@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE NAP_TOControl_GlobalSettingIns
+ALTER PROCEDURE NAP_TOControl_GlobalSettingInsert
 	@UserName NVARCHAR(30),
 	@MaxTurnover MONEY,
 	@UserID INT,
