@@ -1,10 +1,5 @@
-USE [bodb_DownlineTOTest]
-GO
-/****** Object:  StoredProcedure [sb].[TOControl_TransitionIns]    Script Date: 3/27/2017 11:21:40 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [sb].[TOControl_TransitionIns]
 	@XMLString XML
 AS 
