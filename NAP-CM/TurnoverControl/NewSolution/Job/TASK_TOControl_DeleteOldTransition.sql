@@ -30,6 +30,6 @@ BEGIN
 	IF @MaxID > 100000 --Keep 10000 very first rows in the table 
 		WHILE EXISTS (SELECT 1 FROM dbo.TOControl_Transition WITH (NOLOCK) WHERE ID < @MaxID) --To avoid TABLOCK escalation
 			DELETE TOP (4500)
-			FROM dbo.TOControl_Transition
+			FROM dbo.TOControl_Transition WITH (UPDLOCK, ROWLOCK)
 			WHERE ID < @MaxID
 END
