@@ -28,6 +28,9 @@ BEGIN
 	FROM dbo.TOConTrol_GlobalVariables WITH (ROWLOCK)
 	WHERE VName = 'MaxID'
 
+	IF @MaxID IS NULL
+		SELECT @MaxID = 0
+
 	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver) --To avoid TABLOCK escalation
 		SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
 		FROM dbo.TOControl_Transition WITH (ROWLOCK)
