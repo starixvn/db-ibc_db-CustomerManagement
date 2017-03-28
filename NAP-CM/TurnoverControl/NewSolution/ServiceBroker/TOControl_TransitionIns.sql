@@ -31,22 +31,25 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY
-	, MinTransID BIGINT, MaxTransid BIGINT
+	--, MinTransID BIGINT, MaxTransid BIGINT
 							   )
-
+	/*
 	DECLARE @transidTbl AS TABLE (transid BIGINT)
 	DECLARE  @FinishedTime DATETIME, @MaxBatchID BIGINT, @MinTransID BIGINT, @MaxTransID BIGINT
+	*/
 
 	BEGIN TRY
-		INSERT INTO @TmpTable(srecommend, mrecommend, recommend, matchid, adjusted_TurnOver, adjusted_HouseTurnOver, MinTransID, MaxTransid)
+		INSERT INTO @TmpTable(srecommend, mrecommend, recommend, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
+							--, MinTransID, MaxTransid
+							)
 		SELECT x.v.value('(s/text())[1]','INT') AS srecommend,
 			   x.v.value('(m/text())[1]','INT') AS mrecommend,
 			   x.v.value('(a/text())[1]','INT') AS recommend,
 			   x.v.value('(mid/text())[1]','INT') AS matchid,
 			   x.v.value('(aTO/text())[1]','MONEY') AS adjusted_TurnOver,
 			   x.v.value('(aHTO/text())[1]','MONEY') AS adjusted_HouseTurnOver
-			   , x.v.value('(min/text())[1]','BIGINT') AS MinTransID
-			   , x.v.value('(max/text())[1]','BIGINT') AS MaxTransID
+			   --, x.v.value('(min/text())[1]','BIGINT') AS MinTransID
+			   --, x.v.value('(max/text())[1]','BIGINT') AS MaxTransID
 		FROM @XMLString.nodes('/root/r') AS x(v)
 		OPTION (OPTIMIZE FOR (@XMLString = NULL))
 		
@@ -56,6 +59,7 @@ BEGIN
 				 ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID)
 				 AND gl.MaxTurnOver != 0
 
+		/*
 		SELECT @FinishedTime = CURRENT_TIMESTAMP
 
 		SELECT @MinTransID = MIN(MinTransID), @MaxTransID = MAX(MaxTransid)
@@ -80,6 +84,7 @@ BEGIN
 		
 		DELETE DownlineTO_Log_tmp WITH(ROWLOCK,UPDLOCK)
 		WHERE transid IN (SELECT transid FROM @transidTbl)
+		*/
 
 	END TRY
 	BEGIN CATCH --Write ErrLog
