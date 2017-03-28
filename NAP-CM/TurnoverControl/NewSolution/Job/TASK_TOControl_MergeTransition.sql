@@ -39,7 +39,7 @@ BEGIN
 	DROP TABLE #TmpTableRaw
 
 	UPDATE t 
-	SET MaxTurnOver = t.MaxTurnOver
+	SET MaxTurnOver = gl.MaxTurnOver
 	FROM #TmpTable t
 		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID
 
