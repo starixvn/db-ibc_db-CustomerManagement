@@ -1,10 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [bodb02]
-GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [sb].[TOControl_TransitionIns]
 	@XMLString XML
 AS 

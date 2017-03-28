@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[NAP_TOControl_TurnoverNotificationUpdate]
 (
 	@matchids			VARCHAR(1000),
 	@supers				VARCHAR(1000),
-	@nlevel				TINYINT = 80,
+	@nlevel				VARCHAR(4000),
 	@ErrorCode			INT = 0 OUTPUT,
 	@ErrorMessage		NVARCHAR(200) = '' OUTPUT
 )
@@ -24,12 +24,13 @@ BEGIN
 	
 	;WITH tmp AS
 	(
-		SELECT m.val AS matchid, c.val AS custid
+		SELECT m.val AS matchid, c.val AS custid, l.val AS nlevel
 		FROM dbo.strSplit(@matchids,',') m
 			INNER JOIN dbo.strSplit(@supers,',') c ON m.rank = c.rank
+			INNER JOIN dbo.strSplit(@nlevel,',') l ON m.rank = l.rank
 	)
-	UPDATE t WITH(ROWLOCK, UPDLOCK)
-	SET t.IsNotified = @nlevel
+	UPDATE t WITH(ROWLOCK,UPDLOCK)
+	SET t.IsNotified = tmp.nlevel
 	FROM dbo.TOControl_Setting t
 		INNER JOIN tmp ON t.matchid = tmp.matchid AND t.custid = tmp.custid
 	
