@@ -1,6 +1,8 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE bodb02
+GO
 
-CREATE PROCEDURE [dbo].[NAP_TOControl_MatchSelect]
+ALTER PROCEDURE [dbo].[NAP_TOControl_MatchSelect]
 	@LeagueID INT,
 	@FromDate DATETIME = NULL,
 	@ToDate DATETIME = NULL

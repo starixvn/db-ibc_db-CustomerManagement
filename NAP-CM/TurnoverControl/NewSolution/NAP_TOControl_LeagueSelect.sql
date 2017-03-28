@@ -1,4 +1,6 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE bodb02
+GO
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_LeagueSelect]
 	@SportType INT,   
