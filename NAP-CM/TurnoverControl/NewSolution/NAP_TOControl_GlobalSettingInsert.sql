@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-CREATE PROCEDURE [dbo].[NAP_TOControl_GlobalSettingInsert]
+ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingInsert]
 	@UserName NVARCHAR(30),
 	@MaxTurnover MONEY,
 	@UserID INT,
@@ -48,13 +48,39 @@ BEGIN
 			RETURN
 	END
 
-	---- Process to get information about turnover (running events) for @CustID
-	--INSERT INTO @MatchList(matchid, homeid, awayid, eventdate, sporttype, leagueid)
-	--	SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.sporttype, m.leagueid
-	--	FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
-	--	WHERE m.eventstatus <> 'completed'
+	CREATE TABLE #tmpTurnover(MatchId INT, SumOfStake MONEY, HouseTurnover MONEY)
+	INSERT INTO #tmpTurnover(MatchId, SumOfStake, HouseTurnover)
+		EXECUTE DBAGE.bodb02.dbo.NAP_TOControl_MatchTurnoverByCustomerSelect @CustID = @CustID, @RoleID = @roleid
+		
+	INSERT INTO dbo.TOControl_Setting(CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, PercentLevel, IsNotified)
+		SELECT
+			@CustID, t.MatchId, @MaxTurnover AS MaxTurnOver, t.SumOfStake AS TotalTurnOver, t.HouseTurnover, 
+			CASE
+				WHEN PercentUsed < 10 THEN 0
+				WHEN PercentUsed < 20 THEN 1
+				WHEN PercentUsed < 30 THEN 2
+				WHEN PercentUsed < 40 THEN 3
+				WHEN PercentUsed < 50 THEN 4
+				WHEN PercentUsed < 60 THEN 5
+				WHEN PercentUsed < 70 THEN 6
+				WHEN PercentUsed < 80 THEN 7
+				WHEN PercentUsed < 90 THEN 8
+				WHEN PercentUsed < 100 THEN 9
+				ELSE 10
+			END AS PercentLevel, 
+			0 AS IsNotified
+		FROM #tmpTurnover t
+			CROSS APPLY (SELECT CASE WHEN @MaxTurnover = 0 THEN 0 ELSE (HouseTurnover*100)/@MaxTurnover END) _(PercentUsed)
 
-	INSERT INTO dbo.TOControl_Setting VALUES(@CustID, @MaxTurnover)
+	IF @@ERROR > 0 
+	BEGIN
+		SELECT @ErrCode = 103, @ErrMsg = 'Adding failed.'
+		RETURN;
+		
+	END
+	
+	INSERT INTO dbo.TOControl_GlobalSetting(CustID, MaxTurnOver) 
+		VALUES(@CustID, @MaxTurnover)
 
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF(millisecond, @startRun, @endRun)
