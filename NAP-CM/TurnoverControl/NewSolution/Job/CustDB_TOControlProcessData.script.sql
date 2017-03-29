@@ -1,6 +1,5 @@
 USE [msdb]
 GO
-
 BEGIN TRANSACTION
 DECLARE @ReturnCode INT
 SELECT @ReturnCode = 0
@@ -23,7 +22,7 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'CustDB: TOControl ProcessDat
 		@category_name=N'[Uncategorized (Local)]', 
 		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [TOControl ProcessData]    Script Date: 3/28/2017 15:07:57 ******/
+/****** Object:  Step [TOControl ProcessData]    Script Date: 3/29/2017 12:51:42 ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'TOControl ProcessData', 
 		@step_id=1, 
 		@cmdexec_success_code=0, 
@@ -38,7 +37,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'TOContro
 		@database_name=N'CustDB', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [WAITFOR DELAY]    Script Date: 3/28/2017 15:07:57 ******/
+/****** Object:  Step [WAITFOR DELAY]    Script Date: 3/29/2017 12:51:42 ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'WAITFOR DELAY', 
 		@step_id=2, 
 		@cmdexec_success_code=0, 
@@ -55,7 +54,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'WAITFOR 
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'10 seconds', 
+EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Every 10 secs', 
 		@enabled=1, 
 		@freq_type=4, 
 		@freq_interval=1, 
@@ -63,11 +62,11 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'10 second
 		@freq_subday_interval=10, 
 		@freq_relative_interval=0, 
 		@freq_recurrence_factor=0, 
-		@active_start_date=20130530, 
+		@active_start_date=20170329, 
 		@active_end_date=99991231, 
 		@active_start_time=0, 
 		@active_end_time=235959, 
-		@schedule_uid=N'ad8e54aa-6e3d-456c-9f53-965cbed7507e'
+		@schedule_uid=N'edd27c7f-b855-46f9-bf94-8ab0ffeddf94'
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
