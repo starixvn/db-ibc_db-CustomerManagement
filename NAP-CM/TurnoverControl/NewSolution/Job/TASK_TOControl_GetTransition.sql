@@ -28,20 +28,20 @@ BEGIN
 	FROM dbo.TOConTrol_GlobalVariables WITH (ROWLOCK)
 	WHERE VName = 'MaxID'
 
-	IF @MaxID IS NULL
-		SELECT @MaxID = 0
-
 	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver) --To avoid TABLOCK escalation
-		SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
-		FROM dbo.TOControl_Transition WITH (ROWLOCK)
-		WHERE ID > @MaxID
+	SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
+	FROM dbo.TOControl_Transition WITH (ROWLOCK)
+	WHERE ID > @MaxID
 
-	SELECT @MaxID = MAX(ID)
-		FROM @TmpTable
+	IF @@ROWCOUNT <> 0
+	BEGIN
+		SELECT @MaxID = MAX(ID)
+			FROM @TmpTable
 
-	UPDATE dbo.TOConTrol_GlobalVariables WITH (UPDLOCK, ROWLOCK)
-	SET VValue = CONVERT(VARCHAR(200), @MaxID)
-	WHERE VName = 'MaxID'
+		UPDATE dbo.TOConTrol_GlobalVariables WITH (UPDLOCK, ROWLOCK)
+		SET VValue = CONVERT(VARCHAR(200), @MaxID)
+		WHERE VName = 'MaxID'
+	END
 
 	SELECT CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
 	FROM @TmpTable

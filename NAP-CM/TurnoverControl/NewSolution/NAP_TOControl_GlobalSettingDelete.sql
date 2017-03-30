@@ -1,4 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO 
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingDelete]
 	@CustID INT,
@@ -54,7 +56,7 @@ BEGIN
 		SELECT @AffectedMatch = LEFT(@AffectedMatch, LEN(@AffectedMatch)-1)
 	END
 
-	DELETE dbo.TOControl_Setting WITH(ROWLOCK, UPDLOCK) 
+	DELETE dbo.TOControl_GlobalSetting WITH(ROWLOCK, UPDLOCK) 
 	WHERE CustID=@CustID
 	
 	DELETE t

@@ -1,4 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_TurnoverNotificationSelect]
 AS
@@ -45,7 +47,7 @@ BEGIN
 	-- return result
 	SELECT 
 		m.sporttype, m.leagueid, m.matchid, m.homeid, m.awayid, m.eventdate,
-		c.custid, c.username, e.currency,
+		c.custid, c.username, e.currency,c.roleid,
 		t.totalturnover, t.maxturnover, t.houseturnover, t.nlevel
 	FROM @temp_ t
 		INNER JOIN @MatchList m ON t.matchid = m.matchid
