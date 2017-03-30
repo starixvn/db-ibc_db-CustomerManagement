@@ -4,6 +4,7 @@
 */
 
 USE [master]
+GO
 ALTER DATABASE bodb02 ADD FILEGROUP [TOControl_Transition]
 ALTER DATABASE bodb02 ADD FILEGROUP [TOControl_Setting]
 

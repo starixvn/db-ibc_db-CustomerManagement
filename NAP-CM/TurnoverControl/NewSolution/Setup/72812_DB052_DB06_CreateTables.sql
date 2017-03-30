@@ -4,6 +4,7 @@
 */
 
 USE [master]
+GO
 ALTER DATABASE bodb02 ADD FILEGROUP [TOControl_Setting]
 
 ALTER DATABASE bodb02 ADD FILE (NAME = N'TOControl_Setting_01'

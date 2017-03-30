@@ -4,6 +4,7 @@
 */
 
 USE [master]
+GO
 ALTER DATABASE CustDB ADD FILEGROUP [TOControl_Setting]
 ALTER DATABASE CustDB ADD FILEGROUP [TOControl_SettingIndex]
 
