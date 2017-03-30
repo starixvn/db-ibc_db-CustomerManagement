@@ -6,7 +6,7 @@
 USE [master]
 ALTER DATABASE bodb02 ADD FILEGROUP [TOControl_Setting]
 
-ALTER DATABASE bodb02 ADD FILE (NAME = N'TOControl_Setting'
+ALTER DATABASE bodb02 ADD FILE (NAME = N'TOControl_Setting_01'
 								, FILENAME = N'H:\IBC_DB\bodb02\TOControl_Setting_01.ndf' --Replace with each environment's appropriate path
 								, SIZE = 2048KB , FILEGROWTH = 32768KB) TO FILEGROUP [TOControl_Setting]
 

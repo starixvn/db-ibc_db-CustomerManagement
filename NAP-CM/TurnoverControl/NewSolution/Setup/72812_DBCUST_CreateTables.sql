@@ -8,15 +8,15 @@ ALTER DATABASE CustDB ADD FILEGROUP [TOControl_Setting]
 ALTER DATABASE CustDB ADD FILEGROUP [TOControl_SettingIndex]
 
 
-ALTER DATABASE CustDB ADD FILE (NAME = N'TOControl_Setting'
+ALTER DATABASE CustDB ADD FILE (NAME = N'TOControl_Setting_01'
 								, FILENAME = N'H:\USER_DB\CustDB\TOControl_Setting_01.ndf' --Replace with each environment's appropriate path
 								, SIZE = 2048KB , FILEGROWTH = 32768KB)
 								,
-								(NAME = N'TOControl_Setting'
+								(NAME = N'TOControl_Setting_02'
 								, FILENAME = N'H:\USER_DB\CustDB\TOControl_Setting_02.ndf' --Replace with each environment's appropriate path
 								, SIZE = 2048KB , FILEGROWTH = 32768KB) TO FILEGROUP [TOControl_Setting]
 
-ALTER DATABASE CustDB ADD FILE (NAME = N'TOControl_SettingIndex'
+ALTER DATABASE CustDB ADD FILE (NAME = N'TOControl_SettingIndex_01'
 								, FILENAME = N'H:\USER_DB\CustDB\TOControl_SettingIndex_01.ndf' --Replace with each environment's appropriate path
 								, SIZE = 2048KB , FILEGROWTH = 32768KB) TO FILEGROUP [TOControl_SettingIndex]
 
