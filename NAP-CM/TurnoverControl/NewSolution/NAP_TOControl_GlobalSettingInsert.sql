@@ -1,4 +1,6 @@
-/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO 
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingInsert]
 	@UserName NVARCHAR(30),
@@ -42,7 +44,7 @@ BEGIN
 		RETURN
 	END
 
-	IF EXISTS (SELECT 1 FROM dbo.TOControl_Setting WITH(NOLOCK) WHERE CustID = @CustID)
+	IF EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH(NOLOCK) WHERE CustID = @CustID)
 	BEGIN
 			SELECT @ErrCode = 102, @ErrMsg = 'The setting of this customer already existed!'
 			RETURN

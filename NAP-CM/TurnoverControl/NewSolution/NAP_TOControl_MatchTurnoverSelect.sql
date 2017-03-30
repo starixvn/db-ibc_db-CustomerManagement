@@ -1,5 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
+USE CustDB
+GO
+    
 ALTER PROCEDURE [dbo].[NAP_TOControl_MatchTurnoverSelect]
 	@SportType				INT = 1, 
 	@LeagueID				INT = 0,
@@ -78,7 +80,7 @@ BEGIN
 	;WITH CTE_SettingList AS (
 		SELECT 
 			t.CustID, t.matchid, t.MaxTurnover, t.TotalTurnover, t.HouseTurnover,
-			CASE WHEN (t.MaxTurnover = 0) OR (@UsedPercent = 0) THEN 100 ELSE t.HouseTurnover*100/t.MaxTurnover END AS PercentageUsed
+			CASE WHEN t.MaxTurnover = 0 THEN 100 ELSE t.HouseTurnover*100/t.MaxTurnover END AS PercentageUsed
 		FROM dbo.TOControl_Setting t WITH(NOLOCK) 
 		WHERE t.PercentLevel >= @PercentLevel
 	)
