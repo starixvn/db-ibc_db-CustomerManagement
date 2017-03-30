@@ -48,19 +48,19 @@ BEGIN
 			   AS SOURCE (CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver)
 				ON (TARGET.CustID = SOURCE.CustID AND TARGET.matchid = SOURCE.matchid)
 			WHEN MATCHED THEN 
-				 UPDATE SET @PercentageUsed = CASE WHEN TARGET.MaxTurnOver > 0 THEN	(TARGET.TotalTurnOver + SOURCE.adjusted_TurnOver) * 100 / TARGET.MaxTurnOver
+				 UPDATE SET @PercentageUsed = CASE WHEN TARGET.MaxTurnOver > 0 THEN	(TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver
 											  ELSE 0
 											  END,
 							TARGET.TotalTurnOver = TARGET.TotalTurnOver + SOURCE.adjusted_TurnOver,
 							TARGET.HouseTurnover = TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver,
-							TARGET.IsNotified = 
-								CASE	
-									WHEN @PercentageUsed >= 100 THEN 100
-									WHEN @PercentageUsed >= 80 THEN 80
-									WHEN @PercentageUsed >= 60 THEN 60
-									WHEN @PercentageUsed >= 40 THEN 40
-								ELSE 0
-								END,
+							--TARGET.IsNotified = 
+							--	CASE	
+							--		WHEN @PercentageUsed >= 100 THEN 100
+							--		WHEN @PercentageUsed >= 80 THEN 80
+							--		WHEN @PercentageUsed >= 60 THEN 60
+							--		WHEN @PercentageUsed >= 40 THEN 40
+							--	ELSE 0
+							--	END,
 							TARGET.PercentLevel = 
 								CASE	
 									WHEN @PercentageUsed < 10 THEN 0

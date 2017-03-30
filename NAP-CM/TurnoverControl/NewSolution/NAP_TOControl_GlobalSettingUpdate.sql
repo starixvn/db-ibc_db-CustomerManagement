@@ -69,7 +69,7 @@ BEGIN
 		RETURN
 	END
 
-	UPDATE dbo.TOControl_Setting WITH(ROWLOCK, UPDLOCK) 
+	UPDATE dbo.TOControl_GlobalSetting WITH(ROWLOCK, UPDLOCK) 
 	SET MaxTurnOver = @MaxTurnover 
 	WHERE CustID = @CustID
 	
