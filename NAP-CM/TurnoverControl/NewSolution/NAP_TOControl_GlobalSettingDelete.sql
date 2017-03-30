@@ -80,12 +80,5 @@ BEGIN
 				@ActionID = 670,
 				@TrackingValue2 = @TrackingValue2,
 				@Duration = @duration
-				
-	IF @@SERVERNAME = 'DBCUST' 
-		EXEC DBAGE.bodb02.dbo.NAP_TOControl_GlobalSettingDelete 
-			@CustID = @CustID,
-			@UserID = @UserID,
-			@IP	= @IP
-			
 END
 GO

@@ -104,12 +104,5 @@ BEGIN
 				@TrackingValue = @LogData,
 				@Duration = @duration
 
-	IF @@SERVERNAME = 'DBCUST' 
-		EXEC DBAGE.bodb02.dbo.NAP_TOControl_GlobalSettingInsert 
-			@UserName = @UserName,
-			@MaxTurnover = @MaxTurnover,
-			@UserID = @UserID,
-			@IP	= @IP
-	
 END
 GO
