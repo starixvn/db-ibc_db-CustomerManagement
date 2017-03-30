@@ -1,4 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingUpdate]
 	@CustID INT,
@@ -63,7 +65,7 @@ BEGIN
 		RETURN
 	END
 
-	IF @MaxTurnover <= 0
+	IF @MaxTurnover < 0
 	BEGIN
 		SELECT @ErrCode = 102, @ErrMsg = 'Invalid MaxTurnover.'
 		RETURN
@@ -75,7 +77,7 @@ BEGIN
 	
 	UPDATE t
 	SET 
-		@PercentageUsed = (t.HouseTurnOver*100/@MaxTurnover),
+		@PercentageUsed = CASE WHEN @MaxTurnover = 0 THEN 100 ELSE (t.HouseTurnOver*100/@MaxTurnover) END,
 		t.MaxTurnover = @MaxTurnover,
 		t.IsNotified = 
 			CASE 

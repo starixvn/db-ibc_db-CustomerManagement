@@ -27,9 +27,14 @@ BEGIN
 	FROM dbo.TOConTrol_GlobalVariables WITH (ROWLOCK)
 	WHERE VName = 'MaxID'
 
-	IF @MaxID > 100000 --Keep 10000 very first rows in the table 
-		WHILE EXISTS (SELECT 1 FROM dbo.TOControl_Transition WITH (NOLOCK) WHERE ID < @MaxID) --To avoid TABLOCK escalation
-			DELETE TOP (4500)
-			FROM dbo.TOControl_Transition WITH (UPDLOCK, ROWLOCK)
-			WHERE ID < @MaxID
+	--Keep 10000 very first rows in the table
+	IF @MaxID - 10000 <= 0
+		RETURN
+
+	SET @MaxID = @MaxID - 10000
+
+	WHILE EXISTS (SELECT 1 FROM dbo.TOControl_Transition WITH (NOLOCK) WHERE ID < @MaxID) --To avoid TABLOCK escalation
+		DELETE TOP (4500)
+		FROM dbo.TOControl_Transition WITH (UPDLOCK, ROWLOCK)
+		WHERE ID < @MaxID
 END

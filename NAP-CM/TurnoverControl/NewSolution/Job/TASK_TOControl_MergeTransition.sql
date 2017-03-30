@@ -48,9 +48,7 @@ BEGIN
 			   AS SOURCE (CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver)
 				ON (TARGET.CustID = SOURCE.CustID AND TARGET.matchid = SOURCE.matchid)
 			WHEN MATCHED THEN 
-				 UPDATE SET @PercentageUsed = CASE WHEN TARGET.MaxTurnOver > 0 THEN	(TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver
-											  ELSE 0
-											  END,
+				 UPDATE SET @PercentageUsed = CASE WHEN TARGET.MaxTurnOver = 0 THEN	100 ELSE (TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver END,
 							TARGET.TotalTurnOver = TARGET.TotalTurnOver + SOURCE.adjusted_TurnOver,
 							TARGET.HouseTurnover = TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver,
 							--TARGET.IsNotified = 
@@ -77,7 +75,18 @@ BEGIN
 							END 
 			WHEN NOT MATCHED THEN	
 				INSERT (CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, IsNotified, PercentLevel)
-				VALUES (SOURCE.CustID, SOURCE.matchid, SOURCE.MaxTurnOver, SOURCE.adjusted_TurnOver, SOURCE.adjusted_HouseTurnOver, 0, 0);
+				VALUES (SOURCE.CustID, SOURCE.matchid, SOURCE.MaxTurnOver, SOURCE.adjusted_TurnOver, SOURCE.adjusted_HouseTurnOver, 0, 
+						CASE WHEN SOURCE.MaxTurnOver = 0 THEN 100 ELSE CASE	WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 10 THEN 0
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 20 THEN 1
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 30 THEN 2
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 40 THEN 3
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 50 THEN 4
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 60 THEN 5
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 70 THEN 6
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 80 THEN 7
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 90 THEN 8
+																			WHEN (SOURCE.adjusted_HouseTurnOver) * 100 / SOURCE.MaxTurnOver < 100 THEN 9 ELSE 10 END
+											  END);
 
 	DROP TABLE #TmpTable
 END

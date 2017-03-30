@@ -69,6 +69,7 @@ BEGIN
   
 	SELECT DISTINCT leagueid
 	FROM @League
+	ORDER BY LeagueID
 
 END
 GO

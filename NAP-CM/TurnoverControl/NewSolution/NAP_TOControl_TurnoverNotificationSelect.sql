@@ -22,7 +22,7 @@ BEGIN
 	DECLARE @temp_ TABLE (custid INT, matchid INT, totalturnover MONEY, MaxTurnover MONEY, houseturnover MONEY, nlevel TINYINT)
 
 	;WITH cte_ AS (
-		SELECT t.custid, t.matchid, t.totalturnover, t.MaxTurnover, t.houseturnover, t.IsNotified, t.houseturnover*100/t.MaxTurnover AS PercentageUsed
+		SELECT t.custid, t.matchid, t.totalturnover, t.MaxTurnover, t.houseturnover, t.IsNotified, CASE WHEN t.MaxTurnover = 0 THEN 100 ELSE t.houseturnover*100/t.MaxTurnover END AS PercentageUsed
 		FROM dbo.TOControl_Setting t WITH(NOLOCK)
 		WHERE t.PercentLevel >= 4
 	)

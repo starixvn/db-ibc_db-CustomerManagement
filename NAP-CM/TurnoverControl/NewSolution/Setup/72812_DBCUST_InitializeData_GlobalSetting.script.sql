@@ -1,10 +1,9 @@
-/*
-	Created: 20170331@Elodie
-	Task: Initialize data for table TOControl_GlobalSetting
-	DB: DBCUST/CustDB, DB052/bodb02, DB053/bodb02, DB06/bodb02
+/*	
+	Created: 20170407@Elodie
+	Task: Initialize data for TO Control setting
+	DB: DBCUST/CustDB
 */
 
---DBCUST
 USE CustDB
 GO
 --DELETE FROM TOControl_GlobalSetting
@@ -6694,6 +6693,96 @@ SELECT 15691361, 750000 UNION ALL
 SELECT 5430927, 750000 UNION ALL
 SELECT 4347661, 522000 
 
+CREATE TABLE #SuperList (custid INT PRIMARY KEY)
+CREATE TABLE #MasterList (custid INT PRIMARY KEY)
+CREATE TABLE #AgentList (custid INT PRIMARY KEY)
+CREATE TABLE #MatchList (matchid INT PRIMARY KEY)
 
+INSERT INTO #SuperList (custid)
+SELECT ci.custid
+FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK)
+	INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON gs.custid = ci.custid
+WHERE roleid = 4
 
+INSERT INTO #MasterList (custid)
+SELECT ci.custid
+FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK)
+	INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON gs.custid = ci.custid
+WHERE roleid = 3
 
+INSERT INTO #AgentList (custid)
+SELECT ci.custid
+FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK)
+	INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON gs.custid = ci.custid
+WHERE roleid = 2
+
+INSERT INTO #MatchList (matchid)
+SELECT m.matchid
+FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
+WHERE m.eventstatus <> 'completed'
+
+CREATE TABLE #tmpTurnover(custid INT, MatchId INT, SumOfStake MONEY, HouseTurnover MONEY)
+
+INSERT INTO #tmpTurnover(custid, MatchId, SumOfStake, HouseTurnover)
+SELECT 
+	b.srecommend,
+	b.matchid, 
+	SUM(b.stake) AS SumOfStake, 
+	SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
+FROM DBAGE.bodb02.dbo.bettrans b WITH(NOLOCK)
+	INNER JOIN #SuperList s ON b.srecommend = s.custid																	
+	INNER JOIN #MatchList m ON b.matchid = m.matchid
+WHERE b.statusid NOT BETWEEN 101 AND 103
+	AND b.ruben = 0
+	AND ((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
+GROUP BY b.srecommend, b.matchid
+
+INSERT INTO #tmpTurnover(custid, MatchId, SumOfStake, HouseTurnover)
+SELECT 
+	b.mrecommend,
+	b.matchid, 
+	SUM(b.stake) AS SumOfStake, 
+	SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
+FROM DBAGE.bodb02.dbo.bettrans b WITH(NOLOCK)
+	INNER JOIN #MasterList ma ON b.mrecommend = ma.custid																	
+	INNER JOIN #MatchList m ON b.matchid = m.matchid
+WHERE b.statusid NOT BETWEEN 101 AND 103
+	AND b.ruben = 0
+	AND ((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
+GROUP BY b.mrecommend, b.matchid
+
+INSERT INTO #tmpTurnover(custid, MatchId, SumOfStake, HouseTurnover)
+SELECT 
+	b.recommend,
+	b.matchid, 
+	SUM(b.stake) AS SumOfStake,
+	SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
+FROM DBAGE.bodb02.dbo.bettrans b WITH(NOLOCK)
+	INNER JOIN #AgentList a ON b.recommend = a.custid																	
+	INNER JOIN #MatchList m ON b.matchid = m.matchid
+WHERE b.statusid NOT BETWEEN 101 AND 103
+	AND b.ruben = 0
+	AND ((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
+GROUP BY b.recommend, b.matchid
+
+	
+INSERT INTO dbo.TOControl_Setting(CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, PercentLevel, IsNotified)
+SELECT
+	t.CustID, t.MatchId, gs.MaxTurnOver, t.SumOfStake AS TotalTurnOver, t.HouseTurnover, 
+	CASE
+		WHEN PercentUsed < 10 THEN 0
+		WHEN PercentUsed < 20 THEN 1
+		WHEN PercentUsed < 30 THEN 2
+		WHEN PercentUsed < 40 THEN 3
+		WHEN PercentUsed < 50 THEN 4
+		WHEN PercentUsed < 60 THEN 5
+		WHEN PercentUsed < 70 THEN 6
+		WHEN PercentUsed < 80 THEN 7
+		WHEN PercentUsed < 90 THEN 8
+		WHEN PercentUsed < 100 THEN 9
+		ELSE 10
+	END AS PercentLevel, 
+	0 AS IsNotified
+FROM #tmpTurnover t
+	INNER JOIN dbo.TOControl_GlobalSetting gs WITH (NOLOCK) ON t.custid = gs.CustID
+	CROSS APPLY (SELECT CASE WHEN gs.MaxTurnover = 0 THEN 100 ELSE (HouseTurnover*100)/gs.MaxTurnover END) _(PercentUsed)

@@ -72,7 +72,7 @@ BEGIN
 			END AS PercentLevel, 
 			0 AS IsNotified
 		FROM #tmpTurnover t
-			CROSS APPLY (SELECT CASE WHEN @MaxTurnover = 0 THEN 0 ELSE (HouseTurnover*100)/@MaxTurnover END) _(PercentUsed)
+			CROSS APPLY (SELECT CASE WHEN @MaxTurnover = 0 THEN 100 ELSE (HouseTurnover*100)/@MaxTurnover END) _(PercentUsed)
 
 	IF @@ERROR > 0 
 	BEGIN

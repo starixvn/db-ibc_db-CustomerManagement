@@ -97,6 +97,7 @@ BEGIN
 	WHERE 
 		@UsedPercent <=	t.PercentageUsed
 	ORDER BY 
+		m.leagueid DESC,
 		m.matchid ASC, 
 		t.PercentageUsed DESC, 
 		c.username ASC
