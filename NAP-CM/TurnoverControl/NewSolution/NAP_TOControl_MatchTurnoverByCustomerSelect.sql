@@ -1,4 +1,6 @@
 /*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+USE bodb02
+GO
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_MatchTurnoverByCustomerSelect]
 	@CustID INT,
@@ -31,7 +33,7 @@ BEGIN
 			SUM(b.stake) AS SumOfStake, 
 			SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
 		FROM bodb02.dbo.bettrans b WITH(NOLOCK)
-			INNER JOIN @MatchList m ON b.matchid = b.matchid
+			INNER JOIN @MatchList m ON b.matchid = m.matchid
 		WHERE b.srecommend = @CustID
 			AND b.statusid NOT BETWEEN 101 AND 103
 			AND b.ruben = 0
@@ -46,7 +48,7 @@ BEGIN
 			SUM(b.stake) AS SumOfStake, 
 			SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
 		FROM bodb02.dbo.bettrans b WITH(NOLOCK)
-			INNER JOIN @MatchList m ON b.matchid = b.matchid
+			INNER JOIN @MatchList m ON b.matchid = m.matchid
 		WHERE b.mrecommend = @CustID
 			AND b.statusid NOT BETWEEN 101 AND 103
 			AND b.ruben = 0
@@ -61,7 +63,7 @@ BEGIN
 			SUM(b.stake) AS SumOfStake,
 			SUM((1-b.tpositiontaking)*b.stake) AS HouseTurnover
 		FROM bodb02.dbo.bettrans b WITH(NOLOCK)
-			INNER JOIN @MatchList m ON b.matchid = b.matchid
+			INNER JOIN @MatchList m ON b.matchid = m.matchid
 		WHERE b.recommend = @CustID
 			AND b.statusid NOT BETWEEN 101 AND 103
 			AND b.ruben = 0
