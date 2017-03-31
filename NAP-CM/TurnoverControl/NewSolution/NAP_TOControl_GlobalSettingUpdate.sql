@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingUpdate]
 	@CustID INT,
@@ -119,5 +119,12 @@ BEGIN
 				@TrackingValue2 = @TrackingValue2,
 				@Duration = @duration
 
+	IF @@SERVERNAME = 'DBCUST' 
+		EXEC DBAGE.bodb02.dbo.NAP_TOControl_GlobalSettingUpdate 
+			@CustID = @CustID,
+			@MaxTurnover = @MaxTurnover,
+			@UserID = @UserID,
+			@IP	= @IP
+			
 END
 GO
