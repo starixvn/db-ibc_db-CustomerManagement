@@ -5,7 +5,9 @@ ALTER PROCEDURE [dbo].[Dot_Member_Credit_Match_Turnover_Check_Cust]
 	@MatchID			INT,
 	@Recommend			INT,
 	@MRecommend			INT,
-	@SRecommend			INT
+	@SRecommend			INT,
+	@Stake				MONEY,
+	@TPositionTaking	SMALLMONEY
 AS
 /*
 	Created: Don
@@ -21,16 +23,16 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @MatchTurnover MONEY, @MaxMatchTurnover_Setting MONEY
+	DECLARE @NewMatchTurnover MONEY, @MaxMatchTurnover_Setting MONEY
 	DECLARE @StopFlag TINYINT
 	
-	SELECT @MatchTurnover = -1, @MaxMatchTurnover_Setting = -1
+	SELECT @NewMatchTurnover = -1, @MaxMatchTurnover_Setting = -1
 	SELECT @StopFlag = 0
 	
 	IF (@Recommend > -1)
 	BEGIN
 		SELECT 
-			@MatchTurnover = tos.HouseTurnover,
+			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking)),
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
@@ -38,18 +40,14 @@ BEGIN
 			tos.matchid = @MatchID
 
 		IF (@@ROWCOUNT > 0)
-			IF (1 =		CASE 
-							WHEN @MaxMatchTurnover_Setting = 0 THEN 1 
-							WHEN @MatchTurnover/@MaxMatchTurnover_Setting >= 1 THEN 1 
-							ELSE 0 
-						END)
+			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
 				SELECT @StopFlag = 1
 	END
 
 	IF (@MRecommend > -1 AND @StopFlag = 0)
 	BEGIN
 		SELECT 
-			@MatchTurnover = tos.HouseTurnover,
+			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking)),
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
@@ -57,18 +55,14 @@ BEGIN
 			tos.matchid = @MatchID
 			
 		IF (@@ROWCOUNT > 0)
-			IF (1 =		CASE 
-							WHEN @MaxMatchTurnover_Setting = 0 THEN 1 
-							WHEN @MatchTurnover/@MaxMatchTurnover_Setting >= 1 THEN 1 
-							ELSE 0 
-						END)
+			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
 				SELECT @StopFlag = 1
 	END
 
 	IF (@SRecommend >- 1 AND @StopFlag = 0)
 	BEGIN
 		SELECT 
-			@MatchTurnover = tos.HouseTurnover,
+			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking)),
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
@@ -76,11 +70,7 @@ BEGIN
 			tos.matchid = @MatchID
 			
 		IF (@@ROWCOUNT > 0)
-			IF (1 =		CASE 
-							WHEN @MaxMatchTurnover_Setting = 0 THEN 1 
-							WHEN @MatchTurnover/@MaxMatchTurnover_Setting >= 1 THEN 1 
-							ELSE 0 
-						END)
+			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
 				SELECT @StopFlag = 1
 	END 
 	
