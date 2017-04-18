@@ -87,7 +87,7 @@ BEGIN
 		SELECT TOP 1 @CustID
 		FROM bodb02.dbo.CustInfo ci WITH (NOLOCK)
 		WHERE ci.recommend = @CustID AND ci.roleid = 1
-	END
+	END;
 
 	MERGE dbo.MESSAGE_NOTICE AS TARGET
 	USING (SELECT CustID, @UserID, @TypeID FROM #TmpTable) AS SOURCE (CustID, UserID, TypeID)
