@@ -1,9 +1,10 @@
+/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [ON_USER]
 GO
 
 ALTER PROCEDURE [dbo].[Age_MessageNoticeDownlineUpdStatus] 
 	@custID		int,
-	@isViewed	bit -- 1: Status is viewed.
+	@isViewed	BIT, -- 1: Status is viewed.
 	@TypeID		TINYINT
 AS
 /*
@@ -22,7 +23,9 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON
 	CREATE TABLE #TmpTable (CustID INT PRIMARY KEY)
+	DECLARE @RoleID TINYINT
 
+	SELECT @RoleID = roleid FROM bodb02.dbo.CustInfo WITH (NOLOCK) WHERE custid = @CustID 
 	IF @RoleID = 4
 	BEGIN
 		--Super who has downlines
@@ -83,8 +86,9 @@ BEGIN
 
     -- Update statements for procedure here
 	UPDATE msg
-	FROM MESSAGE_NOTICE msg WITH(ROWLOCK)
-		INNER JOIN #TmpTable tmp ON msg.custID = tmp.CustID 
 	SET isViewed = @isViewed
+	FROM MESSAGE_NOTICE msg WITH(ROWLOCK)
+		INNER JOIN #TmpTable tmp ON msg.custID = tmp.CustID 	
 	WHERE TypeID = @TypeID
 END
+

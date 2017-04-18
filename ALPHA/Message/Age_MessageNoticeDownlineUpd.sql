@@ -1,3 +1,4 @@
+/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [ON_USER]
 GO
 
