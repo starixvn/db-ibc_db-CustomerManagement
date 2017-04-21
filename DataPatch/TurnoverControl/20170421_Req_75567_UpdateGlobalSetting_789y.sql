@@ -6722,11 +6722,13 @@ SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.sporttype, m.leagueid
 FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
 WHERE m.eventstatus <> 'completed'
 
+--3164 affected rows
 UPDATE gs
 SET gs.MaxTurnOver = c.MaxTurnover
 FROM dbo.TOControl_GlobalSetting gs WITH(ROWLOCK, UPDLOCK) 
 	INNER JOIN #CustList c ON c.CustID = gs.CustID
 
+--5979 affected rows
 UPDATE t
 SET 
 	@PercentageUsed = CASE WHEN c.MaxTurnover = 0 THEN 100 ELSE (t.HouseTurnOver*100/c.MaxTurnover) END,
