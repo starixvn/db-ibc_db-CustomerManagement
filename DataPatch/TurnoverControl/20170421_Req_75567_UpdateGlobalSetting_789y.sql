@@ -16,7 +16,7 @@ DECLARE @MaxTurnover MONEY = 200000
 --FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK)
 --	INNER JOIN dbo.Customer c WITH (NOLOCK) ON gs.custid = c.custid
 --	INNER JOIN Exchange e WITH (NOLOCK) ON c.currency = e.exchangeid
---WHERE site = '789y' AND roleid <> 1 AND gs.MaxTurnOver < @MaxTurnover 
+--WHERE site = '789y' AND roleid <> 1 AND gs.MaxTurnOver < @MaxTurnover AND e.code = 'USD'
 --ORDER BY c.username
 
 --3164 affected rows
@@ -24,7 +24,8 @@ INSERT INTO #CustList (custid, MaxTurnOver)
 SELECT c.custid, @MaxTurnover
 FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK)
 	INNER JOIN dbo.Customer c WITH (NOLOCK) ON gs.custid = c.custid
-WHERE site = '789y' AND roleid <> 1 AND gs.MaxTurnOver < @MaxTurnover
+	INNER JOIN Exchange e WITH (NOLOCK) ON c.currency = e.exchangeid
+WHERE site = '789y' AND roleid <> 1 AND gs.MaxTurnOver < @MaxTurnover AND e.code = 'USD'
 
 DECLARE @MatchList TABLE(matchid INT, homeid INT, awayid INT, eventdate DATETIME, sporttype INT, leagueid INT) 
 DECLARE @PercentageUsed MONEY
