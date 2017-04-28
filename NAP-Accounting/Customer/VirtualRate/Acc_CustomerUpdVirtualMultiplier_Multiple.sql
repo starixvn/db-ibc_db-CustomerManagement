@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
@@ -14,6 +18,7 @@ AS
 	Revisions: 
 		- 20160614@Elodie: Update enable virtualrate [Redmine:#58700]
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
+		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
 
 	Param's Explanation:  
 		- @VirtualMultiplier = '<ROOT>
@@ -38,7 +43,10 @@ BEGIN
 	DECLARE	@tblVirtualrate	TABLE (
 								CustIDs				VARCHAR(MAX)
 							,	VirtualMultiplier	SMALLMONEY	
-								);
+							);
+	CREATE TABLE #CustList (CustID INT PRIMARY KEY)
+	CREATE TABLE #BACust (CustID INT PRIMARY KEY)
+	DECLARE @CustStr VARCHAR(MAX) = '', @VR_ExcludeBA_XML XML						
 	DECLARE	@DocHandler		INT;														
 	 
 	SET	@startRun = GETDATE();  
@@ -78,6 +86,48 @@ BEGIN
 		RETURN;
 	END;
 	
+	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), ignore the BA accounts with margin >= 4%
+	IF EXISTS (SELECT 1 FROM @tblVirtualrate WHERE VirtualMultiplier = 3)
+	BEGIN
+		INSERT INTO #CustList (CustID)
+		SELECT CONVERT(INT,ss.val)
+		FROM @tblVirtualrate AS tv
+			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss
+		WHERE VirtualMultiplier = 3
+
+		INSERT INTO #BACust(CustID)
+		SELECT CustID
+		FROM DBLIC.bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
+		WHERE ba.Status = 'Running'
+
+		DELETE tmp
+		FROM #CustList tmp 
+			INNER JOIN #BACust ba ON ba.CustID = tmp.CustID
+
+		SELECT @CustStr =  ISNULL(STUFF(( select ',' + CAST(custid AS VARCHAR(20))
+		FROM #CustList
+		FOR XML PATH('')), 1,1,''),'')
+
+		UPDATE tmp
+		SET tmp.CustIDs = @CustStr
+		FROM @tblVirtualrate tmp
+		WHERE VirtualMultiplier = 3.0
+
+		SELECT @VR_ExcludeBA_XML =(
+								SELECT (
+										SELECT	CustIDs	AS '@CustIds'
+											,	VirtualMultiplier	AS '@VirtualMultiplier'
+										FROM @tblVirtualrate
+										FOR XML PATH('Rate')
+											, TYPE
+										)
+								FOR XML PATH('ROOT')
+									, TYPE
+								)
+
+		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),@VR_ExcludeBA_XML)
+	END
+
 	-- Update via Execrep
 	EXECUTE	dbo.Acc_CustSetting_10 
 				@VirtualMultiplier = @VirtualMultiplier;
