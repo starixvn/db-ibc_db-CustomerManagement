@@ -5,7 +5,8 @@ GO
 
 ALTER PROCEDURE [dbo].[Age_MessageNoticeUpdStatus] 
 	@custID		int,
-	@isViewed	bit -- 1: Status is viewed.
+	@isViewed	BIT, -- 1: Status is viewed.
+	@TypeID		TINYINT = 1 -- 1: Position taking. 2: Betting Limit. 3: Status	
 AS
 BEGIN
     /*
@@ -15,6 +16,7 @@ BEGIN
     Original:
     Revisions:
 		- 20110427@Simon: Add Popup Message For Betting Limit.
+		- 20170417@Elodie: Add TypeId [RedmineID: #73073]
 		
     Param's Explanation:
         . @custID: ID of agent
@@ -28,7 +30,7 @@ BEGIN
     -- Update statements for procedure here
 	UPDATE MESSAGE_NOTICE WITH(ROWLOCK)
 	SET isViewed = @isViewed
-	WHERE @custID = custID
+	WHERE custID = @custID AND TypeID = @TypeID
 END
 
 GO
