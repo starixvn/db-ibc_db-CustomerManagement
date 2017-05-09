@@ -16,6 +16,7 @@ BEGIN
     Original:
     Revisions:
 		- 20110427@Simon: Add Popup Message For Betting Limit.
+		- 20170417@Elodie: Add TypeId [RedmineID: #73073]
 		
     Param's Explanation:
         . @custID: ID of agent
