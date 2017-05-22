@@ -19,6 +19,7 @@ AS
 		- 20160614@Elodie: Update enable virtualrate [Redmine:#58700]
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
+		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 
 	Param's Explanation:  
 		- @VirtualMultiplier = '<ROOT>
@@ -86,7 +87,7 @@ BEGIN
 		RETURN;
 	END;
 	
-	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), ignore the BA accounts with margin >= 4%
+	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), update VR of the BA accounts = 0 with margin >= 4%
 	IF EXISTS (SELECT 1 FROM @tblVirtualrate WHERE VirtualMultiplier = 3)
 	BEGIN
 		INSERT INTO #CustList (CustID)
@@ -99,6 +100,14 @@ BEGIN
 		SELECT CustID
 		FROM DBLIC.bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
 		WHERE ba.Status = 'Running'
+
+		SELECT @CustStr =  ISNULL(STUFF(( select ',' + CAST(c.custid AS VARCHAR(20))
+		FROM #CustList c
+			INNER JOIN #BACust ba ON ba.CustID = c.CustID
+		FOR XML PATH('')), 1,1,''),'')
+
+		INSERT INTO @tblVirtualrate (CustIDs, VirtualMultiplier)
+		SELECT @CustStr, 0
 
 		DELETE tmp
 		FROM #CustList tmp 
