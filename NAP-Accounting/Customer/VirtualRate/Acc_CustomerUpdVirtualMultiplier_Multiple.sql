@@ -107,7 +107,7 @@ BEGIN
 		FOR XML PATH('')), 1,1,''),'')
 
 		INSERT INTO @tblVirtualrate (CustIDs, VirtualMultiplier)
-		SELECT @CustStr, 0
+		SELECT @CustStr, 1
 
 		DELETE tmp
 		FROM #CustList tmp 
