@@ -39,7 +39,7 @@ Revisions:
 	- 20161031@Winnie: FishingWorld - [Redmine: #65474]
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
-
+	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
 BEGIN
@@ -248,7 +248,7 @@ BEGIN
 			ISNULL(ci.DisableCricket,1) AS DisableCricket,
 			ISNULL(ci.HideCricket,1) AS HideCricket,
 			ISNULL(cdm.Discount,0) AS discountCricket,
-			
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  isnull(ci.reject, 0), cu.username) as RowNumber
 				                                  
@@ -374,7 +374,7 @@ BEGIN
 		INNER JOIN dbo.CustMaster cm with(NOLOCK) on cu.custid = cm.custid
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 
 		LEFT JOIN CustDiscount3rd_Agent cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
-		
+		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
 	WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
@@ -393,7 +393,7 @@ BEGIN
 			   ci.DisableCricket, ci.HideCricket, cdm.Discount,
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
-			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
+			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason
 
 	ORDER BY RowNumber
 END
