@@ -1,7 +1,3 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO 
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelUserInfo]
 	@custid int
 AS
@@ -33,16 +29,17 @@ Revisions:
 	- 20160413@Winnie: VoidBridge - [Redmine: #55531]
 	- 20160801@Elodie: NG2 Product - [Redmine: #60809]
 	- 20161031@Winnie: FishingWorld - [Redmine: #65474]
-
+	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
+	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct - [Redmine #72336]	
 Param's Explanation:
-• @custid: custid that need to be viewed.   
+Ã¢â‚¬Â¢ @custid: custid that need to be viewed.   
 */
 
 	SET NOCOUNT ON
 
 	declare @roleid tinyint
 	declare @remark nvarchar(300) = ''
-	DECLARE @Site VARCHAR(10)
+	DECLARE @Site VARCHAR(10),@HasDownline INT=0,@IsDisabledDownline BIT=0
 	
 	select @roleid = roleid
 	  from Customer with(nolock)
@@ -72,7 +69,43 @@ Param's Explanation:
 		  from CustSuper with(nolock)
 		 where custid = @custid
 	end
-
+	-- casino
+	IF @RoleID=2
+		BEGIN		
+			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE recommend = @CustID AND roleid=1 AND SyncCasino=1)
+					SELECT @HasDownline=1
+			IF @HasDownline=1
+			BEGIN
+				IF EXISTS(SELECT 1 FROM  custInfo WITH(NOLOCK) WHERE recommend=@custid AND DisableCasino=1 AND SyncCasino=1)
+					SELECT @IsDisabledDownline=1			
+			END
+		END		
+		ELSE IF @RoleID=3
+		BEGIN	
+			
+			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE mrecommend = @CustID AND roleid=2 AND SyncCasino=1)
+				SELECT @HasDownline=1
+			IF @HasDownline=1
+			BEGIN
+				IF EXISTS(SELECT 1 FROM  custInfo WITH(NOLOCK) WHERE mrecommend=@custid AND DisableCasino=1 AND SyncCasino=1)
+					SELECT @IsDisabledDownline=1
+			
+			END
+		END
+		ELSE IF @RoleID=4	
+		BEGIN	
+			
+			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE srecommend = @CustID AND roleid=3 AND SyncCasino=1)
+				SELECT @HasDownline=1
+			IF @HasDownline=1
+			BEGIN				
+				IF EXISTS(SELECT 1 FROM custInfo WITH(NOLOCK) WHERE srecommend=@custid AND DisableCasino=1 AND SyncCasino=1)
+				BEGIN				
+					SELECT @IsDisabledDownline=1						
+				END
+			
+			END
+		END	
 	-- For DCS
 	 
     DECLARE	@bitmapOrder_MuayThai		INT
@@ -81,7 +114,8 @@ Param's Explanation:
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_NG2			INT
-		,	@bitmapOrder_FishingWorld	INT
+		,	@bitmapOrder_FishingWorld	INT	
+		 
     
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
     SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
@@ -105,44 +139,14 @@ Param's Explanation:
 		,	@IsHidden_NG2			INT = 1
 		,	@IsHidden_FishingWorld	INT = 1	
     
-    DECLARE	@SportBook2				INT = 16
-		,	@CockFighting			INT = 19
-		,	@Cricket				INT = 20
-		,	@AllBet					INT = 21
-		,	@VoidBridge				INT = 22
-		,	@NG2					INT = 23
-		,	@FishingWorld			INT = 24
-    
-	IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@SportBook2,4))
-	BEGIN
-		SET @IsHidden_MuayThai = 0
-	END
-	IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@CockFighting,4))
-	BEGIN
-		SET @IsHidden_CockFighting = 0
-	END
-	IF EXISTS (SELECT TOP(1) 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@AllBet, 4))
-	BEGIN
-	    SET	@IsHidden_AllBet = 0
-	END
-	
-	IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@Cricket,4))
-	BEGIN
-		SET @IsHidden_Cricket = 0
-	END
-
-	IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@VoidBridge,4))
-	BEGIN
-		SET @IsHidden_VoidBridge = 0
-	END
-	 IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@NG2,11))
-	BEGIN
-		SET @IsHidden_NG2 = 0
-	END
-	IF EXISTS( SELECT 1 FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@FishingWorld,13))
-	BEGIN
-		SET @IsHidden_FishingWorld = 0
-	END
+   
+				EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
+				EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 
 	DECLARE @recommend INT, @IsIMBC BIT = 0
 	
@@ -182,6 +186,8 @@ Param's Explanation:
 		   ci.disablelivecasino,
 		   ci.DisableBingo,
 		   ci.synclivecasino,
+		   @HasDownline AS HasDownline,
+		   @IsDisabledDownline AS DisableCasinoDownline,
 		   ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
 		   
@@ -292,3 +298,13 @@ Param's Explanation:
 
 	
 END
+GO
+GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbAdminNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbExtAccNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbDownlineNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbDownlineNetView]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelUserInfo] TO vnteam
