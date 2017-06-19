@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]  
     @GroupName	VARCHAR(50) = 'ACCTHAI',
     @Custid		int = null,

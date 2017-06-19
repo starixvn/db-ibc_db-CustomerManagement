@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByMAg] 
     @MRecommend INT
   , @Custid     INT = NULL
