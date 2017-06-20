@@ -199,7 +199,7 @@ BEGIN
 			-- For Lottery
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLottery,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_Lottery)) AS HideLotteryUpline,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableFishingWorldUpline,
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLotteryUpline,
 			CAST(CASE WHEN @IsHidden_Lottery = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lottery)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
 			-- For NG2
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
@@ -399,6 +399,11 @@ BEGIN
 		   ISNULL(ci.SyncedVoidBridgeUpline,1) AS SyncedVoidBridgeUpline,
 		   ISNULL(ci.SyncedVoidBridgeDownline,1) AS SyncedVoidBridgeDownline,
 		   
+		    ISNULL(ci.DisableLottery,1) AS DisableLottery,
+		   ISNULL(ci.DisableLotteryUpline,1) AS DisableLotteryUpline,
+		   ISNULL(ci.HideLottery,1) AS HideLottery,
+		   ISNULL(ci.HideLotteryUpline,1) AS HideLotteryUpline,
+
 		   ISNULL(ci.DisableNG2,1) AS DisableNG2,
 		   ISNULL(ci.DisableNG2Upline,1) AS DisableNG2Upline,
 		   ISNULL(ci.HideNG2,1) AS HideNG2,
@@ -417,7 +422,6 @@ BEGIN
 		   ISNULL(ci.DisableVirtualSportsUpline,1) AS DisableVirtualSportsUpline,
 		   ISNULL(ci.HideVirtualSports,1) AS HideVirtualSports,
 		   ISNULL(ci.HideVirtualSportsUpline,1) AS HideVirtualSportsUpline,
-
 	       --transfer condition
 	       @TransferOption disableTransfer,	
 	       ROW_NUMBER() OVER (ORDER BY ci.enabled desc,
@@ -469,7 +473,7 @@ BEGIN
 			   ,ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
 			   ,ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline
 			   ,ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline
-
+			   ,ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline
 	ORDER BY RowNumber
 
 
