@@ -18,10 +18,10 @@ SET NOCOUNT ON
 
 if @roleid = 2
 BEGIN		
-	SELECT c.custid,cl.ClosedReason
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
 	from custinfo c with (nolock)
 	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid	
+	where c.roleid = 1 and c.recommend = @custid AND c.closed=1
 	UNION ALL
 	SELECT cl.custid,cl.ClosedReason
 	from CustLoginInfo cl WITH(NOLOCK) 
@@ -30,27 +30,27 @@ BEGIN
 END
 else if @roleid = 3
 BEGIN
-	SELECT c.custid,cl.ClosedReason
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
 	from custinfo c with (nolock)
 	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid	
+	where c.roleid = 1 and c.recommend = @custid  AND c.closed=1	
 	UNION ALL	
-	SELECT  c.custid,cl.ClosedReason
+	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
 	from custinfo c with (nolock)
 	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 2 and c.mrecommend = @custid	
+	where c.roleid = 2 and c.mrecommend = @custid AND c.closed=1
 END
 else if @roleid = 4
 BEGIN
-	SELECT c.custid,cl.ClosedReason
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
 	from custinfo c with (nolock)
 	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid	
+	where c.roleid = 1 and c.recommend = @custid  AND c.closed=1	
 	UNION ALL		
-	SELECT  c.custid,cl.ClosedReason
+	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
 	from custinfo  c with (nolock)
 	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid IN(2,3) and c.srecommend = @custid	
+	where c.roleid IN(2,3) and c.srecommend = @custid  AND c.closed=1	
 END
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerSelList] TO [bodbAdminNet]
