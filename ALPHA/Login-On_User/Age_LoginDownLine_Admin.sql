@@ -55,132 +55,194 @@ Revisions:
 	- 20130123@Elodie: Write more log on DBTXN server in case of DBLOG server failure
 	- 20130426@Johnson: get field SecurityCode 
 	- 20130507@Johnson: get field isForcedChangeSecurityCode
+	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 */
-
-SET NOCOUNT ON 
-
-DECLARE @Begin		DATETIME 
-DECLARE @End		DATETIME
-DECLARE @Duration	INT
-
-SET @Begin = GETDATE()
- 
-declare @LogData nvarchar(200),	@logincount int,@locked int
-
-IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 5 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) < 0
-BEGIN	
-	SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
-				ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
-			END , @ErrCode=105    
-	RETURN    
-END
-
-if not exists (SELECT 1
-				FROM customer as c with (NOLOCK)
-					inner join custinfo as ci with (NOLOCK) on c.custid = ci.custid
-				WHERE  c.roleID in (2,3,4) and c.username = @Username)
 BEGIN
-	RETURN
-END
-else
-BEGIN
-	Select	@CustID  = CustInfo.CustID, @RoleID = CustInfo.RoleID, @Currency = Exchange.Currency, @CurrencyId = Exchange.ExchangeId
-			,@CasinoDisable = CustInfo.DisableCasino, @CasinoSync = CustInfo.SyncCasino
-			,@BingoDisable = CustInfo.DisableBingo, @BingoSync = CustInfo.syncBingo 
-	from 
-		CustInfo with (NOLOCK) 
-		INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID
-	where CustInfo.username = @UserName
-	
-	Select @site = site 
-	from
-		Customer with(NOLOCK)
-	where CustId = @CustID
-	
-	SELECT @SecurityCode = ISNULL(SecurityCode,''),
-		@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-	FROM dbo.CustLoginInfo WITH(NOLOCK)
-	WHERE custid = @custid
-	------------------------
-	--Login from Account site	
-	select @accUsername = username, @accUserPwd = userpwd from customer with (nolock) where custid = @accUserID
-	
-	select @ServerID = case @RoleID when 2 then 90 when 3 then 91 else 92 end  
-	------------------------
+	SET NOCOUNT ON 
 
-	Select @LogData = 'Admin ' + @accUsername + ' - Login to ' + @UserName 
+	DECLARE @Begin		DATETIME 
+	DECLARE @End		DATETIME
+	DECLARE @Duration	INT
+
+	SET @Begin = GETDATE()
+	 
+	declare @LogData nvarchar(200),	@logincount int,@locked int
+
+	-- SB Parameters -----
+	DECLARE @SB_xml XML, @SB_currentDate DATETIME, @SB_Error BIT = 0
+	SET @SB_currentDate = GETDATE()
+	-- SB Parameters ----------	
 	
-	DECLARE @SubAccID int
-	SELECT @SubAccID = @accUserID * (-1) -- Admin Login
-	
-	SET @End = GETDATE()
-	SET @Duration = DATEDIFF(millisecond, @Begin, @End)
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @LoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1301,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @LoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1301,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END CATCH
+	IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 5 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) < 0
+	BEGIN	
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
+				END , @ErrCode=105    
+		RETURN    
+	END
+
+	if not exists (SELECT 1
+					FROM customer as c with (NOLOCK)
+						inner join custinfo as ci with (NOLOCK) on c.custid = ci.custid
+					WHERE  c.roleID in (2,3,4) and c.username = @Username)
+	BEGIN
+		RETURN
+	END
+	else
+	BEGIN
+		Select	@CustID  = CustInfo.CustID, @RoleID = CustInfo.RoleID, @Currency = Exchange.Currency, @CurrencyId = Exchange.ExchangeId
+				,@CasinoDisable = CustInfo.DisableCasino, @CasinoSync = CustInfo.SyncCasino
+				,@BingoDisable = CustInfo.DisableBingo, @BingoSync = CustInfo.syncBingo 
+		from 
+			CustInfo with (NOLOCK) 
+			INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID
+		where CustInfo.username = @UserName
 		
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @accUserID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @LoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1301,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @accUserID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @LoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1301,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END CATCH
-	return
-END
+		Select @site = site 
+		from
+			Customer with(NOLOCK)
+		where CustId = @CustID
+		
+		SELECT @SecurityCode = ISNULL(SecurityCode,''),
+			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+		FROM dbo.CustLoginInfo WITH(NOLOCK)
+		WHERE custid = @custid
+		------------------------
+		--Login from Account site	
+		select @accUsername = username, @accUserPwd = userpwd from customer with (nolock) where custid = @accUserID
+		
+		select @ServerID = case @RoleID when 2 then 90 when 3 then 91 else 92 end  
+		------------------------
 
+		Select @LogData = 'Admin ' + @accUsername + ' - Login to ' + @UserName 
+		
+		DECLARE @SubAccID int
+		SELECT @SubAccID = @accUserID * (-1) -- Admin Login
+		
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond, @Begin, @End)
+		
+		-- Starting: Service Broke code --
+		SET @SB_xml = (SELECT	
+							@CustID	AS '@UserID'
+							, @RoleID AS '@RoleID'
+							, @SubAccID	AS '@SubAccID'
+							, @ServerID	AS '@ServerID'
+							, @LoginIP AS '@IP'
+							, @LoginDomain AS '@DomainName'
+							, @SB_currentDate AS '@LogDate'
+							, 1301	AS '@ActionID'
+							, @LogData AS	'@Doing'
+							, @BrowserName AS '@BrowserName'
+							, @Platform	AS '@Platform'
+							, @CountryCode AS '@CountryCode'
+							, @Duration	AS '@Duration'
+							, NULL AS '@Username2'
+				
+						FOR XML PATH ('row')
+						)
+			
+		--SELECT @SB_xml
+		EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+		--SELECT @SB_Error AS SB_Error
+		
+		IF @SB_Error = 1 
+		BEGIN
+		
+			BEGIN TRY
+				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @LoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1301,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END TRY
+			BEGIN CATCH
+				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @LoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1301,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END CATCH
+		END
+		
+		-- Starting: Service Broke code --
+		SET @SB_xml = (SELECT	
+							@accUserID	AS '@UserID'
+							, @RoleID AS '@RoleID'
+							, @SubAccID	AS '@SubAccID'
+							, @ServerID	AS '@ServerID'
+							, @LoginIP AS '@IP'
+							, @LoginDomain AS '@DomainName'
+							, @SB_currentDate AS '@LogDate'
+							, 1301	AS '@ActionID'
+							, @LogData AS	'@Doing'
+							, @BrowserName AS '@BrowserName'
+							, @Platform	AS '@Platform'
+							, @CountryCode AS '@CountryCode'
+							, @Duration	AS '@Duration'
+							, NULL AS '@Username2'
+				
+						FOR XML PATH ('row')
+						)
+			
+		--SELECT @SB_xml
+		EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+		--SELECT @SB_Error AS SB_Error
+		
+		IF @SB_Error = 1 
+		BEGIN
+			BEGIN TRY
+				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @accUserID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @LoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1301,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END TRY
+			BEGIN CATCH
+				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @accUserID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @LoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1301,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END CATCH
+		END	
+		RETURN
+	END
+END
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_Admin] TO [bodbDownlineNet]
 GO

@@ -31,6 +31,7 @@ AS
 							- Return ErrCode, ErrMsg 
 		- 20141102@Viet: add ASB00Sub00, ASB01Sub00, requested by Martin Jr.
 		- 20150304@Elodie: add SAS0109Sub02, MSE12Sub01, requested by Martin Jr.
+		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 	
 	Parameter's Explanation:
 		 = 0: Transaction recorded successfully.
@@ -52,6 +53,11 @@ BEGIN
 	IF @UserPwd2 = '' SET @UserPwd2 = @UserPwd
 
 	declare @LogData nvarchar(300)
+	
+	-- SB Parameters -----
+	DECLARE @SB_xml XML, @SB_currentDate DATETIME, @SB_Error BIT = 0
+	SET @SB_currentDate = GETDATE()
+	-- SB Parameters ----------
 	
 	--	,@logincount int,@locked int,
 	--	@RoleID_SAg int
@@ -132,31 +138,56 @@ BEGIN
 	
 		SET @End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-		BEGIN TRY
-			EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-				@UserID = 0, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @LoginIP,
-				@ActionID = 1322,
-				@Doing = @LogData,
-				@Duration = @Duration
-		END TRY
-		BEGIN CATCH		
-			SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-		
-			EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-				@UserID = 0, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @LoginIP,
-				@ActionID = 1322,
-				@Doing = @LogData,
-				@Duration = @Duration
-		END CATCH	
-
+		-- Starting: Service Broke code --
+		SET @SB_xml = (SELECT	
+							0	AS '@UserID'
+							, @RoleID AS '@RoleID'
+							, @SubAccID	AS '@SubAccID'
+							, @ServerID	AS '@ServerID'
+							, @LoginIP AS '@IP'
+							, NULL AS '@DomainName'
+							, @SB_currentDate AS '@LogDate'
+							, 1322	AS '@ActionID'
+							, @LogData AS	'@Doing'
+							, NULL AS '@BrowserName'
+							, NULL	AS '@Platform'
+							, NULL AS '@CountryCode'
+							, @Duration	AS '@Duration'
+							, NULL AS '@Username2'
+				
+						FOR XML PATH ('row')
+						)
+			
+		--SELECT @SB_xml
+		EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+		--SELECT @SB_Error AS SB_Error
+		IF @SB_Error = 1 
+		BEGIN
+			BEGIN TRY
+				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+					@UserID = 0, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @LoginIP,
+					@ActionID = 1322,
+					@Doing = @LogData,
+					@Duration = @Duration
+			END TRY
+			BEGIN CATCH		
+				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+			
+				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+					@UserID = 0, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @LoginIP,
+					@ActionID = 1322,
+					@Doing = @LogData,
+					@Duration = @Duration
+			END CATCH	
+		END
 		select @ErrMsg = N'Wrong username or password.', @ErrCode = 106	
 		return
 	END
@@ -170,31 +201,57 @@ BEGIN
 		
 			SET @End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-			BEGIN TRY
-				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END TRY
-			BEGIN CATCH		
-				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-			
-				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END CATCH	
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@db_custid	AS '@UserID'
+								, @db_roleid AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @LoginIP AS '@IP'
+								, NULL AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1322	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, NULL AS '@BrowserName'
+								, NULL	AS '@Platform'
+								, NULL AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
 		
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END TRY
+				BEGIN CATCH		
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+				
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END CATCH	
+			END
 			select @ErrMsg = N'Login Failed.', @ErrCode = 107		
 			return
 		END
@@ -205,31 +262,57 @@ BEGIN
 		
 			SET @End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-			BEGIN TRY
-				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END TRY
-			BEGIN CATCH		
-				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@db_custid	AS '@UserID'
+								, @db_roleid AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @LoginIP AS '@IP'
+								, NULL AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1322	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, NULL AS '@BrowserName'
+								, NULL	AS '@Platform'
+								, NULL AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
 			
-				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END CATCH	
-		
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END TRY
+				BEGIN CATCH		
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+				
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END CATCH	
+			END
 			select @ErrMsg = case @Language when 'E' then N'Account closed. Please contact your administrator!' 
 					else N'此戶口已關閉. 請聯絡管理部' end, @ErrCode = 108
 			return
@@ -241,31 +324,57 @@ BEGIN
 		
 			SET @End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-			BEGIN TRY
-				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END TRY
-			BEGIN CATCH		
-				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
 			
-				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-					@UserID = @db_custid, 
-					@RoleID = @db_roleid, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @LoginIP,
-					@ActionID = 1322,
-					@Doing = @LogData,
-					@Duration = @Duration
-			END CATCH		
-		
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@db_custid	AS '@UserID'
+								, @db_roleid AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @LoginIP AS '@IP'
+								, NULL AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1322	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, NULL AS '@BrowserName'
+								, NULL	AS '@Platform'
+								, NULL AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END TRY
+				BEGIN CATCH		
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+				
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						@UserID = @db_custid, 
+						@RoleID = @db_roleid, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @LoginIP,
+						@ActionID = 1322,
+						@Doing = @LogData,
+						@Duration = @Duration
+				END CATCH		
+			END
 			IF @isSubAcc = 0
 			BEGIN
 				IF @failedcount > 5 and @isSubAcc = 0
@@ -348,30 +457,58 @@ BEGIN
 	---------------------------
 	SET @End = GETDATE() 
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			@UserID = @db_custid, 
-			@RoleID = @db_roleid, 
-			@SubAccID = @SubAccID,
-			@ServerID = @ServerID,
-			@LoginIP = @LoginIP,
-			@ActionID = 1322,
-			@Doing = @LogData,
-			@Duration = @Duration
-	END TRY
-	BEGIN CATCH		
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
 	
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			@UserID = @db_custid, 
-			@RoleID = @db_roleid, 
-			@SubAccID = @SubAccID,
-			@ServerID = @ServerID,
-			@LoginIP = @LoginIP,
-			@ActionID = 1322,
-			@Doing = @LogData,
-			@Duration = @Duration
-	END CATCH		
+	-- Starting: Service Broke code --
+	SET @SB_xml = (SELECT	
+						@db_custid	AS '@UserID'
+						, @db_roleid AS '@RoleID'
+						, @SubAccID	AS '@SubAccID'
+						, @ServerID	AS '@ServerID'
+						, @LoginIP AS '@IP'
+						, NULL AS '@DomainName'
+						, @SB_currentDate AS '@LogDate'
+						, 1322	AS '@ActionID'
+						, @LogData AS	'@Doing'
+						, NULL AS '@BrowserName'
+						, NULL	AS '@Platform'
+						, NULL AS '@CountryCode'
+						, @Duration	AS '@Duration'
+						, NULL AS '@Username2'
+			
+					FOR XML PATH ('row')
+					)
+		
+	--SELECT @SB_xml
+	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+	--SELECT @SB_Error AS SB_Error
+	IF @SB_Error = 1 
+	BEGIN
+			
+		BEGIN TRY
+			EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+				@UserID = @db_custid, 
+				@RoleID = @db_roleid, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @LoginIP,
+				@ActionID = 1322,
+				@Doing = @LogData,
+				@Duration = @Duration
+		END TRY
+		BEGIN CATCH		
+			SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+		
+			EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+				@UserID = @db_custid, 
+				@RoleID = @db_roleid, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @LoginIP,
+				@ActionID = 1322,
+				@Doing = @LogData,
+				@Duration = @Duration
+		END CATCH
+	END			
 END
 
 
@@ -381,3 +518,5 @@ GO
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_API] TO [bodbDownlineNetView] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline_API] TO [vnteam] AS [dbo]
+
+

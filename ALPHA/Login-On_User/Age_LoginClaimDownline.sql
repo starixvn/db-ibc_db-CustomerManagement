@@ -32,6 +32,7 @@
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT
 AS
+
 /*
 Created: 20090903@Don
 Task : check if customer's ID existed or not
@@ -53,49 +54,169 @@ Revisions:
 	- 20130123@Elodie: Change link server DB03 to DBONUSER
 					   Write more log on DBTXN server in case of DBLOG server failure
 	- 20130409@Johnson: Get more fields isForcedChangeSecurityCode and SecurityCode
+	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
+	
 Param's Explanation:
 • @IsNickname: is use Nickname or not, parameter Input also Output
 • @Nickname: parameter Input also Output
 */
+BEGIN
 
-SET NOCOUNT ON
+	SET NOCOUNT ON
 
-DECLARE @Begin		DATETIME
-DECLARE @End		DATETIME
-DECLARE @Duration	INT
+	DECLARE @Begin		DATETIME
+	DECLARE @End		DATETIME
+	DECLARE @Duration	INT
 
-SET @Begin = GETDATE() 
+	SET @Begin = GETDATE() 
 
-DECLARE	@inputLoginIP VARCHAR(15)
+	DECLARE	@inputLoginIP VARCHAR(15)
 
-SELECT	@inputLoginIP = @LoginIP 
+	SELECT	@inputLoginIP = @LoginIP 
 
-DECLARE @LogData NVARCHAR(200),
-	@role NVARCHAR(20), 
-	@db_currency TINYINT,  
-	@db_loginip NVARCHAR(20),
-	@rowcount int
+	DECLARE @LogData NVARCHAR(200),
+		@role NVARCHAR(20), 
+		@db_currency TINYINT,  
+		@db_loginip NVARCHAR(20),
+		@rowcount int
+	
+	-- SB Parameters -----
+	DECLARE @SB_xml XML, @SB_currentDate DATETIME, @SB_Error BIT = 0
+	SET @SB_currentDate = GETDATE()
+	-- SB Parameters ----------
+	
+	----- begin 20110608: login using Nickname
+		SET  @ServerID = 0 
 
------ begin 20110608: login using Nickname
-	SET  @ServerID = 0 
+		SELECT @RoleID = RoleID 
+		FROM customer c WITH (NOLOCK) 
+		WHERE CustID = @CustID
 
-	SELECT @RoleID = RoleID 
-	FROM customer c WITH (NOLOCK) 
-	WHERE CustID = @CustID
+		IF @RoleID = 2  
+					SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustAgent WITH (NOLOCK) WHERE CustID = @CustID   
+				ELSE IF @RoleID = 3  
+					SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @CustID  
+				ELSE IF @RoleID = 4  
+					SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
 
-	IF @RoleID = 2  
-				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustAgent WITH (NOLOCK) WHERE CustID = @CustID   
-			ELSE IF @RoleID = 3  
-				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @CustID  
-			ELSE IF @RoleID = 4  
-				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
+		IF @NicknameLoginOnly = 1 AND @IsNickname = 0 AND @SubAccID <= 0
+				BEGIN  
+				 SELECT @LogData = '[After Login] Login Result:Failed!'  
+				 
+					SET @End = GETDATE() 
+					SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+					
+					-- Starting: Service Broke code --
+					SET @SB_xml = (SELECT	
+										@CustID	AS '@UserID'
+										, @RoleID AS '@RoleID'
+										, @SubAccID	AS '@SubAccID'
+										, @ServerID	AS '@ServerID'
+										, @inputLoginIP AS '@IP'
+										, @LoginDomain AS '@DomainName'
+										, @SB_currentDate AS '@LogDate'
+										, 1303	AS '@ActionID'
+										, @LogData AS	'@Doing'
+										, @BrowserName AS '@BrowserName'
+										, @Platform	AS '@Platform'
+										, @CountryCode AS '@CountryCode'
+										, @Duration	AS '@Duration'
+										, NULL AS '@Username2'
+							
+									FOR XML PATH ('row')
+									)
+						
+					--SELECT @SB_xml
+					EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+					--SELECT @SB_Error AS SB_Error
+					IF @SB_Error = 1 
+					BEGIN
+		
+						BEGIN TRY
+							EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+								 @UserID = @CustID, 
+								 @RoleID = @RoleID, 
+								 @SubAccID = @SubAccID,
+								 @ServerID = @ServerID,
+								 @LoginIP = @inputLoginIP,
+								 @DomainName = @LoginDomain,
+								 @ActionID = 1303,
+								 @Doing = @LogData,
+								 @BrowserName = @BrowserName,
+								 @Platform = @Platform,
+								 @CountryCode = @CountryCode,
+								 @Duration = @Duration
+						END TRY
+						BEGIN CATCH
+							SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+							EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+								 @UserID = @CustID, 
+								 @RoleID = @RoleID, 
+								 @SubAccID = @SubAccID,
+								 @ServerID = @ServerID,
+								 @LoginIP = @inputLoginIP,
+								 @DomainName = @LoginDomain,
+								 @ActionID = 1303,
+								 @Doing = @LogData,
+								 @BrowserName = @BrowserName,
+								 @Platform = @Platform,
+								 @CountryCode = @CountryCode,
+								 @Duration = @Duration
+						END CATCH						 
+					
+					END
+					SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+							 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
+							 END ,@ErrCode=106      
+				   
+				 --raiserror (@ErrMsg, 16, 1)  
+				 return  
+				END  
 
-	IF @NicknameLoginOnly = 1 AND @IsNickname = 0 AND @SubAccID <= 0
-			BEGIN  
-			 SELECT @LogData = '[After Login] Login Result:Failed!'  
-			 
-				SET @End = GETDATE() 
-				SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+	-------end 20110608: login using Nickname
+	 
+
+	IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 10
+	BEGIN
+		SELECT @LogData = '[After Login] Result:Failed(Session_Expired)'
+		-- ***Check Sub-Account***  
+		IF @SubAccID > 0 
+		BEGIN
+			SET @LogData = 'SubAccount:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + @LogData
+		END
+
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+		
+		IF @IsNickname = 1
+		BEGIN
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@CustID	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, @Nickname AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+					
 				BEGIN TRY
 					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 						 @UserID = @CustID, 
@@ -103,7 +224,71 @@ DECLARE @LogData NVARCHAR(200),
 						 @SubAccID = @SubAccID,
 						 @ServerID = @ServerID,
 						 @LoginIP = @inputLoginIP,
-						 @DomainName = @LoginDomain,
+						 @DomainName = @LoginDomain,	
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Duration = @Duration,
+						 @Nickname = @Nickname
+				END TRY
+				BEGIN CATCH
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,	
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Duration = @Duration,
+						 @Nickname = @Nickname
+				END CATCH
+			END	
+		END
+			
+		ELSE
+		BEGIN
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@CustID	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+					
+				BEGIN TRY	
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,	
 						 @ActionID = 1303,
 						 @Doing = @LogData,
 						 @BrowserName = @BrowserName,
@@ -119,447 +304,528 @@ DECLARE @LogData NVARCHAR(200),
 						 @SubAccID = @SubAccID,
 						 @ServerID = @ServerID,
 						 @LoginIP = @inputLoginIP,
-						 @DomainName = @LoginDomain,
+						 @DomainName = @LoginDomain,	
 						 @ActionID = 1303,
 						 @Doing = @LogData,
 						 @BrowserName = @BrowserName,
 						 @Platform = @Platform,
 						 @CountryCode = @CountryCode,
 						 @Duration = @Duration
-				END CATCH						 
-			  
-				SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
-						 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
-						 END ,@ErrCode=106      
-			   
-			 --raiserror (@ErrMsg, 16, 1)  
-			 return  
-			END  
+				END CATCH
+			END	
+		END	
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)  
+			END , @ErrCode=105    
+		RETURN    
+	END
+		
+	IF @SubAccID > 0
+	BEGIN
+		SELECT 
+			@SubUserName = username, 
+			@CustID = custid, 
+			@SubPageAccess = PageAccess
+		FROM custSub WITH (NOLOCK)
+		WHERE subaccid = @SubAccID and userpwd = @UserPwd
+
+		IF @@ROWCOUNT = 0  
+		BEGIN
+			SELECT @LogData = 'Sub-account Login' + ',[After Login] Result:Failed(User_Not_Found)'      
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								0	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, NULL	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+					
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = 0, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode
+				END TRY
+				BEGIN CATCH
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)		
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = 0, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode
+				END CATCH
+			END	
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+					 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
+					 END ,@ErrCode=106   
+			RETURN    
+		END
+	END
+
+		
+	SELECT 
+		@RoleID = roleid, 
+		@db_currency = currency, 
+		@site = site , 
+		@db_loginip= ISNULL(iplogin, ''), 
+		@UserName = username
+	FROM 
+		customer WITH (NOLOCK)
+	WHERE 
+		custid = @CustID and ((@SubAccID = 0 and userpwd = @UserPwd) or @SubAccID <> 0)
 
 
--------end 20110608: login using Nickname
- 
+	SET @rowcount = @@ROWCOUNT
 
-IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 10
-BEGIN
-	SELECT @LogData = '[After Login] Result:Failed(Session_Expired)'
+	SELECT @ServerID = CASE WHEN @roleid=2 THEN 90 WHEN @roleid=3 THEN 91 ELSE 92 END -- login from web
+
+	-- user not found  
+	IF @rowcount = 0  
+	BEGIN  
+		SELECT @LogData = '[After Login]Result:Failed(User_Not_Found)' 
+		
+		IF @Nickname =1 
+		BEGIN
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@CustID	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, NULL	AS '@Duration'
+								, @Nickname AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+					
+				BEGIN TRY
+					
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Nickname = @Nickname
+				END TRY
+				BEGIN CATCH
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)				
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Nickname = @Nickname
+				END CATCH
+			END	
+		END	
+		ELSE 
+		BEGIN
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@CustID	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, NULL	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode
+				END TRY
+				BEGIN CATCH
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)						
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode
+				END CATCH
+			END	
+		END	
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
+				 END ,@ErrCode=106  
+		RETURN  
+	END 
+
+
+	SELECT @role = CASE @RoleID WHEN 1 THEN 'Customer:' 
+						WHEN 2 THEN 'Agent:' 
+						WHEN 3 THEN 'Master:' 
+						WHEN 4 THEN 'Super:' 
+					ELSE 'Unknown:' END  
+
+	SELECT 
+		@IsCasinoSync = SyncCasino, 
+		@isCasinoDisabled = DisableCasino,
+		@isBingoDisabled = DisableBingo,
+		@isBingoSync = SyncBingo
+	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
+
+	  
+	-- Successful  
+	SELECT 
+		@Currency = Currency, 
+		@CurrencyId = @db_currency 
+	FROM 
+		exchange WITH (NOLOCK) 
+	WHERE exchangeid = @db_currency  
+
+	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
+	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
+
+	SELECT	@isBingoDisabled = ISNULL(@isBingoDisabled,1), @isBingoSync = ISNULL(@isBingoSync,0)
+
+
+	IF @RoleID = 2  
+		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
+	ELSE IF @RoleID = 3  
+		SELECT @MasterUsername = LOWER(@UserName)  
+	ELSE IF @RoleID = 4  
+		SELECT @MasterUsername = NULL  
+
+	/*
+		GET ON_USER_AGENT INFO - CHECK (SECOND LOGIN) - (FIRST LOGIN) < 5 RETURN 
+	*/
+
+	DECLARE	@1stLoginTime DATETIME
+
+	IF EXISTS (	SELECT	TOP 1 1 
+				FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
+				WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0)
+	BEGIN
+		SELECT	@1stLoginTime = LoginTime 
+		FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
+		WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0
+		
+		IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
+		BEGIN 		
+			SELECT @LogData =  @role + @UserName + '[After Login] Result:Failed(Unknown_Login)'	
+			
+			-- Starting: Service Broke code --
+			SET @SB_xml = (SELECT	
+								@CustID	AS '@UserID'
+								, @RoleID AS '@RoleID'
+								, @SubAccID	AS '@SubAccID'
+								, @ServerID	AS '@ServerID'
+								, @inputLoginIP AS '@IP'
+								, @LoginDomain AS '@DomainName'
+								, @SB_currentDate AS '@LogDate'
+								, 1303	AS '@ActionID'
+								, @LogData AS	'@Doing'
+								, @BrowserName AS '@BrowserName'
+								, @Platform	AS '@Platform'
+								, @CountryCode AS '@CountryCode'
+								, @Duration	AS '@Duration'
+								, NULL AS '@Username2'
+					
+							FOR XML PATH ('row')
+							)
+				
+			--SELECT @SB_xml
+			EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+			--SELECT @SB_Error AS SB_Error
+			IF @SB_Error = 1 
+			BEGIN
+			
+				BEGIN TRY
+					EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,	
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Duration = @Duration
+				END TRY
+				BEGIN CATCH
+					SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
+					EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+						 @UserID = @CustID, 
+						 @RoleID = @RoleID, 
+						 @SubAccID = @SubAccID,
+						 @ServerID = @ServerID,
+						 @LoginIP = @inputLoginIP,
+						 @DomainName = @LoginDomain,	
+						 @ActionID = 1303,
+						 @Doing = @LogData,
+						 @BrowserName = @BrowserName,
+						 @Platform = @Platform,
+						 @CountryCode = @CountryCode,
+						 @Duration = @Duration
+				END CATCH
+			END
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
+				END , @ErrCode=107    
+			RETURN
+		END 
+
+	END
+		
+	  
+	SELECT @LogData =  @role + @UserName + ' [After Login] Result:Success'  
+
+	----------------------------------
+	--**Output LoginIP to check the first login**
+	SELECT @LoginIP=ISNULL(@db_loginip, '')
+
+	IF @SubAccID > 0 
+	BEGIN
+		SELECT	 @isFirstLogin	= ISNULL(isFirstLogin,0)
+				,@PwdExpiry		= PwdExpiry
+				,@securitycode	= ISNULL(SecurityCode,'')
+				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+		FROM	CustLoginInfoSub WITH (NOLOCK)
+		WHERE	SubAccID = @SubAccID AND CustID = @CustID
+	END
+	ELSE 
+	BEGIN
+		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
+				@securityCode	= ISNULL(SecurityCode,''),
+				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+		FROM	CustLoginInfo WITH (NOLOCK)
+		WHERE	CustID = @CustID
+		
+		SELECT	@PwdExpiry	= PwdExpiry
+		FROM	Customer WITH (NOLOCK)
+		WHERE	CustID = @CustID
+	END
+
 	-- ***Check Sub-Account***  
 	IF @SubAccID > 0 
 	BEGIN
-		SET @LogData = 'SubAccount:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + @LogData
+		SET @LogData = 'Sub-account:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + ' [After Login] Result:Success' 
 	END
 
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-	
-	IF @IsNickname = 1
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration,
-			 @Nickname = @Nickname
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration,
-			 @Nickname = @Nickname
-	END CATCH
-	ELSE
-	BEGIN TRY	
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,	
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Duration = @Duration
-	END CATCH
-	SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
-			ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)  
-		END , @ErrCode=105    
-	RETURN    
-END
-	
-IF @SubAccID > 0
-BEGIN
-	SELECT 
-		@SubUserName = username, 
-		@CustID = custid, 
-		@SubPageAccess = PageAccess
-	FROM custSub WITH (NOLOCK)
-	WHERE subaccid = @SubAccID and userpwd = @UserPwd
-
-	IF @@ROWCOUNT = 0  
+	--------------------------- 
+	IF @IsNickname =1 AND @SubAccID < = 0
 	BEGIN
-		SELECT @LogData = 'Sub-account Login' + ',[After Login] Result:Failed(User_Not_Found)'      
-		BEGIN TRY
-			EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-				 @UserID = 0, 
-				 @RoleID = @RoleID, 
-				 @SubAccID = @SubAccID,
-				 @ServerID = @ServerID,
-				 @LoginIP = @inputLoginIP,
-				 @DomainName = @LoginDomain,
-				 @ActionID = 1303,
-				 @Doing = @LogData,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode
-		END TRY
-		BEGIN CATCH
-			SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)		
-			EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-				 @UserID = 0, 
-				 @RoleID = @RoleID, 
-				 @SubAccID = @SubAccID,
-				 @ServerID = @ServerID,
-				 @LoginIP = @inputLoginIP,
-				 @DomainName = @LoginDomain,
-				 @ActionID = 1303,
-				 @Doing = @LogData,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode
-		END CATCH
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
-				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
-				 END ,@ErrCode=106   
-		RETURN    
+		-- Starting: Service Broke code --
+		SET @SB_xml = (SELECT	
+							@CustID	AS '@UserID'
+							, @RoleID AS '@RoleID'
+							, @SubAccID	AS '@SubAccID'
+							, @ServerID	AS '@ServerID'
+							, @inputLoginIP AS '@IP'
+							, @LoginDomain AS '@DomainName'
+							, @SB_currentDate AS '@LogDate'
+							, 1303	AS '@ActionID'
+							, @LogData AS	'@Doing'
+							, @BrowserName AS '@BrowserName'
+							, @Platform	AS '@Platform'
+							, @CountryCode AS '@CountryCode'
+							, @Duration	AS '@Duration'
+							, @Nickname AS '@Username2'
+				
+						FOR XML PATH ('row')
+						)
+			
+		--SELECT @SB_xml
+		EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+		--SELECT @SB_Error AS SB_Error
+		IF @SB_Error = 1 
+		BEGIN
+			BEGIN TRY	
+				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @inputLoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1303,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration,
+					 @Nickname = @Nickname
+			END TRY
+			BEGIN CATCH 
+				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
+				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @inputLoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1303,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration,
+					 @Nickname = @Nickname	
+			END CATCH
+		END	
 	END
-END
-
-	
-SELECT 
-	@RoleID = roleid, 
-	@db_currency = currency, 
-	@site = site , 
-	@db_loginip= ISNULL(iplogin, ''), 
-	@UserName = username
-FROM 
-	customer WITH (NOLOCK)
-WHERE 
-	custid = @CustID and ((@SubAccID = 0 and userpwd = @UserPwd) or @SubAccID <> 0)
-
-
-SET @rowcount = @@ROWCOUNT
-
-SELECT @ServerID = CASE WHEN @roleid=2 THEN 90 WHEN @roleid=3 THEN 91 ELSE 92 END -- login from web
-
--- user not found  
-IF @rowcount = 0  
-BEGIN  
-	SELECT @LogData = '[After Login]Result:Failed(User_Not_Found)' 
-	
-	IF @Nickname =1 
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Nickname = @Nickname
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)				
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode,
-			 @Nickname = @Nickname
-	END CATCH
 	ELSE 
-	BEGIN TRY
-		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)						
-		EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-			 @UserID = @CustID, 
-			 @RoleID = @RoleID, 
-			 @SubAccID = @SubAccID,
-			 @ServerID = @ServerID,
-			 @LoginIP = @inputLoginIP,
-			 @DomainName = @LoginDomain,
-			 @ActionID = 1303,
-			 @Doing = @LogData,
-			 @BrowserName = @BrowserName,
-			 @Platform = @Platform,
-			 @CountryCode = @CountryCode
-	END CATCH
-	SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
-			 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
-			 END ,@ErrCode=106  
-	RETURN  
-END 
-
-
-SELECT @role = CASE @RoleID WHEN 1 THEN 'Customer:' 
-					WHEN 2 THEN 'Agent:' 
-					WHEN 3 THEN 'Master:' 
-					WHEN 4 THEN 'Super:' 
-				ELSE 'Unknown:' END  
-
-SELECT 
-	@IsCasinoSync = SyncCasino, 
-	@isCasinoDisabled = DisableCasino,
-	@isBingoDisabled = DisableBingo,
-	@isBingoSync = SyncBingo
-FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
-
-  
--- Successful  
-SELECT 
-	@Currency = Currency, 
-	@CurrencyId = @db_currency 
-FROM 
-	exchange WITH (NOLOCK) 
-WHERE exchangeid = @db_currency  
-
-SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
-SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
-
-SELECT	@isBingoDisabled = ISNULL(@isBingoDisabled,1), @isBingoSync = ISNULL(@isBingoSync,0)
-
-
-IF @RoleID = 2  
-	SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
-ELSE IF @RoleID = 3  
-	SELECT @MasterUsername = LOWER(@UserName)  
-ELSE IF @RoleID = 4  
-	SELECT @MasterUsername = NULL  
-
-/*
-	GET ON_USER_AGENT INFO - CHECK (SECOND LOGIN) - (FIRST LOGIN) < 5 RETURN 
-*/
-
-DECLARE	@1stLoginTime DATETIME
-
-IF EXISTS (	SELECT	TOP 1 1 
-			FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
-			WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0)
-BEGIN
-	SELECT	@1stLoginTime = LoginTime 
-	FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
-	WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0
-	
-	IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
-	BEGIN 		
-		SELECT @LogData =  @role + @UserName + '[After Login] Result:Failed(Unknown_Login)'	
-		BEGIN TRY
-			EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-				 @UserID = @CustID, 
-				 @RoleID = @RoleID, 
-				 @SubAccID = @SubAccID,
-				 @ServerID = @ServerID,
-				 @LoginIP = @inputLoginIP,
-				 @DomainName = @LoginDomain,	
-				 @ActionID = 1303,
-				 @Doing = @LogData,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode,
-				 @Duration = @Duration
-		END TRY
-		BEGIN CATCH
-			SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
-			EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-				 @UserID = @CustID, 
-				 @RoleID = @RoleID, 
-				 @SubAccID = @SubAccID,
-				 @ServerID = @ServerID,
-				 @LoginIP = @inputLoginIP,
-				 @DomainName = @LoginDomain,	
-				 @ActionID = 1303,
-				 @Doing = @LogData,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode,
-				 @Duration = @Duration
-		END CATCH
-	  
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
-				ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
-			END , @ErrCode=107    
-		RETURN
-	END 
-
-END
-	
-  
-SELECT @LogData =  @role + @UserName + ' [After Login] Result:Success'  
-
-----------------------------------
---**Output LoginIP to check the first login**
-SELECT @LoginIP=ISNULL(@db_loginip, '')
-
-IF @SubAccID > 0 
-BEGIN
-	SELECT	 @isFirstLogin	= ISNULL(isFirstLogin,0)
-			,@PwdExpiry		= PwdExpiry
-			,@securitycode	= ISNULL(SecurityCode,'')
-			,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-	FROM	CustLoginInfoSub WITH (NOLOCK)
-	WHERE	SubAccID = @SubAccID AND CustID = @CustID
-END
-ELSE 
-BEGIN
-	SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
-			@securityCode	= ISNULL(SecurityCode,''),
-			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-	FROM	CustLoginInfo WITH (NOLOCK)
-	WHERE	CustID = @CustID
-	
-	SELECT	@PwdExpiry	= PwdExpiry
-	FROM	Customer WITH (NOLOCK)
-	WHERE	CustID = @CustID
-END
-
--- ***Check Sub-Account***  
-IF @SubAccID > 0 
-BEGIN
-	SET @LogData = 'Sub-account:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + ' [After Login] Result:Success' 
-END
-
-SET @End = GETDATE()
-SET @Duration = DATEDIFF(millisecond,@Begin,@End)
---------------------------- 
-IF @IsNickname =1 AND @SubAccID < = 0
-BEGIN TRY	
-	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-		 @UserID = @CustID, 
-		 @RoleID = @RoleID, 
-		 @SubAccID = @SubAccID,
-		 @ServerID = @ServerID,
-		 @LoginIP = @inputLoginIP,
-		 @DomainName = @LoginDomain,	
-		 @ActionID = 1303,
-		 @Doing = @LogData,
-		 @BrowserName = @BrowserName,
-		 @Platform = @Platform,
-		 @CountryCode = @CountryCode,
-		 @Duration = @Duration,
-		 @Nickname = @Nickname
-END TRY
-BEGIN CATCH 
-	SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
-	EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-		 @UserID = @CustID, 
-		 @RoleID = @RoleID, 
-		 @SubAccID = @SubAccID,
-		 @ServerID = @ServerID,
-		 @LoginIP = @inputLoginIP,
-		 @DomainName = @LoginDomain,	
-		 @ActionID = 1303,
-		 @Doing = @LogData,
-		 @BrowserName = @BrowserName,
-		 @Platform = @Platform,
-		 @CountryCode = @CountryCode,
-		 @Duration = @Duration,
-		 @Nickname = @Nickname	
-END CATCH
-ELSE 
-BEGIN TRY
-	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
-		 @UserID = @CustID, 
-		 @RoleID = @RoleID, 
-		 @SubAccID = @SubAccID,
-		 @ServerID = @ServerID,
-		 @LoginIP = @inputLoginIP,
-		 @DomainName = @LoginDomain,	
-		 @ActionID = 1303,
-		 @Doing = @LogData,
-		 @BrowserName = @BrowserName,
-		 @Platform = @Platform,
-		 @CountryCode = @CountryCode,
-		 @Duration = @Duration
-END TRY
-BEGIN CATCH
-	SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
-	EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
-		 @UserID = @CustID, 
-		 @RoleID = @RoleID, 
-		 @SubAccID = @SubAccID,
-		 @ServerID = @ServerID,
-		 @LoginIP = @inputLoginIP,
-		 @DomainName = @LoginDomain,	
-		 @ActionID = 1303,
-		 @Doing = @LogData,
-		 @BrowserName = @BrowserName,
-		 @Platform = @Platform,
-		 @CountryCode = @CountryCode,
-		 @Duration = @Duration
-END CATCH	
-	
+	BEGIN
+			
+		-- Starting: Service Broke code --
+		SET @SB_xml = (SELECT	
+							@CustID	AS '@UserID'
+							, @RoleID AS '@RoleID'
+							, @SubAccID	AS '@SubAccID'
+							, @ServerID	AS '@ServerID'
+							, @inputLoginIP AS '@IP'
+							, @LoginDomain AS '@DomainName'
+							, @SB_currentDate AS '@LogDate'
+							, 1303	AS '@ActionID'
+							, @LogData AS	'@Doing'
+							, @BrowserName AS '@BrowserName'
+							, @Platform	AS '@Platform'
+							, @CountryCode AS '@CountryCode'
+							, @Duration	AS '@Duration'
+							, NULL AS '@Username2'
+				
+						FOR XML PATH ('row')
+						)
+			
+		--SELECT @SB_xml
+		EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @MessageType='MessageType_CustomerLog_UserLog_Login', @SB_Error = @SB_Error out
+		--SELECT @SB_Error AS SB_Error
+		IF @SB_Error = 1 
+		BEGIN
+		
+			BEGIN TRY
+				EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @inputLoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1303,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END TRY
+			BEGIN CATCH
+				SELECT @LogData = @LogData + ' ErrMsg=' + left(error_message(), 400)	
+				EXEC bodb_customerlog.dbo.WriteLog_UserLog_Login
+					 @UserID = @CustID, 
+					 @RoleID = @RoleID, 
+					 @SubAccID = @SubAccID,
+					 @ServerID = @ServerID,
+					 @LoginIP = @inputLoginIP,
+					 @DomainName = @LoginDomain,	
+					 @ActionID = 1303,
+					 @Doing = @LogData,
+					 @BrowserName = @BrowserName,
+					 @Platform = @Platform,
+					 @CountryCode = @CountryCode,
+					 @Duration = @Duration
+			END CATCH
+		END		
+	END	
+END	
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginClaimDownline] TO [bodbDownlineNet]
 GO
