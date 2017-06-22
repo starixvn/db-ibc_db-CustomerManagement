@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE CustDB
-GO
+GO 
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelBySAg]  
     @SRecommend int,  
@@ -439,4 +439,4 @@ BEGIN
 	ORDER BY RowNumber
 END
 
-GO
+
