@@ -1,0 +1,53 @@
+﻿/****** Object:  Stored Procedure dbo.Age_CheckIn    Script Date: 9/20/2011 8:47:06 PM ******/
+ ALTER PROCEDURE [dbo].[Age_CheckIn]
+	@CustID int,
+	@NetSessionID varchar(30),
+	@ServerID int,
+	@On_UserID int OUTPUT,
+	@IP nvarchar(15) = '',
+	@SubAccID int = 0
+AS
+
+/*
+	Created: 20110912@Sophia
+	Task: Checkin at Agent site
+	DB: DB03.ON_USER
+	Original SP: Acc_CheckIn
+	
+	Revisions:	
+		-2011107@Jamie: Add LoginTime 
+	
+	Param's Explanation: 
+	@Thien: to allow internal admin login without interfere with real agent
+			--	pass @SubAccID = - CustID of Admin
+	
+	Note : @SubSystem to indicate which of admin site connected from
+	1 : ASP admin
+	2 : VN.NET RBS
+	3 : VN.NET Account Site
+	4 : TW.NET Admin
+	5 : TW.NET Admin call to ASP Admin
+	6 : Affiliate Admin Site
+
+
+*/
+SET NOCOUNT ON
+
+if @@servername <> '5WRHH1S' 
+	update On_User_Agent with (ROWLOCK) set IsKickedout=1, ServerID=0 where CustID = @CustID and SubAccID = @SubAccID
+
+ 
+	
+insert into On_User_Agent
+	(custid, NetSessionID, on_sessionid, ServerID, IsKickedout, IP, SubAccID,LoginTime)
+values
+	(@custid, @NetSessionid,0, @ServerID, 0, @IP, @SubAccID,GETDATE())
+
+Select @On_UserID = SCOPE_IDENTITY()
+
+GO
+GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbAdminNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbDownlineNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbDownlineNetView]
