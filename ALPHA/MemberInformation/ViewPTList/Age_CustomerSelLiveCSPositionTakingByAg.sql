@@ -15,7 +15,7 @@ AS
 
 	Revisions: 
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-	
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
@@ -46,10 +46,12 @@ BEGIN
 			ci.custid,
 			MAX(CASE WHEN cg.sporttype = 162 THEN cg.spositiontaking ELSE 0 END) v162spositiontaking,
 			MAX(CASE WHEN cg.sporttype = 162 THEN cg.mpositiontaking ELSE 0 END) v162mpositiontaking,
-			MAX(CASE WHEN cg.sporttype = 162 THEN cg.apositiontaking ELSE 0 END) v162apositiontaking 
+			MAX(CASE WHEN cg.sporttype = 162 THEN cg.apositiontaking ELSE 0 END) v162apositiontaking,
+			 ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSettingGame AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE 
 			ci.Recommend = @Recommend 
 			AND ci.roleid = 1 
@@ -61,7 +63,8 @@ BEGIN
 			ci.SyncLiveCasino, 
 			ci.reject, 
 			ci.username, 
-			ci.custid
+			ci.custid,
+			cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 	

@@ -16,7 +16,7 @@ AS
 	Revisions: 
 		- 20111128@Lukas: Add paging
 		- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
-	
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
@@ -83,13 +83,15 @@ BEGIN
 			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=152 THEN cs3.mpositiontaking ELSE 0 END) v152mpositiontaking_51,
 			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=152 THEN cs3.mpositiontaking ELSE 0 END) v152mpositiontaking_52,
 			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=153 THEN cs3.mpositiontaking ELSE 0 END) v153mpositiontaking_51,
-			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=153 THEN cs3.mpositiontaking ELSE 0 END) v153mpositiontaking_52
+			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=153 THEN cs3.mpositiontaking ELSE 0 END) v153mpositiontaking_52,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM																									   
 			custinfo AS ci WITH (NOLOCK)
-			INNER JOIN CustSetting3rd AS cs3 WITH (NOLOCK) ON ci.custid = cs3.custid	
+			INNER JOIN CustSetting3rd AS cs3 WITH (NOLOCK) ON ci.custid = cs3.custid
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID	
 		WHERE ci.Recommend = @Recommend AND ci.roleid=1 AND cs3.sporttype BETWEEN 151 AND 153
 		GROUP BY
-			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid
+			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 	

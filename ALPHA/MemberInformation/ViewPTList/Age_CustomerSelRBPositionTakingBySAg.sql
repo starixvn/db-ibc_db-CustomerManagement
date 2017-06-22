@@ -18,7 +18,7 @@ AS
 
 	Revisions: 
 		- 20111128@Lukas: Add paging
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -59,13 +59,15 @@ BEGIN
 			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_51,
 			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_52,
 			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=153 THEN cs3.spositiontaking ELSE 0 END) v153spositiontaking_51,
-			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=153 THEN cs3.spositiontaking ELSE 0 END) v153spositiontaking_52
+			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=153 THEN cs3.spositiontaking ELSE 0 END) v153spositiontaking_52,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM																									   
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting3rd AS cs3 WITH (NOLOCK) ON ci.custid = cs3.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID	
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3 AND cs3.sporttype BETWEEN 151 AND 153
 		GROUP BY
-			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid	
+			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 

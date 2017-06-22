@@ -29,6 +29,7 @@ AS
 		- 20160114@Helen: Cricket - [Redmine: #50027]
 		- 20160627@Helen: Provide dedicated Outright PT for each sport - [Redmine: 59438]
 		- 20170302@Helen: BAIO - Cust setting - [Redmine: 71609]
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
@@ -152,16 +153,17 @@ BEGIN
 			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_501_Live, 
 			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 0 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_501_NonLive,
 			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 1 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_599_Live,
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 0 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_599_NonLive
-
+			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 0 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_599_NonLive,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 			LEFT JOIN CustPTSetting3rd_Agent pt WITH (NOLOCK) ON pt.CustID = ci.custid 
 								AND pt.SportType = 50 AND pt.BetType IN (501,599) AND @IsIMBC = 1 
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3
 		GROUP BY
-			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid
+			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
  
