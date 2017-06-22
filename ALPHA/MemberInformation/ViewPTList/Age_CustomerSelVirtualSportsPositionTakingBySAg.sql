@@ -21,7 +21,7 @@ AS
 		- 20131126@Kathy: Add Virtual Greyhounds/Motor Racing (182, 184) [Redmine:#7234]
 		- 20140402@Dom: Add Virtual Speedway/ Cycling setting (sporttype: 183,185)
 		- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -58,13 +58,15 @@ BEGIN
 			MAX(CASE WHEN cg.sporttype=184 THEN cg.spositiontaking ELSE 0 END) v184spositiontaking,
 			MAX(CASE WHEN cg.sporttype=183 THEN cg.spositiontaking ELSE 0 END) v183spositiontaking,
 			MAX(CASE WHEN cg.sporttype=185 THEN cg.spositiontaking ELSE 0 END) v185spositiontaking,
-			MAX(CASE WHEN cg.sporttype=186 THEN cg.spositiontaking ELSE 0 END) v186spositiontaking
+			MAX(CASE WHEN cg.sporttype=186 THEN cg.spositiontaking ELSE 0 END) v186spositiontaking,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM																									   
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting3rd AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID	
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3 AND cg.sporttype in (180, 181,182,184, 183, 185, 186)
 		GROUP BY
-			ci.enabled, ci.closed, ci.DisableVirtualSports, ci.HideVirtualSports, ci.reject, ci.username, ci.custid	
+			ci.enabled, ci.closed, ci.DisableVirtualSports, ci.HideVirtualSports, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 
