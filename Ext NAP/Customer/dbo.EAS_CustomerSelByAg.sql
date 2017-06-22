@@ -124,7 +124,7 @@ BEGIN
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
-		,	@IsHidden_Lottery			INT = 1
+		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
 		,	@IsHidden_FishingWorld	INT = 1
 		,	@IsHidden_VS			INT = 1
@@ -399,7 +399,7 @@ BEGIN
 		   ISNULL(ci.SyncedVoidBridgeUpline,1) AS SyncedVoidBridgeUpline,
 		   ISNULL(ci.SyncedVoidBridgeDownline,1) AS SyncedVoidBridgeDownline,
 		   
-		    ISNULL(ci.DisableLottery,1) AS DisableLottery,
+		   ISNULL(ci.DisableLottery,1) AS DisableLottery,
 		   ISNULL(ci.DisableLotteryUpline,1) AS DisableLotteryUpline,
 		   ISNULL(ci.HideLottery,1) AS HideLottery,
 		   ISNULL(ci.HideLotteryUpline,1) AS HideLotteryUpline,
@@ -457,23 +457,23 @@ BEGIN
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
 	 GROUP BY cu.custid, cu.username, cu.username2, cu.ugroup, ci.enabled, ci.closed,
-			   ci.reject, cu.roleid, cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,
-			   ci.DoubleCommLosing, ci.DisableOutright, ci.disablehorseracing,
-			   ci.disableOpenTote, ci.disable151_au, ci.disable152_uk, ci.disable152_au,
-			   ci.disable153_au, ci.disablehorseracing, ci.disableOpenTote, ci.disable151_au,
-			   ci.disable152_uk, ci.disable152_au, ci.disable153_au, ci.synccasino,
-			   ci.disablecasino, ci.syncBingo, ci.DisableBingo, ci.DisableNumber,  
-			   ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P, ci.DisableLiveCasino, ci.SyncLiveCasino, 
-			   --ci.DisableVirtualSports, ci.HideVirtualSports,
-			   ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.DisableHRFixedOdds,
-			   ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount
-			   , ci.DisableMuayThai, ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline
-			   ,ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline
-			   ,ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline
-			   ,ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
-			   ,ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline
-			   ,ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline
-			   ,ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline
+				ci.reject, cu.roleid, cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,
+				ci.DoubleCommLosing, ci.DisableOutright, ci.disablehorseracing,
+				ci.disableOpenTote, ci.disable151_au, ci.disable152_uk, ci.disable152_au,
+				ci.disable153_au, ci.disablehorseracing, ci.disableOpenTote, ci.disable151_au,
+				ci.disable152_uk, ci.disable152_au, ci.disable153_au, ci.synccasino,
+				ci.disablecasino, ci.syncBingo, ci.DisableBingo, ci.DisableNumber,  
+			   	ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P, ci.DisableLiveCasino, ci.SyncLiveCasino, 
+			   	--ci.DisableVirtualSports, ci.HideVirtualSports,
+			  	ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.DisableHRFixedOdds,
+				ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
+				ci.DisableMuayThai, ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
+				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
+				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
+				ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,
+			  	ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
+			   	ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline,
+				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline
 	ORDER BY RowNumber
 
 

@@ -134,7 +134,7 @@ BEGIN
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
-		,	@IsHidden_Lottery			INT = 1
+		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
 		,	@IsHidden_FishingWorld	INT = 1	
 		,	@IsHidden_VS			INT = 1
