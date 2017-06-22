@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelRBPositionTakingByAg]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerSelRBPositionTakingByAg]
 (
 	@Recommend INT,
 	@PageIndex	INT = 1,
