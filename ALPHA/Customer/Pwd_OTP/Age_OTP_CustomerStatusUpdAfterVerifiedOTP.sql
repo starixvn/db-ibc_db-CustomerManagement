@@ -1,6 +1,4 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerStatusUpdAfterVerifiedOTP]
 	@CustID INT,
 	@SubAccID INT = 0,
@@ -19,6 +17,7 @@ AS
 	Task: Update status of account
 
 	Revisions:
+	-- 20170619@Winnie: Apply color for closed accounts RedmineID: #74494
 
 	Param's Explanation:
 		- @CheckedOTP:	= 1: check OTP success
@@ -186,7 +185,7 @@ BEGIN
 				WHERE CustID = @CustID
 			
 				UPDATE CustLoginInfo WITH(UPDLOCK, ROWLOCK)
-				SET VerifyOTPCount = 0
+				SET VerifyOTPCount = 0,ClosedReason=3
 				WHERE CustID = @CustID
 			
 				SELECT	@ErrCode = 200,

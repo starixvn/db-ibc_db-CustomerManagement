@@ -47,7 +47,7 @@ Revisions:
 	- 20160413@Percy: Support Voidbridge single wallet [Redmine: #55259]
 	- 20161028@Percy: Support Fishing World [RedmineID: #65731]
 	- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
-
+	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 Param's Explanation:
 • @username: username of customer that need to be viewed.   
 • @uplineId: the ID of the upline.
@@ -60,7 +60,8 @@ BEGIN
     DECLARE @todaySuperCash MONEY,
 			@todayMasterCash MONEY,
 			@todayAgentCash MONEY,
-			@todayCustCash MONEY
+			@todayCustCash MONEY,		
+			@ClosedReason TINYINT
     DECLARE @today DATE
 	DECLARE @yesterday DATE
 
@@ -185,7 +186,7 @@ BEGIN
 	    --Upline
 	    SELECT @upLineEnabled = ISNULL(Enabled, 0)
 	         , @upLineSuspend = ISNULL(reject, 0)
-	         , @upLineClosed = ISNULL(closed, 0)
+	         , @upLineClosed = ISNULL(closed, 0)			
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
 	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
@@ -243,6 +244,7 @@ BEGIN
 	      FROM custinfo WITH(NOLOCK)
 	     WHERE custID = @srecommend
 
+		 
 		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		 SELECT TOP 1 @DisableDownlinesGoldDeluxe = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableGoldDeluxe = 1
 		 SELECT TOP 1 @DisableDownlinesColossusBet = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1
@@ -284,7 +286,7 @@ BEGIN
     --Updater Info
     DECLARE @TransferOption VARCHAR(8)
     EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
-    SELECT closed, -- redundant value
+    SELECT closed, -- redundant value		
 	    reject AS suspended, -- redundant value
 	    DisableOutright, -- redundant value
 	    DisableFinancial, -- redundant value
@@ -295,8 +297,12 @@ BEGIN
     FROM custinfo WITH (NOLOCK) 	
     WHERE custid = @uplineId
 
-	
-	
+	IF @roleid=1
+		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid=@custid
+	ELSE
+	BEGIN
+		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
+	END
     --General info
     SELECT c.custid, ci.roleid, 
         c.username, c.username2, c.firstname, c.lastname, 	
@@ -308,7 +314,9 @@ BEGIN
 		@netPosition AS netPosition,
 	    c.currency,	
     	
-	    ci.enabled, ci.closed, ci.reject AS suspended,
+	    ci.enabled, ci.closed,
+		ISNULL(@ClosedReason,0) AS ClosedReason,
+		 ci.reject AS suspended,
 	    DisableOutright,
 	    ci.DisableFinancial,
 	    ci.DisableNumber,
@@ -316,6 +324,7 @@ BEGIN
     	
 	    ISNULL(@upLineSuspend,0) AS [uplineSuspend],
 	    ISNULL(@upLineClosed,0) AS [upLineClosed],
+		
 	    ISNULL(@upLineEnabled,0) AS [uplineEnabled],
 	    ISNULL(@upLineEnabledMa,0) AS [upLineEnabledMa],
 	    ISNULL(@upLineDisableOutright,0) AS [upLineDisableOutright],	

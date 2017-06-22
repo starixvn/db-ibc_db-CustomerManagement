@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus]
 	@custid			INT,
 	@CheckedSecurityCode	BIT = 1,
 	@FunctionName	VARCHAR(100) ='',	
@@ -14,7 +15,8 @@
 		DB: DBTXN/bodb02
 		
 		Revisions:
-		
+		-- 20170619@Winnie: Apply color for closed Accounts RedmineID: #74494
+
 		Parameter's Explanation:
 			- @CheckedSecurityCode: = 1: check security code success
 								= 0: failed security code
@@ -80,7 +82,7 @@ SET NOCOUNT ON
 			WHERE custid = @custid
 			
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = 0
+			SET securityCodeCount = 0,ClosedReason=3
 			WHERE custid = @custid
 			
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong SC over 5 times. Please contact CSD or your upline to reopen.'
