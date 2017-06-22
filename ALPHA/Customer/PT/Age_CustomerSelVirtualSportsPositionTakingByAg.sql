@@ -1,26 +1,31 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelRBPositionTakingBySAg]
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
+ALTER PROCEDURE [dbo].[Age_CustomerSelVirtualSportsPositionTakingByAg]
 (
-	@SRecommend INT,
+	@Recommend INT,
 	@PageIndex	INT = 1,
 	@PageSize	INT = 10000,
 	@TotalPages	INT = 0 OUTPUT
 )
 AS
 /*
-
-	Created: 20110311@Lukas
-	Date: 20110311
-	Task : Select Racebook for PT List from custsetting3rd
+	Created: 20120809@Sophia
+	Date:  
+	Task : Select Virtual Sports for PT List from custsettinggame
 	DB: DBCUST.CustDB
-	Original: DB052.bodb02.dbo.Age_CustomerSelPositionTakingBySAg
+	Original: Age_CustomerSelPositionTakingByAg
 
 	Revisions: 
-		- 20111128@Lukas: Add paging
+		- 20121204@Tom: Add  virtual tennis setting (sporttype : 186 , bettype : 1220)
+		- 20130305@Johnson: add virtual horse racing setting (sporttype : 181)
+		- 20131126@Kathy: Add Virtual Greyhounds/Motor Racing (182, 184) [Redmine:#7234]
+		- 20140402@Dom: Add Virtual Speedway/ Cycling setting (sporttype: 183,185)
 		- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
 
-
 	Param's Explanation:
-	• @SRecommend: Super Agent ID
+	• @Recommend: Agent ID
 */
 BEGIN
 
@@ -31,49 +36,56 @@ BEGIN
 	FROM 
 		custinfo AS ci WITH (NOLOCK)		
 	WHERE 
-		ci.SRecommend = @SRecommend AND ci.roleid=3
+		ci.Recommend = @Recommend AND ci.roleid=1
 
 	SELECT *
 	FROM 
 	(
 		SELECT 
-			ROW_NUMBER() OVER( ORDER BY CASE WHEN ISNULL(ci.enabled,0) = 0 THEN 3 
+			ROW_NUMBER() OVER (ORDER BY CASE WHEN ISNULL(ci.enabled,0) = 0 THEN 3 
 											WHEN ISNULL(ci.closed,0) = 1 THEN 2 
 											WHEN ISNULL(ci.reject,0) = 1 THEN 1 
 											ELSE 0 
 										END, ci.username) AS RowNumber,
 			ci.closed, ci.enabled, 
+			ci.DisableVirtualSports, ci.HideVirtualSports,
 			ISNULL(ci.reject,0) AS suspended,
 			ci.username, 
 			ci.custid,
+			MAX(CASE WHEN cg.sporttype=180 THEN cg.spositiontaking ELSE 0 END) v180spositiontaking,
+			MAX(CASE WHEN cg.sporttype=180 THEN cg.mpositiontaking ELSE 0 END) v180mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=180 THEN cg.apositiontaking ELSE 0 END) v180apositiontaking,
 			
-			-- Horse
-			MAX(CASE WHEN cs3.bettype = 31 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_31,
-			MAX(CASE WHEN cs3.bettype = 32 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_32,
-			MAX(CASE WHEN cs3.bettype = 41 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_41,
-			MAX(CASE WHEN cs3.bettype = 42 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_42,
-			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_51,
-			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=151 THEN cs3.spositiontaking ELSE 0 END) v151spositiontaking_52,
-			MAX(CASE WHEN cs3.bettype = 41 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_41,
-			MAX(CASE WHEN cs3.bettype = 42 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_42,
-			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_51,
-			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=152 THEN cs3.spositiontaking ELSE 0 END) v152spositiontaking_52,
-			MAX(CASE WHEN cs3.bettype = 51 AND cs3.sporttype=153 THEN cs3.spositiontaking ELSE 0 END) v153spositiontaking_51,
-			MAX(CASE WHEN cs3.bettype = 52 AND cs3.sporttype=153 THEN cs3.spositiontaking ELSE 0 END) v153spositiontaking_52
+			MAX(CASE WHEN cg.sporttype=181 THEN cg.spositiontaking ELSE 0 END) v181spositiontaking,
+			MAX(CASE WHEN cg.sporttype=181 THEN cg.mpositiontaking ELSE 0 END) v181mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=181 THEN cg.apositiontaking ELSE 0 END) v181apositiontaking,
+
+			MAX(CASE WHEN cg.sporttype=182 THEN cg.spositiontaking ELSE 0 END) v182spositiontaking,
+			MAX(CASE WHEN cg.sporttype=182 THEN cg.mpositiontaking ELSE 0 END) v182mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=182 THEN cg.apositiontaking ELSE 0 END) v182apositiontaking,
+
+			MAX(CASE WHEN cg.sporttype=184 THEN cg.spositiontaking ELSE 0 END) v184spositiontaking,
+			MAX(CASE WHEN cg.sporttype=184 THEN cg.mpositiontaking ELSE 0 END) v184mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=184 THEN cg.apositiontaking ELSE 0 END) v184apositiontaking,
+
+			MAX(CASE WHEN cg.sporttype=183 THEN cg.spositiontaking ELSE 0 END) v183spositiontaking,
+			MAX(CASE WHEN cg.sporttype=183 THEN cg.mpositiontaking ELSE 0 END) v183mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=183 THEN cg.apositiontaking ELSE 0 END) v183apositiontaking,
+
+			MAX(CASE WHEN cg.sporttype=185 THEN cg.spositiontaking ELSE 0 END) v185spositiontaking,
+			MAX(CASE WHEN cg.sporttype=185 THEN cg.mpositiontaking ELSE 0 END) v185mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=185 THEN cg.apositiontaking ELSE 0 END) v185apositiontaking,
+						
+			MAX(CASE WHEN cg.sporttype=186 THEN cg.spositiontaking ELSE 0 END) v186spositiontaking,
+			MAX(CASE WHEN cg.sporttype=186 THEN cg.mpositiontaking ELSE 0 END) v186mpositiontaking,
+			MAX(CASE WHEN cg.sporttype=186 THEN cg.apositiontaking ELSE 0 END) v186apositiontaking 
 		FROM																									   
 			custinfo AS ci WITH (NOLOCK)
-			INNER JOIN CustSetting3rd AS cs3 WITH (NOLOCK) ON ci.custid = cs3.custid	
-		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3 AND cs3.sporttype BETWEEN 151 AND 153
+			INNER JOIN CustSetting3rd AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+		WHERE ci.Recommend = @Recommend AND ci.roleid=1 AND cg.sporttype in ( 180, 181, 182,184, 183, 185, 186)
 		GROUP BY
-			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid	
-	) t
+			ci.enabled, ci.closed, ci.DisableVirtualSports, ci.HideVirtualSports, ci.reject, ci.username, ci.custid
+	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
-
+	
 END
-
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [vnteam] AS [dbo]
