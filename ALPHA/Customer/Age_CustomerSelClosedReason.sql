@@ -7,7 +7,7 @@ AS
 /*
 	Created by: Winnie
 	Date:[]
-	Task: Customer List get closed reason for casino PT page
+	Task: Customer List get closed reason
 	DB: DBCUST.CustDB
 	
 	Revisions:	
