@@ -19,7 +19,7 @@ AS
 
 	Revisions: 
 		- 20150616@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-	
+		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
@@ -50,13 +50,15 @@ BEGIN
 			ci.custid,
 			MAX(CASE WHEN cg.sporttype=255 THEN cg.spositiontaking ELSE 0 END) v255spositiontaking,
 			MAX(CASE WHEN cg.sporttype=255 THEN cg.mpositiontaking ELSE 0 END) v255mpositiontaking,
-			MAX(CASE WHEN cg.sporttype=255 THEN cg.apositiontaking ELSE 0 END) v255apositiontaking 
+			MAX(CASE WHEN cg.sporttype=255 THEN cg.apositiontaking ELSE 0 END) v255apositiontaking,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM
 			dbo.custinfo AS ci WITH (NOLOCK)
 			INNER JOIN dbo.CustSettingGame AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.Recommend = @Recommend AND ci.roleid=1 AND cg.sporttype = 255
 		GROUP BY
-			ci.enabled, ci.closed, ci.DisableGoldDeluxe, ci.reject, ci.username, ci.custid
+			ci.enabled, ci.closed, ci.DisableGoldDeluxe, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 	

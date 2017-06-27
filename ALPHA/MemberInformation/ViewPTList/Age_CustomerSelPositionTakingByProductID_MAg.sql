@@ -1,9 +1,4 @@
-
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
-
+/*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 /****** Object:  Stored Procedure dbo.Age_CustomerSelPositionTakingByProductID_MAg    Script Date: 10/29/2015 9:34:05 AM ******/
 
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_MAg]
@@ -21,7 +16,7 @@ AS
 	DB: DBCUST/CustDB
 
 	Revisions:
-
+		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -54,11 +49,13 @@ BEGIN
                 ci.enabled, 
 			    ISNULL(ci.reject,0) AS suspended,
 			    ci.username, 
-			    ci.custid
+			    ci.custid,
+				ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM        custInfo                AS ci WITH(NOLOCK)
+		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE   ci.MRecommend = @MRecommend 
           AND   ci.roleid = 2
-		GROUP BY    ci.enabled, ci.closed, ci.reject, ci.username, ci.custid
+		GROUP BY    ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) info
 	CROSS APPLY (
 		SELECT 2 AS roleid
