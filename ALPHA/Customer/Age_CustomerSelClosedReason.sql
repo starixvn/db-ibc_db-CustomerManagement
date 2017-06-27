@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,BODBDownlineNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelClosedReason]
 	@custid int,
 	@RoleID TINYINT
