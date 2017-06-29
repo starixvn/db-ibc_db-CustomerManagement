@@ -393,7 +393,7 @@ BEGIN
 		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
 		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
 		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
-
+		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
 
 
 	       --transfer condition

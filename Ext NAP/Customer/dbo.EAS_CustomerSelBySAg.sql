@@ -239,7 +239,7 @@ BEGIN
 		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
 		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
 		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
-		   
+		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
 		   -- For Myanmar Odds
 		   CASE WHEN ac.CustId IS NOT NULL THEN 1 ELSE 0 END AS IsMyanmarOdds,
 		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
