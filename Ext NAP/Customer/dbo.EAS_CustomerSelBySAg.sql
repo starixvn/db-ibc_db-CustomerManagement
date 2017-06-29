@@ -41,6 +41,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
+	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
 BEGIN
@@ -333,7 +334,14 @@ BEGIN
 									THEN 0
 								ELSE 1
 						END AS SyncedAllBetDownline,
-
+						-- GD
+						CASE	WHEN EXISTS	(	SELECT	1
+												FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
+												WHERE	ciDownline.srecommend = c.custid
+														AND ISNULL(HideGoldDeluxe,1)=1)
+									THEN 0
+								ELSE 1
+						END AS SyncedGoldDeluxeDownline,
 						-- For Cricket
 						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
 						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket
@@ -400,6 +408,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_CustomerSelBySAg] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_CustomerSelBySAg] TO [vnteam] AS [dbo]

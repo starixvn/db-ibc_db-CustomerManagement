@@ -44,6 +44,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
+	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
 BEGIN
@@ -125,8 +126,8 @@ BEGIN
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
 		,	@IsHidden_NG2			INT = 1
-		,	@IsHidden_FishingWorld	INT = 1
-    
+		,	@IsHidden_FishingWorld	INT = 1	
+		,	@SyncDownlinesGoldDeluxe BIT
    	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
@@ -134,7 +135,8 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
-			
+	
+
 	-- get data for filtered customers	
 	DECLARE @SearchQuery varchar(1024)
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
@@ -271,7 +273,14 @@ BEGIN
 						THEN 0
 					ELSE 1
 			END AS SyncedVoidBridgeDownline,
-
+			-- GD
+			CASE	WHEN EXISTS	(	SELECT	1
+									FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
+									WHERE	ciDownline.srecommend = cu.custid
+											AND ISNULL(HideGoldDeluxe,1)=1)
+						THEN 0
+					ELSE 1
+			END AS SyncedGoldDeluxeDownline,
 			-- For NG2
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
 			1 AS HideNG2Upline,
@@ -334,6 +343,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_CustomerSelByCom] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_CustomerSelByCom] TO [vnteam] AS [dbo]

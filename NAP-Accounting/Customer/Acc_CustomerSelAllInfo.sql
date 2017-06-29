@@ -80,6 +80,7 @@ Revisions:
 	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
+	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -103,6 +104,7 @@ BEGIN
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
 		  , @DisableDownlinesGoldDeluxe BIT
+		  , @SyncDownlinesGoldDeluxe BIT
 		  , @DisableDownlinesColossusBet BIT 
 		  , @DisableDownlinesSuperLive BIT
           , @IsInternal BIT
@@ -254,6 +256,11 @@ BEGIN
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableGoldDeluxe = 1) 											 
 										      ELSE 0 END	
 
+	SELECT @SyncDownlinesGoldDeluxe = CASE @roleid WHEN 4 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND  ISNULL(HideGoldDeluxe,1) = 1)
+										      WHEN 3 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND  ISNULL(HideGoldDeluxe,1) = 1) 											 
+										      WHEN 2 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND  ISNULL(HideGoldDeluxe,1) = 1) 											 
+										      ELSE 1 END
+											  	
 	SELECT @DisableDownlinesColossusBet = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableColossusBet = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid  AND DisableColossusBet = 1) 											 
@@ -595,7 +602,8 @@ BEGIN
 	    ci.HideVirtualSports,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
-		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
+		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,		
+		ISNULL(@SyncDownlinesGoldDeluxe,0) SyncDownlinesGoldDeluxe,
 		ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
 		ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
