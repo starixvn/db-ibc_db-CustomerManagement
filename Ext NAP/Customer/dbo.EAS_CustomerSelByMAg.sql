@@ -419,6 +419,7 @@ BEGIN
 			ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge, ci.HideVoidBridgeUpline, ci.SyncedVoidBridge, ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2, ci.HideNG2Upline, ci.SyncedNG2, ci.SyncedNG2Upline,
 			ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld, ci.HideFishingWorldUpline, ci.SyncedFishingWorld, ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason
+			ci.SyncedGoldDeluxeDownline
 	ORDER BY RowNumber
 END
 
