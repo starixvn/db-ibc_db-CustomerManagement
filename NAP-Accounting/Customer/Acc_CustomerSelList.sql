@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerSelList]
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelList]
 	@custid int,
 	@PageSize int = 500,
 	@PageIndex int = 1,
@@ -15,6 +16,7 @@ AS
 		- 2009115@Ryan: apply paging.
 		- 20110301@Johnson: change the length of username in @CustList upto 30
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+		- 20170620@Winnie: Apply color for closed accounts [RedmineID: #74494]
 */
 
 SET NOCOUNT ON
@@ -23,7 +25,8 @@ DECLARE @RowCount int, @RowStart int, @RowEnd int
 SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
 
 DECLARE @CustList TABLE(	
-	username nvarchar(30)	
+	username nvarchar(30),
+	ClosedReason TINYINT
 )
 	
 Declare @roleid tinyint
@@ -34,27 +37,30 @@ where custid = @custid
 
 if @roleid = 2
 BEGIN	
-	INSERT INTO @CustList
-	SELECT username
-	from custinfo with (nolock)
-	where roleid = 1 and recommend = @custid
-	order by enabled desc, closed, reject, username	
+	INSERT INTO @CustList(username,ClosedReason)
+	SELECT c.username,cl.ClosedReason
+	from custinfo c with (nolock)
+	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+	where c.roleid = 1 and c.recommend = @custid
+	order by c.enabled desc, c.closed, c.reject, c.username	
 END
 else if @roleid = 3
 BEGIN
-	INSERT INTO @CustList		
-	SELECT username
-	from custinfo with (nolock)
-	where roleid = 2 and mrecommend = @custid
-	order by enabled desc, closed, reject, username	
+	INSERT INTO @CustList(username,ClosedReason)		
+	SELECT  c.username,cl.ClosedReason
+	from custinfo c with (nolock)
+	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	where c.roleid = 2 and c.mrecommend = @custid
+	order by c.enabled desc, c.closed, c.reject, c.username	
 END
 else if @roleid = 4
 BEGIN
-	INSERT INTO @CustList
-	SELECT username
-	from custinfo with (nolock)
-	where roleid = 3 and srecommend = @custid
-	order by enabled desc, closed, reject, username	
+	INSERT INTO @CustList(username,ClosedReason)		
+	SELECT  c.username,cl.ClosedReason
+	from custinfo  c with (nolock)
+	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	where c.roleid = 3 and c.srecommend = @custid
+	order by c.enabled desc, c.closed, c.reject, c.username	
 END
 
 --Paging
@@ -65,24 +71,14 @@ BEGIN
 	FROM @CustList c 
 END
 		
-SELECT UserName
+SELECT UserName,ClosedReason
 FROM 
 (
 	SELECT 
-		UserName,
+		UserName,ClosedReason,
 		ROW_NUMBER() OVER (ORDER BY (SELECT 0)) AS RowNumber 
 	FROM @CustList 
 ) c
 WHERE c.RowNumber BETWEEN @RowStart AND @RowEnd
 
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelList] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelList] TO [bodbExtAccNet]
---GO
---GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelList] TO [ITTim]
---GO
---GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelList] TO [ITVivi]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelList] TO [vnteam]
