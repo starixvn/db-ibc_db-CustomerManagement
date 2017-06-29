@@ -104,7 +104,8 @@ BEGIN
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
 		  , @DisableDownlinesGoldDeluxe BIT
-		  , @SyncDownlinesGoldDeluxe BIT
+		  , @IsSyncUplineGoldDeluxe BIT
+		  , @DisabledUplineGoldDeluxe BIT
 		  , @DisableDownlinesColossusBet BIT 
 		  , @DisableDownlinesSuperLive BIT
           , @IsInternal BIT
@@ -254,13 +255,8 @@ BEGIN
     SELECT @DisableDownlinesGoldDeluxe = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableGoldDeluxe = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableGoldDeluxe = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableGoldDeluxe = 1) 											 
-										      ELSE 0 END	
+										      ELSE 0 END
 
-	SELECT @SyncDownlinesGoldDeluxe = CASE @roleid WHEN 4 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND  ISNULL(HideGoldDeluxe,1) = 1)
-										      WHEN 3 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND  ISNULL(HideGoldDeluxe,1) = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 0 FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND  ISNULL(HideGoldDeluxe,1) = 1) 											 
-										      ELSE 1 END
-											  	
 	SELECT @DisableDownlinesColossusBet = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableColossusBet = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid  AND DisableColossusBet = 1) 											 
@@ -294,7 +290,8 @@ BEGIN
 	    FROM	customer c WITH(NOLOCK)
 		    INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.recommend
 	    WHERE ci.custid = @custid
-    	
+    	SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
+
 	    IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
 							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
 					    WHERE custid = @uplineid
@@ -324,7 +321,10 @@ BEGIN
 
     IF @roleid = 4 --super
     BEGIN
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
+		SELECT @IsSyncUplineGoldDeluxe=1
+		SELECT @DisabledUplineGoldDeluxe=0
+
 
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -410,6 +410,8 @@ BEGIN
     ELSE IF @roleid = 3 --master
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
+		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
+		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
 
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -446,7 +448,8 @@ BEGIN
     ELSE IF @roleid = 2 --agent
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
-
+		SELECT	@uplineid = mrecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
+		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
 	    SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0),
 		    @LimitPerIP = ISNULL(LimitPerIP, 0),
