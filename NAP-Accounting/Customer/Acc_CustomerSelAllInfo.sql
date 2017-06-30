@@ -78,6 +78,7 @@ Revisions:
 	- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
 	- 20170420@Helen:  Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
+	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -109,6 +110,7 @@ BEGIN
           , @NicknameLoginOnly BIT
           , @LastChangedSecurityCodeDate DATETIME
 		  , @HasDownline BIT = 0
+		  , @ClosedReason TINYINT
 
     DECLARE @todaySuperCash MONEY
           , @todayMasterCash MONEY
@@ -271,7 +273,7 @@ BEGIN
 						      AND isLicensee =1)
 	    SET @IsDeposit =1
     	
-	    SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate
+	    SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate,@ClosedReason=ClosedReason
 	    FROM DBCUST.CustDB.dbo.CustLoginInfo WITH(NOLOCK)
 	    WHERE custid = @custid
     END
@@ -291,11 +293,11 @@ BEGIN
 
 	    SET @IsDeposit =1
     	
-	    SELECT @LastChangedSecurityCodeDate = LastChangedDate
+	    SELECT @LastChangedSecurityCodeDate = LastChangedDate,@ClosedReason=ClosedReason
 	    FROM DBCUST.CustDB.dbo.CustLoginInfo_Member WITH(NOLOCK)
 	    WHERE custid = @custid
     END
-
+	
     /*
     --Get INTernal status
     SELECT @IsInternal = CASE @roleid WHEN 4 THEN (SELECT ISNULL(IsInternal, 0) FROM custSuper WITH(NOLOCK) WHERE custid = @custid)
@@ -528,10 +530,9 @@ BEGIN
 		WHERE CDA.CustID IN (@srecommend,@mrecommend,@recommend,@custid)
 		
 		IF @CustGroupHeadlineID IS NULL
-			SET @CustGroupHeadlineID = @srecommend
-			
+			SET @CustGroupHeadlineID = @srecommend	
+
 	END
-	
     SELECT c.custid, c.username, c.firstname, c.lastname, 
 	    c.username2, 		
 	    ci.roleid, 
@@ -601,6 +602,7 @@ BEGIN
 		
 		, ISNULL(Headline.username,'') AS Headline
 		, ISNULL(GroupHeadline.GroupID,0) AS GroupHeadlineID
+		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
 		
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
