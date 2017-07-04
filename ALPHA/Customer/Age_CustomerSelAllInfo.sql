@@ -48,6 +48,7 @@ Revisions:
 	- 20161028@Percy: Support Fishing World [RedmineID: #65731]
 	- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
+	- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
 Param's Explanation:
 • @username: username of customer that need to be viewed.   
 • @uplineId: the ID of the upline.
@@ -522,7 +523,7 @@ BEGIN
 			    @todayCustCash  = ISNULL(SUM(winlost-actual_stake+playercomm),0)
 	    FROM bettrans WITH (NOLOCK)
 	    WHERE  recommend = @custid AND ruben = 1 AND bettype <= 19000 --AND bettype NOT BETWEEN 2101 AND 2499 AND bettype NOT BETWEEN 4001 AND 7999
-			AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable <> 0)
+			AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3))
 		    AND CONVERT(DATE, winlostdate) = @today
 
 		SELECT 	@todayAgentCash = @todayAgentCash + ISNULL(SUM(awinlost+comm-playercomm),0),
@@ -647,7 +648,7 @@ BEGIN
 			    @todayCustCash   = ISNULL(SUM(winlost-actual_stake + playercomm),0)
 	    FROM bettrans WITH (NOLOCK)
 	    WHERE mrecommend = @custid AND ruben = 1 AND bettype <= 19000 --AND bettype NOT BETWEEN 2101 AND 2499 AND bettype NOT BETWEEN 4001 AND 7999
-		    AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable <> 0)
+		    AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3))
 			AND CONVERT(DATE, winlostdate) = @today
 
 		SELECT	@todayMasterCash = @todayMasterCash + ISNULL(SUM(mwinlost+acomm-comm),0),
