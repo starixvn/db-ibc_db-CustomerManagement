@@ -79,6 +79,7 @@ Revisions:
 	- 20170420@Helen:  Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
+	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -155,7 +156,8 @@ BEGIN
 		    @TotalAgentSuspended INT,
 		    @TotalMemberActive INT,
 		    @TotalMemberClosed INT,
-		    @TotalMemberSuspended INT
+		    @TotalMemberSuspended INT,
+			@IsAllDayBalTransfer BIT
 
     DECLARE @TransLogOT MONEY
           , @TransLogOTPT MONEY
@@ -321,6 +323,7 @@ BEGIN
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
+			 , @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 	      FROM custSuper WITH(NOLOCK)
 	     WHERE custid = @custid
 
@@ -426,7 +429,11 @@ BEGIN
 	    FROM Custinfo WITH(NOLOCK)
 	    WHERE MRecommend = @custid
 
-        --------------
+            --------------
+		SELECT 
+			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	    FROM custSuper WITH(NOLOCK)
+		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
 
     END
     ELSE IF @roleid = 2 --agent
@@ -446,12 +453,22 @@ BEGIN
 	    @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND Closed = 0 THEN 1 ELSE 0 END), 0)
 	    FROM Custinfo WITH(NOLOCK)
 	    WHERE Recommend = @custid
+				   --------------
+		  SELECT 
+			 @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	      FROM custSuper WITH(NOLOCK)
+		  WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     ELSE IF @roleid = 1 --member
     BEGIN
 	    SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0)
 	    FROM custAgent WITH(NOLOCK) WHERE custid = @uplineid
+		  --------------
+		  SELECT 
+			 @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	      FROM custSuper WITH(NOLOCK)
+		  WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     
     --Direct Customer Status
@@ -599,7 +616,7 @@ BEGIN
 	    @IsDisabledDirectStatus IsDisabledDirectStatus,
 		@HasDownline AS HasDownline, 
 		@OTPCreateDate AS OTPCreateDate
-		
+		,ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer
 		, ISNULL(Headline.username,'') AS Headline
 		, ISNULL(GroupHeadline.GroupID,0) AS GroupHeadlineID
 		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason

@@ -62,6 +62,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170517@Winnie: Apply color for closed accounts - [Redmine #74494]	
+	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -88,7 +89,7 @@ Param's Explanation:
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
-	DECLARE @IsIMBC BIT = 0
+	DECLARE @IsIMBC BIT = 0,@IsAllDayBalTransfer BIT
 	
 	IF ISNULL(@username,'') <> ''
 		SELECT @roleid = roleid, @agentid = recommend, @custid = custid,@srecommend = srecommend
@@ -108,8 +109,8 @@ Param's Explanation:
 		SELECT 
 			@IsInternal = isnull(IsInternal, 0) ,
 			@LimitPerIP =  isnull(LimitPerIP, 0),
-			@SelectedBetting =  isnull(SelectedBetting, 0)
-			
+			@SelectedBetting =  isnull(SelectedBetting, 0),
+			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
 
 		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
@@ -130,6 +131,12 @@ Param's Explanation:
 		
 		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
 			SET @IsIMBC = 1
+
+		SELECT 
+		@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	    FROM custSuper WITH(NOLOCK)
+		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+
 	END
 	ELSE IF @roleid = 2 --agent
 	BEGIN
@@ -143,6 +150,12 @@ Param's Explanation:
 		
 		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
 			SET @IsIMBC = 1
+
+		SELECT 
+			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	    FROM custSuper WITH(NOLOCK)
+		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+			
 			
 	END
 	ELSE IF @roleid = 1 --member
@@ -328,7 +341,8 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_NG2),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_NG2), 0) AS SyncedNG2
-			,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason		
+			,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
+			,ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer		
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
