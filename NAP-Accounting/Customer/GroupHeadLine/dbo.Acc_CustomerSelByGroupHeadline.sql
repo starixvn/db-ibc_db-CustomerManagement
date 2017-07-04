@@ -27,7 +27,7 @@ AS
         - 20160620@Winnie: #48948 Hide_special_sites_from_unautorized_users
         - 20160829@Elodie: Modify code to get supers who is not assigned to group [Redmine:#63216]
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
-
+		- 20170605@Winnie: Apply Color for closed account [Redmine's Ids: #74494]
     Example: exec Acc_CustomerSelByGroupHeadline @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
 
 */    
@@ -51,6 +51,7 @@ BEGIN
       , Site VARCHAR(50)
       , Currency INT
       , RoleID INT
+	  , ClosedReason TINYINT NULL
     )
 
      CREATE TABLE #tmpGroupHeadline 
@@ -77,6 +78,7 @@ BEGIN
       , RoleID INT
       , HeadlineType TINYINT
       , OwnerName NVARCHAR(100)
+	  , ClosedReason TINYINT NULL
     )
 
     CREATE TABLE #tmpResultAll
@@ -93,15 +95,17 @@ BEGIN
       , RoleID INT
       , HeadlineType TINYINT
       , OwnerName NVARCHAR(100)
+	  , ClosedReason TINYINT NULL
     )    
     
     --get super account     
     IF (@roleid = 0 OR @roleid = 4)    
     BEGIN     
-		INSERT INTO #tmpDirectCust (custid, site, currency, roleid)
-        SELECT c.custid, c.site, c.currency, c.roleid    
+		INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
+        SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason
         FROM dbo.Customer c WITH(NOLOCK) 
-			INNER JOIN dbo.CustSuper cs WITH(NOLOCK) ON c.custid = cs.custid AND cs.IsInternal = 0 AND c.roleid = 4     
+			INNER JOIN dbo.CustSuper cs WITH(NOLOCK) ON c.custid = cs.custid AND cs.IsInternal = 0 AND c.roleid = 4   
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID  
         WHERE (@currency = 0 OR c.currency = @currency)
             AND ((@IsTest = 0 AND c.currency NOT IN (20, 27, 28)) OR @IsTest = 1)
     END
@@ -109,11 +113,12 @@ BEGIN
     --get direct master    
     IF (@roleid = 0 OR @roleid = 3)    
     BEGIN     
-        INSERT INTO #tmpDirectCust (custid, site, currency, roleid)
-        SELECT c.custid, c.site, c.currency, c.roleid      
+        INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
+        SELECT c.custid, c.site, c.currency, c.roleid ,cl.ClosedReason     
         FROM dbo.f_GetDirectAgency(4) a
             INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.custid = c.custid
             INNER JOIN dbo.CustMaster cm WITH(NOLOCK) ON cm.custid = c.custid AND cm.isInternal = 0
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID  
          WHERE (@currency = 0 OR c.currency = @currency)
             AND ((@IsTest = 0 AND c.currency NOT IN (20, 27, 28)) OR @IsTest = 1)
     END     
@@ -121,11 +126,12 @@ BEGIN
     --get direct agent    
     IF (@roleid = 0 OR @roleid = 2 )    
     BEGIN     
-        INSERT INTO #tmpDirectCust (custid, site, currency, roleid)
-        SELECT c.custid, c.site, c.currency, c.roleid    
+        INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
+        SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason     
         FROM dbo.f_GetDirectAgency(3) a
             INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.custid = c.custid
-            INNER JOIN dbo.CustAgent ca WITH(NOLOCK) ON ca.custid = c.custid AND ca.IsInternal = 0    
+            INNER JOIN dbo.CustAgent ca WITH(NOLOCK) ON ca.custid = c.custid AND ca.IsInternal = 0  
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID    
         WHERE (@currency = 0 OR c.currency = @currency)
             AND ((@IsTest = 0 AND c.currency NOT IN (20, 27, 28)) OR @IsTest = 1)
     END
@@ -133,11 +139,12 @@ BEGIN
     --get direct memeber    
     IF (@roleid = 0 OR @roleid = 1)    
     BEGIN     
-        INSERT INTO #tmpDirectCust (custid, site, currency, roleid)
-        SELECT c.custid, cc.site, c.currency, c.roleid    
+        INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason   )
+        SELECT c.custid, cc.site, c.currency, c.roleid ,cl.ClosedReason   
         FROM dbo.f_GetDirectAgency(2) a
             INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.custid = c.custid
-            INNER JOIN dbo.Customer cc WITH(NOLOCK) ON c.recommend = cc.custid    
+            INNER JOIN dbo.Customer cc WITH(NOLOCK) ON c.recommend = cc.custid 
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID       
         WHERE c.recommend NOT IN (    SELECT custid
                                     FROM dbo.CustAgent WITH(NOLOCK)
                                     WHERE IsInternal = 1)
@@ -160,7 +167,7 @@ BEGIN
 
     INSERT INTO #tmpResultAll 
     SELECT  hl.HeadlineID Custheadlineid ,hl.GroupName groupname, ca.custid ,ci.username,isnull(ci.reject,0) issuspend,    
-            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable,d.site, d.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName,'') AS OwnerName
+            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable,d.site, d.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName,'') AS OwnerName,ISNULL(d.ClosedReason,0) AS ClosedReason
     FROM custaccount ca WITH(NOLOCK)    
         INNER JOIN #tmpGroupHeadline hl WITH(NOLOCK) ON  hl.groupid = ca.groupid
         INNER JOIN custinfo ci WITH(NOLOCK) ON  ci.custid = ca.custid     
@@ -171,7 +178,7 @@ BEGIN
     
     UNION ALL    
     SELECT  0 custheadlineid,'Not assigned to group' , c.custid ,ci.username,isnull(ci.reject,0) issuspend,    
-            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable, c.site, c.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName, '') AS OwnerName
+            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable, c.site, c.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName, '') AS OwnerName,ISNULL(c.ClosedReason,0) AS ClosedReason
     FROM #tmpDirectCust c    
         INNER JOIN custinfo ci WITH(NOLOCK) ON  ci.custid = c.custid     
         LEFT JOIN #tmpGroupHeadline hl WITH(NOLOCK) ON  ci.custid = hl.HeadlineID
