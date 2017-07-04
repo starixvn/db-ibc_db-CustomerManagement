@@ -181,13 +181,7 @@ BEGIN
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld)) AS SyncedFishingWorldUpline,
 			1 AS SyncedFishingWorldDownline,
 			-- GD
-				CASE	WHEN EXISTS	(	SELECT	1
-										FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
-										WHERE	ciDownline.srecommend = custinfo.custid
-												AND ISNULL(HideGoldDeluxe,1)=1)
-							THEN 0
-						ELSE 1
-				END AS SyncedGoldDeluxeDownline,
+			1 AS SyncedGoldDeluxeDownline,
 			-- For NG2
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_NG2)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2Upline,

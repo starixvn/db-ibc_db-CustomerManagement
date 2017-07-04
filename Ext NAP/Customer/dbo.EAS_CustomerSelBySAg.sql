@@ -337,7 +337,7 @@ BEGIN
 						-- GD
 						CASE	WHEN EXISTS	(	SELECT	1
 												FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
-												WHERE	ciDownline.srecommend = c.custid
+												WHERE	ciDownline.mrecommend = c.custid
 														AND ISNULL(HideGoldDeluxe,1)=1)
 									THEN 0
 								ELSE 1
