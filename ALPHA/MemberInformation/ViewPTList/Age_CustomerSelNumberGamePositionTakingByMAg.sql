@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelNumberGamePositionTakingByMAg]
 (
 	@MRecommend INT,
@@ -17,7 +17,7 @@ AS
 		- 20110801@Sophia: Add bettype 88,89,90
 		- 20111128@Lukas: Add paging
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -68,17 +68,20 @@ BEGIN
 			MAX(CASE WHEN cs3rd.bettype = 86 AND cs3rd.sporttype=161 THEN cs3rd.mlivepositiontaking ELSE 0 END) AS v161mlivepositiontaking_86,
 			MAX(CASE WHEN cs3rd.bettype = 87 AND cs3rd.sporttype=161 THEN cs3rd.mlivepositiontaking ELSE 0 END) AS v161mlivepositiontaking_87,
 			MAX(CASE WHEN cs3rd.bettype = 89 AND cs3rd.sporttype=161 THEN cs3rd.mlivepositiontaking ELSE 0 END) AS v161mlivepositiontaking_89,
-			MAX(CASE WHEN cs3rd.bettype = 90 AND cs3rd.sporttype=161 THEN cs3rd.mlivepositiontaking ELSE 0 END) AS v161mlivepositiontaking_90
+			MAX(CASE WHEN cs3rd.bettype = 90 AND cs3rd.sporttype=161 THEN cs3rd.mlivepositiontaking ELSE 0 END) AS v161mlivepositiontaking_90,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting3rd AS cs3rd WITH (NOLOCK) ON ci.custid = cs3rd.custid 
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.MRecommend = @MRecommend AND ci.roleid=2 
 		GROUP BY
 			ci.enabled,
 			ci.closed,
 			ci.reject, 	
 			ci.username, 
-			ci.custid					
+			ci.custid,
+			cl.ClosedReason				
 	) t
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 END

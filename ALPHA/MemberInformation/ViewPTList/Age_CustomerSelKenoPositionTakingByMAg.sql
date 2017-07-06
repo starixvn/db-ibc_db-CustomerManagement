@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelKenoPositionTakingByMAg]
 (
 	@MRecommend INT,
@@ -18,6 +19,7 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20160919@Helen: Page list navigation disappears when select small page size number of Keno product in Position Talking (%) - [Redmine:59432]
 		- 20161116@Winnie: Show MaxKeno 2, Hide Massac,Malta [RedmineID: #66058]
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -81,17 +83,18 @@ BEGIN
 		           --MAX(CASE WHEN cg.bettype = 1509 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1509,
 		           MAX(CASE WHEN cg.bettype = 1511 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1511,
 		           MAX(CASE WHEN cg.bettype = 1513 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1513,
-		           MAX(CASE WHEN cg.bettype = 1514 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1514
-
+		           MAX(CASE WHEN cg.bettype = 1514 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1514,
+				   ISNULL(cl.ClosedReason,0) AS ClosedReason
 	          FROM custinfo ci with(nolock)
 					INNER JOIN CustSettingGame cg with(nolock) on ci.custid = cg.custid
 					INNER JOIN CustGameType ct with(nolock) on ci.custid = ct.CustID
 					INNER JOIN @tmp_GameType gt on gt.GameTypeID = ct.GameTypeID and gt.IBCBetTypeID = cg.Bettype
+					LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		     WHERE 1 = 1
 		       and ci.mrecommend = @MRecommend
 		       AND ci.roleid = 2
 		       AND cg.sporttype = 202
-		  GROUP BY ci.enabled, ci.closed, ci.reject, ci.username, ci.custid
+		  GROUP BY ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	       ) t
 	 WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 

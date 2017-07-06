@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelLiveCSPositionTakingBySAg]
 (
 	@SRecommend INT,
@@ -15,7 +15,7 @@ AS
 	Original: Age_CustomerSelPositionTakingBySAg
 	Revisions: 
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -44,10 +44,12 @@ BEGIN
 			ISNULL(ci.reject, 0) AS suspended,
 			ci.username, 
 			ci.custid,
-			MAX(CASE WHEN cg.sporttype = 162 THEN cg.spositiontaking ELSE 0 END) v162spositiontaking
+			MAX(CASE WHEN cg.sporttype = 162 THEN cg.spositiontaking ELSE 0 END) v162spositiontaking,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSettingGame AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE 
 			ci.SRecommend = @SRecommend 
 			AND ci.roleid = 3 
@@ -59,7 +61,8 @@ BEGIN
 			ci.SyncLiveCasino, 
 			ci.reject, 
 			ci.username, 
-			ci.custid	
+			ci.custid,
+			cl.ClosedReason
 	) t
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 

@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelLiveCSPositionTakingByMAg]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerSelLiveCSPositionTakingByMAg]
 (
 	@MRecommend INT,
 	@PageIndex	INT = 1,
@@ -16,7 +17,7 @@ AS
 
 	Revisions: 
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -46,10 +47,12 @@ BEGIN
 			ci.username, 
 			ci.custid,
 			MAX(CASE WHEN cg.sporttype = 162 THEN cg.mpositiontaking ELSE 0 END) v162mpositiontaking,
-			MAX(CASE WHEN cg.sporttype = 162 THEN cg.apositiontaking ELSE 0 END) v162apositiontaking
+			MAX(CASE WHEN cg.sporttype = 162 THEN cg.apositiontaking ELSE 0 END) v162apositiontaking,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN custSettingGame AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.MRecommend = @MRecommend 
 			AND ci.roleid = 2 
 			AND cg.sporttype = 162
@@ -60,7 +63,8 @@ BEGIN
 			ci.SyncLiveCasino, 
 			ci.reject, 
 			ci.username, 
-			ci.custid	
+			ci.custid,
+			cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 END

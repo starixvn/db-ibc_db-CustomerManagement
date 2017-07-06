@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
     @Recommend	int,  
     @Custid		int = null,  
@@ -40,6 +41,8 @@ Revisions:
 	- 20161031@Winnie: FishingWorld - [Redmine: #65474]
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
+	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
+
 exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
 BEGIN    
@@ -402,8 +405,8 @@ BEGIN
 			ISNULL(ci.DisableCricket,1) AS DisableCricket,
 			ISNULL(ci.HideCricket,1) AS HideCricket,
 			ISNULL(cdm.PlayerDiscount,0) AS playerdiscountCricket,
-			ISNULL(cdm.AgentDiscount,0) AS discountCricket
-			
+			ISNULL(cdm.AgentDiscount,0) AS discountCricket,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason
       FROM dbo.customer AS cu with(NOLOCK)
 		INNER JOIN #Custinfo ci with(nolock) on cu.custid = ci.custid
 		
@@ -415,6 +418,7 @@ BEGIN
 		 
 		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 AND @IsMyanmarOdds = 1		 																			
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
+		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cu.custid=cl.CustID
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
@@ -433,7 +437,7 @@ BEGIN
 			   ,ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline
 			   ,ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline
 			   ,ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
-			   , ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount
+			   , ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason
 	ORDER BY RowNumber
 
     DROP TABLE #Custinfo,

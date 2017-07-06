@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelVirtualSportsPositionTakingByMAg]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerSelVirtualSportsPositionTakingByMAg]
 (
 	@MRecommend INT,
 	@PageIndex	INT = 1,
@@ -20,7 +21,7 @@ AS
 		- 20131126@Kathy: Add Virtual Greyhounds/Motor Racing (182, 184) [Redmine:#7234]
 		- 20140402@Dom: Add Virtual Speedway/ Cycling setting (sporttype: 183,185)
 		- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
-
+		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -70,13 +71,15 @@ BEGIN
 			MAX(CASE WHEN cg.sporttype=185 THEN cg.apositiontaking ELSE 0 END) v185apositiontaking,
 			
 			MAX(CASE WHEN cg.sporttype=186 THEN cg.mpositiontaking ELSE 0 END) v186mpositiontaking,
-			MAX(CASE WHEN cg.sporttype=186 THEN cg.apositiontaking ELSE 0 END) v186apositiontaking			
+			MAX(CASE WHEN cg.sporttype=186 THEN cg.apositiontaking ELSE 0 END) v186apositiontaking,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason			
 		FROM																									   
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting3rd AS cg WITH (NOLOCK) ON ci.custid = cg.custid	
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID	
 		WHERE ci.MRecommend = @MRecommend AND ci.roleid=2 AND cg.sporttype in (180, 181,184,182, 183, 185, 186)
 		GROUP BY
-			ci.enabled, ci.closed, ci.DisableVirtualSports, ci.HideVirtualSports, ci.reject, ci.username, ci.custid	
+			ci.enabled, ci.closed, ci.DisableVirtualSports, ci.HideVirtualSports, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 END

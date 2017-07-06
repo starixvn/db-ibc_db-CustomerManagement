@@ -1,3 +1,4 @@
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE [bodb02]
 GO
 /****** Object:  StoredProcedure [dbo].[Acc_CustomerSelStatus]    Script Date: 6/8/2017 10:32:08 PM ******/
@@ -60,6 +61,8 @@ Revisions:
 	- 20161028@Winnie: Fishing world [Redmine's Ids: #65474]
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
+	- 20170517@Winnie: Apply color for closed accounts - [Redmine #74494]	
+	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -84,8 +87,9 @@ Param's Explanation:
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
 			,@IsMyanmarOdds BIT = 0
 			,@srecommend INT = 0
-	
-	DECLARE @IsIMBC BIT = 0
+			,@ClosedReason TINYINT
+			,@IsDeposit BIT=0
+	DECLARE @IsIMBC BIT = 0,@IsAllDayBalTransfer BIT
 	
 	IF ISNULL(@username,'') <> ''
 		SELECT @roleid = roleid, @agentid = recommend, @custid = custid,@srecommend = srecommend
@@ -105,8 +109,8 @@ Param's Explanation:
 		SELECT 
 			@IsInternal = isnull(IsInternal, 0) ,
 			@LimitPerIP =  isnull(LimitPerIP, 0),
-			@SelectedBetting =  isnull(SelectedBetting, 0)
-			
+			@SelectedBetting =  isnull(SelectedBetting, 0),
+			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
 
 		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
@@ -127,6 +131,12 @@ Param's Explanation:
 		
 		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
 			SET @IsIMBC = 1
+
+		SELECT 
+		@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	    FROM custSuper WITH(NOLOCK)
+		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+
 	END
 	ELSE IF @roleid = 2 --agent
 	BEGIN
@@ -140,6 +150,12 @@ Param's Explanation:
 		
 		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
 			SET @IsIMBC = 1
+
+		SELECT 
+			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+	    FROM custSuper WITH(NOLOCK)
+		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+			
 			
 	END
 	ELSE IF @roleid = 1 --member
@@ -233,6 +249,27 @@ Param's Explanation:
 	ELSE	
 				EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT	
 
+	IF(@roleid=1)
+	BEGIN
+		 IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
+							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
+					    WHERE custid = @agentid
+						      AND isLicensee =1)
+
+			SET @IsDeposit =1
+			IF @IsDeposit<>1
+				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo_Member WITH(NOLOCK) WHERE Custid=@custid
+	END
+	ELSE
+	BEGIN	
+		 IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
+							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
+					    WHERE custid = @custid
+						      AND isLicensee =1)
+			SET @IsDeposit =1
+    		IF @IsDeposit<>1
+				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
+	END
 	SELECT	ISNULL(reject,0) AS Suspend,
 			ISNULL (closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
@@ -304,7 +341,8 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_NG2),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_NG2), 0) AS SyncedNG2
-					
+			,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
+			,ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer		
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
@@ -350,3 +388,4 @@ Param's Explanation:
 			ci.DisableMicrogameRNG
 	
 END
+GO

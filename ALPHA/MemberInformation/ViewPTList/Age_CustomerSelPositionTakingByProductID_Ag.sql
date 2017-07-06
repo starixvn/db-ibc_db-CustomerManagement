@@ -1,8 +1,4 @@
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
-
+/*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_Ag]
 (
 	@ProductID	TINYINT,
@@ -19,7 +15,7 @@ AS
 
 	Revisions:
 		- 20160322@Billy: Fix bug return multiple PT value - [Redmine: #54529]
-
+		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
@@ -52,11 +48,13 @@ BEGIN
                 ci.enabled, 
 			    ISNULL(ci.reject,0) AS suspended,
 			    ci.username, 
-			    ci.custid
+			    ci.custid,
+				ISNULL(cl.ClosedReason,0) AS ClosedReason
 		FROM        custInfo                AS ci WITH(NOLOCK)
+		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE   ci.Recommend = @Recommend 
           AND   ci.roleid = 1
-		GROUP BY    ci.enabled, ci.closed, ci.reject, ci.username, ci.custid
+		GROUP BY    ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
 	) info
 	CROSS APPLY (
 		SELECT 2 AS roleid
