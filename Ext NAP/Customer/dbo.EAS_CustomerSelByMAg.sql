@@ -456,4 +456,4 @@ BEGIN
 			ci.SyncedGoldDeluxeDownline
 	ORDER BY RowNumber
 END
-
+GO
