@@ -441,7 +441,7 @@ BEGIN
 			   ,ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
 			   , ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline
 	ORDER BY RowNumber
-	ORDER BY RowNumber
+
 
     DROP TABLE #Custinfo,
                #CustSetting,
