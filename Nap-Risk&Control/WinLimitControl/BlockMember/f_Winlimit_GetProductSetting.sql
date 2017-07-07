@@ -12,8 +12,9 @@ AS
 		- 20161019@Winnie: Fishing World [Redmine:#62547]
 		- 20161011@Helen: CWL - Phase 3 [Redmine:61220]
 		- 20170611@Helen: CWL Phase 3 - Apply for Virtual Sport [Redmine:72603]
+		- 20170707@Elodie: Apply SMA Winlimit for Lottery [Redmine:#77927]
 		- 20170710@Helen: Keno Lottery, BetradarVS into CWL [Redmine:77567,77564]
-		
+
 	Parameters Explanation:	
 */
 BEGIN
@@ -44,6 +45,8 @@ BEGIN
 			SELECT 5, 1201, 0, 1 --Virtual Sports
 			UNION ALL
 			SELECT 8, 1501, 0, 1  -- Keno
+			UNION ALL
+			SELECT 28, 1031, 1, 0  -- Lottery
 			--UNION ALL
 			--SELECT 14, 1900, 0, 1  -- Macau
 			
