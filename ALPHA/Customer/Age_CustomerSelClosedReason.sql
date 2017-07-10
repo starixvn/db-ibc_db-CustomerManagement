@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,BODBDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbdownlineNet,bodbdownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelClosedReason]
 	@custid int,
 	@RoleID TINYINT
@@ -52,6 +52,4 @@ BEGIN
 	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 	where c.roleid IN(2,3) and c.srecommend = @custid  AND c.closed=1	
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelList] TO [bodbAdminNet]
 GO
