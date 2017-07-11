@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE CustDB
-GO 
+GO
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelBySAg]  
     @SRecommend int,  
@@ -433,7 +433,7 @@ BEGIN
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
 			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline,
-			   ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports
+			   ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports,
 			   ci.DisableLottery,ci.HideLottery,ci.HideLotteryUpline
 
 	ORDER BY RowNumber

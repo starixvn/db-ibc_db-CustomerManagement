@@ -473,7 +473,8 @@ BEGIN
 				ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,
 			  	ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
 			   	ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline,
-				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline
+			        ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
+				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline,
 	ORDER BY RowNumber
 
 

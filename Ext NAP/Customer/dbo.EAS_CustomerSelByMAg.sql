@@ -379,7 +379,7 @@ BEGIN
 															AND ISNULL(HideGoldDeluxe,1)=1)
 										THEN 0
 									ELSE 1
-							END AS SyncedGoldDeluxeDownline,
+								END AS SyncedGoldDeluxeDownline,
 							
 							-- For VS
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSports,
