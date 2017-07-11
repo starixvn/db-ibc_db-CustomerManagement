@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,vnteam" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveMember]
 	@agentname     VARCHAR(40)
   , @membername    VARCHAR(40)
@@ -66,6 +70,7 @@ Revisions:
 	- 20160330@Elodie: Update code to correct commission for DCS product of member
 	- 20160426@Winnie: fix  Bug #56653 [Move account: IsHidden of move master is changed to 0]  & #56802[[NAP] Move member: HideGoldDeluxe of moved member is changed to 0]
 	- 20160819@Winnie: fix  Bug #62755 [NAP - IsDailyAutoReset of downline is changed to 0 after moving downline although both downline and upline has IsDailyAutoReset=1]
+	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 	
 Param's Explanation:
 - @ErrCode:
@@ -130,10 +135,10 @@ BEGIN
           , @Closed					BIT
           , @aSuspended				BIT
           , @Suspended				BIT
-          , @aHideVirtualSports 	BIT
-          , @HideVirtualSports		BIT
-          , @aDisableVirtualSports	BIT
-          , @DisableVirtualSports	BIT
+          --, @aHideVirtualSports 	BIT
+          --, @HideVirtualSports		BIT
+          --, @aDisableVirtualSports	BIT
+          --, @DisableVirtualSports	BIT
           , @aDisableHRFixedOdds	BIT
           , @DisableHRFixedOdds		BIT
           , @aDoubleCommLosing		BIT
@@ -178,8 +183,8 @@ BEGIN
          , @aDisableNumber	      = DisableNumber
          , @aClosed			      = closed
          , @aSuspended		      = reject
-         , @aDisableVirtualSports = DisableVirtualSports
-         , @aHideVirtualSports	  = HideVirtualSports
+         --, @aDisableVirtualSports = DisableVirtualSports
+         --, @aHideVirtualSports	  = HideVirtualSports
          , @aDisableHRFixedOdds	  = DisableHRFixedOdds
          , @aHideKeno			  = HideKeno
          , @aDisableEsports       = DisableEsports
@@ -213,8 +218,8 @@ BEGIN
          , @DoubleCommLosing	 = DoubleCommLosing
          , @Closed				 = closed
          , @Suspended			 = reject
-         , @DisableVirtualSports = DisableVirtualSports
-         , @HideVirtualSports	 = HideVirtualSports
+         --, @DisableVirtualSports = DisableVirtualSports
+         --, @HideVirtualSports	 = HideVirtualSports
          , @DisableHRFixedOdds	 = DisableHRFixedOdds
          , @HideKeno			 = HideKeno
          , @DisableEsports       = DisableEsports
@@ -380,15 +385,15 @@ BEGIN
 	    return
     END
 
-    --Check VS enable status:
-    IF @aHideVirtualSports = 1 AND @HideVirtualSports = 0
-    BEGIN
-	    SELECT @ErrMsg = 'Member is offered Virtual Sports but new agent is not offered Virtual Sports.',
-		    @ErrCode = 112					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
+    ----Check VS enable status:
+    --IF @aHideVirtualSports = 1 AND @HideVirtualSports = 0
+    --BEGIN
+	   -- SELECT @ErrMsg = 'Member is offered Virtual Sports but new agent is not offered Virtual Sports.',
+		  --  @ErrCode = 112					 
+	   -- IF @ReturnErrCode = 0
+		  --  RAISERROR(@ErrMsg, 16, 1)
+	   -- return
+    --END
 
     --Check Keno enable status:
     IF @aHideKeno = 1 AND @HideKeno = 0
@@ -703,17 +708,17 @@ BEGIN
 	    return
     END
 
-    --VS
-    IF exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND sporttype = 180)
-	    AND not exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @recommend AND sporttype = 180)
+    ----VS
+    --IF exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND sporttype = 180)
+	   -- AND not exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @recommend AND sporttype = 180)
 
-    BEGIN
-	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Virtual Sports setting.',
-		    @ErrCode = 206					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
+    --BEGIN
+	   -- SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Virtual Sports setting.',
+		  --  @ErrCode = 206					 
+	   -- IF @ReturnErrCode = 0
+		  --  RAISERROR(@ErrMsg, 16, 1)
+	   -- return
+    --END
 
     --Check identical auto master position taking
     IF exists (
@@ -877,22 +882,7 @@ BEGIN
 		 IF @ReturnErrCode = 0
 		    RAISERROR(@ErrMsg, 16, 1)
 	    RETURN
-	END
-	
-    ----Check P2P :Game Setting
-    --IF exists(
-    --	SELECT TOP 1 1
-    --	FROM dbo.P2PGROUPCOMM me WITH(NOLOCK)
-    --		INNER JOIN dbo.P2PGROUPCOMM a WITH(NOLOCK)
-    --			ON a.GroupID = me.GroupID
-    --		WHERE  me.custid = @custid AND A.custid = @recommend
-    --				AND (a.discount < me.playerdiscount )
-    --)
-    --BEGIN
-    --	SELECT @ErrMsg = 'Error agent ' + @agentname + ', member ' + @membername + ': P2P''s commission of member is greater than P2P''s commission of new agent .',
-    --		@ErrCode = 303
-    --	return
-    --END
+	END   
 
     ----------------------------
     DECLARE
@@ -919,6 +909,7 @@ BEGIN
 	    @v2apositiontaking_8 SMALLMONEY,
 	    --@v2apositiontaking_9 SMALLMONEY,
 	    @v2apositiontaking_20 SMALLMONEY,
+		@v2apositiontaking_9999 SMALLMONEY,
     	
 	    @v3apositiontaking_1 SMALLMONEY,
 	    @v3apositiontaking_2 SMALLMONEY,
@@ -979,14 +970,14 @@ BEGIN
 	    @v161alivepositiontaking_90 SMALLMONEY,
 	    --livecasino
 	    @v162apositiontaking_1101 SMALLMONEY, 
-	    --VS
-	    @v180apositiontaking_1201 SMALLMONEY,
-	    @v181apositiontaking_1231 SMALLMONEY,
-	    @v182apositiontaking_1231 SMALLMONEY,
-	    @v183apositiontaking_1231 SMALLMONEY,
-	    @v184apositiontaking_1231 SMALLMONEY,
-	    @v185apositiontaking_1231 SMALLMONEY,
-	    @v186apositiontaking_1220 SMALLMONEY,
+	    ----VS
+	    --@v180apositiontaking_1201 SMALLMONEY,
+	    --@v181apositiontaking_1231 SMALLMONEY,
+	    --@v182apositiontaking_1231 SMALLMONEY,
+	    --@v183apositiontaking_1231 SMALLMONEY,
+	    --@v184apositiontaking_1231 SMALLMONEY,
+	    --@v185apositiontaking_1231 SMALLMONEY,
+	    --@v186apositiontaking_1220 SMALLMONEY,
 
 	    --Keno
 	    @v202apositiontaking_1501 SMALLMONEY,
@@ -1071,7 +1062,8 @@ BEGIN
     SELECT @v2apositiontaking_7 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=2
     SELECT @v2apositiontaking_8 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=2
     --SELECT @v2apositiontaking_9 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=2
-    SELECT @v2apositiontaking_20 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=2
+    SELECT @v2apositiontaking_20 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=2	
+	SELECT @v2apositiontaking_9999 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=9999 AND sporttype=2	
 
     SELECT @v3apositiontaking_1 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=3
     SELECT @v3apositiontaking_2 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=3
@@ -1134,13 +1126,13 @@ BEGIN
 
     SELECT @v162apositiontaking_1101 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 162 AND bettype = 1101
 
-    SELECT @v180apositiontaking_1201 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1201 AND sporttype=180
-    SELECT @v181apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=181
-    SELECT @v182apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=182
-    SELECT @v183apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=183
-    SELECT @v184apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=184
-    SELECT @v185apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=185
-    SELECT @v186apositiontaking_1220 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1220 AND sporttype=186
+    --SELECT @v180apositiontaking_1201 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1201 AND sporttype=180
+    --SELECT @v181apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=181
+    --SELECT @v182apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=182
+    --SELECT @v183apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=183
+    --SELECT @v184apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=184
+    --SELECT @v185apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=185
+    --SELECT @v186apositiontaking_1220 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1220 AND sporttype=186
 
     --Keno
     SELECT @v202apositiontaking_1501 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 202 AND bettype = 1501
@@ -1157,70 +1149,7 @@ BEGIN
     -- Gold Deluxe
     SELECT @v255apositiontaking_1701 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 255 AND bettype = 1701
 
-    print  'Move member '+@membername+' FROM agent id '+convert(VARCHAR(20), @recommend_old)+' to agent '+@agentname+' (id ' + convert(VARCHAR(20), @recommend)+')'
-
-    ----P2PGAMESETTING table
-    --UPDATE G_P
-    --SET stakelevel1 = CASE WHEN s.stakelevel1 = 1 AND G_P.stakelevel1 = 1 THEN 1 ELSE 0 END,
-    --	stakelevel2 = CASE WHEN s.stakelevel2 = 1 AND G_P.stakelevel2 = 1 THEN 1 ELSE 0 END,
-    --	stakelevel3 = CASE WHEN s.stakelevel3 = 1 AND G_P.stakelevel3 = 1 THEN 1 ELSE 0 END,
-    --	stakelevel4 = CASE WHEN s.stakelevel4 = 1 AND G_P.stakelevel4 = 1 THEN 1 ELSE 0 END,
-    --	stakelevel5 = CASE WHEN s.stakelevel5 = 1 AND G_P.stakelevel5 = 1 THEN 1 ELSE 0 END
-    --FROM P2PGameSetting G_P WITH (ROWLOCK, UPDLOCK)
-    --	INNER JOIN 
-    --		( SELECT * FROM dbo.P2PGameSetting s WITH(NOLOCK) WHERE custid = @srecommend) s
-    --			ON G_P.BETTYPE = s.BETTYPE
-    --WHERE G_P.custid = @CustID
-
-    --IF @@ERROR <> 0 
-    --	BEGIN
-    --		IF @@ERROR <>0
-    --			SELECT	@ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (P2PGameSetting).',
-    --					@ErrCode = 500
-    --		RETURN
-    --	END
-
-    --IF (@aDisableP2P = 1 AND @DisableP2P = 0) 
-    --	OR (@aIsAutoResetP2P = 0 AND @IsAutoResetP2P = 1)
-    --	OR (@aDisableFunP2P = 1 AND @DisableFunP2P = 0)
-    --	OR (@aMaxTransferP2P < @MaxTransferP2P)
-    --	OR (@aDisableVirtualSports = 1 AND @DisableVirtualSports = 0)
-    --	OR (@aDoubleCommLosing = 0 AND @DoubleCommLosing = 1)
-    --BEGIN
-    --	UPDATE	Custinfo WITH (UPDLOCK,ROWLOCK)
-    --	SET		DisableP2P = CASE WHEN @aDisableP2P = 1 THEN 1 ELSE DisableP2P END,
-    --			DisableFunP2P = CASE WHEN @aIsAutoResetP2P = 1 THEN 1 ELSE DisableFunP2P END,
-    --			IsAutoResetP2P = CASE WHEN @aDisableFunP2P = 0 THEN 0 ELSE IsAutoResetP2P END,
-    --			MaxTransferP2P = CASE WHEN @aMaxTransferP2P < MaxTransferP2P THEN @aMaxTransferP2P ELSE MaxTransferP2P END,
-    --			DisableVirtualSports = CASE WHEN @aDisableVirtualSports = 1 THEN 1 ELSE DisableVirtualSports END ,
-    --			DoubleCommLosing = CASE WHEN @aDoubleCommLosing = 0 THEN 0 ELSE DoubleCommLosing END
-    --	WHERE	custid = @CustID
-    --	IF @@ERROR <>0
-    --	BEGIN
-    --		Select	@ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-    --				@ErrCode = 501
-    --		RETURN 
-    --	END
-    --END
-
-    ----P2PGroupComm table
-    --UPDATE G_C 
-    --SET sdiscount = a.sdiscount,
-    --	adiscount  =a.adiscount,
-    --	discount  =a.discount
-    --FROM P2PGroupComm G_C WITH (ROWLOCK, UPDLOCK)
-    --	INNER JOIN 
-    --		( SELECT * FROM dbo.P2PGROUPCOMM a WITH(NOLOCK) WHERE custid = @recommend) a
-    --		ON G_C.GroupID = a.GroupID
-    --WHERE G_C.custid = @custid
-
-    --IF @@ERROR <> 0 
-    --BEGIN
-    --	IF @@ERROR <>0
-    --		SELECT	@ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-    --				@ErrCode = 502
-    --	RETURN
-    --END
+    print  'Move member '+@membername+' FROM agent id '+convert(VARCHAR(20), @recommend_old)+' to agent '+@agentname+' (id ' + convert(VARCHAR(20), @recommend)+')'    
 
     IF (@aDoubleCommLosing = 0 AND @DoubleCommLosing = 1)
     BEGIN
@@ -1290,10 +1219,12 @@ BEGIN
 	    @apositiontaking_8 = @apositiontaking_8,
 	    @apositiontaking_9 = @apositiontaking_9,
 	    @apositiontaking_10 = @apositiontaking_10,
+
 	    @alivepositiontaking_1 = @alivepositiontaking_1,
 	    @alivepositiontaking_3 = @alivepositiontaking_3,
 	    @alivepositiontaking_7 = @alivepositiontaking_7,
 	    @alivepositiontaking_8 = @alivepositiontaking_8,
+
 	    @v2apositiontaking_1 = @v2apositiontaking_1,
 	    @v2apositiontaking_2 = @v2apositiontaking_2,
 	    @v2apositiontaking_3 = @v2apositiontaking_3,
@@ -1301,29 +1232,38 @@ BEGIN
 	    @v2apositiontaking_8 = @v2apositiontaking_8,
 	    --@v2apositiontaking_9 = @v2apositiontaking_9,
 	    @v2apositiontaking_20 = @v2apositiontaking_20,
+		@v2apositiontaking_9999 = @v2apositiontaking_9999,
+
 	    @v3apositiontaking_1 = @v3apositiontaking_1,
 	    @v3apositiontaking_2 = @v3apositiontaking_2,
 	    @v3apositiontaking_3 = @v3apositiontaking_3,
 	    @v3apositiontaking_20 = @v3apositiontaking_20,
+
 	    @v5apositiontaking_1 = @v5apositiontaking_1,
 	    @v5apositiontaking_2 = @v5apositiontaking_2,
 	    @v5apositiontaking_3 = @v5apositiontaking_3,
 	    @v5apositiontaking_20 = @v5apositiontaking_20,
+
 	    @v8apositiontaking_1 = @v8apositiontaking_1,
 	    @v8apositiontaking_3 = @v8apositiontaking_3,
 	    @v8apositiontaking_20 = @v8apositiontaking_20,
+
 	    @v10apositiontaking_1 = @v10apositiontaking_1,
 	    @v10apositiontaking_2 = @v10apositiontaking_2,
 	    @v10apositiontaking_3 = @v10apositiontaking_3,
 	    @v10apositiontaking_20 = @v10apositiontaking_20,
+
 	    @v11apositiontaking_1 = @v11apositiontaking_1,
 	    @v11apositiontaking_20 = @v11apositiontaking_20,	
+
 	    @v99apositiontaking_1 = @v99apositiontaking_1,
 	    @v99apositiontaking_2 = @v99apositiontaking_2,
 	    @v99apositiontaking_3 = @v99apositiontaking_3,
 	    @v99apositiontaking_9 = @v99apositiontaking_9,
 	    @v99apositiontaking_20 = @v99apositiontaking_20,
+
 	    @v154apositiontaking_20 = @v154apositiontaking_20,
+
 	    @v161apositiontaking_81 = @v161apositiontaking_81,   
 	    @v161apositiontaking_83 = @v161apositiontaking_83,   
 	    --@v161apositiontaking_85 = @v161apositiontaking_85,   
@@ -1456,7 +1396,8 @@ BEGIN
 		    RAISERROR(@ErrMsg, 16, 1)	
 	    return
     END
-
+	
+	/* Remove Inspired VS
     -- VS
     DECLARE @ErrCode_1 VARCHAR(300)
 
@@ -1648,7 +1589,7 @@ BEGIN
 		    RAISERROR(@ErrMsg, 16, 1)	
 	    return
     END
-
+	*/
     -- Keno
     EXEC dbo.Acc_CustomerUpdMemberKeno_Positiontaking
 	    @custid  = @custid,
@@ -2084,44 +2025,7 @@ BEGIN
 	    IF @ReturnErrCode = 0
 		    RAISERROR(@ErrMsg, 16, 1)
 	    return
-    END 
-    
-  
-
-    /*
-    --Bingo & Number Game
-    IF @aDisableBingo = 1 AND (@aDisableBingo <> @DisableBingo)
-    BEGIN 
-
-	    UPDATE Custinfo WITH (UPDLOCK,ROWLOCK)
-	    SET DisableBingo = 1 
-	    WHERE custid = @custid 
-	    IF @@ERROR<>0
-	    BEGIN
-		    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-		    @ErrCode = 136
-		    IF @ReturnErrCode = 0
-			    RAISERROR(@ErrMsg, 16, 1)
-		    return
-	    END 
-    END 
-
-    IF @aDisableNumber = 1 AND (@aDisableNumber <> @DisableNumber)
-    BEGIN 
-
-	    UPDATE Custinfo WITH (UPDLOCK,ROWLOCK)
-	    SET DisableNumber = 1 
-	    WHERE custid = @custid 
-	    IF @@ERROR<>0
-	    BEGIN
-		    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-		    @ErrCode = 137
-		    IF @ReturnErrCode = 0
-			    RAISERROR(@ErrMsg, 16, 1)
-		    return
-	    END 
-    END 
-    */
+    END         
 
     --Apply ExeReplication
     -- call Acc_ExecRep_00 two times to update coming bets that not replicated to subcriptions servers yet.

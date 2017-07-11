@@ -1,4 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+USE bodb02
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@username VARCHAR(30)
 AS
@@ -80,6 +83,7 @@ Revisions:
 	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
+	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
 Param's Explanation:
@@ -101,7 +105,7 @@ BEGIN
           , @DisableDownlinesNumber BIT
           , @DisableDownlinesLiveCS BIT
           , @DisableDownlinesHRFixedOdds BIT
-          , @DisableDownlinesVirtualSports BIT
+          --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
 		  , @DisableDownlinesGoldDeluxe BIT
@@ -244,10 +248,10 @@ BEGIN
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableHRFixedOdds,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableHRFixedOdds = 1) 											 
 										      ELSE 0 END
     										  
-    SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
-										     WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableVirtualSports = 1) 											 
-										     WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableVirtualSports = 1) 											 
-										     ELSE 0 END
+    --SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
+				--						     WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableVirtualSports = 1) 											 
+				--						     WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableVirtualSports = 1) 											 
+				--						     ELSE 0 END
 
     SELECT @DisableDownlinesEsports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableEsports = 1)
 											WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
@@ -595,7 +599,7 @@ BEGIN
 	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    ISNULL(@DisableDownlinesLiveCS,0) DisableDownlinesLiveCS,
 	    ISNULL(@DisableDownlinesHRFixedOdds,0) DisableDownlinesHRFixedOdds,
-	    ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
+	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
 		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,
 		ISNULL(@DisableDownlinesGoldDeluxe,0) DisableDownlinesGoldDeluxe,
@@ -612,8 +616,8 @@ BEGIN
 	    ci.disableLiveCasino,
 	    ci.synclivecasino,
 	    ci.DisableHRFixedOdds,
-	    ci.DisableVirtualSports,
-	    ci.HideVirtualSports,
+	    --ci.DisableVirtualSports,
+	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
 		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,			
@@ -1001,17 +1005,18 @@ BEGIN
 		    @TotalMemberActive MemberActive,
 		    @TotalMemberClosed MemberClosed,
 		    @TotalMemberSuspended MemberSuspended
+
 	DROP TABLE #SportBettypeMatrix
+
 	-- For sportbook2
-	EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid
+	IF @IsDeposit = 0 -- credit
+	BEGIN
+		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
+	END
+	ELSE  -- deposit
+	BEGIN
+		EXEC DBACC.bodb02.dbo.Acc_Dep_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
+	END
 	
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelAllInfo] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelAllInfo] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelAllInfo] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelAllInfo] TO [vnteam] AS [dbo]
 GO
