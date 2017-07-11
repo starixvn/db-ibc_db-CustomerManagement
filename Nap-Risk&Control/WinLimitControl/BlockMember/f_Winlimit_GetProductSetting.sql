@@ -1,3 +1,7 @@
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+USE CustDB
+GO 
+
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
 RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
 AS
