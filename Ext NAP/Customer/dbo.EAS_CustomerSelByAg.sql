@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
     @Recommend	int,  
     @Custid		int = null,  
@@ -42,6 +42,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
+	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 
 exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
@@ -179,7 +180,8 @@ BEGIN
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_FishingWorld)) AS SyncedFishingWorld,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld)) AS SyncedFishingWorldUpline,
 			1 AS SyncedFishingWorldDownline,
-			
+			-- GD
+			1 AS SyncedGoldDeluxeDownline,
 			-- For NG2
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_NG2)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2Upline,
@@ -385,7 +387,7 @@ BEGIN
 		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
 		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
 		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
-
+		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
 
 
 	       --transfer condition
@@ -437,8 +439,9 @@ BEGIN
 			   ,ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline
 			   ,ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline
 			   ,ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline
-			   , ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason
+			   , ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline
 	ORDER BY RowNumber
+
 
     DROP TABLE #Custinfo,
                #CustSetting,
@@ -446,6 +449,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_CustomerSelByAg] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_CustomerSelByAg] TO [vnteam] AS [dbo]

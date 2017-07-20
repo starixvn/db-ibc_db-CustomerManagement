@@ -41,6 +41,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
+	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
 BEGIN
@@ -238,7 +239,7 @@ BEGIN
 		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
 		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
 		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
-		   
+		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
 		   -- For Myanmar Odds
 		   CASE WHEN ac.CustId IS NOT NULL THEN 1 ELSE 0 END AS IsMyanmarOdds,
 		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
@@ -333,7 +334,14 @@ BEGIN
 									THEN 0
 								ELSE 1
 						END AS SyncedAllBetDownline,
-
+						-- GD
+						CASE	WHEN EXISTS	(	SELECT	1
+												FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
+												WHERE	ciDownline.mrecommend = c.custid
+														AND ISNULL(HideGoldDeluxe,1)=1)
+									THEN 0
+								ELSE 1
+						END AS SyncedGoldDeluxeDownline,
 						-- For Cricket
 						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
 						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket
@@ -394,12 +402,9 @@ BEGIN
 			   ci.DisableCricket, ci.HideCricket, cdm.Discount,
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
-			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason
+			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline
 
 	ORDER BY RowNumber
 END
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_CustomerSelBySAg] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_CustomerSelBySAg] TO [vnteam] AS [dbo]
