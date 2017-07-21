@@ -1,3 +1,4 @@
+/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
 	@custid	int = 0,
 	@username varchar(30),
@@ -13,13 +14,14 @@ Original:Accounting site
 
 Revisions:
 	- 20130121@Dan: Move sp from DB053/bodb02 to DBEAS/bodb_EAS, change linked server DB06 to DBACC, call to bodb_AGE for Acc_CustGroup
-	
+	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
 */	
 SET NOCOUNT ON  
 DECLARE @srecommend INT, 
 		@mrecommend INT,
 		@recommend INT,
-		
+		@HasSecurityCode		BIT=0,
+		@UplineHasSecurityCode	BIT=0,
 		@roleID TINYINT,		
 		@SuperName NVARCHAR(50),
 		@MasterName NVARCHAR(50),
@@ -38,6 +40,31 @@ SELECT  @username = username, @roleID=roleID,
 FROM bodb02.dbo.custinfo WITH (NOLOCK) 
 WHERE custid = @custid
 
+IF @roleID=1
+BEGIN	
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo_Member cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
+			SELECT @HasSecurityCode=1
+END
+ELSE IF @roleID=2
+BEGIN
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
+			SELECT @HasSecurityCode=1
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@mrecommend AND cl.SecurityCode IS NOT NULL)
+		SELECT @UplineHasSecurityCode=1
+END
+ELSE IF @roleID=3
+BEGIN
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
+			SELECT @HasSecurityCode=1
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@srecommend AND cl.SecurityCode IS NOT NULL)
+		SELECT @UplineHasSecurityCode=1
+END
+ELSE IF @roleID=4
+BEGIN
+	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
+		SELECT @HasSecurityCode=1
+END
+
 -- check belong to group 
 IF NOT EXISTS (SELECT 1 FROM bodb_AGE.dbo.Acc_CustGroup (NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
 BEGIN
@@ -55,9 +82,6 @@ END
 
 SELECT @custid AS custid, @username AS username, @roleID AS roleID, 
 	@srecommend AS srecommend, @mrecommend AS mrecommend, @recommend AS recommend,
-	@SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
+	@SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,@HasSecurityCode AS HasSecurityCode,@UplineHasSecurityCode AS UplineHasSecurityCode
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_CustomerSelUserInfo]   TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_CustomerSelUserInfo]   TO [vnteam]
