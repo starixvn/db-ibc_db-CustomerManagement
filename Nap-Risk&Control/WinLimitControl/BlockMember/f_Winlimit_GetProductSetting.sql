@@ -1,5 +1,5 @@
 /*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1" isNested="1"></info>*/
-USE CustDB
+USE bodb02
 GO 
 
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
