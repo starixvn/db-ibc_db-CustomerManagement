@@ -418,7 +418,7 @@ BEGIN
 			   ci.DisableCricket, ci.HideCricket, cdm.Discount,
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
-			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline
+			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline,
 			   ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports
 
 	ORDER BY RowNumber
