@@ -39,12 +39,7 @@ SELECT  @username = username, @roleID=roleID,
 FROM bodb02.dbo.custinfo WITH (NOLOCK) 
 WHERE custid = @custid
 
-IF @roleID=1
-BEGIN	
-	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo_Member cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
-			SELECT @HasSecurityCode=1
-END
-ELSE IF @roleID IN(2,3,4)
+IF @roleID IN(2,3,4)
 BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
 			SELECT @HasSecurityCode=1
