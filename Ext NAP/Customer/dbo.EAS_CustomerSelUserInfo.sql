@@ -67,6 +67,6 @@ END
 
 SELECT @custid AS custid, @username AS username, @roleID AS roleID, 
 	@srecommend AS srecommend, @mrecommend AS mrecommend, @recommend AS recommend,
-	@SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,@HasSecurityCode AS HasSecurityCode,@UplineHasSecurityCode AS UplineHasSecurityCode
+	@SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,@HasSecurityCode AS HasSecurityCode
 
 GO
