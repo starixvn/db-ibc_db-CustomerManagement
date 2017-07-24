@@ -81,6 +81,7 @@ Revisions:
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
+	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -115,6 +116,7 @@ BEGIN
           , @LastChangedSecurityCodeDate DATETIME
 		  , @HasDownline BIT = 0
 		  , @ClosedReason TINYINT
+		  ,	@UplineHasSecurityCode	BIT=0
 
     DECLARE @todaySuperCash MONEY
           , @todayMasterCash MONEY
@@ -303,7 +305,8 @@ BEGIN
 	    FROM DBCUST.CustDB.dbo.CustLoginInfo_Member WITH(NOLOCK)
 	    WHERE custid = @custid
     END
-	
+
+
     /*
     --Get INTernal status
     SELECT @IsInternal = CASE @roleid WHEN 4 THEN (SELECT ISNULL(IsInternal, 0) FROM custSuper WITH(NOLOCK) WHERE custid = @custid)
@@ -321,6 +324,7 @@ BEGIN
 
     IF @roleid = 4 --super
     BEGIN
+		SELECT @UplineHasSecurityCode=1
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
 		SELECT @IsSyncUplineGoldDeluxe=1
 		SELECT @DisabledUplineGoldDeluxe=0
@@ -560,6 +564,11 @@ BEGIN
 			SET @CustGroupHeadlineID = @srecommend	
 
 	END
+
+			
+	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
+			SELECT @UplineHasSecurityCode=1
+
     SELECT c.custid, c.username, c.firstname, c.lastname, 
 	    c.username2, 		
 	    ci.roleid, 
@@ -632,7 +641,7 @@ BEGIN
 		, ISNULL(Headline.username,'') AS Headline
 		, ISNULL(GroupHeadline.GroupID,0) AS GroupHeadlineID
 		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
-		
+		,@UplineHasSecurityCode AS UplineHasSecurityCode
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 

@@ -20,8 +20,7 @@ SET NOCOUNT ON
 DECLARE @srecommend INT, 
 		@mrecommend INT,
 		@recommend INT,
-		@HasSecurityCode		BIT=0,
-		@UplineHasSecurityCode	BIT=0,
+		@HasSecurityCode		BIT=0,	
 		@roleID TINYINT,		
 		@SuperName NVARCHAR(50),
 		@MasterName NVARCHAR(50),
@@ -45,24 +44,10 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo_Member cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
 			SELECT @HasSecurityCode=1
 END
-ELSE IF @roleID=2
+ELSE IF @roleID IN(2,3,4)
 BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
 			SELECT @HasSecurityCode=1
-	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@mrecommend AND cl.SecurityCode IS NOT NULL)
-		SELECT @UplineHasSecurityCode=1
-END
-ELSE IF @roleID=3
-BEGIN
-	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
-			SELECT @HasSecurityCode=1
-	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@srecommend AND cl.SecurityCode IS NOT NULL)
-		SELECT @UplineHasSecurityCode=1
-END
-ELSE IF @roleID=4
-BEGIN
-	IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
-		SELECT @HasSecurityCode=1
 END
 
 -- check belong to group 
