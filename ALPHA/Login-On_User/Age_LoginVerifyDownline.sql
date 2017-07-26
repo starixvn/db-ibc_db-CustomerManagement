@@ -1,4 +1,8 @@
-﻿ALTER PROCEDURE [dbo].[Age_LoginVerifyDownline]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
+ALTER PROCEDURE [dbo].[Age_LoginVerifyDownline]
 	@UserName VARCHAR(50) = '' OUTPUT ,  
 	@UserPwd VARCHAR(50),  
 	@CustID INT OUTPUT, 
@@ -53,7 +57,8 @@ Revisions:
 	- 20130420@Thien: Prevent hacking from Viettel IPs
 	- 20130916@Elodie: Correct writting log on DBTXN server in case of actionID = 908
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
-	
+	- 20170724@Elodie: Don't reset login count of main account when sub account login successfull - [Redmine: #80409] 
+
 Param's Explanation:
 • @IsNickname: is use Nickname or not
 • @SiteGroup: Check the site and corresponding domain
@@ -2303,7 +2308,9 @@ BEGIN
 	  
 	-- Successful  
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
-	SET logincount = 0, iplogin = CASE WHEN @db_loginip<>'' THEN @inputLoginIP ELSE '' END, lastlogged = CURRENT_TIMESTAMP 
+	SET logincount = CASE WHEN @isExisted = 0 THEN 0 ELSE logincount END,
+		iplogin = CASE WHEN @db_loginip<>'' THEN @inputLoginIP ELSE '' END, 		
+		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
 
 	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
@@ -2445,8 +2452,3 @@ BEGIN
 	END	
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginVerifyDownline] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginVerifyDownline] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginVerifyDownline] TO [vnteam] AS [dbo]
