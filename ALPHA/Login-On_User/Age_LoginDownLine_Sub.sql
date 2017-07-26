@@ -1,8 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
-ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]    
+﻿ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]    
 	@SubUserName varchar(50),    
 	@UserPwd varchar(50),    
 	@LoginIP varchar(20),    
@@ -69,8 +65,6 @@ Revisions:
 	- 20130328@Jamie: Get LastChangedPwdDate in case login via OldUserPwd
 	- 20130409@Johnson: Get more fields securitycode and isForcedChangeSecuritycode 
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
-	- 20170724@Elodie: Don't reset login count of main account when sub account login successfull - [Redmine: #80409] 
-
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
 • @ErrCode:
@@ -821,7 +815,7 @@ BEGIN
 
 	  
 	UPDATE customer with (rowlock, updlock)  
-	SET iplogin = case when @db_loginip<>'' then @LoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 
+	SET logincount = 0, iplogin = case when @db_loginip<>'' then @LoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
 	  
 	-- Don't write log for AdminLogin
@@ -912,7 +906,11 @@ BEGIN
 ---------------------------  
 END 
 GO
-
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_Sub] TO [bodbDownlineNet]
+GO
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_Sub] TO [bodbDownlineNetView]
+GO
+GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline_Sub] TO [vnteam]
 
 
 
