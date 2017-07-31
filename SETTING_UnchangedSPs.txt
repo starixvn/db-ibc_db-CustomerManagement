@@ -1,0 +1,3 @@
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+ALPHA\Customer\Age_CustomerSelAllInfo.sql
+ALPHA\Customer\Agw_CustomerSelInfo.sql

@@ -263,7 +263,6 @@ BEGIN
 		   ISNULL(ci.SyncedNG2Upline,1) AS SyncedNG2Upline,
 
 		   ISNULL(ci.DisableLucky3,1) AS DisableLucky3,
-		   ISNULL(ci.DisableLucky3Upline,1) AS DisableLucky3Upline,
 		   ISNULL(ci.HideLucky3,1) AS HideLucky3,
 		   ISNULL(ci.HideLucky3Upline,1) AS HideLucky3Upline,
 
@@ -326,9 +325,8 @@ BEGIN
 									ELSE 1
 							END AS SyncedVoidBridgeDownline,
 
-						-- For FishingWorld
-						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lucky3)) AS DisableLucky3,
-						
+						-- For Lucky3
+						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lucky3)) AS DisableLucky3,						
 						CAST(CASE WHEN @IsHidden_Lucky3 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lucky3)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3,
 						CAST(CASE WHEN @IsHidden_Lucky3 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_Lucky3)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3Upline,												
 
@@ -461,7 +459,8 @@ BEGIN
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
 			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline,
 			   ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports,
-			   ci.DisableLottery,ci.HideLottery,ci.HideLotteryUpline
+			   ci.DisableLottery,ci.HideLottery,ci.HideLotteryUpline,
+			   ci.DisableLucky3,ci.HideLucky3Upline,ci.HideLucky3
 
 	ORDER BY RowNumber
 END
