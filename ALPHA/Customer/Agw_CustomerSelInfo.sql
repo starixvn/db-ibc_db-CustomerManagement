@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Agw_CustomerSelInfo]
 	@CustID int
 
@@ -135,8 +139,4 @@ BEGIN
 	EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid		    
 	
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Agw_CustomerSelInfo] TO [bodbDownlineNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Agw_CustomerSelInfo] TO [vnteam]
