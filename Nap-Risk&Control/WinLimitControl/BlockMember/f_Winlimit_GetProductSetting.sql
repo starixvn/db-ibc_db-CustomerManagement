@@ -12,6 +12,7 @@ AS
 		- 20161019@Winnie: Fishing World [Redmine:#62547]
 		- 20161011@Helen: CWL - Phase 3 [Redmine:61220]
 		- 20170611@Helen: CWL Phase 3 - Apply for Virtual Sport [Redmine:72603]
+		- 20170710@Helen: Keno Lottery, BetradarVS into CWL [Redmine:77567,77564]
 		
 	Parameters Explanation:	
 */
@@ -45,6 +46,12 @@ BEGIN
 			SELECT 8, 1501, 0, 1  -- Keno
 			--UNION ALL
 			--SELECT 14, 1900, 0, 1  -- Macau
+			
+			UNION ALL
+			SELECT 27, 2701, 0, 1  -- BetradarVS
+			
+			UNION ALL
+			SELECT 28, 1021, 1, 1  -- Keno Lottery
 			
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
