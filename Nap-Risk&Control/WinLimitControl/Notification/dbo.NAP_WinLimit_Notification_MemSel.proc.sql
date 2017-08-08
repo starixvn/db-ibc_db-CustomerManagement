@@ -25,6 +25,7 @@ Revisions:
 	- 20170306@Robert: CWL Phase 3 - email notification Enhancement - [Redmine: 61220]
 	- 20170306@Helen: CWL Phase 3A - email notification Enhancement - [Redmine: 72604]
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
+	- 20170808@Robert: CWL Phase 4 - Support Loosing Limit notification, email template and enhancement requests from NSD team [Redmine: 72870]
 	
 Param's Explanation:
 	• @ErrCode:
@@ -53,13 +54,18 @@ Param's Explanation:
                     THEN wl.MaxWinLimitSetting.value('(/MaxWinLimitSetting/@Level2)[1]', 'MONEY')
                     WHEN wl.LevelID = 3
                     THEN wl.MaxWinLimitSetting.value('(/MaxWinLimitSetting/@Level3)[1]', 'MONEY')
+				WHEN wl.LevelID = 101
+                    THEN wl.MaxWinLimitSetting.value('(/MaxWinLimitSetting/@Level101)[1]', 'MONEY')
+				WHEN wl.LevelID = 102
+                    THEN wl.MaxWinLimitSetting.value('(/MaxWinLimitSetting/@Level102)[1]', 'MONEY')
                 END AS WinlimitAmount,
                 wl.TotalWinAmt AS TotalWinAmt_OriginalCurrency,
                 wl.TotalWinAmt_RM AS TotalWinAmt_BaseCurrency,
                 wl.ModifiedDate,
                 wl.WinlostDate,
                 wl.LevelId,
-                l.LevelName
+                l.LevelName,
+                wl.BettypeIDList
          FROM WinLimit_CustGameMonitoring_History wl WITH (NOLOCK)
               INNER JOIN Customer c WITH (NOLOCK) ON c.custid = wl.CustID
               INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid = c.recommend
