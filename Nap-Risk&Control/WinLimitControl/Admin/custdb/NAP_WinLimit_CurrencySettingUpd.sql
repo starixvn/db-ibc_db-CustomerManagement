@@ -20,13 +20,11 @@ CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingUpd] @ProductId         INT,
                                                          @CurrencyId        INT,
                                                          @SiteId            INT,
                                                          @LevelId           INT,
-                                                         @MaxWinLimit       MONEY         = 0,
-                                                         @IsBlockedPlaceBet BIT           = 0,
-                                                         @IsBlockedTransfer BIT           = 0,
-                                                         @UserID            INT           = 0,
-                                                         @IP                VARCHAR(20)   = '',
-                                                         @ErrorCode         INT           = 0 OUTPUT,
-                                                         @ErrorMessage      NVARCHAR(500) = '' OUTPUT
+                                                         @MaxWinLimit       MONEY       = 0,
+                                                         @IsBlockedPlaceBet BIT         = 0,
+                                                         @IsBlockedTransfer BIT         = 0,
+                                                         @UserID            INT         = 0,
+                                                         @IP                VARCHAR(20) = ''
 AS
 
 /*
@@ -38,6 +36,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 
 Parameters Explanation:	
    @ProductId: Product ID.
@@ -50,8 +49,6 @@ Parameters Explanation:
    @IsBlockedTransfer: Is block transfer.
    @UserID: User making this action.
    @IP: IP of the machine making this action.
-   @ErrorCode: Error Code.
-   @ErrorMessage: Error Message.
 */
 
      SET NOCOUNT ON;
@@ -78,32 +75,26 @@ Parameters Explanation:
                    AND ExchangeID = @CurrencyId
                    AND SiteID = @SiteId
                    AND LevelID = @LevelId;
-             BEGIN TRY
-                 UPDATE s
-                   SET
-                       s.MaxWinLimit_RM = @MaxWinLimit,
-                       s.IsBlockedPlaceBet = @IsBlockedPlaceBet,
-                       s.IsBlockedTransfer = @IsBlockedTransfer
-                 FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK)
-                 WHERE s.ProductID = @ProductId
-                       AND s.GroupId = @GroupId
-                       AND s.ExchangeID = @CurrencyId
-                       AND s.SiteID = @SiteId
-                       AND s.LevelID = @LevelId;
-                 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
-                      @IsCurrencySetting = 1,
-                      @ProductID = @ProductId,
-                      @GroupId = @GroupId,
-                      @CurrencyId = @CurrencyId,
-                      @SiteID = @SiteId,
-                      @LevelID = @LevelId;
-             END TRY
-             BEGIN CATCH
-                 SELECT @ErrorCode = 500,
-                        @ErrorMessage = 'There is an error while processing, please try again!';
-                 RETURN;
-             END CATCH;
+             UPDATE s
+               SET
+                   s.MaxWinLimit_RM = @MaxWinLimit,
+                   s.IsBlockedPlaceBet = @IsBlockedPlaceBet,
+                   s.IsBlockedTransfer = @IsBlockedTransfer
+             FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK)
+             WHERE s.ProductID = @ProductId
+                   AND s.GroupId = @GroupId
+                   AND s.ExchangeID = @CurrencyId
+                   AND s.SiteID = @SiteId
+                   AND s.LevelID = @LevelId;
+             EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
+                  @IsCurrencySetting = 1,
+                  @ProductID = @ProductId,
+                  @GroupId = @GroupId,
+                  @CurrencyId = @CurrencyId,
+                  @SiteID = @SiteId,
+                  @LevelID = @LevelId;
              BEGIN -- Write Log
+
                  SELECT @EndRun = GETDATE(),
                         @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
                  SET @TrackingValue1 = '<NAP_WinLimit_CurrencySettingUpd ';
@@ -136,48 +127,42 @@ Parameters Explanation:
                           @TrackingValue = @TrackingValue1,
                           @TrackingValue2 = @TrackingValue2,
                           @Duration = @Duration;
-                 END TRY
-                 BEGIN CATCH
-                 END CATCH;
-             END;
-         END;
-     ELSE
+			 END TRY
+				BEGIN CATCH
+			 END CATCH;
+     END;
+     END;
+         ELSE
          BEGIN -- Insert data
-             BEGIN TRY
-                 INSERT INTO dbo.WinLimit_ProductSettingDetail
-                 (ProductID,
-                  GroupId,
-                  ExchangeID,
-                  SiteID,
-                  LevelID,
-                  MaxWinLimit_RM,
-                  IsBlockedPlaceBet,
-                  IsBlockedTransfer
-                 )
-                 VALUES
-                 (@ProductId,
-                  @GroupId,
-                  @CurrencyId,
-                  @SiteId,
-                  @LevelId,
-                  @MaxWinLimit,
-                  @IsBlockedPlaceBet,
-                  @IsBlockedTransfer
-                 );
-                 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
-                      @IsCurrencySetting = 1,
-                      @ProductID = @ProductId,
-                      @GroupId = @GroupId,
-                      @CurrencyId = @CurrencyId,
-                      @SiteID = @SiteId,
-                      @LevelID = @LevelId;
-             END TRY
-             BEGIN CATCH
-                 SELECT @ErrorCode = 500,
-                        @ErrorMessage = 'There is an error while processing, please try again!';
-                 RETURN;
-             END CATCH;
+             INSERT INTO dbo.WinLimit_ProductSettingDetail
+             (ProductID,
+              GroupId,
+              ExchangeID,
+              SiteID,
+              LevelID,
+              MaxWinLimit_RM,
+              IsBlockedPlaceBet,
+              IsBlockedTransfer
+             )
+             VALUES
+             (@ProductId,
+              @GroupId,
+              @CurrencyId,
+              @SiteId,
+              @LevelId,
+              @MaxWinLimit,
+              @IsBlockedPlaceBet,
+              @IsBlockedTransfer
+             );
+             EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
+                  @IsCurrencySetting = 1,
+                  @ProductID = @ProductId,
+                  @GroupId = @GroupId,
+                  @CurrencyId = @CurrencyId,
+                  @SiteID = @SiteId,
+                  @LevelID = @LevelId;
              BEGIN -- Write log
+
                  SELECT @EndRun = GETDATE(),
                         @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
                  SET @TrackingValue1 = '<NAP_WinLimit_CurrencySettingUpd ';
@@ -197,13 +182,11 @@ Parameters Explanation:
                           @ActionID = 31201,
                           @TrackingValue = @TrackingValue1,
                           @Duration = @Duration;
-                 END TRY
+     END TRY
                  BEGIN CATCH
-                 END CATCH;
-             END;
-         END;
-     SELECT @ErrorCode = 0,
-            @ErrorMessage = '';
+     END CATCH;
+     END;
+     END;
 GO
 GRANT EXECUTE ON [dbo].[NAP_WinLimit_CurrencySettingUpd] TO [bodbAdminNet];
 GO
