@@ -11,7 +11,7 @@ AS
 	Task: Get customer list to send email - [Redmine:#58401]
 	DB: DBACC/bodb_ACC
   
-	History:  
+	Revisions:  
 	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 	Param's Explanation:  
 		- @CustList = '<Notify>
