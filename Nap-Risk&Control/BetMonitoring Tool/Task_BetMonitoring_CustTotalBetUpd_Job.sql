@@ -10,8 +10,8 @@ AS
 	Task: Update the sum of bet ticket's sportbook - [Redmine:#58401]
 	DB: DBACC/bodb_ACC
   
-	History:  
-
+	Revisions:  
+		
 */
 BEGIN
 	SET NOCOUNT ON

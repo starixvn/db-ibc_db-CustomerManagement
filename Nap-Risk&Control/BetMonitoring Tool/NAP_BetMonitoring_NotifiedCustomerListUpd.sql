@@ -11,8 +11,7 @@ AS
 	Task: Get customer list to send email - [Redmine:#58401]
 	DB: DBACC/bodb_ACC
   
-	History:  
-
+	Revisions:  	
 	Param's Explanation:  
 		- @CustList = '<Notify>
 							<row c = "1" s = "1"/>

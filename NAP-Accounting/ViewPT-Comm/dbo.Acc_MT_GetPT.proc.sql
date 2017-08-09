@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 alter PROCEDURE [dbo].[Acc_MT_GetPT] 
 	@UserName varchar(30),
 	@Sporttype smallint = 1,
@@ -35,7 +36,6 @@ Revisions:
 	- 20140402@Kathy: Add Virtual Speedway (183), Virtual Virtual Cycling (185)	[Redmine:#14142]
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports, bettype)
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
-	
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -862,6 +862,3 @@ End
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_MT_GetPT] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_MT_GetPT] TO [vnteam]

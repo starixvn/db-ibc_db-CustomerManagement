@@ -1,13 +1,5 @@
-
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Sel    Script Date: 10/28/2014 9:45:19 AM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Sel    Script Date: 10/23/2014 12:48:25 PM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Sel    Script Date: 10/23/2014 8:38:07 AM ******/
-CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_Sel]
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Sel]
 	@Licensee NVARCHAR(100)
 	,@CurrencyID INT
 	,@AgentID INT = NULL
@@ -22,9 +14,8 @@ AS
 		DB: DBTXN/CustDB
 		
 		Revisions:
-		20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
-
-
+			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
+			
 */
 SET NOCOUNT ON
 	DECLARE @tmp_Sports TABLE(SportType TINYINT,SportName NVARCHAR(50))
@@ -212,8 +203,4 @@ SET ANSI_NULLS ON
 GO
 
 
-GO 
- GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_Sel] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_Sel] TO [bodbLicenseeNet]
 GO 

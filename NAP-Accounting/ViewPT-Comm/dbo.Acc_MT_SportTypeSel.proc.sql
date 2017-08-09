@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_MT_SportTypeSel]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_MT_SportTypeSel]
 AS 
 
 /*
@@ -10,7 +11,7 @@ AS
 	Revisions:
 		- 20091201@Kiwi: Union with CustSetting3rd.
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports)
-        - 20151021@Billy: Add support for DCS -- UNION with ProductSettingDetail
+        - 20151021@Billy: Add support for DCS -- UNION with ProductSettingDetail		
 */
 
 SET NOCOUNT ON
@@ -43,6 +44,3 @@ ORDER BY t.sporttype
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_MT_SportTypeSel] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_MT_BetTypeSel] TO [vnteam]

@@ -1,4 +1,4 @@
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
 SET QUOTED_IDENTIFIER ON 
 GO
 SET ANSI_NULLS ON 
@@ -22,8 +22,7 @@ Created: Dom
 		DB: DBTXN/CustDB
 		
 		Revisions:
-		20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
-
+			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)			
 */
 
 BEGIN
@@ -147,8 +146,4 @@ SET ANSI_NULLS ON
 GO
 
 
-GO 
- GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_List] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_List] TO [bodbLicenseeNet]
 GO 
