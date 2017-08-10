@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-alter PROCEDURE [dbo].[Acc_MT_GetPT] 
+CREATE PROCEDURE [dbo].[Acc_MT_GetPT] 
 	@UserName varchar(30),
 	@Sporttype smallint = 1,
 	@Bettype smallint = 1,
