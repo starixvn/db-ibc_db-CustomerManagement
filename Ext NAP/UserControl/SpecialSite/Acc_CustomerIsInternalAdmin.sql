@@ -11,6 +11,7 @@ AS
 	Revision:
 		- 20161111@Elodie: Remove hardcode statrix, add list username who has permission to access special site		
 		- 20161205@Winnie: Remove hardcode like statrix [RedmineID:#67772]
+		- 20170816@Elodie: Add more starix account [Redmine: #81730]
 	Param's Explanation:
 */
 BEGIN
@@ -48,6 +49,12 @@ BEGIN
 							,15470969	--starix8
 							,15471129	--starix9
 							,10278938	--starixIT
+							/*-- 20170816@Elodie: Add more starix account*/
+							,26870995	--starix68
+							,26871005	--starix69
+							,26871009	--starix70
+							,26879871	--starix71
+							,16492113	--starix33
 						) AND @UserName LIKE 'starix%'			
 			SELECT @IsAllowAccess = 0
 	END
