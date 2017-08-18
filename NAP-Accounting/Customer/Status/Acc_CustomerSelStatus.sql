@@ -1,13 +1,7 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE [bodb02]
 GO
-/****** Object:  StoredProcedure [dbo].[Acc_CustomerSelStatus]    Script Date: 6/8/2017 10:32:08 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Acc_CustomerSelStatus    Script Date: 6/8/2017 1:21:12 AM ******/
-/****** Object:  Stored Procedure dbo.Acc_CustomerSelStatus    Script Date: 6/5/2017 1:34:27 PM ******/
+
 ALTER PROCEDURE [dbo].[Acc_CustomerSelStatus]
 	@CustID		INT,
 	@AdminID	INT			= 0,
@@ -63,6 +57,8 @@ Revisions:
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170517@Winnie: Apply color for closed accounts - [Redmine #74494]	
 	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
+	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -205,7 +201,8 @@ Param's Explanation:
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_NG2			INT
 		,	@bitmapOrder_FishingWorld	INT
-    
+		,	@bitmapOrder_VS				INT
+
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
     SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
 	SET	@bitmapOrder_AllBet =	(
@@ -225,7 +222,7 @@ Param's Explanation:
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
 	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
-    
+    SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
     
     
     DECLARE	@IsHidden_MuayThai			INT = 1
@@ -235,15 +232,16 @@ Param's Explanation:
 		,	@IsHidden_VoidBridge		INT = 1
 		,	@IsHidden_NG2				INT = 1
 		,	@IsHidden_FishingWorld		INT = 1
-    
+		,	@IsHidden_VS				INT = 1
    
-		EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-		EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT	
-		EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
-		EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
-		EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
-		EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
-	
+	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT	
+	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
+
 	IF @IsIMBC=0
 		SELECT @IsHidden_Cricket=1
 	ELSE	
@@ -293,8 +291,8 @@ Param's Explanation:
 			@LimitPerIP as LimitPerIP,
 			@SelectedBetting as SelectedBetting,
 			@IsInternal AS IsInternal,
-			ISNULL(DisableVirtualSports,0) as DisableVirtualSports,
-			ISNULL(HideVirtualSports,0) as HideVirtualSports,
+			--ISNULL(DisableVirtualSports,0) as DisableVirtualSports,
+			--ISNULL(HideVirtualSports,0) as HideVirtualSports,
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
 			ISNULL(DisableHRFixedOdds,0) AS DisableHRFixedOdds,
 			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
@@ -340,9 +338,14 @@ Param's Explanation:
 			-- For NG2
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_NG2),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_NG2), 0) AS SyncedNG2
-			,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
-			,ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer		
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_NG2), 0) AS SyncedNG2,
+
+			CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason,
+			ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer,		
+
+			-- For VS
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VS), 1) AS DisableVirtualSports,		
+			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
@@ -370,8 +373,8 @@ Param's Explanation:
 			ci.srecommend, 
 			ci.mrecommend, 
 			ci.recommend, 
-			ci.DisableVirtualSports, 
-			ci.HideVirtualSports, 
+			--ci.DisableVirtualSports, 
+			--ci.HideVirtualSports, 
 			ci.DoubleCommLosing,
 			ci.DisableHRFixedOdds,
 			ci.DisableEsports,
@@ -385,7 +388,6 @@ Param's Explanation:
 			cps.bitmapHasSynced,
 			ci.DisableMicrogameLC,
 			ci.DisableSuperLive,
-			ci.DisableMicrogameRNG
-	
+			ci.DisableMicrogameRNG	
 END
 GO

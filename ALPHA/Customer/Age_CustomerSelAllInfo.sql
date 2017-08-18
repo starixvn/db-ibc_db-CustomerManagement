@@ -1,4 +1,7 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE bodb02
+GO
+
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
@@ -47,6 +50,7 @@ Revisions:
 	- 20160413@Percy: Support Voidbridge single wallet [Redmine: #55259]
 	- 20161028@Percy: Support Fishing World [RedmineID: #65731]
 	- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
+	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 	- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
 Param's Explanation:
@@ -119,7 +123,7 @@ BEGIN
           , @upLineEnabled   BIT
           , @upLineEnabledMa BIT
 
-          , @uplineDisableVirtualSports BIT
+          --, @uplineDisableVirtualSports BIT
           , @uplineDoubleCommLosing     BIT
           , @uplineDisableHRFixedOdds   BIT
           , @uplineDisableEsports       BIT
@@ -153,7 +157,7 @@ BEGIN
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         , @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
+	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
 	         , @uplineDisableEsports = ISNULL(DisableEsports, 0)
@@ -193,7 +197,7 @@ BEGIN
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         , @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
+	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
@@ -235,7 +239,7 @@ BEGIN
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         , @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
+	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
@@ -333,7 +337,7 @@ BEGIN
 	    ISNULL(@uplineDisableCS,0) AS [uplineDisableCS],	
 	    ISNULL(@uplineDisableBingo,0) AS [uplineDisableBingo],	
 	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
-	    ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
+	    --ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
 	    ISNULL(@uplineDoubleCommLosing,0) as [uplineDoubleCommLosing],
 	    ISNULL(@uplineDisableHRFixedOdds,0) AS [uplineDisableHRFixedOdds],
 	    ISNULL(@uplineDisableEsports, 0) AS uplineDisableEsports,
@@ -364,8 +368,8 @@ BEGIN
 	    c.creatdate AS createdate,
 	    ci.DisableLiveCasino,
 	    ci.SyncLiveCasino,
-	    ci.DisableVirtualSports,
-	    ci.HideVirtualSports,
+	    --ci.DisableVirtualSports,
+	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,
 	    --ci.DisableP2P, 
 	    ci.DisableHRFixedOdds,

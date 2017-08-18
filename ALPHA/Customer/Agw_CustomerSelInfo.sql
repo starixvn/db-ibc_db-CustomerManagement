@@ -6,11 +6,10 @@ ALTER PROCEDURE [dbo].[Agw_CustomerSelInfo]
 	@CustID int
 
 AS
-
 /*
 	Created: 20080909@QuiNV
 	Task: Get basic information of a customer (belonging have been checked on web already)
-	DB: DBCUST.CustDB
+	DB: DBCUST/CustDB
 	Original:
 
 
@@ -30,7 +29,7 @@ AS
 		- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
 		- 20150825@Helen: Colossus Bet - [Redmine: #41264]
 		- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
-
+		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 */
 BEGIN
     SET NOCOUNT ON
@@ -114,10 +113,10 @@ BEGIN
          , ci.disablecasino
          , ci.DisableBingo
          , ci.DisableNumber
-         , ci.DisableVirtualSports
+         --, ci.DisableVirtualSports
          , ci.synccasino
          , ci.syncBingo
-         , ci.HideVirtualSports
+         --, ci.HideVirtualSports
          , ci.currency
          , ci.credit
          , ci.DoubleCommLosing

@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CustomerCheckMoveMaster]
 	@supername	VARCHAR(40),
 	@mastername VARCHAR(40),
@@ -27,6 +31,8 @@ AS
 		- 20150904@Helen: commission setting for MO [Redmine #41470]
 		- 20151030@Dominic: Add MuayThai product [Redmine: #46732]
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
+		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
+
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -96,8 +102,8 @@ BEGIN
 			@sGivenCredit			MONEY,
 			@mGivenCredit			MONEY,
 			@sUsedCredit			MONEY,
-			@sHideVirtualSports		BIT, 
-			@mHideVirtualSports		BIT,
+			--@sHideVirtualSports		BIT, 
+			--@mHideVirtualSports		BIT,
 			@sDisableEsports	    BIT,
 			@mDisableEsports	    BIT,
 			@sHideKeno				BIT, 
@@ -133,7 +139,7 @@ BEGIN
 	     , @sDisableHRFixedOdds = DisableHRFixedOdds
 	     , @sDisableEsports     = DisableEsports
 	     , @sGivenCredit		= credit
-	     , @sHideVirtualSports  = HideVirtualSports
+	     --, @sHideVirtualSports  = HideVirtualSports
 	     , @sHideKeno			= HideKeno
 	     , @sHideGoldDeluxe		= HideGoldDeluxe
 	     , @sHideColossusBet	= HideColossusBet
@@ -164,7 +170,7 @@ BEGIN
 	     , @mDisableHRFixedOdds = DisableHRFixedOdds
 	     , @mDisableEsports     = DisableEsports
 	     , @mGivenCredit		= credit
-	     , @mHideVirtualSports  = HideVirtualSports
+	     --, @mHideVirtualSports  = HideVirtualSports
 	     , @mHideKeno			= HideKeno 		
 	     , @mHideGoldDeluxe		= HideGoldDeluxe
 	     , @mHideColossusBet	= HideColossusBet
@@ -433,13 +439,13 @@ BEGIN
 		RETURN
 	END
 
-	--Check Virtual sport enable status
-	IF @sHideVirtualSports = 1 and @mHideVirtualSports = 0
-	BEGIN
-		SELECT @ErrMsg = 'Master is offered Virtual Sports but new super is not offered Virtual Sports.',
-			@ErrCode = 123					 
-		return
-	END	
+	----Check Virtual sport enable status
+	--IF @sHideVirtualSports = 1 and @mHideVirtualSports = 0
+	--BEGIN
+	--	SELECT @ErrMsg = 'Master is offered Virtual Sports but new super is not offered Virtual Sports.',
+	--		@ErrCode = 123					 
+	--	return
+	--END	
 
 	--Check Keno sport enable status
 	IF @sHideKeno = 1 and @mHideKeno = 0

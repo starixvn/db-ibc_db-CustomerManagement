@@ -1,6 +1,5 @@
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,vnteam" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
 GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveMaster]
@@ -68,6 +67,8 @@ Revisions:
 	- 20160218@Dominic: Not allow to move a IMBC customer to MBC line and vice versa [Redmine: #50221]
 	- 20160426@Winnie: fix  Bug #56653 [Move account: IsHidden of move master is changed to 0]
 	- 20160426@Winnie: fix  Bug #62755 [NAP - IsDailyAutoReset of downline is changed to 0 after moving downline although both downline and upline has IsDailyAutoReset=1]
+	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -110,8 +111,8 @@ BEGIN
             --@mDisableP2P        BIT, 
             --@sDisableFunP2P        BIT,
             --@mDisableFunP2P        BIT,
-            @sDisableVirtualSports        BIT,
-            @mDisableVirtualSports        BIT,            
+            --@sDisableVirtualSports        BIT,
+            --@mDisableVirtualSports        BIT,            
             @sHideKeno                    BIT,
             @mHideKeno                    BIT,
             @mHideGoldDeluxe		BIT,
@@ -132,7 +133,7 @@ BEGIN
             --@sIsAutoResetP2P    = IsAutoResetP2P, 
             --@sDisableP2P        = DisableP2P, 
             --@sDisableFunP2P        = DisableFunP2P,
-            @sDisableVirtualSports    = DisableVirtualSports,
+            --@sDisableVirtualSports    = DisableVirtualSports,
             @sHideKeno                = HideKeno,
 			@sDisableGoldDeluxe		= DisableGoldDeluxe,
 			@sHideGoldDeluxe	= HideGoldDeluxe,
@@ -152,7 +153,7 @@ BEGIN
             --@mIsAutoResetP2P    = IsAutoResetP2P, 
             --@mDisableP2P        = DisableP2P, 
             --@mDisableFunP2P        = DisableFunP2P,
-            @mDisableVirtualSports    = DisableVirtualSports,
+            --@mDisableVirtualSports    = DisableVirtualSports,
             @mHideKeno                = HideKeno,
 			@mDisableGoldDeluxe		= DisableGoldDeluxe,
 			@mHideGoldDeluxe	= HideGoldDeluxe,
@@ -207,95 +208,7 @@ BEGIN
     INSERT INTO #CustInfo
     SELECT custid
     FROM custinfo (NOLOCK)
-    WHERE mrecommend = @mrecommend;
-
-
-    ----P2PGAMESETTING table
-    --UPDATE G_P
-    --SET stakelevel1 = CASE WHEN s.stakelevel1 = 1 AND G_P.stakelevel1 = 1 THEN 1 ELSE 0 END,
-    --    stakelevel2 = CASE WHEN s.stakelevel2 = 1 AND G_P.stakelevel2 = 1 THEN 1 ELSE 0 END,
-    --    stakelevel3 = CASE WHEN s.stakelevel3 = 1 AND G_P.stakelevel3 = 1 THEN 1 ELSE 0 END,
-    --    stakelevel4 = CASE WHEN s.stakelevel4 = 1 AND G_P.stakelevel4 = 1 THEN 1 ELSE 0 END,
-    --    stakelevel5 = CASE WHEN s.stakelevel5 = 1 AND G_P.stakelevel5 = 1 THEN 1 ELSE 0 END
-    --FROM P2PGameSetting G_P WITH (ROWLOCK, UPDLOCK)
-    --    INNER JOIN 
-    --        ( SELECT * FROM dbo.P2PGameSetting s WITH(NOLOCK) WHERE custid = @srecommend) s
-    --            ON G_P.BETTYPE = s.BETTYPE
-    --WHERE G_P.custid IN (SELECT custid FROM @CustInfo)
-
-    --IF @@ERROR <> 0 
-    --    BEGIN        
-    --        SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (P2PGameSetting).',
-    --                    @ErrCode = 300
-    --        RETURN
-    --    END
-
-    --IF EXISTS (
-    --    SELECT TOP 1 1 FROM 
-    --    (SELECT * FROM dbo.P2PGameSetting m WITH(NOLOCK) WHERE m.custid = @mrecommend)  m
-    --    INNER JOIN
-    --        (SELECT * FROM dbo.P2PGameSetting s WITH(NOLOCK) WHERE s.custid = @srecommend)   s
-    --                ON s.BETTYPE = m.BETTYPE
-    --    WHERE (m.stakelevel2 = 0 AND m.stakelevel3 = 0 AND m.stakelevel4 = 0 AND m.stakelevel5 = 0 )
-    --    AND (s.stakelevel2 = 1 OR s.stakelevel3 = 1 OR s.stakelevel4 = 1 OR s.stakelevel5 = 1 )
-    --)
-    --BEGIN
-    --    UPDATE G_P
-    --    SET stakelevel1 = CASE WHEN s.stakelevel1 = 1 THEN 1 ELSE 0 END,
-    --        stakelevel2 = CASE WHEN s.stakelevel2 = 1 THEN 1 ELSE 0 END,
-    --        stakelevel3 = CASE WHEN s.stakelevel2 = 0 AND s.stakelevel3 = 1 THEN 1 ELSE 0 END,
-    --        stakelevel4 = CASE WHEN s.stakelevel2 = 0 AND s.stakelevel3 = 0 AND s.stakelevel4 = 1 THEN 1 ELSE 0 END,
-    --        stakelevel5 = CASE WHEN s.stakelevel2 = 0 AND s.stakelevel3 = 0 AND s.stakelevel4 = 0 AND s.stakelevel5 = 1 THEN 1 ELSE 0 END
-    --    FROM P2PGameSetting G_P WITH (ROWLOCK, UPDLOCK)
-    --        INNER JOIN 
-    --            ( SELECT * FROM dbo.P2PGameSetting s WITH(NOLOCK) WHERE custid = @srecommend) s
-    --                ON G_P.BETTYPE = s.BETTYPE
-    --    WHERE G_P.custid = @mrecommend AND G_P.stakelevel2 = 0 AND G_P.stakelevel3 = 0 AND G_P.stakelevel4 = 0 AND G_P.stakelevel5 = 0
-        
-    --    IF @@ERROR <> 0 
-    --    BEGIN        
-    --            SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (P2PGameSetting).',
-    --                    @ErrCode = 301
-    --        RETURN
-    --    END    
-    --END
-
-    --if (@sDisableP2P = 1 and @mDisableP2P = 0) 
-    --    OR (@sIsAutoResetP2P = 0 and @mIsAutoResetP2P = 1)
-    --    OR (@sDisableFunP2P = 1 and @mDisableFunP2P = 0)
-    --    OR (@sMaxTransferP2P < @mMaxTransferP2P)
-    --    OR (@sDoubleCommLosing = 0 AND @mDoubleCommLosing = 1)
-    --BEGIN
-    --    UPDATE    Custinfo WITH (UPDLOCK,ROWLOCK)
-    --    SET        DisableP2P = CASE WHEN @sDisableP2P = 1 THEN 1 ELSE DisableP2P END,
-    --            DisableFunP2P = CASE WHEN @sDisableFunP2P  = 1 THEN 1 ELSE DisableFunP2P END,
-    --            IsAutoResetP2P = CASE WHEN @sIsAutoResetP2P = 0 THEN 0 ELSE IsAutoResetP2P END,
-    --            MaxTransferP2P = CASE WHEN @sMaxTransferP2P < MaxTransferP2P THEN @sMaxTransferP2P ELSE MaxTransferP2P END,
-    --            DoubleCommLosing = CASE WHEN @sDoubleCommLosing = 0 THEN 0 ELSE DoubleCommLosing END
-    --    WHERE    custid IN(SELECT CustID FROM @CustInfo)
-    --    IF @@ERROR <>0
-    --    BEGIN
-    --        SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-    --                @ErrCode = 302
-    --        RETURN 
-    --    END
-    --END
-
-    ----P2PGroupComm table
-    --UPDATE G_C 
-    --SET sdiscount = s.sdiscount
-    --FROM P2PGroupComm G_C WITH (ROWLOCK, UPDLOCK)
-    --    INNER JOIN 
-    --        ( SELECT * FROM dbo.P2PGROUPCOMM s WITH(NOLOCK) WHERE custid = @srecommend) s
-    --        ON G_C.GroupID = s.GroupID
-    --WHERE G_C.custid IN (SELECT custid FROM @CustInfo)
-
-    --IF @@ERROR <> 0 
-    --BEGIN    
-    --    SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (P2PGroupComm).',
-    --                @ErrCode = 303
-    --    RETURN
-    --END
+    WHERE mrecommend = @mrecommend;    
 
     if (@sDoubleCommLosing = 0 and @mDoubleCommLosing = 1)
     BEGIN
@@ -466,19 +379,19 @@ BEGIN
         END;
     END;
 
-    -- VS
-    IF @sDisableVirtualSports = 1 AND (@sDisableVirtualSports <> @mDisableVirtualSports)
-    BEGIN
-        UPDATE    Custinfo WITH (UPDLOCK,ROWLOCK)
-           SET        DisableVirtualSports = 1 
-        WHERE    custid IN(SELECT CustID FROM #CustInfo);
-        IF @@ERROR <>0
-        BEGIN
-            SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 310;
-            RETURN; 
-        END;
-    END;
+    ---- VS
+    --IF @sDisableVirtualSports = 1 AND (@sDisableVirtualSports <> @mDisableVirtualSports)
+    --BEGIN
+    --    UPDATE    Custinfo WITH (UPDLOCK,ROWLOCK)
+    --       SET        DisableVirtualSports = 1 
+    --    WHERE    custid IN(SELECT CustID FROM #CustInfo);
+    --    IF @@ERROR <>0
+    --    BEGIN
+    --        SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
+    --                @ErrCode = 310;
+    --        RETURN; 
+    --    END;
+    --END;
 
     -- Keno
     IF @sHideKeno = 0 AND (@sHideKeno <> @mHideKeno)
@@ -534,33 +447,6 @@ INNER JOIN CustGameType mcg ON scg.CustID = @srecommend AND mcg.GameTypeID = scg
                 @ErrCode = 312;
         RETURN;
     END;
-    /*
-    IF @sDisableBingo = 1 AND (@sDisableBingo <> @mDisableBingo)
-    BEGIN
-
-        UPDATE Custinfo WITH (UPDLOCK, ROWLOCK)
-           SET    DisableBingo = 1 
-        WHERE    custid IN(SELECT CustID FROM @CustInfo)
-        IF @@ERROR <>0
-            SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 132
-        RETURN
-
-    END
-
-    IF @sDisableNumber = 1 AND (@sDisableNumber <> @mDisableNumber)
-    BEGIN
-
-        UPDATE Custinfo WITH (UPDLOCK, ROWLOCK)
-           SET    DisableNumber = 1 
-        WHERE    custid IN(SELECT CustID FROM @CustInfo)
-        IF @@ERROR <>0
-            SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 133
-        RETURN
-
-    END
-    */
 
     --Apply ExeReplication
     -- call Acc_ExecRep_00 two times to update coming bets that not replicated to subcriptions servers yet.
@@ -634,25 +520,16 @@ INNER JOIN CustGameType mcg ON scg.CustID = @srecommend AND mcg.GameTypeID = scg
 				,@SuperID = @srecommend
 				,@RoleID = 3
 				,@SportBettypeXML = @SportBettypeXML;
-
-    /*
-    EXEC dbo.Acc_CustomerUpdMasterHR_MinMaxPositiontaking @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterLiveCS_MaxPositiontaking @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterVS_MinMaxPositiontaking @sporttype = 180, @bettype = 1201, @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterVS_MinMaxPositiontaking @sporttype = 181, @bettype = 1231, @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterVS_MinMaxPositiontaking @sporttype = 182, @bettype = 1231, @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterVS_MinMaxPositiontaking @sporttype = 184, @bettype = 1231, @mrecommend = @mrecommend, @srecommend = @srecommend
-    EXEC dbo.Acc_CustomerUpdMasterVS_MinMaxPositiontaking @sporttype = 186, @bettype = 1220, @mrecommend = @mrecommend, @srecommend = @srecommend
-    */
+   
     EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'horse';    
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 180, @bettype = 1201;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 181, @bettype = 1231;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 182, @bettype = 1231;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 183, @bettype = 1231;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 184, @bettype = 1231;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 185, @bettype = 1231;
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 186, @bettype = 1220;
-    EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'LiveCasino';
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 180, @bettype = 1201;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 181, @bettype = 1231;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 182, @bettype = 1231;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 183, @bettype = 1231;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 184, @bettype = 1231;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 185, @bettype = 1231;
+    --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 186, @bettype = 1220;
+    --EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'LiveCasino';
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1501;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1511;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1503;

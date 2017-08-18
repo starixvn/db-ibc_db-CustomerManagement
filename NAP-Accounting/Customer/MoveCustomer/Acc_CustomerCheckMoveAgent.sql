@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CustomerCheckMoveAgent]
 	@mastername		VARCHAR(40)
 	, @agentname	VARCHAR(40)
@@ -28,6 +32,8 @@ AS
 		- 20150904@Helen: commission setting for MO [Redmine #41470]
 		- 20151030@Dominic: Add MuayThai product [Redmine: #46732]
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
+		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
+
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -91,8 +97,8 @@ BEGIN
 	      , @aGivenCredit			MONEY
 	      , @mGivenCredit			MONEY
 	      , @mUsedCredit			MONEY
-	      , @aHideVirtualSports		BIT
-	      , @mHideVirtualSports		BIT
+	      --, @aHideVirtualSports		BIT
+	      --, @mHideVirtualSports		BIT
 	      , @aHideKeno				BIT
 	      , @mHideKeno				BIT
 	      ,	@mHideGoldDeluxe		BIT
@@ -128,7 +134,7 @@ BEGIN
 	     , @mSuspended			= reject
 	     , @mDisableHRFixedOdds = DisableHRFixedOdds
 	     , @mGivenCredit		= credit
-	     , @mHideVirtualSports  = HideVirtualSports
+	     --, @mHideVirtualSports  = HideVirtualSports
 	     , @mHideKeno			= HideKeno
 	     , @mDisableEsports     = DisableEsports
 	     , @mHideGoldDeluxe		= HideGoldDeluxe
@@ -161,7 +167,7 @@ BEGIN
 	     , @aSuspended			= reject
 	     , @aDisableHRFixedOdds = DisableHRFixedOdds
 	     , @aGivenCredit		= credit
-	     , @aHideVirtualSports  = HideVirtualSports
+	     --, @aHideVirtualSports  = HideVirtualSports
 	     , @aHideKeno			= HideKeno
 	     , @aDisableEsports     = DisableEsports
 	     , @aHideGoldDeluxe		= HideGoldDeluxe
@@ -411,13 +417,13 @@ BEGIN
 		return
 	END
 	
-	--Check Virtual sport enable status
-	IF @mHideVirtualSports = 1 and @aHideVirtualSports = 0
-	BEGIN
-		SELECT @ErrMsg = 'Agent is offered Virtual Sports but new master is not offered Virtual Sports.',
-			@ErrCode = 123					 
-		return
-	END		
+	----Check Virtual sport enable status
+	--IF @mHideVirtualSports = 1 and @aHideVirtualSports = 0
+	--BEGIN
+	--	SELECT @ErrMsg = 'Agent is offered Virtual Sports but new master is not offered Virtual Sports.',
+	--		@ErrCode = 123					 
+	--	return
+	--END		
 
 	--Check Keno enable status
 	IF @mHideKeno = 1 and @aHideKeno = 0
@@ -500,14 +506,14 @@ BEGIN
 		return
 	END
 
-	-- Virtual sports
-	IF exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @recommend and sporttype = 180)
-		AND not exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @mrecommend and sporttype = 180)		
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': master does not have Virtual Sports setting.',
-			@ErrCode = 124					 
-		return
-	END
+	---- Virtual sports
+	--IF exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @recommend and sporttype = 180)
+	--	AND not exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @mrecommend and sporttype = 180)		
+	--BEGIN
+	--	SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': master does not have Virtual Sports setting.',
+	--		@ErrCode = 124					 
+	--	return
+	--END
 
 	--Check casino Syn
 	--Remove checking Casino 
