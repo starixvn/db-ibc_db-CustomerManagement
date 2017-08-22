@@ -100,7 +100,7 @@ BEGIN
 	
 	UPDATE pre
 		SET GroupID = GGS.GroupID, ProductId = GGS.ProductID
-	FROM #DataTmp_pre pre
+	FROM #DataTmp_pre pre WITH (NOLOCK)
 		INNER JOIN dbo.Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON pre.Bettype = GGS.BetTypeID
 	
 	INSERT INTO #DataTmp (CustId, WinlostDate, GroupID, TotalWinAmount,IsPrivateSetting,ProductId, BettypeIDList)
@@ -117,7 +117,7 @@ BEGIN
 	SET ExchangeID = cc.currency
 		, SiteID = s.siteid
 		, IsPrivateSetting = CASE WHEN CGS.CustID IS NOT NULL THEN 1 ELSE 0 END 
-	FROM #DataTmp t
+	FROM #DataTmp t 
 		INNER JOIN dbo.custInfo CI WITH (NOLOCK) ON t.CustId = ci.custid
 		INNER JOIN dbo.Customer cc WITH (NOLOCK) ON cc.custid = ci.recommend
 		INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = cc.site
