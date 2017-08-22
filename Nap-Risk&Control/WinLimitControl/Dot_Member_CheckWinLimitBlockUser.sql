@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Dot_Member_CheckWinLimitBlockUser]  
 (  
 	 @custID  INT ,  
@@ -13,6 +13,7 @@ AS
 	Revisions:  
 		- 20160617@Helen: CWL - phase 2 - BlockUser/block transfer - [Redmine: 57722]
 		- 20170623@Helen: CWL - Block Transferred cannot run - [Redmine: 78851]
+		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
 		
 */  
 BEGIN  
@@ -23,7 +24,9 @@ BEGIN
 			
 	DECLARE @Max_level VARCHAR(50)
 	
-	SET @Max_level = ISNULL((SELECT TOP 1 LevelName FROM Winlimit_LevelSetting WITH (NOLOCK)
+	SET @Max_level = ISNULL((SELECT TOP 1 LevelName 
+							FROM Winlimit_LevelSetting WITH (NOLOCK)
+							WHERE LevelID NOT IN (4,5)
 							ORDER BY LevelID DESC),'')
 	
 	IF @Bettype IS NOT NULL	-- For PlaceBet	
