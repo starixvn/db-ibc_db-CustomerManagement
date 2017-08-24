@@ -47,6 +47,7 @@ Revisions:
 	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	
@@ -87,6 +88,7 @@ BEGIN
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
+		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
@@ -95,6 +97,7 @@ BEGIN
     SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
+	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
     SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
     SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
@@ -117,6 +120,7 @@ BEGIN
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
+		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
 		,	@IsHidden_FishingWorld	INT = 1
 		,	@IsHidden_VS			INT = 1
@@ -126,6 +130,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
@@ -240,6 +245,11 @@ BEGIN
 		   ISNULL(ci.SyncedVoidBridgeUpline,1) AS SyncedVoidBridgeUpline,
 		   ISNULL(ci.SyncedVoidBridgeDownline,1) AS SyncedVoidBridgeDownline,
 		   
+		   ISNULL(ci.DisableLottery,1) AS DisableLottery,
+		   ISNULL(ci.DisableLotteryUpline,1) AS DisableLotteryUpline,
+		   ISNULL(ci.HideLottery,1) AS HideLottery,
+		   ISNULL(ci.HideLotteryUpline,1) AS HideLotteryUpline,
+
 		   ISNULL(ci.DisableNG2,1) AS DisableNG2,
 		   ISNULL(ci.DisableNG2Upline,1) AS DisableNG2Upline,
 		   ISNULL(ci.HideNG2,1) AS HideNG2,
@@ -252,13 +262,12 @@ BEGIN
 		   ISNULL(ci.HideFishingWorldUpline,1) AS HideFishingWorldUpline,
 		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
 		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
-		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
+		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,		  		   
 		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
 		   ISNULL(ci.DisableVirtualSports,1) AS DisableVirtualSports,
 		   ISNULL(ci.DisableVirtualSportsUpline,1) AS DisableVirtualSportsUpline,
 		   ISNULL(ci.HideVirtualSports,1) AS HideVirtualSports,
 		   ISNULL(ci.HideVirtualSportsUpline,1) AS HideVirtualSportsUpline,
-		   
 		   --For Myanmar Odds
 		   CASE WHEN ac.CustId IS NOT NULL THEN 1 ELSE 0 END AS  IsMyanmarOdds,
 		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
@@ -333,7 +342,12 @@ BEGIN
 										THEN 0
 									ELSE 1
 							END AS SyncedVoidBridgeDownline,
-
+							-- For Lottery
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLottery,
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLotteryUpline,
+							CAST(CASE WHEN @IsHidden_Lottery = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lottery)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
+							CAST(CASE WHEN @IsHidden_Lottery = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_Lottery)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLotteryUpline,						
+							
 							-- For NG2
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2Upline,
@@ -365,7 +379,7 @@ BEGIN
 															AND ISNULL(HideGoldDeluxe,1)=1)
 										THEN 0
 									ELSE 1
-							END AS SyncedGoldDeluxeDownline,
+								END AS SyncedGoldDeluxeDownline,
 							
 							-- For VS
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSports,
@@ -438,8 +452,8 @@ BEGIN
 			ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2, ci.HideNG2Upline, ci.SyncedNG2, ci.SyncedNG2Upline,
 			ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld, ci.HideFishingWorldUpline, ci.SyncedFishingWorld, ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,
 			ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
+			ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery, ci.HideLotteryUpline,
 			ci.SyncedGoldDeluxeDownline
 	ORDER BY RowNumber
 END
-
 GO
