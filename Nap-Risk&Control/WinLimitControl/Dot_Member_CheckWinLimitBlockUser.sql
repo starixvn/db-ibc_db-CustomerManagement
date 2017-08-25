@@ -24,10 +24,15 @@ BEGIN
 			
 	DECLARE @Max_level VARCHAR(50)
 	
+	DECLARE @WinlimitLevel_min INT, @WinlimitLevel_max INT
+	
+	SET @WinlimitLevel_min = 1
+	SET @WinlimitLevel_max = 100
+	
 	SET @Max_level = ISNULL((SELECT TOP 1 LevelName 
-							FROM Winlimit_LevelSetting WITH (NOLOCK)
-							WHERE LevelID NOT IN (4,5)
-							ORDER BY LevelID DESC),'')
+							FROM dbo.Winlimit_LevelSetting WITH (NOLOCK)
+							WHERE LevelID >= @WinlimitLevel_min AND LevelID <= @WinlimitLevel_max
+							ORDER BY LevelOrder DESC),'')
 	
 	IF @Bettype IS NOT NULL	-- For PlaceBet	
 	BEGIN
@@ -41,19 +46,19 @@ BEGIN
 	END
 	ELSE -- For Withdraw/Transfer
 	BEGIN
-		IF EXISTS(SELECT 1 FROM WinLimit_CustGameStatus (NOLOCK) WHERE CustID = @custID)
+		IF EXISTS(SELECT 1 FROM dbo.WinLimit_CustGameStatus (NOLOCK) WHERE CustID = @custID)
 		BEGIN
 			SELECT CS.ProductID,CS.BettypeID,CASE WHEN CS.IsBlockedTransfer = 1 THEN @Max_level ELSE LS.LevelName END AS 'CWL status',CS.IsBlockedTransfer
 			FROM dbo.WinLimit_CustGameStatus CS WITH (NOLOCK) 
 				 CROSS APPLY (SELECT TOP 1 CM_1.LevelID   
-								FROM WinLimit_CustGameMonitoring CM_1 WITH (NOLOCK)   
-									INNER JOIN Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON GGS.GroupID =CM_1.GroupID 
+								FROM dbo.WinLimit_CustGameMonitoring CM_1 WITH (NOLOCK)   
+									INNER JOIN dbo.Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON GGS.GroupID =CM_1.GroupID 
 																							AND CM_1.ProductID = GGS.ProductID 
 																							AND CS.BettypeID = GGS.BetTypeID
 								WHERE CS.CustID = CM_1.CustID AND CS.ProductID = CM_1.ProductID 
 								ORDER BY CM_1.ModifiedDate DESC  
 								) CM  
-				INNER JOIN Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = CM.LevelID
+				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = CM.LevelID
 			WHERE cs.CustID = @custID 
 		END
 		ELSE
