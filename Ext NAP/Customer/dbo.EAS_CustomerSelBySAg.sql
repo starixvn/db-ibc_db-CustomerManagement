@@ -47,12 +47,14 @@ Revisions:
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
+	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
+
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
 BEGIN
     SET NOCOUNT ON  
 
-    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0
+    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0
 	DECLARE @IsMyanmarOdds BIT = 0
 	 DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
 	 
@@ -74,6 +76,9 @@ BEGIN
      WHERE custid = @SRecommend
 	 
 	 EXEC DBPOLICY.bodb02.dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+
+	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @SRecommend AND cl.SecurityCode IS NOT NULL)
+		SELECT @UplineHasSecurityCode = 1
 
 	-- For DCS
     DECLARE	@bitmapOrder_MuayThai		INT 
@@ -271,6 +276,7 @@ BEGIN
 			ISNULL(ci.HideCricket,1) AS HideCricket,
 			ISNULL(cdm.Discount,0) AS discountCricket,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
+			@UplineHasSecurityCode AS UplineHasSecurityCode,
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  isnull(ci.reject, 0), cu.username) as RowNumber
 				                                  
