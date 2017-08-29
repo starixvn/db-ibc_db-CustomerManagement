@@ -344,7 +344,7 @@ BEGIN
 	WHERE (
 			-- cover for both Winlimt & LossLimit
 			LS.LevelOrder < T.LevelOrder
-			-- from Loss Limit to Win limit (Level 4 -> Level 2): currently reaching loss limit (such as level 4) and then reach to winlimit (such as level 2) 
+			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
 				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
