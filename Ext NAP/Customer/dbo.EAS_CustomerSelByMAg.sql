@@ -58,7 +58,7 @@ exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@
 BEGIN
     SET NOCOUNT ON  
 
-    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0
+    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0, @HasSecurityCode BIT = 0
 	DECLARE @IsMyanmarOdds BIT = 0
 	
 	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
@@ -83,6 +83,8 @@ BEGIN
 
 	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @MRecommend AND cl.SecurityCode IS NOT NULL)
 		SELECT @UplineHasSecurityCode = 1
+	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @Custid AND cl.SecurityCode IS NOT NULL)
+		SELECT @HasSecurityCode = 1
 
 	-- For DCS
     DECLARE	@bitmapOrder_MuayThai		INT 
@@ -285,6 +287,7 @@ BEGIN
 			ISNULL(cdm.Discount,0) AS discountCricket,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 			@UplineHasSecurityCode AS UplineHasSecurityCode,
+			@HasSecurityCode AS HasSecurityCode,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject, 0), cu.username) RowNumber
       FROM dbo.customer cu WITH(NOLOCK)
 		INNER JOIN (SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
