@@ -50,6 +50,8 @@ Revisions:
 	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
+	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
+
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
 BEGIN
@@ -68,7 +70,7 @@ BEGIN
 		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
 	 END CATCH
 	 
-	 DECLARE @IsMyanmarOdds BIT = 0, @IsInternalAdmin BIT = 0
+	 DECLARE @IsMyanmarOdds BIT = 0, @IsInternalAdmin BIT = 0, @HasSecurityCode BIT = 0
 	 
     INSERT INTO @tmpSuperList(CustID, username)
     SELECT custID, username 
@@ -93,6 +95,9 @@ BEGIN
                                END
 
 	EXEC DBPOLICY.bodb02.dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+
+	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @Custid AND cl.SecurityCode IS NOT NULL)
+		SELECT @HasSecurityCode = 1
 
     --------output
     -- For DCS
@@ -329,7 +334,8 @@ BEGIN
 			1 AS DisableVirtualSportsUpline,
 			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 			1 AS HideVirtualSportsUpline,
-
+			1 AS UplineHasSecurityCode,
+			@HasSecurityCode AS HasSecurityCode,
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  ISNULL(ci.reject,0), cu.username) as RowNumber
       FROM dbo.customer cu with(nolock)

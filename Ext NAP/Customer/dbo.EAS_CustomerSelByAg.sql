@@ -48,13 +48,15 @@ Revisions:
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
+	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
+	- 20170828@Elodie: Account with no permission view special site cann't search member 789y in customer list - [Redmine: #79254]
 
-exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
+	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
 BEGIN    
     SET NOCOUNT ON  
 
-    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0
+    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0
 	DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0
 	
 	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
@@ -81,7 +83,10 @@ BEGIN
      FROM dbo.custagent WITH(NOLOCK)
      WHERE custid = @Recommend
 
-	 	 EXEC DBPOLICY.bodb02.dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+	 EXEC DBPOLICY.bodb02.dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+
+	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @Recommend AND cl.SecurityCode IS NOT NULL)
+		SELECT @UplineHasSecurityCode = 1
 
 	-- For DCS
     DECLARE	@bitmapOrder_MuayThai		INT 
@@ -269,13 +274,15 @@ BEGIN
        and sporttype = 161
        
 	-- get data for filtered customers	
-	DECLARE @SearchQuery varchar(1024)
+	DECLARE @SearchQuery varchar(1024), @AgentSite VARCHAR(10)
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
 	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
 	SELECT @SearchQuery = 'SELECT * 
 	FROM OPENQUERY(DBPOLICY, 
 	''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
+
+	SELECT @AgentSite = site FROM Customer WITH (NOLOCK) WHERE custid = @Recommend
 
 	INSERT INTO  @tmp (siteid , site,SpecialGroup)
 	EXECUTE(@SearchQuery)
@@ -440,7 +447,8 @@ BEGIN
 			ISNULL(ci.HideCricket,1) AS HideCricket,
 			ISNULL(cdm.PlayerDiscount,0) AS playerdiscountCricket,
 			ISNULL(cdm.AgentDiscount,0) AS discountCricket,
-			ISNULL(cl.ClosedReason,0) AS ClosedReason
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,
+			@UplineHasSecurityCode AS UplineHasSecurityCode
       FROM dbo.customer AS cu with(NOLOCK)
 		INNER JOIN #Custinfo ci with(nolock) on cu.custid = ci.custid
 		
@@ -455,7 +463,7 @@ BEGIN
 		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cu.custid=cl.CustID
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
-			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
+			AND (@IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @tmp ))
 	 GROUP BY cu.custid, cu.username, cu.username2, cu.ugroup, ci.enabled, ci.closed,
 				ci.reject, cu.roleid, cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,
 				ci.DoubleCommLosing, ci.DisableOutright, ci.disablehorseracing,
