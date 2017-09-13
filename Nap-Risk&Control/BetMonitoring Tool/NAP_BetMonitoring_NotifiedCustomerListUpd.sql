@@ -11,7 +11,8 @@ AS
 	Task: Get customer list to send email - [Redmine:#58401]
 	DB: DBACC/bodb_ACC
   
-	Revisions:  	
+	Revisions:  
+	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 	Param's Explanation:  
 		- @CustList = '<Notify>
 							<row c = "1" s = "1"/>
@@ -26,7 +27,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE	@DocHandler	INT, @startRun DATETIME, @endRun DATETIME, @duration INT											
-	CREATE TABLE #tmpCust (CustID INT, SportType TINYINT)
+	CREATE TABLE #tmpCust (CustID INT, SportType SMALLINT)
 	CREATE CLUSTERED INDEX CIX_tmpCust ON #tmpCust(CustID,SportType)
 
 	SET	@startRun = GETDATE();  
@@ -40,7 +41,7 @@ BEGIN
 		SELECT	Data.c
 			,	Data.s
 		FROM OPENXML (@DocHandler, '/Notify/row', 1) 
-		WITH (c INT, s TINYINT) AS Data;
+		WITH (c INT, s SMALLINT) AS Data;
 
 		EXECUTE	sp_xml_removedocument @DocHandler;
 		-- end read xml	

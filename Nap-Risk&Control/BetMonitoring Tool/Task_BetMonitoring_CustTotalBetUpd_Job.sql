@@ -11,6 +11,7 @@ AS
 	DB: DBACC/bodb_ACC
   
 	Revisions:  
+		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 		
 */
 BEGIN
@@ -21,7 +22,7 @@ BEGIN
 
 	SELECT @WinLostDate =  CONVERT(NVARCHAR(10), @WinLostDate, 120)
 	
-	CREATE TABLE #tmpCustBetting (CustID INT, SportType TINYINT, BetCount INT)
+	CREATE TABLE #tmpCustBetting (CustID INT, SportType SMALLINT, BetCount INT)
 	CREATE CLUSTERED INDEX CIX_tmpCustBetting ON #tmpCustBetting(CustID,SportType) 
 	
 	INSERT INTO #tmpCustBetting (CustID, SportType, BetCount)
