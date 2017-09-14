@@ -1,14 +1,7 @@
-USE [bodb_Age]
+/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+USE [bodb_AGE]
 GO
 
-/****** Object:  StoredProcedure [dbo].[NAP_LimitLoss_MonitorList]    Script Date: 06/08/2016 18:15:05 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_LimitLoss_MonitorList    Script Date: 6/27/2014 1:18:44 PM ******/
 ALTER PROCEDURE [dbo].[NAP_LimitLoss_MonitorList]
 AS
 /*

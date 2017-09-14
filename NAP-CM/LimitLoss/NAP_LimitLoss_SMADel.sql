@@ -1,22 +1,15 @@
-USE [bodb_Age]
+/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+USE [bodb_AGE]
 GO
 
-/****** Object:  StoredProcedure [dbo].[NAP_LimitLoss_SMADel]    Script Date: 06/08/2016 13:17:08 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-/****** Object:  Stored Procedure dbo.NAP_LimitLoss_MonitorList    Script Date: 6/27/2014 1:18:44 PM ******/
-CREATE PROCEDURE [dbo].[NAP_LimitLoss_SMADel]
-    @CustId	 INT,
-    @Creator	 INT = 0,
-    @IP		 NVARCHAR(50) = NULL,
+ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMADel]
+    @CustId		INT,
+	@Mode		BIT = 0,
+    @UserID		INT = 0,
+    @IP			NVARCHAR(50) = NULL,
     
-    @ErrCode	 INT = 0 OUT,
-    @ErrMsg	 NVARCHAR(200) = '' OUT
+    @ErrCode	INT = 0 OUT,
+    @ErrMsg		NVARCHAR(200) = '' OUT
 
 AS
 /*
@@ -26,7 +19,11 @@ AS
 	DB: DBAGE/bodb_Age
 
 	Revisions:
+		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
+
 	Parameter's explaination: 
+		- Mode =	0: SMA setting
+					1: Group Headline Setting
 	
 	Example:
 	
@@ -35,27 +32,48 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE	 @startRun	DATETIME,
-			 @endRun		DATETIME,
-			 @duration	INT
-    SET		 @startRun = GETDATE()
+    DECLARE	@startRun			DATETIME,
+			@endRun				DATETIME,
+			@duration			INT,
+			@MaxLoss_Old		MONEY,
+			@GroupHeadlineID	SMALLINT
+
+    SET		@startRun = GETDATE()
 
     --Check permission 
-    EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+    EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
     IF @ErrCode <> 0
 	    RETURN
 
-    IF @CustId <= 0
-	   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
-    BEGIN
-	    SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
-	    RETURN
-    END
+	IF @Mode = 0
+	BEGIN
+		IF @CustId <= 0
+		   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
+			RETURN
+		END
+		
+		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
 
-    DECLARE @MaxLoss_Old MONEY
-    SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+		DELETE LimitLoss_Setting WITH(ROWLOCK,UPDLOCK) WHERE CustID=@CustID
+	END
 
-    DELETE LimitLoss_Setting WITH(ROWLOCK,UPDLOCK) WHERE CustID=@CustID
+	IF @Mode = 1
+	BEGIN
+		SELECT @GroupHeadlineID = groupID FROM bodb02.dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
+		 
+		IF @CustId <= 0
+		   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_HeadlineSetting ls WITH (NOLOCK) WHERE ls.GroupHeadlineID = @GroupHeadlineID)
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Headline.'
+			RETURN
+		END
+
+		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_HeadlineSetting ls WITH (NOLOCK) WHERE ls.GroupHeadlineID = @GroupHeadlineID
+
+		DELETE LimitLoss_HeadlineSetting WITH(ROWLOCK,UPDLOCK) WHERE GroupHeadlineID = @GroupHeadlineID
+	END
 
     DECLARE @LogData NVARCHAR(4000)
 
@@ -64,31 +82,29 @@ BEGIN
 
     SELECT @LogData = '<NAP_LimitLoss_SMADel CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
 					    + 'MaxLoss="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+						+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
 					    + 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 					    + 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
 					    + 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
 
-    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-				    @Userid = @Creator,
-				    @ActionID = 665,
-				    @TrackingValue = @LogData,
-				    @Duration = @duration
-
+	BEGIN TRY
+		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			@Userid = @UserID,
+			@CustID = @CustID,
+			@ActionID = 665,
+			@TrackingValue = @LogData,
+			@Duration = @duration			
+	END TRY
+	BEGIN CATCH
+		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			@Userid = @UserID,
+			@CustID = @CustID,
+			@ActionID = 665,
+			@TrackingValue = @LogData,
+			@Duration = @duration	
+	END CATCH
 END
 
-/*
-GO
-GRANT EXECUTE ON [dbo].[NAP_LimitLoss_SMADel] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_LimitLoss_SMADel] TO [bodbAdminNet]
-GO
-*/
-
-GO
-GRANT EXECUTE ON [dbo].[NAP_LimitLoss_SMADel] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_LimitLoss_SMADel] TO [bodbAdminNet]
-GO
 
 
 
