@@ -6,6 +6,7 @@ ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
 				,	@IP						VARCHAR(15)		= ''
+				,	@SportType				SMALLINT		= 0
 				,	@ErrCode				INT				= 0			OUTPUT 
 				,	@ErrMsg					NVARCHAR(4000)	= ''		OUTPUT  
 AS  
@@ -20,8 +21,11 @@ AS
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
 		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
-
+		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
 	Param's Explanation:  
+		- @SportType = 0 : All
+					 = 1 : Soccer
+					 = 2 : Other Sports
 		- @VirtualMultiplier = '<ROOT>
 									<Rate CustIds="1,2,3,4,5,6" VirtualMultiplier="0.7" />	
 									<Rate CustIds="11,22,33,44,55,66" VirtualMultiplier="1.5" />
@@ -136,11 +140,12 @@ BEGIN
 
 		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),@VR_ExcludeBA_XML)
 	END
-
+	
 	-- Update via Execrep
-	EXECUTE	dbo.Acc_CustSetting_10 
-				@VirtualMultiplier = @VirtualMultiplier;
-
+		EXECUTE	dbo.Acc_CustSetting_10 
+					@VirtualMultiplier = @VirtualMultiplier
+					,@SportType=@SportType;
+	
 	-- Update enable virtual rate via Execrep
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04 @custid = 0, @roleid = 0, @action = 'EnableVirtualMultiplier', @EnableVirtualMultiplier = @VirtualMultiplier;
 
