@@ -1,4 +1,8 @@
-﻿ALTER PROCEDURE [dbo].[Age_LoginDownline]  
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO 
+
+ALTER PROCEDURE [dbo].[Age_LoginDownline]  
 	@UserName varchar(50) = '' OUTPUT,  
 	@UserPwd varchar(50),  
 	@LoginIP varchar(15)='' OUTPUT,  --- if output=NULL then account is the first login
@@ -34,7 +38,7 @@ AS
 /*
 Created: 
 Task : login from agent site
-DB: DBTXN/BODB02
+DB: DBCUST/CustDB
 Original:
 
 Revisions:
@@ -67,8 +71,8 @@ Revisions:
 	- 20130327@Jamie: Close account if login fail over 5 times.
 	- 20130328@Jamie: Get LastChangedPwdDate in case login via OldUserPwd
 	- 20130409@Johnson: Get more fields SecurityCode and isForcedChangeSecurityCode 
-	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
-	
+	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 	
+
 Param's Explanation:
 • @IsNickname: is use Nickname or not
 • @NicknameLoginOnly: Value of the option Set login option by nickname only
