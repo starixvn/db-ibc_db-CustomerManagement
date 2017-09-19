@@ -25,7 +25,7 @@ AS
 				@IsSpecialHeadline BIT = 0,
 				@SiteCode TINYINT = 1
 
-		EXEC Acc_CustomerIsSpecialSite_xpre @UserName = 'supertest246xxx', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
+		EXEC Acc_CustomerIsSpecialSite_xpre @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
 
 		SELECT @SiteCode, @IsSpecialSite, @IsSpecialHeadline
 
@@ -65,8 +65,8 @@ BEGIN
 		END
 	END
 
-	IF @site = '246xxx'
-		SELECT @SiteCode = 2
+	IF @site = 'Y987'
+		SELECT @SiteCode = 9
 	ELSE IF @site = '789y'
 		SELECT @SiteCode = 7
 	ELSE 
@@ -97,14 +97,14 @@ BEGIN
 					FROM #tmpCustGroup cg
 						INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
 						INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = c.site
-					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4 AND c.site = '246xxx')
+					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4 AND c.site = 'Y987')
 			OR EXISTS (	SELECT 1
 						FROM #tmpCustGroup cg
 							INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
 							INNER JOIN dbo.customer ag WITH (NOLOCK) ON c.recommend = ag.custid
 							INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = ag.site
-						WHERE SpecialGroup = 1 AND c.roleid = 1 AND c.site = '246xxx')
-			SELECT @IsSpecialHeadline = 1, @SiteCode = 2
+						WHERE SpecialGroup = 1 AND c.roleid = 1 AND c.site = 'Y987')
+			SELECT @IsSpecialHeadline = 1, @SiteCode = 9
 	END
 END
 

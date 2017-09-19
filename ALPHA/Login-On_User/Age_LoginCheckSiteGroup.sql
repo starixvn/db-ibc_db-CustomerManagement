@@ -21,8 +21,8 @@ AS
 	• @SiteGroup: Check the site and corresponding domain
 		+ ALL: All add domains 
 		+ 789y: Allow customers of 789y ONLY
-		+ 789y: Allow customers of 789y ONLY
-		+ IBCBET | Others: Allow all customers except 789y
+		+ Y987: Allow customers of Y987 ONLY
+		+ IBCBET | Others: Allow all customers except 789y and Y987
 
 
 */
@@ -33,11 +33,11 @@ BEGIN
 	BEGIN
 		SELECT	@isAllowed  = 1 
 	END
-	ELSE IF @SiteGroup IN ('789y','246xxx','IBCBET','Others')
+	ELSE IF @SiteGroup IN ('789y','Y987','IBCBET','Others')
 	BEGIN
 		IF @SiteGroup ='789y' AND @Site='789y'	SELECT	@isAllowed = 1
-		IF @SiteGroup ='246xxx' AND @Site='246xxx'	SELECT	@isAllowed = 1		 
-		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @Site <> '789y' SELECT @isAllowed = 1
+		IF @SiteGroup ='Y987' AND @Site='Y987'	SELECT	@isAllowed = 1		 
+		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @Site <> '789y' AND @Site <> 'Y987' SELECT @isAllowed = 1
 		ELSE SELECT @isAllowed = 0 			
 	END 
 	ELSE SELECT	@isAllowed = 0 	
