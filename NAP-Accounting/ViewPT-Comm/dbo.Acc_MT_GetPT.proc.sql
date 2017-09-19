@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-alter PROCEDURE [dbo].[Acc_MT_GetPT] 
+CREATE PROCEDURE [dbo].[Acc_MT_GetPT] 
 	@UserName varchar(30),
 	@Sporttype smallint = 1,
 	@Bettype smallint = 1,
@@ -36,6 +36,7 @@ Revisions:
 	- 20140402@Kathy: Add Virtual Speedway (183), Virtual Virtual Cycling (185)	[Redmine:#14142]
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports, bettype)
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
+	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -46,7 +47,7 @@ Param's Explanation:
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
-DECLARE @tmp_Sports TABLE (SportType TINYINT, SportName NVARCHAR(50))
+DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 DECLARE @tmp_Bettype TABLE (TypeID INT, TypeNamee NVARCHAR(50))
 	
 BEGIN TRY

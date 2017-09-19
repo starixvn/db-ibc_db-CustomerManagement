@@ -1,4 +1,5 @@
-CREATE PROCEDURE [dbo].[Acc_MT_GetKenoPT_xtest]
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+CREATE PROCEDURE [dbo].[Acc_MT_GetKenoPT]
 	@username	varchar(50),  
 	@Sporttype	int = 202,
 	@Bettype	int,
@@ -14,13 +15,13 @@ AS
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports, bettype)
 		- 20150807@Elodie: Correct show PT for deposit customer [Redmine:#36137]
-
+		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 	Parameters Explanation:
  */
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
-DECLARE @tmp_Sports TABLE (SportType TINYINT, SportName NVARCHAR(50))
+DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 DECLARE @tmp_Bettype TABLE (TypeID INT, TypeNamee NVARCHAR(50))
 	
 BEGIN TRY
@@ -224,8 +225,3 @@ end
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_MT_GetKenoPT] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_MT_GetKenoPT] TO [vnteam]
- 
- 

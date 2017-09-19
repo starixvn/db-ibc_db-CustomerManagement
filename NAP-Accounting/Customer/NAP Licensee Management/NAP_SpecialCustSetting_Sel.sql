@@ -15,10 +15,11 @@ AS
 		
 		Revisions:
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
+			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 			
 */
 SET NOCOUNT ON
-	DECLARE @tmp_Sports TABLE(SportType TINYINT,SportName NVARCHAR(50))
+	DECLARE @tmp_Sports TABLE(SportType SMALLINT,SportName NVARCHAR(50))
 	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
 	
 	BEGIN TRY

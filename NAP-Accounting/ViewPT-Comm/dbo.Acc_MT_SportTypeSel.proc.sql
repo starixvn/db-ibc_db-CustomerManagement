@@ -12,12 +12,13 @@ AS
 		- 20091201@Kiwi: Union with CustSetting3rd.
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports)
         - 20151021@Billy: Add support for DCS -- UNION with ProductSettingDetail		
+		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 */
 
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
-DECLARE @tmp_Sports TABLE (SportType TINYINT, SportName NVARCHAR(50))
+DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 	
 BEGIN TRY
 	INSERT INTO @tmp_Sports (SportType, SportName)
