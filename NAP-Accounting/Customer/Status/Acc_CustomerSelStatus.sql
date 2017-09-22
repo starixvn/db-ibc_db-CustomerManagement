@@ -330,7 +330,7 @@ Param's Explanation:
 
 			-- For Lucky3
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lucky3), 1) AS DisableLucky3,		
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lucky3), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3,
+			CAST(CASE WHEN @IsHidden_Lucky3 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lucky3), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3,
 
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
