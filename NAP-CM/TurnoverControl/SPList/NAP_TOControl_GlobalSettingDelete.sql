@@ -53,7 +53,7 @@ BEGIN
 	SELECT @MaxTurnover_Old = t.MaxTurnover 
 	FROM dbo.TOControl_Setting t WITH(NOLOCK) 
 		INNER JOIN @MatchList m ON t.matchid = m.matchid
-	WHERE t.CustID = @CustID
+	WHERE t.CustID = @CustID AND t.IsGroupHeadLine = @IsGroupHeadline
 	
 	SELECT @AffectedMatch = @AffectedMatch + CAST(t.MatchID AS VARCHAR(20)) + ',' 
 	FROM dbo.TOControl_Setting t WITH(NOLOCK) 
