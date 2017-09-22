@@ -1,20 +1,20 @@
 /*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [sb].[TOControl_TransitionIns]
 	@XMLString XML
 AS 
 /*
-Created: 20170324@Francis
-Task : Process message from SB queue to insert data into transition table
-DB: DBAGE.bodb02
+	Created: 20170324@Francis
+	Task : Process message from SB queue to insert data into transition table
+	DB: DBAGE.bodb02
 
-Original:
+	Original:
 
-Revisions:
+	Revisions:
+		- 20170919@Helen: TO Control Phase 3 - [redmine:75557]
 
-Param explanation:
+	Param explanation:
 
-/*
+	/*
 	XML mapping dictionary tag when buliding and parsing XML string
 	Tag		Stand_For
 	---		---------
@@ -24,32 +24,90 @@ Param explanation:
 	mid		matchid
 	aTO		adjusted_TurnOver
 	aHTO	adjusted_HouseTurnOver
-*/
+	*/
 
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY)
-
+	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME, adjusted_TurnOver MONEY, adjusted_HTOWithoutExtraPT MONEY)
+	
+	DECLARE @EventDate_min DATETIME
+	
+	CREATE TABLE #ExtraPTInfo (SuperID INT,ExtraPT DECIMAL(9,8), fromDate DATETIME, todate DATETIME)
+	
+	CREATE TABLE #GroupHeadline (CustID INT PRIMARY KEY, GroupID INT, RoleID INT, IsMemberExcluded BIT)
+	
+	SET @EventDate_min = (SELECT MIN(eventdate) FROM bodb02.dbo.match m WITH(NOLOCK))
+	
 	BEGIN TRY
-		INSERT INTO @TmpTable(srecommend, mrecommend, recommend, matchid, adjusted_TurnOver, adjusted_HouseTurnOver)
+		INSERT INTO @TmpTable(srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver, adjusted_HTOWithoutExtraPT)
 		SELECT x.v.value('(s/text())[1]','INT') AS srecommend,
 			   x.v.value('(m/text())[1]','INT') AS mrecommend,
 			   x.v.value('(a/text())[1]','INT') AS recommend,
+			   x.v.value('(p/text())[1]','INT') AS player,
 			   x.v.value('(mid/text())[1]','INT') AS matchid,
+			   x.v.value('(wld/text())[1]','SMALLDATETIME') AS winlostdate,
 			   x.v.value('(aTO/text())[1]','MONEY') AS adjusted_TurnOver,
-			   x.v.value('(aHTO/text())[1]','MONEY') AS adjusted_HouseTurnOver
+			   x.v.value('(aHTOWithoutExtraPT/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT
 		FROM @XMLString.nodes('/root/r') AS x(v)
 		OPTION (OPTIMIZE FOR (@XMLString = NULL))
 		
-		INSERT INTO dbo.TOControl_Transition (CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver)
-			SELECT gl.CustID, t.matchid, t.adjusted_TurnOver, t.adjusted_HouseTurnOver
-			FROM @TmpTable t INNER JOIN TOControl_GlobalSetting gl WITH (NOLOCK) 
-				 ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID)
-				 AND gl.MaxTurnOver != 0
+		-- Get Extra PT Info 
+		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
+		SELECT DISTINCT GHL.srecommend,EPT.ExtraPT,EPT.FromDate,EPT.ToDate
+		FROM dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK)
+			INNER JOIN @TmpTable GHL ON GHL.srecommend = EPT.SuperId
+		WHERE EPT.ProductId = 1 AND EPT.Sporttype  = 0 AND EPT.ToDate >= @EventDate_min
+		
+		-- Get Group Headline Info have global setting
+		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded)
+		SELECT DISTINCT GS.CustID, ca.GroupID, ci.roleid 
+			, IsMemberExcluded =  CASE WHEN CI.roleid = 1 
+											AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount CA1 WITH (NOLOCK)
+														WHERE CA1.groupID = ca.GroupID AND CA1.custID IN (ci.srecommend, ci.mrecommend, ci.recommend))
+										THEN 1 ELSE 0 END					
+			
+		FROM bodb02.dbo.CustGroupHeadline ca WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.Custinfo ci WITH (NOLOCK) ON ca.custID = ci.custid
+			INNER JOIN bodb02.dbo.TOControl_GlobalSetting GS WITH (NOLOCK) ON ca.CustID = GS.CustID AND GS.IsGroupHeadLine = 1 AND gs.MaxTurnOver <> 0
+			
+		WHERE EXISTS (SELECT 1 FROM @TmpTable tmp  WHERE tmp.srecommend = ca.CustID OR tmp.mrecommend = ca.CustID OR tmp.recommend = ca.CustID OR tmp.player = ca.CustID) 
+					
+		-- Inserting data into TOControl_Transition
+		INSERT INTO dbo.TOControl_Transition (CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)
+		-- For SMA Setting Level
+		SELECT gl.CustID, t.matchid, t.adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 0
+		FROM @TmpTable t 
+			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) AND IsGroupHeadLine = 0
+			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
+		WHERE gl.MaxTurnOver != 0
+		GROUP BY gl.CustID, t.matchid, t.adjusted_TurnOver
+		
+		-- For Headline Setting Level
+		UNION ALL
+		
+		SELECT gh.CustID, t.matchid, t.adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 1
+		FROM #GroupHeadline gh
+			INNER JOIN bodb02.dbo.custAccount CA WITH (NOLOCK) ON CA.groupID = gh.GroupID
+			INNER JOIN @TmpTable t ON t.srecommend = CA.CustID 
+									OR t.mrecommend = CA.CustID 
+									OR t.recommend = CA.CustID 
+									-- member under this group headline
+									OR (t.player = CA.custid AND ca.isGroupHeadline = 0)
+									-- exclude member play group headline, and his super/master/agent under this group
+									OR (t.player = CA.custid AND ca.isGroupHeadline = 1 AND gh.roleID = 1
+										AND gh.IsMemberExcluded = 0)
+							
+			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
+		GROUP BY gh.CustID, t.matchid, t.adjusted_TurnOver
+			 
 	END TRY
 	BEGIN CATCH --Write ErrLog
 		PRINT (ERROR_MESSAGE())
 	END CATCH
+	
+	DROP TABLE #ExtraPTInfo
+	DROP TABLE #GroupHeadline
+	
 END 

@@ -1,10 +1,9 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO 
-
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingInsert]
 	@UserName NVARCHAR(30),
 	@MaxTurnover MONEY,
+	@IsGroupHeadline BIT = 0,
+	@SportType SMALLINT = 1,
 	@UserID INT,
 	@IP	VARCHAR(40),
 	@ErrCode INT = 0 OUTPUT,
@@ -18,7 +17,7 @@ AS
 	DB: DBCUST.CustDB
 
 	Revisions:
-
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 	Parameter's explaination:
 */
 BEGIN 
@@ -29,7 +28,7 @@ BEGIN
 			@duration	INT
 	DECLARE @roleid INT
 	SET	@startRun = GETDATE()
-
+	
 	--Check permission 
 	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[GlobalSetting]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
@@ -44,36 +43,29 @@ BEGIN
 		RETURN
 	END
 
-	IF EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH(NOLOCK) WHERE CustID = @CustID)
+	IF EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH(NOLOCK) WHERE CustID = @CustID AND IsGroupHeadLine = @IsGroupHeadline AND Sporttype = @SportType)
 	BEGIN
 			SELECT @ErrCode = 102, @ErrMsg = 'The setting of this customer already existed!'
 			RETURN
 	END
 
 	CREATE TABLE #tmpTurnover(MatchId INT, SumOfStake MONEY, HouseTurnover MONEY)
+	
 	INSERT INTO #tmpTurnover(MatchId, SumOfStake, HouseTurnover)
-		EXECUTE DBAGE.bodb02.dbo.NAP_TOControl_MatchTurnoverByCustomerSelect @CustID = @CustID, @RoleID = @roleid
+	EXECUTE DBAGE.bodb02.dbo.NAP_TOControl_MatchTurnoverByCustomerSelect @CustID = @CustID, @RoleID = @roleid, @IsGroupHeadline = @IsGroupHeadline, @SportType = @SportType
+	
+	
+	INSERT INTO dbo.TOControl_Setting(CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, PercentLevel, IsNotified,IsGroupHeadline)
+	SELECT
+		@CustID, t.MatchId, @MaxTurnover AS MaxTurnOver, t.SumOfStake AS TotalTurnOver, t.HouseTurnover
+		,	CASE	WHEN @MaxTurnover = 0 THEN 10 
+					ELSE (SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting (NOLOCK) WHERE ((HouseTurnover*100)/@MaxTurnover) >= PercentValue)
+			END AS PercentLevel
+			
+		, 0 AS IsNotified
+		, @IsGroupHeadline AS IsGroupHeadline
+	FROM #tmpTurnover t WITH (NOLOCK)
 		
-	INSERT INTO dbo.TOControl_Setting(CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, PercentLevel, IsNotified)
-		SELECT
-			@CustID, t.MatchId, @MaxTurnover AS MaxTurnOver, t.SumOfStake AS TotalTurnOver, t.HouseTurnover, 
-			CASE
-				WHEN PercentUsed < 10 THEN 0
-				WHEN PercentUsed < 20 THEN 1
-				WHEN PercentUsed < 30 THEN 2
-				WHEN PercentUsed < 40 THEN 3
-				WHEN PercentUsed < 50 THEN 4
-				WHEN PercentUsed < 60 THEN 5
-				WHEN PercentUsed < 70 THEN 6
-				WHEN PercentUsed < 80 THEN 7
-				WHEN PercentUsed < 90 THEN 8
-				WHEN PercentUsed < 100 THEN 9
-				ELSE 10
-			END AS PercentLevel, 
-			0 AS IsNotified
-		FROM #tmpTurnover t
-			CROSS APPLY (SELECT CASE WHEN @MaxTurnover = 0 THEN 100 ELSE (HouseTurnover*100)/@MaxTurnover END) _(PercentUsed)
-
 	IF @@ERROR > 0 
 	BEGIN
 		SELECT @ErrCode = 103, @ErrMsg = 'Adding failed.'
@@ -81,8 +73,8 @@ BEGIN
 		
 	END
 	
-	INSERT INTO dbo.TOControl_GlobalSetting(CustID, MaxTurnOver) 
-		VALUES(@CustID, @MaxTurnover)
+	INSERT INTO dbo.TOControl_GlobalSetting(CustID, MaxTurnOver,SportType,IsGroupHeadLine) 
+	VALUES(@CustID, @MaxTurnover, @SportType,@IsGroupHeadline)
 
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF(millisecond, @startRun, @endRun)
@@ -90,6 +82,7 @@ BEGIN
 	DECLARE @LogData NVARCHAR(4000)
 	SELECT @LogData = '<NAP_TOControl_GlobalSettingInsert CustID="' + COALESCE(CAST(@CustID as varchar(50)),space(1)) + '" ' 					
 					+ 'MaxTuronver="' + COALESCE(CAST(@MaxTurnover AS VARCHAR(50)), SPACE(1)) + '" ' 
+					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(50)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 					+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
 					+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
@@ -106,3 +99,4 @@ BEGIN
 
 END
 GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingInsert] TO [bodbAdminNet]

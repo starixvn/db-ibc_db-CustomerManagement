@@ -3,7 +3,7 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[NAP_TOControl_MatchSelect]
-	@LeagueID INT,
+	@LeagueID INT = 0,
 	@FromDate DATETIME = NULL,
 	@ToDate DATETIME = NULL
 AS
@@ -14,7 +14,7 @@ AS
 	DB: DBAGE.bodb02
 
 	Revisions:
-
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 	Parameter's explaination:
 */
 BEGIN
@@ -22,11 +22,12 @@ BEGIN
 
 	SELECT m.matchid, m.eventdate, m.homeid, m.awayid
 	FROM dbo.match m WITH (NOLOCK)
-	WHERE m.leagueid = 	@LeagueID 
+	WHERE (@LeagueID = 0 OR m.leagueid = @LeagueID )
 		AND m.eventdate BETWEEN @FromDate AND @ToDate 
 		AND m.matchcode NOT LIKE '%hedge%'
-		AND eventstatus <> 'completed'
 	ORDER BY m.eventdate
 
 END
+GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchSelect] TO [bodbAdminNet]
 GO

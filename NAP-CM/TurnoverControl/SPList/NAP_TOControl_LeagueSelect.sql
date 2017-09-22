@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[NAP_TOControl_LeagueSelect]
+CREATE PROCEDURE [dbo].[NAP_TOControl_LeagueSelect]
 	@SportType INT,   
 	@FromDate DATETIME,   
 	@ToDate DATETIME,  
@@ -15,7 +15,7 @@ AS
 	DB: DBAGE.bodb02
 
 	Revisions:
-
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 	Parameter's explaination:
 		@MoveBetDate	= NULL		: used for Add SMA Turnover
 						<> NULL		: Used for list SMA Turnover
@@ -31,7 +31,7 @@ BEGIN
 			SELECT DISTINCT l.leagueid, l.leaguename  
 			FROM dbo.League l WITH(NOLOCK)   
 				INNER JOIN dbo.match m WITH (NOLOCK) ON l.leagueid = m.leagueid 
-			WHERE l.sporttype = @SportType AND m.eventdate BETWEEN @FromDate AND @ToDate and eventstatus <> 'completed' and matchcode not like '%hedge%'
+			WHERE l.sporttype = @SportType AND m.eventdate BETWEEN @FromDate AND @ToDate and matchcode NOT LIKE '%hedge%'
 	END
 	ELSE
 	BEGIN
@@ -73,3 +73,4 @@ BEGIN
 
 END
 GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_LeagueSelect] TO [bodbAdminNet]
