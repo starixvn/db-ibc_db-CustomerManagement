@@ -36,7 +36,7 @@ BEGIN
 	ELSE IF @SiteGroup IN ('789y','Y987','IBCBET','Others')
 	BEGIN
 		IF @SiteGroup ='789y' AND @Site='789y'	SELECT	@isAllowed = 1
-		IF @SiteGroup ='Y987' AND @Site='Y987'	SELECT	@isAllowed = 1		 
+		ELSE IF @SiteGroup ='Y987' AND @Site='Y987'	SELECT	@isAllowed = 1		 
 		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @Site <> '789y' AND @Site <> 'Y987' SELECT @isAllowed = 1
 		ELSE SELECT @isAllowed = 0 			
 	END 
