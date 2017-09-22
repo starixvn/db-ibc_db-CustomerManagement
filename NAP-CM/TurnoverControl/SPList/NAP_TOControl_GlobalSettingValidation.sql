@@ -53,8 +53,8 @@ BEGIN
 	SELECT GS.ID, GS.Username,GS.IsGroupHeadline,GS.MaxTurnover,GS.SportType, 2
 	FROM #GlobalSettingTbl GS WITH (NOLOCK)
 		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON gs.username = ci.username
-		LEFT JOIN dbo.custAccount CA WITH (NOLOCK) ON CA.custid = ci.custid
-	WHERE GS.IsGroupHeadline IN ('x','X') AND (CA.custid IS NULL OR CA.IsGroupHeadLine = 0)
+		LEFT JOIN dbo.CustGroupHeadline CA WITH (NOLOCK) ON CA.custid = ci.custid
+	WHERE GS.IsGroupHeadline IN ('x','X') AND (CA.custid IS NULL)
 	
 	UNION ALL
 	
