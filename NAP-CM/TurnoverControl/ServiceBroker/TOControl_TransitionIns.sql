@@ -77,17 +77,17 @@ BEGIN
 		-- Inserting data into TOControl_Transition
 		INSERT INTO dbo.TOControl_Transition (CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)
 		-- For SMA Setting Level
-		SELECT gl.CustID, t.matchid, t.adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 0
+		SELECT gl.CustID, t.matchid, SUM(t.adjusted_TurnOver) AS adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 0
 		FROM @TmpTable t 
 			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) AND IsGroupHeadLine = 0
 			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
 		WHERE gl.MaxTurnOver != 0
-		GROUP BY gl.CustID, t.matchid, t.adjusted_TurnOver
+		GROUP BY gl.CustID, t.matchid --, t.adjusted_TurnOver
 		
 		-- For Headline Setting Level
 		UNION ALL
 		
-		SELECT gh.CustID, t.matchid, t.adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 1
+		SELECT gh.CustID, t.matchid, SUM(t.adjusted_TurnOver) AS adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 1
 		FROM #GroupHeadline gh
 			INNER JOIN bodb02.dbo.custAccount CA WITH (NOLOCK) ON CA.groupID = gh.GroupID
 			INNER JOIN @TmpTable t ON t.srecommend = CA.CustID 
@@ -100,7 +100,7 @@ BEGIN
 										AND gh.IsMemberExcluded = 0)
 							
 			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
-		GROUP BY gh.CustID, t.matchid, t.adjusted_TurnOver
+		GROUP BY gh.CustID, t.matchid--, t.adjusted_TurnOver
 			 
 	END TRY
 	BEGIN CATCH --Write ErrLog
