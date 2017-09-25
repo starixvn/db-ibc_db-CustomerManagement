@@ -79,7 +79,7 @@ BEGIN
 					
 					ELSE ''
 				END AS Level
-			 , e.currency AS Currency
+			 , CASE WHEN CA.custid IS NOT NULL THEN 'RM' ELSE e.currency END AS Currency
 			 , CONVERT(MONEY,GS.MaxTurnover) AS MaxTurnover
 	FROM #GlobalSettingTbl GS WITH (NOLOCK)
 		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON gs.username = ci.username

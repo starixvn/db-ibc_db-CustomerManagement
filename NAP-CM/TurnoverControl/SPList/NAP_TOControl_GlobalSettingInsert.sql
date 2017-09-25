@@ -34,15 +34,26 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN
 
-	DECLARE @CustID INT
+	DECLARE @CustID INT, @GroupHeadlineID INT
 	SELECT @CustID = CustID, @roleid = RoleID FROM dbo.CustInfo WITH(NOLOCK) WHERE UserName = @UserName
 
-	IF @CustID IS NULL OR @roleid = 1
+	IF (@CustID IS NULL OR @roleid = 1) AND @IsGroupHeadline = 0
 	BEGIN
 		SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
 		RETURN
 	END
-
+	
+	IF @IsGroupHeadline = 1
+	BEGIN
+		SET @GroupHeadlineID = (SELECT GroupID FROM dbo.CustGroupHeadline CG WITH (NOLOCK) WHERE CustID = @CustID)
+		
+		IF @GroupHeadlineID IS NULL
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Headline.'
+			RETURN
+		END	
+	END
+	
 	IF EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH(NOLOCK) WHERE CustID = @CustID AND IsGroupHeadLine = @IsGroupHeadline AND Sporttype = @SportType)
 	BEGIN
 			SELECT @ErrCode = 102, @ErrMsg = 'The setting of this customer already existed!'

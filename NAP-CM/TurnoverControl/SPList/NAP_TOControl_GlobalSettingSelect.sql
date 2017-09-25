@@ -24,7 +24,7 @@ BEGIN
 				WHEN t.IsGroupHeadLine = 1 THEN 'Headline'
 				ELSE CASE ci.RoleID WHEN  4 THEN 'Super' WHEN 3 THEN 'Master' WHEN 2 THEN 'Agent' END 
 		   END AS [Level]
-		, ex.Currency
+		, CASE WHEN T.IsGroupHeadLine = 1 THEN 'RM' ELSE ex.Currency END AS Currency
 		, t.MaxTurnover
 		, t.CustID
 	FROM dbo.TOControl_GlobalSetting t WITH(NOLOCK) 

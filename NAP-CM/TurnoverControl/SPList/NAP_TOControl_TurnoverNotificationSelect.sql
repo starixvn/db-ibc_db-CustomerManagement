@@ -49,7 +49,8 @@ BEGIN
 	-- return result
 	SELECT 
 		m.sporttype, m.leagueid, m.matchid, m.homeid, m.awayid, m.eventdate,
-		c.custid, c.username, e.currency
+		c.custid, c.username
+		, CASE WHEN t.IsGroupHeadline = 1 THEN 'RM' ELSE e.currency END AS currency
 		, CASE WHEN t.IsGroupHeadline = 1 THEN 'Headline' 
 											  ELSE CASE WHEN c.roleid = 4 THEN 'Super'
 														WHEN c.roleid = 3 THEN 'Master'	
@@ -58,7 +59,7 @@ BEGIN
 													END	
 										 END AS [Level]				
 		, c.roleid
-		, t.totalturnover, t.maxturnover, t.houseturnover, t.nlevel, 
+		, t.totalturnover, t.maxturnover, t.houseturnover, t.nlevel 
 	FROM @temp_ t
 		INNER JOIN @MatchList m ON t.matchid = m.matchid
 		INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.custID = c.custid

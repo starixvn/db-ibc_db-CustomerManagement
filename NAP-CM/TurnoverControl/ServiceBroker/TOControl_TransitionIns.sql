@@ -87,20 +87,28 @@ BEGIN
 		-- For Headline Setting Level
 		UNION ALL
 		
-		SELECT gh.CustID, t.matchid, SUM(t.adjusted_TurnOver) AS adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 1
+		SELECT	gh.CustID, t.matchid
+				, SUM(CASE WHEN CI.currency = 20 THEN t.adjusted_TurnOver ELSE t.adjusted_TurnOver * e.actualrate END ) AS adjusted_TurnOver
+				, SUM(CASE	WHEN CI.currency = 20 THEN t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0) 
+							ELSE ((t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) * e.actualrate)
+					END) AS adjusted_HouseTurnOver, 1
 		FROM #GroupHeadline gh
 			INNER JOIN bodb02.dbo.custAccount CA WITH (NOLOCK) ON CA.groupID = gh.GroupID
-			INNER JOIN @TmpTable t ON t.srecommend = CA.CustID 
+			INNER JOIN bodb02.dbo.Custinfo CI WITH (NOLOCK) ON CI.CustID =  CA.CustID
+			INNER JOIN bodb02.dbo.Exchange E WITH (NOLOCK) ON E.exchangeID = ci.currency
+			INNER JOIN @TmpTable t ON ((t.srecommend = CA.CustID 
 									OR t.mrecommend = CA.CustID 
-									OR t.recommend = CA.CustID 
+									OR t.recommend = CA.CustID) AND t.player = 0) 
 									-- member under this group headline
 									OR (t.player = CA.custid AND ca.isGroupHeadline = 0)
 									-- exclude member play group headline, and his super/master/agent under this group
 									OR (t.player = CA.custid AND ca.isGroupHeadline = 1 AND gh.roleID = 1
 										AND gh.IsMemberExcluded = 0)
+			
 							
 			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
 		GROUP BY gh.CustID, t.matchid--, t.adjusted_TurnOver
+		
 			 
 	END TRY
 	BEGIN CATCH --Write ErrLog

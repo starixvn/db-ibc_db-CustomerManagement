@@ -106,13 +106,14 @@ BEGIN
 			
 	)
 	SELECT 
-			t.CustID, c.username, e.currency, 
-			m.leagueid, m.matchID, m.homeid, m.awayid, m.eventdate, m.eventstatus, 
-			t.MaxTurnover, t.TotalTurnover, t.HouseTurnover
+			t.CustID, c.username
+			, CASE WHEN T.IsGroupHeadLine = 1 THEN 'RM' ELSE e.currency END AS currency
+			, m.leagueid, m.matchID, m.homeid, m.awayid, m.eventdate, m.eventstatus
+			, t.MaxTurnover, t.TotalTurnover, t.HouseTurnover
 			, CASE WHEN t.IsGroupHeadLine = 1 THEN 'Headline'
 				   ELSE	CASE c.RoleID WHEN 4 THEN 'Super' WHEN 3 THEN 'Master' WHEN 2 THEN 'Agent' END 
-			  END AS Level,
-			t.PercentageUsed
+			  END AS Level
+			, t.PercentageUsed
 	FROM CTE_SettingList t
 		INNER JOIN #MatchList m WITH (NOLOCK) ON t.matchID = m.matchid
 		INNER JOIN dbo.custInfo c WITH (NOLOCK) ON t.custID = c.custid
