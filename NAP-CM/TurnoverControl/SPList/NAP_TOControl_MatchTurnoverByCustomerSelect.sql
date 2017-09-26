@@ -59,7 +59,7 @@ BEGIN
 	IF @IsGroupHeadline = 1
 	BEGIN
 		-- Get all under this Headline
-		INSERT INTO @GroupHeadlineList (CustID, RoleID,srecommend)
+		INSERT INTO @GroupHeadlineList (CustID, RoleID,srecommend,IsMemberExcluded)
 		SELECT ca1.custid,ci.roleid,ci.srecommend,IsMemberExcluded =  CASE WHEN CI.roleid = 1 
 											AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount CA_tmp WITH (NOLOCK) 
 														WHERE CA_tmp.groupID = ca.GroupID AND CA_tmp.custID IN (ci.srecommend, ci.mrecommend, ci.recommend))
@@ -71,7 +71,7 @@ BEGIN
 		
 		-- Get extra PT info
 		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
-		SELECT DISTINCT GHL.CustID,ISNULL(EPT.ExtraPT,0),EPT.FromDate,EPT.ToDate
+		SELECT GHL.CustID,ISNULL(EPT.ExtraPT,0),EPT.FromDate,EPT.ToDate
 		FROM @GroupHeadlineList GHL
 			LEFT JOIN dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK) ON GHL.srecommend = EPT.SuperId 
 																	AND EPT.ProductId = 1 
@@ -83,12 +83,17 @@ BEGIN
 			INSERT INTO #TicketGroupHeadlineList (matchid,TotalStake,TotalHouseTO)
 			SELECT 
 				b.matchid, 
-				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0)) *b.stake) AS HouseTurnover
+				
+				SUM(b.stake * b.actualrate) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate	
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
+						 
 			WHERE b.srecommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 4)
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -103,12 +108,16 @@ BEGIN
 			INSERT INTO #TicketGroupHeadlineList (matchid,TotalStake,TotalHouseTO)
 			SELECT 
 				b.matchid, 
-				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0))*b.stake) AS HouseTurnover
+				
+				SUM(b.stake * b.actualrate) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+				
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.mrecommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 3)
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -121,12 +130,16 @@ BEGIN
 			INSERT INTO #TicketGroupHeadlineList (matchid,TotalStake,TotalHouseTO)
 			SELECT 
 				b.matchid, 
-				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0))*b.stake) AS HouseTurnover
+				
+				SUM(b.stake * b.actualrate) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.recommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 2)
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -139,12 +152,16 @@ BEGIN
 			INSERT INTO #TicketGroupHeadlineList (matchid,TotalStake,TotalHouseTO)
 			SELECT 
 				b.matchid, 
-				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0))*b.stake) AS HouseTurnover
+				
+				SUM(b.stake * b.actualrate) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.custid IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 1 AND IsMemberExcluded = 0)
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -175,11 +192,13 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0))*b.stake) AS HouseTurnover
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))*b.stake) AS HouseTurnover
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+							 FROM #ExtraPTInfo s WITH(NOLOCK) 
+							 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.srecommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -192,11 +211,13 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				SUM(b.stake) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0))*b.stake) AS HouseTurnover
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))*b.stake) AS HouseTurnover
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.mrecommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0
@@ -209,11 +230,13 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				SUM(b.stake) AS SumOfStake,
-				SUM((1-b.tpositiontaking - ISNULL(s.ExtraPT,0)) * b.stake) AS HouseTurnover
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0)) * b.stake) AS HouseTurnover
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
-				LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate
+				OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.recommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
 				AND b.ruben = 0

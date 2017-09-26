@@ -30,7 +30,10 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME, adjusted_TurnOver MONEY, adjusted_HTOWithoutExtraPT MONEY)
+	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME
+								, adjusted_TurnOver MONEY,adjusted_TurnOver_withABS MONEY, adjusted_HTOWithoutExtraPT MONEY
+								, adjusted_TurnOver_RM MONEY,adjusted_TurnOver_withABS_RM MONEY, adjusted_HTOWithoutExtraPT_RM MONEY
+								)
 	
 	DECLARE @EventDate_min DATETIME
 	
@@ -41,28 +44,36 @@ BEGIN
 	SET @EventDate_min = (SELECT MIN(eventdate) FROM bodb02.dbo.match m WITH(NOLOCK))
 	
 	BEGIN TRY
-		INSERT INTO @TmpTable(srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver, adjusted_HTOWithoutExtraPT)
-		SELECT x.v.value('(s/text())[1]','INT') AS srecommend,
-			   x.v.value('(m/text())[1]','INT') AS mrecommend,
-			   x.v.value('(a/text())[1]','INT') AS recommend,
-			   x.v.value('(p/text())[1]','INT') AS player,
+		INSERT INTO @TmpTable(srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver,adjusted_TurnOver_withABS, adjusted_HTOWithoutExtraPT
+								, adjusted_TurnOver_RM,adjusted_TurnOver_withABS_RM, adjusted_HTOWithoutExtraPT_RM)
+								
+		SELECT x.v.value('(super/text())[1]','INT') AS srecommend,
+			   x.v.value('(master/text())[1]','INT') AS mrecommend,
+			   x.v.value('(agent/text())[1]','INT') AS recommend,
+			   x.v.value('(player/text())[1]','INT') AS player,
 			   x.v.value('(mid/text())[1]','INT') AS matchid,
 			   x.v.value('(wld/text())[1]','SMALLDATETIME') AS winlostdate,
-			   x.v.value('(aTO/text())[1]','MONEY') AS adjusted_TurnOver,
-			   x.v.value('(aHTOWithoutExtraPT/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT
+			   x.v.value('(adjTO/text())[1]','MONEY') AS adjusted_TurnOver,
+			   x.v.value('(adjTOwithABS/text())[1]','MONEY') AS adjusted_TurnOver_withABS,
+			   x.v.value('(adjHTONoExtraPT/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT,
+			   
+			   x.v.value('(adjTO_RM/text())[1]','MONEY') AS adjusted_TurnOver_RM,
+			   x.v.value('(adjTOwithABS_RM/text())[1]','MONEY') AS adjusted_TurnOver_withABS_RM,
+			   x.v.value('(adjHTONoExtraPT_RM/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT_RM
+			   
 		FROM @XMLString.nodes('/root/r') AS x(v)
 		OPTION (OPTIMIZE FOR (@XMLString = NULL))
 		
 		-- Get Extra PT Info 
 		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
-		SELECT DISTINCT GHL.srecommend,EPT.ExtraPT,EPT.FromDate,EPT.ToDate
+		SELECT GHL.srecommend,EPT.ExtraPT,EPT.FromDate,EPT.ToDate
 		FROM dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK)
 			INNER JOIN @TmpTable GHL ON GHL.srecommend = EPT.SuperId
 		WHERE EPT.ProductId = 1 AND EPT.Sporttype  = 0 AND EPT.ToDate >= @EventDate_min
 		
 		-- Get Group Headline Info have global setting
 		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded)
-		SELECT DISTINCT GS.CustID, ca.GroupID, ci.roleid 
+		SELECT GS.CustID, ca.GroupID, ci.roleid 
 			, IsMemberExcluded =  CASE WHEN CI.roleid = 1 
 											AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount CA1 WITH (NOLOCK)
 														WHERE CA1.groupID = ca.GroupID AND CA1.custID IN (ci.srecommend, ci.mrecommend, ci.recommend))
@@ -77,28 +88,40 @@ BEGIN
 		-- Inserting data into TOControl_Transition
 		INSERT INTO dbo.TOControl_Transition (CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)
 		-- For SMA Setting Level
-		SELECT gl.CustID, t.matchid, SUM(t.adjusted_TurnOver) AS adjusted_TurnOver, SUM(t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) AS adjusted_HouseTurnOver, 0
-		FROM @TmpTable t 
-			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) AND IsGroupHeadLine = 0
-			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
-		WHERE gl.MaxTurnOver != 0
-		GROUP BY gl.CustID, t.matchid --, t.adjusted_TurnOver
+		SELECT gl.CustID, t.matchid
+		
+				, SUM(t.adjusted_TurnOver ) AS adjusted_TurnOver
+				
+				, SUM (t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver_withABS * ISNULL(ExtraPT_tmp.ExtraPT,0))	AS adjusted_HouseTurnOver
+				
+				, 0
+		FROM @TmpTable t
+			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) AND t.player = 0 AND IsGroupHeadLine = 0
+			OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
+		WHERE gl.MaxTurnOver <> 0
+		GROUP BY gl.CustID, t.matchid 
 		
 		-- For Headline Setting Level
 		UNION ALL
 		
 		SELECT	gh.CustID, t.matchid
-				, SUM(CASE WHEN CI.currency = 20 THEN t.adjusted_TurnOver ELSE t.adjusted_TurnOver * e.actualrate END ) AS adjusted_TurnOver
-				, SUM(CASE	WHEN CI.currency = 20 THEN t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0) 
-							ELSE ((t.adjusted_HTOWithoutExtraPT - t.adjusted_TurnOver * ISNULL(s.ExtraPT,0)) * e.actualrate)
-					END) AS adjusted_HouseTurnOver, 1
+				
+				, SUM(t.adjusted_TurnOver_RM ) AS adjusted_TurnOver
+				
+				, SUM (t.adjusted_HTOWithoutExtraPT_RM - t.adjusted_TurnOver_withABS_RM * ISNULL(ExtraPT_tmp.ExtraPT,0))	AS adjusted_HouseTurnOver
+				
+				, 1
 		FROM #GroupHeadline gh
 			INNER JOIN bodb02.dbo.custAccount CA WITH (NOLOCK) ON CA.groupID = gh.GroupID
 			INNER JOIN bodb02.dbo.Custinfo CI WITH (NOLOCK) ON CI.CustID =  CA.CustID
 			INNER JOIN bodb02.dbo.Exchange E WITH (NOLOCK) ON E.exchangeID = ci.currency
-			INNER JOIN @TmpTable t ON ((t.srecommend = CA.CustID 
-									OR t.mrecommend = CA.CustID 
-									OR t.recommend = CA.CustID) AND t.player = 0) 
+			INNER JOIN @TmpTable t ON 
+									-- Headline is SMA
+									(
+										(t.srecommend = CA.CustID OR t.mrecommend = CA.CustID OR t.recommend = CA.CustID) AND t.player = 0
+									) 
 									-- member under this group headline
 									OR (t.player = CA.custid AND ca.isGroupHeadline = 0)
 									-- exclude member play group headline, and his super/master/agent under this group
@@ -106,8 +129,11 @@ BEGIN
 										AND gh.IsMemberExcluded = 0)
 			
 							
-			LEFT JOIN #ExtraPTInfo s WITH(NOLOCK) ON t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate 
-		GROUP BY gh.CustID, t.matchid--, t.adjusted_TurnOver
+			OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
+						 FROM #ExtraPTInfo s WITH(NOLOCK) 
+						 WHERE t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
+						 
+		GROUP BY gh.CustID, t.matchid
 		
 			 
 	END TRY

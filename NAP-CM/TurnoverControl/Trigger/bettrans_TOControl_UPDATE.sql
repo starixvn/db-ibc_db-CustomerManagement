@@ -3,6 +3,15 @@ ALTER TRIGGER [dbo].[bettrans_TOControl_UPDATE]
    AFTER UPDATE
 AS 
 /*
+	Created: Helen
+	Date: 2017-09-20
+	Task: Insert new CustId to Gobal setting (multiple insert)
+	DB: DB053.bodb02
+	
+	
+	- Revision:
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		
 	XML mapping dictionary tag when buliding and parsing XML string
 	Tag		Stand_For
 	---		---------
@@ -36,7 +45,11 @@ BEGIN
 
 	DECLARE @HasError BIT
 	
-	DECLARE @TmpTable AS TABLE (ID INT IDENTITY (1,1) PRIMARY KEY CLUSTERED, srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME, adj_TO MONEY, adj_HouseTO MONEY)
+	DECLARE @TmpTable AS TABLE (ID INT IDENTITY (1,1) PRIMARY KEY CLUSTERED, srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME
+								, adj_TO MONEY, adj_TO_withABS MONEY, adj_HouseTO MONEY
+								, adj_TO_RM MONEY, adj_TO_withABS_RM MONEY, adj_HouseTO_RM MONEY
+								)
+								
 							   
 	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY)
 	
@@ -48,18 +61,48 @@ BEGIN
 	
 	--Build command string and push into SB Queue          
 	--1000 rows per command string 	
-	INSERT INTO @TmpTable (srecommend,  mrecommend, recommend,player, matchid,winlostdate, adj_TO, adj_HouseTO)
+	INSERT INTO @TmpTable (srecommend,  mrecommend, recommend,player, matchid,winlostdate
+				, adj_TO,adj_TO_withABS, adj_HouseTO
+				, adj_TO_RM,adj_TO_withABS_RM, adj_HouseTO_RM
+				)
 	SELECT i.srecommend, i.mrecommend, i.recommend,0 AS player, i.matchid,i.winlostdate, 
+		
 		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake --delete ticket
 				 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake --recover ticket
 				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake -- undo or calculate after refund
 				 ELSE 0
 			END) AS adj_TO,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_withABS,
+				
 		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake) --delete ticket
 				 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake) --recover ticket
 				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake) -- undo or calculate after refund
 				 ELSE 0
-			END) AS adj_HouseTO
+			END) AS adj_HouseTO,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * i.actualrate --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * i.actualrate --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * i.actualrate -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_RM,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * i.actualrate) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * i.actualrate) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * i.actualrate) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_withABS_RM,
+				
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * i.actualrate) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_HouseTO_RM
+				
 	FROM inserted i INNER JOIN deleted d ON i.transid = d.transid
 	WHERE ((i.bettype < 31 and i.bettype NOT IN (9,29,10)) OR i.bettype between 121 and 999 OR i.bettype BETWEEN 1301 and 1334)
 		AND i.betfrom <> 'p'		
@@ -78,11 +121,37 @@ BEGIN
 				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake -- undo or calculate after refund
 				 ELSE 0
 			END) AS adj_TO,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_withABS,
+				
 		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake) --delete ticket
 				 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake) --recover ticket
 				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake) -- undo or calculate after refund
 				 ELSE 0
-			END) AS adj_HouseTO
+			END) AS adj_HouseTO,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * i.actualrate  --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * i.actualrate --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * i.actualrate -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_RM,
+		
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * i.actualrate) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * i.actualrate) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * i.actualrate) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_TO_withABS_RM,
+				
+		SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * i.actualrate) --delete ticket
+				 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) --recover ticket
+				 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) -- undo or calculate after refund
+				 ELSE 0
+			END) AS adj_HouseTO_RM
+				
 	FROM inserted i INNER JOIN deleted d ON i.transid = d.transid
 		INNER JOIN @GroupHeadlineList GHL ON GHL.CustID = I.custid
 		
@@ -104,7 +173,9 @@ BEGIN
 	BEGIN
 		SELECT @XMLString = NULL
 
-		SELECT @XMLString = (SELECT srecommend AS 's',  mrecommend AS 'm', recommend AS 'a', player 'p' , matchid AS 'mid',winlostdate AS 'wld', adj_TO AS 'aTO', adj_HouseTO AS 'aHTOWithoutExtraPT'
+		SELECT @XMLString = (SELECT srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player' , matchid AS 'mid',winlostdate AS 'wld'
+									, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
+									, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
 							 FROM @TmpTable		
 							 FOR XML PATH ('r'))
 
@@ -121,7 +192,9 @@ BEGIN
 
 				SELECT @XMLString = NULL
 
-				SELECT @XMLString = (SELECT TOP (@RowPerCommand) srecommend AS 's',  mrecommend AS 'm', recommend AS 'a', player 'p', matchid AS 'mid', winlostdate AS 'wld', adj_TO AS 'aTO', adj_HouseTO AS 'aHTOWithoutExtraPT'
+				SELECT @XMLString = (SELECT TOP (@RowPerCommand) srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player', matchid AS 'mid', winlostdate AS 'wld'
+												, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
+												, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
 									 FROM @TmpTable		
 									 WHERE ID BETWEEN @MinID AND @MaxID
 						 			 FOR XML PATH ('r'))

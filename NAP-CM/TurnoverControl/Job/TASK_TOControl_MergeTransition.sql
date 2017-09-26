@@ -23,40 +23,49 @@ BEGIN
 
 	DECLARE @PercentageUsed MONEY
 
-	CREATE TABLE #TmpTableRaw(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY)
-	CREATE TABLE #TmpTable(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, MaxTurnOver MONEY NULL)
+	CREATE TABLE #TmpTableRaw(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY,IsGroupHeadline BIT)
+	
+	CREATE TABLE #TmpTable(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, MaxTurnOver MONEY NULL, IsGroupHeadline BIT)
+	
 	CREATE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTableRaw (CustID, matchid)
 	CREATE UNIQUE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTable (CustID, matchid)
 
-	INSERT INTO #TmpTableRaw(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver)
+	INSERT INTO #TmpTableRaw(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline)
 	EXEC DBAGE.bodb02.dbo.TASK_TOControl_GetTransition
 
-	INSERT INTO #TmpTable(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver)
-	SELECT CustID, matchid, SUM (adjusted_TurnOver), SUM(adjusted_HouseTurnOver)
+	INSERT INTO #TmpTable(CustID, matchid, IsGroupHeadline, adjusted_TurnOver, adjusted_HouseTurnOver)
+	SELECT CustID, matchid,IsGroupHeadline, SUM (adjusted_TurnOver), SUM(adjusted_HouseTurnOver)
 	FROM #TmpTableRaw
-	GROUP BY CustID, matchid
+	GROUP BY CustID, matchid,IsGroupHeadline 
 
 	DROP TABLE #TmpTableRaw
 
 	UPDATE t 
 	SET MaxTurnOver = gl.MaxTurnOver
 	FROM #TmpTable t
-		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID
+		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID AND t.IsGroupHeadline = gl.IsGroupHeadLine
 
 	MERGE dbo.TOControl_Setting AS TARGET
-			USING (SELECT CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver FROM #TmpTable)
-			   AS SOURCE (CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver)
-				ON (TARGET.CustID = SOURCE.CustID AND TARGET.matchid = SOURCE.matchid)
+			USING (SELECT CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine FROM #TmpTable)
+			   AS SOURCE (CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)
+				ON (TARGET.CustID = SOURCE.CustID AND TARGET.matchid = SOURCE.matchid AND TARGET.IsGroupHeadLine = SOURCE.IsGroupHeadLine)
 			WHEN MATCHED THEN 
-				 UPDATE SET @PercentageUsed = CASE WHEN TARGET.MaxTurnOver = 0 THEN	100 ELSE (TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver END,
+				 UPDATE SET 
+							--@PercentageUsed = CASE WHEN TARGET.MaxTurnOver = 0 THEN	100 ELSE (TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver END,
 							TARGET.TotalTurnOver = TARGET.TotalTurnOver + SOURCE.adjusted_TurnOver,
 							TARGET.HouseTurnover = TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver,
 							
-							TARGET.PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE @PercentageUsed >= PercentValue),0)
+							TARGET.PercentLevel = CASE WHEN TARGET.MaxTurnOver = 0 THEN	10 
+														ELSE ISNULL((SELECT MAX(PercentLevel) 
+																	FROM dbo.TOControl_LevelSetting WITH (NOLOCK) 
+																	WHERE (TARGET.HouseTurnover + SOURCE.adjusted_HouseTurnOver) * 100 / TARGET.MaxTurnOver >= PercentValue
+														  
+																	),0)
+													END				
 								
 			WHEN NOT MATCHED THEN	
-				INSERT (CustID, matchid, MaxTurnOver, TotalTurnOver, HouseTurnover, IsNotified, PercentLevel)
-				VALUES (SOURCE.CustID, SOURCE.matchid, SOURCE.MaxTurnOver, SOURCE.adjusted_TurnOver, SOURCE.adjusted_HouseTurnOver, 0, 
+				INSERT (CustID, matchid, IsGroupHeadLine, MaxTurnOver, TotalTurnOver, HouseTurnover, IsNotified, PercentLevel)
+				VALUES (SOURCE.CustID, SOURCE.matchid,SOURCE.IsGroupHeadLine, SOURCE.MaxTurnOver, SOURCE.adjusted_TurnOver, SOURCE.adjusted_HouseTurnOver, 0, 
 						CASE WHEN SOURCE.MaxTurnOver = 0 THEN 10 
 							ELSE ISNULL((SELECT MAX(PercentLevel) 
 										FROM dbo.TOControl_LevelSetting WITH (NOLOCK) 

@@ -94,15 +94,14 @@ BEGIN
 	WHERE CustID = @CustID AND Sporttype = @SportType AND IsGroupHeadLine = @IsGroupHeadLine
 	
 	UPDATE t
-	SET 
-		@PercentageUsed = CASE WHEN @MaxTurnover = 0 THEN 100 ELSE (t.HouseTurnOver*100/@MaxTurnover) END,
-		t.MaxTurnover = @MaxTurnover,
-		t.IsNotified = 	CASE WHEN @MaxTurnover > t.MaxTurnover 
-									THEN   --- reset isNotified only in case of increasing maxturnover
-										CASE WHEN @PercentageUsed < 40 THEN 0 
-											 ELSE (SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting (NOLOCK) WHERE @PercentageUsed > PercentValue)
-										END	
-						ELSE 0 END 
+		SET 
+			t.MaxTurnover = @MaxTurnover,
+			t.IsNotified = 	CASE WHEN @MaxTurnover = 0 THEN 10 
+								  ELSE ISNULL((SELECT MAX(PercentValue) 
+												FROM dbo.TOControl_LevelSetting (NOLOCK) 
+												WHERE t.HouseTurnOver*100/@MaxTurnover > PercentValue AND IsNotified = 1),0)
+								END				
+						
 	FROM dbo.TOControl_Setting t WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN @MatchList m ON m.matchid = t.matchid
 	WHERE t.CustID = @CustID AND t.IsGroupHeadLine = @IsGroupHeadLine

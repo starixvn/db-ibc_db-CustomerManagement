@@ -3,6 +3,16 @@ ALTER TRIGGER [dbo].[bettrans_TOControl_INSERT]
    AFTER INSERT
 AS 
 /*
+	Created: Helen
+	Date: 2017-09-20
+	Task: Insert new CustId to Gobal setting (multiple insert)
+	DB: DB053.bodb02
+	
+	
+	- Revision:
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+	
+	
 	XML mapping dictionary tag when buliding and parsing XML string
 	Tag		Stand_For
 	---		---------
@@ -23,15 +33,28 @@ BEGIN
 	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY)
 	
 	INSERT INTO @GroupHeadlineList (CustID)
-	SELECT DISTINCT ca.custid
+	SELECT ca.custid
 	FROM bodb02.dbo.custAccount ca WITH (NOLOCK) 
 		INNER JOIN bodb02.dbo.custInfo ci WITH (NOLOCK) ON ci.custid = ca.custid
 	WHERE ci.roleid = 1	
-			
-	SELECT @XMLString = (SELECT tmp.s,tmp.m, tmp.a,tmp.p,tmp.mid, tmp.wld, tmp.aTO,tmp.aHTOWithoutExtraPT
-						FROM (SELECT srecommend AS 's', mrecommend AS 'm', recommend AS 'a',0 AS 'p', matchid AS 'mid', winlostdate AS 'wld',
-							   SUM(stake) AS 'aTO',
-							   SUM((1-tpositiontaking)*abs(stake)) AS 'aHTOWithoutExtraPT'
+	
+	SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
+								, tmp.adjTO_RM,tmp.adjTOwithABS_RM,tmp.adjHTONoExtraPT_RM
+						FROM (SELECT srecommend AS 'super', mrecommend AS 'master', recommend AS 'agent',0 AS 'player', matchid AS 'mid', winlostdate AS 'wld'
+							   
+							   , SUM(stake) AS 'adjTO'
+							   
+							   , SUM(ABS(stake)) AS 'adjTOwithABS'
+							   
+							   , SUM((1-tpositiontaking)*ABS(stake)) AS 'adjHTONoExtraPT'
+							   
+							   , CONVERT(MONEY, SUM(stake*actualrate)) AS 'adjTO_RM'
+							   
+							   , CONVERT(MONEY, SUM(ABS(stake * actualrate))) AS 'adjTOwithABS_RM'
+							   
+							   , CONVERT(MONEY, SUM((1-tpositiontaking)*ABS(stake)*actualrate)) AS 'adjHTONoExtraPT_RM'
+							   
+							   
 						 FROM inserted  
 						 WHERE matchid > 0 AND statusID NOT BETWEEN 101 AND 103
 						  	   AND ((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
@@ -48,9 +71,19 @@ BEGIN
 										
 						 GROUP BY srecommend, mrecommend, recommend, matchid, winlostdate
 						 UNION All
-						 SELECT srecommend AS 's', mrecommend AS 'm', recommend AS 'a', Ins.custid AS 'p',matchid AS 'mid', winlostdate AS 'wld',
-							   SUM(stake) AS 'aTO',
-							   SUM((1-tpositiontaking)*abs(stake)) AS 'aHTOWithoutExtraPT'
+						 SELECT srecommend AS 'super', mrecommend AS 'master', recommend AS 'agent', Ins.custid AS 'player',matchid AS 'mid', winlostdate AS 'wld'
+							   
+							   , SUM(stake) AS 'adjTO'
+							   
+							   , SUM(ABS(stake)) AS 'adjTOWithABS'
+							   
+							   , SUM((1-tpositiontaking)*abs(stake)) AS 'aHTONoExtraPT'
+							   
+							   , CONVERT(MONEY,SUM(stake * Ins.actualrate )) AS 'adjTO_RM'
+							   
+							   , CONVERT(MONEY,SUM(ABS(stake) * Ins.actualrate )) AS 'adjTOWithABS_RM'
+							   
+							   , CONVERT(MONEY,SUM((1-tpositiontaking)*ABS(stake) * Ins.actualrate )) AS 'aHTONoExtraPT_RM'
 						 FROM inserted  Ins
 							INNER JOIN @GroupHeadlineList GHL ON Ins.custid = GHL.CustID
 						 WHERE matchid > 0 AND statusID NOT BETWEEN 101 AND 103

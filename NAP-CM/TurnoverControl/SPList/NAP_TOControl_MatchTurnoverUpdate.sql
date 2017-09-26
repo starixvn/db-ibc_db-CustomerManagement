@@ -37,7 +37,6 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @PercentageUsed MONEY
 	DECLARE @LogData NVARCHAR(4000)
 	DECLARE @startRun	DATETIME,
 			@endRun		DATETIME,
@@ -66,15 +65,11 @@ BEGIN
 	ELSE
 	BEGIN
 		UPDATE dbo.TOControl_Setting WITH(ROWLOCK, UPDLOCK)
-		SET 
-			@PercentageUsed = (HouseTurnOver*100/@MaxTurnover),
-			MaxTurnover = @MaxTurnover,
-			IsNotified = CASE WHEN @MaxTurnover > MaxTurnover 
-									THEN   --- reset isNotified only in case of increasing maxturnover
-										CASE WHEN @PercentageUsed < 40 THEN 0 
-											 ELSE (SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting (NOLOCK) WHERE @PercentageUsed > PercentValue)
-										END	
-						ELSE 0 END 
+			SET 
+				MaxTurnover = @MaxTurnover,
+				IsNotified =  ISNULL((SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting WITH(NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) > PercentValue AND IsNotified = 1),0),
+				PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) > PercentValue),0) 
+						
 		WHERE CustID = @CustID AND matchid = @MatchID AND IsGroupHeadLine = @IsGroupHeadline
 	END
 
@@ -102,3 +97,4 @@ GO
 
 GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchTurnoverUpdate] TO [bodbAdminNet]
 GO
+

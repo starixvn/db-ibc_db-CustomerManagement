@@ -40,9 +40,8 @@ BEGIN
 	CREATE TABLE #MatchList(matchid INT, homeid INT, awayid INT, eventdate DATETIME, eventstatus NVARCHAR(50), leagueid INT)
 
 	DECLARE @PercentLevel TINYINT = 0
-	SELECT @PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE PercentValue <= @UsedPercent),0)
+	SELECT @PercentLevel = ISNULL((SELECT MIN(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE PercentValue >= @UsedPercent),0)
 		
-
 	/* Get information about needed events */
 	IF @Todate <= @MoveBetsDay
 	BEGIN

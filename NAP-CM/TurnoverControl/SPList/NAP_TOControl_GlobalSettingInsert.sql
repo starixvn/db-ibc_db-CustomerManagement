@@ -70,7 +70,7 @@ BEGIN
 	SELECT
 		@CustID, t.MatchId, @MaxTurnover AS MaxTurnOver, t.SumOfStake AS TotalTurnOver, t.HouseTurnover
 		,	CASE	WHEN @MaxTurnover = 0 THEN 10 
-					ELSE (SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting (NOLOCK) WHERE ((HouseTurnover*100)/@MaxTurnover) >= PercentValue)
+					ELSE ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting (NOLOCK) WHERE ((HouseTurnover*100)/@MaxTurnover) >= PercentValue),0)
 			END AS PercentLevel
 			
 		, 0 AS IsNotified

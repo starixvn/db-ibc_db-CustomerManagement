@@ -22,14 +22,14 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @MaxID BIGINT = 0
-	DECLARE @TmpTable AS TABLE (ID BIGINT, CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY)
+	DECLARE @TmpTable AS TABLE (ID BIGINT, CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, IsGroupHeadline BIT)
 
 	SELECT @MaxID = CONVERT(BIGINT, VValue)
 	FROM dbo.TOConTrol_GlobalVariables WITH (ROWLOCK)
 	WHERE VName = 'MaxID'
 
-	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver) --To avoid TABLOCK escalation
-	SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
+	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline) --To avoid TABLOCK escalation
+	SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline
 	FROM dbo.TOControl_Transition WITH (ROWLOCK)
 	WHERE ID > @MaxID
 
@@ -43,6 +43,6 @@ BEGIN
 		WHERE VName = 'MaxID'
 	END
 
-	SELECT CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
+	SELECT CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline
 	FROM @TmpTable
 END

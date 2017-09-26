@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
+ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
 (
 	@CustID INT,
 	@matchid INT,
@@ -44,7 +44,7 @@ BEGIN
 	
 	SELECT @RoleID = RoleID,@srecommend = srecommend FROM CustInfo WITH(NOLOCK) WHERE CustID = @CustID
 	
-	SET @ExtraPT = ISNULL((SELECT TOP 1 ExtraPT 
+	SET @ExtraPT = ISNULL((SELECT SUM(ExtraPT) 
 							FROM dbo.Acc_GroupExtraPTSetting s WITH(NOLOCK) 
 							WHERE s.SuperId = @SRecommend 
 								AND s.ProductId = 1 
@@ -82,8 +82,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator
 			
 		END
@@ -114,8 +114,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		ELSE IF (@RoleID=2)
@@ -145,8 +145,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 	END
@@ -167,6 +167,7 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
@@ -179,8 +180,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		ELSE IF (@RoleID=3)
@@ -198,6 +199,7 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
@@ -210,8 +212,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		ELSE IF (@RoleID=2)
@@ -229,6 +231,7 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15) 
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
@@ -258,7 +261,10 @@ BEGIN
 	GROUP BY bettype
 
 	------- FINAL RESULT --------
-	SELECT Bettype AS BettypeID, Live, NonLive, Total 
+	SELECT Bettype AS BettypeID
+			, CASE WHEN ISNULL(Live,'') = '' THEN '0 - 0' ELSE Live END AS Live
+			, CASE WHEN ISNULL(NonLive,'') = '' THEN '0 - 0' ELSE NonLive END AS NonLive
+			, Total 
 	FROM
 	(
 	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
@@ -271,6 +277,7 @@ BEGIN
 	  FROM #HouseTO_1_3_5_7_8_15 BT1 WITH (NOLOCK)
 	  
 	  UNION All
+	  
 	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator

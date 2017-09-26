@@ -39,9 +39,9 @@ BEGIN
 	
 	EXEC sp_xml_preparedocument @iDoc OUTPUT, @GlobalSetting
 
-	INSERT #GlobalSettingTbl (CustID,IsGroupHeadline,MaxTurnover,MatchID)
-	SELECT CustID,IsGroupHeadline,MaxTurnover,MatchID
-	FROM OPENXML(@iDoc, '/ROOT/GlobalSetting', 1) WITH (CustID INT, IsGroupHeadline	BIT, MaxTurnover MONEY, MatchID INT)
+	INSERT #GlobalSettingTbl (CustId,MatchId,IsGroupHeadline,MaxTurnover)
+	SELECT CustId,MatchId,IsGroupHeadline,MaxTurnover
+	FROM OPENXML(@iDoc, '/ROOT/GlobalSetting', 1) WITH (CustId INT,MatchId INT, IsGroupHeadline	BIT, MaxTurnover MONEY)
 
 	EXEC sp_xml_removedocument @iDoc	
 	
@@ -72,6 +72,12 @@ BEGIN
 			
 			SET @start = @start + 1
 		END
+	END
+	ELSE
+	BEGIN
+		SELECT @ErrCode = 101, @ErrMsg = 'No action occured.'
+		
+		RETURN
 	END
 	
 	DROP TABLE #ExistingGlobalSettingTbl

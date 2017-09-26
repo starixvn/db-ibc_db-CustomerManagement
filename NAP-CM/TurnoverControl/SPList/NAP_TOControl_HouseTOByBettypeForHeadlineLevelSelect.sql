@@ -25,7 +25,7 @@ BEGIN
 	-- CALL wrong SP
 	IF @IsGroupHeadline = 0 RETURN
 	
-	CREATE TABLE #HouseTO_1_3_5_7_8_15 (liveindicator BIT, bettype SMALLINT, betteam_h MONEY, betteam_a MONEY,betteam_1 MONEY,betteam_x MONEY, betteam_2 MONEY )
+	CREATE TABLE #HouseTO_1_3_5_7_8_15 (liveindicator TINYINT, bettype SMALLINT, betteam_h MONEY, betteam_a MONEY,betteam_1 MONEY,betteam_x MONEY, betteam_2 MONEY )
 	
 	CREATE TABLE #HouseTO_99 (liveindicator BIT, bettype SMALLINT, total MONEY )
 	
@@ -62,12 +62,13 @@ BEGIN
 	
 	-- Get extra PT info
 	INSERT INTO @ExtraPTInfo (SuperID,ExtraPT)
-	SELECT DISTINCT GHL.CustID,ISNULL(EPT.ExtraPT,0)
-	FROM @GroupHeadlineList GHL
+	SELECT GHL.srecommend,ISNULL(SUM(EPT.ExtraPT),0)
+	FROM (SELECT DISTINCT srecommend FROM @GroupHeadlineList) AS GHL
 		LEFT JOIN dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK) ON GHL.srecommend = EPT.SuperId 
 																AND EPT.ProductId = 1 
 																AND EPT.Sporttype = 0 
 																AND @EventDate BETWEEN EPT.FromDate AND EPT.ToDate 
+	GROUP BY GHL.srecommend																
 	
 	IF EXISTS (SELECT matchid FROM match WITH (NOLOCK) WHERE matchid = @matchid)
 	BEGIN
@@ -75,11 +76,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate  ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
 			WHERE b.matchid = @matchid
@@ -87,11 +88,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator,b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator,-1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking- s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking- s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -100,8 +102,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator
 			
 		END
@@ -109,11 +111,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
 			WHERE b.matchid = @matchid
@@ -121,11 +123,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -134,19 +137,19 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		IF EXISTS (SELECT 1 FROM @GroupHeadlineList WHERE RoleID = 2)
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
 			WHERE b.matchid = @matchid
@@ -154,11 +157,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -167,8 +171,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		
@@ -176,11 +180,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
 			WHERE b.matchid = @matchid
@@ -188,11 +192,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype  
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -201,8 +206,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		
@@ -213,11 +218,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId 	
 			WHERE b.matchid = @matchid
@@ -225,11 +230,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -238,19 +244,19 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		IF EXISTS (SELECT 1 FROM @GroupHeadlineList WHERE RoleID = 3)
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans14 b WITH(NOLOCK)
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
 			WHERE b.matchid = @matchid
@@ -258,11 +264,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15)
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0))  AS VARCHAR(30)) BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId 
@@ -271,19 +278,19 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		IF EXISTS (SELECT 1 FROM @GroupHeadlineList WHERE RoleID = 2)
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake)  * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId 
 			WHERE b.matchid = @matchid
@@ -291,11 +298,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15) 
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -304,8 +312,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator	
 		END
 		
@@ -313,11 +321,11 @@ BEGIN
 		BEGIN
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
-				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
-				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_a
-				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_1
-				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_x
-				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_2
+				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_h
+				, SUM(ISNULL(CASE WHEN b.betteam='a' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_a
+				, SUM(ISNULL(CASE WHEN b.betteam='1' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_1
+				, SUM(ISNULL(CASE WHEN b.betteam='x' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_x
+				, SUM(ISNULL(CASE WHEN b.betteam='2' THEN (1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate ELSE 0 END,0)) AS betteam_2
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId 
 			WHERE b.matchid = @matchid
@@ -325,11 +333,12 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype IN(1,3,5,7,8,15) 
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator, b.bettype
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				CAST(SUM(ISNULL((1-tpositiontaking - s.ExtraPT)*abs(stake) * b.actualrate,0)) AS VARCHAR(30)) BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 				INNER JOIN @ExtraPTInfo s  ON b.srecommend = s.SuperId  
@@ -338,8 +347,8 @@ BEGIN
 				AND b.statusid NOT IN (101,102,103)
 				AND b.bettype NOT IN(SELECT bettype FROM dbo.f_VSHorseRacingByBettype())
 				AND b.bettype NOT IN(1,3,5,7,8,15)
-				
 				AND b.betfrom <> 'p'
+				
 			GROUP BY b.liveindicator
 		END
 	END
@@ -356,7 +365,10 @@ BEGIN
 	GROUP BY bettype
 
 	------- FINAL RESULT --------
-	SELECT Bettype AS BettypeID, Live, NonLive, Total 
+	SELECT Bettype AS BettypeID
+			, CASE WHEN ISNULL(Live,'') = '' THEN '0 - 0' ELSE Live END AS Live
+			, CASE WHEN ISNULL(NonLive,'') = '' THEN '0 - 0' ELSE NonLive END AS NonLive
+			, Total 
 	FROM
 	(
 	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
@@ -369,6 +381,7 @@ BEGIN
 	  FROM #HouseTO_1_3_5_7_8_15 BT1 WITH (NOLOCK)
 	  
 	  UNION All
+	  
 	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator

@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeSelect]
+ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeSelect]
 (
 	@CustID INT,
 	@matchid INT,

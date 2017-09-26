@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[Dot_Member_Credit_Match_Turnover_Check_Cust]
 	@SRecommend			INT,
 	@Stake				MONEY,
 	@TPositionTaking	SMALLMONEY,
-	@eventdate	DATETIME 
+	@eventdate	DATETIME,
+	@actualrate FLOAT
 	
 AS
 /*
@@ -28,13 +29,13 @@ BEGIN
 	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY, ID INT IDENTITY (1,1))
 	DECLARE @Start INT, @Stop INT, @CustID_Headline INT, @ExtraPT DECIMAL(9,8)
 	
-	DECLARE @NewMatchTurnover MONEY, @MaxMatchTurnover_Setting MONEY
+	DECLARE @NewMatchTurnover MONEY, @MaxMatchTurnover_Setting MONEY, @adjHouseTurnover MONEY
 	DECLARE @StopFlag TINYINT
 	
 	SELECT @NewMatchTurnover = -1, @MaxMatchTurnover_Setting = -1
 	SELECT @StopFlag = 0
 	
-	SET @ExtraPT = ISNULL((SELECT TOP 1 ExtraPT 
+	SET @ExtraPT = ISNULL((SELECT SUM(ExtraPT) 
 							FROM dbo.Acc_GroupExtraPTSetting s WITH(NOLOCK) 
 							WHERE s.SuperId = @SRecommend 
 								AND s.ProductId = 1 
@@ -42,10 +43,12 @@ BEGIN
 								AND @EventDate BETWEEN s.FromDate AND s.ToDate)
 							,0)
 	
+	SET @adjHouseTurnover = (@Stake * (1 - @TPositionTaking- @ExtraPT))
+	
 	IF (@Recommend > -1) AND EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH (NOLOCK) WHERE CustID = @Recommend AND IsGroupHeadLine = 0)
 	BEGIN
 		SELECT 
-			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking- @ExtraPT)),
+			@NewMatchTurnover = tos.HouseTurnover + @adjHouseTurnover,
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 			
@@ -61,7 +64,7 @@ BEGIN
 	IF (@MRecommend > -1 AND @StopFlag = 0) AND EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH (NOLOCK) WHERE CustID = @MRecommend AND IsGroupHeadLine = 0)
 	BEGIN
 		SELECT 
-			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking - @ExtraPT)),
+			@NewMatchTurnover = tos.HouseTurnover + @adjHouseTurnover,
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
@@ -76,7 +79,7 @@ BEGIN
 	IF (@SRecommend >- 1 AND @StopFlag = 0) AND EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH (NOLOCK) WHERE CustID = @SRecommend AND IsGroupHeadLine = 0)
 	BEGIN
 		SELECT 
-			@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking - @ExtraPT)),
+			@NewMatchTurnover = tos.HouseTurnover + @adjHouseTurnover,
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
@@ -92,6 +95,7 @@ BEGIN
 	BEGIN
 		-------------- Process for Headline --------------------------------------
 		-- Get Headline that member belongs to, his headline have TO Global setting
+		
 		INSERT INTO @GroupHeadlineList (CustID)
 		SELECT GS.CustID
 		FROM dbo.custAccount ca WITH (NOLOCK)
@@ -101,30 +105,21 @@ BEGIN
 		
 		IF EXISTS (SELECT 1 FROM @GroupHeadlineList)
 		BEGIN
-			SET @Start = 1
-			SET @Stop = (SELECT MAX(ID) FROM @GroupHeadlineList)
-			WHILE @Start <= @Stop
+			SET @adjHouseTurnover = (@Stake * @actualrate * (1 - @TPositionTaking- @ExtraPT))
+			
+			IF EXISTS (SELECT TOP 1 1
+						FROM @GroupHeadlineList GHL
+							CROSS APPLY (SELECT HouseTurnover,MaxTurnOver
+										 FROM TOControl_Setting tos WITH(NOLOCK)
+										 WHERE tos.custid = GHL.CustID 
+												AND	tos.matchid = @MatchID
+												AND tos.IsGroupHeadLine = 1
+												AND tos.HouseTurnover + @adjHouseTurnover > tos.MaxTurnOver
+										) AS TO_tmp		
+						)				
 			BEGIN
-				SELECT @CustID_Headline = CustID FROM @GroupHeadlineList WHERE ID = @Start
-				
-				SELECT 
-					@NewMatchTurnover = tos.HouseTurnover + (@Stake * (1 - @TPositionTaking - @ExtraPT)),
-					@MaxMatchTurnover_Setting = tos.MaxTurnOver
-				FROM dbo.TOControl_Setting tos WITH(NOLOCK)
-				WHERE tos.custid = @CustID_Headline 
-					AND	tos.matchid = @MatchID
-					AND tos.IsGroupHeadLine = 1
-					
-				IF (@@ROWCOUNT > 0)
-				BEGIN
-					IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
-					BEGIN
-						SELECT @StopFlag = 1
-						BREAK
-					END
-				END		
-				SET @Start = @Start + 1	
-			END
+				SELECT @StopFlag = 1
+			END						
 		END
 	END	
 	/*	@StopFlag = 1, invalid, so cancel the place bet 

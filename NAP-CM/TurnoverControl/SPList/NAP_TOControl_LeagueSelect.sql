@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-CREATE PROCEDURE [dbo].[NAP_TOControl_LeagueSelect]
+ALTER PROCEDURE [dbo].[NAP_TOControl_LeagueSelect]
 	@SportType INT,   
 	@FromDate DATETIME,   
 	@ToDate DATETIME,  
