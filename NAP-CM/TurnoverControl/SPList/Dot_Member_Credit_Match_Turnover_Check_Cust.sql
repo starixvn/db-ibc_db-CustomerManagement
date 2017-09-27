@@ -97,7 +97,7 @@ BEGIN
 		-- Get Headline that member belongs to, his headline have TO Global setting
 		
 		INSERT INTO @GroupHeadlineList (CustID)
-		SELECT GS.CustID
+		SELECT DISTINCT GS.CustID
 		FROM dbo.custAccount ca WITH (NOLOCK)
 			INNER JOIN dbo.CustGroupHeadline ca1 WITH (NOLOCK) ON ca1.groupID = ca.groupID
 			INNER JOIN dbo.TOControl_GlobalSetting GS WITH (NOLOCK) ON CA1.CustID = GS.CustID AND GS.IsGroupHeadLine = 1
