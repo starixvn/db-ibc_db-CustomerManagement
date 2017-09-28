@@ -67,6 +67,7 @@ BEGIN
 										 END AS [Level]				
 		, c.roleid
 		, t.totalturnover, t.maxturnover, t.houseturnover, t.nlevel 
+		, t.IsGroupHeadline
 	FROM @temp_ t
 		INNER JOIN @MatchList m ON t.matchid = m.matchid
 		INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.custID = c.custid
