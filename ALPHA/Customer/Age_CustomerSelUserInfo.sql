@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet,bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE CustDB
 GO
 
@@ -37,6 +37,7 @@ Revisions:
 	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct - [Redmine #72336]	
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
+	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -122,6 +123,7 @@ Param's Explanation:
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
+		,	@bitmapOrder_Lucky3			INT
 		,	@bitmapOrder_FishingWorld	INT	
 		,	@bitmapOrder_VS				INT
     
@@ -131,6 +133,7 @@ Param's Explanation:
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
+	SET @bitmapOrder_Lucky3 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 160 AND Bettype = 1600)
 	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
 
@@ -148,9 +151,9 @@ Param's Explanation:
 		,	@IsHidden_VoidBridge	INT = 1	
 		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
+		,	@IsHidden_Lucky3		INT = 1    
 		,	@IsHidden_FishingWorld	INT = 1	
 		,	@IsHidden_VS			INT = 1
-   
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
@@ -158,6 +161,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 26, @IsHide = @IsHidden_Lucky3 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 
@@ -270,6 +274,14 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VS),1) AS DisableVirtualSports,
 			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 		
+			-- For Lucky3
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lucky3)) AS DisableLucky3,		
+			CAST(	CASE	WHEN	@IsHidden_Lucky3 = 0 						
+								AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lucky3), 1) = 0 
+								THEN 0
+							ELSE 1 
+					END AS BIT) AS HideLucky3,			
+
 			--FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld),1) AS DisableFishingWorld,
 			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
@@ -320,12 +332,3 @@ Param's Explanation:
 	
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbExtAccNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelUserInfo] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelUserInfo] TO vnteam

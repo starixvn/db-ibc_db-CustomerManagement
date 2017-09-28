@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE CustDB
-GO 
+GO
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]  
     @GroupName	VARCHAR(50) = 'ACCTHAI',
@@ -51,6 +51,7 @@ Revisions:
 	- 20170606@Winnie: Apply color for closed account  - [Redmine #74494]	
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
+	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
@@ -109,6 +110,7 @@ BEGIN
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
+		,	@bitmapOrder_Lucky3			INT
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
 
@@ -118,6 +120,7 @@ BEGIN
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
     SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
+	SET @bitmapOrder_Lucky3 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 160 AND Bettype = 1600)
     SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
 
@@ -141,6 +144,7 @@ BEGIN
 		,	@IsHidden_VoidBridge	INT = 1
 		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
+		,	@IsHidden_Lucky3		INT = 1    
 		,	@IsHidden_FishingWorld	INT = 1	
 		,	@IsHidden_VS			INT = 1
 		,	@SyncDownlinesGoldDeluxe BIT
@@ -152,6 +156,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 26, @IsHide = @IsHidden_Lucky3 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
 				
@@ -312,6 +317,12 @@ BEGIN
 			CAST(CASE WHEN @IsHidden_NG2 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_NG2)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_NG2)) AS SyncedNG2,
 			1 AS SyncedNG2Upline,
+			-- For Lucky3
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lucky3)) AS DisableLucky3,
+			1 AS DisableLucky3Upline,
+			CAST(CASE WHEN @IsHidden_Lucky3 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lucky3)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3,
+			1 AS HideLucky3Upline,
+
 			-- For FishingWorld
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)) AS DisableFishingWorld,
 			1 AS DisableFishingWorldUpline,
