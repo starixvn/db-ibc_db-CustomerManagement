@@ -7,8 +7,8 @@ ALTER PROCEDURE [dbo].[Dot_Member_Credit_Match_Turnover_Check_Cust]
 	@SRecommend			INT,
 	@Stake				MONEY,
 	@TPositionTaking	SMALLMONEY,
-	@eventdate	DATETIME,
-	@actualrate FLOAT
+	@eventdate			DATETIME,
+	@actualrate			FLOAT
 	
 AS
 /*
