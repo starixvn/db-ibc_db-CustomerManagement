@@ -9,7 +9,7 @@ AS
 	DB: DB053.bodb02
 	
 	
-	- Revision:
+	- Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		
 	XML mapping dictionary tag when buliding and parsing XML string

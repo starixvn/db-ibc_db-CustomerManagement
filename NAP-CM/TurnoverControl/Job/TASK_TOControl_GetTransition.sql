@@ -15,7 +15,7 @@ DB: DBAGE.bodb02
 Original:
 
 Revisions:
-
+	- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 Param explanation:
 */
 BEGIN
