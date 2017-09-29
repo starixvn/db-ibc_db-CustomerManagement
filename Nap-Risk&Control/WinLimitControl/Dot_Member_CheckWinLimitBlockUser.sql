@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Dot_Member_CheckWinLimitBlockUser]  
 (  
 	 @custID  INT ,  
@@ -13,6 +13,7 @@ AS
 	Revisions:  
 		- 20160617@Helen: CWL - phase 2 - BlockUser/block transfer - [Redmine: 57722]
 		- 20170623@Helen: CWL - Block Transferred cannot run - [Redmine: 78851]
+		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
 		
 */  
 BEGIN  
@@ -23,8 +24,15 @@ BEGIN
 			
 	DECLARE @Max_level VARCHAR(50)
 	
-	SET @Max_level = ISNULL((SELECT TOP 1 LevelName FROM Winlimit_LevelSetting WITH (NOLOCK)
-							ORDER BY LevelID DESC),'')
+	DECLARE @WinlimitLevel_min INT, @WinlimitLevel_max INT
+	
+	SET @WinlimitLevel_min = 1
+	SET @WinlimitLevel_max = 100
+	
+	SET @Max_level = ISNULL((SELECT TOP 1 LevelName 
+							FROM dbo.Winlimit_LevelSetting WITH (NOLOCK)
+							WHERE LevelID >= @WinlimitLevel_min AND LevelID <= @WinlimitLevel_max
+							ORDER BY LevelOrder DESC),'')
 	
 	IF @Bettype IS NOT NULL	-- For PlaceBet	
 	BEGIN
@@ -38,19 +46,19 @@ BEGIN
 	END
 	ELSE -- For Withdraw/Transfer
 	BEGIN
-		IF EXISTS(SELECT 1 FROM WinLimit_CustGameStatus (NOLOCK) WHERE CustID = @custID)
+		IF EXISTS(SELECT 1 FROM dbo.WinLimit_CustGameStatus (NOLOCK) WHERE CustID = @custID)
 		BEGIN
 			SELECT CS.ProductID,CS.BettypeID,CASE WHEN CS.IsBlockedTransfer = 1 THEN @Max_level ELSE LS.LevelName END AS 'CWL status',CS.IsBlockedTransfer
 			FROM dbo.WinLimit_CustGameStatus CS WITH (NOLOCK) 
 				 CROSS APPLY (SELECT TOP 1 CM_1.LevelID   
-								FROM WinLimit_CustGameMonitoring CM_1 WITH (NOLOCK)   
-									INNER JOIN Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON GGS.GroupID =CM_1.GroupID 
+								FROM dbo.WinLimit_CustGameMonitoring CM_1 WITH (NOLOCK)   
+									INNER JOIN dbo.Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON GGS.GroupID =CM_1.GroupID 
 																							AND CM_1.ProductID = GGS.ProductID 
 																							AND CS.BettypeID = GGS.BetTypeID
 								WHERE CS.CustID = CM_1.CustID AND CS.ProductID = CM_1.ProductID 
 								ORDER BY CM_1.ModifiedDate DESC  
 								) CM  
-				INNER JOIN Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = CM.LevelID
+				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = CM.LevelID
 			WHERE cs.CustID = @custID 
 		END
 		ELSE
