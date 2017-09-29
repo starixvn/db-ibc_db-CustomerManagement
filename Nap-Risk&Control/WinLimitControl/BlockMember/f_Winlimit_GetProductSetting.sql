@@ -19,6 +19,7 @@ AS
 		- 20170707@Elodie: Apply SMA Winlimit for Lottery [Redmine:#77927]
 		- 20170710@Helen: Keno Lottery, BetradarVS into CWL [Redmine:77567,77564]
 		- 20171027@Johnson: Add Lucky 3 [Redmine: #75883]
+		- 20171001@Elodie: Apply SMA Winlimit and Company Win Limit for BullFighting [Redmine:#81664]
 
 	Parameters Explanation:	
 */
@@ -60,7 +61,8 @@ BEGIN
 									
 			UNION ALL
 			SELECT 26, 1600, 0,1 --Lucky 3
-			
+			UNION ALL
+			SELECT 207, 1004, 1, 1  -- BullFighting
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
 
