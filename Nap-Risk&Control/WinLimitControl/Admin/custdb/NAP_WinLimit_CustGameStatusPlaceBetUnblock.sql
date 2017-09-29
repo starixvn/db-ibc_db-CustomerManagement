@@ -15,13 +15,11 @@ SET ANSI_NULLS ON;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE PROCEDURE [dbo].[NAP_WinLimit_CustGameStatusPlaceBetUnblock] @CustId       INT,
-                                                                    @ProductId    INT,
-                                                                    @GroupId      INT,
-                                                                    @UserID       INT           = 0,
-                                                                    @IP           VARCHAR(20)   = '',
-                                                                    @ErrorCode    INT           = 0 OUTPUT,
-                                                                    @ErrorMessage NVARCHAR(500) = '' OUTPUT
+CREATE PROCEDURE [dbo].[NAP_WinLimit_CustGameStatusPlaceBetUnblock] @CustId    INT,
+                                                                    @ProductId INT,
+                                                                    @GroupId   INT,
+                                                                    @UserID    INT         = 0,
+                                                                    @IP        VARCHAR(20) = ''
 AS
 	
 /*
@@ -33,6 +31,7 @@ DB: DBCust/CustDB
 
 Revisions:
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:	
 
     EXEC [NAP_WinLimit_CustGameStatusPlaceBetUnblock]
@@ -49,26 +48,20 @@ Parameters Explanation:
      DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT, @LogSPData VARCHAR(300);
      SELECT @StartRun = GETDATE();
      BEGIN -- UPDATE
-         BEGIN TRY
-             UPDATE s
-               SET
-                   s.IsBlockedPlaceBet = 0,
-                   s.ActionId = 2,
-                   s.ModifiedDate = GETDATE()
-             FROM dbo.WinLimit_CustGameStatus s WITH (ROWLOCK, UPDLOCK)
-                  INNER JOIN dbo.Winlimit_GameGroupSetting g WITH (NOLOCK) ON s.BettypeID = g.BettypeID
-                                                                              AND s.ProductID = g.ProductID
-             WHERE s.CustId = @CustId
-                   AND s.ProductId = @ProductId
-                   AND g.GroupId = @GroupId;
-         END TRY
-         BEGIN CATCH
-             SELECT @ErrorCode = 1,
-                    @ErrorMessage = 'The setting of PlaceBet/Withdraw cannot be changed because of an database internal error.';
-             RETURN;
-         END CATCH;
+         UPDATE s
+           SET
+               s.IsBlockedPlaceBet = 0,
+               s.ActionId = 2,
+               s.ModifiedDate = GETDATE()
+         FROM dbo.WinLimit_CustGameStatus s WITH (ROWLOCK, UPDLOCK)
+              INNER JOIN dbo.Winlimit_GameGroupSetting g WITH (NOLOCK) ON s.BettypeID = g.BettypeID
+                                                                          AND s.ProductID = g.ProductID
+         WHERE s.CustId = @CustId
+               AND s.ProductId = @ProductId
+               AND g.GroupId = @GroupId;
      END;
      BEGIN --LOG
+
          SELECT @EndRun = GETDATE(),
                 @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
          SET @LogSPData = '<NAP_WinLimit_CustGameStatusPlaceBetUnblock ';
@@ -88,8 +81,6 @@ Parameters Explanation:
          BEGIN CATCH
          END CATCH;
      END;
-     SELECT @ErrorCode = 0,
-            @ErrorMessage = '';
 GO
 GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusPlaceBetUnblock] TO [bodbAdminNet];
 GO

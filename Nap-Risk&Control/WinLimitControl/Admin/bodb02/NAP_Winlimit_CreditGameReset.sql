@@ -8,14 +8,13 @@ IF EXISTS
           AND type IN(N'P', N'PC')
 )
     DROP PROCEDURE [dbo].[NAP_Winlimit_CreditGameReset];
-
 GO
 SET ANSI_NULLS ON;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE PROCEDURE [dbo].[NAP_Winlimit_CreditGameReset] @CustId    INT,
-                                                     @GroupId INT
+CREATE PROCEDURE [dbo].[NAP_Winlimit_CreditGameReset] @CustId  INT,
+                                                      @GroupId INT
 AS
 	
 /*
@@ -27,6 +26,8 @@ DB: DBCust/bodb02
 
 Revisions:
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
+
 Parameters Explanation:	
 EXEC [NAP_Winlimit_CreditGameReset] 
    @CustId = 662531, 
@@ -35,28 +36,17 @@ EXEC [NAP_Winlimit_CreditGameReset]
 */
 
      SET NOCOUNT ON;
-     BEGIN -- ATE
-         BEGIN TRY
-             UPDATE cg
-               SET
-                   cg.WinLost = 0
-             FROM dbo.WinLimit_CreditGame cg WITH (ROWLOCK, UPDLOCK)
-             WHERE cg.CustId = @CustId
-                   AND cg.BetType IN
-             (
-                 SELECT BetTypeId
-                 FROM DBCUST.CustDB.dbo.Winlimit_GameGroupSetting WITH (NOLOCK)
-                 WHERE GroupId = @GroupId
-             );
-         END TRY
-         BEGIN CATCH
-             SELECT 1 AS ErrorCode,
-                    'The credit win limit cannot be reseted because of an database internal error.' AS ErrorMessage;
-             RETURN;
-         END CATCH;
-     END;
-     SELECT 0 AS ErrorCode,
-            '' AS ErrorMessage;
+     UPDATE cg
+       SET
+           cg.WinLost = 0
+     FROM dbo.WinLimit_CreditGame cg WITH (ROWLOCK, UPDLOCK)
+     WHERE cg.CustId = @CustId
+           AND cg.BetType IN
+     (
+         SELECT BetTypeId
+         FROM DBCUST.CustDB.dbo.Winlimit_GameGroupSetting WITH (NOLOCK)
+         WHERE GroupId = @GroupId
+     );
 GO
 GRANT EXECUTE ON [dbo].[NAP_Winlimit_CreditGameReset] TO [bodbAdminNet];
 GO

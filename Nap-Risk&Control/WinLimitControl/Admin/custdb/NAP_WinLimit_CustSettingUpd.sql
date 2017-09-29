@@ -24,9 +24,7 @@ CREATE PROCEDURE [dbo].NAP_WinLimit_CustSettingUpd @CustID       INT,
                                                    @LevelID      INT,
                                                    @MaxWinLimit  MONEY         = 0,
                                                    @UserID       INT           = 0,
-                                                   @IP           VARCHAR(20)   = '',
-                                                   @ErrorCode    INT           = 0 OUTPUT,
-                                                   @ErrorMessage NVARCHAR(100) = '' OUTPUT
+                                                   @IP           VARCHAR(20)   = ''
 AS
 	
 /*
@@ -38,7 +36,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
-
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:
 	
 	
@@ -56,29 +54,19 @@ Parameters Explanation:
                AND GroupId = @GroupId
                AND LevelId = @LevelId;
      END;
-     BEGIN -- UPDATE
-
-         BEGIN TRY
-             UPDATE dbo.WinLimit_CustGameSetting WITH(ROWLOCK, UPDLOCK)
-               SET
-                   MaxWinLimit_RM = @MaxWinLimit
-             WHERE CustID = @CustID
-                   AND ProductID = @ProductID
-                   AND Groupid = @GroupId
-                   AND LevelId = @LevelId;
-             EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
-                  @IsCurrencySetting = 0,
-                  @CustID = @CustID,
-                  @ProductID = @ProductId,
-                  @GroupId = @GroupId,
-                  @LevelID = @LevelId;
-         END TRY
-         BEGIN CATCH
-             SELECT @ErrorCode = 4,
-                    @ErrorMessage = 'This setting cannot be updated because of an database internal error.';
-             RETURN;
-         END CATCH;
-     END;
+     UPDATE dbo.WinLimit_CustGameSetting WITH(ROWLOCK, UPDLOCK)
+	   SET
+		   MaxWinLimit_RM = @MaxWinLimit
+	 WHERE CustID = @CustID
+		   AND ProductID = @ProductID
+		   AND Groupid = @GroupId
+		   AND LevelId = @LevelId;
+	 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
+		  @IsCurrencySetting = 0,
+		  @CustID = @CustID,
+		  @ProductID = @ProductId,
+		  @GroupId = @GroupId,
+		  @LevelID = @LevelId;
      BEGIN -- LOG
          SELECT @EndRun = GETDATE(),
                 @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
@@ -113,8 +101,6 @@ Parameters Explanation:
          BEGIN CATCH
          END CATCH;
      END;
-     SELECT @ErrorCode = 0,
-            @ErrorMessage = '';
 GO
 GRANT EXECUTE ON [dbo].NAP_WinLimit_CustSettingUpd TO [bodbAdminNet];
 GO

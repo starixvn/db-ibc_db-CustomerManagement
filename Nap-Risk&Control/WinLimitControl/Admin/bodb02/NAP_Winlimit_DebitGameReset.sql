@@ -26,7 +26,7 @@ DB: DBCust/bodb02
 
 Revisions:
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
-
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:	
 EXEC [NAP_Winlimit_DebitGameReset] 
    @CustId = 662531, 
@@ -35,28 +35,17 @@ EXEC [NAP_Winlimit_DebitGameReset]
 */
 
      SET NOCOUNT ON;
-     BEGIN -- UPDATE
-         BEGIN TRY
-             UPDATE cg
-               SET
-                   cg.WinLost = 0
-             FROM dbo.Winlimit_DebitGame cg WITH (ROWLOCK, UPDLOCK)
-             WHERE cg.CustId = @CustId
-                   AND cg.BetType IN
-             (
-                 SELECT BetTypeId
-                 FROM DBCUST.CustDB.dbo.Winlimit_GameGroupSetting WITH (NOLOCK)
-                 WHERE GroupId = @GroupId
-             );
-         END TRY
-         BEGIN CATCH
-             SELECT 1 AS ErrorCode,
-                    'The debit win limit cannot be reseted because of an database internal error.' AS ErrorMessage;
-             RETURN;
-         END CATCH;
-     END;
-     SELECT 0 AS ErrorCode,
-            '' AS ErrorMessage;
+     UPDATE cg
+       SET
+           cg.WinLost = 0
+     FROM dbo.Winlimit_DebitGame cg WITH (ROWLOCK, UPDLOCK)
+     WHERE cg.CustId = @CustId
+           AND cg.BetType IN
+     (
+         SELECT BetTypeId
+         FROM DBCUST.CustDB.dbo.Winlimit_GameGroupSetting WITH (NOLOCK)
+         WHERE GroupId = @GroupId
+     );
 GO
 GRANT EXECUTE ON [dbo].[NAP_Winlimit_DebitGameReset] TO [bodbAdminNet];
 GO

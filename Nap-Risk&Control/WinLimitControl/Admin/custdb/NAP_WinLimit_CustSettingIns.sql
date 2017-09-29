@@ -15,17 +15,15 @@ SET ANSI_NULLS ON;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingIns] @CustId       INT,
-                                                     @ProductId    INT,
-                                                     @GroupId      INT,
-                                                     @SiteId       INT,
-                                                     @CurrencyId   INT,
-                                                     @LevelId      INT,
-                                                     @MaxWinLimit  MONEY,
-                                                     @UserID       INT           = 0,
-                                                     @IP           VARCHAR(20)   = '',
-                                                     @ErrorCode    INT           = 0 OUTPUT,
-                                                     @ErrorMessage NVARCHAR(500) = '' OUTPUT
+CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingIns] @CustId      INT,
+                                                     @ProductId   INT,
+                                                     @GroupId     INT,
+                                                     @SiteId      INT,
+                                                     @CurrencyId  INT,
+                                                     @LevelId     INT,
+                                                     @MaxWinLimit MONEY,
+                                                     @UserID      INT         = 0,
+                                                     @IP          VARCHAR(20) = ''
 AS
 
 /*
@@ -37,6 +35,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:
 
 Example:	
@@ -56,35 +55,26 @@ EXEC [NAP_WinLimit_CustSettingIns]
      DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT;
      SELECT @StartRun = GETDATE();
      BEGIN -- INSERT
-         BEGIN TRY
-             INSERT INTO dbo.WinLimit_CustGameSetting
-             (CustID,
-              ProductID,
-              GroupId,
-              LevelID,
-              MaxWinLimit_RM
-             )
-             VALUES
-             (@CustId,
-              @ProductId,
-              @GroupId,
-              @LevelId,
-              @MaxWinLimit
-             );
-             SELECT @ErrorCode = 0,
-                    @ErrorMessage = '';
-             EXEC dbo.Task_Winlimit_CurrencyMaxWinLimitUpd
-                  @IsCurrencySetting = 0,
-                  @CustID = @CustID,
-                  @ProductID = @ProductId,
-                  @GroupId = @GroupId,
-                  @LevelID = @LevelId;
-         END TRY
-         BEGIN CATCH
-             SELECT @ErrorCode = 5,
-                    @ErrorMessage = 'This setting cannot be inserted because of an database internal error.';
-             RETURN;
-         END CATCH;
+         INSERT INTO dbo.WinLimit_CustGameSetting
+         (CustID,
+          ProductID,
+          GroupId,
+          LevelID,
+          MaxWinLimit_RM
+         )
+         VALUES
+         (@CustId,
+          @ProductId,
+          @GroupId,
+          @LevelId,
+          @MaxWinLimit
+         );
+         EXEC dbo.Task_Winlimit_CurrencyMaxWinLimitUpd
+              @IsCurrencySetting = 0,
+              @CustID = @CustID,
+              @ProductID = @ProductId,
+              @GroupId = @GroupId,
+              @LevelID = @LevelId;
      END;
      BEGIN --LOG
          DECLARE @LogSPData VARCHAR(300);
@@ -111,8 +101,6 @@ EXEC [NAP_WinLimit_CustSettingIns]
          BEGIN CATCH
          END CATCH;
      END;
-     SELECT @ErrorCode = 0,
-            @ErrorMessage = '';
 GO
 GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingIns] TO [bodbAdminNet];
 GO

@@ -35,7 +35,7 @@ Revisions:
 	- 20160923@Jacob: Risk & Control - Phase 3 [#61220].  
 	- 20170321@Hellen: Risk & Control - Phase 3A [#72604].  
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332] 
-	
+	- 20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:   
    @FromDate: From date  
    @ToDate: To Date  
@@ -46,7 +46,7 @@ Parameters Explanation:
    @LevelId: Level Id  
      
 Example:  
-EXEC NAP_WinLimit_MonitorSel @FromDate = '20160101', @ToDate = '20161231'  
+EXEC NAP_WinLimit_MonitorSel @FromDate = '20160101', @ToDate = '20191231'  
 */
 BEGIN
 
@@ -63,7 +63,8 @@ BEGIN
           ModifiedDate      DATETIME,
           CurrencyId        INT,
           SiteId            INT,
-          IsNotified        BIT
+          IsNotified        BIT,
+		MaxWinLimitSetting XML
          );
          INSERT INTO #WinLimitMonitor
          (CustId,
@@ -76,7 +77,8 @@ BEGIN
           ModifiedDate,
           CurrencyId,
           SiteId,
-          IsNotified
+          IsNotified,
+		MaxWinLimitSetting
          )
                 SELECT cm.CustID,
                        ci.username,
@@ -88,7 +90,8 @@ BEGIN
                        cm.ModifiedDate,
                        c.currency,
                        s.siteid,
-                       cmh_notified.IsNotified
+                       cmh_notified.IsNotified,
+				   cm.MaxWinLimitSetting
                 FROM WinLimit_CustGameMonitoring cm WITH (NOLOCK)
 					 CROSS APPLY (SELECT TOP 1 IsNotified 
 								  FROM WinLimit_CustGameMonitoring_History cmh WITH (NOLOCK) 
@@ -128,6 +131,7 @@ BEGIN
                 m.TotalWinAmountRM,
                 m.ModifiedDate AS ReachedLimitTime,
                 m.ReachedLimitLevel,
+			 m.MaxWinLimitSetting,
          (
              SELECT COUNT(1)
              FROM dbo.WinLimit_CustGameMonitoring_History h WITH (NOLOCK)

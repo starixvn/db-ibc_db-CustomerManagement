@@ -18,13 +18,11 @@ SET ANSI_NULLS ON;
 GO
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingDel] @CustID       INT,
-                                                     @ProductID    TINYINT,
-                                                     @GroupId      INT,
-                                                     @UserID       INT           = 0,
-                                                     @IP           VARCHAR(20)   = '',
-                                                     @ErrorCode    INT           = 0 OUTPUT,
-                                                     @ErrorMessage NVARCHAR(200) = '' OUTPUT
+CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingDel] @CustID    INT,
+                                                     @ProductID TINYINT,
+                                                     @GroupId   INT,
+                                                     @UserID    INT         = 0,
+                                                     @IP        VARCHAR(20) = ''
 AS
 
 /*
@@ -36,7 +34,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
-
+20170808@Jacob: Risk & Control - Phase 4 [#72870]
 Parameters Explanation:	
 
 Example: 	
@@ -49,7 +47,7 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
      SELECT @StartRun = GETDATE();
      BEGIN -- SAVE Old State
          DECLARE @OldState TABLE
-         (LevelId     INT,
+         (LevelId        INT,
           MaxWinLimit_RM MONEY
          );
          INSERT INTO @OldState
@@ -61,19 +59,13 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
                       AND GroupId = @GroupId;
      END;
      BEGIN -- Delete
-         BEGIN TRY
-             DELETE dbo.WinLimit_CustGameSetting
-             WHERE CustID = @CustID
-                   AND ProductID = @ProductID
-                   AND GroupId = @GroupId;
-         END TRY
-         BEGIN CATCH
-             SELECT @ErrorCode = 2,
-                    @ErrorMessage = 'This setting cannot be deleted because of an database internal error.';
-             RETURN;
-         END CATCH;
+         DELETE dbo.WinLimit_CustGameSetting
+         WHERE CustID = @CustID
+               AND ProductID = @ProductID
+               AND GroupId = @GroupId;
      END;
      BEGIN -- Log
+
          SELECT @EndRun = GETDATE(),
                 @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
          DECLARE @LogSPData VARCHAR(300);
@@ -93,7 +85,7 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
                  FROM @OldState;
                  SET @LogSPData = @LogSPData+'" MaxWinLimitLevel'+CONVERT(VARCHAR(20), @LevelId)+'="'+CONVERT(VARCHAR(20), @MaxWinLimitOld);
                  DELETE @OldState
-                 WHERE LevelId = @LevelId
+                 WHERE LevelId = @LevelId;
              END;
          SET @LogSPData = @LogSPData+'" UserId="'+CONVERT(VARCHAR(20), @UserId);
          SET @LogSPData = @LogSPData+'" IP="'+COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1))+'" />';
@@ -108,8 +100,6 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
          BEGIN CATCH
          END CATCH;
      END;
-     SELECT @ErrorCode = 0,
-            @ErrorMessage = '';
 GO
 GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingDel] TO [bodbAdminNet];
 GO
