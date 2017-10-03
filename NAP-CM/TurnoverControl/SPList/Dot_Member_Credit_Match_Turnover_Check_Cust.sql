@@ -35,11 +35,16 @@ BEGIN
 	SELECT @NewMatchTurnover = -1, @MaxMatchTurnover_Setting = -1
 	SELECT @StopFlag = 0
 	
+	-- Get Extra PT Info: 
+			-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
+			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
+			
 	SET @ExtraPT = ISNULL((SELECT SUM(ExtraPT) 
 							FROM dbo.Acc_GroupExtraPTSetting s WITH(NOLOCK) 
 							WHERE s.SuperId = @SRecommend 
 								AND s.ProductId = 1 
 								AND s.Sporttype  = 0 
+								AND s.SubProduct = ''
 								AND @EventDate BETWEEN s.FromDate AND s.ToDate)
 							,0)
 	

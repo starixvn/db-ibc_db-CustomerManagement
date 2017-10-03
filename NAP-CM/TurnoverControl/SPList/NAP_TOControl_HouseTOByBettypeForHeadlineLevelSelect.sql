@@ -60,13 +60,16 @@ BEGIN
 		INNER JOIN bodb02.dbo.custInfo ci WITH (NOLOCK) ON ci.custid = ca1.custid
 	WHERE ca.custid = @CustID 
 	
-	-- Get extra PT info
+	-- Get Extra PT Info: 
+			-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
+			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
 	INSERT INTO @ExtraPTInfo (SuperID,ExtraPT)
 	SELECT GHL.srecommend,ISNULL(SUM(EPT.ExtraPT),0)
 	FROM (SELECT DISTINCT srecommend FROM @GroupHeadlineList) AS GHL
 		LEFT JOIN dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK) ON GHL.srecommend = EPT.SuperId 
 																AND EPT.ProductId = 1 
 																AND EPT.Sporttype = 0 
+																AND EPT.SubProduct = ''
 																AND @EventDate BETWEEN EPT.FromDate AND EPT.ToDate 
 	GROUP BY GHL.srecommend																
 	

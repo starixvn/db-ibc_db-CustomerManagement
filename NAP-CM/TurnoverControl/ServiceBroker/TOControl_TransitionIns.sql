@@ -64,12 +64,15 @@ BEGIN
 		FROM @XMLString.nodes('/root/r') AS x(v)
 		OPTION (OPTIMIZE FOR (@XMLString = NULL))
 		
-		-- Get Extra PT Info 
+		-- Get Extra PT Info: 
+			-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
+			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
 		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
 		SELECT GHL.srecommend,EPT.ExtraPT,EPT.FromDate,EPT.ToDate
 		FROM dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK)
 			INNER JOIN @TmpTable GHL ON GHL.srecommend = EPT.SuperId
-		WHERE EPT.ProductId = 1 AND EPT.Sporttype  = 0 AND EPT.ToDate >= @EventDate_min
+		WHERE EPT.ProductId = 1 AND EPT.Sporttype  = 0 
+			AND EPT.SubProduct = '' AND EPT.ToDate >= @EventDate_min
 		
 		-- Get Group Headline Info have global setting
 		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded)

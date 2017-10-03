@@ -43,3 +43,6 @@ BEGIN
 	END
 END
 GO
+
+GRANT EXECUTE ON [dbo].[NAP_TOControl_TurnoverNotificationUpdate] TO [bodbAdminNet]
+GO
