@@ -11,7 +11,7 @@ AS
 /*
 	Created: Helen
 	Date: 2017-09-21
-	Task: Retrieve balance information
+	Task: Retrieve balance information - [Redmine:75557]
 	DB: DBAGE.bodb02
 	
 	Revisions:
@@ -27,7 +27,7 @@ BEGIN
 	
 	CREATE TABLE #HouseTO_1_3_5_7_8_15 (liveindicator TINYINT, bettype SMALLINT, betteam_h MONEY, betteam_a MONEY,betteam_1 MONEY,betteam_x MONEY, betteam_2 MONEY )
 	
-	CREATE TABLE #HouseTO_99 (liveindicator BIT, bettype SMALLINT, total MONEY )
+	CREATE TABLE #HouseTO_99 (liveindicator TINYINT, bettype SMALLINT, total MONEY )
 	
 	CREATE TABLE  #SportBettype (Bettype SMALLINT PRIMARY KEY)
 	

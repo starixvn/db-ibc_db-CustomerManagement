@@ -67,8 +67,8 @@ BEGIN
 		UPDATE dbo.TOControl_Setting WITH(ROWLOCK, UPDLOCK)
 			SET 
 				MaxTurnover = @MaxTurnover,
-				IsNotified =  ISNULL((SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting WITH(NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) > PercentValue AND IsNotified = 1),0),
-				PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) > PercentValue),0) 
+				IsNotified =  ISNULL((SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting WITH(NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) >= PercentValue AND IsNotified = 1),0),
+				PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) >= PercentValue),0) 
 						
 		WHERE CustID = @CustID AND matchid = @MatchID AND IsGroupHeadLine = @IsGroupHeadline
 	END

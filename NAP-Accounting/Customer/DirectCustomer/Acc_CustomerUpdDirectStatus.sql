@@ -15,6 +15,7 @@ AS
 	Revisions:		
 		- 20140523@Logan: Initial version.
 		- 20170420@Helen:  Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		
     Param's Explanation:
     • @ErrCode:
@@ -32,6 +33,9 @@ BEGIN
           , @duration INT
           , @existed  BIT  
     SET @startRun = getdate()
+    
+    DECLARE @CreateDate DATETIME
+	SET @CreateDate = GETDATE()
 
     --Checking if the account is markable or not
     DECLARE @upline INT = 0
@@ -87,7 +91,23 @@ BEGIN
 	INSERT INTO CustDirectAccount (CustID)
 	SELECT C.custid
 	FROM @affectedList C 
-	
+	-- TO Control: Send Email
+	IF @roleid IN (2,3,4)
+	BEGIN
+		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
+		
+		SELECT '<NewDirectCustomer  custid="'+ COALESCE(CAST(CustID AS VARCHAR(300)), SPACE(1)) + '" ' +
+									'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" ' +
+									'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)),SPACE(1)) + '" />'  AS NotificationInfo
+				, @CreateDate AS CreatedDate
+				
+				, CASE	WHEN @roleid = 4 THEN 600
+						WHEN @roleid = 3 THEN 601
+						WHEN @roleid = 2 THEN 602
+				  END AS ActionID		
+										
+		FROM @affectedList
+	END
 	--DELETE dbo.CustDirectAccount WHERE CustID = @upline
 		
     DECLARE @affCust INT

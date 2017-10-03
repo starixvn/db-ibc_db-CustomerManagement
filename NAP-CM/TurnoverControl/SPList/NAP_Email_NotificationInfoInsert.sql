@@ -1,6 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO
 ALTER PROCEDURE [dbo].[NAP_Email_NotificationInfoInsert]
 (
 	@ActionID INT
@@ -11,8 +9,8 @@ AS
 /*
 	Created: Helen
 	Date: 2017-09-29
-	Task: Email Notifications
-	DB: DBCUST.CustDB
+	Task: Email Notifications - [Redmine:75557]
+	DB: DBCUST/CustDB
 
 	Revisions:
 		

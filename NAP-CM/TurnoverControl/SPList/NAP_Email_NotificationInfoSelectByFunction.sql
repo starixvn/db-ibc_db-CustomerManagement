@@ -11,8 +11,8 @@ AS
 /*
 	Created: Helen
 	Date: 2017-09-29
-	Task: Email Notifications
-	DB: DBCUST.CustDB
+	Task: Email Notifications - [Redmine:75557]
+	DB: DBCUST/CustDB
 
 	Revisions:
 		
@@ -38,7 +38,7 @@ BEGIN
 	-- FOR TO Control
 	IF @NotifiedByFunction_Flag = 1
 	BEGIN
-		SELECT EN.NotificationInfo,EN.CreatedDate,EN.ActionID
+		SELECT EN.ID,EN.NotificationInfo,EN.CreatedDate,EN.ActionID
 		FROM dbo.EmailNotification EN WITH (NOLOCK)
 			INNER JOIN dbo.strSplit(@ActionIDs,',') AC ON EN.ActionID =AC.val 
 		WHERE EN.IsNotifiedbyTOControl = 0 AND EN.CreatedDate >= @fromdate AND CreatedDate < @todate

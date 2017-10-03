@@ -9,14 +9,13 @@ ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeSelect]
 AS
 
 /*
-	Created: Don
-	Date: 2017-03-27
-	Task: Retrieve balance information
+	Created: Helen
+	Date: 2017-09-21
+	Task: Retrieve balance information - [Redmine:75557]
 	DB: DBAGE.bodb02
-	Original: DBAGE.bodb02.NAP_SMATurnoverBalanceInfoSel
-
+	
 	Revisions:
-		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+	
 	Parameter's explaination: 
 	
 		

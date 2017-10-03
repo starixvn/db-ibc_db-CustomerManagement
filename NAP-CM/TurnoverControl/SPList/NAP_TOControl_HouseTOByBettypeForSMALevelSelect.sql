@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
+alter PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
 (
 	@CustID INT,
 	@matchid INT,
@@ -9,14 +9,13 @@ ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
 AS
 
 /*
-	Created: Don
-	Date: 2017-03-27
-	Task: Retrieve balance information
+	Created: Helen
+	Date: 2017-09-21
+	Task: Retrieve balance information - [Redmine:75557]
 	DB: DBAGE.bodb02
-	Original: DBAGE.bodb02.NAP_SMATurnoverBalanceInfoSel
-
+	
 	Revisions:
-		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+	
 	Parameter's explaination: 
 	
 	
@@ -27,9 +26,9 @@ BEGIN
 	-- CALL wrong SP
 	IF @IsGroupHeadline = 1 RETURN
 	
-	CREATE TABLE #HouseTO_1_3_5_7_8_15 (liveindicator BIT, bettype SMALLINT, betteam_h MONEY, betteam_a MONEY,betteam_1 MONEY,betteam_x MONEY, betteam_2 MONEY )
+	CREATE TABLE #HouseTO_1_3_5_7_8_15 (liveindicator TINYINT, bettype SMALLINT, betteam_h MONEY, betteam_a MONEY,betteam_1 MONEY,betteam_x MONEY, betteam_2 MONEY )
 	
-	CREATE TABLE #HouseTO_99 (liveindicator BIT, bettype SMALLINT, total MONEY )
+	CREATE TABLE #HouseTO_99 (liveindicator TINYINT, bettype SMALLINT, total MONEY )
 	
 	DECLARE @RoleID INT , @ExtraPT DECIMAL(9,8), @srecommend INT, @EventDate_min DATETIME
 	
@@ -263,8 +262,9 @@ BEGIN
 	SELECT 2,bettype, SUM(total)
 	FROM #HouseTO_99
 	GROUP BY bettype
-
+	
 	------- FINAL RESULT --------
+	 
 	SELECT Bettype AS BettypeID
 			, CASE WHEN ISNULL(Live,'') = '' THEN '0 - 0' ELSE Live END AS Live
 			, CASE WHEN ISNULL(NonLive,'') = '' THEN '0 - 0' ELSE NonLive END AS NonLive

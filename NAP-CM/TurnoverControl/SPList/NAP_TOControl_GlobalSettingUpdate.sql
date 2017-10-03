@@ -99,7 +99,7 @@ BEGIN
 			t.IsNotified = 	CASE WHEN @MaxTurnover = 0 THEN 10 
 								  ELSE ISNULL((SELECT MAX(PercentValue) 
 												FROM dbo.TOControl_LevelSetting (NOLOCK) 
-												WHERE t.HouseTurnOver*100/@MaxTurnover > PercentValue AND IsNotified = 1),0)
+												WHERE t.HouseTurnOver*100/@MaxTurnover >= PercentValue AND IsNotified = 1),0)
 								END				
 						
 	FROM dbo.TOControl_Setting t WITH(ROWLOCK, UPDLOCK)
