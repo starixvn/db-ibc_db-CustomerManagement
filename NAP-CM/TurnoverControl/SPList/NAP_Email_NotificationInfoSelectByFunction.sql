@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_Email_NotificationInfoSelectByFunction_xtest]
+ALTER PROCEDURE [dbo].[NAP_Email_NotificationInfoSelectByFunction]
 (
 	@fromdate DATETIME 
 	, @todate DATETIME 
@@ -48,7 +48,7 @@ BEGIN
 END
 GO
 
-GRANT EXECUTE ON [dbo].[NAP_Email_NotificationInfoSelectByFunction_xtest] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[NAP_Email_NotificationInfoSelectByFunction] TO [bodbAdminNet]
 
 GO
 
