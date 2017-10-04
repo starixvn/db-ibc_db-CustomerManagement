@@ -151,31 +151,91 @@ BEGIN
 
 	-- Log data for each customer
 	DECLARE	@CustID			INT
-		,	@LogSPData		NVARCHAR(MAX) = '';
-	
-	INSERT INTO #log
-		(	CustID, LogValue, isFinished)
-	SELECT	CAST(ss.val AS INT)
-		,	(	SELECT	ss.val		AS '@CustID'
-					,	@UserID		AS '@UserID'
-					,	@ErrCode	AS '@ErrCode'
-					,	@ErrMsg		AS '@ErrMsg'
-					,	@IP			AS '@IP'
-					,	1			AS '@EnableVirtualrate'
-					,	(	SELECT	pvs.sporttype			AS '@SportType'
-								,	pvs.bettype				AS '@BetType'
-								,	pvs.islive				AS '@IsLive'
-								,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
-							FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)
-							ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
-							FOR XML PATH ('s')
-						,	TYPE
-						)
-				FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
-			)
-		,	0
-	FROM		@tblVirtualrate AS tv
-	CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+		,	@LogSPData		NVARCHAR(MAX) = ''
+		,	@LogSPData_OLD	NVARCHAR(MAX) = '';
+	IF(@SportType=0)
+	BEGIN
+		INSERT INTO #log
+			(	CustID, LogValue, isFinished)
+		SELECT	CAST(ss.val AS INT)
+			,	(	SELECT	ss.val		AS '@CustID'
+						,	@UserID		AS '@UserID'
+						,	@SportType  AS '@SportType'
+						,	@ErrCode	AS '@ErrCode'
+						,	@ErrMsg		AS '@ErrMsg'
+						,	@IP			AS '@IP'
+						,	1			AS '@EnableVirtualrate'
+						,	(	SELECT	pvs.sporttype			AS '@SportType'
+									,	pvs.bettype				AS '@BetType'
+									,	pvs.islive				AS '@IsLive'
+									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)						
+								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+								FOR XML PATH ('s')
+							,	TYPE
+							)
+					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+				)
+			,	0
+		FROM		@tblVirtualrate AS tv
+		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
+	ELSE IF(@SportType=1)
+	BEGIN
+		INSERT INTO #log
+			(	CustID, LogValue, isFinished)
+		SELECT	CAST(ss.val AS INT)
+			,	(	SELECT	ss.val		AS '@CustID'
+						,	@UserID		AS '@UserID'
+						,	@SportType  AS '@SportType'
+						,	@ErrCode	AS '@ErrCode'
+						,	@ErrMsg		AS '@ErrMsg'
+						,	@IP			AS '@IP'
+						,	1			AS '@EnableVirtualrate'
+						,	(	SELECT	pvs.sporttype			AS '@SportType'
+									,	pvs.bettype				AS '@BetType'
+									,	pvs.islive				AS '@IsLive'
+									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+								WHERE pvs.sporttype =1			
+								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+								FOR XML PATH ('s')
+							,	TYPE
+							)
+					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+				)
+			,	0
+		FROM		@tblVirtualrate AS tv
+		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
+	ELSE IF(@SportType=2)
+	BEGIN 
+		INSERT INTO #log
+			(	CustID, LogValue, isFinished)
+		SELECT	CAST(ss.val AS INT)
+			,	(	SELECT	ss.val		AS '@CustID'
+						,	@UserID		AS '@UserID'
+						,	@SportType  AS '@SportType'
+						,	@ErrCode	AS '@ErrCode'
+						,	@ErrMsg		AS '@ErrMsg'
+						,	@IP			AS '@IP'
+						,	1			AS '@EnableVirtualrate'
+						,	(	SELECT	pvs.sporttype			AS '@SportType'
+									,	pvs.bettype				AS '@BetType'
+									,	pvs.islive				AS '@IsLive'
+									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+								WHERE pvs.sporttype <>1			
+								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+								FOR XML PATH ('s')
+							,	TYPE
+							)
+					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+				)
+			,	0
+		FROM		@tblVirtualrate AS tv
+		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
 
 	SET	@endRun = GETDATE();
 	SET	@duration = DATEDIFF(MILLISECOND, @startRun, @endRun);
@@ -187,16 +247,87 @@ BEGIN
 		,	@CustID = CustID
 		,	@LogSPData = LogValue
 		WHERE	isFinished = 0;
-
 		IF	@@ROWCOUNT = 0
 			BREAK;
-
+			
+		IF(@SportType=0)
+		BEGIN
+			SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+			ELSE IF (@SportType=1)
+			BEGIN
+				SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID	AND pvs.sporttype = 1 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+			ELSE IF
+			(@SportType=2)
+			BEGIN
+				SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID	AND pvs.sporttype <> 1 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+		
 		BEGIN TRY
 			EXECUTE	DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 						@UserID = @UserID
 					,	@CustID = @CustID
 					,	@ActionID = 807
 					,	@TrackingValue = @LogSPData
+					,	@TrackingValue2= @LogSPData_OLD
 					,	@Duration = @duration;			
 		END TRY
 		BEGIN CATCH
@@ -205,6 +336,7 @@ BEGIN
 					,	@CustID = @CustID
 					,	@ActionID = 807
 					,	@TrackingValue = @LogSPData
+					,	@TrackingValue2= @LogSPData_OLD
 					,	@Duration = @duration;
 		END CATCH;
 	END;
