@@ -22,6 +22,7 @@ AS
 		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
 		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
+		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment
 	Param's Explanation:  
 		- @SportType = 0 : All
 					 = 1 : Soccer
@@ -211,30 +212,30 @@ BEGIN
 	ELSE IF(@SportType=2)
 	BEGIN 
 		INSERT INTO #log
-			(	CustID, LogValue, isFinished)
-		SELECT	CAST(ss.val AS INT)
-			,	(	SELECT	ss.val		AS '@CustID'
-						,	@UserID		AS '@UserID'
-						,	@SportType  AS '@SportType'
-						,	@ErrCode	AS '@ErrCode'
-						,	@ErrMsg		AS '@ErrMsg'
-						,	@IP			AS '@IP'
-						,	1			AS '@EnableVirtualrate'
-						,	(	SELECT	pvs.sporttype			AS '@SportType'
-									,	pvs.bettype				AS '@BetType'
-									,	pvs.islive				AS '@IsLive'
-									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
-								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
-								WHERE pvs.sporttype <>1			
-								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
-								FOR XML PATH ('s')
-							,	TYPE
-							)
-					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
-				)
-			,	0
-		FROM		@tblVirtualrate AS tv
-		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+				(	CustID, LogValue, isFinished)
+			SELECT	CAST(ss.val AS INT)
+				,	(	SELECT	ss.val		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									WHERE pvs.sporttype <>1			
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+				,	0
+			FROM		@tblVirtualrate AS tv
+			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
 	END
 
 	SET	@endRun = GETDATE();
@@ -248,8 +249,8 @@ BEGIN
 		,	@LogSPData = LogValue
 		WHERE	isFinished = 0;
 		IF	@@ROWCOUNT = 0
-			BREAK;
-			
+			BREAK;			
+		
 		IF(@SportType=0)
 		BEGIN
 			SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
@@ -299,7 +300,7 @@ BEGIN
 			ELSE IF
 			(@SportType=2)
 			BEGIN
-				SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+					SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
 							,	@UserID		AS '@UserID'
 							,	@SportType  AS '@SportType'
 							,	@ErrCode	AS '@ErrCode'
@@ -321,6 +322,7 @@ BEGIN
 					)
 			END
 		
+	
 		BEGIN TRY
 			EXECUTE	DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 						@UserID = @UserID
