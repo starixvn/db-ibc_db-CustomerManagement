@@ -31,6 +31,7 @@ Revisions:
 	- 20160907@Susan: Add ACCMMK group
 	- 20161005@Harris: Add ACCYNG group for Allbet
 	- 20171003@Elodie: Add ACCTESTK68 group
+	- 20171005@Elodie: Add TH999 group
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -133,7 +134,11 @@ BEGIN
 		SELECT 74 --TH
 		UNION ALL SELECT 20	--UUS
 	END
-	
+	ELSE IF (@System in ( 'TH999'))
+	BEGIN
+		INSERT INTO @tbCurrency(ExchangeID)
+		SELECT 74 --TH
+	END
 	RETURN
 END
 

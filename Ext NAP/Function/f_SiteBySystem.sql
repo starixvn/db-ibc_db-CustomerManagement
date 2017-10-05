@@ -32,6 +32,7 @@ Revisions:
 	- 20160907@Susan: Add new group ACCMMK
 	- 20161005@Harris: Add new group ACCYNG	for Allbet Testing
 	- 20171003@Elodie: Add ACCTESTK68 group
+	- 20171005@Elodie: Add TH999 group
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -94,7 +95,7 @@ BEGIN
 		UNION ALL 
 		SELECT 11 --INDO	
 	END	
-	ELSE IF (@System IN ('ACCTESTK68'))
+	ELSE IF (@System IN ('ACCTESTK68','TH999'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 257 --Y987
