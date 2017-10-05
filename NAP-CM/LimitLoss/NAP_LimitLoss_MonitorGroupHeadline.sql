@@ -15,7 +15,7 @@ AS
 
 	Parameter's explaination: 
 	
-	Example:  EXEC NAP_LimitLoss_MonitorGroupHeadline @CustID = 12345
+	Example:  EXEC NAP_LimitLoss_MonitorGroupHeadline @GroupHeadlineID = 5
 	
 */
 BEGIN
@@ -26,21 +26,17 @@ BEGIN
 	FROM bodb02.dbo.CustAccount WITH (NOLOCK)
 	WHERE groupID = @GroupHeadlineID
 
-	CREATE TABLE #LossSetting (CustID)
 	SELECT	c.CustId, c.Username, c.roleid, e.currency, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
-			CASE WHEN t.OldLevelID > t.LevelID THEN -1
-				 WHEN t.OldLevelID < t.LevelID THEN 1
+			CASE WHEN ISNULL(t.OldLevelID,0) > t.LevelID THEN -1
+				 WHEN ISNULL(t.OldLevelID,0) < t.LevelID THEN 1
 				 ELSE 0 END AS Movement,
-			CASE WHEN t.MaxLoss = 0 THEN 100 
-				 WHEN t.TotalBalance >=0 THEN 0
+			CASE WHEN ISNULL(t.MaxLoss,0) = 0 THEN 100 
+				 WHEN ISNULL(t.TotalBalance,0) >=0 THEN 0
 				 ELSE CAST((t.TotalBalance/t.MaxLoss*100) AS INT) END AS PercentageLoss
-	FROM #GroupList
-		LEFT JOIN (SELECT * FROM dbo.LimitLoss_Setting t WITH(NOLOCK) 
-
-		
-		INNER JOIN bodb02.dbo.custInfo c WITH (NOLOCK) ON t.CustID = c.custid
-		INNER JOIN bodb02.dbo.exchange e WITH (NOLOCK) on c.currency = e.exchangeid
-	WHERE t.LevelID > 0
+	FROM #GroupList gl
+		INNER JOIN bodb02.dbo.custInfo c WITH (NOLOCK) ON gl.CustID = c.custid
+		INNER JOIN bodb02.dbo.exchange e WITH (NOLOCK) ON c.currency = e.exchangeid
+		LEFT JOIN LimitLoss_Setting t WITH(NOLOCK) ON t.CustID = gl.custid
 	ORDER BY PercentageLoss DESC, t.TotalBalance, c.username
 END
 

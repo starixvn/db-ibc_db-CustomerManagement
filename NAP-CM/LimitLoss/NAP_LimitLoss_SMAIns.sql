@@ -32,10 +32,10 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE	 @startRun	DATETIME,
-			 @endRun		DATETIME,
-			 @duration	INT
-    SET		 @startRun = GETDATE()
+    DECLARE	@startRun DATETIME, @endRun	DATETIME, @duration	INT
+	DECLARE @CustID INT, @roleid INT, @GroupHeadlineID SMALLINT
+
+    SET	@startRun = GETDATE()
 
     --Check permission 
     EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
@@ -47,8 +47,7 @@ BEGIN
 	   SELECT @ErrCode = 101, @ErrMsg = 'Max Loss should be negative!'
 	   RETURN
     END	    
-	    
-    DECLARE @CustID INT, @roleid INT, @GroupHeadlineID SMALLINT
+	        
     SELECT @CustID = ci.CustID,@roleid=ci.RoleID FROM bodb02.dbo.CustInfo ci WITH(NOLOCK) WHERE ci.UserName = @UserName
 
 	--Insert SMA setting
@@ -87,6 +86,12 @@ BEGIN
 		END
 		
 		INSERT INTO LimitLoss_HeadlineSetting(GroupHeadlineID, MaxLoss) VALUES(@GroupHeadlineID, @MaxLoss)
+
+		INSERT INTO LimitLoss_Setting(CustID, MaxLoss) 
+		SELECT ca.custid, NULL
+		FROM bodb02.dbo.custAccount ca WITH (NOLOCK)
+		WHERE groupID = @GroupHeadlineID
+			AND NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting WITH (NOLOCK) WHERE custid = ca.custid)
 	END
     
     DECLARE @LogData NVARCHAR(4000)

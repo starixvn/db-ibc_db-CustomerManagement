@@ -73,6 +73,11 @@ BEGIN
 		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_HeadlineSetting ls WITH (NOLOCK) WHERE ls.GroupHeadlineID = @GroupHeadlineID
 
 		DELETE LimitLoss_HeadlineSetting WITH(ROWLOCK,UPDLOCK) WHERE GroupHeadlineID = @GroupHeadlineID
+
+		DELETE ls 
+		FROM dbo.LimitLoss_Setting ls WITH (ROWLOCK,UPDLOCK)
+			INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = ls.CustID
+		WHERE ca.groupID = @GroupHeadlineID AND ls.MaxLoss IS NULL
 	END
 
     DECLARE @LogData NVARCHAR(4000)
