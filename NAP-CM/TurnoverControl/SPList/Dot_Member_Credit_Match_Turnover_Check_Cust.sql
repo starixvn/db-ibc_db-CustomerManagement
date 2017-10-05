@@ -57,9 +57,9 @@ BEGIN
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 			
-		WHERE 
-			tos.CustID = @Recommend AND
-			tos.matchid = @MatchID
+		WHERE tos.CustID = @Recommend 
+			AND	tos.matchid = @MatchID
+			AND tos.IsGroupHeadLine = 0
 
 		IF (@@ROWCOUNT > 0)
 			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
@@ -72,9 +72,9 @@ BEGIN
 			@NewMatchTurnover = tos.HouseTurnover + @adjHouseTurnover,
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
-		WHERE 
-			tos.custid = @MRecommend AND 
-			tos.matchid = @MatchID
+		WHERE tos.custid = @MRecommend 
+			AND tos.matchid = @MatchID
+			AND tos.IsGroupHeadLine = 0
 			
 		IF (@@ROWCOUNT > 0)
 			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
@@ -88,8 +88,9 @@ BEGIN
 			@MaxMatchTurnover_Setting = tos.MaxTurnOver
 		FROM dbo.TOControl_Setting tos WITH(NOLOCK)
 		WHERE 
-			tos.custid = @SRecommend AND
-			tos.matchid = @MatchID
+			tos.custid = @SRecommend 
+			AND tos.matchid = @MatchID
+			AND tos.IsGroupHeadLine = 0
 			
 		IF (@@ROWCOUNT > 0)
 			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)

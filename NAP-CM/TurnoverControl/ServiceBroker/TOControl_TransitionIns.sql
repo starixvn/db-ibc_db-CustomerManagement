@@ -39,7 +39,7 @@ BEGIN
 	
 	CREATE TABLE #ExtraPTInfo (SuperID INT,ExtraPT DECIMAL(9,8), fromDate DATETIME, todate DATETIME)
 	
-	CREATE TABLE #GroupHeadline (CustID INT PRIMARY KEY, GroupID INT, RoleID INT, IsMemberExcluded BIT)
+	CREATE TABLE #GroupHeadline (CustID INT, GroupID INT, RoleID INT, IsMemberExcluded BIT, Sporttype SMALLINT)
 	
 	SET @EventDate_min = (SELECT MIN(eventdate) FROM bodb02.dbo.match m WITH(NOLOCK))
 	
@@ -75,13 +75,13 @@ BEGIN
 			AND EPT.SubProduct = '' AND EPT.ToDate >= @EventDate_min
 		
 		-- Get Group Headline Info have global setting
-		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded)
-		SELECT GS.CustID, ca.GroupID, ci.roleid 
+		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded,Sporttype)
+		SELECT GS.CustID, ca.GroupID, ci.roleid
 			, IsMemberExcluded =  CASE WHEN CI.roleid = 1 
 											AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount CA1 WITH (NOLOCK)
 														WHERE CA1.groupID = ca.GroupID AND CA1.custID IN (ci.srecommend, ci.mrecommend, ci.recommend))
 										THEN 1 ELSE 0 END					
-			
+			, GS.Sporttype 
 		FROM bodb02.dbo.CustGroupHeadline ca WITH (NOLOCK)
 			INNER JOIN bodb02.dbo.Custinfo ci WITH (NOLOCK) ON ca.custID = ci.custid
 			INNER JOIN bodb02.dbo.TOControl_GlobalSetting GS WITH (NOLOCK) ON ca.CustID = GS.CustID AND GS.IsGroupHeadLine = 1 AND gs.MaxTurnOver <> 0
@@ -99,7 +99,10 @@ BEGIN
 				
 				, 0
 		FROM @TmpTable t
-			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) AND t.player = 0 AND IsGroupHeadLine = 0
+			INNER JOIN bodb02.dbo.match m WITH (NOLOCK) ON t.matchid = m.matchid
+			INNER JOIN bodb02.dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON (t.srecommend = gl.CustID OR t.mrecommend = gl.CustID OR t.recommend = gl.CustID) 
+													AND t.player = 0 AND IsGroupHeadLine = 0
+													AND ((gl.Sporttype = 1 AND M.sporttype = 1) OR (gl.Sporttype = 99 AND m.sporttype > 1 AND m.sporttype <= 99))
 			OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
 						 FROM #ExtraPTInfo s WITH(NOLOCK) 
 						 WHERE t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
@@ -118,8 +121,6 @@ BEGIN
 				, 1
 		FROM #GroupHeadline gh
 			INNER JOIN bodb02.dbo.custAccount CA WITH (NOLOCK) ON CA.groupID = gh.GroupID
-			INNER JOIN bodb02.dbo.Custinfo CI WITH (NOLOCK) ON CI.CustID =  CA.CustID
-			INNER JOIN bodb02.dbo.Exchange E WITH (NOLOCK) ON E.exchangeID = ci.currency
 			INNER JOIN @TmpTable t ON 
 									-- Headline is SMA
 									(
@@ -131,11 +132,14 @@ BEGIN
 									OR (t.player = CA.custid AND ca.isGroupHeadline = 1 AND gh.roleID = 1
 										AND gh.IsMemberExcluded = 0)
 			
+			INNER JOIN bodb02.dbo.match m WITH (NOLOCK) ON t.matchid = m.matchid
 							
 			OUTER APPLY (SELECT SUM(s.ExtraPT) AS ExtraPT 
 						 FROM #ExtraPTInfo s WITH(NOLOCK) 
 						 WHERE t.srecommend = s.SuperId AND t.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 						 
+		WHERE ((gh.Sporttype = 1 AND M.sporttype = 1) OR (gh.Sporttype = 99 AND m.sporttype > 1 AND m.sporttype <= 99))				 
+		
 		GROUP BY gh.CustID, t.matchid
 		
 			 
