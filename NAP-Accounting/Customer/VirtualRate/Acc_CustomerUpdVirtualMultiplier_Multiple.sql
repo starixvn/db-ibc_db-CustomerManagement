@@ -2,6 +2,10 @@
 USE CustDB
 GO
 
+/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
@@ -45,13 +49,23 @@ BEGIN
 	DECLARE	@startRun		DATETIME;  
 	DECLARE	@endRun			DATETIME;  
 	DECLARE	@duration		INT; 
-
+	DECLARE @ListCustID		VARCHAR(MAX);
 	DECLARE	@tblVirtualrate	TABLE (
 								CustIDs				VARCHAR(MAX)
 							,	VirtualMultiplier	SMALLMONEY	
 							);
 	CREATE TABLE #CustList (CustID INT PRIMARY KEY)
 	CREATE TABLE #BACust (CustID INT PRIMARY KEY)
+	CREATE TABLE #tmpCustVirtualSetting(
+	[custid] [int] NOT NULL,
+	[seqNo] [tinyint] NOT NULL,
+	[bitmapVirtual] [binary](64) NOT NULL CONSTRAINT [DF_CustVirtualSetting_bitmapVirtual]  DEFAULT (0x00),
+		 CONSTRAINT [PK_CustVirtualSetting] PRIMARY KEY CLUSTERED 
+		(
+			[custid] ASC,
+			[seqNo] ASC
+		))
+
 	DECLARE @CustStr VARCHAR(MAX) = '', @VR_ExcludeBA_XML XML						
 	DECLARE	@DocHandler		INT;														
 	 
@@ -91,6 +105,18 @@ BEGIN
 			,	@ErrCode = 101;
 		RETURN;
 	END;
+
+	SELECT @ListCustID=Custids FROM @tblVirtualrate
+
+	INSERT INTO #tmpCustVirtualSetting
+           ([custid]
+           ,[seqNo]
+           ,[bitmapVirtual])
+	SELECT [custid]
+           ,[seqNo]
+           ,[bitmapVirtual]
+	FROM CustVirtualSetting c
+	INNER JOIN	dbo.strSplit(@ListCustID, ',') AS ss ON c.custid=ss.val
 	
 	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), update VR of the BA accounts = 0 with margin >= 4%
 	IF EXISTS (SELECT 1 FROM @tblVirtualrate WHERE VirtualMultiplier = 3)
@@ -266,7 +292,7 @@ BEGIN
 										,	pvs.islive				AS '@IsLive'
 										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
 									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
-									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									INNER JOIN #tmpCustVirtualSetting AS cvs  ON cvs.seqNo = pvs.seqNo  								
 									WHERE   cvs.custid=@CustID 
 									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
 									FOR XML PATH ('s')
@@ -289,7 +315,7 @@ BEGIN
 										,	pvs.islive				AS '@IsLive'
 										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
 									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
-									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									INNER JOIN #tmpCustVirtualSetting AS cvs   ON cvs.seqNo = pvs.seqNo  								
 									WHERE   cvs.custid=@CustID	AND pvs.sporttype = 1 
 									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
 									FOR XML PATH ('s')
@@ -313,7 +339,7 @@ BEGIN
 										,	pvs.islive				AS '@IsLive'
 										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
 									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
-									INNER JOIN dbo.CustVirtualSetting AS cvs WITH(NOLOCK)  ON cvs.seqNo = pvs.seqNo  								
+									INNER JOIN #tmpCustVirtualSetting AS cvs  ON cvs.seqNo = pvs.seqNo  								
 									WHERE   cvs.custid=@CustID	AND pvs.sporttype <> 1 
 									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
 									FOR XML PATH ('s')
