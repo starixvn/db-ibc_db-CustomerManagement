@@ -141,16 +141,8 @@ BEGIN
 
 		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),@VR_ExcludeBA_XML)
 	END
-	
-	-- Update via Execrep
-		EXECUTE	dbo.Acc_CustSetting_10 
-					@VirtualMultiplier = @VirtualMultiplier
-					,@SportType=@SportType;
-	
-	-- Update enable virtual rate via Execrep
-	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04 @custid = 0, @roleid = 0, @action = 'EnableVirtualMultiplier', @EnableVirtualMultiplier = @VirtualMultiplier;
 
-	-- Log data for each customer
+	-- Get Log data for each customer
 	DECLARE	@CustID			INT
 		,	@LogSPData		NVARCHAR(MAX) = ''
 		,	@LogSPData_OLD	NVARCHAR(MAX) = '';
@@ -237,6 +229,15 @@ BEGIN
 			FROM		@tblVirtualrate AS tv
 			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
 	END
+
+	
+	-- Update via Execrep
+		EXECUTE	dbo.Acc_CustSetting_10 
+					@VirtualMultiplier = @VirtualMultiplier
+					,@SportType=@SportType;
+	
+	-- Update enable virtual rate via Execrep
+	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04 @custid = 0, @roleid = 0, @action = 'EnableVirtualMultiplier', @EnableVirtualMultiplier = @VirtualMultiplier;
 
 	SET	@endRun = GETDATE();
 	SET	@duration = DATEDIFF(MILLISECOND, @startRun, @endRun);
