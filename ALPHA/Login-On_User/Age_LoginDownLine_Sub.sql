@@ -1,4 +1,8 @@
-﻿ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]    
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
+ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]    
 	@SubUserName varchar(50),    
 	@UserPwd varchar(50),    
 	@LoginIP varchar(20),    
@@ -39,7 +43,7 @@ AS
 /*
 Created: 
 Task : login sub-acc from agent site
-DB: DBTXN/BODB02
+DB: DBCUST/CUSTDB
 Original:LoginDownline_Sub  
 
 Revisions:
@@ -906,11 +910,3 @@ BEGIN
 ---------------------------  
 END 
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_Sub] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_Sub] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline_Sub] TO [vnteam]
-
-
-

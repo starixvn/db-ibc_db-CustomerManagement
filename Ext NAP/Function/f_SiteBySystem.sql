@@ -1,4 +1,6 @@
-﻿ALTER FUNCTION [dbo].[f_SiteBySystem]
+﻿/*<info serverAlias="DBCUST-CustDB,DBTXN-bodb02,DB05-bodb02,DB052-bodb02,DB053-bodb02,DB054-bodb02,DB06-bodb02,DBLICAPI-bodb02,DBLicApi02-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+
+ALTER FUNCTION [dbo].[f_SiteBySystem]
 (
 	@System varchar(50) = 'ACCOUNTING'
 )
@@ -72,6 +74,8 @@ BEGIN
 		SELECT 184 -- 766666
 		UNION ALL 
 		SELECT 147
+		UNION ALL 
+		SELECT 257 --Y987
 	END
 	ELSE IF (@System = 'ACCDDD')
 	BEGIN
