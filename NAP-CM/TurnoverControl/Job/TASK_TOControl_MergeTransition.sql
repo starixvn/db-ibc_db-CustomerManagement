@@ -28,7 +28,7 @@ BEGIN
 	CREATE TABLE #TmpTable(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, MaxTurnOver MONEY NULL, IsGroupHeadline BIT)
 	
 	CREATE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTableRaw (CustID, matchid)
-	CREATE UNIQUE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTable (CustID, matchid)
+	CREATE UNIQUE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTable (CustID, matchid,IsGroupHeadline)
 
 	INSERT INTO #TmpTableRaw(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline)
 	EXEC DBAGE.bodb02.dbo.TASK_TOControl_GetTransition
