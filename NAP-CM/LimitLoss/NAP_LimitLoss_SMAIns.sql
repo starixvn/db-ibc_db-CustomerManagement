@@ -59,13 +59,19 @@ BEGIN
 		   RETURN
 		END    
 
-		IF EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
+		IF EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId AND ls.MaxLoss IS NOT NULL)
 		BEGIN
 			SELECT @ErrCode = 103, @ErrMsg = 'This customer already existed!'
 			RETURN
 		END
 
-		INSERT INTO LimitLoss_Setting(CustID, MaxLoss) VALUES(@CustID, @MaxLoss)
+		UPDATE ls 
+		SET ls.MaxLoss = @MaxLoss
+		FROM LimitLoss_Setting ls WITH (ROWLOCK,UPDLOCK)
+		WHERE ls.CustID = @CustID
+
+		IF @@ROWCOUNT = 0
+			INSERT INTO LimitLoss_Setting(CustID, MaxLoss) VALUES(@CustID, @MaxLoss)
 	END
     
 	--Insert Headline setting
