@@ -42,7 +42,7 @@ BEGIN
     IF @ErrCode <> 0
 	    RETURN
 	    
-    IF @MaxLoss > 0
+    IF @MaxLoss >= 0
     BEGIN
 	   SELECT @ErrCode = 101, @ErrMsg = 'Max Loss should be negative!'
 	   RETURN

@@ -32,11 +32,13 @@ BEGIN
 				 ELSE 0 END AS Movement,
 			CASE WHEN ISNULL(t.MaxLoss,0) = 0 THEN 100 
 				 WHEN ISNULL(t.TotalBalance,0) >=0 THEN 0
-				 ELSE CAST((t.TotalBalance/t.MaxLoss*100) AS INT) END AS PercentageLoss
+				 ELSE CAST((t.TotalBalance/t.MaxLoss*100) AS INT) END AS PercentageLoss,
+			CASE WHEN t.MaxLoss IS NULL THEN 1
+				 ELSE 0 END AS NoSetting
 	FROM #GroupList gl
 		INNER JOIN bodb02.dbo.custInfo c WITH (NOLOCK) ON gl.CustID = c.custid
 		INNER JOIN bodb02.dbo.exchange e WITH (NOLOCK) ON c.currency = e.exchangeid
 		LEFT JOIN LimitLoss_Setting t WITH(NOLOCK) ON t.CustID = gl.custid
-	ORDER BY PercentageLoss DESC, t.TotalBalance, c.username
+	ORDER BY NoSetting, PercentageLoss DESC, t.TotalBalance, c.username
 END
 
