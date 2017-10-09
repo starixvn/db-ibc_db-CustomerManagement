@@ -10,6 +10,7 @@ AS
 		- 20170321@Helen: NAP Risk & Control - Phase 3A [Redmine: 72604]
 		- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
 		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
+		- 20171005@Johnson: Change request-Only notify once time for each level [Redmine:#84141]
 
 	Param's Explanation:
 	
@@ -334,7 +335,7 @@ BEGIN
 		
 	FROM dbo.WinLimit_CustGameMonitoring g WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN dbo.Winlimit_LevelSetting ls WITH (NOLOCK) ON g.LevelID = ls.LevelID
-		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId
+		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId		
 		
 		CROSS APPLY (SELECT TOP 1 tmp.ActionID,tmp.IsBlockedTransfer,tmp.IsBlockedPlaceBet
 					 FROM dbo.WinLimit_CustGameStatus tmp WITH (NOLOCK) 
@@ -343,11 +344,37 @@ BEGIN
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID
 	WHERE (
 			-- cover for both Winlimt & LossLimit
-			LS.LevelOrder < T.LevelOrder
+				(LS.LevelOrder < T.LevelOrder 
+				--in case loss, if exists losslevel history which higher than losslevel customer reach again
+				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
+							AND EXISTS(SELECT TOP 1 1
+								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
+									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
+								WHERE g.CustID = gh1.CustID 
+									AND g.WinlostDate = gh1.WinlostDate 
+									AND g.GroupID = gh1.GroupID 
+									AND g.ProductID = gh1.ProductID	
+									AND gh1.LevelID >= @LosslimitLevel_min AND gh1.LevelID <= @LosslimitLevel_max
+									AND ls1.LevelOrder >= T.LevelOrder
+							)
+						THEN 0 ELSE 1 END	
+						)	
+				)	
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
 				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
+				--not exists winlevel history which higher winlevel customer reach again
+				AND NOT EXISTS(SELECT TOP 1 1
+							FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
+								INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
+							WHERE g.CustID = gh2.CustID 
+								AND g.WinlostDate = gh2.WinlostDate 
+								AND g.GroupID = gh2.GroupID 
+								AND g.ProductID = gh2.ProductID
+								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
+								AND ls2.LevelOrder >= T.LevelOrder
+							)
 				) 
 			-- Reach level again after unblocked
 			OR CGS.ActionID IN (2,4)
