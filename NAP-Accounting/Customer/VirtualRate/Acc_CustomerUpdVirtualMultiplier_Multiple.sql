@@ -26,7 +26,7 @@ AS
 		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
 		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
-		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment
+		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment [RedmineID:#84112]
 	Param's Explanation:  
 		- @SportType = 0 : All
 					 = 1 : Soccer
