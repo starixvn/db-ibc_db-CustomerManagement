@@ -2,6 +2,10 @@
 USE CustDB
 GO
 
+/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
@@ -22,6 +26,7 @@ AS
 		- 20170426@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, ignore the BA accounts with margin >= 4% [RedmineID:#75075]
 		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
+		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment [RedmineID:#84112]
 	Param's Explanation:  
 		- @SportType = 0 : All
 					 = 1 : Soccer
@@ -44,13 +49,23 @@ BEGIN
 	DECLARE	@startRun		DATETIME;  
 	DECLARE	@endRun			DATETIME;  
 	DECLARE	@duration		INT; 
-
+	DECLARE @ListCustID		VARCHAR(MAX);
 	DECLARE	@tblVirtualrate	TABLE (
 								CustIDs				VARCHAR(MAX)
 							,	VirtualMultiplier	SMALLMONEY	
 							);
 	CREATE TABLE #CustList (CustID INT PRIMARY KEY)
 	CREATE TABLE #BACust (CustID INT PRIMARY KEY)
+	CREATE TABLE #tmpCustVirtualSetting(
+	[custid] [int] NOT NULL,
+	[seqNo] [tinyint] NOT NULL,
+	[bitmapVirtual] [binary](64) NOT NULL CONSTRAINT [DF_CustVirtualSetting_bitmapVirtual]  DEFAULT (0x00),
+		 CONSTRAINT [PK_CustVirtualSetting] PRIMARY KEY CLUSTERED 
+		(
+			[custid] ASC,
+			[seqNo] ASC
+		))
+
 	DECLARE @CustStr VARCHAR(MAX) = '', @VR_ExcludeBA_XML XML						
 	DECLARE	@DocHandler		INT;														
 	 
@@ -90,6 +105,18 @@ BEGIN
 			,	@ErrCode = 101;
 		RETURN;
 	END;
+
+	SELECT @ListCustID=Custids FROM @tblVirtualrate
+
+	INSERT INTO #tmpCustVirtualSetting
+           ([custid]
+           ,[seqNo]
+           ,[bitmapVirtual])
+	SELECT [custid]
+           ,[seqNo]
+           ,[bitmapVirtual]
+	FROM CustVirtualSetting c
+	INNER JOIN	dbo.strSplit(@ListCustID, ',') AS ss ON c.custid=ss.val
 	
 	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), update VR of the BA accounts = 0 with margin >= 4%
 	IF EXISTS (SELECT 1 FROM @tblVirtualrate WHERE VirtualMultiplier = 3)
@@ -140,6 +167,95 @@ BEGIN
 
 		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),@VR_ExcludeBA_XML)
 	END
+
+	-- Get Log data for each customer
+	DECLARE	@CustID			INT
+		,	@LogSPData		NVARCHAR(MAX) = ''
+		,	@LogSPData_OLD	NVARCHAR(MAX) = '';
+	IF(@SportType=0)
+	BEGIN
+		INSERT INTO #log
+			(	CustID, LogValue, isFinished)
+		SELECT	CAST(ss.val AS INT)
+			,	(	SELECT	ss.val		AS '@CustID'
+						,	@UserID		AS '@UserID'
+						,	@SportType  AS '@SportType'
+						,	@ErrCode	AS '@ErrCode'
+						,	@ErrMsg		AS '@ErrMsg'
+						,	@IP			AS '@IP'
+						,	1			AS '@EnableVirtualrate'
+						,	(	SELECT	pvs.sporttype			AS '@SportType'
+									,	pvs.bettype				AS '@BetType'
+									,	pvs.islive				AS '@IsLive'
+									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)						
+								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+								FOR XML PATH ('s')
+							,	TYPE
+							)
+					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+				)
+			,	0
+		FROM		@tblVirtualrate AS tv
+		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
+	ELSE IF(@SportType=1)
+	BEGIN
+		INSERT INTO #log
+			(	CustID, LogValue, isFinished)
+		SELECT	CAST(ss.val AS INT)
+			,	(	SELECT	ss.val		AS '@CustID'
+						,	@UserID		AS '@UserID'
+						,	@SportType  AS '@SportType'
+						,	@ErrCode	AS '@ErrCode'
+						,	@ErrMsg		AS '@ErrMsg'
+						,	@IP			AS '@IP'
+						,	1			AS '@EnableVirtualrate'
+						,	(	SELECT	pvs.sporttype			AS '@SportType'
+									,	pvs.bettype				AS '@BetType'
+									,	pvs.islive				AS '@IsLive'
+									,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+								FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+								WHERE pvs.sporttype =1			
+								ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+								FOR XML PATH ('s')
+							,	TYPE
+							)
+					FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+				)
+			,	0
+		FROM		@tblVirtualrate AS tv
+		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
+	ELSE IF(@SportType=2)
+	BEGIN 
+		INSERT INTO #log
+				(	CustID, LogValue, isFinished)
+			SELECT	CAST(ss.val AS INT)
+				,	(	SELECT	ss.val		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									WHERE pvs.sporttype <>1			
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+				,	0
+			FROM		@tblVirtualrate AS tv
+			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+	END
+
 	
 	-- Update via Execrep
 		EXECUTE	dbo.Acc_CustSetting_10 
@@ -148,34 +264,6 @@ BEGIN
 	
 	-- Update enable virtual rate via Execrep
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04 @custid = 0, @roleid = 0, @action = 'EnableVirtualMultiplier', @EnableVirtualMultiplier = @VirtualMultiplier;
-
-	-- Log data for each customer
-	DECLARE	@CustID			INT
-		,	@LogSPData		NVARCHAR(MAX) = '';
-	
-	INSERT INTO #log
-		(	CustID, LogValue, isFinished)
-	SELECT	CAST(ss.val AS INT)
-		,	(	SELECT	ss.val		AS '@CustID'
-					,	@UserID		AS '@UserID'
-					,	@ErrCode	AS '@ErrCode'
-					,	@ErrMsg		AS '@ErrMsg'
-					,	@IP			AS '@IP'
-					,	1			AS '@EnableVirtualrate'
-					,	(	SELECT	pvs.sporttype			AS '@SportType'
-								,	pvs.bettype				AS '@BetType'
-								,	pvs.islive				AS '@IsLive'
-								,	tv.VirtualMultiplier	AS '@VirtualMultiplier'
-							FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)
-							ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
-							FOR XML PATH ('s')
-						,	TYPE
-						)
-				FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
-			)
-		,	0
-	FROM		@tblVirtualrate AS tv
-	CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
 
 	SET	@endRun = GETDATE();
 	SET	@duration = DATEDIFF(MILLISECOND, @startRun, @endRun);
@@ -187,16 +275,88 @@ BEGIN
 		,	@CustID = CustID
 		,	@LogSPData = LogValue
 		WHERE	isFinished = 0;
-
 		IF	@@ROWCOUNT = 0
-			BREAK;
-
+			BREAK;			
+		
+		IF(@SportType=0)
+		BEGIN
+			SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN #tmpCustVirtualSetting AS cvs  ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+			ELSE IF (@SportType=1)
+			BEGIN
+				SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN #tmpCustVirtualSetting AS cvs   ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID	AND pvs.sporttype = 1 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+			ELSE IF
+			(@SportType=2)
+			BEGIN
+					SELECT @LogSPData_OLD=(	SELECT	@CustID		AS '@CustID'
+							,	@UserID		AS '@UserID'
+							,	@SportType  AS '@SportType'
+							,	@ErrCode	AS '@ErrCode'
+							,	@ErrMsg		AS '@ErrMsg'
+							,	@IP			AS '@IP'
+							,	1			AS '@EnableVirtualrate'
+							,	(	SELECT	pvs.sporttype			AS '@SportType'
+										,	pvs.bettype				AS '@BetType'
+										,	pvs.islive				AS '@IsLive'
+										,	dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID)	AS '@VirtualMultiplier'
+									FROM	dbo.ProfileVirtualSetting AS pvs WITH (NOLOCK)	
+									INNER JOIN #tmpCustVirtualSetting AS cvs  ON cvs.seqNo = pvs.seqNo  								
+									WHERE   cvs.custid=@CustID	AND pvs.sporttype <> 1 
+									ORDER BY pvs.sporttype ASC, pvs.islive DESC, pvs.bettype ASC
+									FOR XML PATH ('s')
+								,	TYPE
+								)
+						FOR XML PATH ('Acc_CustomerUpdVirtualMultiplier_Multiple')
+					)
+			END
+		
+	
 		BEGIN TRY
 			EXECUTE	DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 						@UserID = @UserID
 					,	@CustID = @CustID
 					,	@ActionID = 807
 					,	@TrackingValue = @LogSPData
+					,	@TrackingValue2= @LogSPData_OLD
 					,	@Duration = @duration;			
 		END TRY
 		BEGIN CATCH
@@ -205,6 +365,7 @@ BEGIN
 					,	@CustID = @CustID
 					,	@ActionID = 807
 					,	@TrackingValue = @LogSPData
+					,	@TrackingValue2= @LogSPData_OLD
 					,	@Duration = @duration;
 		END CATCH;
 	END;
