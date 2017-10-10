@@ -37,8 +37,9 @@ BEGIN
 			@endRun				DATETIME,
 			@duration			INT,
 			@MaxLoss_Old		MONEY,
-			@GroupHeadlineID	SMALLINT
-
+			@GroupHeadlineID	SMALLINT,
+			@i					TINYINT,
+			@MaxLevel			TINYINT
     SET		 @startRun = GETDATE()
 
     --Check permission 
@@ -66,6 +67,27 @@ BEGIN
 		UPDATE LimitLoss_Setting WITH(ROWLOCK,UPDLOCK) 
 		SET MaxLoss = @MaxLoss
 		WHERE CustID = @CustID
+		
+		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+		WHILE (@i<@MaxLevel)
+		BEGIN
+			UPDATE l
+			SET LevelID = @i
+			FROM LimitLoss_Setting l
+			WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND CAST((l.TotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+				AND l.MaxLoss IS NOT NULL
+				AND l.CustID = @CustId
+
+			SET @i = @i+1
+		END
+
+		UPDATE l
+		SET LevelID = @MaxLevel
+		FROM LimitLoss_Setting l
+		WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+			AND l.MaxLoss IS NOT NULL
+			AND l.CustID = @CustId
 	END
 
 	IF @Mode = 1
@@ -84,6 +106,25 @@ BEGIN
 		UPDATE LimitLoss_HeadlineSetting WITH(ROWLOCK,UPDLOCK) 
 		SET MaxLoss = @MaxLoss
 		WHERE GroupHeadlineID = @GroupHeadlineID
+
+		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+		WHILE (@i<@MaxLevel)
+		BEGIN
+			UPDATE l
+			SET LevelID = @i
+			FROM LimitLoss_HeadlineSetting l
+			WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND CAST((l.TotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+				AND l.GroupHeadlineID = @GroupHeadlineID
+
+			SET @i = @i+1
+		END
+
+		UPDATE l
+		SET LevelID = @i
+		FROM LimitLoss_HeadlineSetting l
+		WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+			AND l.GroupHeadlineID = @GroupHeadlineID
 	END
 
     DECLARE @LogData NVARCHAR(4000), @LogData2 NVARCHAR(4000)
