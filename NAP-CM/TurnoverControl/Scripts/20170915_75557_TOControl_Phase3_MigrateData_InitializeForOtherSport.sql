@@ -13,14 +13,6 @@ FROM TOControl_GlobalSetting T WITH (ROWLOCK,UPDLOCK)
 ------- Other sports -----------------
 DELETE FROM TOControl_GlobalSetting WHERE Sporttype = 99
 
-CREATE TABLE #TOControl_GlobalSetting(
-	ID INT IDENTITY(1,1),
-	[CustID] [int] NOT NULL,
-	[MaxTurnOver] MONEY NOT NULL,
-	[Sporttype] [smallint] NOT NULL,
-	[IsGroupHeadLine] [bit] NOT NULL,
-)
-
 CREATE TABLE #MaxTurnOver_tmp (ExchangeID INT, actualrate FLOAT, MaxTurnOver MONEY)
 
 INSERT INTO #MaxTurnOver_tmp (ExchangeID,actualrate,MaxTurnOver)
@@ -41,6 +33,6 @@ FROM dbo.TOControl_GlobalSetting GS WITH (NOLOCK)
 WHERE GS.Sporttype = 1
 	
 DROP TABLE #MaxTurnOver_tmp
-DROP TABLE #TOControl_GlobalSetting
+
 
 GO
