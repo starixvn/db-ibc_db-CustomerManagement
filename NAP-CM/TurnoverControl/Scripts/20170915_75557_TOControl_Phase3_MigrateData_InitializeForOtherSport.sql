@@ -23,6 +23,7 @@ WHERE EXISTS (SELECT 1
 					INNER JOIN dbo.Custinfo CI WITH (NOLOCK) ON GS.CustID = CI.custid 
 			  WHERE CI.currency = E.exchangeid		
 			)	
+	AND E.exchangeid <> 20		
 
 INSERT INTO TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine)
 SELECT GS.CustID, MT.MaxTurnOver,99,0
@@ -30,7 +31,7 @@ FROM dbo.TOControl_GlobalSetting GS WITH (NOLOCK)
 	INNER JOIN dbo.Custinfo CI WITH (NOLOCK) ON GS.CustID = CI.custid 
 	INNER JOIN dbo.Exchange E WITH (NOLOCK) ON E.exchangeid = CI.currency
 	INNER JOIN #MaxTurnOver_tmp MT ON MT.ExchangeID = E.exchangeid
-WHERE GS.Sporttype = 1
+WHERE GS.Sporttype = 1 AND E.exchangeid <> 20
 	
 DROP TABLE #MaxTurnOver_tmp
 
