@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[NAP_Email_NotificationInfoUpdateByFunction]
 (
 	@NotificationIDList VARCHAR(MAX)
 	, @NotifiedByFunction_Flag TINYINT = 1
+	, @IsNotifiedValue TINYINT = 1
 	
 )
 AS
@@ -19,6 +20,11 @@ AS
 			
 		- @NotifiedByFunction_Flag: 
 			1: TO Control
+		- @IsNotifiedByFunction:
+			+ Update IsNotifiedbyTOContol = 1 for list of valid ID sent email
+			+ Update IsNotifiedbyTOContol = 0 for list of valid ID but NOT sent email yet
+			+ Update IsNotifiedbyTOContol = 2 for list of NOT valid ID sent email
+	
 			
 */
 BEGIN
@@ -27,7 +33,7 @@ BEGIN
 	IF @NotifiedByFunction_Flag = 1
 	BEGIN
 		UPDATE EN	
-			SET IsNotifiedbyTOControl = 1
+			SET IsNotifiedbyTOControl = @IsNotifiedValue
 		FROM dbo.EmailNotification EN WITH (ROWLOCK,UPDLOCK)
 			INNER JOIN dbo.strSplit(@NotificationIDList,',') AC ON EN.ID = AC.val 
 		
