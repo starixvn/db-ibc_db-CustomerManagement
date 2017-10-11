@@ -13,9 +13,6 @@ FROM TOControl_GlobalSetting T WITH (ROWLOCK,UPDLOCK)
 ------- Other sports -----------------
 DELETE FROM TOControl_GlobalSetting WHERE Sporttype = 99
 
-CREATE TABLE #MaxTurnOver_tmp (ExchangeID INT, actualrate FLOAT, MaxTurnOver MONEY)
-
-
 SELECT E.exchangeid, E.actualrate, 300000/actualrate AS MaxTurnOver
 INTO #MaxTurnOver_tmp
 FROM dbo.Exchange E WITH (NOLOCK)
@@ -27,7 +24,7 @@ WHERE EXISTS (SELECT 1
 	AND E.exchangeid <> 20		
 
 INSERT INTO TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine)
-SELECT GS.CustID, MT.MaxTurnOver,99,0
+SELECT GS.CustID, CONVERT(MONEY,MT.MaxTurnOver) AS MaxTurnOver ,99,0
 FROM dbo.TOControl_GlobalSetting GS WITH (NOLOCK)
 	INNER JOIN dbo.Custinfo CI WITH (NOLOCK) ON GS.CustID = CI.custid 
 	INNER JOIN dbo.Exchange E WITH (NOLOCK) ON E.exchangeid = CI.currency
