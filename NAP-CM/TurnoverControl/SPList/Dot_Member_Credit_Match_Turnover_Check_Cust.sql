@@ -48,6 +48,10 @@ BEGIN
 								AND @EventDate BETWEEN s.FromDate AND s.ToDate)
 							,0)
 	
+	/* For Rollback Plan:
+	SET @ExtraPT = 0
+	*/
+	
 	SET @adjHouseTurnover = (@Stake * (1 - @TPositionTaking- @ExtraPT))
 	
 	IF (@Recommend > -1) AND EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting WITH (NOLOCK) WHERE CustID = @Recommend AND IsGroupHeadLine = 0)
@@ -96,6 +100,10 @@ BEGIN
 			IF (@NewMatchTurnover > @MaxMatchTurnover_Setting)
 				SELECT @StopFlag = 1
 	END 
+	
+	/* For Rollback Plan:
+	RETURN
+	*/
 	
 	IF @StopFlag = 0
 	BEGIN
