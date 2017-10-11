@@ -33,7 +33,7 @@ BEGIN
 	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY)
 	
 	INSERT INTO @GroupHeadlineList (CustID)
-	SELECT ca.custid
+	SELECT DISTINCT ca.custid
 	FROM bodb02.dbo.custAccount ca WITH (NOLOCK) 
 		INNER JOIN inserted  Ins ON ca.custid = Ins.custid
 	
