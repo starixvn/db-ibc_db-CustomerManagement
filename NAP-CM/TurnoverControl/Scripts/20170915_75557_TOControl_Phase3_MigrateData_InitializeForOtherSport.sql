@@ -15,8 +15,9 @@ DELETE FROM TOControl_GlobalSetting WHERE Sporttype = 99
 
 CREATE TABLE #MaxTurnOver_tmp (ExchangeID INT, actualrate FLOAT, MaxTurnOver MONEY)
 
-INSERT INTO #MaxTurnOver_tmp (ExchangeID,actualrate,MaxTurnOver)
-SELECT E.exchangeid, E.actualrate, CONVERT(MONEY, 300000/actualrate) AS MaxTurnOver
+
+SELECT E.exchangeid, E.actualrate, 300000/actualrate AS MaxTurnOver
+INTO #MaxTurnOver_tmp
 FROM dbo.Exchange E WITH (NOLOCK)
 WHERE EXISTS (SELECT 1 
 			  FROM dbo.TOControl_GlobalSetting GS WITH (NOLOCK)

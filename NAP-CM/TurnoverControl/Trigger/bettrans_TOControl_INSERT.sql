@@ -35,8 +35,7 @@ BEGIN
 	INSERT INTO @GroupHeadlineList (CustID)
 	SELECT ca.custid
 	FROM bodb02.dbo.custAccount ca WITH (NOLOCK) 
-		INNER JOIN bodb02.dbo.custInfo ci WITH (NOLOCK) ON ci.custid = ca.custid
-	WHERE ci.roleid = 1	
+		INNER JOIN inserted  Ins ON ca.custid = Ins.custid
 	
 	SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
 								, tmp.adjTO_RM,tmp.adjTOwithABS_RM,tmp.adjHTONoExtraPT_RM

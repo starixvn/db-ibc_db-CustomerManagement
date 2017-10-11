@@ -54,10 +54,9 @@ BEGIN
 	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY)
 	
 	INSERT INTO @GroupHeadlineList (CustID)
-	SELECT ca.custid
+	SELECT DISTINCT ca.custid
 	FROM bodb02.dbo.custAccount ca WITH (NOLOCK) 
-		INNER JOIN bodb02.dbo.custInfo ci WITH (NOLOCK) ON ci.custid = ca.custid
-	WHERE ci.roleid = 1	
+		INNER JOIN inserted  Ins ON ca.custid = Ins.custid	
 	
 	--Build command string and push into SB Queue          
 	--1000 rows per command string 	
