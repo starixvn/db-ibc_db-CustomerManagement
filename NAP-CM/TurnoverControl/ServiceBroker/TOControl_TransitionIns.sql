@@ -76,7 +76,7 @@ BEGIN
 		
 		-- Get Group Headline Info have global setting
 		INSERT INTO #GroupHeadline (CustID,GroupID,RoleID,IsMemberExcluded,Sporttype)
-		SELECT GS.CustID, ca.GroupID, ci.roleid
+		SELECT DISTINCT GS.CustID, ca.GroupID, ci.roleid
 			, IsMemberExcluded =  CASE WHEN CI.roleid = 1 
 											AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount CA1 WITH (NOLOCK)
 														WHERE CA1.groupID = ca.GroupID AND CA1.custID IN (ci.srecommend, ci.mrecommend, ci.recommend))
