@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_GroupHeadlineSelectByGroupID]
+ALTER PROCEDURE [dbo].[Acc_GroupHeadlineSelectByGroupID]
 (
 	@GroupID INT
 	

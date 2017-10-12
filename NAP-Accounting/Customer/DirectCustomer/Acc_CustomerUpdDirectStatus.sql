@@ -96,9 +96,7 @@ BEGIN
 	BEGIN
 		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
 		
-		SELECT '<NewDirectCustomer  custid="'+ COALESCE(CAST(CustID AS VARCHAR(300)), SPACE(1)) + '" ' +
-									'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" ' +
-									'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)),SPACE(1)) + '" />'  AS NotificationInfo
+		SELECT '<NewDirectCustomer  custid="'+ COALESCE(CAST(CustID AS VARCHAR(300)), SPACE(1)) + '" />'  AS NotificationInfo
 				, @CreateDate AS CreatedDate
 				
 				, CASE	WHEN @roleid = 4 THEN 600

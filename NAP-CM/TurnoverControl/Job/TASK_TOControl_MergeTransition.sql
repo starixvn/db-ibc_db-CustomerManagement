@@ -23,28 +23,30 @@ BEGIN
 
 	DECLARE @PercentageUsed MONEY
 
-	CREATE TABLE #TmpTableRaw(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY,IsGroupHeadline BIT)
+	CREATE TABLE #TmpTableRaw(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY,IsGroupHeadline BIT,sporttype SMALLINT)
 	
-	CREATE TABLE #TmpTable(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, MaxTurnOver MONEY NULL, IsGroupHeadline BIT)
+	CREATE TABLE #TmpTable(CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, MaxTurnOver MONEY NULL, IsGroupHeadline BIT,sporttype SMALLINT)
 	
-	CREATE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTableRaw (CustID, matchid,IsGroupHeadline)
-	CREATE UNIQUE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTable (CustID, matchid,IsGroupHeadline)
+	CREATE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTableRaw (CustID, matchid,IsGroupHeadline,sporttype)
+	CREATE UNIQUE CLUSTERED INDEX CIX_CustID_MatchID ON #TmpTable (CustID, matchid,IsGroupHeadline,sporttype)
 
-	INSERT INTO #TmpTableRaw(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline)
+	INSERT INTO #TmpTableRaw(CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline,sporttype)
 	EXEC DBAGE.bodb02.dbo.TASK_TOControl_GetTransition
 
-	INSERT INTO #TmpTable(CustID, matchid, IsGroupHeadline, adjusted_TurnOver, adjusted_HouseTurnOver)
-	SELECT CustID, matchid,IsGroupHeadline, SUM (adjusted_TurnOver), SUM(adjusted_HouseTurnOver)
+	INSERT INTO #TmpTable(CustID, matchid, IsGroupHeadline, sporttype, adjusted_TurnOver, adjusted_HouseTurnOver)
+	SELECT CustID, matchid,IsGroupHeadline, sporttype,  SUM (adjusted_TurnOver), SUM(adjusted_HouseTurnOver)
 	FROM #TmpTableRaw
-	GROUP BY CustID, matchid,IsGroupHeadline 
+	GROUP BY CustID, matchid,IsGroupHeadline, sporttype 
 
 	DROP TABLE #TmpTableRaw
 
 	UPDATE t 
-	SET MaxTurnOver = gl.MaxTurnOver
+		SET MaxTurnOver = gl.MaxTurnOver
 	FROM #TmpTable t
-		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID AND t.IsGroupHeadline = gl.IsGroupHeadLine
-
+		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID 
+							AND t.IsGroupHeadline = gl.IsGroupHeadLine 
+							AND ((gl.Sporttype = 1 AND t.sporttype = 1) OR (gl.Sporttype = 99 AND t.sporttype > 1 AND t.sporttype <= 99))								
+		
 	MERGE dbo.TOControl_Setting AS TARGET
 			USING (SELECT CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine FROM #TmpTable)
 			   AS SOURCE (CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)

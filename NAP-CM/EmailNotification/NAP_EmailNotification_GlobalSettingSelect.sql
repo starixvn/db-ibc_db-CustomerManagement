@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-CREATE PROCEDURE [dbo].[NAP_EmailNotification_GlobalSettingSelect]
+ALTER PROCEDURE [dbo].[NAP_EmailNotification_GlobalSettingSelect]
 (	
 	@NotifiedByFunction_Flag TINYINT = 1
 )	

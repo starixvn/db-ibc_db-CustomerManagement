@@ -83,10 +83,11 @@ BEGIN
 										THEN 1 ELSE 0 END					
 			, GS.Sporttype 
 		FROM bodb02.dbo.CustGroupHeadline ca WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.custAccount ca1 WITH (NOLOCK) ON ca.GroupID = ca1.groupID
 			INNER JOIN bodb02.dbo.Custinfo ci WITH (NOLOCK) ON ca.custID = ci.custid
 			INNER JOIN bodb02.dbo.TOControl_GlobalSetting GS WITH (NOLOCK) ON ca.CustID = GS.CustID AND GS.IsGroupHeadLine = 1 AND gs.MaxTurnOver <> 0
 			
-		WHERE EXISTS (SELECT 1 FROM @TmpTable tmp  WHERE tmp.srecommend = ca.CustID OR tmp.mrecommend = ca.CustID OR tmp.recommend = ca.CustID OR tmp.player = ca.CustID) 
+		WHERE EXISTS (SELECT 1 FROM @TmpTable tmp  WHERE tmp.srecommend = ca1.CustID OR tmp.mrecommend = ca1.CustID OR tmp.recommend = ca1.CustID OR tmp.player = ca1.CustID) 
 					
 		-- Inserting data into TOControl_Transition
 		INSERT INTO dbo.TOControl_Transition (CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine)
