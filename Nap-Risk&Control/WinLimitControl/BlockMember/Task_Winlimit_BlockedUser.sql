@@ -303,15 +303,15 @@ BEGIN
 	-- UPDATE when reaching Limit: Win or Loss 	
 	UPDATE g
 		SET MaxwinLimit = t.MaxWinLimit
-			, TotalWinAmt = g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount
+			, TotalWinAmt = g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount
 			, WinAmt = t.TotalWinAmount
 			, ModifiedDate = @ReachedDate
 			, IsNotified = 0
 			, LevelID = T.LevelID
 			, MaxWinLimitSetting = t.MaxWinLimitSetting
 			, TotalWinAmt_RM = CASE 
-									WHEN T.ExchangeID = 20 THEN (g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount) 
-									ELSE  ROUND (e.actualrate * (g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount),2)
+									WHEN T.ExchangeID = 20 THEN (g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount) 
+									ELSE  ROUND (e.actualrate * (g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount),2)
 								END
 			, BettypeIDList = t.BettypeIDList
 	OUTPUT inserted.CustId, inserted.ProductId,inserted.GroupID, inserted.MaxWinLimit, inserted.TotalWinAmt, inserted.WinAmt, inserted.LevelID  
@@ -377,7 +377,25 @@ BEGIN
 							)
 				) 
 			-- Reach level again after unblocked
-			OR CGS.ActionID IN (2,4)
+			--and not exists history level which customer reach
+			OR (CGS.ActionID IN (2,4)
+				AND NOT EXISTS(SELECT TOP 1 1
+							FROM dbo.WinLimit_CustGameMonitoring_History gh3 WITH(NOLOCK) 
+								INNER JOIN dbo.Winlimit_LevelSetting ls3 WITH (NOLOCK) ON gh3.LevelID = ls3.LevelID
+							WHERE g.CustID = gh3.CustID 
+								AND g.WinlostDate = gh3.WinlostDate 
+								AND g.GroupID = gh3.GroupID 
+								AND g.ProductID = gh3.ProductID
+								AND 1 = CASE WHEN ((gh3.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max
+													AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max)
+												 OR 
+													(gh3.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
+													AND T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max)
+												)
+												AND ls3.LevelOrder >= T.LevelOrder
+											THEN 1 ELSE 0 END
+							)				
+				)
 		)
 	
 	-- INSERT NEW
