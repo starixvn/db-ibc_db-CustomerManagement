@@ -137,12 +137,12 @@ BEGIN
 			SUM(CASE WHEN b.srecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.swinlost+b.scomm-b.acomm END) AS totalSuperCash,
 			SUM(CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END) AS totalMasterCash,
 			SUM(CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END) AS totalAgentCash,
-			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END) AS totalMemberCash,
+			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS totalMemberCash,
 			-- yesterday
 			SUM(CASE WHEN b.srecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.swinlost+b.scomm-b.acomm END) AS yesterdaySuperCash,
 			SUM(CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END) AS yesterdayMasterCash,
 			SUM(CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END) AS yesterdayAgentCash,
-			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END) AS yesterdayMemberCash
+			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS yesterdayMemberCash
 		FROM bodb02.dbo.bettrans b WITH (NOLOCK)
 			INNER JOIN (
 				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 4
@@ -163,12 +163,12 @@ BEGIN
 			SUM(CASE WHEN b.srecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.swinlost+b.scomm-b.acomm END) AS totalSuperCash,
 			SUM(CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END) AS totalMasterCash,
 			SUM(CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END) AS totalAgentCash,
-			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END) AS totalMemberCash,
+			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS totalMemberCash,
 			-- yesterday
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.swinlost+b.scomm-b.acomm END ELSE 0 END) AS yesterdaySuperCash,
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END ELSE 0 END) AS yesterdayMasterCash,
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END ELSE 0 END) AS yesterdayAgentCash,
-			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END ELSE 0 END) AS yesterdayMemberCash
+			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END ELSE 0 END) AS yesterdayMemberCash
 		FROM bodb02.dbo.bettrans b WITH (NOLOCK)
 			INNER JOIN (
 				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 4
@@ -248,12 +248,12 @@ BEGIN
 			0 AS totalSuperCash,
 			SUM(CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END) AS totalMasterCash,
 			SUM(CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END) AS totalAgentCash,
-			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END) AS totalMemberCash,
+			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS totalMemberCash,
 			-- yesterday
 			0 AS yesterdaySuperCash,
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.mrecommend = b.custid THEN b.winlost-b.actual_stake ELSE b.mwinlost+b.acomm-b.comm END ELSE 0 END) AS yesterdayMasterCash,
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END ELSE 0 END) AS yesterdayAgentCash,
-			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END ELSE 0 END) AS yesterdayMemberCash
+			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END ELSE 0 END) AS yesterdayMemberCash
 		FROM bodb02.dbo.bettrans b WITH (NOLOCK)
 			INNER JOIN (
 				SELECT ci.custid
@@ -338,12 +338,12 @@ BEGIN
 			0 AS totalSuperCash,
 			0 AS totalMasterCash,
 			SUM(CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END) AS totalAgentCash,
-			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END) AS totalMemberCash,
+			SUM(CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS totalMemberCash,
 			-- yesterday
 			0 AS yesterdaySuperCash,
 			0 AS yesterdayMasterCash,
 			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.recommend = b.custid THEN b.winlost-b.actual_stake ELSE b.awinlost+b.comm-b.playercomm END ELSE 0 END) AS yesterdayAgentCash,
-			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake ELSE b.winlost-b.actual_stake+b.playercomm END ELSE 0 END) AS yesterdayMemberCash
+			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN b.srecommend <> b.custid AND b.mrecommend <> b.custid AND b.recommend <> b.custid THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END ELSE 0 END) AS yesterdayMemberCash
 		FROM bodb02.dbo.bettrans b WITH (NOLOCK)
 			INNER JOIN (
 				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 2
