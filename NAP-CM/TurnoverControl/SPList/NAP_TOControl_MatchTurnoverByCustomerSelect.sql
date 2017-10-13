@@ -101,7 +101,6 @@ BEGIN
 						 
 			WHERE b.srecommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 4)
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 				
 			GROUP BY b.matchid
@@ -125,7 +124,6 @@ BEGIN
 						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.mrecommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 3)
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid	
 		END
@@ -147,7 +145,6 @@ BEGIN
 						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.recommend IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 2)
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid	
 		END
@@ -169,7 +166,6 @@ BEGIN
 						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.custid IN (SELECT custid FROM @GroupHeadlineList GHL WHERE RoleID = 1 AND IsMemberExcluded = 0)
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid		
 		END
@@ -209,7 +205,6 @@ BEGIN
 							 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.srecommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid
 
@@ -228,7 +223,6 @@ BEGIN
 						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.mrecommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid
 
@@ -247,7 +241,6 @@ BEGIN
 						 WHERE b.srecommend = s.SuperId AND b.winlostdate BETWEEN s.FromDate AND s.ToDate ) AS ExtraPT_tmp
 			WHERE b.recommend = @CustID
 				AND b.statusid NOT BETWEEN 101 AND 103
-				AND b.ruben = 0
 				AND b.betfrom <> 'p'
 			GROUP BY b.matchid
 
