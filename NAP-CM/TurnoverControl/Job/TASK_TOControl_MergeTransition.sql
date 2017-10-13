@@ -46,6 +46,8 @@ BEGIN
 		INNER JOIN dbo.TOControl_GlobalSetting gl WITH (NOLOCK) ON t.CustID = gl.CustID 
 							AND t.IsGroupHeadline = gl.IsGroupHeadLine 
 							AND ((gl.Sporttype = 1 AND t.sporttype = 1) OR (gl.Sporttype = 99 AND t.sporttype > 1 AND t.sporttype <= 99))								
+	
+	DELETE #TmpTable WHERE MaxTurnOver IS NULL
 		
 	MERGE dbo.TOControl_Setting AS TARGET
 			USING (SELECT CustID, matchid, MaxTurnOver, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadLine FROM #TmpTable)
