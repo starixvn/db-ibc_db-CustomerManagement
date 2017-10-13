@@ -74,8 +74,8 @@ BEGIN
 			UPDATE l
 			SET LevelID = @i
 			FROM LimitLoss_Setting l
-			WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
-				AND CAST((l.TotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+			WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
 				AND l.MaxLoss IS NOT NULL
 				AND l.CustID = @CustId
 
@@ -85,7 +85,7 @@ BEGIN
 		UPDATE l
 		SET LevelID = @MaxLevel
 		FROM LimitLoss_Setting l
-		WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+		WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
 			AND l.MaxLoss IS NOT NULL
 			AND l.CustID = @CustId
 	END
@@ -113,8 +113,8 @@ BEGIN
 			UPDATE l
 			SET LevelID = @i
 			FROM LimitLoss_HeadlineSetting l
-			WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
-				AND CAST((l.TotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+			WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND (l.TotalBalance/l.MaxLoss*100)< (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
 				AND l.GroupHeadlineID = @GroupHeadlineID
 
 			SET @i = @i+1
@@ -123,7 +123,7 @@ BEGIN
 		UPDATE l
 		SET LevelID = @i
 		FROM LimitLoss_HeadlineSetting l
-		WHERE CAST((l.TotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+		WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
 			AND l.GroupHeadlineID = @GroupHeadlineID
 	END
 

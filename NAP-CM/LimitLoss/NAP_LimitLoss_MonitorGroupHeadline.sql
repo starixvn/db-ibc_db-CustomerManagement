@@ -32,7 +32,7 @@ BEGIN
 				 ELSE 0 END AS Movement,
 			CASE WHEN ISNULL(t.MaxLoss,0) = 0 THEN 100 
 				 WHEN ISNULL(t.TotalBalance,0) >=0 THEN 0
-				 ELSE CAST((t.TotalBalance/t.MaxLoss*100) AS INT) END AS PercentageLoss,
+				 ELSE (t.TotalBalance/t.MaxLoss*100) END AS PercentageLoss,
 			CASE WHEN t.MaxLoss IS NULL THEN 1
 				 ELSE 0 END AS NoSetting
 	FROM #GroupList gl

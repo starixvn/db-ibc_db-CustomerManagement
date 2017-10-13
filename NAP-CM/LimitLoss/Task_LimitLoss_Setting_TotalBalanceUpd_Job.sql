@@ -373,8 +373,8 @@ BEGIN
 		SET NewLevelID = @i
 		FROM #BalanceCust b
 			INNER JOIN LimitLoss_Setting l ON b.CustID = l.CustID
-		WHERE CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
-			AND CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+		WHERE (b.NewTotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+			AND (b.NewTotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
 			AND l.MaxLoss IS NOT NULL
 
 		SET @i = @i+1
@@ -384,7 +384,7 @@ BEGIN
 	SET NewLevelID = @MaxLevel
 	FROM #BalanceCust b
 		INNER JOIN LimitLoss_Setting l ON b.CustID = l.CustID
-	WHERE CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+	WHERE (b.NewTotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
 		AND l.MaxLoss IS NOT NULL
 
 	UPDATE l
@@ -410,8 +410,8 @@ BEGIN
 		SET NewLevelID = @i
 		FROM #BalanceGroupHeadline b
 			INNER JOIN LimitLoss_HeadlineSetting l ON b.GroupHeadlineID = l.GroupHeadlineID
-		WHERE CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
-			AND CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+		WHERE (b.NewTotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+			AND (b.NewTotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
 
 		SET @i = @i+1
 	END
@@ -420,7 +420,7 @@ BEGIN
 	SET NewLevelID = @MaxLevel
 	FROM #BalanceGroupHeadline b
 		INNER JOIN LimitLoss_HeadlineSetting l ON b.GroupHeadlineID = l.GroupHeadlineID
-	WHERE CAST((b.NewTotalBalance/l.MaxLoss*100) AS INT) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+	WHERE (b.NewTotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
 
 	UPDATE l
 	SET l.TotalBalance = b.NewTotalBalance,

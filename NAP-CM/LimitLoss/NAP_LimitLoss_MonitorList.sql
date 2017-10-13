@@ -1,7 +1,14 @@
-/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_AGE]
+USE [bodb_Age]
 GO
 
+/****** Object:  StoredProcedure [dbo].[NAP_LimitLoss_MonitorList]    Script Date: 06/08/2016 18:15:05 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+/****** Object:  Stored Procedure dbo.NAP_LimitLoss_MonitorList    Script Date: 6/27/2014 1:18:44 PM ******/
 ALTER PROCEDURE [dbo].[NAP_LimitLoss_MonitorList]
 AS
 /*
@@ -13,48 +20,27 @@ AS
 	Revisions:
 		- 20140620@Elodie: Add icon to indicate loss movement [Redmine:#17906]
 		- 20160607@Aaron: Get CustId [Redmine: #58855]
-		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
-
 	Parameter's explaination: 
 	
 	Example:  EXEC NAP_LimitLoss_MonitorList
 	
 */
-BEGIN
-	SET NOCOUNT ON
+SET NOCOUNT ON
 
-	CREATE TABLE #GroupList (CustID INT PRIMARY KEY, GroupID SMALLINT, IsGroupHeadline BIT)
-	CREATE TABLE #MonitorList (CustID INT PRIMARY KEY, MaxLoss MONEY, TotalBalance MONEY, LevelID TINYINT, YesterdayBalance MONEY, OldLevelID TINYINT, GroupHeadlineID INT)
-
-	INSERT INTO #GroupList(CustID, GroupID, IsGroupHeadline)
-	SELECT custid, ca.groupID, ca.IsGroupHeadLine
-	FROM bodb02.dbo.CustAccount ca WITH (NOLOCK)
-		INNER JOIN dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON ca.groupID = hs.GroupHeadlineID
-
-	--Insert SMA setting
-	INSERT INTO #MonitorList (CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, GroupHeadlineID)
-	SELECT CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, 0
+SELECT	c.CustId, c.Username, c.roleid, e.currency, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
+		CASE WHEN t.OldLevelID > t.LevelID THEN -1
+			 WHEN t.OldLevelID < t.LevelID THEN 1
+			 ELSE 0 END AS Movement,
+		CASE WHEN t.MaxLoss = 0 THEN 100 
+			 WHEN t.TotalBalance >=0 THEN 0
+			 ELSE (t.TotalBalance/t.MaxLoss*100) END AS PercentageLoss
 	FROM dbo.LimitLoss_Setting t WITH(NOLOCK) 
-	WHERE t.LevelID > 0
-		AND NOT EXISTS (SELECT 1 FROM #GroupList WHERE CustID = t.CustID)       
-	
-	--Insert Headline setting
-	INSERT INTO #MonitorList (CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, GroupHeadlineID)
-	SELECT CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, t.GroupHeadlineID
-	FROM dbo.LimitLoss_HeadlineSetting t WITH(NOLOCK)	
-		INNER JOIN #GroupList l ON t.GroupHeadlineID = l.GroupID AND l.IsGroupHeadline = 1
-	WHERE t.LevelID > 0
-
-	SELECT	c.CustId, c.Username, c.roleid, e.currency, t.GroupHeadlineID, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
-			CASE WHEN t.OldLevelID > t.LevelID THEN -1
-				 WHEN t.OldLevelID < t.LevelID THEN 1
-				 ELSE 0 END AS Movement,
-			CASE WHEN t.MaxLoss = 0 THEN 100 
-				 WHEN t.TotalBalance >=0 THEN 0
-				ELSE CAST((t.TotalBalance/t.MaxLoss*100) AS INT) END AS PercentageLoss
-	FROM #MonitorList t WITH(NOLOCK) 
 		INNER JOIN bodb02.dbo.custInfo c WITH (NOLOCK) ON t.CustID = c.custid
 		INNER JOIN bodb02.dbo.exchange e WITH (NOLOCK) on c.currency = e.exchangeid
+	WHERE t.LevelID > 0
 	ORDER BY PercentageLoss DESC, t.TotalBalance, c.username
-END
+
 GO
+GRANT EXECUTE ON [dbo].[NAP_LimitLoss_MonitorList] TO [bodbAdminNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[NAP_LimitLoss_MonitorList] TO [vnteam]
