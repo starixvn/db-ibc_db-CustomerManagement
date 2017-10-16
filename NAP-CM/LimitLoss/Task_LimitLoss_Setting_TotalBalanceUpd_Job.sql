@@ -21,29 +21,31 @@ BEGIN
 
 	CREATE TABLE #BalanceCust (CustID INT PRIMARY KEY, NewTotalBalance MONEY, YesterdayTotalBalance MONEY, NewLevelID TINYINT)
 	CREATE TABLE #BalanceGroupHeadline (GroupHeadlineID INT PRIMARY KEY, NewTotalBalance MONEY, YesterdayTotalBalance MONEY, NewLevelID TINYINT)
-	
-	DECLARE @MaxLevel TINYINT, @i TINYINT
-	SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
-
 	CREATE TABLE #Cust_LimitLoss_Setting (custid INT, roleId TINYINT)
 
+	DECLARE @MaxLevel TINYINT, @i TINYINT	
+
+	--------INSERT/DELETE LimitLoss_Setting when GroupHeadline is changed-------------------------
+	INSERT INTO dbo.LimitLoss_Setting(CustID, MaxLoss)
+	SELECT custid, NULL
+	FROM dbo.LimitLoss_HeadlineSetting cs WITH (NOLOCK)
+		INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON cs.GroupHeadlineID = ca.groupID
+	WHERE NOT EXISTS (SELECT 1 FROM LimitLoss_Setting WITH (NOLOCK) WHERE CustID = ca.custid)
+	        
+	DELETE cs
+	FROM LimitLoss_Setting cs WITH (ROWLOCK,UPDLOCK)  
+	WHERE NOT EXISTS (	SELECT 1 
+						FROM dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK)
+							INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON hs.GroupHeadlineID = ca.groupID
+						WHERE ca.custid = cs.CustID)
+		AND cs.MaxLoss IS NULL
+
+	/* Balance Info */
 	INSERT INTO #Cust_LimitLoss_Setting (custid, roleId)
 	SELECT c.custid, c.roleid
 	FROM dbo.LimitLoss_Setting s WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON s.custid = c.custid
 
-	--------INSERT/DELETE LimitLoss_Setting when GroupHeadline is changed-------------------------
-	INSERT INTO dbo.LimitLoss_Setting(CustID, MaxLoss)
-	SELECT custid, NULL
-	FROM #Cust_LimitLoss_Setting cs
-	WHERE NOT EXISTS (SELECT 1 FROM LimitLoss_Setting WITH (NOLOCK) WHERE CustID = cs.custid)
-	        
-	DELETE cs
-	FROM LimitLoss_Setting cs WITH (ROWLOCK,UPDLOCK)  
-	WHERE NOT EXISTS (SELECT 1 FROM #Cust_LimitLoss_Setting WITH (NOLOCK) WHERE CustID = cs.custid)
-		AND cs.MaxLoss IS NULL
-
-	/* Balance Info */
 	DECLARE @isTest BIT = 0
 	SELECT  @isTest = dbo.f_CheckSPVersion(@@PROCID)
 
@@ -367,6 +369,7 @@ BEGIN
 	GROUP BY b.custid
 	/* End get balance */
 
+	SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
 	WHILE (@i<@MaxLevel)
 	BEGIN
 		UPDATE b
