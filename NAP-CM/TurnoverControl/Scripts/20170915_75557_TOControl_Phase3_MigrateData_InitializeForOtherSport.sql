@@ -5,14 +5,17 @@
 	
 	Notes: TOControl_GlobalSetting: 6K rows
 */
--------- Soccer --------------------
-UPDATE T
-	SET Sporttype = 1,IsGroupHeadLine = 0
-FROM TOControl_GlobalSetting T WITH (ROWLOCK,UPDLOCK)
-
-------- Other sports -----------------
+-------- Delete data for other sports -------------------------------
 DELETE FROM TOControl_GlobalSetting WHERE Sporttype = 99
 
+------------------- Soccer --------------------
+UPDATE T
+	SET Sporttype = 1, IsGroupHeadLine = 0
+FROM TOControl_GlobalSetting T WITH (ROWLOCK,UPDLOCK)
+	INNER JOIN dbo.Custinfo CI WITH (NOLOCK) ON T.CustID = CI.custid 
+WHERE CI.currency <> 20	
+
+--------------------------- Other sports ----------------------------------
 SELECT E.exchangeid, E.actualrate, 300000/actualrate AS MaxTurnOver
 INTO #MaxTurnOver_tmp
 FROM dbo.Exchange E WITH (NOLOCK)
