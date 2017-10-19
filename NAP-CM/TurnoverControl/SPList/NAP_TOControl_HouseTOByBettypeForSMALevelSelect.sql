@@ -77,7 +77,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator,-1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking- @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking- @ExtraPT)*abs(stake),0)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 			WHERE b.matchid = @matchid
@@ -109,7 +109,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0))  BalanceInfo
 			FROM bettrans b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
 			WHERE b.matchid = @matchid
@@ -140,7 +140,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) BalanceInfo
 			FROM bettrans b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
 			WHERE b.matchid = @matchid
@@ -175,7 +175,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0))  BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
 			WHERE b.matchid = @matchid
@@ -207,7 +207,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0))  BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK) 
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype
 			WHERE b.matchid = @matchid
@@ -239,7 +239,7 @@ BEGIN
 			
 			INSERT INTO #HouseTO_99 (liveindicator,bettype,total)
 			SELECT b.liveindicator, -1 bettype,
-				CAST(SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0)) AS VARCHAR(30)) BalanceInfo
+				SUM(ISNULL((1-tpositiontaking - @ExtraPT)*abs(stake),0))  BalanceInfo
 			FROM bettrans14 b WITH(NOLOCK)
 				INNER JOIN #SportBettype bt WITH (NOLOCK) ON bt.Bettype = b.bettype 
 			WHERE b.matchid = @matchid
