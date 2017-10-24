@@ -10,6 +10,7 @@ AS
 	DB:			DBLIC/bodb_licensee
 	Original:    
 	Revisions: 	
+	- 20171024@Winnie: Get BA customers [RedmineID:#85335]
 	Param's Explanation:  
 		- @SportType = 0 : All
 					 = 1 : Soccer
