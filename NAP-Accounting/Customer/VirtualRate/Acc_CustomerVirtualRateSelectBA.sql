@@ -37,4 +37,4 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON Acc_CustomerVirtualRateSelectBA TO bodbAdminNet 
+
