@@ -2,7 +2,7 @@
 USE bodb_licensee
 GO
 ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectBA
-					@CustID		VARCHAR(MAX)	= ''				
+					@CustIDs		VARCHAR(MAX)	= ''				
 AS  
 /*  
 	Created:	20171024@Winnie
@@ -26,7 +26,7 @@ BEGIN
 	CREATE TABLE #CustList (CustID INT PRIMARY KEY)
 	INSERT INTO #CustList(CustID)
 	SELECT CONVERT(INT,ss.val)
-	FROM dbo.strSplit(@CustID, ',') AS ss
+	FROM dbo.strSplit(@CustIDs, ',') AS ss
 
 	DELETE t
 	FROM #CustList t
