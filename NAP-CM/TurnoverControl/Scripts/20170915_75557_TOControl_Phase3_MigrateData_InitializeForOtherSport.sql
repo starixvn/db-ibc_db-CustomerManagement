@@ -16,7 +16,7 @@ FROM TOControl_GlobalSetting T WITH (ROWLOCK,UPDLOCK)
 WHERE CI.currency <> 20	
 
 --------------------------- Other sports ----------------------------------
-SELECT E.exchangeid, E.actualrate, 300000/actualrate AS MaxTurnOver
+SELECT E.exchangeid, E.actualrate, 150000/actualrate AS MaxTurnOver
 INTO #MaxTurnOver_tmp
 FROM dbo.Exchange E WITH (NOLOCK)
 WHERE EXISTS (SELECT 1 
