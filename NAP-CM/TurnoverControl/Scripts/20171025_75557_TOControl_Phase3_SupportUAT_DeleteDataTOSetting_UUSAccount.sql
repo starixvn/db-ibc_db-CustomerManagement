@@ -10,7 +10,6 @@ GO
 
 DELETE TS
 FROM dbo.TOControl_Setting TS
-WHERE CustID = 19235084  
-	AND matchid IN (23236845, 23311169) 
-	AND IsGroupHeadLine = 0
+WHERE Custid IN (23003140,19235084)
+
 GO	
