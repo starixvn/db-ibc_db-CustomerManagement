@@ -1,7 +1,7 @@
 /*<info serverAlias="DBLIC-bodb_licensee" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
 USE bodb_licensee
 GO
-ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectBA
+ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectNonBA
 					@CustIDs		VARCHAR(MAX)	= ''				
 AS  
 /*  
