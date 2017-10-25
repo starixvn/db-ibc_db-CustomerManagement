@@ -543,8 +543,8 @@ BEGIN
 
 	-------------------------Headline---------------------------------------------------------------------
 	INSERT INTO #BalanceGroupHeadline (GroupHeadlineID, NewTotalBalance, YesterdayTotalBalance, NewLevelID)
-	SELECT hs.GroupHeadlineID, SUM(ls.TotalBalance), SUM(ls.YesterdayBalance), 0
-	FROM dbo.LimitLoss_Setting ls WITH (NOLOCK)
+	SELECT hs.GroupHeadlineID, SUM(ls.NewTotalBalanceRMB), SUM(ls.YesterdayTotalBalanceRMB), 0
+	FROM #BalanceCust ls WITH (NOLOCK)
 		INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = ls.CustID
 		INNER JOIN dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON ca.groupID = hs.GroupHeadlineID
 	GROUP BY hs.GroupHeadlineID
