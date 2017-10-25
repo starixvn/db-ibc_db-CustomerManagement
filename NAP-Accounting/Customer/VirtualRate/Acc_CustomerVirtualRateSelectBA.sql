@@ -1,7 +1,7 @@
 /*<info serverAlias="DBLIC-bodb_licensee" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
 USE bodb_licensee
 GO
-ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectNonBA
+ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectBA
 					@CustIDs		VARCHAR(MAX)	= ''				
 AS  
 /*  
@@ -28,12 +28,11 @@ BEGIN
 	SELECT CONVERT(INT,ss.val)
 	FROM dbo.strSplit(@CustIDs, ',') AS ss
 
-	DELETE t
+	SELECT t.*
 	FROM #CustList t
 	INNER JOIN dbo.[LicenseeBAHistory] ba WITH (NOLOCK) ON t.CustID=BA.CustID
 	WHERE ba.Status = 'Running'
 
-	SELECT * FROM #CustList
 	
 END
 
