@@ -20,7 +20,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT m.matchid, m.eventdate, m.homeid, m.awayid
+	SELECT m.matchid, m.eventdate, m.homeid, m.awayid,m.IsNeutral
 	FROM dbo.match m WITH (NOLOCK)
 	WHERE (@LeagueID = 0 OR m.leagueid = @LeagueID )
 		AND m.eventdate BETWEEN @FromDate AND @ToDate 

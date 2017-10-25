@@ -37,7 +37,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	CREATE TABLE #MatchList(matchid INT, homeid INT, awayid INT, eventdate DATETIME, eventstatus NVARCHAR(50), leagueid INT)
+	CREATE TABLE #MatchList(matchid INT, homeid INT, awayid INT, eventdate DATETIME, eventstatus NVARCHAR(50), leagueid INT, IsNeutral BIT)
 
 	DECLARE @PercentLevel TINYINT = 0
 	SELECT @PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE @UsedPercent  >=  PercentValue),0)
@@ -45,8 +45,8 @@ BEGIN
 	/* Get information about needed events */
 	IF @Todate <= @MoveBetsDay
 	BEGIN
-		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid)
-			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid
+		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid,IsNeutral )
+			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid, m.IsNeutral
 			FROM DBAGE.bodb02.dbo.match14 m WITH(NOLOCK)
 			WHERE 
 				m.eventdate BETWEEN @FromDate AND @ToDate
@@ -58,8 +58,8 @@ BEGIN
 	END
 	ELSE IF @FromDate > @MoveBetsDay
 	BEGIN
-		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid)
-			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid
+		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid,IsNeutral)
+			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid, m.IsNeutral
 			FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
 			WHERE 
 				m.eventdate BETWEEN @FromDate AND @ToDate
@@ -70,8 +70,8 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid)
-			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid
+		INSERT INTO #MatchList(matchid, homeid, awayid, eventdate, eventstatus, leagueid,IsNeutral)
+			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid,m.IsNeutral
 			FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
 			WHERE 
 				m.eventdate BETWEEN @MoveBetsDay AND @ToDate
@@ -82,7 +82,7 @@ BEGIN
 
 			UNION ALL
 
-			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid
+			SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.eventstatus, m.leagueid,m.IsNeutral
 			FROM DBAGE.bodb02.dbo.match14 m WITH(NOLOCK)
 			WHERE 
 				m.eventdate BETWEEN @FromDate AND @MoveBetsDay
@@ -107,7 +107,9 @@ BEGIN
 	SELECT 
 			t.CustID, c.username
 			, CASE WHEN T.IsGroupHeadLine = 1 THEN 'RM' ELSE e.currency END AS currency
-			, m.leagueid, m.matchID, m.homeid, m.awayid, m.eventdate, m.eventstatus
+			, m.leagueid, m.matchID
+			, m.IsNeutral
+			, m.homeid, m.awayid, m.eventdate, m.eventstatus
 			, t.MaxTurnover, t.TotalTurnover, t.HouseTurnover
 			, CASE WHEN t.IsGroupHeadLine = 1 THEN 'Headline'
 				   ELSE	CASE c.RoleID WHEN 4 THEN 'Super' WHEN 3 THEN 'Master' WHEN 2 THEN 'Agent' END 
