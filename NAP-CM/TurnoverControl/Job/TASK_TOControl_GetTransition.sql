@@ -15,23 +15,24 @@ DB: DBAGE.bodb02
 Original:
 
 Revisions:
-
+	- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 Param explanation:
 */
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @MaxID BIGINT = 0
-	DECLARE @TmpTable AS TABLE (ID BIGINT, CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY)
+	DECLARE @TmpTable AS TABLE (ID BIGINT, CustID INT, matchid INT, adjusted_TurnOver MONEY, adjusted_HouseTurnOver MONEY, IsGroupHeadline BIT, sporttype SMALLINT)
 
 	SELECT @MaxID = CONVERT(BIGINT, VValue)
 	FROM dbo.TOConTrol_GlobalVariables WITH (ROWLOCK)
 	WHERE VName = 'MaxID'
 
-	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver) --To avoid TABLOCK escalation
-	SELECT TOP (4500) ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
-	FROM dbo.TOControl_Transition WITH (ROWLOCK)
-	WHERE ID > @MaxID
+	INSERT INTO @TmpTable (ID, CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline,sporttype) --To avoid TABLOCK escalation
+	SELECT TOP (4500) t.ID, t.CustID, t.matchid, t.adjusted_TurnOver, t.adjusted_HouseTurnOver,t.IsGroupHeadline,m.sporttype
+	FROM dbo.TOControl_Transition t WITH (ROWLOCK)
+		INNER JOIN dbo.match m WITH (NOLOCK) ON t.matchid = m.matchid
+	WHERE t.ID > @MaxID
 
 	IF @@ROWCOUNT <> 0
 	BEGIN
@@ -43,6 +44,6 @@ BEGIN
 		WHERE VName = 'MaxID'
 	END
 
-	SELECT CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver
+	SELECT CustID, matchid, adjusted_TurnOver, adjusted_HouseTurnOver,IsGroupHeadline,sporttype
 	FROM @TmpTable
 END

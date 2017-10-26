@@ -1,8 +1,9 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[NAP_TOControl_MatchTurnoverUpdate]
 	@CustID INT,
 	@MatchID INT,
+	@SportType SMALLINT = 1,
+	@IsGroupHeadline BIT = 0,
 	@MaxTurnover MONEY,
 	@UserID INT,
 	@IP	VARCHAR(40),
@@ -16,13 +17,26 @@ AS
 	DB: DBCUST.CustDB
 
 	Revisions:
-
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		
 	Parameter's explaination:
+		
+	Hardcode IsNotified: 
+	CASE	
+		WHEN @MaxTurnover > MaxTurnover THEN   --- reset isNotified only in case of increasing MaxTurnover
+			CASE	
+				WHEN @PercentageUsed >= 100 THEN 100
+				WHEN @PercentageUsed >= 80 THEN 80
+				WHEN @PercentageUsed >= 60 THEN 60
+				WHEN @PercentageUsed >= 40 THEN 40
+				ELSE 0
+			END 
+		ELSE IsNotified 
+	END
 */
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @PercentageUsed MONEY
 	DECLARE @LogData NVARCHAR(4000)
 	DECLARE @startRun	DATETIME,
 			@endRun		DATETIME,
@@ -46,30 +60,22 @@ BEGIN
 		SET 
 			MaxTurnover = @MaxTurnover,
 			IsNotified = 0
-		WHERE CustID = @CustID AND matchid = @MatchID
+		WHERE CustID = @CustID AND matchid = @MatchID AND IsGroupHeadLine = @IsGroupHeadline
 	END
 	ELSE
 	BEGIN
 		UPDATE dbo.TOControl_Setting WITH(ROWLOCK, UPDLOCK)
-		SET 
-			@PercentageUsed = (HouseTurnOver*100/@MaxTurnover),
-			MaxTurnover = @MaxTurnover,
-			IsNotified = 
-				CASE	
-					WHEN @MaxTurnover > MaxTurnover THEN   --- reset isNotified only in case of increasing MaxTurnover
-						CASE	
-							WHEN @PercentageUsed >= 100 THEN 100
-							WHEN @PercentageUsed >= 80 THEN 80
-							WHEN @PercentageUsed >= 60 THEN 60
-							WHEN @PercentageUsed >= 40 THEN 40
-							ELSE 0
-						END 
-					ELSE IsNotified 
-				END
-		WHERE CustID = @CustID AND matchid = @MatchID
+			SET 
+				MaxTurnover = @MaxTurnover,
+				IsNotified =  ISNULL((SELECT MAX(PercentValue) FROM dbo.TOControl_LevelSetting WITH(NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) >= PercentValue AND IsNotified = 1),0),
+				PercentLevel = ISNULL((SELECT MAX(PercentLevel) FROM dbo.TOControl_LevelSetting WITH (NOLOCK) WHERE (HouseTurnOver*100/@MaxTurnover) >= PercentValue),0) 
+						
+		WHERE CustID = @CustID AND matchid = @MatchID AND IsGroupHeadLine = @IsGroupHeadline
 	END
 
-	SELECT @LogData = '<NAP_TOControl_MatchTurnoverUpdate MatchID="' + COALESCE(CAST(@MatchID AS VARCHAR(10)), SPACE(1)) + '" ' 
+	SELECT @LogData = '<NAP_TOControl_MatchTurnoverUpdate CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(10)), SPACE(1)) + '" ' 
+					+ 'MatchID="' + COALESCE(CAST(@MatchID AS VARCHAR(10)), SPACE(1)) + '" ' 
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
 					+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" '
@@ -84,7 +90,11 @@ BEGIN
 		@Custid = @CustID,
 		@ActionID = 671,
 		@TrackingValue = @LogData,
-		@Duration = @duration				
+		@Duration = @duration					
 						
 END
 GO
+
+GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchTurnoverUpdate] TO [bodbAdminNet]
+GO
+

@@ -5,6 +5,8 @@ GO
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingUpdate]
 	@CustID INT,
 	@MaxTurnover MONEY,
+	@SportType SMALLINT = 1,
+	@IsGroupHeadLine BIT = 0,
 	@UserID INT,
 	@IP	VARCHAR(40),
 	@ErrCode int = 0 OUTPUT,
@@ -18,8 +20,17 @@ AS
 	DB: DBCUST.CustDB
 
 	Revisions:
-
+		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		
 	Parameter's explaination:
+	Update IsNotified						
+						WHEN @PercentageUsed >= 100 THEN 100
+						WHEN @PercentageUsed >= 80 THEN 80
+						WHEN @PercentageUsed >= 60 THEN 60
+						WHEN @PercentageUsed >= 40 THEN 40
+						ELSE 0
+					END 
+				ELSE IsNotified 
 */
 
 BEGIN 
@@ -40,19 +51,26 @@ BEGIN
 		RETURN
 	
 	INSERT INTO @MatchList(matchid, homeid, awayid, eventdate, sporttype, leagueid)
-		SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.sporttype, m.leagueid
-		FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
-		WHERE m.eventstatus <> 'completed'
+	SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.sporttype, m.leagueid
+	FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
+	WHERE m.eventstatus <> 'completed'
+		AND (
+				-- Soccer
+				(@SportType = 1 AND m.sporttype = 1) 
+				OR 
+				-- Other sports
+				(@SportType = 99 AND m.sporttype > 1 AND m.sporttype <=99 )
+			 )
 
 	SELECT @MaxTurnover_Old = t.MaxTurnover 
 	FROM dbo.TOControl_Setting t WITH(NOLOCK)
 		INNER JOIN @MatchList m ON t.matchid = m.matchid
-	WHERE t.CustID = @CustID
+	WHERE t.CustID = @CustID AND t.IsGroupHeadLine = @IsGroupHeadLine
 
 	SELECT @AffectedMatch = @AffectedMatch + CAST(t.MatchID AS VARCHAR(20)) + ',' 
 	FROM dbo.TOControl_Setting t WITH(NOLOCK) 
 		INNER JOIN @MatchList m ON m.matchid = t.matchid
-	WHERE t.CustID = @CustID
+	WHERE t.CustID = @CustID AND t.IsGroupHeadLine = @IsGroupHeadLine
 
 	IF (LEN(ISNULL(@AffectedMatch, '')) > 0)
 	BEGIN
@@ -73,27 +91,20 @@ BEGIN
 
 	UPDATE dbo.TOControl_GlobalSetting WITH(ROWLOCK, UPDLOCK) 
 	SET MaxTurnOver = @MaxTurnover 
-	WHERE CustID = @CustID
+	WHERE CustID = @CustID AND Sporttype = @SportType AND IsGroupHeadLine = @IsGroupHeadLine
 	
 	UPDATE t
-	SET 
-		@PercentageUsed = CASE WHEN @MaxTurnover = 0 THEN 100 ELSE (t.HouseTurnOver*100/@MaxTurnover) END,
-		t.MaxTurnover = @MaxTurnover,
-		t.IsNotified = 
-			CASE 
-				WHEN @MaxTurnover > t.MaxTurnover THEN   --- reset isNotified only in case of increasing maxturnover
-					CASE	
-						WHEN @PercentageUsed >= 100 THEN 100
-						WHEN @PercentageUsed >= 80 THEN 80
-						WHEN @PercentageUsed >= 60 THEN 60
-						WHEN @PercentageUsed >= 40 THEN 40
-						ELSE 0
-					END 
-				ELSE IsNotified 
-			END
+		SET 
+			t.MaxTurnover = @MaxTurnover,
+			t.IsNotified = 	CASE WHEN @MaxTurnover = 0 THEN 10 
+								  ELSE ISNULL((SELECT MAX(PercentValue) 
+												FROM dbo.TOControl_LevelSetting (NOLOCK) 
+												WHERE t.HouseTurnOver*100/@MaxTurnover >= PercentValue AND IsNotified = 1),0)
+								END				
+						
 	FROM dbo.TOControl_Setting t WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN @MatchList m ON m.matchid = t.matchid
-	WHERE t.CustID = @CustID
+	WHERE t.CustID = @CustID AND t.IsGroupHeadLine = @IsGroupHeadLine
 
 	DECLARE @LogData NVARCHAR(4000), @TrackingValue2 NVARCHAR(4000)
 
@@ -102,6 +113,7 @@ BEGIN
 
 	SELECT @LogData = '<NAP_TOControl_GlobalSettingUpdate CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover AS VARCHAR(20)), SPACE(1)) + '" ' 
+					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 					+ 'AffectedMatch="' + COALESCE(@AffectedMatch,space(1)) + '" '
 					+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
@@ -109,6 +121,7 @@ BEGIN
 
 	SELECT @TrackingValue2 = '<NAP_TOControl_GlobalSettingUpdate CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 					+ 'AffectedMatch="' + COALESCE(@AffectedMatch,space(1)) + '" '
 					+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
@@ -122,4 +135,6 @@ BEGIN
 				@Duration = @duration
 			
 END
+GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingUpdate] TO [bodbAdminNet]
 GO
