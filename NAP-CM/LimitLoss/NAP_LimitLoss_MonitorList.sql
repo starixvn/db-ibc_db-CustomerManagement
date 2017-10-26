@@ -45,7 +45,8 @@ BEGIN
 		INNER JOIN #GroupList l ON t.GroupHeadlineID = l.GroupID AND l.IsGroupHeadline = 1
 	WHERE t.LevelID > 0
 
-	SELECT	c.CustId, c.Username, c.roleid, CASE WHEN t.GroupHeadlineID = 1 THEN 'RM' ELSE e.currency END, t.GroupHeadlineID, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
+	SELECT	c.CustId, c.Username, c.roleid, CASE WHEN t.GroupHeadlineID <> 0 THEN 'RM' ELSE e.currency END AS currency, 
+			t.GroupHeadlineID, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
 			CASE WHEN t.OldLevelID > t.LevelID THEN -1
 				 WHEN t.OldLevelID < t.LevelID THEN 1
 				 ELSE 0 END AS Movement,

@@ -1,4 +1,7 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+USE bodb02
+GO
+
 ALTER PROC Acc_CustDirectSel
 (
 	@CustID INT
@@ -24,6 +27,7 @@ BEGIN
 		, ISNULL(cda.ApprovedBy,'') AS ApprovedBy
 		, ISNULL(c.mobilephone,'') AS Mobilephone
 		, ISNULL(ls.MaxLoss,0) AS MaxLoss
+		, hs.MaxLoss AS MaxLossHeadline
 		, CASE WHEN e.ExchangeID = 20 THEN 'UUS' ELSE e.Currency END AS Currency
 				
 	FROM dbo.CustDirectAccount cda WITH (NOLOCK)
@@ -31,11 +35,9 @@ BEGIN
 		INNER JOIN dbo.Exchange e WITH (NOLOCK) ON e.ExchangeID = c.Currency
 		INNER JOIN dbo.Customer cr WITH (NOLOCK) ON c.creator = cr.CustID
 		LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustID AND GroupHeadline.GroupID > 0 
+		LEFT JOIN bodb_Age.dbo.LimitLoss_HeadlineSetting hs ON GroupHeadline.groupID = hs.GroupHeadlineID
 		LEFT JOIN bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) ON cda.Custid = ls.CustID
-		
 	WHERE cda.Custid = @CustID
 	
 END
-GO
-GRANT EXECUTE ON [dbo].Acc_CustDirectSel TO [bodbAdminNet] 
 GO
