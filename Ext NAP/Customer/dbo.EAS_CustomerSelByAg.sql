@@ -51,7 +51,8 @@ Revisions:
 	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20170828@Elodie: Account with no permission view special site cann't search member 789y in customer list - [Redmine: #79254]
-
+	- 20171027@Johnson: fix the unsynchronized setting, add SyncGDUpline [Redmine: #72973]
+	
 	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
 BEGIN    
@@ -162,7 +163,8 @@ BEGIN
 			--DisableVirtualSports, HideVirtualSports, 
 			DoubleCommLosing, Recommend, DisableCasinoBonus, DisableHRFixedOdds, HideKeno,
 			DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,
-
+			(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
+			FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend) as SyncGoldDeluxeUpline,
 			-- For MuayThai
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -396,6 +398,7 @@ BEGIN
 	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
 	       ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
+		   ISNULL(ci.SyncGoldDeluxeUpline,1) AS SyncGoldDeluxeUpline,
 		   
 		   ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
 		   ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
@@ -497,7 +500,7 @@ BEGIN
 			   	ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P, ci.DisableLiveCasino, ci.SyncLiveCasino, 
 			   	--ci.DisableVirtualSports, ci.HideVirtualSports,
 			  	ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.DisableHRFixedOdds,
-				ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
+				ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
 				ci.DisableMuayThai, ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
