@@ -10,6 +10,7 @@ AS
 		- 20170321@Helen: NAP Risk & Control - Phase 3A [Redmine: 72604]
 		- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
 		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
+		- 20171005@Johnson: Change request-Only notify once time for each level [Redmine:#84141]
 
 	Param's Explanation:
 	
@@ -302,15 +303,15 @@ BEGIN
 	-- UPDATE when reaching Limit: Win or Loss 	
 	UPDATE g
 		SET MaxwinLimit = t.MaxWinLimit
-			, TotalWinAmt = g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount
+			, TotalWinAmt = g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount
 			, WinAmt = t.TotalWinAmount
 			, ModifiedDate = @ReachedDate
 			, IsNotified = 0
 			, LevelID = T.LevelID
 			, MaxWinLimitSetting = t.MaxWinLimitSetting
 			, TotalWinAmt_RM = CASE 
-									WHEN T.ExchangeID = 20 THEN (g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount) 
-									ELSE  ROUND (e.actualrate * (g.TotalWinAmt -  CASE WHEN CGS.ActionID IN (2,4) THEN 0 ELSE g.WinAmt END + t.TotalWinAmount),2)
+									WHEN T.ExchangeID = 20 THEN (g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount) 
+									ELSE  ROUND (e.actualrate * (g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount),2)
 								END
 			, BettypeIDList = t.BettypeIDList
 	OUTPUT inserted.CustId, inserted.ProductId,inserted.GroupID, inserted.MaxWinLimit, inserted.TotalWinAmt, inserted.WinAmt, inserted.LevelID  
@@ -334,7 +335,7 @@ BEGIN
 		
 	FROM dbo.WinLimit_CustGameMonitoring g WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN dbo.Winlimit_LevelSetting ls WITH (NOLOCK) ON g.LevelID = ls.LevelID
-		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId
+		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId		
 		
 		CROSS APPLY (SELECT TOP 1 tmp.ActionID,tmp.IsBlockedTransfer,tmp.IsBlockedPlaceBet
 					 FROM dbo.WinLimit_CustGameStatus tmp WITH (NOLOCK) 
@@ -343,14 +344,58 @@ BEGIN
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID
 	WHERE (
 			-- cover for both Winlimt & LossLimit
-			LS.LevelOrder < T.LevelOrder
+				(LS.LevelOrder < T.LevelOrder 
+				--in case loss, if exists losslevel history which higher than losslevel customer reach again
+				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
+							AND EXISTS(SELECT TOP 1 1
+								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
+									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
+								WHERE g.CustID = gh1.CustID 
+									AND g.WinlostDate = gh1.WinlostDate 
+									AND g.GroupID = gh1.GroupID 
+									AND g.ProductID = gh1.ProductID	
+									AND gh1.LevelID >= @LosslimitLevel_min AND gh1.LevelID <= @LosslimitLevel_max
+									AND ls1.LevelOrder >= T.LevelOrder
+							)
+						THEN 0 ELSE 1 END	
+						)	
+				)	
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
 				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
+				--not exists winlevel history which higher winlevel customer reach again
+				AND NOT EXISTS(SELECT TOP 1 1
+							FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
+								INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
+							WHERE g.CustID = gh2.CustID 
+								AND g.WinlostDate = gh2.WinlostDate 
+								AND g.GroupID = gh2.GroupID 
+								AND g.ProductID = gh2.ProductID
+								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
+								AND ls2.LevelOrder >= T.LevelOrder
+							)
 				) 
 			-- Reach level again after unblocked
-			OR CGS.ActionID IN (2,4)
+			--and not exists history level which customer reach
+			OR (CGS.ActionID IN (2,4)
+				AND NOT EXISTS(SELECT TOP 1 1
+							FROM dbo.WinLimit_CustGameMonitoring_History gh3 WITH(NOLOCK) 
+								INNER JOIN dbo.Winlimit_LevelSetting ls3 WITH (NOLOCK) ON gh3.LevelID = ls3.LevelID
+							WHERE g.CustID = gh3.CustID 
+								AND g.WinlostDate = gh3.WinlostDate 
+								AND g.GroupID = gh3.GroupID 
+								AND g.ProductID = gh3.ProductID
+								AND 1 = CASE WHEN ((gh3.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max
+													AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max)
+												 OR 
+													(gh3.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
+													AND T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max)
+												)
+												AND ls3.LevelOrder >= T.LevelOrder
+											THEN 1 ELSE 0 END
+							)				
+				)
 		)
 	
 	-- INSERT NEW
