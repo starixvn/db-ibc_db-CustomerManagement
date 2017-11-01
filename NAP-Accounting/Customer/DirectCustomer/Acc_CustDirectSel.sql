@@ -15,8 +15,11 @@ DB: DBAGE/BODB02
 
 Revisions:
 	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
+	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 */
 BEGIN
+	DECLARE @IsGroupHeadline BIT
+	SELECT @IsGroupHeadline = IsGroupHeadLine FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID
 
 	SELECT 
 		cda.CustID AS CustID
@@ -29,7 +32,7 @@ BEGIN
 		, ISNULL(ls.MaxLoss,0) AS MaxLoss
 		, hs.MaxLoss AS MaxLossHeadline
 		, CASE WHEN e.ExchangeID = 20 THEN 'UUS' ELSE e.Currency END AS Currency
-				
+		, ISNULL(@IsGroupHeadline,0) AS IsGroupHeadline				
 	FROM dbo.CustDirectAccount cda WITH (NOLOCK)
 		INNER JOIN dbo.Customer c WITH (NOLOCK) ON cda.CustID = c.CustID
 		INNER JOIN dbo.Exchange e WITH (NOLOCK) ON e.ExchangeID = c.Currency
