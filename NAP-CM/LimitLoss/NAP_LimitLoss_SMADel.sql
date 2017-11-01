@@ -4,7 +4,7 @@ GO
 
 ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMADel]
     @CustId		INT,
-	@Mode		BIT = 0,
+	@Mode		TINYINT = 0,
     @UserID		INT = 0,
     @IP			NVARCHAR(50) = NULL,
     
@@ -24,6 +24,7 @@ AS
 	Parameter's explaination: 
 		- Mode =	0: SMA setting
 					1: Group Headline Setting
+					2: Member of group headline
 	
 	Example:
 	
@@ -78,6 +79,23 @@ BEGIN
 		FROM dbo.LimitLoss_Setting ls WITH (ROWLOCK,UPDLOCK)
 			INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = ls.CustID
 		WHERE ca.groupID = @GroupHeadlineID AND ls.MaxLoss IS NULL
+	END
+
+	IF @Mode = 2
+	BEGIN
+		IF @CustId <= 0
+		   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
+			RETURN
+		END
+		
+		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+
+		UPDATE ls 
+		SET MaxLoss = NULL
+		FROM LimitLoss_Setting ls WITH(ROWLOCK,UPDLOCK) 
+		WHERE CustID = @CustID
 	END
 
     DECLARE @LogData NVARCHAR(4000)

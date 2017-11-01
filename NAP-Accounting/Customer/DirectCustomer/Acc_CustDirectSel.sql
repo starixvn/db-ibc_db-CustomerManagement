@@ -29,7 +29,7 @@ BEGIN
 		, ISNULL(cda.RequestedBy,'') AS RequestBy
 		, ISNULL(cda.ApprovedBy,'') AS ApprovedBy
 		, ISNULL(c.mobilephone,'') AS Mobilephone
-		, ISNULL(ls.MaxLoss,0) AS MaxLoss
+		, ls.MaxLoss AS MaxLoss
 		, hs.MaxLoss AS MaxLossHeadline
 		, CASE WHEN e.ExchangeID = 20 THEN 'UUS' ELSE e.Currency END AS Currency
 		, ISNULL(@IsGroupHeadline,0) AS IsGroupHeadline				
