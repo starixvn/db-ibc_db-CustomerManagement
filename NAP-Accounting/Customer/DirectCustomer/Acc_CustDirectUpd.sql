@@ -25,8 +25,9 @@ Task: Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 DB: DBCUST/CUSTDB
 
 Revisions:
+	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
-	
+
 */
 BEGIN
 	DECLARE @startRun DATETIME
@@ -182,11 +183,11 @@ BEGIN
 	IF @IsUpdDirectAccount = 1
 	BEGIN
 		SELECT @LogData = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1)) + '" ' +
+							'ProcessedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Boss="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'RequestedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'ApprovedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Mobilephone="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1))) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'MaxLossHeadline="' + COALESCE(CAST(@MaxLossHeadline AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
@@ -194,11 +195,11 @@ BEGIN
 							'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)), SPACE(1)) + '" />'
 						    
 		SELECT @LogData2 = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy_OLD AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone_old AS NVARCHAR(50)), SPACE(1)) + '" ' +
+							'ProcessedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Boss="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'RequestedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy_OLD AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'ApprovedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Mobilephone="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone_old AS NVARCHAR(50)), SPACE(1))) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(@MaxLoss_old AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'MaxLossHeadline="' + COALESCE(CAST(@MaxLossHeadline_OLD AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
