@@ -58,11 +58,18 @@ BEGIN
 	   RETURN
 	END	    
 		
+	SELECT @MaxLoss_Old = ls.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+
+	SELECT @GroupHeadlineID = groupID 
+	FROM dbo.custAccount ca WITH (NOLOCK) 
+		INNER JOIN DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON ca.groupID = hs.GroupHeadlineID
+	WHERE custid = @CustID
+
+	SELECT @MaxLossHeadline_OLD = hs.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) WHERE hs.GroupHeadlineID = @GroupHeadlineID
+
 	IF @MaxLoss IS NOT NULL --update MaxLoss
 	BEGIN
-		SET @IsUpdDirectAccount = 1
-
-		SELECT @MaxLoss_Old = ls.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+		SET @IsUpdDirectAccount = 1		
 
 		IF @MaxLoss_OLD IS NOT NULL
 		BEGIN
@@ -73,6 +80,7 @@ BEGIN
 					@CustId = @CustID, 
 					@MaxLoss = @MaxLoss, 
 					@Mode = 0, 
+					@System = 1,
 					@UserID = @creator, 
 					@IP = @IP, 
 					@ErrCode = @ErrCode OUTPUT,
@@ -87,6 +95,7 @@ BEGIN
 					@Username = @Username, 
 					@MaxLoss = @MaxLoss, 
 					@Mode = 0, 
+					@System = 1,
 					@UserID = @creator, 
 					@IP = @IP, 
 					@ErrCode = @ErrCode OUTPUT,
@@ -96,14 +105,7 @@ BEGIN
 
 	IF @MaxLossHeadline IS  NOT NULL --update MaxLossHeadline
 	BEGIN
-		SET @IsUpdDirectAccount = 1
-
-		SELECT @GroupHeadlineID = groupID 
-		FROM dbo.custAccount ca WITH (NOLOCK) 
-			INNER JOIN DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON ca.groupID = hs.GroupHeadlineID
-		WHERE custid = @CustID
-
-		SELECT @MaxLossHeadline_OLD = hs.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) WHERE hs.GroupHeadlineID = @GroupHeadlineID
+		SET @IsUpdDirectAccount = 1		
 
 		IF @MaxLossHeadline_OLD IS NOT NULL
 		BEGIN
@@ -114,6 +116,7 @@ BEGIN
 					@CustId = @CustID, 
 					@MaxLoss = @MaxLossHeadline, 
 					@Mode = 1, 
+					@System = 1,
 					@UserID = @creator, 
 					@IP = @IP, 
 					@ErrCode = @ErrCode OUTPUT,
@@ -128,6 +131,7 @@ BEGIN
 					@Username = @Username, 
 					@MaxLoss = @MaxLossHeadline, 
 					@Mode = 1, 
+					@System = 1,
 					@UserID = @creator, 
 					@IP = @IP, 
 					@ErrCode = @ErrCode OUTPUT,
@@ -188,8 +192,8 @@ BEGIN
 							'RequestedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
 							'ApprovedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
 							'Mobilephone="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1))) + '" ' +
-							'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(100)), SPACE(1)) + '" ' +
-							'MaxLossHeadline="' + COALESCE(CAST(@MaxLossHeadline AS VARCHAR(100)), SPACE(1)) + '" ' +
+							'MaxLoss="' + COALESCE(CAST(ISNULL(@MaxLoss,@MaxLoss_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
+							'MaxLossHeadline="' + COALESCE(CAST(ISNULL(@MaxLossHeadline,@MaxLossHeadline_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)), SPACE(1)) + '" />'

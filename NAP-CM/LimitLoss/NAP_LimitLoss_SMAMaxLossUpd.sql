@@ -7,8 +7,9 @@ ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMAMaxLossUpd]
     @MaxLoss	MONEY,
 	@Mode		BIT = 0,
     @UserID		INT = 0,
-    @IP			NVARCHAR(50) = NULL,
-    
+    @IP			NVARCHAR(50) = NULL,    
+	@System		BIT = 0,
+
     @ErrCode	INT = 0 OUT,
     @ErrMsg		NVARCHAR(200)='' OUT
 
@@ -25,7 +26,8 @@ AS
 	Parameter's explaination: 
 		- Mode =	0: SMA setting
 					1: Group Headline Setting
-	
+		- System =  0: update from Nap-CM system (write log in this SP)
+					1: update from Nap accounting system (write log in Acc_CustDirectUpd SP)
 	Example:
 	
 */
@@ -127,43 +129,65 @@ BEGIN
 			AND l.GroupHeadlineID = @GroupHeadlineID
 	END
 
-    DECLARE @LogData NVARCHAR(4000), @LogData2 NVARCHAR(4000)
+	IF @System = 0
+	BEGIN
+		DECLARE @LogData NVARCHAR(4000), @LogData2 NVARCHAR(4000)
 
-    SET @endRun = GETDATE()
-    SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
+		SET @endRun = GETDATE()
+		SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
 
-    SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
-					    + 'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
-						+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
-					    + 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
-					    + 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
-					    + 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
+		IF @Mode = 0
+		BEGIN
+			SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+								+ 'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
 					    
-    SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
-					    + 'MaxLoss="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
-						+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
-					    + 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
-					    + 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
-					    + 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'					    
+			SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'MaxLoss="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'	
+		END
+		ELSE											    
+		BEGIN
+			SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+								+ 'MaxLossHeadline="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
+					    
+			SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'MaxLossHeadline="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'	
+		END
 
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@Userid = @UserID,
-			@CustID = @CustID,
-			@ActionID = 667,
-			@TrackingValue = @LogData,
-			@TrackingValue2 = @LogData2,
-			@Duration = @duration			
-	END TRY
-	BEGIN CATCH
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@Userid = @UserID,
-			@CustID = @CustID,
-			@ActionID = 667,
-			@TrackingValue = @LogData,
-			@TrackingValue2 = @LogData2,
-			@Duration = @duration	
-	END CATCH
+		BEGIN TRY
+			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+				@Userid = @UserID,
+				@CustID = @CustID,
+				@ActionID = 667,
+				@TrackingValue = @LogData,
+				@TrackingValue2 = @LogData2,
+				@Duration = @duration			
+		END TRY
+		BEGIN CATCH
+			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+				@Userid = @UserID,
+				@CustID = @CustID,
+				@ActionID = 667,
+				@TrackingValue = @LogData,
+				@TrackingValue2 = @LogData2,
+				@Duration = @duration	
+		END CATCH
+	END
 END
 
 
