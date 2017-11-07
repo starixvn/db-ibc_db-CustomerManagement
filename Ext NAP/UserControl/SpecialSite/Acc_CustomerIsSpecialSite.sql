@@ -37,11 +37,11 @@ BEGIN
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
 	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @site NVARCHAR(50), @GroupID SMALLINT = NULL
 
-	EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsername @UserName
 	IF @CustID IS NULL 
-		return;
-	SELECT @RoleID = roleID, @recommend = recommend, @site = site FROM customer WITH (NOLOCK) WHERE custid = @custid
-	
+		return
+	SELECT @RoleID = roleID, @recommend = recommend, @site = [Site] FROM customer WITH (NOLOCK) WHERE custid = @CustID
+
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 
 	--check if customer is special site
@@ -50,7 +50,7 @@ BEGIN
 		SELECT @site = NULL
 
 		SELECT @site = c.site 
-		FROM dbo.Customer c WITH (NOLOCK)	
+		FROM dbo.Customer c WITH (NOLOCK)
 			INNER JOIN dbo.Site s WITH (NOLOCK) ON c.site = s.site
 		WHERE c.custid = @recommend AND s.SpecialGroup = 1
 
