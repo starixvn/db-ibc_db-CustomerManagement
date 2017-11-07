@@ -37,4 +37,3 @@ BEGIN
 	return @custID
 		
 END
-GO
