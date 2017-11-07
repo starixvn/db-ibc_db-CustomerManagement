@@ -18,6 +18,7 @@ AS
 		- 20161111@Elodie: Check more member of group headline
 		- 20161201@Elodie: Output more @IsSpecialHeadline [RedmineID: #66873]
 		- 20170918@Elodie: Output more @SiteCode [RedmineID: #83219]
+		- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 	Param's Explanation:
 
 	Example query:
@@ -36,7 +37,10 @@ BEGIN
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
 	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @site NVARCHAR(50), @GroupID SMALLINT = NULL
 
-	SELECT @CustID = custid, @RoleID = roleID, @recommend = recommend, @site = site FROM customer WITH (NOLOCK) WHERE username = @UserName
+	EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+	IF @CustID IS NULL 
+		return;
+	SELECT @RoleID = roleID, @recommend = recommend, @site = site FROM customer WITH (NOLOCK) WHERE custid = @custid
 	
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 
