@@ -50,10 +50,8 @@ BEGIN
 			SELECT 5, 1201, 0, 1 --Virtual Sports
 			UNION ALL
 			SELECT 8, 1501, 0, 1  -- Keno
-			UNION ALL
-			SELECT 28, 1031, 0, 1  -- Lottery for CWL
-			UNION ALL
-			SELECT 28, 1021, 1, 0  -- Lottery for SMA WL
+			UNION ALL		
+			SELECT 28, 1021, 1, 1  -- Lottery 
 			--UNION ALL
 			--SELECT 14, 1900, 0, 1  -- Macau
 			
