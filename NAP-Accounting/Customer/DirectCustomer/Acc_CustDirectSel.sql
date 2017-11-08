@@ -23,7 +23,7 @@ BEGIN
 
 	SELECT 
 		cda.CustID AS CustID
-		, cr.Username AS  CreatedBy
+		, ISNULL(cr.Username,'') AS  CreatedBy
 		, ISNULL(cda.ProcessedBy,'') AS ProcessedBy
 		, ISNULL(cda.Boss,'') AS Boss
 		, ISNULL(cda.RequestedBy,'') AS RequestBy
@@ -36,7 +36,7 @@ BEGIN
 	FROM dbo.CustDirectAccount cda WITH (NOLOCK)
 		INNER JOIN dbo.Customer c WITH (NOLOCK) ON cda.CustID = c.CustID
 		INNER JOIN dbo.Exchange e WITH (NOLOCK) ON e.ExchangeID = c.Currency
-		INNER JOIN dbo.Customer cr WITH (NOLOCK) ON c.creator = cr.CustID
+		LEFT JOIN dbo.Customer cr WITH (NOLOCK) ON c.creator = cr.CustID
 		LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustID AND GroupHeadline.GroupID > 0 
 		LEFT JOIN bodb_Age.dbo.LimitLoss_HeadlineSetting hs ON GroupHeadline.groupID = hs.GroupHeadlineID
 		LEFT JOIN bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) ON cda.Custid = ls.CustID

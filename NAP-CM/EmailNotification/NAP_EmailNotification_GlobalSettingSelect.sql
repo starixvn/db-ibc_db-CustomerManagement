@@ -35,7 +35,7 @@ BEGIN
 	-- FOR TO Control
 	ELSE IF @NotifiedByFunction_Flag = 2
 	BEGIN
-		SELECT ca.CustID, ls.GroupHeadlineID
+		SELECT ca.CustID, ls.GroupHeadlineID AS GroupID
 		FROM DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting ls WITH(NOLOCK) 
 			INNER JOIN dbo.custAccount ca WITH (NOLOCK) ON ls.GroupHeadlineID = ca.groupID
 		WHERE ca.IsGroupHeadLine = 1
