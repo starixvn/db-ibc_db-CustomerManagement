@@ -15,22 +15,22 @@ Original:Accounting site
 		- 20171107@Vicky: Support to search customer id on Left panel (#86134)
 */
 BEGIN
-	declare @custID int
+	DECLARE @custID int
 	SET @Username = RTRIM(LTRIM(@username))
 	
-	select @custid = custid
-	from customer with (nolock)
-	where username = @Username AND roleid <= 4
+	SELECT @custid = custid
+	FROM customer WITH (NOLOCK)
+	WHERE username = @Username AND roleid <= 4
 	
-	if (@custid IS NULL)
-		select @custid = custid
-		from customer with (nolock)
-		where username2 = @Username  AND roleid <= 4
+	IF (@custid IS NULL)
+		SELECT @custid = custid
+		FROM customer WITH (NOLOCK)
+		WHERE username2 = @Username  AND roleid <= 4
 	
-	IF(@custID IS NULL AND ISNUMERIC(@Username) = 1)
+	IF (@custID IS NULL AND ISNUMERIC(@Username) = 1)
 	BEGIN
 		SELECT @custid = custid
-		FROM customer with (nolock)
+		FROM customer WITH (NOLOCK)
 		WHERE custid = CAST(@username as int) AND roleid <= 4
 	END
 	
