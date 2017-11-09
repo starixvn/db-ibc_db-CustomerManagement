@@ -26,7 +26,7 @@ AS
 				@IsSpecialHeadline BIT = 0,
 				@SiteCode TINYINT = 1
 
-		EXEC Acc_CustomerIsSpecialSite_xpre @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
+		EXEC Acc_CustomerIsSpecialSite @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
 
 		SELECT @SiteCode, @IsSpecialSite, @IsSpecialHeadline
 
