@@ -3,7 +3,7 @@ ALTER FUNCTION [dbo].[f_GetCustIDFromUsername]
 (
 	@Username varchar(30)
 )
-RETURNS int
+RETURNS INT
 AS
 /*
 Created: Thien
@@ -15,7 +15,7 @@ Original:Accounting site
 		- 20171107@Vicky: Support to search customer id on Left panel (#86134)
 */
 BEGIN
-	DECLARE @custID int
+	DECLARE @custID INT
 	SET @Username = RTRIM(LTRIM(@username))
 	
 	SELECT @custid = custid
@@ -31,7 +31,7 @@ BEGIN
 	BEGIN
 		SELECT @custid = custid
 		FROM customer WITH (NOLOCK)
-		WHERE custid = CAST(@username as int) AND roleid <= 4
+		WHERE custid = CAST(@username AS INT) AND roleid <= 4
 	END
 	
 	return @custID
