@@ -39,7 +39,7 @@ BEGIN
 
 	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsername @UserName
 	IF @CustID IS NULL 
-		return
+		RETURN
 	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM customer WITH (NOLOCK) WHERE custid = @CustID
 
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
