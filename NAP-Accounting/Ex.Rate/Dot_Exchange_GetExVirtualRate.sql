@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[Dot_Exchange_GetExVirtualRate]
 */
 AS 
 BEGIN
+	SET NOCOUNT ON
 
 	SELECT e.exchangeid, e.currency, e.Code, e.ExVirtualRate
 	FROM dbo.exchange e WITH (NOLOCK)
