@@ -19,8 +19,6 @@ BEGIN
 			
 	SET NOCOUNT ON;
 	
-	DECLARE @GroupHeadlineList TABLE (CustID INT PRIMARY KEY)
-	
 	-- Process for sportbook bettype for TO Control only
 	IF EXISTS ( SELECT 1 
 				FROM inserted 
