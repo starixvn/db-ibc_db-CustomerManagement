@@ -164,6 +164,7 @@ BEGIN
 			SELECT @XMLString = (SELECT srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player' , matchid AS 'mid',winlostdate AS 'wld'
 										, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
 										, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
+										, 0 AS 'IsInsert'
 								 FROM @TmpTable		
 								 FOR XML PATH ('r'))
 
@@ -183,6 +184,7 @@ BEGIN
 					SELECT @XMLString = (SELECT TOP (@RowPerCommand) srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player', matchid AS 'mid', winlostdate AS 'wld'
 													, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
 													, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
+													, 0 AS 'IsInsert'
 										 FROM @TmpTable		
 										 WHERE ID BETWEEN @MinID AND @MaxID
 						 				 FOR XML PATH ('r'))
