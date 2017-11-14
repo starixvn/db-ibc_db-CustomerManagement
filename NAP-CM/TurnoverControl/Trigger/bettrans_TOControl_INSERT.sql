@@ -21,7 +21,7 @@ BEGIN
 	-- Process for sportbook bettype for TO Control only
 	IF EXISTS ( SELECT 1 
 				FROM inserted 
-				WHERE bettype >= 19000)
+				WHERE bettype >= 2000)
 		RETURN
 	
 	SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
