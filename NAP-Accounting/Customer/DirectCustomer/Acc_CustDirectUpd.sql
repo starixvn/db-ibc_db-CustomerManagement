@@ -5,10 +5,10 @@ GO
 ALTER PROC Acc_CustDirectUpd
 (
 	@CustID INT
-	, @ProcessedBy VARCHAR(100)= ''
-	, @Boss VARCHAR(100)= ''
-	, @RequestedBy VARCHAR(100) = ''
-	, @ApprovedBy VARCHAR(100) = ''
+	, @ProcessedBy NVARCHAR(100)= ''
+	, @Boss NVARCHAR(100)= ''
+	, @RequestedBy NVARCHAR(100) = ''
+	, @ApprovedBy NVARCHAR(100) = ''
 	, @Mobilephone NVARCHAR(50) = ''
 	, @MaxLoss MONEY = 0
 	
@@ -34,10 +34,10 @@ BEGIN
           , @IsUpdDirectAccount BIT = 0
     SET @startRun = getdate()
     
-    DECLARE @ProcessedBy_OLD VARCHAR(100)
-		, @Boss_OLD VARCHAR(100)
-		, @RequestedBy_OLD VARCHAR(100) 
-		, @ApprovedBy_OLD VARCHAR(100)
+    DECLARE @ProcessedBy_OLD NVARCHAR(100)
+		, @Boss_OLD NVARCHAR(100)
+		, @RequestedBy_OLD NVARCHAR(100) 
+		, @ApprovedBy_OLD NVARCHAR(100)
 		, @Mobilephone_OLD NVARCHAR(50)
 		, @MaxLoss_OLD MONEY 
     
@@ -126,22 +126,22 @@ BEGIN
 	IF @IsUpdDirectAccount = 1
 	BEGIN
 		SELECT @LogData = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone AS VARCHAR(200)), SPACE(1)) + '" ' +
+							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'Boss="' + COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'RequestedBy="' + COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'Mobilephone="' + COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1)) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)), SPACE(1)) + '" />'
 						    
 		SELECT @LogData2 = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy_old AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss_old AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy_OLD AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy_old AS VARCHAR(200)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone_old AS VARCHAR(200)), SPACE(1)) + '" ' +
+							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'Boss="' + COALESCE(CAST(@Boss_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'RequestedBy="' + COALESCE(CAST(@RequestedBy_OLD AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
+							'Mobilephone="' + COALESCE(CAST(@Mobilephone_old AS NVARCHAR(50)), SPACE(1)) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(@MaxLoss_old AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' +
