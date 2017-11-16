@@ -24,6 +24,7 @@ Task: Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 DB: DBCUST/CUSTDB
 
 Revisions:
+	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
 	
 */
 BEGIN
