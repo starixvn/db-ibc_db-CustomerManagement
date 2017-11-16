@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 		
 	Parameter's explaination:
 		
@@ -44,7 +45,7 @@ BEGIN
 	SET	@startRun = GETDATE()
 
 	--Check permission 
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID, @funcname='[TurnoverMonitor]', @ErrCode=@ErrCode OUTPUT, @ErrMsg=@ErrMsg OUTPUT
+	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='TurnoverMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 		
@@ -93,8 +94,5 @@ BEGIN
 		@Duration = @duration					
 						
 END
-GO
-
-GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchTurnoverUpdate] TO [bodbAdminNet]
 GO
 
