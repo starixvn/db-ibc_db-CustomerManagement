@@ -16,22 +16,22 @@ Original:Accounting site
 */
 BEGIN
 	DECLARE @custID INT
-	SET @Username = RTRIM(LTRIM(@username))
+	SET @Username = RTRIM(LTRIM(@Username))
 	
-	SELECT @custid = custid
+	SELECT @custID = custid
 	FROM customer WITH (NOLOCK)
 	WHERE username = @Username AND roleid <= 4
 	
-	IF (@custid IS NULL)
-		SELECT @custid = custid
+	IF (@custID IS NULL)
+		SELECT @custID = custid
 		FROM customer WITH (NOLOCK)
 		WHERE username2 = @Username  AND roleid <= 4
 	
 	IF (@custID IS NULL AND ISNUMERIC(@Username) = 1)
 	BEGIN
-		SELECT @custid = custid
+		SELECT @custID = custid
 		FROM customer WITH (NOLOCK)
-		WHERE custid = CAST(@username AS INT) AND roleid <= 4
+		WHERE custid = CAST(@Username AS INT) AND roleid <= 4
 	END
 	
 	return @custID
