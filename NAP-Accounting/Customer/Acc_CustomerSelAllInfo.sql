@@ -199,7 +199,7 @@ BEGIN
 	/* End get sport bettype */
 	
     --Get CustID FROM DB06, WHERE got index on Username AND Username2
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username
 
     IF @custid is NULL
     BEGIN

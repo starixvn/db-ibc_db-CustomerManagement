@@ -37,7 +37,7 @@ BEGIN
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
 	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @site NVARCHAR(50), @GroupID SMALLINT = NULL
 
-	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsername @UserName
+	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName
 	IF @CustID IS NULL 
 		RETURN
 	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM customer WITH (NOLOCK) WHERE custid = @CustID
