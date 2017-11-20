@@ -187,11 +187,11 @@ BEGIN
 	IF @IsUpdDirectAccount = 1
 	BEGIN
 		SELECT @LogData = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
-							'Boss="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1))) + '" ' +
-							'RequestedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
-							'ApprovedBy="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
-							'Mobilephone="' +  dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1))) + '" ' +
+							'ProcessedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Boss="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'RequestedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'ApprovedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Mobilephone="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1))) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(ISNULL(@MaxLoss,@MaxLoss_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'MaxLossHeadline="' + COALESCE(CAST(ISNULL(@MaxLossHeadline,@MaxLossHeadline_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
