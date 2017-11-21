@@ -45,9 +45,12 @@ BEGIN
     SET		 @startRun = GETDATE()
 
     --Check permission 
-    EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-    IF @ErrCode <> 0
-	    RETURN
+    IF @System = 0
+	BEGIN
+		EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		IF @ErrCode <> 0
+			RETURN
+	END
 	    
     IF @MaxLoss >= 0
     BEGIN
