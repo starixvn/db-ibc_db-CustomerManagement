@@ -28,7 +28,7 @@ BEGIN
 		FROM customer WITH (NOLOCK)
 		WHERE username2 = @Username  AND roleid <= 4
 	
-	IF (@custID IS NULL AND ISNUMERIC(@Username) = 1)
+	IF (@CheckCustId <> 0 AND @custID IS NULL AND ISNUMERIC(@Username) = 1)
 	BEGIN
 		SELECT @custID = custid
 		FROM customer WITH (NOLOCK)
