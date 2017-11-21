@@ -52,6 +52,7 @@ Revisions:
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
+	- 20171027@Johnson: fix the unsynchronized setting, add SyncGDUpline [Redmine: #72973]
 
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
@@ -230,6 +231,7 @@ BEGIN
            MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) DisableKeno,
 	       ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
+		   ISNULL(ci.SyncGoldDeluxeUpline,1) AS SyncGoldDeluxeUpline,
 		   
 		   ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
 		   ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
@@ -310,6 +312,8 @@ BEGIN
 							--DisableVirtualSports, HideVirtualSports, 
 							DoubleCommLosing, DisableCasinoBonus, DisableHRFixedOdds,
 							HideKeno, DisableEsports, DisableGoldDeluxe, HideGoldDeluxe, DisableColossusBet,HideColossusBet,
+							(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
+							FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @mrecommend) as SyncGoldDeluxeUpline,
 							-- For MuayThai
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)) AS DisableMuayThai,
 							CAST(CASE WHEN @IsHidden_MuayThai = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -469,7 +473,7 @@ BEGIN
 			ci.DisableLiveCasino, ci.SyncLiveCasino,  
 			--ci.DisableVirtualSports, ci.HideVirtualSports,	
 			ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.DisableHRFixedOdds, ci.HideKeno, ci.DisableEsports,
-			ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting,
+			ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting,
 			ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet,ci.HideAllBetUpline, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 			ci.HideCricket,ci.DisableCricket,cdm.Discount,
 			ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge, ci.HideVoidBridgeUpline, ci.SyncedVoidBridge, ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
