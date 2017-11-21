@@ -88,6 +88,7 @@ Revisions:
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
+	- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 
 Param's Explanation:
 	@username: username want to get all info related
