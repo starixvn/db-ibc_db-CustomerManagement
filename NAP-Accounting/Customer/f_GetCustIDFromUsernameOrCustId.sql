@@ -1,7 +1,8 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
 CREATE FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
 (
-	@Username varchar(30)
+	@Username varchar(30),
+	@CheckCustId TINYINT = 0
 )
 RETURNS INT
 AS

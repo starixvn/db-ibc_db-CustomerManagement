@@ -3,7 +3,8 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
-	@username VARCHAR(30)
+	@username VARCHAR(30),
+	@CheckCustId TINYINT = 0
 AS
 
 /*
@@ -198,8 +199,8 @@ BEGIN
 	SELECT ProductID, Bettype, RefTable FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	/* End get sport bettype */
 	
-    --Get CustID FROM DB06, WHERE got index on Username AND Username2
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username
+    --Get CustID FROM DB06, WHERE got index on Username AND Username2 or CustID
+    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
 
     IF @custid is NULL
     BEGIN

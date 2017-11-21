@@ -4,6 +4,7 @@ GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerIsSpecialSite]
 	@UserName VARCHAR(30),
+	@CheckCustId TINYINT = 0,	
 	@IsSpecialSite BIT = 0 OUTPUT,
 	@IsSpecialHeadline BIT = 0 OUTPUT,
 	@SiteCode TINYINT = 1 OUTPUT
@@ -24,7 +25,8 @@ AS
 	Example query:
 		DECLARE @IsSpecialSite BIT = 0,
 				@IsSpecialHeadline BIT = 0,
-				@SiteCode TINYINT = 1
+				@SiteCode TINYINT = 1,
+				@CheckCustId TINYINT = 0
 
 		EXEC Acc_CustomerIsSpecialSite @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
 
@@ -37,7 +39,7 @@ BEGIN
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
 	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @site NVARCHAR(50), @GroupID SMALLINT = NULL
 
-	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName
+	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName,@CheckCustId
 	IF @CustID IS NULL 
 		RETURN
 	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM customer WITH (NOLOCK) WHERE custid = @CustID
