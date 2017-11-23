@@ -3,6 +3,7 @@ USE [bodb_AGE]
 GO
 
 ALTER PROCEDURE [dbo].[NAP_LimitLoss_MonitorList]
+	@ActionID TINYINT = 1
 AS
 /*
 	Created: Elodie
@@ -16,15 +17,20 @@ AS
 		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
 
 	Parameter's explaination: 
-	
-	Example:  EXEC NAP_LimitLoss_MonitorList
+		@ActionID:	1	Alert on report
+					2	Send email notification to recipient
+					3	Send lettalk notification to recipient
+
+	Example:  EXEC NAP_LimitLoss_MonitorList @ActionID = 2
 	
 */
 BEGIN
 	SET NOCOUNT ON
-
+	DECLARE @LevelThreshold TINYINT
 	CREATE TABLE #GroupList (CustID INT PRIMARY KEY, GroupID SMALLINT, IsGroupHeadline BIT)
 	CREATE TABLE #MonitorList (CustID INT PRIMARY KEY, MaxLoss MONEY, TotalBalance MONEY, LevelID TINYINT, YesterdayBalance MONEY, OldLevelID TINYINT, GroupHeadlineID INT)
+
+	SELECT @LevelThreshold = MIN(LevelID) FROM dbo.LimitLoss_ActionConfig WITH (NOLOCK) WHERE ActionID >=@ActionID
 
 	INSERT INTO #GroupList(CustID, GroupID, IsGroupHeadline)
 	SELECT custid, ca.groupID, ca.IsGroupHeadLine
@@ -35,7 +41,7 @@ BEGIN
 	INSERT INTO #MonitorList (CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, GroupHeadlineID)
 	SELECT CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, 0
 	FROM dbo.LimitLoss_Setting t WITH(NOLOCK) 
-	WHERE t.LevelID > 0
+	WHERE t.LevelID >= @LevelThreshold
 		AND NOT EXISTS (SELECT 1 FROM #GroupList WHERE CustID = t.CustID)       
 	
 	--Insert Headline setting
@@ -43,7 +49,7 @@ BEGIN
 	SELECT CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, t.GroupHeadlineID
 	FROM dbo.LimitLoss_HeadlineSetting t WITH(NOLOCK)	
 		INNER JOIN #GroupList l ON t.GroupHeadlineID = l.GroupID AND l.IsGroupHeadline = 1
-	WHERE t.LevelID > 0
+	WHERE t.LevelID >= @LevelThreshold
 
 	SELECT	c.CustId, c.Username, c.roleid, CASE WHEN t.GroupHeadlineID <> 0 THEN 'RM' ELSE e.currency END AS currency, 
 			t.GroupHeadlineID, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
