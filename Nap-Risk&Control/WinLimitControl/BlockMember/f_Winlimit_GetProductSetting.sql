@@ -62,7 +62,7 @@ BEGIN
 			UNION ALL
 			SELECT 26, 1600, 0,1 --Lucky 3
 			UNION ALL
-			SELECT 207, 1004, 1, 1  -- BullFighting
+			SELECT 30, 1004, 1, 1  -- BullFighting
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
 
