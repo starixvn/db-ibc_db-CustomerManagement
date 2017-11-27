@@ -1,22 +1,17 @@
-USE [bodb_Age]
+/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+USE [bodb_AGE]
 GO
 
-/****** Object:  StoredProcedure [dbo].[NAP_LimitLoss_SMAMaxLossUpd]    Script Date: 06/08/2016 13:16:54 ******/
-SET ANSI_NULLS ON
-GO
+ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMAMaxLossUpd]
+    @CustId		INT,
+    @MaxLoss	MONEY,
+	@Mode		BIT = 0,
+    @UserID		INT = 0,
+    @IP			NVARCHAR(50) = NULL,    
+	@System		BIT = 0,
 
-SET QUOTED_IDENTIFIER ON
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_LimitLoss_MonitorList    Script Date: 6/27/2014 1:18:44 PM ******/
-CREATE PROCEDURE [dbo].[NAP_LimitLoss_SMAMaxLossUpd]
-    @CustId	 INT,
-    @MaxLoss	 MONEY,
-    @Creator	 INT = 0,
-    @IP		 NVARCHAR(50) = NULL,
-    
-    @ErrCode	 INT = 0 OUT,
-    @ErrMsg	 NVARCHAR(200)='' OUT
+    @ErrCode	INT = 0 OUT,
+    @ErrMsg		NVARCHAR(200)='' OUT
 
 AS
 /*
@@ -26,8 +21,13 @@ AS
 	DB: DBAGE/bodb_Age
 
 	Revisions:
+		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
+
 	Parameter's explaination: 
-	
+		- Mode =	0: SMA setting
+					1: Group Headline Setting
+		- System =  0: update from Nap-CM system (write log in this SP)
+					1: update from Nap accounting system (write log in Acc_CustDirectUpd SP)
 	Example:
 	
 */
@@ -35,71 +35,162 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE	 @startRun	DATETIME,
-			 @endRun		DATETIME,
-			 @duration	INT
+	DECLARE	@startRun			DATETIME,
+			@endRun				DATETIME,
+			@duration			INT,
+			@MaxLoss_Old		MONEY,
+			@GroupHeadlineID	SMALLINT,
+			@i					TINYINT,
+			@MaxLevel			TINYINT
     SET		 @startRun = GETDATE()
 
     --Check permission 
-    EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-    IF @ErrCode <> 0
-	    RETURN
+    IF @System = 0
+	BEGIN
+		EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		IF @ErrCode <> 0
+			RETURN
+	END
 	    
-    IF @MaxLoss > 0
+    IF @MaxLoss >= 0
     BEGIN
 	   SELECT @ErrCode = 101, @ErrMsg = 'Max Loss should be negative!'
 	   RETURN
     END	    
 
-    IF @CustId <= 0
-	   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
-    BEGIN
-	    SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
-	    RETURN
-    END
+	IF @Mode = 0
+	BEGIN
+		IF @CustId <= 0
+		   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Super/Master/Agent.'
+			RETURN
+		END
+		
+		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
 
-    DECLARE @MaxLoss_Old MONEY
-    SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+		UPDATE LimitLoss_Setting WITH(ROWLOCK,UPDLOCK) 
+		SET MaxLoss = @MaxLoss
+		WHERE CustID = @CustID
+		
+		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+		WHILE (@i<@MaxLevel)
+		BEGIN
+			UPDATE l
+			SET LevelID = @i
+			FROM LimitLoss_Setting l
+			WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+				AND l.MaxLoss IS NOT NULL
+				AND l.CustID = @CustId
 
-    UPDATE LimitLoss_Setting WITH(ROWLOCK,UPDLOCK) 
-    SET MaxLoss = @MaxLoss
-    WHERE CustID=@CustID
+			SET @i = @i+1
+		END
 
-    DECLARE @LogData NVARCHAR(4000), @LogData2 NVARCHAR(4000)
+		UPDATE l
+		SET LevelID = @MaxLevel
+		FROM LimitLoss_Setting l
+		WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+			AND l.MaxLoss IS NOT NULL
+			AND l.CustID = @CustId
+	END
 
-    SET @endRun = GETDATE()
-    SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
+	IF @Mode = 1
+	BEGIN
+		SELECT @GroupHeadlineID = groupID FROM bodb02.dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 
-    SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
-					    + 'MaxLoss="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
-					    + 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
-					    + 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
-					    + 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
+		IF @CustId <= 0
+		   OR NOT EXISTS (SELECT 1 FROM dbo.LimitLoss_HeadlineSetting ls WITH (NOLOCK) WHERE ls.GroupHeadlineID = @GroupHeadlineID)
+		BEGIN
+			SELECT @ErrCode = 101, @ErrMsg = 'Invalid Headline.'
+			RETURN
+		END
+		
+		SELECT @MaxLoss_Old = ls.MaxLoss FROM dbo.LimitLoss_HeadlineSetting ls WITH (NOLOCK) WHERE ls.GroupHeadlineID = @GroupHeadlineID
+
+		UPDATE LimitLoss_HeadlineSetting WITH(ROWLOCK,UPDLOCK) 
+		SET MaxLoss = @MaxLoss
+		WHERE GroupHeadlineID = @GroupHeadlineID
+
+		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+		WHILE (@i<@MaxLevel)
+		BEGIN
+			UPDATE l
+			SET LevelID = @i
+			FROM LimitLoss_HeadlineSetting l
+			WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND (l.TotalBalance/l.MaxLoss*100)< (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+				AND l.GroupHeadlineID = @GroupHeadlineID
+
+			SET @i = @i+1
+		END
+
+		UPDATE l
+		SET LevelID = @i
+		FROM LimitLoss_HeadlineSetting l
+		WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+			AND l.GroupHeadlineID = @GroupHeadlineID
+	END
+
+	IF @System = 0
+	BEGIN
+		DECLARE @LogData NVARCHAR(4000), @LogData2 NVARCHAR(4000)
+
+		SET @endRun = GETDATE()
+		SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
+
+		IF @Mode = 0
+		BEGIN
+			SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+								+ 'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
 					    
-    SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
-					    + 'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
-					    + 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
-					    + 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
-					    + 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'					    
+			SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'MaxLoss="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'	
+		END
+		ELSE											    
+		BEGIN
+			SELECT @LogData = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+								+ 'MaxLossHeadline="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
+					    
+			SELECT @LogData2 = '<NAP_LimitLoss_SMAMaxLossUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'MaxLossHeadline="' + COALESCE(CAST(@MaxLoss_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
+								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
+								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
+								+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'	
+		END
 
-    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-				    @Userid = @Creator,
-				    @ActionID = 667,
-				    @TrackingValue = @LogData,
-				    @TrackingValue2 = @LogData2,
-				    @Duration = @duration
+		BEGIN TRY
+			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+				@Userid = @UserID,
+				@CustID = @CustID,
+				@ActionID = 667,
+				@TrackingValue = @LogData,
+				@TrackingValue2 = @LogData2,
+				@Duration = @duration			
+		END TRY
+		BEGIN CATCH
+			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+				@Userid = @UserID,
+				@CustID = @CustID,
+				@ActionID = 667,
+				@TrackingValue = @LogData,
+				@TrackingValue2 = @LogData2,
+				@Duration = @duration	
+		END CATCH
+	END
 END
 
-/*
-GO
-GRANT EXECUTE ON [dbo].[NAP_LimitLoss_SMAMaxLossUpd] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_LimitLoss_SMAMaxLossUpd] TO [bodbAdminNet]
-GO
-*/
-GO
-GRANT EXECUTE ON [dbo].[NAP_LimitLoss_SMAMaxLossUpd] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_LimitLoss_SMAMaxLossUpd] TO [bodbAdminNet]
-GO
 

@@ -10,8 +10,9 @@ ALTER PROC Acc_CustDirectUpd
 	, @RequestedBy NVARCHAR(100) = ''
 	, @ApprovedBy NVARCHAR(100) = ''
 	, @Mobilephone NVARCHAR(50) = ''
-	, @MaxLoss MONEY = 0
-	
+	, @MaxLoss MONEY = NULL
+	, @MaxLossHeadline MONEY = NULL
+
 	, @creator    INT = NULL
 	, @IP         VARCHAR(20) = ''
 	, @ErrCode    INT = 0 OUTPUT
@@ -24,8 +25,9 @@ Task: Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 DB: DBCUST/CUSTDB
 
 Revisions:
+	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
-	
+
 */
 BEGIN
 	DECLARE @startRun DATETIME
@@ -33,6 +35,8 @@ BEGIN
           , @duration INT
           , @existed  BIT 
           , @IsUpdDirectAccount BIT = 0
+		  , @GroupHeadlineID INT
+		  , @Username NVARCHAR(50)
     SET @startRun = getdate()
     
     DECLARE @ProcessedBy_OLD NVARCHAR(100)
@@ -41,42 +45,100 @@ BEGIN
 		, @ApprovedBy_OLD NVARCHAR(100)
 		, @Mobilephone_OLD NVARCHAR(50)
 		, @MaxLoss_OLD MONEY 
+		, @MaxLossHeadline_OLD MONEY 
     
 	--Check permission & Valid @MaxLoss
 	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[OtherCust]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 		
-	IF @MaxLoss > 0
+	IF (@MaxLoss IS NOT NULL AND @MaxLoss >= 0) OR (@MaxLossHeadline >= 0 AND @MaxLossHeadline IS NOT NULL)
 	BEGIN
 	   SELECT @ErrCode = 101, @ErrMsg = 'Max Loss should be negative!'
 	   RETURN
 	END	    
 		
-	SET @MaxLoss_Old = ISNULL((SELECT ls.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId),0)
-	
-	-- Update MaxLoss
-	IF @MaxLoss_OLD <> @MaxLoss
+	SELECT @MaxLoss_Old = ls.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId
+
+	SELECT @GroupHeadlineID = groupID 
+	FROM dbo.custAccount ca WITH (NOLOCK) 
+		INNER JOIN DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON ca.groupID = hs.GroupHeadlineID
+	WHERE custid = @CustID
+
+	SELECT @MaxLossHeadline_OLD = hs.MaxLoss FROM DBAGE.bodb_Age.dbo.LimitLoss_HeadlineSetting hs WITH (NOLOCK) WHERE hs.GroupHeadlineID = @GroupHeadlineID
+
+	IF @MaxLoss IS NOT NULL --update MaxLoss
 	BEGIN
-		SET @IsUpdDirectAccount = 1
-		
-		IF EXISTS (SELECT 1 FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ls WITH (NOLOCK) WHERE ls.CustId = @CustId)
+		SET @IsUpdDirectAccount = 1		
+
+		IF @MaxLoss_OLD IS NOT NULL
 		BEGIN
-			UPDATE ML
-				SET MaxLoss = @MaxLoss
-			FROM DBAGE.bodb_Age.dbo.LimitLoss_Setting ML WITH(ROWLOCK,UPDLOCK) 
-			WHERE CustID=@CustID
-			
+			-- Update MaxLoss
+			IF @MaxLoss_OLD <> @MaxLoss
+			BEGIN
+				EXEC DBAGE.bodb_Age.dbo.NAP_LimitLoss_SMAMaxLossUpd 
+					@CustId = @CustID, 
+					@MaxLoss = @MaxLoss, 
+					@Mode = 0, 
+					@System = 1,
+					@UserID = @creator, 
+					@IP = @IP, 
+					@ErrCode = @ErrCode OUTPUT,
+					@ErrMsg = @ErrMsg OUTPUT						
+			END
 		END
-		ELSE 
-		BEGIN	
-			INSERT INTO DBAGE.bodb_Age.dbo.LimitLoss_Setting(CustID, MaxLoss) 
-			VALUES(@CustID, @MaxLoss)
+		ELSE
+		BEGIN
+			SELECT @Username = username FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustID
+			-- Insert MaxLoss
+			EXEC DBAGE.bodb_Age.dbo.NAP_LimitLoss_SMAIns 
+					@Username = @Username, 
+					@MaxLoss = @MaxLoss, 
+					@Mode = 0, 
+					@System = 1,
+					@UserID = @creator, 
+					@IP = @IP, 
+					@ErrCode = @ErrCode OUTPUT,
+					@ErrMsg = @ErrMsg OUTPUT		
 		END
-	END	
-	
-	
-	
+	END
+
+	IF @MaxLossHeadline IS  NOT NULL --update MaxLossHeadline
+	BEGIN
+		SET @IsUpdDirectAccount = 1		
+
+		IF @MaxLossHeadline_OLD IS NOT NULL
+		BEGIN
+			-- Update MaxLossHeadline
+			IF @MaxLossHeadline_OLD <> @MaxLossHeadline
+			BEGIN
+				EXEC DBAGE.bodb_Age.dbo.NAP_LimitLoss_SMAMaxLossUpd 
+					@CustId = @CustID, 
+					@MaxLoss = @MaxLossHeadline, 
+					@Mode = 1, 
+					@System = 1,
+					@UserID = @creator, 
+					@IP = @IP, 
+					@ErrCode = @ErrCode OUTPUT,
+					@ErrMsg = @ErrMsg OUTPUT						
+			END
+		END
+		ELSE
+		BEGIN
+			SELECT @Username = username FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustID
+			-- Insert MaxLossHeadline
+			EXEC DBAGE.bodb_Age.dbo.NAP_LimitLoss_SMAIns 
+					@Username = @Username, 
+					@MaxLoss = @MaxLossHeadline, 
+					@Mode = 1, 
+					@System = 1,
+					@UserID = @creator, 
+					@IP = @IP, 
+					@ErrCode = @ErrCode OUTPUT,
+					@ErrMsg = @ErrMsg OUTPUT		
+		END
+	END
+
     -- Update extra info for direct account
 	SELECT  @ProcessedBy_OLD = ISNULL(ProcessedBy,'')
 			, @Boss_OLD = ISNULL(Boss,'')
@@ -100,8 +162,6 @@ BEGIN
 		FROM CustDirectAccount CDA WITH (ROWLOCK,UPDLOCK)
 		WHERE CDA.CustID = @CustID
 	END
-	
-	
 
 	-- Update MobilePhone
 	SET @Mobilephone_old = (SELECT mobilephone FROM CUSTOMER C WITH (NOLOCK) WHERE C.CustId = @CustId)
@@ -127,23 +187,25 @@ BEGIN
 	IF @IsUpdDirectAccount = 1
 	BEGIN
 		SELECT @LogData = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1)) + '" ' +
-							'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(100)), SPACE(1)) + '" ' +
+							'ProcessedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Boss="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'RequestedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'ApprovedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Mobilephone="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone AS NVARCHAR(50)), SPACE(1))) + '" ' +
+							'MaxLoss="' + COALESCE(CAST(ISNULL(@MaxLoss,@MaxLoss_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
+							'MaxLossHeadline="' + COALESCE(CAST(ISNULL(@MaxLossHeadline,@MaxLossHeadline_OLD) AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)), SPACE(1)) + '" />'
 						    
 		SELECT @LogData2 = '<Acc_CustDirectUpd CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" ' +
-							'ProcessedBy="' + COALESCE(CAST(@ProcessedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Boss="' + COALESCE(CAST(@Boss_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'RequestedBy="' + COALESCE(CAST(@RequestedBy_OLD AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'ApprovedBy="' + COALESCE(CAST(@ApprovedBy_old AS NVARCHAR(100)), SPACE(1)) + '" ' +
-							'Mobilephone="' + COALESCE(CAST(@Mobilephone_old AS NVARCHAR(50)), SPACE(1)) + '" ' +
+							'ProcessedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ProcessedBy_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Boss="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Boss_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'RequestedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@RequestedBy_OLD AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'ApprovedBy="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@ApprovedBy_old AS NVARCHAR(100)), SPACE(1))) + '" ' +
+							'Mobilephone="' + dbo.f_EncodeXMLValue(COALESCE(CAST(@Mobilephone_old AS NVARCHAR(50)), SPACE(1))) + '" ' +
 							'MaxLoss="' + COALESCE(CAST(@MaxLoss_old AS VARCHAR(100)), SPACE(1)) + '" ' +
+							'MaxLossHeadline="' + COALESCE(CAST(@MaxLossHeadline_OLD AS VARCHAR(100)), SPACE(1)) + '" ' +
 							'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(4000)), SPACE(1)) + '" />'

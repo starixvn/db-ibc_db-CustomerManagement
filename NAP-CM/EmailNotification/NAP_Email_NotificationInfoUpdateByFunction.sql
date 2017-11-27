@@ -14,12 +14,14 @@ AS
 	DB: DBCUST/CustDB
 
 	Revisions:
-		
+		- 20171012@Elodie: Update email notifications for Loss Limit monitoring function [Redmine:#82892]
 	Parameter's explaination: 
 		- @NotificationIDList: ID of table EmailNotification
 			
 		- @NotifiedByFunction_Flag: 
 			1: TO Control
+			2: Loss monitoring
+			+ 1: for the next one
 		- @IsNotifiedByFunction:
 			+ Update IsNotifiedbyTOContol = 1 for list of valid ID sent email
 			+ Update IsNotifiedbyTOContol = 0 for list of valid ID but NOT sent email yet
@@ -38,7 +40,15 @@ BEGIN
 			INNER JOIN dbo.strSplit(@NotificationIDList,',') AC ON EN.ID = AC.val 
 		
 	END
-	
+	-- FOR Loss monitoring
+	ELSE IF @NotifiedByFunction_Flag = 2
+	BEGIN
+		UPDATE EN	
+			SET EN.IsNotifiedbyLossMonitoring = @IsNotifiedValue
+		FROM dbo.EmailNotification EN WITH (ROWLOCK,UPDLOCK)
+			INNER JOIN dbo.strSplit(@NotificationIDList,',') AC ON EN.ID = AC.val 
+		
+	END
 END
 GO
 

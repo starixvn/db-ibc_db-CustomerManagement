@@ -15,7 +15,8 @@ AS
 	DB: DBCUST/CustDB
 
 	Revisions:
-		
+		- 20171012@Elodie: Get email notifications for Loss Limit monitoring function [Redmine:#82892]
+
 	Parameter's explaination: 
 		- @NotifiedByFunction_Flag
 			1: TO Control
@@ -23,8 +24,8 @@ AS
 			+ 1: for the next one
 		- @ActionIDs
 			- Change Group Headline:1003
-			- Add Group Headline: 1000
-			- Remove Group Headline: 1002
+			- Add member into Group Headline: 1000
+			- Remove member from Group Headline: 1002
 			- New direct customers: 600,601,602
 */
 BEGIN
@@ -45,6 +46,15 @@ BEGIN
 		
 	END
 	
+	-- FOR Loss monitoring
+	ELSE IF @NotifiedByFunction_Flag = 2
+	BEGIN
+		SELECT EN.ID,EN.NotificationInfo,EN.CreatedDate,EN.ActionID
+		FROM dbo.EmailNotification EN WITH (NOLOCK)
+			INNER JOIN dbo.strSplit(@ActionIDs,',') AC ON EN.ActionID =AC.val 
+		WHERE EN.IsNotifiedbyLossMonitoring = 0 AND EN.CreatedDate >= @fromdate AND CreatedDate < @todate
+		
+	END
 END
 GO
 
