@@ -28,7 +28,9 @@ BEGIN
 		FROM customer WITH (NOLOCK)
 		WHERE username2 = @Username  AND roleid <= 4
 	
-	IF (@CheckCustId <> 0 AND @custID IS NULL AND ISNUMERIC(@Username) = 1)
+	IF (@CheckCustId <> 0 AND @custID IS NULL AND ISNUMERIC(@Username) = 1
+		AND ((LEN(@Username) BETWEEN 1 AND 9) OR (LEN(@Username) = 10 AND @Username <= '2147483647'))) --check overflow 
+	   )
 	BEGIN
 		SELECT @custID = custid
 		FROM customer WITH (NOLOCK)
