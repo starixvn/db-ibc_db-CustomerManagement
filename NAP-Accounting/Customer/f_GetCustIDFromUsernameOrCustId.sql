@@ -1,5 +1,5 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
-CREATE FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+ALTER FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
 (
 	@Username varchar(30),
 	@CheckCustId TINYINT = 0
@@ -30,7 +30,6 @@ BEGIN
 	
 	IF (@CheckCustId <> 0 AND @custID IS NULL AND ISNUMERIC(@Username) = 1
 		AND ((LEN(@Username) BETWEEN 1 AND 9) OR (LEN(@Username) = 10 AND @Username <= '2147483647'))) --check overflow 
-	   )
 	BEGIN
 		SELECT @custID = custid
 		FROM customer WITH (NOLOCK)
