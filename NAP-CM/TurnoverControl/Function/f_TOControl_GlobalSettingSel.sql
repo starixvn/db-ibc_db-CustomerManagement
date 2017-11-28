@@ -21,21 +21,36 @@ AS
    
 */
 RETURN (
-   SELECT 1 sporttype, '789y' AS site,CAST(0 AS INT) ExchangeID, CAST(200000 AS MONEY) MaxTurnOver, CAST(3 AS INT) TOCurrency
+   SELECT CAST(1 AS SMALLINT) sporttype, CAST('789y' AS NVARCHAR(50)) AS site,CAST(0 AS INT) ExchangeID, CAST(200000 AS MONEY) MaxTurnOver, CAST(3 AS INT) TOCurrency -- US$
    UNION ALL
-   SELECT 1 AS sporttype, '' siteid,0 ExchangeID, 300000 MaxTurnOver, 2 TOCurrency --RM	
+   SELECT 1 AS sporttype, '' site,0 ExchangeID, 300000 MaxTurnOver, 2 TOCurrency --RM	
    UNION ALL
-   SELECT 99 AS sporttype,'' siteid,0 ExchangeID, 150000 MaxTurnOver, 2 TOCurrency --RM	
+   SELECT 99 AS sporttype,'' site,0 ExchangeID, 150000 MaxTurnOver, 2 TOCurrency --RM	
+   -------------------------CONFIG FOR TEST CURRENCY -----------------------------------------
+   -- for UUS
+   UNION ALL
+   SELECT 1 sporttype, '789y' AS site,20 ExchangeID, 200000 MaxTurnOver, 20 TOCurrency -- UUS
+   UNION ALL  
+   SELECT 1 AS sporttype, '' site,20 ExchangeID, 300000 MaxTurnOver, 20 TOCurrency --UUS   
+   UNION ALL  
+   SELECT 99 AS sporttype,'' site,20 ExchangeID, 150000 MaxTurnOver, 20 TOCurrency --UUS   
+   
+   -- for H
+   UNION ALL
+   SELECT 1 sporttype, '789y' AS site,27 ExchangeID, 200000 MaxTurnOver, 27 TOCurrency -- H
+   UNION ALL  
+   SELECT 1 AS sporttype, '' site,27 ExchangeID, 300000 MaxTurnOver, 27 TOCurrency --H   
+   UNION ALL  
+   SELECT 99 AS sporttype,'' site,27 ExchangeID, 150000 MaxTurnOver, 27 TOCurrency --H
+   
+   -- for C
+   UNION ALL
+   SELECT 1 sporttype, '789y' AS site,28 ExchangeID, 200000 MaxTurnOver, 28 TOCurrency -- C
+   UNION ALL  
+   SELECT 1 AS sporttype, '' site,28 ExchangeID, 300000 MaxTurnOver, 28 TOCurrency --C   
+   UNION ALL  
+   SELECT 99 AS sporttype,'' site,28 ExchangeID, 150000 MaxTurnOver, 28 TOCurrency --C
    
 )
 GO
---GRANT EXECUTE ON [dbo].[f_NAP_GlobalSettingSel] TO [bodbAdminNet]
---GO
---GRANT EXECUTE ON [dbo].[f_NAP_GlobalSettingSel] TO [bodbDownlineNet]
---GO
---GRANT EXECUTE ON [dbo].[f_NAP_GlobalSettingSel] TO [bodbExtAccNet]
---GO
-
-
-
 
