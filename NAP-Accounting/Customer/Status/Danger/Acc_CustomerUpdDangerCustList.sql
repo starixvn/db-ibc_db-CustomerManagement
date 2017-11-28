@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-ALTER PROCEDURE Acc_CustomerUpdDangerCustList
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangerCustList]
 	@CustList			VARCHAR(MAX) = '',	
 	@DangerType			TINYINT,
 	@DangerLevel		INT,
@@ -48,7 +48,13 @@ BEGIN
 	INSERT INTO @tmpCust(UserName)
 	SELECT ss.val	
 	FROM dbo.strSplit(@CustList, ',') AS ss
-
+	
+	IF (SELECT COUNT(UserName) FROM @tmpCust)>100
+	BEGIN
+		SELECT @ErrCode=101
+		SELECT @ErrMsg='Maximun is 100 usernames'
+		RETURN
+	END
 	-- get custid, roleid and danger
 
 	-- If danger for Soccer Live
@@ -182,4 +188,5 @@ END CATCH
 			FOR XML PATH('')
 		), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
 END
+
 GO
