@@ -47,14 +47,8 @@ BEGIN
 	--Get list Username
 	INSERT INTO @tmpCust(UserName)
 	SELECT ss.val	
-	FROM dbo.strSplit(@CustList, ',') AS ss
+	FROM dbo.strSplit(@CustList, ',') AS ss	
 	
-	IF (SELECT COUNT(UserName) FROM @tmpCust)>100
-	BEGIN
-		SELECT @ErrCode=101
-		SELECT @ErrMsg='Maximun is 100 usernames'
-		RETURN
-	END
 	-- get custid, roleid and danger
 
 	-- If danger for Soccer Live
