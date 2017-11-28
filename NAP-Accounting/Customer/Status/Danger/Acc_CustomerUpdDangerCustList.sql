@@ -146,7 +146,7 @@ BEGIN
 	/* region3: write log*/
 	DECLARE @LogSPData VARCHAR(2000)
 
-									SELECT @LogSPData = '<Acc_CustomerUpdDangerCustList CustList="'+ COALESCE(CAST(@CustList AS VARCHAR(MAX)),SPACE(1)) + '"'						
+	SELECT @LogSPData = '<Acc_CustomerUpdDangerCustList CustList="'+ COALESCE(CAST(@CustList AS VARCHAR(MAX)),SPACE(1)) + '"'						
 					+ ' DangerType="' + COALESCE(CONVERT(VARCHAR(1),@DangerType),SPACE(1)) + '"'
 					+ ' RoleId="' + COALESCE(CONVERT(VARCHAR(1),@roleid),SPACE(1)) + '"'
 					+ ' DangerLevel="' + COALESCE(CONVERT(VARCHAR(2),@DangerLevel),SPACE(1)) + '"'
@@ -175,12 +175,12 @@ BEGIN
 	END CATCH
 
 		-- select out put table for error cases 
-		SELECT 	STUFF((
-				SELECT ',' + UserName  
-				FROM @tmpCust 
-				WHERE CustID IS NULL
-				FOR XML PATH('')
-			), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
+	SELECT 	STUFF((
+			SELECT ',' + UserName  
+			FROM @tmpCust 
+			WHERE CustID IS NULL
+			FOR XML PATH('')
+		), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
 END
 
 GO
