@@ -159,28 +159,28 @@ BEGIN
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-														BEGIN TRY
-	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-		@UserID = @UserID,	  
-		@ActionID = 1165,
-		@TrackingValue = @LogSPData,
-		@duration = @duration
-END TRY
-BEGIN CATCH
-	EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-		@UserID = @UserID,	
-		@ActionID = 1165,
-		@TrackingValue = @LogSPData,
-		@duration = @duration
-END CATCH
+	BEGIN TRY
+		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			@UserID = @UserID,	  
+			@ActionID = 1165,
+			@TrackingValue = @LogSPData,
+			@duration = @duration
+	END TRY
+	BEGIN CATCH
+		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			@UserID = @UserID,	
+			@ActionID = 1165,
+			@TrackingValue = @LogSPData,
+			@duration = @duration
+	END CATCH
 
-	-- select out put table for error cases 
-	SELECT 	STUFF((
-			SELECT ',' + UserName  
-			FROM @tmpCust 
-			WHERE CustID IS NULL
-			FOR XML PATH('')
-		), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
+		-- select out put table for error cases 
+		SELECT 	STUFF((
+				SELECT ',' + UserName  
+				FROM @tmpCust 
+				WHERE CustID IS NULL
+				FOR XML PATH('')
+			), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
 END
 
 GO
