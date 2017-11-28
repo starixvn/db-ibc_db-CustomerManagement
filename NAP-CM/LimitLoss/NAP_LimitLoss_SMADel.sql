@@ -43,7 +43,7 @@ BEGIN
     SET		@startRun = GETDATE()
 
     --Check permission 
-    EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@Creator,@SiteKey='CustomerManagement',@FunctionKey='LossMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+    EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='LossMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
     IF @ErrCode <> 0
 	    RETURN
 
