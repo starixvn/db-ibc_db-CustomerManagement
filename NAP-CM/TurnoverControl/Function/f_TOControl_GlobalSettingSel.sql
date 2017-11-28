@@ -10,7 +10,7 @@ AS
     DB: DBCUST/CUSTDB
     
     Revisions:
-		- 20171113@Helen: N/A
+		- 20171113@Helen: Create new [Redmine: 86052]
 	
     Parameters Explanation:  
     
