@@ -11,6 +11,7 @@ AS
 
 	Revisions:
 		- 20170919@Helen: TO Control Phase 3 - [redmine:75557]
+		- 20171110@Helen: Enhance performance for TO - [Redmine: 86052]
 
 	Param explanation:
 
@@ -33,6 +34,8 @@ BEGIN
 	DECLARE @TmpTable AS TABLE (srecommend INT, mrecommend INT, recommend INT,player INT, matchid INT,winlostdate SMALLDATETIME
 								, adjusted_TurnOver MONEY,adjusted_TurnOver_withABS MONEY, adjusted_HTOWithoutExtraPT MONEY
 								, adjusted_TurnOver_RM MONEY,adjusted_TurnOver_withABS_RM MONEY, adjusted_HTOWithoutExtraPT_RM MONEY
+								, IsInsert BIT
+								, IsMemberGroupHeadline BIT
 								)
 	
 	DECLARE @EventDate_min DATETIME
@@ -45,7 +48,7 @@ BEGIN
 	
 	BEGIN TRY
 		INSERT INTO @TmpTable(srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver,adjusted_TurnOver_withABS, adjusted_HTOWithoutExtraPT
-								, adjusted_TurnOver_RM,adjusted_TurnOver_withABS_RM, adjusted_HTOWithoutExtraPT_RM)
+								, adjusted_TurnOver_RM,adjusted_TurnOver_withABS_RM, adjusted_HTOWithoutExtraPT_RM,IsInsert)
 								
 		SELECT x.v.value('(super/text())[1]','INT') AS srecommend,
 			   x.v.value('(master/text())[1]','INT') AS mrecommend,
@@ -56,17 +59,36 @@ BEGIN
 			   x.v.value('(adjTO/text())[1]','MONEY') AS adjusted_TurnOver,
 			   x.v.value('(adjTOwithABS/text())[1]','MONEY') AS adjusted_TurnOver_withABS,
 			   x.v.value('(adjHTONoExtraPT/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT,
-			   
 			   x.v.value('(adjTO_RM/text())[1]','MONEY') AS adjusted_TurnOver_RM,
 			   x.v.value('(adjTOwithABS_RM/text())[1]','MONEY') AS adjusted_TurnOver_withABS_RM,
-			   x.v.value('(adjHTONoExtraPT_RM/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT_RM
+			   x.v.value('(adjHTONoExtraPT_RM/text())[1]','MONEY') AS adjusted_HTOWithoutExtraPT_RM,
+			   x.v.value('(IsInsert/text())[1]','BIT') AS IsInsert
 			   
 		FROM @XMLString.nodes('/root/r') AS x(v)
 		OPTION (OPTIMIZE FOR (@XMLString = NULL))
 		
+		-- Process for member belongs group headline for INSERT (data from dbtrans inserted to DB053) ONLY
+		IF EXISTS (SELECT 1 FROM @TmpTable WHERE IsInsert = 1)
+		BEGIN
+			INSERT INTO @TmpTable (srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver,adjusted_TurnOver_withABS, adjusted_HTOWithoutExtraPT
+									, adjusted_TurnOver_RM,adjusted_TurnOver_withABS_RM, adjusted_HTOWithoutExtraPT_RM,IsInsert,IsMemberGroupHeadline)
+			SELECT srecommend, mrecommend, recommend,player, matchid, winlostdate, adjusted_TurnOver,adjusted_TurnOver_withABS, adjusted_HTOWithoutExtraPT
+					, adjusted_TurnOver_RM,adjusted_TurnOver_withABS_RM, adjusted_HTOWithoutExtraPT_RM,IsInsert
+					, 1 AS IsMemberGroupHeadline
+			FROM @TmpTable tmp
+			WHERE IsInsert = 1
+				AND EXISTS (SELECT 1 FROM bodb02.dbo.custAccount ca WITH (NOLOCK) 
+							WHERE tmp.player = ca.CustID)
+			
+			UPDATE	@TmpTable
+				SET player = 0
+			WHERE IsInsert = 1 AND IsMemberGroupHeadline IS NULL
+				
+		END	
+		
 		-- Get Extra PT Info: 
-			-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
-			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
+		-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
+		-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
 		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
 		SELECT EPT.SuperId,EPT.ExtraPT,EPT.FromDate,EPT.ToDate
 		FROM dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK)

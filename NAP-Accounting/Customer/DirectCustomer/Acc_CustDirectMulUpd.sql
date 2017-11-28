@@ -1,11 +1,9 @@
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 SET QUOTED_IDENTIFIER ON 
 GO
 SET ANSI_NULLS ON 
 GO
-
-/****** Object:  Stored Procedure dbo.Acc_CustDirectMulUpd    Script Date: 10/9/2014 4:58:03 PM ******/
-CREATE PROCEDURE [dbo].[Acc_CustDirectMulUpd]
+ALTER PROCEDURE [dbo].[Acc_CustDirectMulUpd]
     @UserID     INT,    
     @IP         VARCHAR(15) = '',
     @ErrCode    INT = 0 OUTPUT,
@@ -17,7 +15,7 @@ AS
     DB: DBTXN/CustDB
     Original: 
     Revisions:	
-	    - 20140523@Logan: Initial version.
+	    - 20140523@Logan: Initial version. 
 */
 BEGIN
 
@@ -120,15 +118,6 @@ BEGIN
     SELECT * FROM @Success ORDER BY seq ASC
 
 END	
-
-
-GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
 
 GO 
  GRANT EXECUTE ON [dbo].[Acc_CustDirectMulUpd] TO [bodbAdminNet]

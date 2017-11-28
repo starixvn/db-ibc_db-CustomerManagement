@@ -1,4 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
+GO
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDirectStatus]
     @custid  	INT
   , @creator    INT
@@ -16,6 +20,7 @@ AS
 		- 20140523@Logan: Initial version.
 		- 20170420@Helen:  Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		- 20171113@Helen: Support to add default TO setting for new direct customers - [Redmine:86052]
 		
     Param's Explanation:
     • @ErrCode:
@@ -40,13 +45,18 @@ BEGIN
     --Checking if the account is markable or not
     DECLARE @upline INT = 0
           , @roleid TINYINT
-
+          , @srecommend INT
+          , @mrecommend INT
+		  , @recommend INT	
     SELECT @upline = CASE roleid 
                        WHEN 1 THEN recommend
                        WHEN 2 THEN mrecommend
                        WHEN 3 THEN srecommend
                      END
          , @roleid = roleid
+         , @srecommend = srecommend
+         , @mrecommend = mrecommend
+         , @recommend = recommend
       FROM dbo.custInfo WITH(NOLOCK)
      WHERE custid = @custid
     
@@ -94,6 +104,7 @@ BEGIN
 	-- TO Control: Send Email
 	IF @roleid IN (2,3,4)
 	BEGIN
+		
 		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
 		
 		SELECT '<NewDirectCustomer  custid="'+ COALESCE(CAST(CustID AS VARCHAR(300)), SPACE(1)) + '" />'  AS NotificationInfo
@@ -105,7 +116,69 @@ BEGIN
 				  END AS ActionID		
 										
 		FROM @affectedList
+		 
+		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine)
+		SELECT al.custid
+				-- Since there are many kinds of currency default setting, default setting will be converted to RM before convert to orginal curency
+				, CASE 
+						-- currency RM in default Setting
+						WHEN TO_tmp.TOCurrency = 2 THEN CONVERT(MONEY,TO_tmp.MaxTurnOver / E1.actualrate) 
+						-- NOT currency RM in default Setting
+						ELSE  CONVERT(MONEY,(TO_tmp.MaxTurnOver * E.actualrate)/E1.actualrate)
+				END AS MaxTurnOver
+				, TO_tmp.Sporttype, 0
+        
+		FROM @affectedList al
+			INNER JOIN dbo.Customer c WITH (NOLOCK) ON al.custid = c.custid 
+			CROSS APPLY 
+			(        
+				-- Soccer 
+				SELECT TOP 1 f1.sporttype, f1.MaxTurnOver,f1.TOCurrency
+				FROM dbo.f_TOControl_GlobalSettingSel () f1                
+				WHERE f1.site IN (c.site,'') AND f1.ExchangeID IN (c.currency,0) AND f1.sporttype = 1        
+				ORDER BY f1.site DESC, f1.ExchangeID DESC                
+                
+				UNION ALL
+				-- Others sport
+				SELECT TOP 1 sporttype, MaxTurnOver,TOCurrency
+				FROM dbo.f_TOControl_GlobalSettingSel () f2                
+				WHERE f2.site IN (c.site,'') AND f2.ExchangeID IN (c.currency,0) AND f2.sporttype = 99
+				ORDER BY f2.site DESC, f2.ExchangeID DESC
+				) AS TO_tmp
+                        
+			INNER JOIN dbo.Exchange e WITH (NOLOCK) ON e.ExchangeID = TO_tmp.TOCurrency
+			INNER JOIN dbo.Exchange e1 WITH (NOLOCK) ON e1.ExchangeID = c.currency
+		WHERE c.roleid IN (2,3,4) 
+			AND NOT EXISTS (SELECT 1 FROM dbo.TOControl_GlobalSetting gs WITH (NOLOCK) 
+							WHERE gs.custid =  al.custid AND gs.Sporttype =  TO_tmp.sporttype AND gs.IsGroupHeadLine = 0)	
+									
 	END
+	
+	IF @roleid = 3
+	BEGIN
+		DELETE TOControl_GlobalSetting
+		WHERE CustID = @srecommend
+		
+		DELETE TOControl_Setting
+		WHERE CustID = @srecommend
+	END
+	ELSE IF @roleid = 2
+	BEGIN
+		DELETE TOControl_GlobalSetting
+		WHERE CustID IN (@srecommend,@mrecommend)
+		
+		DELETE TOControl_Setting
+		WHERE CustID IN (@srecommend,@mrecommend)
+	END
+	ELSE IF @roleid = 1
+	BEGIN
+			DELETE dbo.TOControl_GlobalSetting
+			WHERE CustID IN (@srecommend,@mrecommend,@recommend)
+			
+			DELETE dbo.TOControl_Setting
+			WHERE CustID IN (@srecommend,@mrecommend,@recommend)
+	END
+		
 	--DELETE dbo.CustDirectAccount WHERE CustID = @upline
 		
     DECLARE @affCust INT
