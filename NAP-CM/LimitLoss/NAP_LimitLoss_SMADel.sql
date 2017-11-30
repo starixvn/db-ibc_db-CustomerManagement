@@ -37,7 +37,9 @@ BEGIN
 			@endRun				DATETIME,
 			@duration			INT,
 			@MaxLoss_Old		MONEY,
-			@GroupHeadlineID	SMALLINT
+			@GroupHeadlineID	SMALLINT,
+			@i					TINYINT,
+			@MaxLevel			TINYINT
 
     SET		@startRun = GETDATE()
 
@@ -75,10 +77,44 @@ BEGIN
 
 		DELETE LimitLoss_HeadlineSetting WITH(ROWLOCK,UPDLOCK) WHERE GroupHeadlineID = @GroupHeadlineID
 
+		--Delete member of headline don't have MaxLoss value
 		DELETE ls 
 		FROM dbo.LimitLoss_Setting ls WITH (ROWLOCK,UPDLOCK)
 			INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = ls.CustID
 		WHERE ca.groupID = @GroupHeadlineID AND ls.MaxLoss IS NULL
+
+		--Update LevelID for member of headline have MaxLoss value
+		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+
+		UPDATE l
+		SET LevelID = 0
+		FROM LimitLoss_Setting l
+			INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = l.CustID
+		WHERE (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+			AND l.MaxLoss IS NOT NULL
+			AND ca.groupID = @GroupHeadlineID
+
+		WHILE (@i<@MaxLevel)
+		BEGIN
+			UPDATE l
+			SET LevelID = @i
+			FROM LimitLoss_Setting l
+				INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = l.CustID
+			WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+				AND (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i+1)
+				AND l.MaxLoss IS NOT NULL
+				AND ca.groupID = @GroupHeadlineID
+
+			SET @i = @i+1
+		END
+
+		UPDATE l
+		SET LevelID = @MaxLevel
+		FROM LimitLoss_Setting l
+			INNER JOIN bodb02.dbo.custAccount ca WITH (NOLOCK) ON ca.custid = l.CustID
+		WHERE (l.TotalBalance/l.MaxLoss*100) >= (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @MaxLevel)
+			AND l.MaxLoss IS NOT NULL
+			AND ca.groupID = @GroupHeadlineID
 	END
 
 	IF @Mode = 2
