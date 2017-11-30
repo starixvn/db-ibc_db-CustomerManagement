@@ -74,6 +74,14 @@ BEGIN
 		WHERE CustID = @CustID
 		
 		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+
+		UPDATE l
+		SET LevelID = 0
+		FROM LimitLoss_Setting l
+		WHERE (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+			AND l.MaxLoss IS NOT NULL
+			AND l.CustID = @CustId
+
 		WHILE (@i<@MaxLevel)
 		BEGIN
 			UPDATE l
@@ -113,6 +121,13 @@ BEGIN
 		WHERE GroupHeadlineID = @GroupHeadlineID
 
 		SELECT @i = min(LevelID), @MaxLevel = max(LevelID) FROM LimitLoss_ActionConfig WITH (NOLOCK)
+
+		UPDATE l
+		SET LevelID = 0
+		FROM LimitLoss_HeadlineSetting l
+		WHERE (l.TotalBalance/l.MaxLoss*100) < (SELECT Value FROM LimitLoss_ActionConfig WITH (NOLOCK) WHERE LevelID = @i)
+			AND l.GroupHeadlineID = @GroupHeadlineID
+
 		WHILE (@i<@MaxLevel)
 		BEGIN
 			UPDATE l
