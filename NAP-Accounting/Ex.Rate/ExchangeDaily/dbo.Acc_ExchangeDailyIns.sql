@@ -33,6 +33,7 @@ Revisions:
 	-  20160914@Jim:  Add HKD base currency into OANDA Exchange rate [RedmineID : #63975]
 	-  20160920@Jim:  Add YNG currency [RedmineID : #64385]
 	-  20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
+		
 */
 /*
 declare @p3 nvarchar(200)
