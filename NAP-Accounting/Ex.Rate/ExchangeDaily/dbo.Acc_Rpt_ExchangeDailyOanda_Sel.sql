@@ -10,6 +10,7 @@ AS
 	DB: DBACC.bodb2
 	Original: Lrf_GET_ExchangeRateOANDA 
 	Revisions:
+		-  20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042] 
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -34,7 +35,9 @@ BEGIN
 		INH,
 		KRW,
 		JPY,
-		HKD
+		HKD,
+		TWD,
+		PHP
 	FROM (
 		SELECT 
 			edo.ExchangeDate,
@@ -57,6 +60,8 @@ BEGIN
 			edo.KRW,
 			edo.JPY,
 			edo.HKD,
+			edo.TWD,
+			edo.PHP,
 			ROW_NUMBER() OVER(
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC

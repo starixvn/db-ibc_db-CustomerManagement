@@ -1,5 +1,5 @@
-USE [CustDB]
-GO
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] @Code VARCHAR(5)
 	, @MYR FLOAT
 	, @USD FLOAT
@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] @Code VARCHAR(5)
 	, @KRW FLOAT
 	, @JPY FLOAT
 	, @HKD FLOAT
+	, @TWD FLOAT
+	, @PHP FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -30,13 +32,15 @@ Revisions:
 	-  20120427@Dan: add new currency KRW and JPY
 	-  20160914@Jim:  Add HKD base currency into OANDA Exchange rate [RedmineID : #63975]
 	-  20160920@Jim:  Add YNG currency [RedmineID : #64385]
+	-  20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
+		
 */
 /*
 declare @p3 nvarchar(200)
 set @p3=N''
 declare @p13 int
 set @p13=0
-exec Acc_ExchangeDailyIns_xtest  @rundate='2016-09-23 06:19:03.143',@VND=17263.400000000001,@ErrMsg=@p3 output,@THB=26.5307,@AUD=1,@KRW=844.46199999999999
+exec Acc_ExchangeDailyIns  @rundate='2016-09-23 06:19:03.143',@VND=17263.400000000001,@ErrMsg=@p3 output,@THB=26.5307,@AUD=1,@KRW=844.46199999999999
 ,@Code='AUD',@CNY=5.0996800000000002,@IDR=10008.6,@CHF=0.74219999999999997,@hkd=0.58535000000000004,@GBP=0.58535000000000004,@ErrCode=@p13 output
 ,@SGD=1.0356399999999999,@USD=0.76466000000000001,@JPY=76.904399999999995,@MYR=3.14269,@EUR=0.68181999999999998
 select @p3, @p13
@@ -86,11 +90,15 @@ BEGIN
 			, KRW
 			, JPY
 			, HKD
+			, TWD
+			, PHP
 			)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -129,6 +137,8 @@ BEGIN
 			, KRW = 2e-101
 			, JPY = 2e-101
 			, HKD = 2e-101
+			, TWD = 2e-101
+			, PHP = 2e-101
 		WHERE ExchangeId = 20
 			AND ExchangeDate = @date
 	END
@@ -187,6 +197,8 @@ BEGIN
 				, KRW
 				, JPY
 				, HKD
+				, TWD
+				, PHP
 				)
 			VALUES (
 				@ExchangeId
@@ -206,6 +218,8 @@ BEGIN
 				, @KRW * @MultipliedBy
 				, @JPY * @MultipliedBy
 				, @HKD * @MultipliedBy
+				, @TWD * @MultipliedBy
+				, @PHP * @MultipliedBy
 				)
 		END
 		ELSE
@@ -230,6 +244,8 @@ BEGIN
 				, KRW = @KRW * @MultipliedBy
 				, JPY = @JPY * @MultipliedBy
 				, HKD = @HKD * @MultipliedBy
+				, TWD = @TWD * @MultipliedBy
+				, PHP = @PHP * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code
@@ -283,6 +299,8 @@ BEGIN
 			, @KRW = KRW
 			, @JPY = JPY
 			, @HKD = HKD
+			, @TWD = TWD
+			, @PHP = PHP
 		FROM dbo.ExchangeDailyOanda WITH (NOLOCK)
 		WHERE Code = 'VND'
 			AND ExchangeDate = @Date
@@ -314,6 +332,8 @@ BEGIN
 				, KRW
 				, JPY
 				, HKD
+				, TWD
+				, PHP
 				)
 			VALUES (
 				@ExchangeId
@@ -332,7 +352,9 @@ BEGIN
 				,  @VND * @MultipliedBy 
 				,  @KRW * @MultipliedBy 
 				,  @JPY * @MultipliedBy 
-				,  @HKD * @MultipliedBy 
+				,  @HKD * @MultipliedBy
+				,  @TWD * @MultipliedBy 
+				,  @PHP * @MultipliedBy
 				)	
 		END
 		ELSE
@@ -356,6 +378,8 @@ BEGIN
 				, KRW =  @KRW * @MultipliedBy 
 				, JPY =  @JPY * @MultipliedBy 
 				, HKD =  @HKD * @MultipliedBy 
+				, TWD =  @TWD * @MultipliedBy
+				, PHP =  @PHP * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code		
@@ -373,11 +397,3 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE
-	ON [dbo].[Acc_ExchangeDailyIns]
-	TO [bodbAdminNet]
-GO
-
-GRANT VIEW DEFINITION
-	ON [dbo].[Acc_ExchangeDailyIns]
-	TO [vnteam]
