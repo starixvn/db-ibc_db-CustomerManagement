@@ -176,12 +176,16 @@ BEGIN
 	END CATCH
 
 		-- select out put table for error cases 
-	SELECT 	STUFF((
-			SELECT ',' + UserName  
-			FROM @tmpCust 
-			WHERE CustID IS NULL
-			FOR XML PATH('')
-		), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
+	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
+	BEGIN
+		SELECT 	STUFF((
+				SELECT ',' + UserName  
+				FROM @tmpCust 
+				WHERE CustID IS NULL
+				FOR XML PATH('')
+			), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
+	END
+	
 END
 
 GO
