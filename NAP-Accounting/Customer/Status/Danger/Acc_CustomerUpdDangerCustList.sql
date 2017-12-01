@@ -34,6 +34,7 @@ BEGIN
 	DECLARE	@roleid		INT
 	DECLARE	@DangerOld	INT
 	SET @startRun = GETDATE()
+	SET @ErrCode=0
 
 	DECLARE @tmpCust TABLE (		
 						UserName			NVARCHAR(50)					
