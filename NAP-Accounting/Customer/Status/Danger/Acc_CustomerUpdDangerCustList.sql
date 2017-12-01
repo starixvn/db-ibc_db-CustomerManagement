@@ -82,7 +82,7 @@ BEGIN
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
 		SELECT @ErrCode=100
-		SELECT @ErrMsg='There are invalid usernames'
+		SELECT @ErrMsg='Invalid Usernames'
 	END
 
 	/* region2: update for member level and Call execrept sp to update SMA folow business*/
