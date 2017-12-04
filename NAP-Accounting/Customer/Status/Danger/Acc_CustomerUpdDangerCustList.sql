@@ -3,7 +3,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangerCustList]
 	@CustList			VARCHAR(MAX) = '',	
 	@DangerType			TINYINT,
 	@DangerLevel		INT,
-	@UserID				INT,
+	@UserName			NVARCHAR(50),
 	@IP					VARCHAR(15) = '',
 	@ErrCode			INT = 0				OUTPUT,
 	@ErrMsg				NVARCHAR(200) = ''	OUTPUT	
@@ -30,11 +30,15 @@ BEGIN
 	DECLARE @startRun	DATETIME
 	DECLARE @endRun		DATETIME
 	DECLARE @CustId		INT
+	DECLARE @UserId		INT
 	DECLARE @duration	INT
 	DECLARE	@roleid		INT
 	DECLARE	@DangerOld	INT
+
 	SET @startRun = GETDATE()
 	SET @ErrCode=0
+
+	SELECT @UserID=CustID FROM dbo.Custinfo WITH(NOLOCK) WHERE username=@UserName
 
 	DECLARE @tmpCust TABLE (		
 						UserName			NVARCHAR(50)					
