@@ -156,7 +156,7 @@ BEGIN
 					+ ' RoleId="' + COALESCE(CONVERT(VARCHAR(1),@roleid),SPACE(1)) + '"'
 					+ ' DangerLevel="' + COALESCE(CONVERT(VARCHAR(2),@DangerLevel),SPACE(1)) + '"'
 					+ ' DangerLevel_Old="' + COALESCE(CONVERT(VARCHAR(2),@DangerOld),SPACE(1)) + '"'
-					+ ' UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '"'				
+					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'				
 					+ ' ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(50)),space(1)) + '"'
 					+ ' ErrMsg="'+ COALESCE(cast(@ErrMsg as varchar(400)),space(1))+'"'
 					+ ' IP="'+ COALESCE(cast(@IP as varchar(15)),space(1))+'" />'
