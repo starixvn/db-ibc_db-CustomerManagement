@@ -172,18 +172,18 @@ BEGIN
 				DECLARE @LogSPData VARCHAR(2000),@LogSPData_Old VARCHAR(2000) 		  
 
 				Select @LogSPData = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'					
-					+' Dangerous level' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
-					+ ' Dangerous type="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
-					+ ' FPS User="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' Err Code="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+' Dangerouslevel' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
+					+ ' Dangeroustype="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' FPSUser="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
 					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
 					
 				Select @LogSPData_Old = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'				
-					+' Dangerous level' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
-					+ ' Dangerous type="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
-					+ ' FPS User="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' Err Code="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+' Dangerouslevel' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
+					+ ' Dangeroustype="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' FPSUser="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
 					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'			
 
@@ -223,6 +223,7 @@ BEGIN
 	END
 	
 END
+
 
 
 GO
