@@ -46,6 +46,7 @@ BEGIN
 					,	RoleID				TINYINT			
 					,	Danger				TINYINT
 					,	IsFinished			BIT DEFAULT(0)
+					,	IsFinishedWriteLog	BIT DEFAULT(0)
 					,	PRIMARY KEY CLUSTERED (UserName)
 					);
 	
@@ -132,8 +133,7 @@ BEGIN
 		BEGIN
 			UPDATE TOP (1) @tmpCust
 			SET isfinished		= 1
-				,@CustId		= custid
-				,@DangerOld		= Danger
+				,@CustId		= custid				
 				,@roleid		= roleid			
 			WHERE isfinished	= 0 
 				AND Custid IS NOT NULL
@@ -149,36 +149,61 @@ BEGIN
 	END
 
 	/* region3: write log*/
-	DECLARE @LogSPData VARCHAR(2000)
+	IF EXISTS (SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NOT NULL)
+	BEGIN
+		WHILE (1 = 1)
+		BEGIN
+			UPDATE TOP (1) @tmpCust
+			SET IsFinishedWriteLog		= 1
+				,@CustId				= custid
+				,@DangerOld				= Danger				
+			WHERE IsFinishedWriteLog	= 0 
+				AND Custid IS NOT NULL
+	
+			IF @@ROWCOUNT = 0 BREAK
+	
+				DECLARE @LogSPData VARCHAR(2000),@LogSPData_Old VARCHAR(2000) 		  
 
-	SELECT @LogSPData = '<Acc_CustomerUpdDangerCustList CustList="'+ COALESCE(CAST(@CustList AS VARCHAR(MAX)),SPACE(1)) + '"'						
-					+ ' DangerType="' + COALESCE(CONVERT(VARCHAR(1),@DangerType),SPACE(1)) + '"'
-					+ ' RoleId="' + COALESCE(CONVERT(VARCHAR(1),@roleid),SPACE(1)) + '"'
-					+ ' DangerLevel="' + COALESCE(CONVERT(VARCHAR(2),@DangerLevel),SPACE(1)) + '"'
-					+ ' DangerLevel_Old="' + COALESCE(CONVERT(VARCHAR(2),@DangerOld),SPACE(1)) + '"'
-					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'				
-					+ ' ErrCode="'+ COALESCE(CAST(@ErrCode AS VARCHAR(50)),space(1)) + '"'
-					+ ' ErrMsg="'+ COALESCE(cast(@ErrMsg as varchar(400)),space(1))+'"'
-					+ ' IP="'+ COALESCE(cast(@IP as varchar(15)),space(1))+'" />'
+				Select @LogSPData = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'					
+					+' DangerLevel' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
+					+ ' DangerType="'+ COALESCE(CAST(@DangerType AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
+					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
+					
+				Select @LogSPData_Old = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'				
+					+' DangerLevel' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
+					+ ' DangerType="'+ COALESCE(CAST(@DangerType AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
+					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'			
 
-	SET @endRun = GETDATE()
-	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
+				SET @endRun = GETDATE()
+				SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,	  
-			@ActionID = 1165,
-			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END TRY
-	BEGIN CATCH
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,	
-			@ActionID = 1165,
-			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END CATCH
-
+				BEGIN TRY
+					EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+						@UserID = @UserID,
+						@Custid = @CustId,	  
+						@ActionID = 1165,
+						@TrackingValue = @LogSPData,
+						@TrackingValue2 = @LogSPData_old,  
+						@duration = @duration
+				END TRY
+				BEGIN CATCH
+					EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+						@UserID = @UserID,	
+						@Custid = @CustId,	  
+						@ActionID = 1165,
+						@TrackingValue = @LogSPData,
+						@TrackingValue2 = @LogSPData_old,  
+						@duration = @duration
+				END CATCH
+		
+		END	
+	END
 		-- select out put table for error cases 
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
