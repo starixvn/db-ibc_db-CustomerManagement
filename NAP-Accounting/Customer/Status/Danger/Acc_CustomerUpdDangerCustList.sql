@@ -34,6 +34,7 @@ BEGIN
 	DECLARE @duration	INT
 	DECLARE	@roleid		INT
 	DECLARE	@DangerOld	INT
+	DECLARE	@DangerTypeText	VARCHAR(50)
 
 	SET @startRun = GETDATE()
 	SET @ErrCode=0
@@ -64,6 +65,8 @@ BEGIN
 			SET t.CustID=c.custid,t.RoleID=c.roleid,t.Danger=c.danger
 		FROM @tmpCust t 
 			INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.UserName=c.username
+			
+		SET @DangerTypeText='Soccer Live'
 	END
 	-- If danger for Soccer Non-Live
 	ELSE IF @DangerType=2
@@ -72,6 +75,8 @@ BEGIN
 			SET t.CustID=c.custid,t.RoleID=c.roleid,t.Danger=c.danger2
 		FROM @tmpCust t 
 			INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.UserName=c.username
+			
+		SET @DangerTypeText='Soccer Non-Live'
 	END
 	-- If danger for OtherSports
 	ELSE
@@ -80,6 +85,8 @@ BEGIN
 			SET t.CustID=c.custid,t.RoleID=c.roleid,t.Danger=c.danger3
 		FROM @tmpCust t 
 			INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.UserName=c.username
+			
+		SET @DangerTypeText='OtherSports'
 	END
 
 	-- select @ErrorCode=100: Invalid usernames
@@ -165,18 +172,18 @@ BEGIN
 				DECLARE @LogSPData VARCHAR(2000),@LogSPData_Old VARCHAR(2000) 		  
 
 				Select @LogSPData = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'					
-					+' DangerLevel' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
-					+ ' DangerType="'+ COALESCE(CAST(@DangerType AS VARCHAR(50)),SPACE(1)) + '"'			
-					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+' Dangerous level' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
+					+ ' Dangerous type="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' FPS User="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' Err Code="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
 					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
 					
 				Select @LogSPData_Old = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'				
-					+' DangerLevel' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
-					+ ' DangerType="'+ COALESCE(CAST(@DangerType AS VARCHAR(50)),SPACE(1)) + '"'			
-					+ ' UserName="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+					+' Dangerous level' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
+					+ ' Dangerous type="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
+					+ ' FPS User="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
+					+ ' Err Code="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
 					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'			
 
@@ -216,5 +223,6 @@ BEGIN
 	END
 	
 END
+
 
 GO
