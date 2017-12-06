@@ -35,6 +35,10 @@ BEGIN
 	DECLARE	@roleid		INT
 	DECLARE	@DangerOld	INT
 	DECLARE	@DangerTypeText	VARCHAR(50)
+	DECLARE @ErrCodeWriteLog		INT	
+	DECLARE @ErrMsgWriteLog			NVARCHAR(200) 
+	SELECT  @ErrCodeWriteLog=0
+	SELECT  @ErrMsgWriteLog	=''
 
 	SET @startRun = GETDATE()
 	SET @ErrCode=0
@@ -147,7 +151,7 @@ BEGIN
 	
 			IF @@ROWCOUNT = 0 BREAK
 	
-			EXEC dbo.Acc_CustomerInfo_Execrep_03	@custid			= @custid, 
+			EXEC dbo.Acc_CustomerInfo_Execrep_03_xpre	@custid			= @custid, 
 													@roleid			= @roleid, 
 													@DangerType		= @DangerType,
 													@DangerLevel	= @DangerLevel 	
@@ -175,16 +179,16 @@ BEGIN
 					+' Dangerouslevel' + '="'  + coalesce(cast(@DangerLevel as varchar(50)),space(1)) + '"'
 					+ ' Dangeroustype="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
 					+ ' FPSUser="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
-					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
+					+ ' ErrCode="'+ coalesce(cast(@ErrCodeWritelog as varchar(50)),space(1)) + '"'
+					+ ' ErrMsg="'+ coalesce(cast(@ErrMsgWritelog as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
 					
 				Select @LogSPData_Old = '<Acc_CustomerUpdDangerCustList CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'				
 					+' Dangerouslevel' + '="'  + coalesce(cast(@DangerOld as varchar(50)),space(1)) + '"'
 					+ ' Dangeroustype="'+ COALESCE(CAST(@DangerTypeText AS VARCHAR(50)),SPACE(1)) + '"'			
 					+ ' FPSUser="'+ COALESCE(CAST(@UserName AS VARCHAR(50)),SPACE(1)) + '"'					
-					+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
-					+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
+					+ ' ErrCode="'+ coalesce(cast(@ErrCodeWritelog as varchar(50)),space(1)) + '"'
+					+ ' ErrMsg="'+ coalesce(cast(@ErrMsgWritelog as varchar(400)),space(1))+'"'
 					+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'			
 
 				SET @endRun = GETDATE()
