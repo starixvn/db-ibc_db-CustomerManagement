@@ -19,6 +19,9 @@ BEGIN
 	DECLARE @custID INT
 	SET @Username = RTRIM(LTRIM(@Username))
 	
+	IF (@Username = '')
+		RETURN @custID
+	
 	SELECT @custID = custid
 	FROM customer WITH (NOLOCK)
 	WHERE username = @Username AND roleid <= 4
