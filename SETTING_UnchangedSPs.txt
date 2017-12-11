@@ -1,2 +1,2 @@
-db-CustomerManagement\NAP-CM\TurnoverControl\SPList\NAP_TOControl_GlobalSettingInsertMultiple.sql
-db-CustomerManagement\NAP-CM\TurnoverControl\SPList\NAP_TOControl_MatchTurnoverUpdateMultiple.sql
+NAP-CM\TurnoverControl\SPList\NAP_TOControl_GlobalSettingInsertMultiple.sql
+NAP-CM\TurnoverControl\SPList\NAP_TOControl_MatchTurnoverUpdateMultiple.sql

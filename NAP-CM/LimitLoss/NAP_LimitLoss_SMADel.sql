@@ -162,7 +162,4 @@ BEGIN
 			@Duration = @duration	
 	END CATCH
 END
-
-
-
-
+GO
