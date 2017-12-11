@@ -19,7 +19,7 @@ AS
 	DB: DBCUST.CustDB
 
 	Revisions:
-	
+		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 	Parameter's explaination:
 */
 BEGIN 
@@ -115,8 +115,4 @@ BEGIN
 	DROP TABLE #InsertNewGlobalSettingTbl
 	
 END
-GO
-
-GO
-GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingInsertMultiple] TO [bodbAdminNet]
 GO
