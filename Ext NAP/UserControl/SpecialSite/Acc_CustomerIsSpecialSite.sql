@@ -4,6 +4,7 @@ GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerIsSpecialSite]
 	@UserName VARCHAR(30),
+	@CheckCustId TINYINT = 0,	
 	@IsSpecialSite BIT = 0 OUTPUT,
 	@IsSpecialHeadline BIT = 0 OUTPUT,
 	@SiteCode TINYINT = 1 OUTPUT
@@ -18,14 +19,16 @@ AS
 		- 20161111@Elodie: Check more member of group headline
 		- 20161201@Elodie: Output more @IsSpecialHeadline [RedmineID: #66873]
 		- 20170918@Elodie: Output more @SiteCode [RedmineID: #83219]
+		- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 	Param's Explanation:
 
 	Example query:
 		DECLARE @IsSpecialSite BIT = 0,
 				@IsSpecialHeadline BIT = 0,
-				@SiteCode TINYINT = 1
+				@SiteCode TINYINT = 1,
+				@CheckCustId TINYINT = 0
 
-		EXEC Acc_CustomerIsSpecialSite_xpre @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
+		EXEC Acc_CustomerIsSpecialSite @UserName = 'supertestY987', @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @IsSpecialSite = @IsSpecialSite OUTPUT, @SiteCode = @SiteCode OUTPUT
 
 		SELECT @SiteCode, @IsSpecialSite, @IsSpecialHeadline
 
@@ -36,8 +39,11 @@ BEGIN
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
 	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @site NVARCHAR(50), @GroupID SMALLINT = NULL
 
-	SELECT @CustID = custid, @RoleID = roleID, @recommend = recommend, @site = site FROM customer WITH (NOLOCK) WHERE username = @UserName
-	
+	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName,@CheckCustId
+	IF @CustID IS NULL 
+		RETURN
+	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM customer WITH (NOLOCK) WHERE custid = @CustID
+
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 
 	--check if customer is special site
@@ -46,7 +52,7 @@ BEGIN
 		SELECT @site = NULL
 
 		SELECT @site = c.site 
-		FROM dbo.Customer c WITH (NOLOCK)	
+		FROM dbo.Customer c WITH (NOLOCK)
 			INNER JOIN dbo.Site s WITH (NOLOCK) ON c.site = s.site
 		WHERE c.custid = @recommend AND s.SpecialGroup = 1
 
@@ -107,6 +113,5 @@ BEGIN
 			SELECT @IsSpecialHeadline = 1, @SiteCode = 9
 	END
 END
-
-
+GO
 

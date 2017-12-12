@@ -3,7 +3,8 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
-	@username VARCHAR(30)
+	@username VARCHAR(30),
+	@CheckCustId TINYINT = 0
 AS
 
 /*
@@ -87,6 +88,7 @@ Revisions:
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
+	- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -198,8 +200,8 @@ BEGIN
 	SELECT ProductID, Bettype, RefTable FROM dbo.f_SportBettypeMatrix_Sel(0, 0, 0, 2, '', '', @isTest)
 	/* End get sport bettype */
 	
-    --Get CustID FROM DB06, WHERE got index on Username AND Username2
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+    --Get CustID FROM DB06, WHERE got index on Username AND Username2 or CustID
+    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
 
     IF @custid is NULL
     BEGIN
