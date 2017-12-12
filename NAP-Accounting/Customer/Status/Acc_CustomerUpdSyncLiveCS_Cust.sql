@@ -1,4 +1,4 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdSyncLiveCS]
+﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdSyncLiveCS_Cust]
 	@custid		INT,
 	@syncLiveCS	BIT = 1,
 	
@@ -78,7 +78,7 @@ SET NOCOUNT ON
 	DECLARE @LogData NVARCHAR(4000)
 	DECLARE @TrackingValue2 NVARCHAR(4000)	
 
-	SELECT @LogData ='<Acc_CustomerUpdSyncLiveCS custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
+	SELECT @LogData ='<Acc_CustomerUpdSyncLiveCS_Cust custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
 	'SyncLiveCS="'+ COALESCE(CAST(@SyncLiveCS AS VARCHAR(50)),SPACE(1)) + '" ' +
 	'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(400)),SPACE(1)) + '" ' +
 	'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
@@ -86,7 +86,7 @@ SET NOCOUNT ON
 	'IP="'+ COALESCE(CAST(@IP AS VARCHAR(20)),SPACE(1)) + '" ' +
 	'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1))  + '" />'
 
-	SELECT @TrackingValue2 ='<Acc_CustomerUpdSyncLiveCS custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
+	SELECT @TrackingValue2 ='<Acc_CustomerUpdSyncLiveCS_Cust custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
 	'SyncLiveCS="'+ COALESCE(CAST(@Old_SyncLiveCS AS VARCHAR(50)),SPACE(1)) + '" ' +
 	'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(400)),SPACE(1)) + '" ' +
 	'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
@@ -107,7 +107,7 @@ SET NOCOUNT ON
 	END TRY
 	BEGIN CATCH
 	
-		SELECT @LogData ='<Acc_CustomerUpdSyncLiveCS custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
+		SELECT @LogData ='<Acc_CustomerUpdSyncLiveCS_Cust custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
 		'SyncLiveCS="'+ COALESCE(CAST(@SyncLiveCS AS VARCHAR(50)),SPACE(1)) + '" ' +
 		'ErrMsg="'+ COALESCE(CAST(ERROR_MESSAGE() AS VARCHAR(400)),SPACE(1)) + '" ' +
 		'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
@@ -115,7 +115,7 @@ SET NOCOUNT ON
 		'IP="'+ COALESCE(CAST(@IP AS VARCHAR(20)),SPACE(1)) + '" ' +
 		'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1))  + '" />'
 
-		SELECT @TrackingValue2 ='<Acc_CustomerUpdSyncLiveCS custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
+		SELECT @TrackingValue2 ='<Acc_CustomerUpdSyncLiveCS_Cust custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)),SPACE(1)) + '" ' +
 		'SyncLiveCS="'+ COALESCE(CAST(@Old_SyncLiveCS AS VARCHAR(50)),SPACE(1)) + '" ' +
 		'ErrMsg="'+ COALESCE(CAST(ERROR_MESSAGE() AS VARCHAR(400)),SPACE(1)) + '" ' +
 		'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
