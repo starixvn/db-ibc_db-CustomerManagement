@@ -540,6 +540,135 @@ BEGIN
 			)
 		GROUP BY b.recommend
 	END
+
+	-- Member
+	BEGIN
+			-- bettransRnG
+		INSERT INTO #tmpBalance
+		(
+			custid,
+			totalSuperCash, totalMasterCash, totalAgentCash, totalMemberCash,
+			yesterdaySuperCash, yesterdayMasterCash, yesterdayAgentCash, yesterdayMemberCash,
+			totalSuperCashRMB, totalMasterCashRMB, totalAgentCashRMB, totalMemberCashRMB,
+			yesterdaySuperCashRMB, yesterdayMasterCashRMB, yesterdayAgentCashRMB, yesterdayMemberCashRMB
+		)
+		SELECT
+			b.custid,
+			-- original currency
+			-- total
+			0 AS totalSuperCash,
+			0 AS totalMasterCash,
+			0 AS totalAgentCash,
+			SUM(b.winlost-b.actual_stake+b.playercomm) AS totalMemberCash,
+			-- yesterday
+			0 AS yesterdaySuperCash,
+			0 AS yesterdayMasterCash,
+			0 AS yesterdayAgentCash,
+			SUM(CASE WHEN b.winlostdate = @yesterday THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS yesterdayMemberCash,
+			-- convert to RM
+			-- total
+			0 AS totalSuperCashRMB,
+			0 AS totalMasterCashRMB,
+			0 AS totalAgentCashRMB,
+			SUM((b.winlost-b.actual_stake+b.playercomm)*b.actualrate) AS totalMemberCashRMB,
+			-- yesterday
+			0 AS yesterdaySuperCashRMB,
+			0 AS yesterdayMasterCashRMB,
+			0 AS yesterdayAgentCashRMB,
+			SUM((CASE WHEN b.winlostdate = @yesterday THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END)*b.actualrate) AS yesterdayMemberCashRMB
+		FROM bodb02.dbo.bettransRnG b WITH (NOLOCK)
+			INNER JOIN (
+				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 1
+			) s ON b.custid = s.custid
+		WHERE b.statusID NOT IN (0, 1)
+			AND b.winlostdate >= @yesterday
+		GROUP BY b.custid
+
+			-- bettransLC
+		INSERT INTO #tmpBalance
+		(
+			custid,
+			totalSuperCash, totalMasterCash, totalAgentCash, totalMemberCash,
+			yesterdaySuperCash, yesterdayMasterCash, yesterdayAgentCash, yesterdayMemberCash,
+			totalSuperCashRMB, totalMasterCashRMB, totalAgentCashRMB, totalMemberCashRMB,
+			yesterdaySuperCashRMB, yesterdayMasterCashRMB, yesterdayAgentCashRMB, yesterdayMemberCashRMB
+		)
+		SELECT
+			b.custid,
+			-- original currency
+			-- total
+			0 AS totalSuperCash,
+			0 AS totalMasterCash,
+			0 AS totalAgentCash,
+			SUM(b.winlost-b.actual_stake+b.playercomm) AS totalMemberCash,
+			-- yesterday
+			0 AS yesterdaySuperCash,
+			0 AS yesterdayMasterCash,
+			0 AS yesterdayAgentCash,
+			SUM(CASE WHEN b.winlostdate = @yesterday THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS yesterdayMemberCash,
+			-- convert to RM
+			-- total
+			0 AS totalSuperCashRMB,
+			0 AS totalMasterCashRMB,
+			0 AS totalAgentCashRMB,
+			SUM((b.winlost-b.actual_stake+b.playercomm)*b.actualrate) AS totalMemberCashRMB,
+			-- yesterday
+			0 AS yesterdaySuperCashRMB,
+			0 AS yesterdayMasterCashRMB,
+			0 AS yesterdayAgentCashRMB,
+			SUM((CASE WHEN b.winlostdate = @yesterday THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END)*b.actualrate) AS yesterdayMemberCashRMB
+		FROM bodb02.dbo.bettransLC b WITH (NOLOCK)
+			INNER JOIN (
+				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 1
+			) s ON b.custid = s.custid
+		WHERE b.statusID NOT IN (0, 1)
+			AND b.winlostdate >= @yesterday
+		GROUP BY b.custid
+
+			-- bettrans
+		INSERT INTO #tmpBalance
+		(
+			custid,
+			totalSuperCash, totalMasterCash, totalAgentCash, totalMemberCash,
+			yesterdaySuperCash, yesterdayMasterCash, yesterdayAgentCash, yesterdayMemberCash,
+			totalSuperCashRMB, totalMasterCashRMB, totalAgentCashRMB, totalMemberCashRMB,
+			yesterdaySuperCashRMB, yesterdayMasterCashRMB, yesterdayAgentCashRMB, yesterdayMemberCashRMB
+		)
+		SELECT
+			b.custid,
+			-- original currency
+			-- total
+			0 AS totalSuperCash,
+			0 AS totalMasterCash,
+			0 AS totalAgentCash,
+			SUM(b.winlost-b.actual_stake+b.playercomm) AS totalMemberCash,
+			-- yesterday
+			0 AS yesterdaySuperCash,
+			0 AS yesterdayMasterCash,
+			0 AS yesterdayAgentCash,
+			SUM(CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END) AS yesterdayMemberCash,
+			-- convert to RM
+			-- total
+			0 AS totalSuperCashRMB,
+			0 AS totalMasterCashRMB,
+			0 AS totalAgentCashRMB,
+			SUM((b.winlost-b.actual_stake+b.playercomm)*b.actualrate) AS totalMemberCashRMB,
+			-- yesterday
+			0 AS yesterdaySuperCashRMB,
+			0 AS yesterdayMasterCashRMB,
+			0 AS yesterdayAgentCashRMB,
+			SUM((CASE WHEN (b.winlostdate <= @yesterday OR b.bettype > 20000) THEN b.winlost-b.actual_stake+b.playercomm ELSE 0 END)*b.actualrate) AS yesterdayMemberCashRMB
+		FROM bodb02.dbo.bettrans b WITH (NOLOCK)
+			INNER JOIN (
+				SELECT custid FROM #Cust_LimitLoss_Setting WHERE roleId = 1
+			) s ON b.custid = s.custid
+		WHERE b.statusID NOT IN (0, 1)
+			AND (
+				b.winlostdate < @yesterday
+				OR NOT EXISTS (SELECT s.bettype FROM #SportBettype s WHERE s.bettype = b.bettype AND s.RefTable IN (1, 2))
+			)
+		GROUP BY b.custid
+	END
 	--------------
 
 	INSERT INTO #BalanceCust (CustID, NewTotalBalance, YesterdayTotalBalance, NewTotalBalanceRMB, YesterdayTotalBalanceRMB, NewLevelID)
@@ -618,3 +747,4 @@ BEGIN
 	FROM LimitLoss_HeadlineSetting l WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN #BalanceGroupHeadline b ON b.GroupHeadlineID = l.GroupHeadlineID
 END
+GO
