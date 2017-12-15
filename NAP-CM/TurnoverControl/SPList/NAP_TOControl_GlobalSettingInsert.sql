@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
+		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 	Parameter's explaination:
 */
 BEGIN 
@@ -93,6 +94,7 @@ BEGIN
 
 	DECLARE @LogData NVARCHAR(4000)
 	SELECT @LogData = '<NAP_TOControl_GlobalSettingInsert CustID="' + COALESCE(CAST(@CustID as varchar(50)),space(1)) + '" ' 					
+					+ 'SportType="' + COALESCE(CAST(@SportType AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'MaxTuronver="' + COALESCE(CAST(@MaxTurnover AS VARCHAR(50)), SPACE(1)) + '" ' 
 					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(50)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
@@ -105,6 +107,7 @@ BEGIN
 	-- WRITE LOG
 	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 				@Userid = @UserID,
+				@CustID = @CustID,
 				@ActionID = 668,
 				@TrackingValue = @LogData,
 				@Duration = @duration

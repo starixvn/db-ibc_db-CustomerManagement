@@ -8,17 +8,19 @@ ALTER PROCEDURE [dbo].[Dot_Member_Credit_Match_Turnover_Check_Cust]
 	@Stake				MONEY,
 	@TPositionTaking	SMALLMONEY,
 	@eventdate			DATETIME,
-	@actualrate			FLOAT
+	@actualrate			FLOAT,
+	@ExchangeID			INT
 	
 AS
 /*
 	Created: Don
 	Date: 2017-04-10
 	Task: Check if House Turnover is valid to place bet
-	DB: DBCUST.CustDB
+	DB: DBCUST/CustDB
 
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 		
 	Parameter's explaination:
 	
@@ -36,8 +38,8 @@ BEGIN
 	SELECT @StopFlag = 0
 	
 	-- Get Extra PT Info: 
-			-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
-			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
+	-- Sportbook: Categorized by SubProduct =  '' , 'MG-SuperLive', 'MuayThai'. They are the same value. 
+	-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
 			
 	SET @ExtraPT = ISNULL((SELECT SUM(ExtraPT) 
 							FROM dbo.Acc_GroupExtraPTSetting s WITH(NOLOCK) 
@@ -119,6 +121,12 @@ BEGIN
 		
 		IF EXISTS (SELECT 1 FROM @GroupHeadlineList)
 		BEGIN
+			
+			IF @ExchangeID = 20
+			BEGIN
+				SET @actualrate = 1
+			END
+			
 			SET @adjHouseTurnover = (@Stake * @actualrate * (1 - @TPositionTaking- @ExtraPT))
 			
 			IF EXISTS (SELECT TOP 1 1

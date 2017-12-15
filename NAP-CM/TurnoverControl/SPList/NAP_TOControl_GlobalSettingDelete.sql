@@ -1,6 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO 
+
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingDelete]
 	@CustID INT,
 	@UserID INT,
@@ -10,16 +9,18 @@ ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingDelete]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT
 AS
-
+	
 /*
 	Created: Don
 	Date: 2017-03-27
 	Task: Delete one Gobal Setting
-	DB: DBCUST.CustDB
+	DB: DBCUST/CustDB
 
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
+		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
+		
 	Parameter's explaination:
 	
 */
@@ -79,6 +80,7 @@ BEGIN
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
 	SELECT @TrackingValue2 = '<NAP_TOControl_GlobalSettingDelete CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+					+ 'SportType="' + COALESCE(CAST(@SportType AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IsGroupHeadLine="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
@@ -88,6 +90,7 @@ BEGIN
 	
 	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 				@Userid = @UserID,
+				@CustID = @CustID,
 				@ActionID = 670,
 				@TrackingValue2 = @TrackingValue2,
 				@Duration = @duration

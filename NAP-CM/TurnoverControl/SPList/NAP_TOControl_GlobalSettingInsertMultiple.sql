@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO 
-
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingInsertMultiple]
 (	
 	@GlobalSetting VARCHAR(MAX) = ''
@@ -20,6 +17,8 @@ AS
 
 	Revisions:
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
+		- 20171215@Helen: Implement some change request from OPS Team - [Redmine: 85638]
+		
 	Parameter's explaination:
 */
 BEGIN 
@@ -116,3 +115,6 @@ BEGIN
 	
 END
 GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingInsertMultiple] TO [bodbAdminNet]
+GO
+

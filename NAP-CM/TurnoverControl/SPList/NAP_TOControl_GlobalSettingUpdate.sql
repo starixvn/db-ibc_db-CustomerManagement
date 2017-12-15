@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[NAP_TOControl_GlobalSettingUpdate]
 	@CustID INT,
 	@MaxTurnover MONEY,
@@ -22,16 +19,10 @@ AS
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
+		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 		
 	Parameter's explaination:
-	Update IsNotified						
-						WHEN @PercentageUsed >= 100 THEN 100
-						WHEN @PercentageUsed >= 80 THEN 80
-						WHEN @PercentageUsed >= 60 THEN 60
-						WHEN @PercentageUsed >= 40 THEN 40
-						ELSE 0
-					END 
-				ELSE IsNotified 
+	 
 */
 
 BEGIN 
@@ -113,14 +104,16 @@ BEGIN
 	SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
 
 	SELECT @LogData = '<NAP_TOControl_GlobalSettingUpdate CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+					+ 'SportType="' + COALESCE(CAST(@SportType AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 					+ 'AffectedMatch="' + COALESCE(@AffectedMatch,space(1)) + '" '
 					+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
 					+ 'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(200)),space(1)) + '" />'
-
+	-- For old value
 	SELECT @TrackingValue2 = '<NAP_TOControl_GlobalSettingUpdate CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" ' 					
+					+ 'SportType="' + COALESCE(CAST(@SportType AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'MaxTurnover="' + COALESCE(CAST(@MaxTurnover_Old AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IsGroupHeadline="' + COALESCE(CAST(@IsGroupHeadline AS VARCHAR(20)), SPACE(1)) + '" ' 
 					+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
@@ -130,10 +123,13 @@ BEGIN
 	
 	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 				@Userid = @UserID,
+				@CustID = @CustID,
 				@ActionID = 669,
 				@TrackingValue = @LogData,
 				@TrackingValue2 = @TrackingValue2,
 				@Duration = @duration
 			
 END
+GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingUpdate] TO [bodbAdminNet]
 GO
