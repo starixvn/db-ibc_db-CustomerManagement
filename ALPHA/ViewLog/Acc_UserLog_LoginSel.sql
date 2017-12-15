@@ -1,9 +1,10 @@
-﻿ALTER PROCEDURE [dbo].[Acc_UserLog_LoginSel]
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_UserLog_LoginSel]
     @UserId INT,
 	@UserName AS VARCHAR(50),
     @FromDate DATETIME,
     @ToDate DATETIME,    
-    @IsAdminAccess BIT = 0,
+    @LogType SMALLINT = 0,
     @PageIndex INT,
     @PageSize INT
 AS 
@@ -25,6 +26,7 @@ AS
 	- 20120914@Viet: hide IP/country for customer under super ZZ from agentsite's viewlog only
 	- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 	- 20160321@Percy: Do not show any Internal Admin's log for External Admin [Redmine: #53932]
+	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
 	
 	
     Param's Explaination:    
@@ -32,7 +34,9 @@ AS
 	- @UserName: customer name type in textbox to search
 	- @FromDate: date range to view log
 	- @ToDate: date range to view log
-	- @IsAdminAccess: Accouting site TRUE, agent = FALSE
+	- @TypeLog: 0: show log for customer; 
+	            1: show log for External Admin; 
+	            2: show log for Internal Nap
 	- @PageIndex: from 0
 	- @PageSize: total record per request
 */
@@ -64,7 +68,7 @@ declare @hideLocation bit
 select @hideLocation = case when @srecommend=5532706 and SYSTEM_USER like 'bodbdownlinen%' then 1 else 0 end
 ----------------------------------------------------
 
-IF (@IsAdminAccess = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
+IF (@LogType = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
 BEGIN
 	SELECT  LogID,
 			UserID,
@@ -103,7 +107,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 							INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 				  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
-							AND IsInternal <= @IsAdminAccess
+							AND IsInternal = 0
 							AND ((	UserID = @UserId AND SubAccID >= 0)
 										--OR (SubAccID = @UserId)
 									) 
@@ -113,7 +117,6 @@ BEGIN
 			
 END
 ELSE
-IF (@IsAdminAccess = 1) 
 BEGIN
 	SELECT  LogID,
 			UserID,
@@ -150,20 +153,12 @@ BEGIN
 				  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
 							INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 				  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
-							AND IsInternal <= @IsAdminAccess
+							--AND IsInternal <= 1
 							AND UserID = @UserId
 									--AND SubAccID <= 0)
 									--OR (SubAccID = @UserId)
-							AND la.ActionID <> 1301								
+							AND (la.ActionID <> 1301 OR @LogType = 2)								
 			) AS MyTable
 	WHERE   RowNum BETWEEN @lbound AND @ubound
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_UserLog_LoginSel] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_UserLog_LoginSel] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_UserLog_LoginSel] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_UserLog_LoginSel] TO [vnteam] AS [dbo]
 GO
