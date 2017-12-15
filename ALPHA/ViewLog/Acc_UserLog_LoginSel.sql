@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Acc_UserLog_LoginSel]
 	@UserName AS VARCHAR(50),
     @FromDate DATETIME,
     @ToDate DATETIME,    
-    @LogType SMALLINT = 0,
+    @LogType TINYINT = 0,
     @PageIndex INT,
     @PageSize INT
 AS 
