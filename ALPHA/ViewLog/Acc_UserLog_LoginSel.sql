@@ -117,7 +117,7 @@ BEGIN
 			
 END
 ELSE
-IF (@LogType = 2 OR @LogType = 3) 
+IF (@LogType = 1 OR @LogType = 2) 
 BEGIN
 	SELECT  LogID,
 			UserID,
