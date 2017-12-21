@@ -1,1 +1,4 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.SQL
+ALPHA\Customer\Age_CustomerSelAllInfo.SQL
+ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.SQL
+ALPHA\Customer\Agw_CustomerSelInfo.SQL

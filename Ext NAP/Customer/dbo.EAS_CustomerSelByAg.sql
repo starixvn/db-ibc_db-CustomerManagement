@@ -52,6 +52,7 @@ Revisions:
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20170828@Elodie: Account with no permission view special site cann't search member 789y in customer list - [Redmine: #79254]
 	- 20171027@Johnson: fix the unsynchronized setting, add SyncGDUpline [Redmine: #72973]
+	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	
 	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
@@ -103,6 +104,7 @@ BEGIN
 		,	@bitmapOrder_Lucky3			INT
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
+		,	@bitmapOrder_BullFighting	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
     SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
@@ -113,6 +115,7 @@ BEGIN
 	SET @bitmapOrder_Lucky3 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 160 AND Bettype = 1600)
 	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
     SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
+	SET @bitmapOrder_BullFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 207 AND Bettype = 1004)
 
 	SELECT	@bitmapOrder_AllBet =	(
 										SELECT	psp.bitmapOrder
@@ -138,6 +141,7 @@ BEGIN
 		,	@IsHidden_Lucky3		INT = 1    
 		,	@IsHidden_FishingWorld	INT = 1
 		,	@IsHidden_VS			INT = 1
+		,	@IsHidden_BullFighting	INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
@@ -149,6 +153,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 26, @IsHide = @IsHidden_Lucky3 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
 
 	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @Recommend AND [Site] = 'IMBC')
 		SET @IsIMBC = 1
@@ -237,7 +242,14 @@ BEGIN
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSports,
 			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSportsUpline,						
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSportsUpline,
-			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports    
+			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
+
+			-- For BullFighting
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BullFighting)) AS DisableBullFighting,
+			CAST(CASE WHEN @IsHidden_BullFighting = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_BullFighting)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBullFightingUpline,						
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_BullFighting)) AS DisableBullFightingUpline,
+			CAST(CASE WHEN @IsHidden_BullFighting = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BullFighting)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBullFighting    
+
     INTO #custinfo
     FROM dbo.custinfo WITH(NOLOCK)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = custinfo.custid  
@@ -455,6 +467,10 @@ BEGIN
 		   ISNULL(ci.DisableVirtualSportsUpline,1) AS DisableVirtualSportsUpline,
 		   ISNULL(ci.HideVirtualSports,1) AS HideVirtualSports,
 		   ISNULL(ci.HideVirtualSportsUpline,1) AS HideVirtualSportsUpline,
+		   ISNULL(ci.DisableBullFighting,1) AS DisableBullFighting,
+		   ISNULL(ci.DisableBullFightingUpline,1) AS DisableBullFightingUpline,
+		   ISNULL(ci.HideBullFighting,1) AS HideBullFighting,
+		   ISNULL(ci.HideBullFightingUpline,1) AS HideBullFightingUpline,
 	       --transfer condition
 	       @TransferOption disableTransfer,	
 	       ROW_NUMBER() OVER (ORDER BY ci.enabled desc,
@@ -509,7 +525,8 @@ BEGIN
 			  	ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
 			   	ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline,
 			    ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
-				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline
+				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline,
+				ci.DisableBullFighting,ci.DisableBullFightingUpline, ci.HideBullFighting,ci.HideBullFightingUpline
 	ORDER BY RowNumber
 
 

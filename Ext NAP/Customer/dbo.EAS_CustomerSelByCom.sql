@@ -52,6 +52,7 @@ Revisions:
 	- 20170629@Winnie: Offer Enable/Disable GoldDeluxe [RedmineID: #72957]
 	- 20170828@Elodie: EXT - Support Security Code on Customer List - [Redmine: #81091]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
+	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
@@ -113,6 +114,7 @@ BEGIN
 		,	@bitmapOrder_Lucky3			INT
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
+		,	@bitmapOrder_BullFighting	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
     SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
@@ -123,6 +125,7 @@ BEGIN
 	SET @bitmapOrder_Lucky3 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 160 AND Bettype = 1600)
     SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
+	SET @bitmapOrder_BullFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 207 AND Bettype = 1004)
 
 	SELECT	@bitmapOrder_AllBet =	(
 										SELECT	psp.bitmapOrder
@@ -137,17 +140,20 @@ BEGIN
 											AND	psp.Bettype = 2402
 									)
     
-    DECLARE	@IsHidden_MuayThai		INT = 1
-		,	@IsHidden_CockFighting	INT = 1
-		,	@IsHidden_Cricket		INT = 1
-		,	@IsHidden_AllBet		INT = 1
-		,	@IsHidden_VoidBridge	INT = 1
-		,	@IsHidden_Lottery		INT = 1
-		,	@IsHidden_NG2			INT = 1
-		,	@IsHidden_Lucky3		INT = 1    
-		,	@IsHidden_FishingWorld	INT = 1	
-		,	@IsHidden_VS			INT = 1
-		,	@SyncDownlinesGoldDeluxe BIT
+    DECLARE	@IsHidden_MuayThai			INT = 1
+		,	@IsHidden_CockFighting		INT = 1
+		,	@IsHidden_Cricket			INT = 1
+		,	@IsHidden_AllBet			INT = 1
+		,	@IsHidden_VoidBridge		INT = 1
+		,	@IsHidden_Lottery			INT = 1
+		,	@IsHidden_NG2				INT = 1
+		,	@IsHidden_Lucky3			INT = 1    
+		,	@IsHidden_FishingWorld		INT = 1	
+		,	@IsHidden_VS				INT = 1
+		,	@IsHidden_BullFighting		INT = 1
+
+		,	@SyncDownlinesGoldDeluxe	BIT
+		
 
    	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
@@ -159,7 +165,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 26, @IsHide = @IsHidden_Lucky3 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
-				
+	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
 
 	-- get data for filtered customers	
 	DECLARE @SearchQuery varchar(1024)
@@ -345,6 +351,13 @@ BEGIN
 			1 AS DisableVirtualSportsUpline,
 			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 			1 AS HideVirtualSportsUpline,
+
+			-- For BullFighting
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BullFighting)) AS DisableBullFighting,
+			1 AS DisableBullFightingUpline,
+			CAST(CASE WHEN @IsHidden_BullFighting = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BullFighting)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBullFighting,
+			1 AS HideBullFightingUpline,
+
 			1 AS UplineHasSecurityCode,
 			@HasSecurityCode AS HasSecurityCode,
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
