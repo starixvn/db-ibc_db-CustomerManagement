@@ -32,14 +32,22 @@ BEGIN
 	DECLARE @MaxTurnover_Old MONEY, @AffectedMatch VARCHAR(1000)=''
 	DECLARE @startRun	DATETIME,
 			@endRun		DATETIME,
-			@duration	INT
+			@duration	INT,
+			@funcname	NVARCHAR(50)
+			
 	SET	@startRun = GETDATE()
 
+	IF @SportType = 1 
+		SET @funcname = '[GlobalSetting_Soccer]'
+	ELSE
+		SET @funcname = '[GlobalSetting_Soccer_OtherSports]'
+		
 	--Check permission 
 	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='GlobalSetting',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	
 	IF @ErrCode <> 0
 		RETURN
-
+	
 	INSERT INTO @MatchList(matchid, homeid, awayid, eventdate, sporttype, leagueid)
 	SELECT m.matchid, m.homeid, m.awayid, m.eventdate, m.sporttype, m.leagueid
 	FROM DBAGE.bodb02.dbo.match m WITH(NOLOCK)
@@ -95,4 +103,6 @@ BEGIN
 				@TrackingValue2 = @TrackingValue2,
 				@Duration = @duration
 END
+GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingDelete] TO [bodbAdminNet]
 GO

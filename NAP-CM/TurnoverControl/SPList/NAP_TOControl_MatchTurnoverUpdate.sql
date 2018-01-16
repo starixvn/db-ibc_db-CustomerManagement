@@ -32,15 +32,22 @@ BEGIN
 			@startRun			DATETIME,
 			@endRun				DATETIME,
 			@duration			INT,
-			@MaxTurnover_old	MONEY
+			@MaxTurnover_old	MONEY,
+			@funcname			NVARCHAR(50)
 			
 	SET	@startRun = GETDATE()
 
+	IF @SportType = 1 
+		SET @funcname = '[TurnoverMonitor_Soccer]'
+	ELSE
+		SET @funcname = '[TurnoverMonitor_OtherSports]'
+		
+	
 	--Check permission 
 	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='TurnoverMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
-		
+	
 	IF EXISTS (SELECT 1 FROM DBAGE.bodb02.dbo.match WITH (NOLOCK) WHERE matchid = @MatchID AND eventstatus = 'completed')
 	BEGIN
 		SELECT @ErrCode = 101, @ErrMsg = 'You are not allowed to update max turnover of a settled match.'

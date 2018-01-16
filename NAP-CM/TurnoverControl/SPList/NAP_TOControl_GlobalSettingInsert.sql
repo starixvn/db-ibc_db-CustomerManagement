@@ -27,15 +27,22 @@ BEGIN
 
 	DECLARE @startRun	DATETIME,
 			@endRun		DATETIME,
-			@duration	INT
+			@duration	INT,
+			@funcname	NVARCHAR(50)
 	DECLARE @roleid INT
 	SET	@startRun = GETDATE()
+	
+	IF @SportType = 1 
+		SET @funcname = '[GlobalSetting_Soccer]'
+	ELSE
+		SET @funcname = '[GlobalSetting_Soccer_OtherSports]'
+	
 	
 	--Check permission 
 	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='GlobalSetting',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
-
+	
 	DECLARE @CustID INT, @GroupHeadlineID INT
 	SELECT @CustID = CustID, @roleid = RoleID FROM dbo.CustInfo WITH(NOLOCK) WHERE UserName = @UserName
 
@@ -114,3 +121,6 @@ BEGIN
 
 END
 GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_GlobalSettingInsert] TO [bodbAdminNet]
+GO
+
