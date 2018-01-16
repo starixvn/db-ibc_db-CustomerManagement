@@ -22,6 +22,7 @@ AS
 
 	Revisions:
 		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
+		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 
 	Parameter's explaination: 
 		- Mode =	0: SMA setting
@@ -44,7 +45,7 @@ BEGIN
     --Check permission 
 	IF @System = 0
 	BEGIN
-		EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[LossMonitor]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='LossMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 		IF @ErrCode <> 0
 			RETURN
 	END
@@ -151,6 +152,4 @@ BEGIN
 		END CATCH
 	END
 END
-
-
-
+GO

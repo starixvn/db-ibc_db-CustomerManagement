@@ -1,4 +1,2 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.SQL
-ALPHA\Customer\Age_CustomerSelAllInfo.SQL
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.SQL
-ALPHA\Customer\Agw_CustomerSelInfo.SQL
+NAP-CM\TurnoverControl\SPList\NAP_TOControl_GlobalSettingInsertMultiple.sql
+NAP-CM\TurnoverControl\SPList\NAP_TOControl_MatchTurnoverUpdateMultiple.sql

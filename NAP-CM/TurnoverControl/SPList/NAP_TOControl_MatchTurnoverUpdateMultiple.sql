@@ -16,6 +16,7 @@ AS
 	DB: DBCUST.CustDB
 
 	Revisions:
+		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 
 	Parameter's explaination:
 	
@@ -84,6 +85,4 @@ BEGIN
 	DROP TABLE #GlobalSettingTbl
 						
 END
-GO
-GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchTurnoverUpdateMultiple] TO [bodbAdminNet]
 GO
