@@ -28,18 +28,19 @@ BEGIN
 	DECLARE @startRun	DATETIME,
 			@endRun		DATETIME,
 			@duration	INT,
-			@funcname	NVARCHAR(50)
+			@FunctionKey NVARCHAR(50)
+			
 	DECLARE @roleid INT
 	SET	@startRun = GETDATE()
 	
 	IF @SportType = 1 
-		SET @funcname = '[GlobalSetting_Soccer]'
+		SET @FunctionKey = 'GlobalSetting_Soccer'
 	ELSE
-		SET @funcname = '[GlobalSetting_Soccer_OtherSports]'
+		SET @FunctionKey = 'GlobalSetting_OtherSports'
 	
 	
 	--Check permission 
-	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='GlobalSetting',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey=@FunctionKey,@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	
