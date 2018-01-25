@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[NAP_TOControl_MatchTurnoverByCustomerSelect]
 	@CustID INT,
 	@RoleID TINYINT,
@@ -14,10 +14,11 @@ AS
 
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 		
 	Parameter's explaination: 
-	Bettypes for SportBook:((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
-	Bettypes get from SportBettypeMatrix: f_SportBettypeMatrix_Sel
+		Bettypes for SportBook:((bettype < 31 and bettype NOT IN (9,29,10)) OR bettype between 121 and 999 OR bettype BETWEEN 1301 and 1334)
+		Bettypes get from SportBettypeMatrix: f_SportBettypeMatrix_Sel
 */
 BEGIN
 	SET NOCOUNT ON
@@ -89,8 +90,8 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				
-				SUM(b.stake * b.actualrate) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+				SUM(b.stake * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS HouseTurnover
 					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
@@ -113,8 +114,8 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				
-				SUM(b.stake * b.actualrate) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+				SUM(b.stake * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS HouseTurnover
 				
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
@@ -134,8 +135,8 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				
-				SUM(b.stake * b.actualrate) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+				SUM(b.stake * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS HouseTurnover
 					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid
@@ -155,8 +156,8 @@ BEGIN
 			SELECT 
 				b.matchid, 
 				
-				SUM(b.stake * b.actualrate) AS SumOfStake, 
-				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * b.actualrate) AS HouseTurnover
+				SUM(b.stake * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS SumOfStake, 
+				SUM((1-b.tpositiontaking - ISNULL(ExtraPT_tmp.ExtraPT,0))* ABS(b.stake) * (CASE WHEN b.currency = 20 THEN 1 ELSE  b.actualrate END)) AS HouseTurnover
 					 
 			FROM bodb02.dbo.bettrans b WITH(NOLOCK)
 				INNER JOIN @MatchList m ON b.matchid = m.matchid

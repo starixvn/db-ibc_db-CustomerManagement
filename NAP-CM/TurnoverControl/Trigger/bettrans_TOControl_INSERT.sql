@@ -11,6 +11,7 @@ AS
 	- Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171110@Helen: Enhance performance for TO trigger - [Redmine: 86052]
+		- 20171212@Helen: Support UUS - Implement some change request from OPS Team - [Redmine: 85638]
 	
 */
 BEGIN
@@ -34,11 +35,11 @@ BEGIN
 							   
 							   , SUM((1-tpositiontaking)*ABS(stake)) AS 'adjHTONoExtraPT'
 							   
-							   , CONVERT(MONEY, SUM(stake*actualrate)) AS 'adjTO_RM'
+							   , CONVERT(MONEY, SUM(stake*(CASE WHEN currency = 20 THEN 1 ELSE  actualrate END ))) AS 'adjTO_RM'
 							   
-							   , CONVERT(MONEY, SUM(ABS(stake * actualrate))) AS 'adjTOwithABS_RM'
+							   , CONVERT(MONEY, SUM(ABS(stake * (CASE WHEN currency = 20 THEN 1 ELSE  actualrate END )))) AS 'adjTOwithABS_RM'
 							   
-							   , CONVERT(MONEY, SUM((1-tpositiontaking)*ABS(stake)*actualrate)) AS 'adjHTONoExtraPT_RM'
+							   , CONVERT(MONEY, SUM((1-tpositiontaking)*ABS(stake)*(CASE WHEN currency = 20 THEN 1 ELSE  actualrate END ))) AS 'adjHTONoExtraPT_RM'
 							   , 1 AS 'IsInsert'
 							 FROM inserted  
 							 WHERE matchid > 0 AND statusID NOT BETWEEN 101 AND 103

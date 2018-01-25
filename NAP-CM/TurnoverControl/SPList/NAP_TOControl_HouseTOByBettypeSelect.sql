@@ -15,7 +15,8 @@ AS
 	DB: DBAGE.bodb02
 	
 	Revisions:
-	
+		- 20171215@Helen: Implement some change request from OPS Team - [Redmine: 85638]
+		
 	Parameter's explaination: 
 	
 		

@@ -11,6 +11,7 @@ AS
 	- Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171110@Helen: Enhance performance for TO trigger - [Redmine: 86052]
+		- 20171212@Helen: Support UUS - Implement some change request from OPS Team - [Redmine: 85638]
 */
 BEGIN
 	
@@ -72,21 +73,21 @@ BEGIN
 					 ELSE 0
 				END) AS adj_HouseTO,
 			
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * i.actualrate --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * i.actualrate --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * i.actualrate -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END) --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_TO_RM,
 			
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * i.actualrate) --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * i.actualrate) --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * i.actualrate) -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_TO_withABS_RM,
 					
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * i.actualrate) --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_HouseTO_RM
 					
@@ -121,21 +122,21 @@ BEGIN
 					 ELSE 0
 				END) AS adj_HouseTO,
 			
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * i.actualrate  --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * i.actualrate --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * i.actualrate -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)  --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_TO_RM,
 			
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * i.actualrate) --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * i.actualrate) --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * i.actualrate) -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN ABS(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_TO_withABS_RM,
 					
-			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * i.actualrate) --delete ticket
-					 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) --recover ticket
-					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * i.actualrate) -- undo or calculate after refund
+			SUM(CASE WHEN i.statusid IN (101,102,103) AND d.statusid IN (0,1,111,112,113) THEN -(1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --delete ticket
+					 WHEN i.statusid = 0 AND d.statusid = 102 THEN (1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) --recover ticket
+					 WHEN d.statusid  = 103 AND i.statusid IN (0,111,112,113) THEN (1-i.tpositiontaking)*abs(i.stake * (CASE WHEN i.currency = 20 THEN 1 ELSE  i.actualrate END)) -- undo or calculate after refund
 					 ELSE 0
 				END) AS adj_HouseTO_RM
 					

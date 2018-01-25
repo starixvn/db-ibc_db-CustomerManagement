@@ -17,21 +17,20 @@ AS
 
 	Revisions:
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
-
+		- 20171215@Helen: Implement some change request from OPS Team - [Redmine: 85638]
+		
 	Parameter's explaination:
 	
 */
 BEGIN
 	SET NOCOUNT ON
 
-	SET NOCOUNT ON
-
-	CREATE TABLE #GlobalSettingTbl (ID INT IDENTITY(1,1) PRIMARY KEY,CustID INT, IsGroupHeadline BIT, MaxTurnover MONEY, MatchID INT)
+	CREATE TABLE #GlobalSettingTbl (ID INT IDENTITY(1,1) PRIMARY KEY,CustID INT, IsGroupHeadline BIT, MaxTurnover MONEY, MatchID INT,SportType SMALLINT)
 	
-	CREATE TABLE #ExistingGlobalSettingTbl (ID INT IDENTITY(1,1) PRIMARY KEY, CustID INT, IsGroupHeadline BIT, MaxTurnover MONEY, MatchID INT)
+	CREATE TABLE #ExistingGlobalSettingTbl (ID INT IDENTITY(1,1) PRIMARY KEY, CustID INT, IsGroupHeadline BIT, MaxTurnover MONEY, MatchID INT, SportType SMALLINT)
 	
 	--Parse XML	
-	DECLARE @iDoc INT, @start INT, @end INT, @MaxTurnover MONEY, @IsGroupHeadline BIT, @CustID INT, @MatchID INT
+	DECLARE @iDoc INT, @start INT, @end INT, @MaxTurnover MONEY, @IsGroupHeadline BIT, @CustID INT, @MatchID INT,@SportType SMALLINT
 	
 	SET @start = 1
 	SET @MaxTurnover = 0 
@@ -40,20 +39,21 @@ BEGIN
 	
 	EXEC sp_xml_preparedocument @iDoc OUTPUT, @GlobalSetting
 
-	INSERT #GlobalSettingTbl (CustId,MatchId,IsGroupHeadline,MaxTurnover)
-	SELECT CustId,MatchId,IsGroupHeadline,MaxTurnover
-	FROM OPENXML(@iDoc, '/ROOT/GlobalSetting', 1) WITH (CustId INT,MatchId INT, IsGroupHeadline	BIT, MaxTurnover MONEY)
+	INSERT #GlobalSettingTbl (CustId,MatchId,IsGroupHeadline,MaxTurnover,SportType)
+	SELECT CustId,MatchId,IsGroupHeadline,MaxTurnover,SportType
+	FROM OPENXML(@iDoc, '/ROOT/GlobalSetting', 1) WITH (CustId INT,MatchId INT, IsGroupHeadline	BIT, MaxTurnover MONEY,SportType SMALLINT)
 
 	EXEC sp_xml_removedocument @iDoc	
 	
-	INSERT #ExistingGlobalSettingTbl (CustID,IsGroupHeadline,MaxTurnover,MatchID)
-	SELECT custid,IsGroupHeadline,MaxTurnover,MatchID
+	INSERT #ExistingGlobalSettingTbl (CustID,IsGroupHeadline,MaxTurnover,MatchID,SportType)
+	SELECT custid,IsGroupHeadline,MaxTurnover,MatchID,SportType
 	FROM #GlobalSettingTbl GS_tmp WITH (NOLOCK)
 	WHERE EXISTS (	SELECT 1 
 						FROM dbo.TOControl_GlobalSetting GS WITH (NOLOCK) 
 						WHERE gs.CustID = GS_tmp.custid 
 							AND GS_tmp.IsGroupHeadline = GS.IsGroupHeadLine
 							AND GS_tmp.MaxTurnover <> GS.MaxTurnOver
+							AND GS_tmp.SportType = GS.Sporttype
 					)
 	
 	-- Process for UPDATE multiple MaxTurnOver
@@ -64,9 +64,9 @@ BEGIN
 		WHILE @start <= @end
 		BEGIN
 	
-			SELECT @CustID = CustID, @MaxTurnover = MaxTurnover, @IsGroupHeadline = IsGroupHeadline, @MatchID = MatchID FROM #ExistingGlobalSettingTbl WITH (NOLOCK) WHERE ID = @start
+			SELECT @CustID = CustID, @MaxTurnover = MaxTurnover, @IsGroupHeadline = IsGroupHeadline, @MatchID = MatchID,@SportType = SportType FROM #ExistingGlobalSettingTbl WITH (NOLOCK) WHERE ID = @start
 			
-			EXEC dbo.NAP_TOControl_MatchTurnoverUpdate @CustID = @CustID, @UserID=@UserID,@IP=@IP,@MaxTurnover=@MaxTurnover,@IsGroupHeadline = @IsGroupHeadline,@MatchID = @MatchID,@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+			EXEC dbo.NAP_TOControl_MatchTurnoverUpdate @CustID = @CustID, @UserID=@UserID,@SportType = @SportType, @IP=@IP,@MaxTurnover=@MaxTurnover,@IsGroupHeadline = @IsGroupHeadline,@MatchID = @MatchID,@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 			
 			IF @ErrCode <> 0 
 				BREAK
@@ -85,4 +85,6 @@ BEGIN
 	DROP TABLE #GlobalSettingTbl
 						
 END
+GO
+GRANT EXECUTE ON [dbo].[NAP_TOControl_MatchTurnoverUpdateMultiple] TO [bodbAdminNet]
 GO

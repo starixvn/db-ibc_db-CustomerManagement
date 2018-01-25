@@ -23,6 +23,7 @@ AS
 
 	Revisions:
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
+		- 20171215@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 	
 	Parameter's explaination: 
 	HARDCODE for @PercentLevel
@@ -115,6 +116,7 @@ BEGIN
 				   ELSE	CASE c.RoleID WHEN 4 THEN 'Super' WHEN 3 THEN 'Master' WHEN 2 THEN 'Agent' END 
 			  END AS Level
 			, t.PercentageUsed
+			, CASE WHEN @SportType = 1 THEN 1 ELSE 99 END AS SportType
 	FROM CTE_SettingList t
 		INNER JOIN #MatchList m WITH (NOLOCK) ON t.matchID = m.matchid
 		INNER JOIN dbo.custInfo c WITH (NOLOCK) ON t.custID = c.custid
