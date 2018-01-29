@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSelTotalRecords]    
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSelTotalRecords]     
 	@CustId INT, 
     @FromDate DATETIME,
@@ -32,7 +32,7 @@ BEGIN
 -- interfering with SELECT statements.
 
 	SET NOCOUNT ON ;
-	DECLARE ,@srecommend INT
+	DECLARE @srecommend INT
 			,@mrecommend INT
 			,@recommend INT
 			,@roleid TINYINT
