@@ -36,10 +36,15 @@ BEGIN
 	IF @TypeID = 3
 	BEGIN
 		CREATE TABLE #NewDisableStatTbl(
-					SportType SMALLINT,
-					BetType SMALLINT,
-					IsDisabled BIT,
-					IsDisabledDownline BIT
+					SportType			SMALLINT,
+					BetType				SMALLINT,
+					IsDisabled			BIT,
+					UpdateAllMasters	BIT,
+					UpdateAllAgents		BIT,
+					UpdateAllMembers	BIT,
+					DisableAllMasters	BIT,
+					DisableAllAgents	BIT,
+					DisableAllMembers	BIT
 				)
 		
 		--Parse XML	
@@ -50,8 +55,7 @@ BEGIN
 		INSERT INTO #NewDisableStatTbl
 		SELECT *
 		FROM OPENXML (@iDoc, '/ROOT/ProductStatus',1) 
-		WITH(SportType smallint, BetType smallint, IsDisabled BIT,IsDisabledDownline BIT
-			)	
+		WITH(SportType smallint,BetType smallint,IsDisabled BIT,UpdateAllMasters BIT,UpdateAllAgents BIT,UpdateAllMembers BIT,DisableAllMasters BIT,DisableAllAgents BIT,DisableAllMembers BIT)	
 		
 		EXEC sp_xml_removedocument @iDoc
 	
@@ -59,6 +63,7 @@ BEGIN
 		INTO #BitmapOrder
 		FROM bodb02.dbo.ProductStatusProfile ps WITH (NOLOCK)
 			INNER JOIN #NewDisableStatTbl ds ON ds.BetType = ps.Bettype AND ds.SportType = ps.Sporttype
+		WHERE UpdateAllMembers = 1
 
 		IF @RoleID = 4
 		BEGIN
