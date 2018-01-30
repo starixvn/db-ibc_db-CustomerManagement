@@ -20,8 +20,11 @@ AS
 		- 20161201@Elodie: Output more @IsSpecialHeadline [RedmineID: #66873]
 		- 20170918@Elodie: Output more @SiteCode [RedmineID: #83219]
 		- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
+		- 20180130@Elodie: Get @SiteCode value of customer instead of Group Headline [RedmineID: #90192]
 	Param's Explanation:
-
+		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
+		2. Alpha: Consolidation report -> bet list -> show NG2 ticket if @IsSpecialHeadline of login SMA = 1 (only check on link i1; i7 & i9 default show NG2 ticket)
+		3. SiteCode: Use to define link i1, i7 or i9 when internal ALPHA site
 	Example query:
 		DECLARE @IsSpecialSite BIT = 0,
 				@IsSpecialHeadline BIT = 0,
@@ -90,27 +93,14 @@ BEGIN
 					FROM #tmpCustGroup cg
 						INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
 						INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = c.site
-					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4 AND c.site = '789y')
+					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4)
 			OR EXISTS (	SELECT 1
 						FROM #tmpCustGroup cg
 							INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
 							INNER JOIN dbo.customer ag WITH (NOLOCK) ON c.recommend = ag.custid
 							INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = ag.site
-						WHERE SpecialGroup = 1 AND c.roleid = 1 AND c.site = '789y')
-			SELECT @IsSpecialHeadline = 1, @SiteCode = 7
-
-		IF EXISTS ( SELECT 1
-					FROM #tmpCustGroup cg
-						INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
-						INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = c.site
-					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4 AND c.site = 'Y987')
-			OR EXISTS (	SELECT 1
-						FROM #tmpCustGroup cg
-							INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
-							INNER JOIN dbo.customer ag WITH (NOLOCK) ON c.recommend = ag.custid
-							INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = ag.site
-						WHERE SpecialGroup = 1 AND c.roleid = 1 AND c.site = 'Y987')
-			SELECT @IsSpecialHeadline = 1, @SiteCode = 9
+						WHERE SpecialGroup = 1 AND c.roleid = 1)
+			SELECT @IsSpecialHeadline = 1
 	END
 END
 GO
