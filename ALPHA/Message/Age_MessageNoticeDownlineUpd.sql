@@ -13,8 +13,10 @@ AS
     Task: Update table "MESSAGE_NOTICE" when one upline enable product for downlines.
     DB: DBONUSER/On_User
     Original:
+
     Revisions:
-    
+		- 20180118@Elodie: Only insert message when update enable status for members on NAP & ExtNAP [RedmineID:#87328]
+
     Param's Explanation:
         . @CustID: ID of agent whose status value has been changed
         . @UserID: ID of master or admin who made it

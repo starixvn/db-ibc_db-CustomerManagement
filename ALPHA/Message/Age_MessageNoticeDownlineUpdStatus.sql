@@ -13,7 +13,8 @@ AS
     DB: DBONUSER/On_User
     Original:
     Revisions:
-    
+		- 2070417@Elodie: Set value of field "isViewed" in table “MESSAGE_NOTICE”
+
     Param's Explanation:
         . @CustID: ID of agent whose status value has been changed
         . @isViewed: status will be updated
