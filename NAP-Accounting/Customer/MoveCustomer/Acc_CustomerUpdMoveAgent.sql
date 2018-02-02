@@ -69,7 +69,7 @@ Revisions:
 	- 20160426@Winnie: fix  Bug #56653 [Move account: IsHidden of move master is changed to 0]
 	- 20160819@Winnie: fix  Bug #62755 [NAP - IsDailyAutoReset of downline is changed to 0 after moving downline although both downline and upline has IsDailyAutoReset=1]
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -100,9 +100,7 @@ declare	@srecommend			int,
 			@mDisableOutright	BIT,
 			@aDisableOutright	BIT,
 			@mDisableCasino		BIT,
-			@aDisableCasino		BIT,
-			@mDisableLiveCasino BIT,
-			@aDisableLiveCasino BIT,
+			@aDisableCasino		BIT,		
 			@mDoubleCommLosing	BIT,
 			@aDoubleCommLosing	BIT,			
 			@aSuspended			BIT,	
@@ -132,8 +130,7 @@ declare	@srecommend			int,
 	select	@srecommend			= srecommend, 
 			@mrecommend			= custid, 
 			@mDisableOutright	= DisableOutright,			
-			@mDisableCasino		= disableCasino,
-			@mDisableLiveCasino = DisableLivecasino, 
+			@mDisableCasino		= disableCasino,		
 			@mDoubleCommLosing	= DoubleCommLosing,			
 			@mSuspended			= reject,
 			--@mMaxTransferP2P	= MaxTransferP2P, 
@@ -153,8 +150,7 @@ declare	@srecommend			int,
 			@srecommend_old		= srecommend, 
 			@mrecommend_old		= mrecommend, 			
 			@aDisableOutright	= DisableOutright,			
-			@aDisableCasino		= disableCasino,
-			@aDisableLiveCasino = DisableLiveCasino,	
+			@aDisableCasino		= disableCasino,		
 			@aDoubleCommLosing	= DoubleCommLosing,		
 			@aSuspended			= reject,
 			--@aMaxTransferP2P	= MaxTransferP2P, 
@@ -297,20 +293,6 @@ BEGIN
 	END;
 END;
 
-IF @mDisableLiveCasino = 1 AND @mDisableLiveCasino <> @aDisableLiveCasino
-BEGIN
-	UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-	SET DisableLiveCasino = 1
-	WHERE custid IN (SELECT custid FROM #CustInfo);
-	
-	IF @@ERROR <> 0
-	BEGIN
-		Select	@ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-				@ErrCode = 309;
-		RETURN; 
-	END;
-END;
-
 ---- VS
 --IF @mDisableVirtualSports = 1 AND (@mDisableVirtualSports <> @aDisableVirtualSports)
 --BEGIN
@@ -433,7 +415,7 @@ END;
 --Apply execrep for these sps
 EXEC Acc_CustSetting_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'number', @roleid = 2;	
-EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'horse', @roleid = 2;	
+
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=180, @bettype = 1201, @roleid = 2;	
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=181, @bettype = 1231, @roleid = 2;
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=182, @bettype = 1231, @roleid = 2;
@@ -441,7 +423,7 @@ EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend,
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=184, @bettype = 1231, @roleid = 2;	
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=185, @bettype = 1231, @roleid = 2;
 --EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=186, @bettype = 1220, @roleid = 2;	
-EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend,	@mode = 'LiveCasino', @roleid = 2;	
+
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1501, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1511, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1503, @roleid = 2;	

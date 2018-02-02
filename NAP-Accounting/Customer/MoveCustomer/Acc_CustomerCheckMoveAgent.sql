@@ -33,7 +33,7 @@ AS
 		- 20151030@Dominic: Add MuayThai product [Redmine: #46732]
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
-
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -52,9 +52,7 @@ BEGIN
 	      , @mrecommend_old			INT
 	      , @scurrency				TINYINT
 	      , @mcurrency				TINYINT
-	      , @acurrency				TINYINT
-	      , @mdisable151_31			BIT
-	      , @adisable151_31			BIT
+	      , @acurrency				TINYINT	    
 	      , @DisableAutoMPT			BIT
 	      , @DisableAutoMPT_old 	BIT
 	      , @mIsInternal			BIT
@@ -63,35 +61,20 @@ BEGIN
 	      , @aDisableOutright		BIT
 	      , @mSyncCasino			BIT
 	      , @aSyncCasino			BIT
-	      , @mSyncLiveCasino		BIT
-	      , @mSyncLiveCasino_Old	BIT
-	      , @aSyncLiveCasino		BIT
+	    
 	      , @mSyncBingo				BIT
 	      , @aSyncBingo				BIT
 	      , @mDisableCasino			BIT
 	      , @aDisableCasino			BIT
-	      , @mDisableLiveCasino 	BIT
-	      , @aDisableLiveCasino 	BIT
+	    
 	      , @mDisableBingo			BIT
 	      , @aDisableBingo			BIT
 	      , @mDisableNumber			BIT
-	      , @aDisableNumber			BIT
-	      , @aDisable151_41			BIT
-	      , @mDisable151_41			BIT
-	      , @aDisable151_51			BIT
-	      , @mDisable151_51			BIT
-	      , @aDisable152_41			BIT
-	      , @mDisable152_41			BIT
-	      , @aDisable152_51			BIT
-	      , @mDisable152_51			BIT
-	      , @aDisable153_51			BIT
-	      , @mDisable153_51			BIT
+	      , @aDisableNumber			BIT	      
 	      , @aClosed				BIT
 	      ,	@mClosed				BIT
 	      , @aSuspended				BIT
-	      , @mSuspended				BIT
-	      ,	@mDisableHRFixedOdds	BIT
-	      , @aDisableHRFixedOdds	BIT
+	      , @mSuspended				BIT	   
 	      , @mDisableEsports	    BIT
 	      , @aDisableEsports	    BIT
 	      , @aGivenCredit			MONEY
@@ -116,23 +99,18 @@ BEGIN
 	     , @mrecommend		    = custid
 	     , @mcurrency		    = currency
 	     , @scurrency		    = currency
-	     , @mdisable151_31	    = DisableHorseracing
+	 
 	     , @mDisableOutright    = DisableOutright
 	     , @mSyncCasino		    = syncCasino
-	     , @mSyncLiveCasino	    = SyncLiveCasino
+	     
 	     , @mSyncBingo		    = SyncBingo
 	     , @mDisableBingo	    = DisableBingo
 	     , @mDisableNumber	    = DisableNumber
 	     , @mDisableCasino	    = disableCasino
-	     , @mDisableLiveCasino  = DisableLivecasino
-	     , @mDisable151_41	    =  DisableOpenTote
-	     , @mDisable151_51	    = Disable151_AU
-	     , @mDisable152_41	    = Disable152_UK
-	     , @mDisable152_51	    = Disable152_AU
-	     , @mDisable153_51	    = Disable153_AU
+	    
 	     , @mClosed			    = closed
 	     , @mSuspended			= reject
-	     , @mDisableHRFixedOdds = DisableHRFixedOdds
+	     
 	     , @mGivenCredit		= credit
 	     --, @mHideVirtualSports  = HideVirtualSports
 	     , @mHideKeno			= HideKeno
@@ -149,23 +127,18 @@ BEGIN
 	     , @srecommend_old		= srecommend
 	     , @mrecommend_old		= mrecommend
 	     , @acurrency			= currency
-	     , @adisable151_31		= DisableHorseracing
+	    
 	     , @aDisableOutright	= DisableOutright
 	     , @aSyncCasino		    = syncCasino
-	     , @aSyncLiveCasino	    = SyncLiveCasino
+	  
 	     , @aSyncBingo			= SyncBingo
 	     , @aDisableBingo		= DisableBingo
 	     , @aDisableNumber		= DisableNumber
 	     , @aDisableCasino		= disableCasino
-	     , @aDisableLiveCasino  = DisableLiveCasino
-	     , @aDisable151_41		= DisableOpenTote
-	     , @aDisable151_51		= Disable151_AU
-	     , @aDisable152_41		= Disable152_UK
-	     , @aDisable152_51		= Disable152_AU
-	     , @aDisable153_51		= Disable153_AU
+	   
 	     , @aClosed			    = closed
 	     , @aSuspended			= reject
-	     , @aDisableHRFixedOdds = DisableHRFixedOdds
+	    
 	     , @aGivenCredit		= credit
 	     --, @aHideVirtualSports  = HideVirtualSports
 	     , @aHideKeno			= HideKeno
@@ -185,9 +158,7 @@ BEGIN
 			@ErrCode = 100			 
 		return
 	END
-		
-	SELECT @mSyncLiveCasino_Old = SyncLiveCasino FROM CustInfo WITH(NOLOCK) WHERE custid = @mrecommend_old
-	
+
 	SELECT @DisableAutoMPT = DisableAutoMPT 
 	from	custMaster with (nolock)
 	WHERE custid = @mrecommend
@@ -261,54 +232,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check Horse enable status:
-	IF @mdisable151_31 = 1 and @adisable151_31 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled SA Racing but new master not enabled SA Racing.',
-			@ErrCode = 107					 
-		return
-	END
-
-
-	--Check OpenTote enable status:
-	IF @mDisable151_41 = 1 and @aDisable151_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled UK/Irish Racing but new master not enabled UK/IRish Racing.',
-			@ErrCode = 108
-		return
-	END
-
-	--Check Horse Racing for Aust Tote
-	IF @mDisable151_51 = 1 and @aDisable151_51 = 0 
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled Aust Racing but new master not enabled Aust Racing .',
-			@ErrCode = 109
-		return
-	END
-
-	-- Check Greyhound for UK
-	IF @mDisable152_41 = 1 and @aDisable152_41 = 0 
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled UK Greyhound but new master not enabled UK Greyhound.',
-			@ErrCode = 110
-		return
-	END
-
-	-- Check Greyhound for UK
-	IF @mDisable152_51 = 1 and @aDisable152_51 = 0 
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled Aust Greyhound but new master not enabled Aust Greyhound.',
-			@ErrCode = 111
-		return
-	END
-
-	-- Check Harness for Aust
-	IF @mDisable153_51 = 1 and @aDisable153_51 = 0 
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent enabled Aust Harness but new master not enabled Aust Harness.',
-			@ErrCode = 112
-		return
-	END
 	
 	-- Check DCS Product's [disabled]
 	SELECT top 1 @DCSSportType = stt.SportType
@@ -384,13 +307,7 @@ BEGIN
 		RETURN
 	END
 
-	--Check Sync Live Casino
-	IF @mSyncLiveCasino = 0 AND @aSyncLiveCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is synchronized Casino but new master is not synchronized Casino.',
-			@ErrCode = 115				 
-		RETURN
-	END
+
 
 	/*
 	--Check Casino enable status
@@ -441,12 +358,6 @@ BEGIN
 		return
 	END
 
-	IF @mdisableHRFixedOdds = 1 and @adisableHRFixedOdds = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Horse Racing Fixed Odds but new master is not enabled Horse Racing Fixed Odds',
-			@ErrCode = 118
-		return
-	END
 
     --E-Sports
 	IF @mDisableEsports = 1 and @aDisableEsports = 0
@@ -488,14 +399,6 @@ BEGIN
 		return
 	end
 
-	--Check Horse, Casino, Number Game sync status:
-	IF exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @recommend and sporttype = 151)
-		AND not exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @mrecommend and sporttype = 151)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': master does not have Horse Racing setting.',
-			@ErrCode = 120					 
-		return
-	END
 
 	--Number Game
 	IF exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @recommend and sporttype = 161)
@@ -567,20 +470,6 @@ BEGIN
 		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s commission is less than agent''s commission.',
 			@ErrCode = 9114					 
 		return
-	END
-
-	--Check commission for live casino
-	IF EXISTS (
-			SELECT 1
-			FROM CustSettingGame mcs WITH(NOLOCK) 
-				INNER JOIN CustSettingGame acs WITH(NOLOCK) ON acs.custid = @recommend AND acs.sporttype = mcs.sporttype AND acs.bettype = mcs.bettype
-			WHERE mcs.custid = @mrecommend AND mcs.sporttype = 162 AND mcs.bettype = 1101
-				AND mcs.adiscount < acs.discount
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s commission for Live Casino is less than agent''s commission.',
-			@ErrCode = 202
-		RETURN
 	END
 
 	--Check commission for Keno
@@ -746,7 +635,7 @@ BEGIN
 			SELECT 1
 			FROM CustSettingGame mcs_old WITH(NOLOCK)
 				INNER JOIN	CustSettingGame mcs_new WITH(NOLOCK) ON mcs_new.custid = @mrecommend AND mcs_new.sporttype = mcs_old.sporttype AND mcs_new.bettype = mcs_old.bettype 
-			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(162,202) AND (mcs_old.bettype = 1101 OR mcs_old.bettype between 1501 and 1599)
+			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(202) AND (mcs_old.bettype = 1101 OR mcs_old.bettype between 1501 and 1599)
 			AND (mcs_old.isautopositiontaking <> mcs_new.isautopositiontaking)
 		)
 	BEGIN
@@ -827,22 +716,6 @@ BEGIN
 			@ErrCode = 207					 
 		return
 	END
-
-	--Check Position Taking for live casino
-		--check m3_master_old <= m3_master_new
-	
-	IF @mSyncLiveCasino_Old = 1 AND @mSyncLiveCasino = 1 AND EXISTS(
-			SELECT 1 
-			FROM CustSettingGame mcs_old WITH(NOLOCK) 
-				INNER JOIN CustSettingGame mcs_new WITH(NOLOCK) ON mcs_new.custid = @mrecommend AND mcs_new.sporttype = mcs_old.sporttype AND mcs_new.bettype = mcs_old.bettype
-			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype = 162 AND mcs_old.bettype = 1101
-				AND mcs_old.mpositiontaking > mcs_new.mpositiontaking	
-		)	
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @Mastername + ': Master Position Taking of new master is less than Master Position Taking of old master.',
-			@ErrCode = 208					 
-		return
-	END	
 
 	--Check Position Taking for Keno
 		--check m3_master_old <= m3_master_new
@@ -982,28 +855,6 @@ BEGIN
 		return
 	END
 
-		--Check for live casino
-		--m2+a2<=m3
-		--n3<= im = 0? m2+a2 : um2 + a2
-	IF @aSyncLiveCasino = 1 AND @mSyncLiveCasino = 1 AND EXISTS(
-			SELECT 1
-			FROM CustSettingGame mcs WITH(NOLOCK) 
-				INNER JOIN CustSettingGame acs WITH(NOLOCK) ON acs.custid = @recommend AND mcs.sporttype = acs.sporttype AND acs.bettype = mcs.bettype 
-				INNER JOIN CustOverrideGame mco WITH(NOLOCK) ON mco.custid = @mrecommend AND mco.sporttype = mcs.sporttype AND mco.bettype = mcs.bettype
-			WHERE mcs.custid = @mrecommend AND mcs.sporttype = 162 AND mcs.bettype = 1101			
-				AND (-- m2+a2<=m3
-					acs.mpositiontaking + acs.apositiontaking > mcs.mpositiontaking OR 
-					--n3<=m2+a2
-					(acs.isautompositiontaking = 0 AND acs.mpositiontaking + acs.apositiontaking < mco.minpositiontaking)
-					OR
-					(acs.isautompositiontaking = 1 AND acs.autompositiontaking + acs.apositiontaking < mco.minpositiontaking)
-				)
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Agent exceeded new master position taking.',
-			@ErrCode = 211
-		RETURN
-	END
 	
 		--Check for Keno
 		--m2+a2<=m3

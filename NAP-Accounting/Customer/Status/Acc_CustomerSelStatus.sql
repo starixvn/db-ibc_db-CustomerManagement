@@ -61,7 +61,7 @@ Revisions:
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -286,8 +286,7 @@ Param's Explanation:
 			ISNULL (closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
-			ISNULL(DisableHorseracing,0) AS DisableHorseracing,
-			ISNULL(DisableOpenTote,0) AS DisableOpenTote,
+	
 			ISNULL(DisableFinancial,0) AS DisableFI,
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
@@ -295,9 +294,7 @@ Param's Explanation:
 			ISNULL(DisableBingo,0) AS DisableBingo,
 			ISNULL(DisableNumber,0) AS DisableNumber,
 			ISNULL(DisableP2P,0) AS DisableP2P,	   
-			ISNULL(SyncBingo,0) AS SyncBingo,
-			ISNULL(DisableLiveCasino,0) AS DisableLiveCasino,
-			ISNULL(SyncLiveCasino,0) AS SyncLiveCasino,
+			ISNULL(SyncBingo,0) AS SyncBingo,			
 			ISNULL(srecommend, 0) AS SRecommend,
 			ISNULL(mrecommend, 0) AS MRecommend,
 			ISNULL(recommend, 0) as ARecommend,
@@ -308,7 +305,7 @@ Param's Explanation:
 			--ISNULL(DisableVirtualSports,0) as DisableVirtualSports,
 			--ISNULL(HideVirtualSports,0) as HideVirtualSports,
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
-			ISNULL(DisableHRFixedOdds,0) AS DisableHRFixedOdds,
+			
 			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
@@ -384,8 +381,7 @@ Param's Explanation:
 			ci.closed,
 			ci.autosuspend,
 			cm.DisableAutoMPT,
-			ci.DisableHorseracing, 
-			ci.DisableOpenTote, 
+		
 			ci.DisableFinancial, 
 			ci.SyncCasino, 
 			ci.DisableCasino, 
@@ -394,15 +390,13 @@ Param's Explanation:
 			ci.DisableNumber, 
 			ci.DisableP2P, 
 			ci.SyncBingo, 
-			ci.DisableLiveCasino, 
-			ci.SyncLiveCasino, 
 			ci.srecommend, 
 			ci.mrecommend, 
 			ci.recommend, 
 			--ci.DisableVirtualSports, 
 			--ci.HideVirtualSports, 
 			ci.DoubleCommLosing,
-			ci.DisableHRFixedOdds,
+		
 			ci.DisableEsports,
 			ci.HideKeno,
 			ci.DisableGoldDeluxe, 

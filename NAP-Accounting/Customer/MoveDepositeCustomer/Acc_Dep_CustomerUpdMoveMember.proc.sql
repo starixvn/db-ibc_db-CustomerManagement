@@ -1,12 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_Dep_CustomerUpdMoveMember]    Script Date: 06/11/2015 09:42:56 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Acc_Dep_CustomerUpdMoveMember    Script Date: 12/24/2013 2:49:26 AM ******/
-/****** Object:  Stored Procedure dbo.Acc_Dep_CustomerUpdMoveMember    Script Date: 12/5/2013 5:09:05 PM ******/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Dep_CustomerUpdMoveMember]
 	@agentname varchar(40),
 	@membername varchar(40),
@@ -52,6 +44,7 @@ Revisions:
 	- 20130723@Jim: change server alias name
 	- 20131108@Elodie: Splitting bodb02 into CustDB (Roll back updates on custinfo,customer table in main SP)  	
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]			
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  					
 	 
 Param's Explanation:
 • @ErrCode:
@@ -84,29 +77,15 @@ declare @srecommend			int,
 		@recommend_old		int, 
 		@currency_old		tinyint,
 		@custid				int, 
-		--== Enable/Disable HR, FI  ==--- 
-		@adisable151_31		bit,-- @adisableHR -> @adisable151_31 
-		@disable151_31		bit,-- @disableHR -> @disable151_31 
+		--== Enable/Disable HR, FI  ==--- 		
 		@adisableFI			bit, 
 		@disableFI			bit,
 		@aDisableOutright	bit,
 		@DisableOutright	bit,
 		@aSyncCasino		bit,
-		@SyncCasino			bit,
-		@aSyncLiveCasino 	bit,
-		@SyncLiveCasino  	bit,
+		@SyncCasino			bit,	
 		@aSyncBingo			bit,
-		@SyncBingo			bit,
-		@aDisable151_41		BIT,-- @aDisableOpenTote -> @aDisable151_41
-		@Disable151_41		BIT,-- @Disable151_41 -> @Disable151_41
-		@aDisable151_51		BIT,
-		@Disable151_51		BIT,
-		@aDisable152_41		BIT,
-		@Disable152_41		BIT,
-		@aDisable152_51		BIT,
-		@Disable152_51		BIT,
-		@aDisable153_51		BIT,
-		@Disable153_51		BIT,
+		@SyncBingo			bit,		
 		@aDisableBingo		BIT,
 		@DisableBingo		BIT,
 		@aDisableNumber		BIT,
@@ -127,18 +106,11 @@ declare @srecommend			int,
 select	@srecommend			= srecommend, 
 		@mrecommend			= mrecommend, 
 		@recommend			= recommend,
-		@acurrency			= currency, 
-		@adisable151_31		= DisableHorseracing, 
+		@acurrency			= currency, 		
 		@adisableFI			= DisableFinancial,
 		@aDisableOutright	= DisableOutright,
-		@aSyncCasino		= syncCasino,
-		@aSyncLiveCasino	= SyncLiveCasino,
-		@aSyncBingo			= syncBingo,
-		@aDisable151_41		= DisableOpenTote,
-		@aDisable151_51		= Disable151_AU,
-		@aDisable152_41		= Disable152_UK,
-		@aDisable152_51		= Disable152_AU,
-		@aDisable153_51		= Disable153_AU,
+		@aSyncCasino		= syncCasino,	
+		@aSyncBingo			= syncBingo,		
 		@aDisableBingo		= DisableBingo,
 		@aDisableNumber		= DisableNumber,
 		@aClosed			= closed,
@@ -154,18 +126,11 @@ select	@custid				= custid,
 		@recommend_old		= recommend, 
 		@srecommend_old		= srecommend, 
 		@mrecommend_old		= mrecommend,
-		@currency_old		= currency,
-		@disable151_31		= DisableHorseracing, 
+		@currency_old		= currency,		
 		@disableFI			= DisableFinancial,
 		@DisableOutright	= DisableOutright,
-		@SyncCasino			= SyncCasino ,
-		@SyncLiveCasino		= SyncLiveCasino,
-		@SyncBingo			= SyncBingo ,
-		@Disable151_41		= DisableOpenTote,
-		@Disable151_51		= Disable151_AU,
-		@Disable152_41		= Disable152_UK,
-		@Disable152_51		= Disable152_AU,
-		@Disable153_51		= Disable153_AU,
+		@SyncCasino			= SyncCasino ,	
+		@SyncBingo			= SyncBingo ,		
 		@DisableBingo		= DisableBingo,
 		@DisableNumber		= DisableNumber,
 		@Closed				= closed,
@@ -228,66 +193,6 @@ BEGIN
 	RETURN
 END
 
---Check Horse, FI enable status:
-if @adisable151_31 = 1 and @disable151_31 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled SA Racing but new agent is not enabled SA Racing.',
-		@ErrCode = 106					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
---Check OpenTote
-if @aDisable151_41 = 1 and @Disable151_41 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled UK/IRish Racing but new agent is not enabled UK/IRish Racing.',
-		@ErrCode = 107				 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
---Check Horse Racing for AU Tote
-if @aDisable151_51 = 1 and @Disable151_51 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Aust Racing but new agent is not enabled Aust Racing.',
-		@ErrCode = 108
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
---Check Greyhound for UK Tote
-if @aDisable152_41 = 1 and @Disable152_41 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled UK Greyhound but new agent is not enabled UK Greyhound.',
-		@ErrCode = 109				 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
---Check Greyhound for AU Tote
-if @aDisable152_51 = 1 and @Disable152_51 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Aust Greyhound but new agent is not enabled Aust Greyhound.',
-		@ErrCode = 110				 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
---Check Harness for AU Tote
-if @aDisable153_51 = 1 and @Disable153_51 = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Aust Harness but new agent is not enabled Aust Harness.',
-		@ErrCode = 111				 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
 if @adisableFI = 1 and @disableFI = 0
 BEGIN
 	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Finance but new agent is not enabled Finance.',
@@ -337,25 +242,8 @@ BEGIN
 	return
 END
 
-IF @aSyncLiveCasino = 0 AND @SyncLiveCasino = 1
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is synchronized Live Casino but new agent is not synchronized Live Casino.',
-		@ErrCode = 117
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
+
 ----------------------------------
---Check Horse, FI, Casino sync status:
-if exists(select 1 from dep_custsetting3rd with (nolock) where custid = @custid and sporttype = 151)
-	AND not exists(select 1 from dep_custsetting3rd with (nolock) where custid = @recommend and sporttype = 151)
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Horse Racing setting.',
-		@ErrCode = 118					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
 
 --number game
 if exists(select 1 from dep_custsetting3rd with (nolock) where custid = @custid and sporttype = 161)
@@ -386,31 +274,8 @@ BEGIN
 		RaisError (@ErrMsg, 16, 1)
 	return
 END
---live casino
-IF EXISTS (SELECT 1 FROM CustInfo WITH(NOLOCK) WHERE custid = @custid AND SyncLiveCasino = 1)
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already live Casino-synchronized.',
-		@ErrCode = 123					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
 
---Check identical auto master position taking for live casino
-IF EXISTS (
-		SELECT 1
-		FROM CustSettingGame acs_old WITH(NOLOCK) 
-			INNER JOIN CustSettingGame acs_new WITH(NOLOCK) ON acs_new.custid = @recommend AND acs_new.sporttype = acs_old.sporttype AND acs_new.bettype = acs_old.bettype
-		WHERE acs_old.custid = @recommend_old AND acs_old.sporttype = 162 AND acs_old.bettype = 1101
-			AND acs_old.isautompositiontaking <> acs_new.isautompositiontaking
-	)
-BEGIN
-	Select @ErrMsg = 'Error agent ' + @agentname + ': Auto Mater Position Taking of new agent is not matched with old agent.',
-		@ErrCode = 202					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
+
 
 ----Check P2P :Game Setting
 --IF exists(
@@ -484,19 +349,6 @@ DECLARE
 	@v201apositiontaking_2 SMALLMONEY,
 	@v201apositiontaking_3 SMALLMONEY,
 	
-	@v151apositiontaking_31 SMALLMONEY,
-	@v151apositiontaking_32 SMALLMONEY,
-	@v151apositiontaking_41 SMALLMONEY,
-	@v151apositiontaking_42 SMALLMONEY,
-	@v151apositiontaking_51 SMALLMONEY,
-	@v151apositiontaking_52 SMALLMONEY,
-	@v152apositiontaking_41 SMALLMONEY,
-	@v152apositiontaking_42 SMALLMONEY,
-	@v152apositiontaking_51 SMALLMONEY,
-	@v152apositiontaking_52 SMALLMONEY,
-	@v153apositiontaking_51 SMALLMONEY,
-	@v153apositiontaking_52 SMALLMONEY,
-	
 	@v161apositiontaking_81 SMALLMONEY,
 	@v161apositiontaking_83 SMALLMONEY,
 	--@v161apositiontaking_85 SMALLMONEY,
@@ -507,9 +359,7 @@ DECLARE
 	@v161alivepositiontaking_86 SMALLMONEY,
 	@v161alivepositiontaking_87 SMALLMONEY,
 	@v161alivepositiontaking_89 SMALLMONEY,
-	@v161alivepositiontaking_90 SMALLMONEY,
-	--livecasino
-	@v162apositiontaking_1101 SMALLMONEY
+	@v161alivepositiontaking_90 SMALLMONEY
 	
 
 SELECT @apositiontaking_1 = apositiontaking FROm dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=1 AND islive = 0
@@ -566,19 +416,6 @@ SELECT @v99apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOC
 SELECT @v201apositiontaking_2 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=201
 SELECT @v201apositiontaking_3 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=201
 
-SELECT @v151apositiontaking_31 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=31 AND sporttype=151
-SELECT @v151apositiontaking_32 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=32 AND sporttype=151
-SELECT @v151apositiontaking_41 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=41 AND sporttype=151
-SELECT @v151apositiontaking_42 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=42 AND sporttype=151
-SELECT @v151apositiontaking_51 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=51 AND sporttype=151
-SELECT @v151apositiontaking_52 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=52 AND sporttype=151
-SELECT @v152apositiontaking_41 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=41 AND sporttype=152
-SELECT @v152apositiontaking_42 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=42 AND sporttype=152
-SELECT @v152apositiontaking_51 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=51 AND sporttype=152
-SELECT @v152apositiontaking_52 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=52 AND sporttype=152
-SELECT @v153apositiontaking_51 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=51 AND sporttype=153
-SELECT @v153apositiontaking_52 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=52 AND sporttype=153
-
 SELECT @v161apositiontaking_81 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=81 AND sporttype=161
 SELECT @v161apositiontaking_83 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=83 AND sporttype=161
 SELECT @v161apositiontaking_86 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161 AND islive = 0
@@ -589,8 +426,6 @@ SELECT @v161alivepositiontaking_86 = apositiontaking FROM dep_custsetting3rd WIT
 SELECT @v161alivepositiontaking_87 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=87 AND sporttype=161
 SELECT @v161alivepositiontaking_89 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=89 AND sporttype=161
 SELECT @v161alivepositiontaking_90 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=90 AND sporttype=161
-
-SELECT @v162apositiontaking_1101 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 162 AND bettype = 1101
 
 
 print  'Move member '+@membername+' from agent id '+convert(varchar(20), @recommend_old)+' to agent '+@agentname+' (id ' + convert(varchar(20), @recommend)+')'
@@ -802,23 +637,6 @@ BEGIN
 			RaisError (@ErrMsg, 16, 1)
 		return
 END
---live casino
-
-UPDATE cs WITH(UPDLOCK,ROWLOCK)
-SET sdiscount = scs.sdiscount
-FROM CustSettingGame scs WITH(NOLOCK)
-	INNER JOIN CustSettingGame cs ON scs.custid = @srecommend AND scs.sporttype = cs.sporttype AND scs.bettype = cs.bettype
-WHERE cs.custid = @custid AND cs.sporttype = 162 AND cs.bettype = 1101
-	AND scs.sdiscount < cs.sdiscount
-
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update super commission unsuccessfully.',
-		@ErrCode = 308				 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
 
 
 --master 3rd
@@ -836,22 +654,7 @@ BEGIN
 			RaisError (@ErrMsg, 16, 1)
 		return
 END
---live casino
-UPDATE cs WITH(UPDLOCK,ROWLOCK) 
-SET adiscount = mcs.adiscount
-FROM CustSettingGame mcs WITH(NOLOCK) 
-	INNER JOIN CustSettingGame cs ON mcs.custid = @mrecommend AND mcs.sporttype = cs.sporttype AND mcs.bettype = cs.bettype 
-WHERE cs.custid = @custid AND cs.sporttype = 162 AND cs.bettype = 1101
-	AND mcs.adiscount < cs.adiscount
 
-IF @@ERROR <> 0
-BEGIN
-	Select @ErrMsg = 'update master commission unsuccessfully.',
-		@ErrCode = 311					 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
 
 --agent 3rd
 UPDATE	cs WITH (UPDLOCK,ROWLOCK)
@@ -869,22 +672,7 @@ BEGIN
 		return
 END
 
---live casino
-UPDATE cs WITH(UPDLOCK,ROWLOCK) 
-SET cs.discount = acs.discount
-FROM CustSettingGame acs WITH(NOLOCK)
-	INNER JOIN CustSettingGame cs ON acs.custid = @recommend AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-WHERE cs.custid = @custid AND cs.sporttype = 162 AND cs.bettype = 1101 
-	AND acs.discount < cs.discount
 
-IF @@ERROR <> 0
-BEGIN
-	Select @ErrMsg = 'update agent commission unsuccessfully.',
-		@ErrCode = 314					 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END	
 	
 --member 3rd
 UPDATE	cs WITH (UPDLOCK,ROWLOCK)
@@ -898,22 +686,6 @@ IF @@ERROR<>0
 BEGIN
 		Select @ErrMsg = 'update commission unsuccessfully.',
 		@ErrCode = 316				 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
---live casino 
-UPDATE cs WITH(UPDLOCK,ROWLOCK)
-SET playerdiscount = acs.discount
-FROM CustSettingGame acs WITH(NOLOCK) 
-	INNER JOIN CustSettingGame cs ON acs.custid = @recommend AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-WHERE cs.custid = @custid AND cs.sporttype = 162 AND cs.bettype = 1101 
-	AND acs.discount < cs.playerdiscount
-
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update commission unsuccessfully.',
-		@ErrCode = 317				 
 		if @ReturnErrCode = 0
 			RaisError (@ErrMsg, 16, 1)
 		return

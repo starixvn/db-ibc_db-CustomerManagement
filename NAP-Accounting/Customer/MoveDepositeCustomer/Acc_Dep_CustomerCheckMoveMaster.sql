@@ -13,6 +13,7 @@ AS
 	
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	Param's Explanation:
 	• @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -33,35 +34,19 @@ BEGIN
 			@mrecommend			INT,
 			@srecommend_old		INT, 
 			@scurrency			TINYINT, 
-			@mcurrency			TINYINT,
-			@sdisable151_31		BIT,-- @sdisableHR -> @sdisable151_31 
-			@mDisable151_31		BIT,-- @mdisableHR -> @mDisable151_31 
+			@mcurrency			TINYINT,			
 			@sdisableFI			BIT, 
 			@mdisableFI			BIT,
 			@sSyncCasino		BIT,
 			@mSyncCasino		BIT,
 			@sSyncBingo			BIT,
-			@mSyncBingo			BIT,
-			@sSyncLiveCasino	BIT,
-			@mSyncLiveCasino	BIT,
+			@mSyncBingo			BIT,		
 			@sIsInternal		BIT,
 			@mIsInternal		BIT,
 			@sDisableOutright	BIT,
 			@mDisableOutright	BIT,
 			@sDisableCasino		BIT,
-			@mDisableCasino		BIT,
-			@sDisableLiveCasino	BIT,
-			@mDisableLiveCasino BIT,
-			@mDisable151_41		BIT,-- @mDisableOpenTote -> @mDisable151_41
-			@sDisable151_41		BIT,-- @sDisableOpenTote -> @sDisable151_41
-			@mDisable151_51		BIT,
-			@sDisable151_51		BIT,
-			@mDisable152_41		BIT,
-			@sDisable152_41		BIT,
-			@mDisable152_51		BIT,
-			@sDisable152_51		BIT,
-			@mDisable153_51		BIT,
-			@sDisable153_51		BIT,
+			@mDisableCasino		BIT,		
 			@sDisableNumber		BIT,
 			@mDisableNumber		BIT,
 			@sDisableBingo		BIT,
@@ -80,20 +65,12 @@ BEGIN
 			@mDisableFunP2P		BIT
 
 	SELECT	@srecommend			= custid, 
-			@scurrency			= currency, 
-			@sdisable151_31		= DisableHorseracing, 
+			@scurrency			= currency, 			
 			@sdisableFI			= DisableFinancial,
 			@sSyncCasino		= SyncCasino,
-			@sSyncBingo			= SyncBingo,
-			@sSyncLiveCasino	= SyncLiveCasino,
+			@sSyncBingo			= SyncBingo,			
 			@sDisableOutright	= DisableOutright,
-			@sDisableCasino		= DisableCasino,
-			@sDisableLiveCasino = DisableLiveCasino,
-			@sDisable151_41		= DisableOpenTote ,
-			@sDisable151_51		= Disable151_AU,
-			@sDisable152_41		= Disable152_UK,
-			@sDisable152_51		= Disable152_AU,
-			@sDisable153_51		= Disable153_AU,
+			@sDisableCasino		= DisableCasino,		
 			@sDisableBingo		= DisableBingo,
 			@sDisableNumber		= DisableNumber,
 			@sClosed			= closed,
@@ -107,20 +84,12 @@ BEGIN
 
 	SELECT	@mrecommend			= custid, 
 			@srecommend_old		= srecommend, 
-			@mcurrency			= currency, 
-			@mDisable151_31		= DisableHorseracing, 
+			@mcurrency			= currency, 			
 			@mdisableFI			= DisableFinancial,
-			@mSyncCasino		= SyncCasino,
-			@mSyncLiveCasino	= SyncLiveCasino,
+			@mSyncCasino		= SyncCasino,		
 			@mSyncBingo			= SyncBingo,
 			@mDisableOutright	= DisableOutright,
-			@mDisableCasino		= DisableCasino,
-			@mDisableLiveCasino = DisableLiveCasino,
-			@mDisable151_41		= DisableOpenTote,
-			@mDisable151_51		= Disable151_AU,
-			@mDisable152_41		= Disable152_UK,
-			@mDisable152_51		= Disable152_AU,
-			@mDisable153_51		= Disable153_AU,
+			@mDisableCasino		= DisableCasino,			
 			@mDisableBingo		= DisableBingo,
 			@mDisableNumber		= DisableNumber,
 			@mSuspended			= reject,
@@ -185,53 +154,7 @@ BEGIN
 		RETURN
 	END
 
-	--Check Horse, FI status:
-	IF @sdisable151_31 = 1 AND @mDisable151_31 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled SA Racing but new super not enabled SA Racing.',
-			@ErrCode = 107					 
-		RETURN
-	END
 
-	--Check OpenTote
-	IF @sDisable151_41 = 1 AND @mDisable151_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK/IRish Racing but new super not enabled UK/IRish Racing.',
-			@ErrCode = 108				 
-		RETURN
-	END
-
-	--Check Horse Racing for AU Tote
-	IF @sDisable151_51 = 1 AND @mDisable151_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Racing but new super not enabled Aust Racing.',
-			@ErrCode = 109			 
-		RETURN
-	END
-
-	--Check Greyhound for UK Tote
-	IF @sDisable152_41 = 1 AND @mDisable152_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK Greyhound but new super not enabled UK Greyhound.',
-			@ErrCode = 110		 
-		RETURN
-	END
-
-	--Check Greyhound for AU Tote
-	IF @sDisable152_51 = 1 AND @mDisable152_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Aust Greyhound but new super not enabled Aust Greyhound.',
-			@ErrCode = 111			 
-		RETURN
-	END
-
-	--Check Harness for AU Tote
-	IF @sDisable153_51 = 1 AND @mDisable153_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Harness but new super not enabled Aust Harness.',
-			@ErrCode = 112			 
-		RETURN
-	END
 
 	IF @sdisableFI = 1 AND @mdisableFI = 0
 	BEGIN
@@ -264,13 +187,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check Casino sync:
-	IF @sSyncLiveCasino = 0 AND @mSyncLiveCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Casino but new super is not synchronized Casino.',
-			@ErrCode = 116					 
-		RETURN
-	END
 
 	--Check Bingo & Number status:
 	IF @sdisableBingo = 1 AND @mdisableBingo = 0
@@ -328,20 +244,6 @@ BEGIN
 		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': super commission is less than master commission.',
 			@ErrCode = 203				 
 		RETURN
-	END
-
-	--Check commission for live casino 
-	IF EXISTS(
-			SELECT 1 
-			FROM CustSettingGame AS scs WITH(NOLOCK)
-				INNER JOIN CustSettingGame mcs WITH(NOLOCK) ON mcs.custid = @mrecommend AND scs.sporttype = mcs.sporttype AND scs.bettype = mcs.bettype
-			WHERE scs.custid = @srecommend AND scs.sporttype = 162 AND scs.bettype = 1101
-				 AND scs.sdiscount < mcs.adiscount
-	)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @mastername + ': super commission is less than master commission.',
-				@ErrCode = 204
-		RETURN	
 	END
 
 	--Check Position Taking
