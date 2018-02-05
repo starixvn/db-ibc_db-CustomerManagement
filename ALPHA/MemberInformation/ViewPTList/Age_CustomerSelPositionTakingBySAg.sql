@@ -30,7 +30,7 @@ AS
 		- 20160627@Helen: Provide dedicated Outright PT for each sport - [Redmine: 59438]
 		- 20170302@Helen: BAIO - Cust setting - [Redmine: 71609]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
-		
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -146,8 +146,6 @@ BEGIN
 			-- Mix Parlay of Mixed Sports
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_9,
 
-			-- HR Fixed Odds
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.spositiontaking else 0 end) as v154spositiontaking_20,
 			
 			-- Cricket
 			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_501_Live, 

@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelBetSetting]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerSelBetSetting]
 	@custid int,
 	@userid int
 AS
@@ -13,7 +14,7 @@ Revisions:
 	- 20101029@Johnson: Inlcude max per ball for number game
 	- 20131021@Kathy: Add HR Fixed Odds (154) [Redmine:#6505]
 	- 20161109@Helen: Separate Bet Setting for Soccer - Parlay - [Redmine:66265]
-	
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 */
@@ -27,8 +28,7 @@ Declare @MinBet_Max money, @MaxBet_Min money, @MaxPerMatch_Min money, @MaxPerMat
 		@MinBetv8_Max money, @MaxBetv8_Min money, @MaxPerMatchv8_Min money, @MaxPerMatchv8_Max money,
 		@MinBetv10_Max money, @MaxBetv10_Min money, @MaxPerMatchv10_Min money, @MaxPerMatchv10_Max money,
 		@MinBetv11_Max money, @MaxBetv11_Min money, @MaxPerMatchv11_Min money, @MaxPerMatchv11_Max money,
-		@MinBetv99_Max money, @MaxBetv99_Min money, @MaxPerMatchv99_Min money, @MaxPerMatchv99_Max money,
-		@MinBetv154_Max money, @MaxBetv154_Min money, @MaxPerMatchv154_Min money, @MaxPerMatchv154_Max money,
+		@MinBetv99_Max money, @MaxBetv99_Min money, @MaxPerMatchv99_Min money, @MaxPerMatchv99_Max money,	
 		@MinBetv161_Max money, @MaxBetv161_Min money, @MaxPerMatchv161_Min money, @MaxPerMatchv161_Max money, 
 		@MaxPerBallv161_Min MONEY, @MaxPerBallv161_Max MONEY,
 		@MinBetv99MP_Max money, @MaxBetv99MP_Min money, @MaxPerMatchv99MP_Min money, @MaxPerMatchv99MP_Max money,
@@ -46,7 +46,7 @@ EXEC Age_CustomerSelMinMaxLimit @custid, @userid,
 		@MinBetv99_Max = @MinBetv99_Max output, @MaxBetv99_Min = @MaxBetv99_Min output, @MaxPerMatchv99_Min = @MaxPerMatchv99_Min output, @MaxPerMatchv99_Max = @MaxPerMatchv99_Max output,		
 		@MinBetv99MP_Max = @MinBetv99MP_Max output, @MaxBetv99MP_Min = @MaxBetv99MP_Min output, @MaxPerMatchv99MP_Min = @MaxPerMatchv99MP_Min output, @MaxPerMatchv99MP_Max = @MaxPerMatchv99MP_Max output,
 		@MinBetv1MP_Max = @MinBetv1MP_Max output, @MaxBetv1MP_Min = @MaxBetv1MP_Min output, @MaxPerMatchv1MP_Min = @MaxPerMatchv1MP_Min output, @MaxPerMatchv1MP_Max = @MaxPerMatchv1MP_Max output,
-		@MinBetv154_Max = @MinBetv154_Max output, @MaxBetv154_Min = @MaxBetv154_Min output, @MaxPerMatchv154_Min = @MaxPerMatchv154_Min output, @MaxPerMatchv154_Max = @MaxPerMatchv154_Max output,
+	
 		@MinBetv161_Max = @MinBetv161_Max output, @MaxBetv161_Min = @MaxBetv161_Min output, @MaxPerMatchv161_Min = @MaxPerMatchv161_Min output, @MaxPerMatchv161_Max = @MaxPerMatchv161_Max output, @MaxPerBallv161_Min = @MaxPerBallv161_Min output, @MaxPerBallv161_Max = @MaxPerBallv161_Max output
 		 
 
@@ -61,8 +61,7 @@ SELECT
 	isnull(ci.maxpermatch11, 0) as maxpermatchv11,
 	isnull(ci.maxpermatch99, 0) as maxpermatchv99,
 	isnull(ci.maxpermatch99MP, 0) as maxpermatchv99MP,
-	isnull(ci.maxpermatch1MP, 0) as maxpermatchv1MP,
-	isnull(ci.maxpermatch154, 0) as maxpermatchv154,
+	isnull(ci.maxpermatch1MP, 0) as maxpermatchv1MP,	
 	isnull(ci.maxpermatch161, 0) as maxpermatchv161,
 	isnull(ci.maxperball161,0) as maxperballv161,
 	
@@ -95,9 +94,6 @@ SELECT
 
 	isnull(max(case when cs.bettype = 9 and cs.sporttype=1 then cs.minbet else 0 end), 0) as MinBetv1MP,
 	isnull(max(case when cs.bettype = 9 and cs.sporttype=1 then cs.maxbet else 0 end), 0) as MaxBetv1MP,
-
-	isnull(max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.minbet else 0 end), 0) as MinBetv154,
-	isnull(max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.maxbet else 0 end), 0) as MaxBetv154,
 	
 	isnull(max(case when cs3.bettype = 81 and cs3.sporttype=161 then cs3.minbet else 0 end), 0) as MinBetv161,
 	isnull(max(case when cs3.bettype = 81 and cs3.sporttype=161 then cs3.maxbet else 0 end), 0) as MaxBetv161,
@@ -153,10 +149,6 @@ SELECT
 	IsNull(@MaxPerMatchv1MP_Min, 0) as MaxPerMatchv1MP_Min,	
 	IsNull(@MaxPerMatchv1MP_Max, 0) as MaxPerMatchv1MP_Max,
 	
-	Isnull(@MinBetv154_Max, 0) as MinBetv154_Max,
-	Isnull(@MaxBetv154_Min, 0) as MaxBetv154_Min,
-	isnull(@MaxPerMatchv154_Min, 0) as MaxPerMatchv154_Min,
-	isnull(@MaxPerMatchv154_Max, 0) as MaxPerMatchv154_Max,
 
 	IsNull(@MinBetv161_Max, 0) as MinBetv161_Max,	
 	IsNull(@MaxBetv161_Min, 0) as MaxBetv161_Min,	
@@ -182,7 +174,6 @@ group by
 	ci.maxpermatch99,
 	ci.maxpermatch99MP,
 	ci.maxpermatch1MP,
-	ci.maxpermatch154,
 	ci.maxpermatch161,
 	ci.maxperball161
 

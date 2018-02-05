@@ -30,7 +30,7 @@ AS
 		- 20160627@Helen: Provide dedicated Outright PT for each sport - [Redmine: 59438]
 		- 20170302@Helen: BAIO - Cust setting - [Redmine: 71609]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
-		
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -218,9 +218,6 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_9,
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_9,
 
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.apositiontaking else 0 end) as v154apositiontaking_20,
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.mpositiontaking else 0 end) as v154mpositiontaking_20,
-			
 			-- Cricket
 			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.AgentPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50apositiontaking_501_Live, 
 			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.MasterPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50mpositiontaking_501_Live, 

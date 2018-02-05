@@ -54,6 +54,8 @@ AS
 		- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 		- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
 		- 20171020@Percy: Apply core SP [RedmineID: #84690]
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+
 	
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -114,7 +116,7 @@ BEGIN
 
           --, @uplineDisableVirtualSports BIT
           , @uplineDoubleCommLosing     BIT
-          , @uplineDisableHRFixedOdds   BIT
+        
           , @uplineDisableEsports       BIT
 		  , @uplineDisableGoldDeluxe	BIT
 		  , @HasDownline				BIT = 0
@@ -148,7 +150,7 @@ BEGIN
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	         
 	         , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -188,7 +190,7 @@ BEGIN
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	        
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -230,7 +232,7 @@ BEGIN
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	        
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -328,7 +330,7 @@ BEGIN
 	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
 	    --ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
 	    ISNULL(@uplineDoubleCommLosing,0) as [uplineDoubleCommLosing],
-	    ISNULL(@uplineDisableHRFixedOdds,0) AS [uplineDisableHRFixedOdds],
+	  
 	    ISNULL(@uplineDisableEsports, 0) AS uplineDisableEsports,
 		ISNULL(@uplineDisableGoldDeluxe, 0) AS uplineDisableGoldDeluxe,
 		ISNULL(@uplineDisableColossusBet, 0) AS uplineDisableColossusBet,
@@ -354,14 +356,12 @@ BEGIN
 	    ci.disablecasino,
 	    ci.syncbingo,
 	    ci.disablebingo,
-	    c.creatdate AS createdate,
-	    ci.DisableLiveCasino,
-	    ci.SyncLiveCasino,
+	    c.creatdate AS createdate,	 
 	    --ci.DisableVirtualSports,
 	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,
 	    --ci.DisableP2P, 
-	    ci.DisableHRFixedOdds,
+	   
 	    ci.HideKeno,
 	    ci.DisableEsports,
 		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,

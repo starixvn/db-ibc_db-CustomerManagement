@@ -39,7 +39,7 @@ Revisions:
 	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 */
@@ -205,10 +205,8 @@ Param's Explanation:
 		   Customer.roleid as roleid,
 		   ci.synccasino,
 		   ci.syncbingo,
-		   ci.disablecasino,
-		   ci.disablelivecasino,
-		   ci.DisableBingo,
-		   ci.synclivecasino,
+		   ci.disablecasino,		
+		   ci.DisableBingo,		
 		   @HasDownline AS HasDownline,
 		   @IsDisabledDownline AS DisableCasinoDownline,
 		   ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,

@@ -13,6 +13,7 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports)
         - 20151021@Billy: Add support for DCS -- UNION with ProductSettingDetail		
 		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 */
 
 SET NOCOUNT ON
@@ -23,10 +24,12 @@ DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 BEGIN TRY
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
+	WHERE Sporttype NOT IN(151,152,153,154)
 END TRY
 BEGIN CATCH
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
+	WHERE Sporttype NOT IN(151,152,153,154)
 END CATCH
 ----- 20150610@Kos -------------------
 

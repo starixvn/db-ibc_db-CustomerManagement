@@ -1,10 +1,8 @@
-﻿USE [CustDB]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+USE [CustDB]
 GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdMasterComm]    Script Date: 06/11/2015 12:38:11 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+
 /****** Object:  Stored Procedure dbo.Age_CustomerUpdMasterComm    Script Date: 12/5/2013 4:35:18 PM ******/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdMasterComm]	
 	@custid int, --customer to be updated
@@ -13,8 +11,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMasterComm]
 	@groupc decimal(9,8),
 	@groupd decimal(9,8),
 	@discount1x2 decimal(9,8),
-	@discountcs decimal(9,8),
-	@discountHRFixedOdds decimal(9,8) = 0,	
+	@discountcs decimal(9,8),	
 	@discountnumber decimal(9,8),
 	@discountMyanmarOdds DECIMAL(9,8)=0,
 	@userid int, --updater Id	
@@ -42,7 +39,7 @@ Revisions:
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
-	
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @groupa: groupa's discount value
@@ -87,7 +84,7 @@ Param's Explanation:
 		@groupd_old decimal(9,8),
 		@discountcs_old decimal(9,8),
 		@discount1x2_old decimal(9,8),	
-		@discountHRFixedOdds_old decimal(9,8),
+	
 		@discountnumber_old decimal(9,8)
 
 	-- Update Master Commission --
@@ -114,14 +111,12 @@ Param's Explanation:
 	select @discount1x2_old = adiscount
 	from custsetting (nolock) where custid = @custid and sporttype = 1 and bettype = 5
 
-	select @discountHRFixedOdds_old = adiscount
-	from custsetting (nolock) where custid = @custid and sporttype = 154 and bettype = 20
 
 	select @discountnumber_old = adiscount
 	from custsetting3rd (nolock) where custid = @custid and sporttype = 161 and bettype = 81
 
 	if (@groupa_old <> @groupa) or (@groupb_old <> @groupb) or (@groupc_old <> @groupc) or (@groupd_old <> @groupd)
-		or (@discountcs_old <> @discountcs) or (@discount1x2_old <> @discount1x2) or (@discountnumber_old <> @discountnumber) or (@discountHRFixedOdds_old <> @discountHRFixedOdds)
+		or (@discountcs_old <> @discountcs) or (@discount1x2_old <> @discount1x2) or (@discountnumber_old <> @discountnumber) 
 		OR (@IsMyanmarOdds = 1 AND @discountMyanmarOdds <> @discountMyanmarOdds_old)
 		set @updatecomm_old = 1
 	else 
@@ -139,7 +134,6 @@ Param's Explanation:
 			@discountcs = @discountcs, --other comm
 			@discount1x2 = @discount1x2, --1x2 
 			@discountnumber = @discountnumber,
-			@discountHRFixedOdds = @discountHRFixedOdds, --1x2
 			
 			@IsMyanmarOdds = @IsMyanmarOdds,
 			@discountMyanmarOdds = @discountMyanmarOdds,

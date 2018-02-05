@@ -54,7 +54,7 @@ Revisions:
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171027@Johnson: fix the unsynchronized setting, add SyncGDUpline [Redmine: #72973]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
 */
@@ -197,18 +197,7 @@ BEGIN
 	       ISNULL(cu.iplogin, '') lastloginip,
 	       ci.DoubleCommLosing,
 	       ISNULL(ci.DisableOutright, 0) DisableOutright,
-	       ISNULL(CASE
-	                WHEN ci.disablehorseracing = 0 OR ci.disableOpenTote = 0
-	                  OR ci.disable151_au = 0 OR ci.disable152_uk = 0
-					  OR ci.disable152_au = 0 OR ci.disable153_au = 0 THEN 0
-					ELSE 1
-				  END ,0) Disable151,
-	       ISNULL(ci.disablehorseracing, 0) disable151_31,
-	       ISNULL(ci.disableOpenTote, 0) disable151_41,
-	       ISNULL(ci.disable151_au, 0) disable151_51,
-	       ISNULL(ci.disable152_uk, 0) disable152_41,
-	       ISNULL(ci.disable152_au, 0) disable152_51,
-	       ISNULL(ci.disable153_au, 0) disable153_51,
+	      
 	       -- FOR casino
 	       ci.synccasino,
 	       ci.disablecasino,
@@ -220,8 +209,7 @@ BEGIN
 	       ci.DisableP2P,
 	       ci.DisableFunP2P,
 	       -- FOR live casino
-	       ci.DisableLiveCasino,
-	       ci.SyncLiveCasino,
+	 
 	       -- FOR VirtualSports
 	       --ci.DisableVirtualSports,
 	       ci.DoubleCommLosing,
@@ -230,7 +218,7 @@ BEGIN
 	       ci.DisableEsports,
 
            ci.DisableCasinoBonus,
-           ci.DisableHRFixedOdds,
+        
            -- FOR Keno
            ci.HideKeno,
            MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) DisableKeno,
@@ -313,13 +301,12 @@ BEGIN
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject, 0), cu.username) RowNumber
       FROM dbo.customer cu WITH(NOLOCK)
 		INNER JOIN (SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
-							MatchLimit, VirtualMultiplier, Enabled, DisableHorseRacing,
+							MatchLimit, VirtualMultiplier, Enabled, 
 							DisableFinancial, DisableCasino, SyncCasino, DisableOutright,
-							DisableOpenTote, DisableBingo, DisableNumber, SyncBingo,
-							disable151_au, disable152_uk, disable152_au, disable153_au,
-							isAutoResetP2P, DisableP2P, DisableFunP2P, DisableLiveCasino, SyncLiveCasino, 
+							DisableBingo, DisableNumber, SyncBingo,							
+							isAutoResetP2P, DisableP2P, DisableFunP2P, 
 							--DisableVirtualSports, HideVirtualSports, 
-							DoubleCommLosing, DisableCasinoBonus, DisableHRFixedOdds,
+							DoubleCommLosing, DisableCasinoBonus, 
 							HideKeno, DisableEsports, DisableGoldDeluxe, HideGoldDeluxe, DisableColossusBet,HideColossusBet,
 							(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
 							FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @mrecommend) as SyncGoldDeluxeUpline,
@@ -478,16 +465,12 @@ BEGIN
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
 	  GROUP BY cu.custid, cu.username, ci.enabled,ci.closed,ci.reject,cu.roleid,
 			cu.firstname, cu.lastname,
-			cu.creatdate ,cu.iplogin,ci.DoubleCommLosing,ci.DisableOutright,  
-			ci.disablehorseracing,ci.disableOpenTote,ci.disable151_au,ci.disable152_uk,ci.disable152_au,
-			ci.disable153_au,ci.disablehorseracing,ci.disableOpenTote,ci.disable151_au,ci.disable152_uk,
-			ci.disable152_au,ci.disable153_au,
+			cu.creatdate ,cu.iplogin,ci.DoubleCommLosing,ci.DisableOutright,  	
 			ci.synccasino,ci.disablecasino,  
 			ci.syncBingo,ci.DisableBingo, ci.DisableNumber,  
-			ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P,  
-			ci.DisableLiveCasino, ci.SyncLiveCasino,  
+			ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P, 
 			--ci.DisableVirtualSports, ci.HideVirtualSports,	
-			ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.DisableHRFixedOdds, ci.HideKeno, ci.DisableEsports,
+			ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.HideKeno, ci.DisableEsports,
 			ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting,
 			ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet,ci.HideAllBetUpline, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 			ci.HideCricket,ci.DisableCricket,cdm.Discount,

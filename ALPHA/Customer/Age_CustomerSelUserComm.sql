@@ -1,4 +1,5 @@
-﻿alter PROCEDURE [dbo].[Age_CustomerSelUserComm]
+﻿/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+alter PROCEDURE [dbo].[Age_CustomerSelUserComm]
 	@custid int,
 	@userid int --upline id
 AS
@@ -15,13 +16,14 @@ Revisions:
 	- 20131018@Kathy: Add HR Fixed Odds (154) [Redmine:#6505]
 	- 20131227@Kathy: Correct column name discountHRFixedOdds_max
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 */
 
 	SET NOCOUNT ON
 
-	DECLARE @ga decimal(9,8), @gb decimal(9,8), @gc decimal(9,8), @gd decimal(9,8), @dis decimal(9,8), @dis1x2 decimal(9,8),@disnumber decimal(9,8), @disHRFixedOdds decimal(9,8)
+	DECLARE @ga decimal(9,8), @gb decimal(9,8), @gc decimal(9,8), @gd decimal(9,8), @dis decimal(9,8), @dis1x2 decimal(9,8),@disnumber decimal(9,8)
 	DECLARE @RoleId INT
 	
 	DECLARE @playerdiscountMyanmarOdds DECIMAL(9,8)=0,
@@ -58,8 +60,6 @@ Param's Explanation:
 			ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.discount ELSE 0 END), 0) AS discountnumber,
 			ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.playerdiscount ELSE 0 END), 0) AS playerdiscountnumber,
 
-			Isnull(max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.discount else 0 end), 0) as discountHRFixedOdds,
-			isnull(max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.playerdiscount else 0 end), 0) as playerdiscountHRFixedOdds,
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(@playerdiscountMyanmarOdds,0) AS playerdiscountMyanmarOdds,
 			ISNULL(@discountMyanmarOdds,0) AS discountMyanmarOdds
@@ -88,8 +88,7 @@ Param's Explanation:
 			@gd = MAX(CASE WHEN acs.bettype = 1 AND acs.sporttype=1 THEN acs.groupd ELSE 0 END),
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.adiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.adiscount ELSE 0 END), --other comm	
-			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.adiscount ELSE 0 END),
-			@disHRFixedOdds = max(case when acs.bettype = 20 and acs.sporttype = 154 then acs.adiscount else 0 end) -- HR Fixed Odds
+			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.adiscount ELSE 0 END)
 				
 		FROM custsetting as acs WITH (NOLOCK)
 		INNER JOIN Custsetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
@@ -103,7 +102,7 @@ Param's Explanation:
 			MAX(CASE WHEN cs.bettype = 5 AND cs.sporttype=1 THEN cs.discount ELSE 0 END) AS discount1x2, --1x2 comm
 			MAX(CASE WHEN cs.bettype = 4 AND cs.sporttype=1 THEN cs.discount ELSE 0 END) AS discountcs, --other comm		
 			MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.discount ELSE 0 END) AS discountnumber,
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.discount else 0 end) as discountHRFixedOdds,
+			
 			@ga AS groupa_max,
 			@gb AS groupb_max,
 			@gc AS groupc_max,
@@ -111,7 +110,7 @@ Param's Explanation:
 			@dis1x2 AS discount1x2_max,
 			@dis AS discountcs_max,
 			@disnumber as discountnumber_max		,
-			@disHRFixedOdds as discountHRFixedOdds_max,
+		
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(@discountMyanmarOdds,0.00) AS discountMyanmarOdds,
 			ISNULL(@adiscountMyanmarOdds,0.00) AS discountMyanmarOdds_Max 
@@ -143,8 +142,8 @@ Param's Explanation:
 			@gd = MAX(CASE WHEN acs.bettype = 1 AND acs.sporttype=1 THEN acs.groupd ELSE 0 END),
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --other comm		
-			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.sdiscount ELSE 0 END),
-			@disHRFixedOdds = max(case when acs.bettype = 20 and acs.sporttype = 154 then acs.sdiscount else 0 end)-- HR Fixed Odds
+			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.sdiscount ELSE 0 END)
+			
 		FROM custsetting as acs WITH (NOLOCK)
 		INNER JOIN CustSetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
 		WHERE acs.custid = @SRecommend
@@ -157,7 +156,7 @@ Param's Explanation:
 			MAX(CASE WHEN cs.bettype = 5 AND cs.sporttype=1 THEN cs.adiscount ELSE 0 END) AS discount1x2, --1x2 comm
 			MAX(CASE WHEN cs.bettype = 4 AND cs.sporttype=1 THEN cs.adiscount ELSE 0 END) AS discountcs, --other comm	
 			MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.adiscount ELSE 0 END) AS discountnumber,	
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.adiscount else 0 end) as discountHRFixedOdds,
+		
 			@ga AS groupa_max,
 			@gb AS groupb_max,
 			@gc AS groupc_max,
@@ -165,7 +164,7 @@ Param's Explanation:
 			@dis1x2 AS discount1x2_max,
 			@dis AS discountcs_max,
 			@disnumber AS discountnumber_max,
-			@disHRFixedOdds as discountHRFixedOdds_max,
+			
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(@discountMyanmarOdds,0.00) AS discountMyanmarOdds,
 			ISNULL(@sdiscountMyanmarOdds,0.00) AS discountMyanmarOdds_Max 
@@ -194,8 +193,8 @@ Param's Explanation:
 			@gd = MAX(CASE WHEN acs.bettype = 1 AND acs.sporttype=1 THEN acs.groupd ELSE 0 END),
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --other comm		
-			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.sdiscount ELSE 0 END),
-			@disHRFixedOdds = max(case when acs.bettype = 20 and acs.sporttype = 154 then acs.sdiscount else 0 end)-- HR Fixed Odds
+			@disnumber = MAX(CASE WHEN acs3.bettype = 81 AND acs3.sporttype=161 THEN acs3.sdiscount ELSE 0 END)
+			
 		FROM custsetting as acs WITH (NOLOCK)
 		INNER JOIN CustSetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
 		WHERE acs.custid = @custid
@@ -208,7 +207,7 @@ Param's Explanation:
 			MAX(CASE WHEN cs.bettype = 5 AND cs.sporttype=1 THEN cs.sdiscount ELSE 0 END) AS discount1x2, --1x2 comm
 			MAX(CASE WHEN cs.bettype = 4 AND cs.sporttype=1 THEN cs.sdiscount ELSE 0 END) AS discountcs, --other comm	
 			MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.sdiscount ELSE 0 END) AS discountnumber,	
-			max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.sdiscount else 0 end) as discountHRFixedOdds,
+			
 			@ga AS groupa_max,
 			@gb AS groupb_max,
 			@gc AS groupc_max,
@@ -216,7 +215,7 @@ Param's Explanation:
 			@dis1x2 AS discount1x2_max,
 			@dis AS discountcs_max,
 			@disnumber AS discountnumber_max,
-			@disHRFixedOdds as discountHRFixedOdds_max,
+			
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(@discountMyanmarOdds,0.00) AS discountMyanmarOdds,
 			ISNULL(@sdiscountMyanmarOdds,0.00) AS discountMyanmarOdds_Max 

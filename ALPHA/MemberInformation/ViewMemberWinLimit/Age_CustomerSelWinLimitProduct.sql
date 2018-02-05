@@ -1,3 +1,4 @@
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct @CustId INT
 AS
 /*  
@@ -8,19 +9,11 @@ AS
 		- 20151223@Patrick:	Add Max/Loss limit for RnG Casino [Redmine: #49528]
 		- 20160216@Billy:	Integrate to support DCS Products - [Redmine: #52268]
 		- 20160413@Billy:	Remove Site Currency check - [Redmine: #54672]
-
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	Param's Explanation: 
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50))
-	--live cs
-	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND SyncLiveCasino = 1)
-	BEGIN
-		INSERT INTO @Products(BetType, SportType, ProductName)
-		SELECT 1101, 162, ProductName
-		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 4
-		--VALUES(1101, 162, 'Live Casino')
-	END
 	--gold deluxe
 	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND HideGoldDeluxe = 0)
 	BEGIN
