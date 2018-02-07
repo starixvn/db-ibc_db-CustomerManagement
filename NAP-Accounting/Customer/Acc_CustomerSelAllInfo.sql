@@ -93,6 +93,7 @@ Revisions:
 		1. Move code of balance part into new nested sp [RedmineID: #73606]
 		2. Change yesterday balance formula + Integrate Bullfighting [RedmineID: #84692]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20180205@Johnson: remove downline NG/CB/GD/CS status for new direction [RedmineID: #87328]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -104,15 +105,12 @@ BEGIN
           , @uplineid INT
           , @roleid TINYINT
           , @UsedCredit MONEY     
-          , @DisableDownlinesCS BIT       
-          , @DisableDownlinesNumber BIT          
+          
           --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
-          , @DownlinesSelectedBetting BIT
-		  , @DisableDownlinesGoldDeluxe BIT
+          , @DownlinesSelectedBetting BIT		  
 		  , @IsSyncUplineGoldDeluxe BIT
-		  , @DisabledUplineGoldDeluxe BIT
-		  , @DisableDownlinesColossusBet BIT 
+		  , @DisabledUplineGoldDeluxe BIT		  
 		  , @DisableDownlinesSuperLive BIT
           , @IsInternal BIT
           , @LimitPerIP TINYINT
@@ -166,15 +164,6 @@ BEGIN
 	    RETURN
     -----------------------------	
 
-    SELECT @DisableDownlinesCS = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableCasino = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableCasino = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableCasino = 1) 											
-										      ELSE 0 END
-
-    SELECT @DisableDownlinesNumber = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableNumber = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableNumber = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableNumber = 1) 											 
-										      ELSE 0 END	
  
     										  
     --SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
@@ -186,16 +175,6 @@ BEGIN
 											WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
 											WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE recommend = @custid  AND DisableEsports = 1)
 											ELSE 0 END
-
-    SELECT @DisableDownlinesGoldDeluxe = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableGoldDeluxe = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableGoldDeluxe = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableGoldDeluxe = 1) 											 
-										      ELSE 0 END
-
-	SELECT @DisableDownlinesColossusBet = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableColossusBet = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid  AND DisableColossusBet = 1) 											 
-										      ELSE 0 END	
 										      
 	SELECT @DisableDownlinesSuperLive = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableSuperLive = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableSuperLive = 1) 											 
@@ -521,13 +500,9 @@ BEGIN
 	    ci.danger3,
 	    ci.Abnormal,
 	    ci.closed, ci.reject as suspended, ci.autosuspend,		 
-	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,	  
-	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,	
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
-		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,
-		ISNULL(@DisableDownlinesGoldDeluxe,0) DisableDownlinesGoldDeluxe,
-		ISNULL(@DisableDownlinesColossusBet,0) DisableDownlinesColossusBet,
+		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
 		ISNULL(@DisableDownlinesSuperLive,0) DisableDownlinesSuperLive,
 		@IsSyncUplineGoldDeluxe AS IsSyncUplineGoldDeluxe,
 		@DisabledUplineGoldDeluxe AS DisabledUplineGoldDeluxe,
