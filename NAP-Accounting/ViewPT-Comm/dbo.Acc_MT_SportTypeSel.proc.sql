@@ -24,12 +24,12 @@ DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 BEGIN TRY
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154)
+	WHERE Sporttype NOT IN(151,152,153,154,206,252,253)
 END TRY
 BEGIN CATCH
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154)
+	WHERE Sporttype NOT IN(151,152,153,154,206,252,253)
 END CATCH
 ----- 20150610@Kos -------------------
 
