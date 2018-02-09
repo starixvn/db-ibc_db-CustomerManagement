@@ -142,13 +142,13 @@ BEGIN
 					
 					--new range logactionid for status by level
 					SELECT @LowerActionId = CASE @roleid WHEN 4 THEN 60000
-														WHEN 3 THEN 61000
-														WHEN 2 THEN 62000
-														WHEN 1 THEN 63000 END,
-							@UpperActionId = CASE @roleid WHEN 4 THEN 60999
-														WHEN 3 THEN 61999
-														WHEN 2 THEN 62999
-														WHEN 1 THEN 63999 END									
+														WHEN 3 THEN 65000
+														WHEN 2 THEN 70000
+														WHEN 1 THEN 75000 END,
+							@UpperActionId = CASE @roleid WHEN 4 THEN 64999
+														WHEN 3 THEN 69999
+														WHEN 2 THEN 74999
+														WHEN 1 THEN 79999 END									
 					
 					INSERT INTO @tmpCust(CustID)
 					SELECT @CustID 
@@ -331,7 +331,7 @@ BEGIN
 								AND IsInternal <= @IsInternal
 								--exclude log action of status
 								AND la.ActionID NOT BETWEEN 1100 AND 1199
-								AND la.ActionID NOT BETWEEN 60000 AND 63999
+								AND la.ActionID NOT BETWEEN 60000 AND 79999
 								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100
