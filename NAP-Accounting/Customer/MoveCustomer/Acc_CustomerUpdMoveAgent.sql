@@ -39,6 +39,7 @@ Revisions:
 	- 20100208@Lewin: Change LogSP data format
 	- 20100512@Henry: Check DisableOpenTote before moving
 	- 20100911@Henry: Check Number Game + Bingo before moving
+	 before moving
 	- 20101019@Henry: Record execution time
 	- 20110318@Johnson: check for Greyhound and Harness
 	- 20110413@Lukas: check closed/suspended
@@ -105,16 +106,7 @@ declare	@srecommend			int,
 			@aDoubleCommLosing	BIT,			
 			@aSuspended			BIT,	
 			@mSuspended			BIT,
-			--@aMaxTransferP2P	MONEY,
-			--@mMaxTransferP2P	MONEY,
-			--@aIsAutoResetP2P	BIT,
-			--@mIsAutoResetP2P	BIT,
-			--@aDisableP2P		BIT, 
-			--@mDisableP2P		BIT, 
-			--@aDisableFunP2P		BIT,
-			--@mDisableFunP2P		BIT,
-			--@aDisableVirtualSports		BIT,
-			--@mDisableVirtualSports		BIT,	
+	
 			@aHideKeno				BIT,		
 			@mHideKeno				BIT,
 			@mHideGoldDeluxe	BIT,
@@ -133,12 +125,8 @@ declare	@srecommend			int,
 			@mDisableCasino		= disableCasino,		
 			@mDoubleCommLosing	= DoubleCommLosing,			
 			@mSuspended			= reject,
-			--@mMaxTransferP2P	= MaxTransferP2P, 
-			--@mIsAutoResetP2P	= IsAutoResetP2P, 
-			--@mDisableP2P		= DisableP2P, 
-			--@mDisableFunP2P		= DisableFunP2P,
-			--@mDisableVirtualSports	= DisableVirtualSports,
-			@mHideKeno				= HideKeno,
+		
+			@mHideKeno			= HideKeno,
 			@mHideGoldDeluxe	= HideGoldDeluxe,
 			@mDisableGoldDeluxe = DisableGoldDeluxe,
 			@mHideColossusBet	= HideColossusBet,
@@ -153,12 +141,8 @@ declare	@srecommend			int,
 			@aDisableCasino		= disableCasino,		
 			@aDoubleCommLosing	= DoubleCommLosing,		
 			@aSuspended			= reject,
-			--@aMaxTransferP2P	= MaxTransferP2P, 
-			--@aIsAutoResetP2P	= IsAutoResetP2P, 
-			--@aDisableP2P		= DisableP2P, 
-			--@aDisableFunP2P		= DisableFunP2P,
-			--@aDisableVirtualSports	= DisableVirtualSports,
-			@aHideKeno				= HideKeno ,
+		
+			@aHideKeno			= HideKeno ,
 			@aHideGoldDeluxe	= HideGoldDeluxe,
 			@aDisableGoldDeluxe = DisableGoldDeluxe,
 			@aHideColossusBet	= HideColossusBet,

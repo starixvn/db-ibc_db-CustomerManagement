@@ -131,11 +131,6 @@ BEGIN
 		--	MAX(CASE WHEN cs3rd.bettype = 3 AND cs3rd.sporttype=201 THEN cs3rd.spositiontaking ELSE 0 END) v201spositiontaking_3,
 		--	MAX(CASE WHEN cs3rd.bettype = 2 AND cs3rd.sporttype=201 THEN cs3rd.spositiontaking ELSE 0 END) v201spositiontaking_2,
 
-			-- Horse
-		--	MAX(CASE WHEN cs3rd.bettype = 31 AND cs3rd.sporttype=151 THEN cs3rd.spositiontaking ELSE 0 END) v151spositiontaking_31,
-		--	MAX(CASE WHEN cs3rd.bettype = 32 AND cs3rd.sporttype=151 THEN cs3rd.spositiontaking ELSE 0 END) v151spositiontaking_32,
-		--	MAX(CASE WHEN cs3rd.bettype = 41 AND cs3rd.sporttype=151 THEN cs3rd.spositiontaking ELSE 0 END) v151spositiontaking_41,
-		--	MAX(CASE WHEN cs3rd.bettype = 42 AND cs3rd.sporttype=151 THEN cs3rd.spositiontaking ELSE 0 END) v151spositiontaking_42,
 
 			-- Other sports
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_1,

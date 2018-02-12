@@ -92,8 +92,7 @@ BEGIN
 		SELECT @UplineHasSecurityCode = 1
 
 	-- For DCS
-    DECLARE	@bitmapOrder_MuayThai		INT 
-		,	@bitmapOrder_CockFighting	INT
+    DECLARE	@bitmapOrder_MuayThai		INT 		
 		,	@bitmapOrder_Cricket		INT
 		,	@IsIMBC						BIT = 0
 		,	@bitmapOrder_AllBet			INT
@@ -106,8 +105,7 @@ BEGIN
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_BullFighting	INT
 
-    SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
-    SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
+    SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3) 
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
@@ -131,8 +129,7 @@ BEGIN
 											AND	psp.Bettype = 2402
 									)
     
-    DECLARE	@IsHidden_MuayThai		INT = 1
-		,	@IsHidden_CockFighting	INT = 1
+    DECLARE	@IsHidden_MuayThai		INT = 1		
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
@@ -144,7 +141,6 @@ BEGIN
 		,	@IsHidden_BullFighting	INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
@@ -162,9 +158,7 @@ BEGIN
     SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
 			MatchLimit, VirtualMultiplier, Enabled,
 			DisableFinancial, DisableCasino, SyncCasino, DisableOutright,
-			DisableBingo, DisableNumber, SyncBingo,			
-			isAutoResetP2P, DisableP2P, DisableFunP2P, 
-			--DisableVirtualSports, HideVirtualSports, 
+			DisableNumber,			
 			DoubleCommLosing, Recommend, DisableCasinoBonus,  HideKeno,
 			DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,
 			(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
@@ -172,9 +166,6 @@ BEGIN
 			-- For MuayThai
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
-			-- For CockFighting
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_CockFighting)) AS DisableCockFighting,
-			CAST(CASE WHEN @IsHidden_CockFighting = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_CockFighting)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCockFighting,
 			-- For AllBet
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBet)) AS DisableAllBet,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)) AS DisableAllBetVIP,
@@ -366,27 +357,14 @@ BEGIN
 	       isnull(cu.iplogin, '') as lastloginip,
 	       ci.DoubleCommLosing,
 	       isnull(ci.DisableOutright, 0) as DisableOutright,
-
 	       -- For casino
 	       ci.synccasino,
-	       ci.disablecasino,
-	       ci.syncBingo,
-	       ci.DisableBingo,
+	       ci.disablecasino,	     
 	       ci.DisableNumber,
-
-	       --For P2P
-	       ci.isAutoResetP2P,
-	       ci.DisableP2P,
-	       ci.DisableFunP2P,
-	       -- For VirtualSports
-	       --ci.DisableVirtualSports,
-	       ci.DoubleCommLosing,
-	       --ci.HideVirtualSports,
+	       ci.DoubleCommLosing,	   
            ci.DisableCasinoBonus,
-
 	       -- For Esports
-	       ci.DisableEsports,
-	       
+	       ci.DisableEsports,	       
 	       -- For Keno
 	       ci.HideKeno,
 	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
@@ -399,9 +377,6 @@ BEGIN
 		   
 		   ISNULL(ci.DisableMuayThai,1) AS DisableMuayThai,
 		   ISNULL(ci.HideMuayThai,1) AS HideMuayThai,
-		   
-		   ISNULL(ci.DisableCockFighting,1) AS DisableCockFighting,
-		   ISNULL(ci.HideCockFighting,1) AS HideCockFighting,
 		   
 		   ISNULL(ci.DisableAllBet,1) AS DisableAllBet,
 		   ISNULL(ci.DisableAllBetVIP,1) AS DisableAllBetVIP,
@@ -492,12 +467,10 @@ BEGIN
 				ci.reject, cu.roleid, cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,
 				ci.DoubleCommLosing, ci.DisableOutright, 		
 				ci.synccasino,
-				ci.disablecasino, ci.syncBingo, ci.DisableBingo, ci.DisableNumber,  
-			   	ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P,
-			   	--ci.DisableVirtualSports, ci.HideVirtualSports,
+				ci.disablecasino,  ci.DisableNumber,  
 			  	ci.DoubleCommLosing, ci.DisableCasinoBonus,
 				ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
-				ci.DisableMuayThai, ci.HideMuayThai,ci.DisableCockFighting,ci.HideCockFighting, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
+				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
 				ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,

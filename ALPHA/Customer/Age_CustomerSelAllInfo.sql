@@ -105,7 +105,7 @@ BEGIN
     DECLARE @upLineDisableFI BIT
           , @upLineDisableCS BIT
 
-          , @uplineDisableBingo    BIT
+       
           , @uplineDisabledNumber  BIT
           , @upLineDisableOutright BIT
 
@@ -146,7 +146,7 @@ BEGIN
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
 	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	      
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
@@ -186,7 +186,7 @@ BEGIN
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
 	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
@@ -228,7 +228,7 @@ BEGIN
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
 	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
@@ -287,7 +287,7 @@ BEGIN
 	    DisableOutright, -- redundant value
 	    DisableFinancial, -- redundant value
 	    DisableCasino, -- redundant value
-	    DisableBingo, -- redundant value
+	  
 	    DisableNumber, -- redundant value 
 	    @TransferOption AS [TransferOption]
     FROM custinfo WITH (NOLOCK) 	
@@ -326,7 +326,7 @@ BEGIN
 	    ISNULL(@upLineDisableOutright,0) AS [upLineDisableOutright],	
 	    ISNULL(@uplineDisableFI,0) AS [uplineDisableFI],	
 	    ISNULL(@uplineDisableCS,0) AS [uplineDisableCS],	
-	    ISNULL(@uplineDisableBingo,0) AS [uplineDisableBingo],	
+	  
 	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
 	    --ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
 	    ISNULL(@uplineDoubleCommLosing,0) as [uplineDoubleCommLosing],
@@ -354,14 +354,12 @@ BEGIN
     	
 	    ci.synccasino,
 	    ci.disablecasino,
-	    ci.syncbingo,
-	    ci.disablebingo,
+	 
 	    c.creatdate AS createdate,	 
 	    --ci.DisableVirtualSports,
 	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,
-	    --ci.DisableP2P, 
-	   
+ 
 	    ci.HideKeno,
 	    ci.DisableEsports,
 		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,

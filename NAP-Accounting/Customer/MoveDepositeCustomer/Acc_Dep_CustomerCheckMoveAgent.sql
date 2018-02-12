@@ -45,26 +45,17 @@ BEGIN
 			@aDisableOutright	BIT,
 			@mSyncCasino		BIT,
 			@aSyncCasino		BIT,			
-			@mSyncBingo			BIT,
-			@aSyncBingo			BIT,
+		
 			@mDisableCasino		BIT,
 			@aDisableCasino		BIT,		
-			@mDisableBingo		BIT,
-			@aDisableBingo		BIT,
+			
 			@mDisableNumber		BIT,
 			@aDisableNumber		BIT,		
 			@aClosed			BIT,	
 			@mClosed			BIT,
 			@aSuspended			BIT,	
-			@mSuspended			BIT,
-			@aMaxTransferP2P	MONEY,
-			@mMaxTransferP2P	MONEY,
-			@aIsAutoResetP2P	BIT,
-			@mIsAutoResetP2P	BIT,
-			@aDisableP2P		BIT, 
-			@mDisableP2P		BIT, 
-			@aDisableFunP2P		BIT,
-			@mDisableFunP2P		BIT
+			@mSuspended			BIT
+		
 
 
 	select	@srecommend			= srecommend, 
@@ -74,16 +65,11 @@ BEGIN
 			@mdisableFI			= DisableFinancial,
 			@mDisableOutright	= DisableOutright,
 			@mSyncCasino		= syncCasino,		
-			@mSyncBingo			= SyncBingo,
-			@mDisableBingo		= DisableBingo,
+		
 			@mDisableNumber		= DisableNumber,
 			@mDisableCasino		= disableCasino,			
 			@mClosed			= closed,
-			@mSuspended			= reject,
-			@mMaxTransferP2P	= MaxTransferP2P, 
-			@mIsAutoResetP2P	= IsAutoResetP2P, 
-			@mDisableP2P		= DisableP2P, 
-			@mDisableFunP2P		= DisableFunP2P 
+			@mSuspended			= reject
 	from	custinfo with (nolock) 
 	where	username = @mastername and roleid = 3
 
@@ -94,16 +80,11 @@ BEGIN
 			@adisableFI			= DisableFinancial,
 			@aDisableOutright	= DisableOutright,
 			@aSyncCasino		= syncCasino,			
-			@aSyncBingo			= SyncBingo,		
-			@aDisableBingo		= DisableBingo,
+		
 			@aDisableNumber		= DisableNumber,
 			@aDisableCasino		= disableCasino,			
 			@aClosed			= closed,
-			@aSuspended			= reject,
-			@aMaxTransferP2P	= MaxTransferP2P, 
-			@aIsAutoResetP2P	= IsAutoResetP2P, 
-			@aDisableP2P		= DisableP2P, 
-			@aDisableFunP2P		= DisableFunP2P 		
+			@aSuspended			= reject
 	from	custinfo with (NOLOCK) 
 	where	username = @agentname and roleid = 2
 
@@ -192,13 +173,7 @@ BEGIN
 		RETURN
 	END
 	*/
-	--Check SyncBingo between Master and Agent 
-	IF @mSyncBingo = 0 AND @aSyncBingo = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is synchronized Bingo but new master is not synchronized Bingo.',
-			@ErrCode = 116					
-		RETURN
-	END
+
 
 	--Check Number Game + Bingo enable status
 	if @mdisableNumber = 1 and @adisableNumber = 0
@@ -208,12 +183,7 @@ BEGIN
 		return
 	END
 
-	if @mdisableBingo = 1 and @adisableBingo = 0
-	BEGIN
-		Select @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Bingo but new master is not enabled Bingo',
-			@ErrCode = 118
-		return
-	END
+	
 
 
 	--Check identical auto master PT 

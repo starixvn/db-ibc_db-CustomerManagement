@@ -112,8 +112,6 @@ Begin
 	@v161_comm_81_4 decimal(9,8), --number game
 	@v201_comm_3_4 decimal(9,8),
 
-	@v253_Comm_1_4 decimal(9,8),-- P2P
-	@v253_Comm_2_4 decimal(9,8),
 
 	@ga3 decimal(9,8) ,
 	@gb3 decimal(9,8),
@@ -124,9 +122,7 @@ Begin
 	
 	@v161_comm_81_3 decimal(9,8), --number game
 	@v201_comm_3_3 decimal(9,8),
-	
-	@v253_Comm_1_3 decimal(9,8),--P2P
-	@v253_Comm_2_3 decimal(9,8),
+
 
 	@ga2 decimal(9,8),
 	@gb2 decimal(9,8),
@@ -138,8 +134,7 @@ Begin
 	@v161_comm_81_2 decimal(9,8), --number game
 	@v201_comm_3_2 decimal(9,8),
 	
-	@v253_Comm_1_2 decimal(9,8),--P2P
-	@v253_Comm_2_2 decimal(9,8),
+
 
 	@ugroup varchar(3) ,
 	@comm decimal(9,8),
@@ -148,9 +143,7 @@ Begin
 	
 	@v161_comm_81 decimal(9,8), --number game
 	@v201_comm_3 decimal(9,8),
-	
-	@v253_Comm_1 decimal(9,8), --P2P
-	@v253_Comm_2 decimal(9,8),
+
 	
 	@SRecommend int,  
 	@MRecommend int,  
@@ -382,11 +375,7 @@ Begin
 				WHERE dcs.custid = @srecommend
 				AND dcs.islive = 0
 			END		
-		--Select P2P commission at super level
-		SELECT @v253_Comm_1_4 = MAX(CASE WHEN groupid = 1 THEN sdiscount ELSE 0 END),
-			@v253_Comm_2_4 = MAX(CASE WHEN groupid = 2 THEN sdiscount ELSE 0 END)
-		FROM P2PGroupComm WITH(NOLOCK)
-		WHERE custid = @srecommend 
+
 		-- 
 		IF(@IsLicensee = 0)
 			BEGIN
@@ -430,12 +419,7 @@ Begin
 				AND dcs.islive = 0
 			END
 		
-		--Select P2P commission at master level
-		SELECT @v253_Comm_1_3 = MAX(CASE WHEN groupid = 1 THEN adiscount ELSE 0 END),
-			@v253_Comm_2_3 = MAX(CASE WHEN groupid = 2 THEN adiscount ELSE 0 END)
-		FROM P2PGroupComm WITH(NOLOCK)
-		WHERE custid = @mrecommend 
-		
+	
 		-- 
 		IF(@IsLicensee = 0)
 		BEGIN
@@ -479,11 +463,7 @@ Begin
 				WHERE dcs.custid = @recommend
 				AND dcs.islive = 0
 			END
-		--Select P2P commission at agent level
-		SELECT @v253_Comm_1_2 = MAX(CASE WHEN groupid = 1 THEN discount ELSE 0 END),
-			@v253_Comm_2_2 = MAX(CASE WHEN groupid = 2 THEN discount ELSE 0 END)
-		FROM P2PGroupComm WITH(NOLOCK)
-		WHERE custid = @recommend 
+	
 		 
 		-- 
 		IF(@IsLicensee = 0)
@@ -522,11 +502,7 @@ Begin
 				WHERE custid = @custid
 				AND dcs.islive = 0
 			END
-		--Select P2P commission at member level
-		SELECT @v253_Comm_1 = MAX(CASE WHEN groupid = 1 THEN playerdiscount ELSE 0 END),
-			@v253_Comm_2 = MAX(CASE WHEN groupid = 2 THEN playerdiscount ELSE 0 END)
-		FROM P2PGroupComm WITH(NOLOCK)
-		WHERE custid = @custid 
+	
 		
 		SELECT @ugroup = ugroup from customer with(nolock) where custid=@custid
 
@@ -569,8 +545,7 @@ Begin
 				@comm_5_4 comm_5_4, 			
 				@v201_comm_3_4 v201_comm_3_4, 				
 				@v161_comm_81_4 v161_comm_81_4, 
-				@v253_comm_1_4  v253_comm_1_4,
-				@v253_comm_2_4  v253_comm_2_4,				
+						
 				
 				@ga3 ga3,
 				@gb3 gb3,
@@ -582,8 +557,7 @@ Begin
 				@v201_comm_3_3 v201_comm_3_3, 
 			
 				@v161_comm_81_3 v161_comm_81_3, 
-				@v253_comm_1_3 v253_comm_1_3,
-				@v253_comm_2_3 v253_comm_2_3,
+			
 				
 				@ga2 ga2,
 				@gb2 gb2,
@@ -595,8 +569,7 @@ Begin
 				@v201_comm_3_2 v201_comm_3_2, 
 				
 				@v161_comm_81_2 v161_comm_81_2,
-				@v253_comm_1_2 v253_comm_1_2,
-				@v253_comm_2_2 v253_comm_2_2,
+			
 				
 				@comm comm,
 				@othercomm othercomm, 
@@ -605,8 +578,7 @@ Begin
 				@v201_comm_3 v201_comm_3, 
 			
 				@v161_comm_81 v161_comm_81  , 
-				@v253_comm_1  v253_comm_1,
-				@v253_comm_2  v253_comm_2,  
+				
 				@ugroup ugroup,
 				ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 				ISNULL(@MyanmarOddsComm_1,0) AS MyanmarOddsComm_1,

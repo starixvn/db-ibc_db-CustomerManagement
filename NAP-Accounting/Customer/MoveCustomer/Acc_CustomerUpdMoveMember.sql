@@ -111,10 +111,7 @@ BEGIN
           , @DisableOutright		BIT
           , @aSyncCasino			BIT
           , @SyncCasino				BIT        
-          , @aSyncBingo				BIT
-          , @SyncBingo				BIT         
-          , @aDisableBingo			BIT
-          , @DisableBingo			BIT
+       
           , @aDisableNumber			BIT
           , @DisableNumber			BIT
           , @aClosed				BIT
@@ -155,10 +152,7 @@ BEGIN
        
          , @aDisableOutright      = DisableOutright
          , @aSyncCasino		      = syncCasino
-        
-         , @aSyncBingo		      = syncBingo
-      
-         , @aDisableBingo	      = DisableBingo
+     
          , @aDoubleCommLosing     = DoubleCommLosing
          , @aDisableNumber	      = DisableNumber
          , @aClosed			      = closed
@@ -186,10 +180,7 @@ BEGIN
        
          , @DisableOutright		 = DisableOutright
          , @SyncCasino			 = SyncCasino
-        
-         , @SyncBingo			 = SyncBingo
-        
-         , @DisableBingo		 = DisableBingo
+    
          , @DisableNumber		 = DisableNumber
          , @DoubleCommLosing	 = DoubleCommLosing
          , @Closed				 = closed
@@ -512,25 +503,6 @@ BEGIN
 	    return	
     END 
 
-    --Check SyncBingo between Agent AND Member 
-    IF @aSyncBingo = 0 AND @SyncBingo = 1 
-    BEGIN
-	    SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': member is synchronized Bingo but new agent is not synchronized Bingo.',
-		    @ErrCode = 114	
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return	
-    END 
-
-    --Check Bingo & Number enable status:
-    IF @adisableBingo = 1 AND @disableBingo = 0
-    BEGIN
-	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Bingo but new agent is not enabled Bingo.',
-		    @ErrCode = 115					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
 
     IF @adisableNumber = 1 AND @disableNumber = 0
     BEGIN
@@ -582,24 +554,6 @@ BEGIN
 	    return
     END
 
-    --bingo
-    IF exists(SELECT 1 FROM custinfo WITH(NOLOCK) WHERE custid = @custid AND SyncBingo = 1)
-    BEGIN
-	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already Bingo-synchronized.',
-		    @ErrCode = 204					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
-    --live casino
-    IF EXISTS (SELECT 1 FROM CustInfo WITH(NOLOCK) WHERE custid = @custid AND SyncLiveCasino = 1)
-    BEGIN
-	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already live Casino-synchronized.',
-		    @ErrCode = 205					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
 
     ----VS
     --IF exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND sporttype = 180)

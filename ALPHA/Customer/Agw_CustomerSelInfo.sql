@@ -107,11 +107,11 @@ BEGIN
          , ci.DisableFinancial
          , ci.DisableOutright
          , ci.disablecasino
-         , ci.DisableBingo
+   
          , ci.DisableNumber
          --, ci.DisableVirtualSports
          , ci.synccasino
-         , ci.syncBingo
+        
          --, ci.HideVirtualSports
          , ci.currency
          , ci.credit

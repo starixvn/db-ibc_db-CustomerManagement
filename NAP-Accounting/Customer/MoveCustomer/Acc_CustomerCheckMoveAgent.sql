@@ -61,14 +61,11 @@ BEGIN
 	      , @aDisableOutright		BIT
 	      , @mSyncCasino			BIT
 	      , @aSyncCasino			BIT
-	    
-	      , @mSyncBingo				BIT
-	      , @aSyncBingo				BIT
+	 
 	      , @mDisableCasino			BIT
 	      , @aDisableCasino			BIT
 	    
-	      , @mDisableBingo			BIT
-	      , @aDisableBingo			BIT
+	     
 	      , @mDisableNumber			BIT
 	      , @aDisableNumber			BIT	      
 	      , @aClosed				BIT
@@ -102,9 +99,7 @@ BEGIN
 	 
 	     , @mDisableOutright    = DisableOutright
 	     , @mSyncCasino		    = syncCasino
-	     
-	     , @mSyncBingo		    = SyncBingo
-	     , @mDisableBingo	    = DisableBingo
+	  
 	     , @mDisableNumber	    = DisableNumber
 	     , @mDisableCasino	    = disableCasino
 	    
@@ -131,8 +126,7 @@ BEGIN
 	     , @aDisableOutright	= DisableOutright
 	     , @aSyncCasino		    = syncCasino
 	  
-	     , @aSyncBingo			= SyncBingo
-	     , @aDisableBingo		= DisableBingo
+	   
 	     , @aDisableNumber		= DisableNumber
 	     , @aDisableCasino		= disableCasino
 	   
@@ -318,13 +312,7 @@ BEGIN
 		RETURN
 	END
 	*/
-	--Check SyncBingo between Master and Agent 
-	IF @mSyncBingo = 0 AND @aSyncBingo = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is synchronized Bingo but new master is not synchronized Bingo.',
-			@ErrCode = 116					
-		RETURN
-	END
+
 
 	--Check Number Game + Bingo enable status
 	IF @mdisableNumber = 1 and @adisableNumber = 0
@@ -350,13 +338,7 @@ BEGIN
 		return
 	END		
 
-	
-	IF @mdisableBingo = 1 and @adisableBingo = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Bingo but new master is not enabled Bingo',
-			@ErrCode = 118
-		return
-	END
+
 
 
     --E-Sports
@@ -1061,20 +1043,7 @@ BEGIN
 		return
 	END
 
-	--Check P2P :Game Comm
-	--IF exists(
-	--	SELECT TOP 1 1
-	--	FROM dbo.P2PGROUPCOMM m WITH(NOLOCK)
-	--		INNER JOIN dbo.P2PGROUPCOMM a WITH(NOLOCK)
-	--			ON a.GroupID = M.GroupID
-	--		WHERE  m.custid = @mrecommend AND A.custid = @recommend
-	--				AND (m.adiscount < a.discount )
-	--)
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': P2P''s commission of agent is is greater than P2P''s commission of new master .',
-	--		@ErrCode = 214
-	--	return
-	--END
+
 
 	-- Check Max Win Limit for DCS
 	SELECT	@DCSSportType = 0

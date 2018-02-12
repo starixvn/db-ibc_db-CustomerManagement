@@ -56,9 +56,7 @@ BEGIN
 			@scurrency				TINYINT, 
 			@mcurrency				TINYINT,		
 			@sSyncCasino			BIT,
-			@mSyncCasino			BIT,
-			@sSyncBingo				BIT,
-			@mSyncBingo				BIT,			
+			@mSyncCasino			BIT,			
 			@sIsInternal			BIT,
 			@mIsInternal			BIT,
 			@sDisableOutright		BIT,
@@ -67,20 +65,12 @@ BEGIN
 			@mDisableCasino			BIT,			
 			@sDisableNumber			BIT,
 			@mDisableNumber			BIT,
-			@sDisableBingo			BIT,
-			@mDisableBingo			BIT,
+		
 			@sClosed				BIT,	
 			@mClosed				BIT,
 			@sSuspended				BIT,	
 			@mSuspended				BIT,
-			--@sMaxTransferP2P		MONEY,
-			--@mMaxTransferP2P		MONEY,
-			--@sIsAutoResetP2P		BIT,
-			--@mIsAutoResetP2P		BIT,
-			--@sDisableP2P			BIT, 
-			--@mDisableP2P			BIT, 
-			--@sDisableFunP2P		BIT,
-			--@mDisableFunP2P		BIT,
+		
 		
 			@sGivenCredit			MONEY,
 			@mGivenCredit			MONEY,
@@ -104,10 +94,10 @@ BEGIN
 	SELECT @srecommend			= custid
 	     , @scurrency			= currency	    
 	     , @sSyncCasino		    = SyncCasino
-	     , @sSyncBingo			= SyncBingo	     
+	 
 	     , @sDisableOutright	= DisableOutright
 	     , @sDisableCasino		= DisableCasino	     
-	     , @sDisableBingo		= DisableBingo
+	 
 	     , @sDisableNumber		= DisableNumber
 	     , @sClosed			    = closed
 	     , @sSuspended			= reject	   
@@ -126,10 +116,10 @@ BEGIN
 	     , @srecommend_old		= srecommend
 	     , @mcurrency			= currency	   
 	     , @mSyncCasino		    = SyncCasino	     
-	     , @mSyncBingo			= SyncBingo
+	    
 	     , @mDisableOutright	= DisableOutright
 	     , @mDisableCasino		= DisableCasino	    
-	     , @mDisableBingo		= DisableBingo
+	   
 	     , @mDisableNumber		= DisableNumber
 	     , @mSuspended			= reject
 	     , @mClosed			    = closed	     
@@ -303,23 +293,7 @@ BEGIN
 		RETURN
 	END
 	*/
-	--Check Bingo sync
-	IF @sSyncBingo = 0 AND @mSyncBingo = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Bingo but new super is not synchronized Bingo',
-			@ErrCode = 115				 
-		RETURN
-	END
 
-	
-
-	--Check Bingo & Number status:
-	IF @sdisableBingo = 1 AND @mdisableBingo = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Bingo but new super is not enabled Bingo.',
-			@ErrCode = 117					 
-		RETURN
-	END
 
 
 	IF @sdisableNumber = 1 AND @mdisableNumber = 0
@@ -879,21 +853,7 @@ BEGIN
 		return
 	END
 	
-	----Check P2P :Game Comm
-	--IF exists(
-	--	SELECT TOP 1 1
-	--	FROM dbo.P2PGROUPCOMM s WITH(NOLOCK)
-	--		INNER JOIN dbo.P2PGROUPCOMM m WITH(NOLOCK)
-	--			ON m.GroupID = s.GroupID
-	--		WHERE  s.custid = @srecommend AND m.custid = @mrecommend
-	--				AND (s.sdiscount < m.adiscount )
-	--)
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': P2P''s commission of master is greater than P2P''s commission of new super.',
-	--		@ErrCode = 210
-	--	return
-	--END
-	
+
 
 	-- Check Max Win Limit for DCS
 	SELECT	@DCSSportType = 0

@@ -84,29 +84,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #MemberBalance
 	
-	IF @BetType = 1101 --Live CS
-	BEGIN
-		SELECT RowNumber, closed, enabled, suspended, username, firstname, lastname, credit, CustId			
-			, NULL AS MaxLossLimit
-		FROM (
-			SELECT ROW_NUMBER() OVER (ORDER BY c.enabled DESC, c.closed, ISNULL(c.reject, 0), c.username) AS RowNumber
-				, c.username
-				, c.closed
-				, c.enabled
-				, ISNULL(c.reject, 0) AS suspended
-				, c.credit
-				, b.custid
-				, cc.firstname
-				, cc.lastname
-			FROM #MemberBalance b 
-				INNER JOIN dbo.custInfo c WITH(NOLOCK) ON b.CustId = c.custid
-				INNER JOIN dbo.customer cc WITH(NOLOCK) ON b.CustId = cc.CustId
-			GROUP BY c.username, closed, enabled, ISNULL(c.reject, 0), credit, firstname, lastname, b.custid
-		)tmp
-		WHERE tmp.RowNumber BETWEEN @RowStart AND @RowEnd
-		ORDER BY RowNumber
-		OPTION (RECOMPILE)
-	END
+	
 	IF EXISTS (SELECT 1 FROM dbo.ProductSettingDetail AS psd WHERE psd.SportType = @SportType AND psd.BetType = @BetType)
 	BEGIN
 	    SELECT	tmp.RowNumber

@@ -117,7 +117,7 @@ BEGIN
 		,	@bitmapOrder_BullFighting	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
-    SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
+
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
@@ -212,18 +212,8 @@ BEGIN
 	    
 	       -- For casino
 	       ci.synccasino,
-	       ci.disablecasino,
-	       ci.syncBingo,
-	       ci.DisableBingo,
-	       ci.DisableNumber,
-	       --For P2P
-	       ci.isAutoResetP2P,
-	       ci.DisableP2P,
-	       ci.DisableFunP2P,
-	    
-	       -- For VirtualSports
-	       --ci.DisableVirtualSports,
-	       --ci.HideVirtualSports,
+	       ci.disablecasino,	   
+	       ci.DisableNumber,	  
 	       ci.DisableCasinoBonus,
 	    
 	       -- For Esports
@@ -372,9 +362,7 @@ BEGIN
 	  GROUP BY cu.custid, cu.username, ci.enabled, ci.closed, ci.reject, cu.roleid,
 			   cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,
 			   ci.disableOpenTote,
-			   ci.synccasino, ci.disablecasino, ci.syncBingo, ci.DisableBingo, ci.DisableNumber,
-			   ci.isAutoResetP2P, ci.DisableP2P, ci.DisableFunP2P, 
-			   --ci.DisableVirtualSports, ci.HideVirtualSports,
+			   ci.synccasino, ci.disablecasino, ci.DisableNumber,			
 			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,
 			   cps.bitmapIsDisabled,cps.bitmapIsHidden, cps.bitmapHasSynced,cdm.Discount,cu.[site],cl.ClosedReason
