@@ -1,4 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[EAS_CustomerSelStatus]
 	@CustID INT
 AS
@@ -41,7 +42,9 @@ BEGIN
 	WHERE custid = @custid
 	
 	SELECT CAST(CASE WHEN stt.CustID IS NULL THEN 0 ELSE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapHasSynced, PSP.bitmapOrder)) END AS BIT) as IsSync,
-		CAST(CASE WHEN stt.CustID IS NULL THEN 1 ELSE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 0 THEN 0 ELSE 1 END) END AS BIT) AS isHidden,    
+		CAST(CASE WHEN stt.CustID IS NULL THEN 1 ELSE 
+										(CASE WHEN (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 0 THEN 0 ELSE 1 END) 
+												END AS BIT) AS isHidden    
 	FROM dbo.ProductSettingDetail pdt WITH (NOLOCK)  
 			INNER JOIN #SportBettypeFilter ft ON pdt.SportType = ft.sporttype AND pdt.BetType = ft.bettype AND pdt.IsLive = ft.islive AND pdt.SettingType = ft.SettingType
 			INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = pdt.BetType AND PSP.Sporttype = PDT.SportType                 
