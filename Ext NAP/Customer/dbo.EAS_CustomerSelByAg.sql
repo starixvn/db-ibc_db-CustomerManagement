@@ -157,7 +157,7 @@ BEGIN
 	
     SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
 			MatchLimit, VirtualMultiplier, Enabled,
-			DisableFinancial, DisableCasino, SyncCasino, DisableOutright,
+			DisableCasino, SyncCasino, DisableOutright,
 			DisableNumber,			
 			DoubleCommLosing, Recommend, DisableCasinoBonus,  HideKeno,
 			DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,

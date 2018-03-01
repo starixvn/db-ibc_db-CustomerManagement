@@ -283,7 +283,7 @@ BEGIN
 	FROM dbo.customer AS cu with(NOLOCK)
 		INNER JOIN (SELECT c.custid, c.currency, roleid, autosuspend, reject,
 						closed, MatchLimit, VirtualMultiplier, Enabled, 
-						DisableFinancial, DisableCasino, SyncCasino, DisableOutright, 
+						DisableCasino, SyncCasino, DisableOutright, 
 						DisableNumber, 
 						DoubleCommLosing, DisableCasinoBonus,  HideKeno, DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet,HideColossusBet,
 						(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 

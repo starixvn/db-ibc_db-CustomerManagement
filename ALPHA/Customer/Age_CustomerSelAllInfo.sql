@@ -144,7 +144,7 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	        
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	      
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
@@ -184,7 +184,7 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)			
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	       
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
@@ -226,7 +226,7 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	        
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
 	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
@@ -285,7 +285,7 @@ BEGIN
     SELECT closed, -- redundant value		
 	    reject AS suspended, -- redundant value
 	    DisableOutright, -- redundant value
-	    DisableFinancial, -- redundant value
+	  
 	    DisableCasino, -- redundant value
 	  
 	    DisableNumber, -- redundant value 
@@ -314,7 +314,7 @@ BEGIN
 		ISNULL(@ClosedReason,0) AS ClosedReason,
 		 ci.reject AS suspended,
 	    DisableOutright,
-	    ci.DisableFinancial,
+	   
 	    ci.DisableNumber,
 	    @DisableAutoMPT as [DisableAutoMPT],	
     	

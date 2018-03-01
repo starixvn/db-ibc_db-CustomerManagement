@@ -287,7 +287,7 @@ Param's Explanation:
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
 	
-			ISNULL(DisableFinancial,0) AS DisableFI,
+		,
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
@@ -379,7 +379,7 @@ Param's Explanation:
 			ci.autosuspend,
 			cm.DisableAutoMPT,
 		
-			ci.DisableFinancial, 
+			
 			ci.SyncCasino, 
 			ci.DisableCasino, 
 			ci.DisableOutright, 

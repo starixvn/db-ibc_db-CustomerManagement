@@ -97,7 +97,7 @@ select	@srecommend			= srecommend,
 		@mrecommend			= mrecommend, 
 		@recommend			= recommend,
 		@acurrency			= currency, 		
-		@adisableFI			= DisableFinancial,
+		
 		@aDisableOutright	= DisableOutright,
 		@aSyncCasino		= syncCasino,	
 	
@@ -113,7 +113,7 @@ select	@custid				= custid,
 		@srecommend_old		= srecommend, 
 		@mrecommend_old		= mrecommend,
 		@currency_old		= currency,		
-		@disableFI			= DisableFinancial,
+	
 		@DisableOutright	= DisableOutright,
 		@SyncCasino			= SyncCasino ,	
 	

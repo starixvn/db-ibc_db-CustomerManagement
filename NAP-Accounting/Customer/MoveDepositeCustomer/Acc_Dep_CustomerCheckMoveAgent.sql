@@ -62,7 +62,7 @@ BEGIN
 			@mrecommend			= custid, 
 			@mcurrency			= currency, 
 			@scurrency			= currency, 			
-			@mdisableFI			= DisableFinancial,
+		
 			@mDisableOutright	= DisableOutright,
 			@mSyncCasino		= syncCasino,		
 		
@@ -77,7 +77,7 @@ BEGIN
 			@srecommend_old		= srecommend, 
 			@mrecommend_old		= mrecommend, 
 			@acurrency			= currency, 		
-			@adisableFI			= DisableFinancial,
+			
 			@aDisableOutright	= DisableOutright,
 			@aSyncCasino		= syncCasino,			
 		

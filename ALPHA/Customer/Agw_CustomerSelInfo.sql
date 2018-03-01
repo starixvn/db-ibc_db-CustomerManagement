@@ -104,7 +104,7 @@ BEGIN
          , ISNULL(@TransferOption, 0) transferoption
          , ISNULL(@DisableAutoMPT, 0) DisableAutoMPT
         
-         , ci.DisableFinancial
+      
          , ci.DisableOutright
          , ci.disablecasino
    

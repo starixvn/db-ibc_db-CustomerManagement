@@ -289,7 +289,7 @@ BEGIN
       FROM dbo.customer cu WITH(NOLOCK)
 		INNER JOIN (SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
 							MatchLimit, VirtualMultiplier, Enabled, 
-							DisableFinancial, DisableCasino, SyncCasino, DisableOutright,
+							DisableCasino, SyncCasino, DisableOutright,
 							DisableNumber,		
 						
 							DoubleCommLosing, DisableCasinoBonus, 

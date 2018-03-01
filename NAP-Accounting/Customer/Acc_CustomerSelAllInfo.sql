@@ -105,7 +105,7 @@ BEGIN
           , @roleid TINYINT
           , @UsedCredit MONEY
         
-          , @DisableDownlinesFI BIT
+        
           , @DisableDownlinesCS BIT
           , @DisableDownlinesBI BIT
           , @DisableDownlinesNumber BIT
@@ -170,11 +170,6 @@ BEGIN
 	    RETURN
     -----------------------------	
 
-    SELECT @DisableDownlinesFI = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableFinancial = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableFinancial = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableFinancial = 1) 											 
-										      ELSE 0 END 	
-    										  
     SELECT @DisableDownlinesCS = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableCasino = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableCasino = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableCasino = 1) 											
@@ -530,8 +525,7 @@ BEGIN
 	    ci.danger3,
 	    ci.Abnormal,
 	    ci.closed, ci.reject as suspended, ci.autosuspend,	
-	    ci.DisableFinancial,
-	    ISNULL(@DisableDownlinesFI,0) DisableDownlinesFI,
+	 
 	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,
 	    ISNULL(@DisableDownlinesBI,0) DisableDownlinesBI,
 	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
