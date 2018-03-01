@@ -234,7 +234,7 @@ BEGIN
 		INNER JOIN dbo.CustProductStatus a WITH(NOLOCK)ON a.CustID = @recommend
 	WHERE dbo.f_GetProductStatus(m.bitmapIsDisabled, stt.bitmapOrder) = 1
 			AND dbo.f_GetProductStatus(a.bitmapIsDisabled, stt.bitmapOrder) = 0
-	
+			AND Sporttype <> 206
 	IF @DCSSportType <> 0
 	BEGIN
 		SELECT @DCSSportName = sportname
