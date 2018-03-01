@@ -286,8 +286,7 @@ Param's Explanation:
 			ISNULL (closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
-	
-		,
+
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
