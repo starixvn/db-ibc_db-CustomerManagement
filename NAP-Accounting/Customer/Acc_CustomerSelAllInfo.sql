@@ -105,7 +105,7 @@ BEGIN
           , @uplineid INT
           , @roleid TINYINT
           , @UsedCredit MONEY     
-          
+          , @DisableDownlinesNumber BIT
           --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT		  
@@ -164,6 +164,11 @@ BEGIN
 	    RETURN
     -----------------------------	
 
+	SELECT @DisableDownlinesNumber = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableNumber = 1)
+										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableNumber = 1) 											 
+										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableNumber = 1) 											 
+										      ELSE 0 END
+											  
  
     										  
     --SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
@@ -500,6 +505,7 @@ BEGIN
 	    ci.danger3,
 	    ci.Abnormal,
 	    ci.closed, ci.reject as suspended, ci.autosuspend,		 
+		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
 		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
