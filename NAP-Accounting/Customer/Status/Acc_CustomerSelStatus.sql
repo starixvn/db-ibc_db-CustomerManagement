@@ -283,16 +283,16 @@ Param's Explanation:
 				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
 	END
 	SELECT	ISNULL(reject,0) AS Suspend,
-			ISNULL (closed,0) As Closed,
-			ISNULL (autosuspend,0) As AutoSuspend,	
-			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
-
+			ISNULL(closed,0) As Closed,
+			ISNULL(autosuspend,0) As AutoSuspend,	
+			ISNULL(cm.DisableAutoMPT ,0) As DisableAutoMPT,	
+			ISNULL(Disable151_AU,0) AS Disable151_AU,
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
 		
 			ISNULL(DisableNumber,0) AS DisableNumber,
-					
+			ISNULL(SyncLiveCasino,0) AS SyncLiveCasino,		
 			ISNULL(srecommend, 0) AS SRecommend,
 			ISNULL(mrecommend, 0) AS MRecommend,
 			ISNULL(recommend, 0) as ARecommend,
@@ -377,14 +377,13 @@ Param's Explanation:
 			ci.closed,
 			ci.autosuspend,
 			cm.DisableAutoMPT,
-		
-			
+			ci.Disable151_AU,			
 			ci.SyncCasino, 
 			ci.DisableCasino, 
 			ci.DisableOutright, 
 		
 			ci.DisableNumber, 
-		
+			ci.SyncLiveCasino, 
 			ci.srecommend, 
 			ci.mrecommend, 
 			ci.recommend, 
