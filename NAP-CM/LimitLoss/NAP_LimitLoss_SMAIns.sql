@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMAIns]
     @Username			NVARCHAR(50),
     @MaxLoss			MONEY,
 	@Mode				BIT = 0,
-	@SendNotification	BIT = 0,
+	@NotifyLetsTalk		BIT = 0,
     @UserID				INT = 0,
     @IP					NVARCHAR(50) = NULL,
     @System				BIT = 0,
@@ -77,12 +77,12 @@ BEGIN
 
 		UPDATE ls 
 		SET ls.MaxLoss = @MaxLoss,
-			SendNotification = @SendNotification
+			NotifyLetsTalk = @NotifyLetsTalk
 		FROM LimitLoss_Setting ls WITH (ROWLOCK,UPDLOCK)
 		WHERE ls.CustID = @CustID
 
 		IF @@ROWCOUNT = 0
-			INSERT INTO LimitLoss_Setting(CustID, MaxLoss, SendNotification) VALUES(@CustID, @MaxLoss, @SendNotification)
+			INSERT INTO LimitLoss_Setting(CustID, MaxLoss, NotifyLetsTalk) VALUES(@CustID, @MaxLoss, @NotifyLetsTalk)
 	END
     
 	--Insert Headline setting
@@ -102,9 +102,9 @@ BEGIN
 			RETURN
 		END
 		
-		INSERT INTO LimitLoss_HeadlineSetting(GroupHeadlineID, MaxLoss, SendNotification) VALUES(@GroupHeadlineID, @MaxLoss, @SendNotification)
+		INSERT INTO LimitLoss_HeadlineSetting(GroupHeadlineID, MaxLoss, NotifyLetsTalk) VALUES(@GroupHeadlineID, @MaxLoss, @NotifyLetsTalk)
 
-		INSERT INTO LimitLoss_Setting(CustID, MaxLoss, SendNotification) 
+		INSERT INTO LimitLoss_Setting(CustID, MaxLoss, NotifyLetsTalk) 
 		SELECT ca.custid, NULL, NULL
 		FROM bodb02.dbo.custAccount ca WITH (NOLOCK)
 		WHERE groupID = @GroupHeadlineID
@@ -122,7 +122,7 @@ BEGIN
 		BEGIN
 			SELECT @LogData = '<NAP_LimitLoss_SMAIns Username="' + COALESCE(CAST(@Username AS VARCHAR(10)), SPACE(1)) + '" ' 					
 								+ 'MaxLoss="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
-								+ 'SendNotification="' + COALESCE(CAST(@SendNotification AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'NotifyLetsTalk="' + COALESCE(CAST(@NotifyLetsTalk AS VARCHAR(1)), SPACE(1)) + '" ' 
 								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
 								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
@@ -132,7 +132,7 @@ BEGIN
 		BEGIN
 			SELECT @LogData = '<NAP_LimitLoss_SMAIns Username="' + COALESCE(CAST(@Username AS VARCHAR(10)), SPACE(1)) + '" ' 					
 								+ 'MaxLossHeadline="' + COALESCE(CAST(@MaxLoss AS VARCHAR(20)), SPACE(1)) + '" ' 
-								+ 'SendNotification="' + COALESCE(CAST(@SendNotification AS VARCHAR(1)), SPACE(1)) + '" ' 
+								+ 'NotifyLetsTalk="' + COALESCE(CAST(@NotifyLetsTalk AS VARCHAR(1)), SPACE(1)) + '" ' 
 								+ 'Mode="' + COALESCE(CAST(@Mode AS VARCHAR(1)), SPACE(1)) + '" ' 
 								+ 'IP="'+ COALESCE(CAST(@IP as varchar(15)),space(1)) + '" '
 								+ 'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),space(1)) + '" '
