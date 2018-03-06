@@ -61,7 +61,7 @@ Revisions:
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20180125@Winnie: Hide inactive products, Keep 2 cols: Disable151_AU,SyncLiveCasino for report part [RedmineID: #86086]  
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
