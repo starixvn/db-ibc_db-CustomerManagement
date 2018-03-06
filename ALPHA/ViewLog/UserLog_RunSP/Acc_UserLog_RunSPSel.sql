@@ -226,7 +226,7 @@ BEGIN
 									LogDate,
 									ActionID,
 									ActionTypeID,
-									la.SPName,
+									SPName,
 									IsInternal,
 									CustID,
 									CustName,

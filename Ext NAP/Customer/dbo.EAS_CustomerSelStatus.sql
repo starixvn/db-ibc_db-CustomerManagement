@@ -41,7 +41,8 @@ BEGIN
 	FROM dbo.CustInfo WITH(NOLOCK)
 	WHERE custid = @custid
 	
-	SELECT CAST(CASE WHEN stt.CustID IS NULL THEN 0 ELSE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapHasSynced, PSP.bitmapOrder)) END AS BIT) as IsSync,
+	SELECT ft.productid,
+		CAST(CASE WHEN stt.CustID IS NULL THEN 0 ELSE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapHasSynced, PSP.bitmapOrder)) END AS BIT) as IsSync,
 		CAST(CASE WHEN stt.CustID IS NULL THEN 1 ELSE 
 										(CASE WHEN (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 0 THEN 0 ELSE 1 END) 
 												END AS BIT) AS isHidden    
