@@ -44,13 +44,15 @@ BEGIN
 	FROM dbo.LimitLoss_Setting t WITH(NOLOCK) 
 	WHERE t.LevelID >= @LevelThreshold
 		AND NOT EXISTS (SELECT 1 FROM #GroupList WHERE CustID = t.CustID)       
-	
+		AND ((t.NotifyLetsTalk = 1 AND @ActionID = 3) OR @ActionID <> 3)
+
 	--Insert Headline setting
 	INSERT INTO #MonitorList (CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, GroupHeadlineID, NotifyLetsTalk)
 	SELECT CustID, MaxLoss, TotalBalance, LevelID, YesterdayBalance, OldLevelID, t.GroupHeadlineID, NotifyLetsTalk
 	FROM dbo.LimitLoss_HeadlineSetting t WITH(NOLOCK)	
 		INNER JOIN #GroupList l ON t.GroupHeadlineID = l.GroupID AND l.IsGroupHeadline = 1
 	WHERE t.LevelID >= @LevelThreshold
+		AND ((t.NotifyLetsTalk = 1 AND @ActionID = 3) OR @ActionID <> 3)
 
 	SELECT	c.CustId, c.Username, c.roleid, CASE WHEN t.GroupHeadlineID <> 0 THEN 'RM' ELSE e.currency END AS currency, 
 			t.GroupHeadlineID, t.YesterdayBalance, t.TotalBalance, t.MaxLoss, t.LevelID,
