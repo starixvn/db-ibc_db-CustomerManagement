@@ -102,12 +102,12 @@ BEGIN
 		FROM LimitLoss_HeadlineSetting hs WITH (NOLOCK)
 			INNER JOIN #GroupList gl WITH (NOLOCK) ON hs.GroupHeadlineID = gl.groupID
 		WHERE IsGroupHeadLine = 1
-			AND hs.LevelID > @LevelThreshold
+			AND hs.LevelID >= @LevelThreshold
 
 		INSERT #OldValueSMA (CustID, NotifyLetsTalk_Old) -- SMA have invidual setting
 		SELECT CustID, NotifyLetsTalk
 		FROM LimitLoss_Setting t WITH (NOLOCK)
-		WHERE NotifyLetsTalk IS NOT NULL AND LevelID > @LevelThreshold
+		WHERE NotifyLetsTalk IS NOT NULL AND LevelID >= @LevelThreshold
 			AND NOT EXISTS (SELECT 1 FROM #GroupList WHERE CustID = t.CustID)       
 
 		INSERT #OldValueSMA (CustID, NotifyLetsTalk_Old) -- member of group healine
@@ -115,7 +115,7 @@ BEGIN
 		FROM LimitLoss_Setting t WITH (NOLOCK)
 			INNER JOIN #GroupList gl ON gl.CustID = t.CustID
 			INNER JOIN LimitLoss_HeadlineSetting hs WITH (NOLOCK) ON gl.GroupID = hs.GroupHeadlineID
-		WHERE hs.LevelID > @LevelThreshold
+		WHERE hs.LevelID >= @LevelThreshold
 			AND t.MaxLoss IS NOT NULL
 
 		UPDATE ls
