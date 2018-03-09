@@ -198,7 +198,8 @@ BEGIN
 								AND la.ActionTypeID = @ActionTypeId
 								AND la.ActionID BETWEEN @LowerActionId AND @UpperActionId
 								AND IsInternal <= @IsInternal
-								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								--show these actions on alpha
+								--AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100
 								
