@@ -358,8 +358,7 @@ BEGIN
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
 	  GROUP BY cu.custid, cu.username, ci.enabled, ci.closed, ci.reject, cu.roleid,
-			   cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,
-			   ci.disableOpenTote,
+			   cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,			 
 			   ci.synccasino, ci.disablecasino, ci.DisableNumber,			
 			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,
