@@ -1,22 +1,5 @@
-﻿USE [CustDB];
-GO
-
-/****** Object:  UserDefinedFunction [dbo].[f_Nap_WinLimit_CreditCurrencySel]    Script Date: 07/11/2016 12:54:52 ******/
-
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[f_Nap_WinLimit_CreditCurrencySel]')
-          AND type IN(N'FN', N'IF', N'TF', N'FS', N'FT')
-)
-    DROP FUNCTION [dbo].[f_Nap_WinLimit_CreditCurrencySel];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
-CREATE FUNCTION [dbo].[f_Nap_WinLimit_CreditCurrencySel]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+ALTER FUNCTION [dbo].[f_Nap_WinLimit_CreditCurrencySel]
 (
 )
 RETURNS TABLE
@@ -30,7 +13,8 @@ Task: #72604 - Implement Game Win Limit Control phase2 3A
 DB: DBCUST/CustDB
 
 Revisions:
-20170313@Jacob: Risk & Control - Phase 3A [#72604].
+	-20170313@Jacob: Risk & Control - Phase 3A [#72604].
+	-20180309@Johnson: add new 2 currencies KHR, LIR [#91574]
 
 Example:
 SELECT * FROM [f_Nap_WinLimit_CreditCurrencySel]()
@@ -116,7 +100,13 @@ SELECT * FROM [f_Nap_WinLimit_CreditCurrencySel]()
             20
      UNION
      SELECT 'YNG (YNG)',
-            72;
-GO
-GRANT SELECT ON f_Nap_WinLimit_CreditCurrencySel TO [bodbAdminNet];
+            72
+     UNION 
+	 SELECT 'KHR (KHR)',
+			71
+	 UNION 
+	 SELECT 'LIR (LIR)',
+			73;
+	 		            
+
 GO

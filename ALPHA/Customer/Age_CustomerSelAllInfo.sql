@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 USE bodb02
 GO
 
@@ -7,77 +7,68 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@uplineid INT = -1,
 	@isInternalAgent BIT = 0
 AS
-/*
-Created: 20090122@nqminh
-Task : Select all customer information for agent account!
-DB: DBAGE/bodb02
-Original:
 
-Revisions:
-    - 20090122@[Reviewer]: [Description of revision]    
-	- 20090506@[Simon]: Calculate outstanding.
-	- 20100429@Terry: Get status for Open Tote
-	- 20100710@Simon: Remove firstname + ' ' + lastname = @username
-	- 20100918@Jacob: Add column DisableBingo, SyncBingo, uplineDisableBingo
-	- 20100924@Terry: Add column DisabledNumber, UplineDisabledNumber
-	- 20101224@Johnson: Apply new arrange of bettype
-	- 20110119@Simon: Select one more column upLineEnabledMa to disabled upline exactly.
-	- 20110317@Lukas: move HR's status to another SP
-	- 20110623@Sophia: Do not allow search by nickname 
-	- 20110721@Sophia: Add parameter @isInternalAgent
-	- 20110823@Sophia: Count Negative stake as positive turnover
-	- 20111018@Tom: 1. Add P2P Transfer (23101)/Outstanding (23102)
-					2. Remove variable @ABSDate ('2011-09-01')	
-	- 20120206@Sophia: Get DisableLiveCasino, SyncLiveCasino for Live Casino
-	- 20120815@Sophia: Get DisableVirtualSports, HideVirtualSports
-	- 20120926@Sophia: Get DoubleCommLosing
-	- 20121110@viet: get custinfo data base on uplineid instead of username only, to reduce scan
-	- 20130522@Johnson: get Poker held funds on member level and disableP2P status (pending)
-	- 20131011@Elodie: Add HR Fixed Odds [Redmine:#6505]
-	- 20140303@Kathy: - get HideKeno column [Redmine:#12691]
-					  - modify formula of Outstanding amount to be calculated based on table Bettrans and TransLog [Redmine:#11550]
-    - 20140822@Logan:   Add status for Esports [Redmine: #20661]			  
-	- 20150422@Elodie: Add Gold Deluxe product [Redmine:#34486]
-	- 20150612@Kathy: Migrate custDB to new server DBCust(Get credit from DBCust.CustDB) [Redmine:#36216]
-	- 20150803@Elodie: Get DisableDownlinesGoldDeluxe field [Redmine:#38741]
-	- 20150707@Jim: exclude Metric Gaming running ticket from bettrans (Feature #38789)
-	- 20150825@Helen: Colossus Bet - [Redmine: #41264]
-	- 20151014@Helen: Customer Setting for Sportsbook 2- [Redmine: #44604]
-	- 20151214@Percy: Do not check ticket running of Cock Fighting at bettrans table, because of the translog [Redmine: #48601]
-	- 20160112@Percy: Expand new bettype for RNG Casino [Redmine: #48283]
-	- 20160128@Percy: Support new sport Cricket [Redmine: #50027]
-	- 20160204@Percy: Support new product AllBet [Redmine: #50605]
-	- 20160413@Percy: Support Voidbridge single wallet [Redmine: #55259]
-	- 20161028@Percy: Support Fishing World [RedmineID: #65731]
-	- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
-	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
-	- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
-	- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
-Param's Explanation:
-• @username: username of customer that need to be viewed.   
-• @uplineId: the ID of the upline.
+/*
+	Created: 20090122@nqminh
+	DB: DBAGE/bodb02
+	Task: Left menu - Search customer - All Info
+
+	Revisions:
+		- 20090122@[Reviewer]: [Description of revision]    
+		- 20090506@[Simon]: Calculate outstanding.
+		- 20100429@Terry: Get status for Open Tote
+		- 20100710@Simon: Remove firstname + ' ' + lastname = @username
+		- 20100918@Jacob: Add column DisableBingo, SyncBingo, uplineDisableBingo
+		- 20100924@Terry: Add column DisabledNumber, UplineDisabledNumber
+		- 20101224@Johnson: Apply new arrange of bettype
+		- 20110119@Simon: Select one more column upLineEnabledMa to disabled upline exactly.
+		- 20110317@Lukas: move HR's status to another SP
+		- 20110623@Sophia: Do not allow search by nickname 
+		- 20110721@Sophia: Add parameter @isInternalAgent
+		- 20110823@Sophia: Count Negative stake as positive turnover
+		- 20111018@Tom: 1. Add P2P Transfer (23101)/Outstanding (23102)
+						2. Remove variable @ABSDate ('2011-09-01')	
+		- 20120206@Sophia: Get DisableLiveCasino, SyncLiveCasino for Live Casino
+		- 20120815@Sophia: Get DisableVirtualSports, HideVirtualSports
+		- 20120926@Sophia: Get DoubleCommLosing
+		- 20121110@viet: get custinfo data base on uplineid instead of username only, to reduce scan
+		- 20130522@Johnson: get Poker held funds on member level and disableP2P status (pending)
+		- 20131011@Elodie: Add HR Fixed Odds [Redmine:#6505]
+		- 20140303@Kathy: - get HideKeno column [Redmine:#12691]
+						  - modify formula of Outstanding amount to be calculated based on table Bettrans and TransLog [Redmine:#11550]
+		- 20140822@Logan:   Add status for Esports [Redmine: #20661]			  
+		- 20150422@Elodie: Add Gold Deluxe product [Redmine:#34486]
+		- 20150612@Kathy: Migrate custDB to new server DBCust(Get credit from DBCust.CustDB) [Redmine:#36216]
+		- 20150803@Elodie: Get DisableDownlinesGoldDeluxe field [Redmine:#38741]
+		- 20150707@Jim: exclude Metric Gaming running ticket from bettrans (Feature #38789)
+		- 20150825@Helen: Colossus Bet - [Redmine: #41264]
+		- 20151014@Helen: Customer Setting for Sportsbook 2- [Redmine: #44604]
+		- 20151214@Percy: Do not check ticket running of Cock Fighting at bettrans table, because of the translog [Redmine: #48601]
+		- 20160112@Percy: Expand new bettype for RNG Casino [Redmine: #48283]
+		- 20160128@Percy: Support new sport Cricket [Redmine: #50027]
+		- 20160204@Percy: Support new product AllBet [Redmine: #50605]
+		- 20160413@Percy: Support Voidbridge single wallet [Redmine: #55259]
+		- 20161028@Percy: Support Fishing World [RedmineID: #65731]
+		- 20170421@Helen: Enable Downline FishingWorld checkbox is ticked & disabled control although Member is disabled [RedmineID: #74421]
+		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+		- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
+		- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
+		- 20171020@Percy: Apply core SP [RedmineID: #84690]
+	
+	Param's Explanation:
+		• @username: username of customer that need to be viewed.   
+		• @uplineId: the ID of the upline.
 */
 
 BEGIN
     SET NOCOUNT ON
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @UsedCredit MONEY, @Mem_MaxCredit MONEY
-    DECLARE @todaySuperCash MONEY,
-			@todayMasterCash MONEY,
-			@todayAgentCash MONEY,
-			@todayCustCash MONEY,		
-			@ClosedReason TINYINT
-    DECLARE @today DATE
-	DECLARE @yesterday DATE
+    DECLARE @ClosedReason TINYINT
 
 	DECLARE @netPosition MONEY = 0 -- for member
 
-    /*DECLARE @ABSDate DATETIME
-    SET @ABSDate = '2011-09-01'	*/
-
-    SELECT @today = CONVERT(DATE, GETDATE())
-		 , @yesterday = DATEADD(DD, -1, @today)
-		 , @username = RTRIM(LTRIM(@username))
+    SELECT @username = RTRIM(LTRIM(@username))
 
     SELECT @custid = custid
          , @roleid = roleid
@@ -92,7 +83,6 @@ BEGIN
 	       )
 
 
-    ------20110623: Do not allow search by nickname
     ------20110721: If @isInternal = 1 then searching by nickname, else do not allow
     IF (@custid IS NULL) AND @isInternalAgent = 1
     BEGIN
@@ -100,7 +90,6 @@ BEGIN
         FROM customer WITH (NOLOCK)
         WHERE username2 = @username
 	       AND (srecommend = @uplineid OR mrecommend = @uplineid OR recommend = @uplineid)
-		    --- AND custid = @uplineid
     END
     --end
 
@@ -399,390 +388,171 @@ BEGIN
 	    LEFT JOIN custinfo s WITH (NOLOCK) ON c.srecommend = s.custid
     WHERE
 	    c.custid = @custid
-    -------------------------------------------------------------------------
-	-- SportBettypeMatrix
-	DECLARE @isTest BIT
-	SELECT  @isTest = dbo.f_CheckSPVersion(@@PROCID)
 
-	CREATE TABLE #SportBettype (ProductID INT, bettype INT, RefTable TINYINT)
-	INSERT INTO #SportBettype (ProductID, bettype, RefTable)
-	SELECT ProductID, bettype, RefTable FROM dbo.f_SportBettypeMatrix_Sel(0,0,0,2,'','',@isTest)
+	-- Balance Info
+	CREATE TABLE #BalanceInfo
+	(
+		superCash	MONEY DEFAULT ((0)), yesterdaySuperCash	 MONEY DEFAULT ((0)), superOutstanding  MONEY DEFAULT ((0)),
+		masterCash	MONEY DEFAULT ((0)), yesterdayMasterCash MONEY DEFAULT ((0)), masterOutstanding MONEY DEFAULT ((0)),
+		agentCash	MONEY DEFAULT ((0)), yesterdayAgentCash	 MONEY DEFAULT ((0)), agentOutstanding  MONEY DEFAULT ((0)),
+		memberCash	MONEY DEFAULT ((0)), yesterdayMemberCash MONEY DEFAULT ((0)), memberOutstanding MONEY DEFAULT ((0))
+	)
 
-    --Balance Info
-    IF @roleid = 1
-    BEGIN
-	    --  Balance calculated with the correct date @Phuong20080925	
-	    SELECT @todayCustCash = ISNULL(SUM(winlost-actual_stake + playercomm),0)
-	    FROM bettrans WITH (NOLOCK)
-	    WHERE custid = @custid AND ruben = 1 AND bettype <= 19000 --AND bettype NOT BETWEEN 2101 AND 2499 AND bettype NOT BETWEEN 4001 AND 7999
-			AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3))
-		    AND CONVERT(DATE, winlostdate) = @today
+	INSERT INTO #BalanceInfo
+	(
+		superCash,  yesterdaySuperCash,
+		masterCash, yesterdayMasterCash,
+		agentCash,  yesterdayAgentCash,
+		memberCash, yesterdayMemberCash
+	)
+	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId
 
-		SELECT @todayCustCash = @todayCustCash + ISNULL(SUM(winlost-actual_stake + playercomm),0)
-		FROM bettransRNG WITH (NOLOCK)
-		WHERE custid = @custid AND statusID NOT IN (0, 1) --AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-			AND CONVERT(DATE, winlostdate) = @today
+	INSERT INTO #BalanceInfo
+	(
+		superOutstanding,
+		masterOutstanding,
+		agentOutstanding,
+		memberOutstanding
+	)
+	EXEC dbo.Acc_CustomerSelOutstanding @CustId = @CustId
 
-		SELECT @todayCustCash = @todayCustCash + ISNULL(SUM(winlost-actual_stake + playercomm),0)
-		FROM bettransLC WITH (NOLOCK)
-		WHERE custid = @custid AND statusID NOT IN (0, 1) --AND gameID BETWEEN 2401 AND 2499
-			AND CONVERT(DATE, winlostdate) = @today
-    	
-	    ;with Balance
-	    AS ( 				
-		    SELECT 
-			    SUM(CASE WHEN ruben=1 THEN winlost-actual_stake+playercomm ELSE 0 END) Cash,
-			    SUM(CASE WHEN ruben=0 THEN ABS(actual_stake) ELSE 0 END) outstanding, 
-			    SUM(CASE WHEN bettype = 23002 AND ruben=0 THEN actual_stake ELSE 0 END) csOutstanding,
-			    SUM(CASE WHEN bettype = 23202 AND ruben=0 THEN actual_stake ELSE 0 END) BingoOutstanding,
-			    SUM(CASE WHEN bettype = 23102 AND ruben=0 THEN actual_stake ELSE 0 END) P2POutstanding,
-			    SUM(CASE WHEN bettype = 23001 AND ruben=0 THEN actual_stake ELSE 0 END) csTransfer,
-			    SUM(CASE WHEN bettype = 23201 AND ruben=0 THEN actual_stake ELSE 0 END) BingoTransfer,
-			    SUM(CASE WHEN bettype = 23101 AND ruben=0 THEN actual_stake ELSE 0 END) P2PTransfer,
-			    MAX(transdate) lastTxn 
-		    FROM bettrans WITH(NOLOCK) 
-		    WHERE custid = @custid
-				AND (
-						(bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable <> 0) AND ruben =0)
-						OR ruben <> 0
-					)
-				AND (
-						(CONVERT(DATE, winlostdate) >= @yesterday AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3)))
-						OR CONVERT(DATE, winlostdate) < @yesterday
-					)
-		    UNION ALL
-		    SELECT 0 Cash,
-			    SUM(ABS(actual_stake)) outstanding, 
-			    0 csOutstanding,
-			    0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 csTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-		    FROM translog with(NOLOCK)
-		    WHERE statusid = 0
-				AND custid = @custid
-			UNION ALL
-			SELECT
-				SUM(CASE WHEN statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0 END) Cash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) outstanding, 
-			    0 csOutstanding,
-			    0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 csTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-			FROM bettransRNG WITH(NOLOCK)
-			WHERE custid = @custid
-				--AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-			UNION ALL
-			SELECT
-				SUM(CASE WHEN statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0 END) Cash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) outstanding, 
-			    0 csOutstanding,
-			    0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 csTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-			FROM bettransLC WITH(NOLOCK)
-			WHERE custid = @custid
-				--AND gameID BETWEEN 2401 AND 2499
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-	    )
-	    SELECT	SUM(ISNULL(Balance.Cash,0)) Cash,
-			    SUM(ISNULL(Balance.Cash,0)) - @todayCustCash yesterday_Cash,
-			    SUM(ISNULL(Balance.outstanding,0)) outstanding,
-			    SUM(ISNULL(Balance.csOutstanding,0)) csOutstanding,
-			    SUM(ISNULL(Balance.BingoOutstanding,0)) BingoOutstanding,
-			    SUM(ISNULL(Balance.P2POutstanding,0)) P2POutstanding,
-			    SUM(ISNULL(Balance.csTransfer,0)) csTransfer,
-			    SUM(ISNULL(Balance.BingoTransfer,0)) BingoTransfer,
-			    SUM(ISNULL(Balance.P2PTransfer,0)) P2PTransfer,
-			    MAX(Balance.lastTxn) lastTxn
-	    FROM Balance
+	-- Used Credit, last transdate, Casino, Bingo, P2P
+	DECLARE
+		@transdate				DATETIME,
+		@TotalCSTransfer		MONEY,
+		@TotalCSOutstanding		MONEY,
+		@TotalBITransfer		MONEY,
+		@TotalBIOutstanding		MONEY,
+		@TotalP2PTransfer		MONEY,
+		@TotalP2POutstanding	MONEY
+
+	IF @roleid = 1
+	BEGIN
+		SELECT @UsedCredit = 0
+
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
+
+		SELECT 
+			@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
+			@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0),
+			@TotalBITransfer     = ISNULL(SUM(CASE WHEN bettype = 23201 THEN actual_stake ELSE 0 END),0),
+			@TotalBIOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23202 THEN actual_stake ELSE 0 END),0),
+			@TotalP2PTransfer    = ISNULL(SUM(CASE WHEN bettype = 23101 THEN actual_stake ELSE 0 END),0),
+			@TotalP2POutstanding = ISNULL(SUM(CASE WHEN bettype = 23102 THEN actual_stake ELSE 0 END),0)
+		FROM dbo.bettrans WITH (NOLOCK)  
+		WHERE custid = @CustID
+			AND bettype IN (23001, 23002, 23101, 23102, 23201, 23202)
+			AND ruben = 0
     END 
     ELSE IF @roleid = 2
     BEGIN
-	    SELECT @UsedCredit = SUM(credit)  
-	    FROM DBCUST.CustDB.dbo.custinfo WITH(NOLOCK) 
-	    WHERE roleid=1 
-		     AND recommend = @custid
-    		 
-	    --Maxcredit 
-	    SELECT @Mem_MaxCredit = ISNULL(maxcredit,0) FROM DBCUST.CustDB.dbo.CustAgent WITH (NOLOCK) 
-	    WHERE  custid=@CustID 
+	    SELECT @UsedCredit = SUM(ISNULL(Credit, 0))
+	    FROM DBCUST.CustDB.dbo.custinfo WITH (NOLOCK)
+	    WHERE roleid = 1 AND recommend = @custid
 
-	    SELECT 	@todayAgentCash = ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash  = ISNULL(SUM(winlost-actual_stake+playercomm),0)
-	    FROM bettrans WITH (NOLOCK)
-	    WHERE  recommend = @custid AND ruben = 1 AND bettype <= 19000 --AND bettype NOT BETWEEN 2101 AND 2499 AND bettype NOT BETWEEN 4001 AND 7999
-			AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3))
-		    AND CONVERT(DATE, winlostdate) = @today
+		SELECT @Mem_MaxCredit = ISNULL(maxcredit,0)
+		FROM DBCUST.CustDB.dbo.CustAgent WITH (NOLOCK) 
+	    WHERE custid = @CustID 
+		
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
 
-		SELECT 	@todayAgentCash = @todayAgentCash + ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash  = @todayCustCash  + ISNULL(SUM(winlost-actual_stake+playercomm),0)
-	    FROM bettransRNG WITH (NOLOCK)
-	    WHERE recommend = @custid AND statusID NOT IN (0, 1) --AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-			AND CONVERT(DATE, winlostdate) = @today
-
-		SELECT 	@todayAgentCash = @todayAgentCash + ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash  = @todayCustCash  + ISNULL(SUM(winlost-actual_stake+playercomm),0)
-	    FROM bettransLC WITH (NOLOCK)
-	    WHERE recommend = @custid AND statusID NOT IN (0, 1) --AND gameID BETWEEN 2401 AND 2499
-			AND CONVERT(DATE, winlostdate) = @today
-    		
-	    ;with Balance
-	    AS (	
-		    SELECT 
-			    SUM(CASE WHEN custid=recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-			    SUM(CASE WHEN bettype NOT IN (23001,23002) AND ruben=0 THEN actual_stake * apositiontaking ELSE 0 END) agentPositionTaking, 
-			    SUM(CASE WHEN custid <> recommend AND ruben=1 THEN winlost-actual_stake+playercomm ELSE 0 END) customerCash,
-			    SUM(CASE WHEN bettype NOT IN (23001,23002) AND ruben=0 THEN ABS(actual_stake) ELSE 0 END) customerOutstanding,
-			    SUM(CASE WHEN bettype = 23002 AND ruben=0 THEN actual_stake ELSE 0 END) csOutstanding,			
-			    SUM(CASE WHEN bettype = 23202 AND ruben=0 THEN actual_stake ELSE 0 END) BingoOutstanding,
-			    SUM(CASE WHEN bettype = 23102 AND ruben=0 THEN actual_stake ELSE 0 END) P2POutstanding,
-			    SUM(CASE WHEN bettype = 23001 AND ruben=0 THEN actual_stake ELSE 0 END) CSTransfer,			
-			    SUM(CASE WHEN bettype = 23201 AND ruben=0 THEN actual_stake ELSE 0 END) BingoTransfer,
-			    SUM(CASE WHEN bettype = 23101 AND ruben=0 THEN actual_stake ELSE 0 END) P2PTransfer,
-			    MAX(transdate) lastTxn
-		    FROM bettrans WITH(NOLOCK) 
-		    WHERE recommend = @custid
-					AND (
-							(bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable <> 0) AND ruben =0)
-							OR ruben <> 0
-						)
-					AND (
-						(CONVERT(DATE, winlostdate) >= @yesterday AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3)))
-						OR CONVERT(DATE, winlostdate) < @yesterday
-					)
-		    UNION ALL
-		    SELECT 0 agentCash,
-			    SUM(actual_stake*apositiontaking) agentPositionTaking, 
-			    0 customerCash,
-			    SUM(ABS(actual_stake)) customerOutstanding,
-			    0 csOutstanding,
-				0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 CSTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-		    FROM translog WITH(NOLOCK)
-		    WHERE statusid = 0
-				AND recommend = @custid
-			UNION ALL
-			SELECT
-				SUM(CASE WHEN custid=recommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN actual_stake * apositiontaking ELSE 0 END) agentPositionTaking,
-			    SUM(CASE WHEN custid<>recommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0 END) customerCash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) customerOutstanding,
-			    0 csOutstanding,
-				0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 CSTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-		    FROM bettransRNG WITH(NOLOCK)
-		    WHERE recommend = @custid
-				--AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-			UNION ALL
-			SELECT
-				SUM(CASE WHEN custid=recommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN actual_stake * apositiontaking ELSE 0 END) agentPositionTaking,
-			    SUM(CASE WHEN custid<>recommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0 END) customerCash,
-			    SUM(CASE WHEN statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) customerOutstanding,
-			    0 csOutstanding,
-				0 BingoOutstanding,
-			    0 P2POutstanding,
-			    0 CSTransfer,
-			    0 BingoTransfer,
-			    0 P2PTransfer,
-			    MAX(transdate) lastTxn
-		    FROM bettransLC WITH(NOLOCK)
-		    WHERE recommend = @custid
-				--AND gameID BETWEEN 2401 AND 2499
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-	    )
-	    SELECT	SUM(ISNULL(Balance.agentCash,0)) agentCash,
-			    SUM(ISNULL(Balance.agentCash,0)) - @todayAgentCash yesterday_agentCash,	
-			    SUM(ISNULL(Balance.agentPositionTaking,0)) agentPositionTaking,
-			    SUM(ISNULL(Balance.customerCash,0)) customerCash,
-			    SUM(ISNULL(Balance.customerCash,0)) - @todayCustCash yesterday_customerCash,
-			    SUM(ISNULL(Balance.customerOutstanding,0)) customerOutstanding,
-			    SUM(ISNULL(Balance.csOutstanding,0)) csOutstanding,
-			    SUM(ISNULL(Balance.bingoOutstanding,0)) BingoOutstanding,
-			    SUM(ISNULL(Balance.P2POutstanding,0)) P2POutstanding,
-			    SUM(ISNULL(Balance.csTransfer,0)) csTransfer,
-			    SUM(ISNULL(Balance.BingoTransfer,0)) BingoTransfer,
-			    SUM(ISNULL(Balance.P2PTransfer,0)) P2PTransfer,
-			    MAX(Balance.lastTxn) lastTxn,
-			    @UsedCredit AS agentUsedCredit,
-			    @Mem_MaxCredit AS memberMaxCredit
-	    FROM Balance 
-
+		SELECT 
+			@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
+			@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0),
+			@TotalBITransfer     = ISNULL(SUM(CASE WHEN bettype = 23201 THEN actual_stake ELSE 0 END),0),
+			@TotalBIOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23202 THEN actual_stake ELSE 0 END),0),
+			@TotalP2PTransfer    = ISNULL(SUM(CASE WHEN bettype = 23101 THEN actual_stake ELSE 0 END),0),
+			@TotalP2POutstanding = ISNULL(SUM(CASE WHEN bettype = 23102 THEN actual_stake ELSE 0 END),0)
+		FROM dbo.bettrans WITH (NOLOCK)  
+		WHERE recommend = @CustID
+			AND bettype IN (23001, 23002, 23101, 23102, 23201, 23202)
+			AND ruben = 0
     END
     ELSE IF @roleid = 3
     BEGIN
-	    SELECT @UsedCredit = SUM(credit)  
-	    FROM DBCUST.CustDB.dbo.custinfo WITH(NOLOCK) 
-	    WHERE roleid=2 
-		    AND mrecommend = @custid
-    				
-	    SELECT	@todayMasterCash = ISNULL(SUM(mwinlost+acomm-comm),0),
-			    @todayAgentCash  = ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash   = ISNULL(SUM(winlost-actual_stake + playercomm),0)
-	    FROM bettrans WITH (NOLOCK)
-	    WHERE mrecommend = @custid AND ruben = 1 AND bettype <= 19000 --AND bettype NOT BETWEEN 2101 AND 2499 AND bettype NOT BETWEEN 4001 AND 7999
-		    AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3))
-			AND CONVERT(DATE, winlostdate) = @today
+	    SELECT @UsedCredit = SUM(ISNULL(Credit, 0))
+	    FROM DBCUST.CustDB.dbo.custinfo WITH (NOLOCK) 
+	    WHERE roleid = 2 AND mrecommend = @custid
 
-		SELECT	@todayMasterCash = @todayMasterCash + ISNULL(SUM(mwinlost+acomm-comm),0),
-			    @todayAgentCash  = @todayAgentCash  + ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash   = @todayCustCash   + ISNULL(SUM(winlost-actual_stake + playercomm),0)
-	    FROM bettransRNG WITH (NOLOCK)
-	    WHERE mrecommend = @custid AND statusID NOT IN (0, 1) --AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-		    AND CONVERT(DATE, winlostdate) = @today
-
-		SELECT	@todayMasterCash = @todayMasterCash + ISNULL(SUM(mwinlost+acomm-comm),0),
-			    @todayAgentCash  = @todayAgentCash  + ISNULL(SUM(awinlost+comm-playercomm),0),
-			    @todayCustCash   = @todayCustCash   + ISNULL(SUM(winlost-actual_stake + playercomm),0)
-	    FROM bettransLC WITH (NOLOCK)
-	    WHERE mrecommend = @custid AND statusID NOT IN (0, 1) --AND gameID BETWEEN 2401 AND 2499
-		    AND CONVERT(DATE, winlostdate) = @today
-    	
-	    ;with Balance
-	    AS (	
-		    SELECT	SUM(CASE WHEN custid=mrecommend THEN winlost-actual_stake ELSE mwinlost+acomm-comm END) masterCash,
-				    SUM(CASE WHEN bettype NOT IN (23001,23002) AND ruben=0 THEN actual_stake * mpositiontaking ELSE 0 END) masterPositionTaking, 
-				    SUM(CASE WHEN custid=recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-				    SUM(CASE WHEN custid <> recommend AND custid <> mrecommend AND ruben=1 THEN winlost-actual_stake+playercomm ELSE 0  END) customerCash,
-				    SUM(CASE WHEN bettype NOT IN (23001,23002) AND custid <> recommend AND custid <> mrecommend AND ruben=0 THEN ABS(actual_stake) ELSE 0 END) customerOutstanding, 
-				    SUM(CASE WHEN bettype = 23002 AND ruben=0 THEN actual_stake ELSE 0 END) csOutstanding,
-				    SUM(CASE WHEN bettype = 23202 AND ruben=0 THEN actual_stake ELSE 0 END) BingoOutstanding,
-				    SUM(CASE WHEN bettype = 23102 AND ruben=0 THEN actual_stake ELSE 0 END) P2POutstanding,
-				    SUM(CASE WHEN bettype= 23001 AND ruben=0 THEN actual_stake ELSE 0 END) csTransfer,
-				    SUM(CASE WHEN bettype= 23201 AND ruben=0 THEN actual_stake ELSE 0 END) BingoTransfer,
-				    SUM(CASE WHEN bettype= 23101 AND ruben=0 THEN actual_stake ELSE 0 END) P2PTransfer,
-				    MAX(transdate) lastTxn
-		    FROM bettrans WITH(NOLOCK) 
-		    WHERE mrecommend = @custid	
-				AND (
-						(bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable <> 0) AND ruben =0)
-						OR ruben <> 0
-					)
-				AND (
-						(CONVERT(DATE, winlostdate) >= @yesterday AND bettype NOT IN (SELECT bettype FROM #SportBettype WHERE RefTable NOT IN (0,3)))
-						OR CONVERT(DATE, winlostdate) < @yesterday
-					)
-		    UNION ALL
-		    SELECT	0,
-				    SUM(actual_stake * mpositiontaking) masterPositionTaking, 
-				    0,
-					0,
-				    SUM(CASE WHEN custid <> mrecommend THEN ABS(actual_stake) ELSE 0 END) customerOutstanding, 
-				    0 csOutstanding,
-					0 BingoOutstanding,
-					0 P2POutstanding,
-					0 CSTransfer,
-					0 BingoTransfer,
-					0 P2PTransfer,
-				    MAX(transdate) lastTxn
-		    FROM translog WITH(NOLOCK)
-		    WHERE statusid = 0
-				AND mrecommend = @custid 
-			UNION ALL
-		    SELECT	
-					SUM(CASE WHEN custid = mrecommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE mwinlost+acomm-comm END) masterCash,
-				    SUM(CASE WHEN statusID IN (0, 1) THEN actual_stake * mpositiontaking ELSE 0 END) masterPositionTaking, 
-				    SUM(CASE WHEN custid = recommend  AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-					SUM(CASE WHEN custid <> recommend AND custid <> mrecommend  AND statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0  END) customerCash,
-				    SUM(CASE WHEN custid <> recommend AND custid <> mrecommend AND statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) customerOutstanding, 
-				    0 csOutstanding,
-					0 BingoOutstanding,
-					0 P2POutstanding,
-					0 CSTransfer,
-					0 BingoTransfer,
-					0 P2PTransfer,
-				    MAX(transdate) lastTxn
-		    FROM bettransRNG WITH(NOLOCK)
-		    WHERE mrecommend = @custid
-				--AND (gameID BETWEEN 2101 AND 2399 OR gameID BETWEEN 4001 AND 7999)
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-			UNION ALL
-		    SELECT	
-					SUM(CASE WHEN custid = mrecommend AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE mwinlost+acomm-comm END) masterCash,
-				    SUM(CASE WHEN statusID IN (0, 1) THEN actual_stake * mpositiontaking ELSE 0 END) masterPositionTaking, 
-				    SUM(CASE WHEN custid = recommend  AND statusID NOT IN (0, 1) THEN winlost-actual_stake ELSE awinlost+comm-playercomm END) agentCash,
-					SUM(CASE WHEN custid <> recommend AND custid <> mrecommend  AND statusID NOT IN (0, 1) THEN winlost-actual_stake+playercomm ELSE 0  END) customerCash,
-				    SUM(CASE WHEN custid <> recommend AND custid <> mrecommend AND statusID IN (0, 1) THEN ABS(actual_stake) ELSE 0 END) customerOutstanding, 
-				    0 csOutstanding,
-					0 BingoOutstanding,
-					0 P2POutstanding,
-					0 CSTransfer,
-					0 BingoTransfer,
-					0 P2PTransfer,
-				    MAX(transdate) lastTxn
-		    FROM bettransLC WITH(NOLOCK)
-		    WHERE mrecommend = @custid
-				--AND gameID BETWEEN 2401 AND 2499
-				AND (
-						(statusID NOT IN (0, 1) AND CONVERT(DATE, winlostdate) >= @yesterday)
-						OR statusID IN (0, 1)
-					)
-	    )
-	    SELECT	SUM(ISNULL(Balance.masterCash,0)) masterCash,
-			    SUM(ISNULL(Balance.masterCash,0)) - @todayMasterCash yesterday_masterCash,
-			    SUM(ISNULL(Balance.masterPositionTaking,0)) masterPositionTaking,
-			    SUM(ISNULL(Balance.agentCash,0)) agentCash,
-			    SUM(ISNULL(Balance.agentCash,0)) - @todayAgentCash yesterday_agentCash,
-			    SUM(ISNULL(Balance.customerCash,0)) customerCash,
-			    SUM(ISNULL(Balance.customerCash,0)) - @todayCustCash yesterday_customerCash, 
-			    SUM(ISNULL(Balance.customerOutstanding,0)) customerOutstanding,
-			    SUM(ISNULL(Balance.csOutstanding,0)) csOutstanding,
-			    SUM(ISNULL(Balance.BingoOutstanding,0)) BingoOutstanding,
-			    SUM(ISNULL(Balance.P2POutstanding,0)) P2POutstanding,
-			    SUM(ISNULL(Balance.csTransfer,0)) csTransfer,
-			    SUM(ISNULL(Balance.bingoTransfer,0)) BingoTransfer,
-			    SUM(ISNULL(Balance.P2PTransfer,0)) P2PTransfer,
-			    MAX(Balance.lastTxn) lastTxn,
-			    @UsedCredit AS masterUsedCredit	
-	    FROM Balance 
-    	
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
+		
+		SELECT 
+			@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
+			@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0),
+			@TotalBITransfer     = ISNULL(SUM(CASE WHEN bettype = 23201 THEN actual_stake ELSE 0 END),0),
+			@TotalBIOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23202 THEN actual_stake ELSE 0 END),0),
+			@TotalP2PTransfer    = ISNULL(SUM(CASE WHEN bettype = 23101 THEN actual_stake ELSE 0 END),0),
+			@TotalP2POutstanding = ISNULL(SUM(CASE WHEN bettype = 23102 THEN actual_stake ELSE 0 END),0)
+		FROM dbo.bettrans WITH (NOLOCK)  
+		WHERE mrecommend = @CustID
+			AND bettype IN (23001, 23002, 23101, 23102, 23201, 23202)
+			AND ruben = 0
     END
-	DROP TABLE #SportBettype
-    -- For Sportbook2
-	EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid		    
+
+	-- Return balance
+    IF @roleid = 1
+    BEGIN
+	    SELECT
+			SUM(memberCash)					AS Cash,
+			SUM(yesterdayMemberCash)		AS yesterday_Cash,
+			SUM(memberOutstanding)			AS outstanding,
+			-- Casino, Bingo, P2P
+			ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
+			ISNULL(@TotalBIOutstanding, 0)	AS BingoOutstanding,
+			ISNULL(@TotalP2POutstanding, 0)	AS P2POutstanding,
+			ISNULL(@TotalCSTransfer, 0)		AS csTransfer,
+			ISNULL(@TotalBITransfer, 0)		AS BingoTransfer,
+			ISNULL(@TotalP2PTransfer, 0)	AS P2PTransfer,
+			@transdate						AS lastTxn
+	    FROM #BalanceInfo
+    END 
+    ELSE IF @roleid = 2
+    BEGIN
+		SELECT
+			SUM(agentCash)					AS agentCash,
+			SUM(yesterdayAgentCash)			AS yesterday_agentCash,
+			SUM(agentOutstanding)			AS agentPositionTaking,
+			SUM(memberCash)					AS customerCash,
+			SUM(yesterdayMemberCash)		AS yesterday_customerCash,
+			SUM(memberOutstanding)			AS customerOutstanding,
+			-- Casino, Bingo, P2P
+			ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
+			ISNULL(@TotalBIOutstanding, 0)	AS BingoOutstanding,
+			ISNULL(@TotalP2POutstanding, 0)	AS P2POutstanding,
+			ISNULL(@TotalCSTransfer, 0)		AS csTransfer,
+			ISNULL(@TotalBITransfer, 0)		AS BingoTransfer,
+			ISNULL(@TotalP2PTransfer, 0)	AS P2PTransfer,
+			@transdate						AS lastTxn,
+			@UsedCredit						AS agentUsedCredit,
+			@Mem_MaxCredit					AS memberMaxCredit
+	    FROM #BalanceInfo
+    END
+    ELSE IF @roleid = 3
+    BEGIN
+		SELECT
+			SUM(masterCash)					AS masterCash,
+			SUM(yesterdayMasterCash)		AS yesterday_masterCash,
+			SUM(masterOutstanding)			AS masterPositionTaking,
+			SUM(agentCash)					AS agentCash,
+			SUM(yesterdayAgentCash)			AS yesterday_agentCash,
+			SUM(memberCash)					AS customerCash,
+			SUM(yesterdayMemberCash)		AS yesterday_customerCash,
+			SUM(memberOutstanding)			AS customerOutstanding,
+			-- Casino, Bingo, P2P
+			ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
+			ISNULL(@TotalBIOutstanding, 0)	AS BingoOutstanding,
+			ISNULL(@TotalP2POutstanding, 0)	AS P2POutstanding,
+			ISNULL(@TotalCSTransfer, 0)		AS csTransfer,
+			ISNULL(@TotalBITransfer, 0)		AS BingoTransfer,
+			ISNULL(@TotalP2PTransfer, 0)	AS P2PTransfer,
+			@transdate						AS lastTxn,
+			@UsedCredit						AS masterUsedCredit
+	    FROM #BalanceInfo
+    END
+    
+	-- For Sportbook2
+	EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid
+
+	DROP TABLE #BalanceInfo
 END
-
-GO
-
-GRANT EXECUTE ON [dbo].[Age_CustomerSelAllInfo] TO [bodbDownlineNet] AS [dbo]
-GO
-
-GRANT EXECUTE ON [dbo].[Age_CustomerSelAllInfo] TO [bodbDownlineNetView] AS [dbo]
-GO
-
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelAllInfo] TO [vnteam] AS [dbo]
 GO
