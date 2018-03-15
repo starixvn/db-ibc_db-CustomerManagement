@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
+ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo_UAT2]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
 	@isInternalAgent BIT = 0
@@ -54,9 +54,7 @@ AS
 		- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 		- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
 		- 20171020@Percy: Apply core SP [RedmineID: #84690]
-		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
-
-	
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]	
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -102,31 +100,22 @@ BEGIN
 
     	
     --Downline/Upline status 
-    DECLARE @upLineDisableFI BIT
-          , @upLineDisableCS BIT
-
-       
+    DECLARE @upLineDisableCS BIT       
           , @uplineDisabledNumber  BIT
           , @upLineDisableOutright BIT
-
           , @upLineClosed    BIT
           , @upLineSuspend   BIT
           , @upLineEnabled   BIT
           , @upLineEnabledMa BIT
-
           --, @uplineDisableVirtualSports BIT
-          , @uplineDoubleCommLosing     BIT
-        
+          , @uplineDoubleCommLosing     BIT        
           , @uplineDisableEsports       BIT
 		  , @uplineDisableGoldDeluxe	BIT
 		  , @HasDownline				BIT = 0
 		  , @DisableDownlinesGoldDeluxe	BIT = 0
 		  , @uplineDisableColossusBet	BIT
-		  , @DisableDownlinesColossusBet BIT = 0
-		  
-
-    DECLARE @DisableAutoMPT BIT
-    		
+		  , @DisableDownlinesColossusBet BIT = 0  
+    DECLARE @DisableAutoMPT BIT    		
     DECLARE @Credit_MAg_Min MONEY, @Credit_MAg_Max MONEY, 
 		    @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY, 
 		    @Credit_Mem_Min MONEY, @Credit_Mem_Max MONEY
@@ -324,7 +313,7 @@ BEGIN
 	    ISNULL(@upLineEnabled,0) AS [uplineEnabled],
 	    ISNULL(@upLineEnabledMa,0) AS [upLineEnabledMa],
 	    ISNULL(@upLineDisableOutright,0) AS [upLineDisableOutright],	
-	    ISNULL(@uplineDisableFI,0) AS [uplineDisableFI],	
+	 
 	    ISNULL(@uplineDisableCS,0) AS [uplineDisableCS],	
 	  
 	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
