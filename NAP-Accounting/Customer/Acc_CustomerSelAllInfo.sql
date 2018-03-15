@@ -103,13 +103,9 @@ BEGIN
     DECLARE @custid INT
           , @uplineid INT
           , @roleid TINYINT
-          , @UsedCredit MONEY
-        
-        
-          , @DisableDownlinesCS BIT
-          , @DisableDownlinesBI BIT
-          , @DisableDownlinesNumber BIT
-          
+          , @UsedCredit MONEY     
+          , @DisableDownlinesCS BIT       
+          , @DisableDownlinesNumber BIT          
           --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
@@ -524,12 +520,9 @@ BEGIN
 	    ci.danger2,
 	    ci.danger3,
 	    ci.Abnormal,
-	    ci.closed, ci.reject as suspended, ci.autosuspend,	
-	 
-	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,
-	    ISNULL(@DisableDownlinesBI,0) DisableDownlinesBI,
-	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
-	
+	    ci.closed, ci.reject as suspended, ci.autosuspend,		 
+	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,	  
+	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,	
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
 		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,
