@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo_UAT2]
+ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
 	@isInternalAgent BIT = 0
