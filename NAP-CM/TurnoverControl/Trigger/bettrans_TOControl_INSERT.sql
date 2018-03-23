@@ -27,7 +27,7 @@ BEGIN
 				WHERE bettype >= 2000)
 		RETURN
 	-- SUPER LIVE, tickets running in translog, then void/reject/refund.
-	IF (EXISTS (SELECT 1 FROM inserted WHERE matchid > 0 AND bettype BETWEEN 801 AND 899)) 
+	IF (EXISTS (SELECT 1 FROM inserted WHERE bettype BETWEEN 801 AND 899)) 
 	BEGIN
 		SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
 									, tmp.adjTO_RM,tmp.adjTOwithABS_RM,tmp.adjHTONoExtraPT_RM, tmp.IsInsert 

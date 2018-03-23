@@ -56,19 +56,16 @@ BEGIN
 							 
 							 FOR XML PATH ('r'))
 		
+		IF @XMLString IS NOT NULL
+		BEGIN
+			--put string into SB.Queue
+			EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
+		END
 	END
 	ELSE
 	BEGIN
 		RETURN
 	END
-	
-	IF @XMLString IS NOT NULL
-	BEGIN
-		--put string into SB.Queue
-		EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
-	END
-	
-	
 END 
 
 
