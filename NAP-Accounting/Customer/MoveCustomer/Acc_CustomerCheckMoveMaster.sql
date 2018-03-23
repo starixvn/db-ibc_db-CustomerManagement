@@ -32,7 +32,7 @@ AS
 		- 20151030@Dominic: Add MuayThai product [Redmine: #46732]
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
-
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -54,51 +54,24 @@ BEGIN
 			@mrecommend				INT,
 			@srecommend_old			INT, 
 			@scurrency				TINYINT, 
-			@mcurrency				TINYINT,
-			@sdisable151_31			BIT,-- @sdisableHR -> @sdisable151_31 
-			@mDisable151_31			BIT,-- @mdisableHR -> @mDisable151_31 			
+			@mcurrency				TINYINT,		
 			@sSyncCasino			BIT,
-			@mSyncCasino			BIT,
-			@sSyncBingo				BIT,
-			@mSyncBingo				BIT,
-			@sSyncLiveCasino		BIT,
-			@mSyncLiveCasino		BIT,
+			@mSyncCasino			BIT,			
 			@sIsInternal			BIT,
 			@mIsInternal			BIT,
 			@sDisableOutright		BIT,
 			@mDisableOutright		BIT,
 			@sDisableCasino			BIT,
-			@mDisableCasino			BIT,
-			@sDisableLiveCasino		BIT,
-			@mDisableLiveCasino 	BIT,
-			@mDisable151_41			BIT,-- @mDisableOpenTote -> @mDisable151_41
-			@sDisable151_41			BIT,-- @sDisableOpenTote -> @sDisable151_41
-			@mDisable151_51			BIT,
-			@sDisable151_51			BIT,
-			@mDisable152_41			BIT,
-			@sDisable152_41			BIT,
-			@mDisable152_51			BIT,
-			@sDisable152_51			BIT,
-			@mDisable153_51			BIT,
-			@sDisable153_51			BIT,
+			@mDisableCasino			BIT,			
 			@sDisableNumber			BIT,
 			@mDisableNumber			BIT,
-			@sDisableBingo			BIT,
-			@mDisableBingo			BIT,
+		
 			@sClosed				BIT,	
 			@mClosed				BIT,
 			@sSuspended				BIT,	
 			@mSuspended				BIT,
-			--@sMaxTransferP2P		MONEY,
-			--@mMaxTransferP2P		MONEY,
-			--@sIsAutoResetP2P		BIT,
-			--@mIsAutoResetP2P		BIT,
-			--@sDisableP2P			BIT, 
-			--@mDisableP2P			BIT, 
-			--@sDisableFunP2P		BIT,
-			--@mDisableFunP2P		BIT,
-			@sDisableHRFixedOdds	BIT,
-			@mDisableHRFixedOdds	BIT,
+		
+		
 			@sGivenCredit			MONEY,
 			@mGivenCredit			MONEY,
 			@sUsedCredit			MONEY,
@@ -119,24 +92,15 @@ BEGIN
 			, @DCSSportName			NVARCHAR(50)
 
 	SELECT @srecommend			= custid
-	     , @scurrency			= currency
-	     , @sdisable151_31		= DisableHorseracing
+	     , @scurrency			= currency	    
 	     , @sSyncCasino		    = SyncCasino
-	     , @sSyncBingo			= SyncBingo
-	     , @sSyncLiveCasino	    = SyncLiveCasino
+	 
 	     , @sDisableOutright	= DisableOutright
-	     , @sDisableCasino		= DisableCasino
-	     , @sDisableLiveCasino  = DisableLiveCasino
-	     , @sDisable151_41		= DisableOpenTote
-	     , @sDisable151_51		= Disable151_AU
-	     , @sDisable152_41		= Disable152_UK
-	     , @sDisable152_51		= Disable152_AU
-	     , @sDisable153_51		= Disable153_AU
-	     , @sDisableBingo		= DisableBingo
+	     , @sDisableCasino		= DisableCasino	     
+	 
 	     , @sDisableNumber		= DisableNumber
 	     , @sClosed			    = closed
-	     , @sSuspended			= reject
-	     , @sDisableHRFixedOdds = DisableHRFixedOdds
+	     , @sSuspended			= reject	   
 	     , @sDisableEsports     = DisableEsports
 	     , @sGivenCredit		= credit
 	     --, @sHideVirtualSports  = HideVirtualSports
@@ -150,24 +114,15 @@ BEGIN
 
 	SELECT @mrecommend			= custid
 	     , @srecommend_old		= srecommend
-	     , @mcurrency			= currency
-	     , @mDisable151_31		= DisableHorseracing
-	     , @mSyncCasino		    = SyncCasino
-	     , @mSyncLiveCasino	    = SyncLiveCasino
-	     , @mSyncBingo			= SyncBingo
+	     , @mcurrency			= currency	   
+	     , @mSyncCasino		    = SyncCasino	     
+	    
 	     , @mDisableOutright	= DisableOutright
-	     , @mDisableCasino		= DisableCasino
-	     , @mDisableLiveCasino  = DisableLiveCasino
-	     , @mDisable151_41		= DisableOpenTote
-	     , @mDisable151_51		= Disable151_AU
-	     , @mDisable152_41		= Disable152_UK
-	     , @mDisable152_51		= Disable152_AU
-	     , @mDisable153_51		= Disable153_AU
-	     , @mDisableBingo		= DisableBingo
+	     , @mDisableCasino		= DisableCasino	    
+	   
 	     , @mDisableNumber		= DisableNumber
 	     , @mSuspended			= reject
-	     , @mClosed			    = closed
-	     , @mDisableHRFixedOdds = DisableHRFixedOdds
+	     , @mClosed			    = closed	     
 	     , @mDisableEsports     = DisableEsports
 	     , @mGivenCredit		= credit
 	     --, @mHideVirtualSports  = HideVirtualSports
@@ -254,53 +209,7 @@ BEGIN
 		RETURN
 	END
 
-	--Check Horse status:
-	IF @sdisable151_31 = 1 AND @mDisable151_31 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled SA Racing but new super not enabled SA Racing.',
-			@ErrCode = 107					 
-		RETURN
-	END
-
-	--Check OpenTote
-	IF @sDisable151_41 = 1 AND @mDisable151_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK/IRish Racing but new super not enabled UK/IRish Racing.',
-			@ErrCode = 108				 
-		RETURN
-	END
-
-	--Check Horse Racing for AU Tote
-	IF @sDisable151_51 = 1 AND @mDisable151_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Racing but new super not enabled Aust Racing.',
-			@ErrCode = 109			 
-		RETURN
-	END
-
-	--Check Greyhound for UK Tote
-	IF @sDisable152_41 = 1 AND @mDisable152_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK Greyhound but new super not enabled UK Greyhound.',
-			@ErrCode = 110		 
-		RETURN
-	END
-
-	--Check Greyhound for AU Tote
-	IF @sDisable152_51 = 1 AND @mDisable152_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Aust Greyhound but new super not enabled Aust Greyhound.',
-			@ErrCode = 111			 
-		RETURN
-	END
-
-	--Check Harness for AU Tote
-	IF @sDisable153_51 = 1 AND @mDisable153_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Harness but new super not enabled Aust Harness.',
-			@ErrCode = 112			 
-		RETURN
-	END
+	
 
 	-- Check DCS Product's [disabled]
 	SELECT top 1 @DCSSportType = stt.SportType
@@ -309,7 +218,8 @@ BEGIN
 		INNER JOIN dbo.CustProductStatus m WITH(NOLOCK)ON m.CustID = @mrecommend
 	WHERE dbo.f_GetProductStatus(s.bitmapIsDisabled, stt.bitmapOrder) = 1
 			AND dbo.f_GetProductStatus(m.bitmapIsDisabled, stt.bitmapOrder) = 0
-	
+			AND Sporttype<>206
+
 	IF @DCSSportType <> 0
 	BEGIN
 		SELECT @DCSSportName = sportname
@@ -384,29 +294,7 @@ BEGIN
 		RETURN
 	END
 	*/
-	--Check Bingo sync
-	IF @sSyncBingo = 0 AND @mSyncBingo = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Bingo but new super is not synchronized Bingo',
-			@ErrCode = 115				 
-		RETURN
-	END
 
-	--Check Casino sync:
-	IF @sSyncLiveCasino = 0 AND @mSyncLiveCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Casino but new super is not synchronized Casino.',
-			@ErrCode = 116					 
-		RETURN
-	END
-
-	--Check Bingo & Number status:
-	IF @sdisableBingo = 1 AND @mdisableBingo = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Bingo but new super is not enabled Bingo.',
-			@ErrCode = 117					 
-		RETURN
-	END
 
 
 	IF @sdisableNumber = 1 AND @mdisableNumber = 0
@@ -416,13 +304,7 @@ BEGIN
 		RETURN
 	END
 	
-	IF @sdisableHRFixedOdds = 1 and @mdisableHRFixedOdds = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Horse Racing Fixed Odds but new super is not enabled Horse Racing Fixed Odds',
-			@ErrCode = 118
-		return
-	END
-
+	
     --E-Sports
 	IF @sDisableEsports = 1 and @mDisableEsports = 0
 	BEGIN
@@ -454,15 +336,7 @@ BEGIN
 			@ErrCode = 124	 
 		return
 	END
-	--Check Horse,  Casino sync status:
-	--no need to check for Horse
-	/*IF EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 151)
-		AND NOT EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @srecommend AND sporttype = 151)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': super does not have Horse Racing setting.',
-			@ErrCode = 110					 
-		RETURN
-	END*/
+
 	
 	--Check Gold Deluxe sport enable status
 	IF @sHideGoldDeluxe = 1 and @mHideGoldDeluxe = 0
@@ -543,19 +417,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check commission for live casino 
-	IF EXISTS(
-			SELECT 1 
-			FROM CustSettingGame AS scs WITH(NOLOCK)
-				INNER JOIN CustSettingGame mcs WITH(NOLOCK) ON mcs.custid = @mrecommend AND scs.sporttype = mcs.sporttype AND scs.bettype = mcs.bettype
-			WHERE scs.custid = @srecommend AND scs.sporttype = 162 AND scs.bettype = 1101
-				 AND scs.sdiscount < mcs.adiscount
-	)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @mastername + ': Super''s commission for Live Casino is less than master''s commission.',
-				@ErrCode = 204
-		RETURN	
-	END
 
 	--Check commission for Keno
 	IF EXISTS(
@@ -783,28 +644,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check Position Taking for Live Casino
-		--n4<=s3+m3<=s4		IF i3=0
-		--m3<=s4 and u3<=s4	IF i3=1
-		--u3+m3>=n4 IF i3=1
-	IF @mSyncLiveCasino = 1 AND @sSyncLiveCasino = 1 AND EXISTS (
-		SELECT 1
-		FROM CustSettingGame scs WITH(NOLOCK) 
-			INNER JOIN CustSettingGame mcs WITH(NOLOCK) ON mcs.custid = @mrecommend AND mcs.sporttype = scs.sporttype AND mcs.bettype = scs.bettype 
-			INNER JOIN CustOverrideGame sco WITH(NOLOCK) ON sco.custid = @srecommend AND sco.sporttype = scs.sporttype AND sco.bettype = scs.bettype
-		WHERE scs.custid = @srecommend AND scs.sporttype = 162 AND scs.bettype = 1101	
-		AND (
-		--n4<=s3+m3<=s4	IF i3=0
-		(mcs.isautopositiontaking = 0 AND ((mcs.mpositiontaking + mcs.spositiontaking < sco.minpositiontaking) OR (mcs.mpositiontaking + mcs.spositiontaking > scs.spositiontaking)))
-		OR --m3<=s4 and u3<=s4	IF i3=1
-		(mcs.isautopositiontaking = 1 AND (mcs.mpositiontaking > scs.spositiontaking OR mcs.autopositiontaking > scs.spositiontaking OR mcs.mpositiontaking + mcs.autopositiontaking < sco.minpositiontaking))	 
-		)	
-	)	
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': Master exceeded new super position taking.',
-			@ErrCode = 207				 
-		RETURN
-	END
 
 	--Check Position Taking for Keno
 		--n4<=s3+m3<=s4		IF i3=0
@@ -1015,21 +854,7 @@ BEGIN
 		return
 	END
 	
-	----Check P2P :Game Comm
-	--IF exists(
-	--	SELECT TOP 1 1
-	--	FROM dbo.P2PGROUPCOMM s WITH(NOLOCK)
-	--		INNER JOIN dbo.P2PGROUPCOMM m WITH(NOLOCK)
-	--			ON m.GroupID = s.GroupID
-	--		WHERE  s.custid = @srecommend AND m.custid = @mrecommend
-	--				AND (s.sdiscount < m.adiscount )
-	--)
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': P2P''s commission of master is greater than P2P''s commission of new super.',
-	--		@ErrCode = 210
-	--	return
-	--END
-	
+
 
 	-- Check Max Win Limit for DCS
 	SELECT	@DCSSportType = 0

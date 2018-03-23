@@ -92,7 +92,7 @@ Revisions:
 	- 20171018@Percy:
 		1. Move code of balance part into new nested sp [RedmineID: #73606]
 		2. Change yesterday balance formula + Integrate Bullfighting [RedmineID: #84692]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -103,15 +103,9 @@ BEGIN
     DECLARE @custid INT
           , @uplineid INT
           , @roleid TINYINT
-          , @UsedCredit MONEY
-          , @DisableDownlinesHR BIT
-          , @DisableDownlinesOpenTote BIT
-          , @DisableDownlinesFI BIT
-          , @DisableDownlinesCS BIT
-          , @DisableDownlinesBI BIT
-          , @DisableDownlinesNumber BIT
-          , @DisableDownlinesLiveCS BIT
-          , @DisableDownlinesHRFixedOdds BIT
+          , @UsedCredit MONEY     
+          , @DisableDownlinesCS BIT       
+          , @DisableDownlinesNumber BIT          
           --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
@@ -172,35 +166,16 @@ BEGIN
 	    RETURN
     -----------------------------	
 
-    SELECT @DisableDownlinesFI = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableFinancial = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableFinancial = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableFinancial,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableFinancial = 1) 											 
-										      ELSE 0 END 	
-    										  
     SELECT @DisableDownlinesCS = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableCasino = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableCasino = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableCasino = 1) 											
 										      ELSE 0 END
 
-    SELECT @DisableDownlinesBI = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableBingo,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableBingo = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableBingo,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableBingo = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableBingo,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableBingo = 1) 											 
-										      ELSE 0 END				
-
     SELECT @DisableDownlinesNumber = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableNumber = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableNumber = 1) 											 
 										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableNumber = 1) 											 
 										      ELSE 0 END	
-    										  
-    SELECT @DisableDownlinesLiveCS = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableLiveCasino,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid  AND DisableLiveCasino = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableLiveCasino,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableLiveCasino = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableLiveCasino,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableLiveCasino = 1) 											 
-										      ELSE 0 END
-    										  
-    SELECT @DisableDownlinesHRFixedOdds= CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableHRFixedOdds,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableHRFixedOdds = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableHRFixedOdds,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableHRFixedOdds = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableHRFixedOdds,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableHRFixedOdds = 1) 											 
-										      ELSE 0 END
+ 
     										  
     --SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
 				--						     WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableVirtualSports = 1) 											 
@@ -545,14 +520,9 @@ BEGIN
 	    ci.danger2,
 	    ci.danger3,
 	    ci.Abnormal,
-	    ci.closed, ci.reject as suspended, ci.autosuspend,	
-	    ci.DisableFinancial,
-	    ISNULL(@DisableDownlinesFI,0) DisableDownlinesFI,
-	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,
-	    ISNULL(@DisableDownlinesBI,0) DisableDownlinesBI,
-	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
-	    ISNULL(@DisableDownlinesLiveCS,0) DisableDownlinesLiveCS,
-	    ISNULL(@DisableDownlinesHRFixedOdds,0) DisableDownlinesHRFixedOdds,
+	    ci.closed, ci.reject as suspended, ci.autosuspend,		 
+	    ISNULL(@DisableDownlinesCS,0) DisableDownlinesCS,	  
+	    ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,	
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
 		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,
@@ -561,15 +531,13 @@ BEGIN
 		ISNULL(@DisableDownlinesSuperLive,0) DisableDownlinesSuperLive,
 		@IsSyncUplineGoldDeluxe AS IsSyncUplineGoldDeluxe,
 		@DisabledUplineGoldDeluxe AS DisabledUplineGoldDeluxe,
-	    ci.DisableBingo,
+	 
 	    ci.DisableNumber,
 	    ci.DisableOutRight,
 	    ci.disablecasino,
 	    ci.synccasino,
-	    ci.syncbingo,
-	    ci.disableLiveCasino,
-	    ci.synclivecasino,
-	    ci.DisableHRFixedOdds,
+	 
+	 
 	    --ci.DisableVirtualSports,
 	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,	    	   

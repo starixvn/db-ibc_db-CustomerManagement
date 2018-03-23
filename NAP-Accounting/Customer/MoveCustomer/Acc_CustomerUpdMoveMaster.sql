@@ -68,7 +68,7 @@ Revisions:
 	- 20160426@Winnie: fix  Bug #56653 [Move account: IsHidden of move master is changed to 0]
 	- 20160426@Winnie: fix  Bug #62755 [NAP - IsDailyAutoReset of downline is changed to 0 after moving downline although both downline and upline has IsDailyAutoReset=1]
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
-
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -96,23 +96,12 @@ BEGIN
             @sDisableOutright    BIT,
             @mDisableOutright    BIT,
             @sDisableCasino        BIT,
-            @mDisableCasino        BIT,
-            @sDisableLiveCasino    BIT,
-            @mDisableLiveCasino BIT,
+            @mDisableCasino        BIT,           
             @sDoubleCommLosing    BIT,
             @mDoubleCommLosing  BIT,
             @sSuspended            BIT,    
             @mSuspended            BIT,
-            --@sMaxTransferP2P    MONEY,
-            --@mMaxTransferP2P    MONEY,
-            --@sIsAutoResetP2P    BIT,
-            --@mIsAutoResetP2P    BIT,
-            --@sDisableP2P        BIT, 
-            --@mDisableP2P        BIT, 
-            --@sDisableFunP2P        BIT,
-            --@mDisableFunP2P        BIT,
-            --@sDisableVirtualSports        BIT,
-            --@mDisableVirtualSports        BIT,            
+      
             @sHideKeno                    BIT,
             @mHideKeno                    BIT,
             @mHideGoldDeluxe		BIT,
@@ -126,14 +115,9 @@ BEGIN
 
     SELECT    @srecommend            = custid,         
             @sDisableOutright    = DisableOutright,
-            @sDisableCasino        = DisableCasino,
-            @sDisableLiveCasino = DisableLiveCasino,
+            @sDisableCasino        = DisableCasino,        
             @sDoubleCommLosing  = DoubleCommLosing,    
-            --@sMaxTransferP2P    = MaxTransferP2P, 
-            --@sIsAutoResetP2P    = IsAutoResetP2P, 
-            --@sDisableP2P        = DisableP2P, 
-            --@sDisableFunP2P        = DisableFunP2P,
-            --@sDisableVirtualSports    = DisableVirtualSports,
+          
             @sHideKeno                = HideKeno,
 			@sDisableGoldDeluxe		= DisableGoldDeluxe,
 			@sHideGoldDeluxe	= HideGoldDeluxe,
@@ -147,13 +131,9 @@ BEGIN
             @srecommend_old        = srecommend,         
             @mDisableOutright    = DisableOutright,
             @mDisableCasino        = DisableCasino,
-            @mDisableLiveCasino = DisableLiveCasino,
+          
             @mDoubleCommLosing    = DoubleCommLosing,
-            --@mMaxTransferP2P    = MaxTransferP2P, 
-            --@mIsAutoResetP2P    = IsAutoResetP2P, 
-            --@mDisableP2P        = DisableP2P, 
-            --@mDisableFunP2P        = DisableFunP2P,
-            --@mDisableVirtualSports    = DisableVirtualSports,
+       
             @mHideKeno                = HideKeno,
 			@mDisableGoldDeluxe		= DisableGoldDeluxe,
 			@mHideGoldDeluxe	= HideGoldDeluxe,
@@ -365,20 +345,7 @@ BEGIN
 
     END;
 
-    IF @sDisableLiveCasino = 1 AND @sDisableLiveCasino <> @mDisableLiveCasino
-    BEGIN
-        UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-           SET DisableLiveCasino = 1
-        WHERE custid IN (SELECT custid FROM #CustInfo);
-        
-        IF @@ERROR <>0 
-        BEGIN
-            SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 309;
-            RETURN;
-        END;
-    END;
-
+  
     ---- VS
     --IF @sDisableVirtualSports = 1 AND (@sDisableVirtualSports <> @mDisableVirtualSports)
     --BEGIN
@@ -521,7 +488,7 @@ INNER JOIN CustGameType mcg ON scg.CustID = @srecommend AND mcg.GameTypeID = scg
 				,@RoleID = 3
 				,@SportBettypeXML = @SportBettypeXML;
    
-    EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'horse';    
+ 
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 180, @bettype = 1201;
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 181, @bettype = 1231;
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 182, @bettype = 1231;
@@ -529,7 +496,7 @@ INNER JOIN CustGameType mcg ON scg.CustID = @srecommend AND mcg.GameTypeID = scg
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 184, @bettype = 1231;
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 185, @bettype = 1231;
     --EXEC dbo.Acc_CustSetting3rd_04 @mrecommend = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'virtual-sports', @sporttype = 186, @bettype = 1220;
-    --EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'LiveCasino';
+
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1501;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1511;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1503;

@@ -1,4 +1,5 @@
-﻿alter PROCEDURE [dbo].[Age_CustomerSelComm_Ag]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+alter PROCEDURE [dbo].[Age_CustomerSelComm_Ag]
 	@Recommend INT
 AS
 
@@ -16,7 +17,7 @@ Revisions:
 	- 20131021@Kathy: Add HR Fixed Odds (154) [Redmine:#6505]
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160114@Helen: Cricket - [Redmine: #50027]
-	
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -54,12 +55,7 @@ BEGIN
 	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.adiscount else 0 end)*100 as adiscount_financial,
 	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.discount else 0 end)*100 as discount_financial,
 	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.playerdiscount else 0 end)*100 as playerdiscount_financial,
-		
-		-- HR Fixed Odds
-		max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.adiscount else 0 end) * 100 as adiscountHRFixedOdds,
-		max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.discount else 0 end) * 100 as discountHRFixedOdds,
-		max(case when cs.bettype = 20 and cs.sporttype = 154 then cs.playerdiscount else 0 end) * 100 as playerdiscountHRFixedOdds,
-
+	
 		--Get NumberGame commission 	
 		max(case when cs3rd.bettype = 81 and cs3rd.sporttype=161 then cs3rd.adiscount else 0 end)*100 as adiscount_numbergame,
 		max(case when cs3rd.bettype = 81 and cs3rd.sporttype=161 then cs3rd.discount else 0 end)*100 as discount_numbergame,

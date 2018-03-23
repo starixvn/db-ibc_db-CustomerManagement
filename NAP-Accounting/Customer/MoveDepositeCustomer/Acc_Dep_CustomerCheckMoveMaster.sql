@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Dep_CustomerCheckMoveMaster]
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Dep_CustomerCheckMoveMaster]
 	@supername	VARCHAR(40),
 	@mastername VARCHAR(40),
 	@userid		INT,	
@@ -13,6 +14,7 @@ AS
 	
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	Param's Explanation:
 	• @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -33,102 +35,53 @@ BEGIN
 			@mrecommend			INT,
 			@srecommend_old		INT, 
 			@scurrency			TINYINT, 
-			@mcurrency			TINYINT,
-			@sdisable151_31		BIT,-- @sdisableHR -> @sdisable151_31 
-			@mDisable151_31		BIT,-- @mdisableHR -> @mDisable151_31 
+			@mcurrency			TINYINT,			
 			@sdisableFI			BIT, 
 			@mdisableFI			BIT,
 			@sSyncCasino		BIT,
 			@mSyncCasino		BIT,
-			@sSyncBingo			BIT,
-			@mSyncBingo			BIT,
-			@sSyncLiveCasino	BIT,
-			@mSyncLiveCasino	BIT,
+		
 			@sIsInternal		BIT,
 			@mIsInternal		BIT,
 			@sDisableOutright	BIT,
 			@mDisableOutright	BIT,
 			@sDisableCasino		BIT,
-			@mDisableCasino		BIT,
-			@sDisableLiveCasino	BIT,
-			@mDisableLiveCasino BIT,
-			@mDisable151_41		BIT,-- @mDisableOpenTote -> @mDisable151_41
-			@sDisable151_41		BIT,-- @sDisableOpenTote -> @sDisable151_41
-			@mDisable151_51		BIT,
-			@sDisable151_51		BIT,
-			@mDisable152_41		BIT,
-			@sDisable152_41		BIT,
-			@mDisable152_51		BIT,
-			@sDisable152_51		BIT,
-			@mDisable153_51		BIT,
-			@sDisable153_51		BIT,
+			@mDisableCasino		BIT,		
 			@sDisableNumber		BIT,
 			@mDisableNumber		BIT,
-			@sDisableBingo		BIT,
-			@mDisableBingo		BIT,
+		
 			@sClosed			BIT,	
 			@mClosed			BIT,
 			@sSuspended			BIT,	
-			@mSuspended			BIT,
-			@sMaxTransferP2P	MONEY,
-			@mMaxTransferP2P	MONEY,
-			@sIsAutoResetP2P	BIT,
-			@mIsAutoResetP2P	BIT,
-			@sDisableP2P		BIT, 
-			@mDisableP2P		BIT, 
-			@sDisableFunP2P		BIT,
-			@mDisableFunP2P		BIT
+			@mSuspended			BIT
+		
 
 	SELECT	@srecommend			= custid, 
-			@scurrency			= currency, 
-			@sdisable151_31		= DisableHorseracing, 
-			@sdisableFI			= DisableFinancial,
+			@scurrency			= currency, 			
+			
 			@sSyncCasino		= SyncCasino,
-			@sSyncBingo			= SyncBingo,
-			@sSyncLiveCasino	= SyncLiveCasino,
+	
 			@sDisableOutright	= DisableOutright,
-			@sDisableCasino		= DisableCasino,
-			@sDisableLiveCasino = DisableLiveCasino,
-			@sDisable151_41		= DisableOpenTote ,
-			@sDisable151_51		= Disable151_AU,
-			@sDisable152_41		= Disable152_UK,
-			@sDisable152_51		= Disable152_AU,
-			@sDisable153_51		= Disable153_AU,
-			@sDisableBingo		= DisableBingo,
+			@sDisableCasino		= DisableCasino,		
+			
 			@sDisableNumber		= DisableNumber,
 			@sClosed			= closed,
-			@sSuspended			= reject,
-			@sMaxTransferP2P	= MaxTransferP2P, 
-			@sIsAutoResetP2P	= IsAutoResetP2P, 
-			@sDisableP2P		= DisableP2P, 
-			@sDisableFunP2P		= DisableFunP2P 		
+			@sSuspended			= reject		
 	FROM	custinfo WITH (NOLOCK) 
 	WHERE	username = @supername AND roleid = 4
 
 	SELECT	@mrecommend			= custid, 
 			@srecommend_old		= srecommend, 
-			@mcurrency			= currency, 
-			@mDisable151_31		= DisableHorseracing, 
-			@mdisableFI			= DisableFinancial,
-			@mSyncCasino		= SyncCasino,
-			@mSyncLiveCasino	= SyncLiveCasino,
-			@mSyncBingo			= SyncBingo,
+			@mcurrency			= currency, 			
+			
+			@mSyncCasino		= SyncCasino,		
+		
 			@mDisableOutright	= DisableOutright,
-			@mDisableCasino		= DisableCasino,
-			@mDisableLiveCasino = DisableLiveCasino,
-			@mDisable151_41		= DisableOpenTote,
-			@mDisable151_51		= Disable151_AU,
-			@mDisable152_41		= Disable152_UK,
-			@mDisable152_51		= Disable152_AU,
-			@mDisable153_51		= Disable153_AU,
-			@mDisableBingo		= DisableBingo,
+			@mDisableCasino		= DisableCasino,			
+			
 			@mDisableNumber		= DisableNumber,
 			@mSuspended			= reject,
-			@mClosed			= closed,
-			@mMaxTransferP2P	= MaxTransferP2P, 
-			@mIsAutoResetP2P	= IsAutoResetP2P, 
-			@mDisableP2P		= DisableP2P, 
-			@mDisableFunP2P		= DisableFunP2P 		
+			@mClosed			= closed		
 	FROM	custinfo WITH (NOLOCK) 
 	WHERE	username = @mastername AND roleid = 3
 
@@ -185,53 +138,7 @@ BEGIN
 		RETURN
 	END
 
-	--Check Horse, FI status:
-	IF @sdisable151_31 = 1 AND @mDisable151_31 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled SA Racing but new super not enabled SA Racing.',
-			@ErrCode = 107					 
-		RETURN
-	END
 
-	--Check OpenTote
-	IF @sDisable151_41 = 1 AND @mDisable151_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK/IRish Racing but new super not enabled UK/IRish Racing.',
-			@ErrCode = 108				 
-		RETURN
-	END
-
-	--Check Horse Racing for AU Tote
-	IF @sDisable151_51 = 1 AND @mDisable151_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Racing but new super not enabled Aust Racing.',
-			@ErrCode = 109			 
-		RETURN
-	END
-
-	--Check Greyhound for UK Tote
-	IF @sDisable152_41 = 1 AND @mDisable152_41 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled UK Greyhound but new super not enabled UK Greyhound.',
-			@ErrCode = 110		 
-		RETURN
-	END
-
-	--Check Greyhound for AU Tote
-	IF @sDisable152_51 = 1 AND @mDisable152_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Aust Greyhound but new super not enabled Aust Greyhound.',
-			@ErrCode = 111			 
-		RETURN
-	END
-
-	--Check Harness for AU Tote
-	IF @sDisable153_51 = 1 AND @mDisable153_51 = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master enabled Aust Harness but new super not enabled Aust Harness.',
-			@ErrCode = 112			 
-		RETURN
-	END
 
 	IF @sdisableFI = 1 AND @mdisableFI = 0
 	BEGIN
@@ -256,29 +163,9 @@ BEGIN
 		RETURN
 	END
 	*/
-	--Check Bingo sync
-	IF @sSyncBingo = 0 AND @mSyncBingo = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Bingo but new super is not synchronized Bingo',
-			@ErrCode = 115				 
-		RETURN
-	END
+	
 
-	--Check Casino sync:
-	IF @sSyncLiveCasino = 0 AND @mSyncLiveCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Casino but new super is not synchronized Casino.',
-			@ErrCode = 116					 
-		RETURN
-	END
 
-	--Check Bingo & Number status:
-	IF @sdisableBingo = 1 AND @mdisableBingo = 0
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Bingo but new super is not enabled Bingo.',
-			@ErrCode = 117					 
-		RETURN
-	END
 
 
 	IF @sdisableNumber = 1 AND @mdisableNumber = 0
@@ -328,20 +215,6 @@ BEGIN
 		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': super commission is less than master commission.',
 			@ErrCode = 203				 
 		RETURN
-	END
-
-	--Check commission for live casino 
-	IF EXISTS(
-			SELECT 1 
-			FROM CustSettingGame AS scs WITH(NOLOCK)
-				INNER JOIN CustSettingGame mcs WITH(NOLOCK) ON mcs.custid = @mrecommend AND scs.sporttype = mcs.sporttype AND scs.bettype = mcs.bettype
-			WHERE scs.custid = @srecommend AND scs.sporttype = 162 AND scs.bettype = 1101
-				 AND scs.sdiscount < mcs.adiscount
-	)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @mastername + ': super commission is less than master commission.',
-				@ErrCode = 204
-		RETURN	
 	END
 
 	--Check Position Taking
@@ -452,21 +325,7 @@ BEGIN
 		RETURN
 	END
 
-	--Check P2P :Game Comm
-	IF exists(
-		SELECT TOP 1 1
-		FROM dbo.P2PGROUPCOMM s WITH(NOLOCK)
-			INNER JOIN dbo.P2PGROUPCOMM m WITH(NOLOCK)
-				ON m.GroupID = s.GroupID
-			WHERE  s.custid = @srecommend AND m.custid = @mrecommend
-					AND (s.sdiscount < m.adiscount )
-	)
-	BEGIN
-		Select @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': P2P''s commission of master is greater than P2P''s commission of new super.',
-			@ErrCode = 210
-		return
-	END
-
+	
 END
 
 

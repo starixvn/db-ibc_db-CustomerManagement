@@ -1,17 +1,13 @@
-﻿USE [CustDB]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+USE [CustDB]
 GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdUserComm]    Script Date: 06/11/2015 12:51:16 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 /****** Object:  Stored Procedure dbo.Age_CustomerUpdUserComm    Script Date: 12/5/2013 4:35:18 PM ******/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdUserComm]	
 	@custid INT, --customer to be updated
 	@playerdiscount DECIMAL(9,8),
 	@playerdiscountcs DECIMAL(9,8),
-	@playerdiscount1x2 DECIMAL(9,8),
-	@playerdiscountHRFixedOdds decimal(9,8) = 0,	
+	@playerdiscount1x2 DECIMAL(9,8),	
 	@playerdiscountnumber DECIMAL(9,8),
 	@playerdiscountMyanmarOdds DECIMAL(9,8) = 0,
 	@userid INT, --updater Id	
@@ -52,7 +48,7 @@ Revisions:
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
-	
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @playerdiscount: Player discount for group			(sportype = 1 and bettype = 1)
@@ -94,7 +90,7 @@ Param's Explanation:
 	
 	--Do update
 	DECLARE @username VARCHAR(40), @recommend INT,
-			@discount DECIMAL(9,8), @discountcs DECIMAL(9,8), @ugroup VARCHAR(10),@discount1x2_max DECIMAL(9,8),@discountnumber_max DECIMAL(9,8), @discountHRFixedOdds_max DECIMAL(9,8)
+			@discount DECIMAL(9,8), @discountcs DECIMAL(9,8), @ugroup VARCHAR(10),@discount1x2_max DECIMAL(9,8),@discountnumber_max DECIMAL(9,8)
 	SELECT @UserName  = username,
 			@recommend = recommend,
 			@ugroup = c.ugroup
@@ -103,7 +99,7 @@ Param's Explanation:
 	DECLARE	@playerdiscount_old DECIMAL(9,8),
 			@playerdiscountcs_old DECIMAL(9,8),		
 			@playerdiscount1x2_old DECIMAL(9,8),
-			@playerdiscountHRFixedOdds_old decimal(9,8),
+			
 			@playerdiscountnumber_old DECIMAL(9,8),
 			@playerdiscountMyanmarOdds_old decimal(9,8)
 			
@@ -134,14 +130,11 @@ Param's Explanation:
 	SELECT @playerdiscount1x2_old = playerdiscount
 	FROM custsetting (NOLOCK) WHERE custid = @custid AND sporttype = 1 AND bettype = 5
 
-	select @playerdiscountHRFixedOdds_old = playerdiscount
-	from custsetting (nolock) where custid = @custid and sporttype = 154 and bettype = 20
-
 
 	SELECT @playerdiscountnumber_old = playerdiscount
 	FROM custsetting3rd (NOLOCK) WHERE custid = @custid AND sporttype = 161 AND bettype = 81
 
-	IF @playerdiscount_old <> @playerdiscount OR @playerdiscountcs_old <> @playerdiscountcs OR @playerdiscount1x2 <> @playerdiscount1x2_old OR @playerdiscountnumber <> @playerdiscountnumber_old OR @playerdiscountHRFixedOdds <> @playerdiscountHRFixedOdds_old
+	IF @playerdiscount_old <> @playerdiscount OR @playerdiscountcs_old <> @playerdiscountcs OR @playerdiscount1x2 <> @playerdiscount1x2_old OR @playerdiscountnumber <> @playerdiscountnumber_old 
 		OR (@IsMyanmarOdds = 1 AND @playerdiscountMyanmarOdds <> @playerdiscountMyanmarOdds_old)
 		SET @updatecomm_old = 1
 	ELSE 
@@ -154,7 +147,7 @@ Param's Explanation:
 	IF	@playerdiscount<0 OR @playerdiscount>0.2
 		OR @playerdiscountcs<0 OR @playerdiscountcs>0.2
 		OR @playerdiscount1x2<0 OR @playerdiscount1x2>0.2
-		OR @playerdiscountHRFixedOdds<0 OR @playerdiscountHRFixedOdds>0.2
+		
 		OR @playerdiscountnumber<0 OR @playerdiscountnumber>0.2
 		OR @playerdiscountMyanmarOdds < 0  OR @playerdiscountMyanmarOdds > 0.01
 	BEGIN	
@@ -198,22 +191,18 @@ Param's Explanation:
 		FROM custsetting3rd WITH (NOLOCK)
 		WHERE custid = @recommend AND sporttype = 161 AND bettype = 81
 
-		SELECT @discountHRFixedOdds_max = discount
-		FROM custsetting WITH (NOLOCK)
-		WHERE custid = @recommend AND sporttype = 154 AND bettype = 20
 		
 		SELECT @playerdiscount1x2 = CASE WHEN @playerdiscount1x2 > @discount1x2_max THEN @discount1x2_max ELSE @playerdiscount1x2 END
 		
 		SELECT @playerdiscountnumber = CASE WHEN @playerdiscountnumber > @discountnumber_max THEN @discountnumber_max ELSE @playerdiscountnumber END			
 		
-		SELECT @playerdiscountHRFixedOdds = CASE WHEN @playerdiscountHRFixedOdds > @discountHRFixedOdds_max THEN @discountHRFixedOdds_max ELSE @playerdiscountHRFixedOdds END		
 		
 		EXEC dbo.Acc_CustomerUpdMember_Commission
 			@custid = @custid,
 			@playerdiscount = @playerdiscount,
 			@playerdiscountcs = @playerdiscountcs , 
 			@playerdiscount1x2 = @playerdiscount1x2,
-			@playerdiscountHRFixedOdds = @playerdiscountHRFixedOdds,
+		
 			@playerdiscountnumber =  @playerdiscountnumber, 
 			@IsMyanmarOdds = @IsMyanmarOdds,
 			@discountMyanmarOdds = @playerdiscountMyanmarOdds,

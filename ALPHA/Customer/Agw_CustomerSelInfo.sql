@@ -30,6 +30,7 @@ AS
 		- 20150825@Helen: Colossus Bet - [Redmine: #41264]
 		- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
 		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 */
 BEGIN
     SET NOCOUNT ON
@@ -102,20 +103,15 @@ BEGIN
          , c.roleid roleid
          , ISNULL(@TransferOption, 0) transferoption
          , ISNULL(@DisableAutoMPT, 0) DisableAutoMPT
-         , ci.DisableHorseRacing Disable151_31
-         , ci.DisableOpenTote Disable151_41
-         , ci.Disable151_AU Disable151_51
-         , ci.Disable152_UK Disable152_41
-         , ci.Disable152_AU Disable152_51
-         , ci.Disable153_AU Disable153_51
-         , ci.DisableFinancial
+        
+      
          , ci.DisableOutright
          , ci.disablecasino
-         , ci.DisableBingo
+   
          , ci.DisableNumber
          --, ci.DisableVirtualSports
          , ci.synccasino
-         , ci.syncBingo
+        
          --, ci.HideVirtualSports
          , ci.currency
          , ci.credit

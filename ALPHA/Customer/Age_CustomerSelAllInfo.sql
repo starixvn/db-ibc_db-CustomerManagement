@@ -54,7 +54,7 @@ AS
 		- 20170517@Winnie: Apply color for closed accounts  - [Redmine:74494]
 		- 20170703@Percy: Hotfix formula today/yesterday balance when getting data from bettrans [RedmineID: #79236]
 		- 20171020@Percy: Apply core SP [RedmineID: #84690]
-	
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]	
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -100,31 +100,22 @@ BEGIN
 
     	
     --Downline/Upline status 
-    DECLARE @upLineDisableFI BIT
-          , @upLineDisableCS BIT
-
-          , @uplineDisableBingo    BIT
+    DECLARE @upLineDisableCS BIT       
           , @uplineDisabledNumber  BIT
           , @upLineDisableOutright BIT
-
           , @upLineClosed    BIT
           , @upLineSuspend   BIT
           , @upLineEnabled   BIT
           , @upLineEnabledMa BIT
-
           --, @uplineDisableVirtualSports BIT
-          , @uplineDoubleCommLosing     BIT
-          , @uplineDisableHRFixedOdds   BIT
+          , @uplineDoubleCommLosing     BIT        
           , @uplineDisableEsports       BIT
 		  , @uplineDisableGoldDeluxe	BIT
 		  , @HasDownline				BIT = 0
 		  , @DisableDownlinesGoldDeluxe	BIT = 0
 		  , @uplineDisableColossusBet	BIT
-		  , @DisableDownlinesColossusBet BIT = 0
-		  
-
-    DECLARE @DisableAutoMPT BIT
-    		
+		  , @DisableDownlinesColossusBet BIT = 0  
+    DECLARE @DisableAutoMPT BIT    		
     DECLARE @Credit_MAg_Min MONEY, @Credit_MAg_Max MONEY, 
 		    @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY, 
 		    @Credit_Mem_Min MONEY, @Credit_Mem_Max MONEY
@@ -142,13 +133,13 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	        
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	      
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	         
 	         , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -182,13 +173,13 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)			
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	       
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	        
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -224,13 +215,13 @@ BEGIN
 	         , @upLineSuspend = ISNULL(reject, 0)
 	         , @upLineClosed = ISNULL(closed, 0)
 	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	         , @uplineDisableFI = ISNULL(DisableFinancial, 0)
+	        
 	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         , @uplineDisableBingo = ISNULL(DisableBingo, 0)
+	         
 	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
 	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
 	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         , @uplineDisableHRFixedOdds = ISNULL(DisableHRFixedOdds, 0)
+	        
 		     , @uplineDisableEsports = ISNULL(DisableEsports, 0)
 			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -283,9 +274,9 @@ BEGIN
     SELECT closed, -- redundant value		
 	    reject AS suspended, -- redundant value
 	    DisableOutright, -- redundant value
-	    DisableFinancial, -- redundant value
+	  
 	    DisableCasino, -- redundant value
-	    DisableBingo, -- redundant value
+	  
 	    DisableNumber, -- redundant value 
 	    @TransferOption AS [TransferOption]
     FROM custinfo WITH (NOLOCK) 	
@@ -312,7 +303,7 @@ BEGIN
 		ISNULL(@ClosedReason,0) AS ClosedReason,
 		 ci.reject AS suspended,
 	    DisableOutright,
-	    ci.DisableFinancial,
+	   
 	    ci.DisableNumber,
 	    @DisableAutoMPT as [DisableAutoMPT],	
     	
@@ -322,13 +313,13 @@ BEGIN
 	    ISNULL(@upLineEnabled,0) AS [uplineEnabled],
 	    ISNULL(@upLineEnabledMa,0) AS [upLineEnabledMa],
 	    ISNULL(@upLineDisableOutright,0) AS [upLineDisableOutright],	
-	    ISNULL(@uplineDisableFI,0) AS [uplineDisableFI],	
+	 
 	    ISNULL(@uplineDisableCS,0) AS [uplineDisableCS],	
-	    ISNULL(@uplineDisableBingo,0) AS [uplineDisableBingo],	
+	  
 	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
 	    --ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
 	    ISNULL(@uplineDoubleCommLosing,0) as [uplineDoubleCommLosing],
-	    ISNULL(@uplineDisableHRFixedOdds,0) AS [uplineDisableHRFixedOdds],
+	  
 	    ISNULL(@uplineDisableEsports, 0) AS uplineDisableEsports,
 		ISNULL(@uplineDisableGoldDeluxe, 0) AS uplineDisableGoldDeluxe,
 		ISNULL(@uplineDisableColossusBet, 0) AS uplineDisableColossusBet,
@@ -352,16 +343,12 @@ BEGIN
     	
 	    ci.synccasino,
 	    ci.disablecasino,
-	    ci.syncbingo,
-	    ci.disablebingo,
-	    c.creatdate AS createdate,
-	    ci.DisableLiveCasino,
-	    ci.SyncLiveCasino,
+	 
+	    c.creatdate AS createdate,	 
 	    --ci.DisableVirtualSports,
 	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,
-	    --ci.DisableP2P, 
-	    ci.DisableHRFixedOdds,
+ 
 	    ci.HideKeno,
 	    ci.DisableEsports,
 		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,

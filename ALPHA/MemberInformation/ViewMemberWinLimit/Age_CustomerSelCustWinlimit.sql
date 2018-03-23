@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 					@CustId			INT
 				,	@BetType		SMALLINT
@@ -18,7 +19,7 @@ AS
 		- 20160216@Billy:	Implement Max Win Loss Limit for DCS Product - [Redmine: #52268]
 		- 20160318@Billy:	Fix MaxLossLimit for RnG Casino - [Redmine: #54335]
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
-
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -83,34 +84,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #MemberBalance
 	
-	IF @BetType = 1101 --Live CS
-	BEGIN
-		SELECT RowNumber, closed, enabled, suspended, username, firstname, lastname, credit, CustId
-			, isAutoResetLiveCasino AS IsAutoReset
-			, MaxWinLiveCasino AS MaxWinLimit
-			, NULL AS MaxLossLimit
-		FROM (
-			SELECT ROW_NUMBER() OVER (ORDER BY c.enabled DESC, c.closed, ISNULL(c.reject, 0), c.username) AS RowNumber
-				, c.username
-				, c.closed
-				, c.enabled
-				, ISNULL(c.reject, 0) AS suspended
-				, c.credit
-				, c.isAutoResetLiveCasino
-				, c.MaxWinLiveCasino
-				, b.custid
-				, cc.firstname
-				, cc.lastname
-			FROM #MemberBalance b 
-				INNER JOIN dbo.custInfo c WITH(NOLOCK) ON b.CustId = c.custid
-				INNER JOIN dbo.customer cc WITH(NOLOCK) ON b.CustId = cc.CustId
-			GROUP BY c.username, closed, enabled, ISNULL(c.reject, 0), credit, firstname, lastname
-			, isAutoResetLiveCasino, MaxWinLiveCasino, b.custid
-		)tmp
-		WHERE tmp.RowNumber BETWEEN @RowStart AND @RowEnd
-		ORDER BY RowNumber
-		OPTION (RECOMPILE)
-	END
+	
 	IF EXISTS (SELECT 1 FROM dbo.ProductSettingDetail AS psd WHERE psd.SportType = @SportType AND psd.BetType = @BetType)
 	BEGIN
 	    SELECT	tmp.RowNumber
