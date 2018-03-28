@@ -1,2 +1,1 @@
-NAP-CM\TurnoverControl\SPList\NAP_TOControl_GlobalSettingInsertMultiple.sql
-NAP-CM\TurnoverControl\SPList\NAP_TOControl_MatchTurnoverUpdateMultiple.sql
+NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
