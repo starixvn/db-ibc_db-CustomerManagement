@@ -76,8 +76,8 @@ BEGIN
 			-- So, only based on  conditions: Productid = 1, Sporttype = 0,SubProduct= '' 
 			
 		INSERT INTO #ExtraPTInfo (SuperID,ExtraPT,fromDate,todate)
-		SELECT GHL.CustID,ISNULL(EPT.ExtraPT,0),EPT.FromDate,EPT.ToDate
-		FROM @GroupHeadlineList GHL
+		SELECT GHL.srecommend,ISNULL(EPT.ExtraPT,0),EPT.FromDate,EPT.ToDate
+		FROM (SELECT DISTINCT srecommend FROM @GroupHeadlineList) AS GHL
 			LEFT JOIN dbo.Acc_GroupExtraPTSetting EPT WITH (NOLOCK) ON GHL.srecommend = EPT.SuperId 
 																	AND EPT.ProductId = 1 
 																	AND EPT.Sporttype = 0 
