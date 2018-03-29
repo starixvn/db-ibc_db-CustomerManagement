@@ -12,6 +12,7 @@ AS
 	DB: DBAGE/bodb_Age
 
 	Revisions:
+		- 20180301@Elodie: Support send lettalk notification [RedmineID: #91064]
 
 	Parameter's explaination: 
 	
@@ -34,7 +35,8 @@ BEGIN
 				 WHEN ISNULL(t.TotalBalance,0) >=0 THEN 0
 				 ELSE (t.TotalBalance/t.MaxLoss*100) END AS PercentageLoss,
 			CASE WHEN t.MaxLoss IS NULL THEN 1
-				 ELSE 0 END AS NoSetting
+				 ELSE 0 END AS NoSetting,
+			NotifyLetsTalk
 	FROM #GroupList gl
 		INNER JOIN bodb02.dbo.custInfo c WITH (NOLOCK) ON gl.CustID = c.custid
 		INNER JOIN bodb02.dbo.exchange e WITH (NOLOCK) ON c.currency = e.exchangeid
