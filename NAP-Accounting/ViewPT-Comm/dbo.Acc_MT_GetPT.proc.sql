@@ -38,6 +38,7 @@ Revisions:
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -48,26 +49,35 @@ Param's Explanation:
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
-DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
-DECLARE @tmp_Bettype TABLE (TypeID INT, TypeNamee NVARCHAR(50))
-	
-BEGIN TRY
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
-END TRY
-BEGIN CATCH
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
-END CATCH
+	BEGIN TRY
+		SELECT *
+		INTO #tmp_Sports
+		FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBAGE')	
+	END TRY
+	BEGIN CATCH
+		IF OBJECT_ID(N'tempdb..#tmp_Sports') IS NOT NULL
+		BEGIN
+			TRUNCATE TABLE #tmp_Sports
+			INSERT INTO #tmp_Sports
+			SELECT *
+			FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBTXN')	
+		END
+	END CATCH
 
-BEGIN TRY
-	INSERT INTO @tmp_Bettype (TypeID, TypeNamee)
-	SELECT TypeID, TypeNamee FROM DBAGE.bodb02.dbo.Bettype WITH (NOLOCK)
-END TRY
-BEGIN CATCH
-	INSERT INTO @tmp_Bettype (TypeID, TypeNamee)
-	SELECT TypeID, TypeNamee FROM DBTXN.bodb02.dbo.Bettype WITH (NOLOCK)
-END CATCH
+	BEGIN TRY			
+		SELECT *
+		INTO #tmp_Bettype
+		FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBAGE')	
+	END TRY
+	BEGIN CATCH		
+		IF OBJECT_ID(N'tempdb..#tmp_Bettype') IS NOT NULL
+		BEGIN
+			TRUNCATE TABLE #tmp_Bettype
+			INSERT INTO #tmp_Bettype
+			SELECT *
+			FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBTXN')	
+		END
+	END CATCH
 ----- 20150610@Kos -------------------
 
 Begin
@@ -183,13 +193,13 @@ Begin
 	IF(@IsLicensee = 0)
 		BEGIN
 			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, Sportname, typenamee
+			SELECT t.Sporttype, Bettype, sports.Name, bettype.Name
 			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 					UNION
 					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
 				 ) t
-			inner join @tmp_Sports sports on t.sporttype = sports.sporttype
-			inner join @tmp_Bettype bettype on t.bettype = bettype.typeid
+			inner join #tmp_Sports sports on t.sporttype = sports.ID
+			inner join #tmp_Bettype bettype on t.bettype = bettype.ID
 			WHERE CustID = @CustID and Bettype = case @Bettype when 0 then Bettype else @Bettype end  
 				and t.Sporttype = case @Sporttype when 0 then t.Sporttype else @Sporttype end  
 			ORDER BY t.Sporttype, t.Bettype		
@@ -197,13 +207,13 @@ Begin
 	ELSE
 		BEGIN
 			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, Sportname, typenamee
+			SELECT t.Sporttype, Bettype, sports.Name, bettype.Name
 			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM dep_CustSetting cs WITH (NOLOCK)
 					UNION
 					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM dep_CustSetting3rd cs3rd WITH (NOLOCK)
 				 ) t
-			inner join @tmp_Sports sports on t.sporttype = sports.sporttype
-			inner join @tmp_Bettype bettype on t.bettype = bettype.typeid
+			inner join #tmp_Sports sports on t.sporttype = sports.ID
+			inner join #tmp_Bettype bettype on t.bettype = bettype.ID
 			WHERE CustID = @CustID and Bettype = case @Bettype when 0 then Bettype else @Bettype end  
 				and t.Sporttype = case @Sporttype when 0 then t.Sporttype else @Sporttype end  
 			ORDER BY t.Sporttype, t.Bettype	
