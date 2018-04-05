@@ -25,7 +25,7 @@ BEGIN
 	UPDATE t
 	SET ExistsCSDB = 1
 	FROM @tmpCust t
-		INNER JOIN DBCasino.Casinoadmin.dbo.Customer cs WITH(NOLOCK) ON t.custid = cs.custid
+		INNER JOIN DBCasino.Casinoadmin.dbo.Customer cs WITH(NOLOCK) ON t.custid = cs.ibccustid
 	
 	SELECT t.*, ci.username as UplineUserName, e.currency as currencyName
 	FROM @tmpCust t

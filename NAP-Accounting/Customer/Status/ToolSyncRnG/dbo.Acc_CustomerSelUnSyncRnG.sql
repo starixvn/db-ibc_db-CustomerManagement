@@ -12,7 +12,7 @@ BEGIN
 	SET NOCOUNT ON 
 	
 	CREATE TABLE #Supers (custid INT)
-	CREATE TABLE #tblCust(CustID INT, username VARCHAR(50))
+	CREATE TABLE #tblCust(CustID INT, username VARCHAR(50), roleid TINYINT,UplineID INT, currency INT, SyncCS BIT, ExistsCSDB BIT DEFAULT 0)
 	
 	INSERT INTO #Supers(custid)
 	SELECT custid 
@@ -25,28 +25,45 @@ BEGIN
 		AND ci.username NOT IN ( 'SA-ttt', 'SA-TH' )
 		AND site IN (SELECT site FROM site WHERE isLicensee = 0)
 	
-	INSERT INTO #tblCust(CustID,username)
-	SELECT custid, username
+	INSERT INTO #tblCust(CustID,username,roleid,UplineID,currency,SyncCS)
+	SELECT custid, username,roleid,
+		CASE roleid WHEN 1 THEN recommend
+					WHEN 2 THEN mrecommend
+					WHEN 3 THEN srecommend END,
+		currency, syncCasino
 	FROM dbo.CustInfo (NOLOCK)
 	WHERE srecommend IN (SELECT custid FROM #Supers) 
 		AND SyncCasino = 0
 		AND Enabled = 1
 	
-	
-	SELECT t.* FROM #tblCust t
-	INNER JOIN dbo.custinfo ci (nolock) on t.custid = ci.custid
-	WHERE t.custid NOT IN (
-		SELECT custid FROM dbo.custSuper WITH(NOLOCK) WHERE isInternal = 1
-		UNION SELECT custid FROM dbo.custMaster WITH(NOLOCK) WHERE isInternal = 1
-		UNION SELECT custid FROM dbo.custAgent WITH(NOLOCK) WHERE isInternal = 1
-	)
-	and roleid > 1
-	UNION 	SELECT t.* FROM #tblCust t
-	INNER JOIN dbo.custinfo ci (nolock) on t.custid = ci.custid
-	WHERE recommend IN (
-		SELECT custid FROM dbo.custAgent WITH(NOLOCK) WHERE isInternal = 0
-	)
-	and roleid = 1
+	UPDATE t
+	SET ExistsCSDB = 1
+	FROM #tblCust t
+		INNER JOIN DBCasino.Casinoadmin.dbo.Customer cs WITH(NOLOCK) ON t.custid = cs.ibccustid
+	SELECT *
+	FROM(	
+		SELECT t.*,upline.username as UplineUserName, e.currency as currencyName
+		FROM #tblCust t
+			INNER JOIN dbo.custinfo ci (nolock) on t.custid = ci.custid
+			INNER JOIN dbo.Custinfo upline WITH(NOLOCK) ON t.UplineID = upline.custid
+			INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
+		WHERE t.custid NOT IN (
+			SELECT custid FROM dbo.custSuper WITH(NOLOCK) WHERE isInternal = 1
+			UNION SELECT custid FROM dbo.custMaster WITH(NOLOCK) WHERE isInternal = 1
+			UNION SELECT custid FROM dbo.custAgent WITH(NOLOCK) WHERE isInternal = 1
+		)
+		and ci.roleid > 1
+		UNION 	SELECT t.*,upline.username as UplineUserName, e.currency as currencyName
+		FROM #tblCust t
+			INNER JOIN dbo.custinfo ci WITH(NOLOCK) ON t.custid = ci.custid
+			INNER JOIN dbo.Custinfo upline WITH(NOLOCK) ON t.UplineID = upline.custid
+			INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
+		WHERE ci.recommend IN (
+			SELECT custid FROM dbo.custAgent WITH(NOLOCK) WHERE isInternal = 0
+		)
+		and ci.roleid = 1
+	)t
+	ORDER BY roleid DESC
 END
 GO		
 		
