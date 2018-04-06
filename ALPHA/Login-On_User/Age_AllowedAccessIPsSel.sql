@@ -8,7 +8,7 @@ AS
 		DB: DBCust.IPDB 
 		
 		Revisions: 
-			-20180313@Louis: Create
+			-20180313@Louis: Create [Redmine: 91633]
 		
 		Parameter's Explanation:
 	*/
