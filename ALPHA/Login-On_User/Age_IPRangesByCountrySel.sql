@@ -1,10 +1,4 @@
 /*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,bodbDownlineNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [IPDB]
-GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[Age_IPRangesByCountrySel]
 	@isIPV6 BIT = 0,
 	@countryCodes NVARCHAR(MAX) = ''
@@ -16,6 +10,7 @@ AS
 		DB: DBCUST.IPDB
 		
 		Revisions:
+			-20180313@Louis: Create
 		
 		Parameter's Explanation:
 			@isIPV6: choose data source of ipv6 instead of ipv4

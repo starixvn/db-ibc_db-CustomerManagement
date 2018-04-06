@@ -1,14 +1,4 @@
 /*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,bodbDownlineNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
-USE [IPDB]
-GO
-/****** Object:  UserDefinedFunction [dbo].[strSplit]    Script Date: 03/23/2018 09:22:09 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  User Defined Function dbo.strSplit    Script Date: 12/5/2013 4:31:58 PM ******/
-
-/****** Object:  User Defined Function dbo.strSplit    Script Date: 8/5/2013 4:08:39 PM ******/
 ALTER FUNCTION [dbo].[strSplit](@string [nvarchar](MAX), @splitter [char](1))
 RETURNS @res TABLE (
     [id] [int] NOT NULL,
@@ -20,6 +10,17 @@ PRIMARY KEY CLUSTERED
 )
 ) WITH EXECUTE AS CALLER
 AS 
+	/*
+		Created: Louis.Nguyen
+		Date: 2018-03-13
+		Task: Split string
+		DB: DBCUST.IPDB
+		
+		Revisions:
+			-20180313@Louis: Create
+		
+		Parameter's Explanation:
+	*/
 begin
 	 
      if substring ( @string, len ( @string), 1)<>@splitter

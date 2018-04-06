@@ -1,11 +1,5 @@
 /*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,bodbDownlineNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [IPDB]
-GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-ALTER PROCEDURE Age_AllowedAccessIPsSel
+ALTER PROCEDURE [dbo].[Age_AllowedAccessIPsSel]
 AS
 	/*
 		Created: Louis.Nguyen
@@ -13,7 +7,8 @@ AS
 		Task: Get office IPs or white list IPs
 		DB: DBCust.IPDB 
 		
-		Revisions:
+		Revisions: 
+			-20180313@Louis: Create
 		
 		Parameter's Explanation:
 	*/
