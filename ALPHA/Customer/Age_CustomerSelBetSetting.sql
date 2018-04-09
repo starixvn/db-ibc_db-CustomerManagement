@@ -15,6 +15,7 @@ Revisions:
 	- 20131021@Kathy: Add HR Fixed Odds (154) [Redmine:#6505]
 	- 20161109@Helen: Separate Bet Setting for Soccer - Parlay - [Redmine:66265]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20180404@Razor: Security in Jan 2018 - Issue #2: uper/Master can edit bet setting of its indirect donwlines [RedmineID: #91896]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 */
@@ -49,6 +50,10 @@ EXEC Age_CustomerSelMinMaxLimit @custid, @userid,
 	
 		@MinBetv161_Max = @MinBetv161_Max output, @MaxBetv161_Min = @MaxBetv161_Min output, @MaxPerMatchv161_Min = @MaxPerMatchv161_Min output, @MaxPerMatchv161_Max = @MaxPerMatchv161_Max output, @MaxPerBallv161_Min = @MaxPerBallv161_Min output, @MaxPerBallv161_Max = @MaxPerBallv161_Max output
 		 
+DECLARE @RoleId INT
+SELECT @RoleId = RoleId
+FROM dbo.custInfo WITH(NOLOCK)
+WHERE custid = @userid
 
 --MIN,MAX BET
 SELECT 	
@@ -163,6 +168,7 @@ FROM
 	INNER JOIN CustSetting cs with (NOLOCK) on ci.custid = cs.custid	
 	INNER JOIN CustSetting3rd cs3 with (NOLOCK) on cs.custid = cs3.custid
 WHERE cs.custid=@custid
+	AND ( ci.roleid = 4 OR ci.roleid = @RoleId - 1)
 group by 
 	ci.maxpermatch,
 	ci.maxpermatch2,
