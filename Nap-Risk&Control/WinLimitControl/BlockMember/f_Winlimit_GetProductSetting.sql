@@ -1,7 +1,10 @@
-/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1" isNested="1"></info>*/
-USE bodb02
-GO 
-
+USE [bodb02]
+GO
+/****** Object:  UserDefinedFunction [dbo].[f_Winlimit_GetProductSetting]    Script Date: 4/17/2018 11:18:10 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
 RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
 AS
@@ -20,6 +23,7 @@ AS
 		- 20170710@Helen: Keno Lottery, BetradarVS into CWL [Redmine:77567,77564]
 		- 20171027@Johnson: Add Lucky 3 [Redmine: #75883]
 		- 20171001@Elodie: Apply SMA Winlimit and Company Win Limit for BullFighting [Redmine:#81664]
+		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
 
 	Parameters Explanation:	
 */
@@ -48,7 +52,7 @@ BEGIN
 			-- Phase 3: add more
 			SELECT 3, 81, 0, 1 --Number Game
 			UNION ALL				
-			SELECT 5, 1201, 0, 1 --Virtual Sports
+			SELECT 5, 1201, 1, 1 --Virtual Sports
 			UNION ALL
 			SELECT 8, 1501, 0, 1  -- Keno
 			UNION ALL		
@@ -68,5 +72,3 @@ BEGIN
 
 	RETURN
 END
-
-GO
