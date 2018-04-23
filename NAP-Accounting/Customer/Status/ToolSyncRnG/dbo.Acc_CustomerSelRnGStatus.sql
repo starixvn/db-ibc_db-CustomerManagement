@@ -31,6 +31,7 @@ BEGIN
 	FROM @tmpCust t
 		INNER JOIN dbo.Custinfo ci WITH(NOLOCK) ON t.UplineID = ci.custid
 		INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
-	WHERE t.custid IS NOT NULL		
+	WHERE t.custid IS NOT NULL
+	ORDER BY roleid DESC	
 END
 GO	
