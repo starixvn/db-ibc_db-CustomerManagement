@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
 USE [bodb_Age]
 GO
 
@@ -23,6 +23,7 @@ AS
 		- 20130121@Dan: Move sp from DB053/bodb02 to DBAGE/bodb_AGE, change linked server DB03 to DBPOLICY, DB06 to DBARC
 		- 20160729@Percy: insert into setting table if group is extra pt group [RedmineID: #60883]
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
+		- 20180409@Kan: Make this SP nested [RedmineID: #77733]
 */
 
 BEGIN
@@ -33,17 +34,6 @@ BEGIN
 	DECLARE @duration	INT
 	
 	SET @startRun = GETDATE()
-	
-	-- Check permission for account site
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission
-		@custid = @UserID,
-		@funcname ='[Admin_ManageExAcc]',
-		@ErrCode = @ErrCode OUTPUT,
-		@ErrMsg = @ErrMsg OUTPUT,
-		@System = 'ACCOUNTING'
-	
-	IF @ErrCode <> 0
-		RETURN
 	
 	DECLARE @RoleID INT
 	DECLARE @CustID INT, @SiteID INT
@@ -65,7 +55,7 @@ BEGIN
 	--Check RoleID, should be super role
 	IF ISNULL(@RoleID, 0) <> 4
 	BEGIN
-		SELECT @ErrMsg = 	N'The role of this username is not super, please check again !'	
+		SELECT @ErrMsg = 	N'The role of this username is not super, please check again!'	
 			, @ErrCode = 102
 		RETURN
 	END
@@ -74,7 +64,7 @@ BEGIN
 	
 	IF (@Currency NOT IN (SELECT exchangeID from bodb02.dbo.[f_CurrencyBySystem](@GroupName)))
 	BEGIN
-		SELECT @ErrMsg = 	N'The currency of this username does not belong to this group !'
+		SELECT @ErrMsg = 	N'The currency of this username does not belong to this group!'
 			, @ErrCode = 103
 		RETURN
 	END
@@ -85,7 +75,7 @@ BEGIN
 	
 	IF (@SiteID NOT IN (SELECT siteid FROM bodb02.dbo.[f_SiteBySystem] (@GroupName)))
 	BEGIN
-		SELECT @ErrMsg = 	N'The site of this username does not belong to this group !'
+		SELECT @ErrMsg = 	N'The site of this username does not belong to this group!'
 			, @ErrCode = 104
 		RETURN
 	END
