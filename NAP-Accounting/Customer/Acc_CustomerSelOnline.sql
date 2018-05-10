@@ -33,11 +33,11 @@ WHERE custid = @custid
 IF @RoleID = 1 
 	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, @lastlogged as reload_time
 	FROM on_user WITH (nolock)
-	WHERE custid = @custid AND DATEDIFF(SECOND, reload_time, @currentTime) <= @availableTime AND iskickedout = 0 AND ServerID <> 0
+	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
 ELSE 
 	IF @RoleID BETWEEN 2 AND 4
 	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, LoginTime as reload_time
 	FROM on_user_agent WITH (nolock)
-	WHERE custid = @custid AND DATEDIFF(SECOND, reload_time, @currentTime) <= @availableTime AND iskickedout = 0 AND ServerID <> 0
+	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
 	ORDER BY on_userid
 GO	
