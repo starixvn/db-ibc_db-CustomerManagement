@@ -40,6 +40,7 @@ Revisions:
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20180510@Elodie: Enhance performance [RedmineID: #95012]
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 */
@@ -48,35 +49,79 @@ Param's Explanation:
 
 	declare @roleid tinyint
 	declare @remark nvarchar(300) = ''
-	DECLARE @Site VARCHAR(10),@HasDownline INT=0,@IsDisabledDownline BIT=0
-	
-	select @roleid = roleid
-	  from Customer with(nolock)
-	 where custid = @custid
+	DECLARE @Site VARCHAR(10),@HasDownline INT=0,@IsDisabledDownline BIT=0, @TotalDownlines INT
+	CREATE TABLE #ciDownline (CustID INT, bitmapHasSynced BINARY (32))
+
+	SELECT @roleid = roleid
+	FROM Customer with(nolock)
+	WHERE custid = @custid
 	 
 	if @roleid = 1
 	begin
 		select @remark = remark
-		  from customer with(nolock)
-		 where custid = @custid
+		from customer with(nolock)
+		where custid = @custid
 	end
 	if @roleid = 2
 	begin
 		select @remark = creationRemark
-		  from CustAgent with(nolock)
-		 where custid = @custid
+		from CustAgent with(nolock)
+		where custid = @custid
+		
+		--Use nest loop and parallesim (will use parallesim if big line) to enhance performance
+		INSERT INTO #ciDownline (CustID, bitmapHasSynced) 
+		SELECT ci.custid, cs.bitmapHasSynced
+		FROM (	SELECT TOP (100000) custid 
+				FROM dbo.custInfo WITH (NOLOCK) WHERE recommend = @custid) ci
+			CROSS APPLY (SELECT TOP (1) bitmapHasSynced FROM dbo.CustProductStatus cs WITH (NOLOCK) WHERE cs.CustID = ci.custid) cs		
 	end
 	if @roleid = 3
 	begin
 		select @remark = creationRemark
-		  from CustMaster with(nolock)
-		 where custid = @custid
+		from CustMaster with(nolock)
+		where custid = @custid
+
+		SELECT @TotalDownlines = COUNT(1)
+		FROM Custinfo WITH (NOLOCK)
+		WHERE mrecommend = @custid
+
+		--Use nest loop and parallesim (will use parallesim if big line) to enhance performance
+		IF @TotalDownlines <= 100000
+			INSERT INTO #ciDownline (CustID, bitmapHasSynced) 
+			SELECT ci.custid, cs.bitmapHasSynced
+			FROM (	SELECT TOP (100000) custid 
+					FROM dbo.custInfo WITH (NOLOCK) WHERE mrecommend = @custid) ci
+				CROSS APPLY (SELECT TOP (1) bitmapHasSynced FROM dbo.CustProductStatus cs WITH (NOLOCK) WHERE cs.CustID = ci.custid) cs		
+		ELSE -- Use hash match if line > 100k
+			INSERT INTO #ciDownline (CustID, bitmapHasSynced) 
+			SELECT ci.custid, cs.bitmapHasSynced
+			FROM dbo.custInfo ci WITH (NOLOCK) 
+				INNER JOIN dbo.CustProductStatus cs WITH (NOLOCK) ON cs.CustID = ci.custid 
+			WHERE ci.mrecommend = @custid
 	end
 	if @roleid = 4
 	begin
 		select @remark = creationRemark
-		  from CustSuper with(nolock)
-		 where custid = @custid
+		from CustSuper with(nolock)
+		where custid = @custid
+		
+		SELECT @TotalDownlines = COUNT(1)
+		FROM Custinfo WITH (NOLOCK)
+		WHERE srecommend = @custid
+
+		--Use nest loop and parallesim (will use parallesim if big line) to enhance performance
+		IF @TotalDownlines <= 100000
+			INSERT INTO #ciDownline (CustID, bitmapHasSynced) 
+			SELECT ci.custid, cs.bitmapHasSynced
+			FROM (SELECT TOP (100000) custid 
+					FROM dbo.custInfo WITH (NOLOCK) WHERE srecommend = @custid) ci
+				CROSS APPLY (SELECT TOP (1) bitmapHasSynced FROM dbo.CustProductStatus cs WITH (NOLOCK) WHERE cs.CustID = ci.custid) cs		
+		ELSE -- Use hash match if line > 100k
+			INSERT INTO #ciDownline (CustID, bitmapHasSynced) 
+			SELECT ci.custid, cs.bitmapHasSynced
+			FROM dbo.custInfo ci WITH (NOLOCK) 
+				INNER JOIN dbo.CustProductStatus cs WITH (NOLOCK) ON cs.CustID = ci.custid 
+			WHERE ci.srecommend = @custid
 	end
 	-- casino
 	IF @RoleID=2
@@ -230,16 +275,10 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0) AS SyncedAllBet,
 			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_AllBet), 0) AS SyncedAllBetUpline,
 			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT	1
-									FROM		dbo.CustProductStatus AS cpsDownline WITH (NOLOCK)
-									INNER JOIN	dbo.custInfo AS ciDownline WITH (NOLOCK)
-											ON	ciDownline.custid = cpsDownline.CustID
-									WHERE	Customer.custid =	CASE	WHEN Customer.roleid = 2 THEN ciDownline.recommend
-																		WHEN Customer.roleid = 3 THEN ciDownline.mrecommend
-																		WHEN Customer.roleid = 4 THEN ciDownline.srecommend
-																		ELSE -1
-																END
-										AND	dbo.f_GetProductStatus(cpsDownline.bitmapHasSynced, @bitmapOrder_AllBet) = 0)
+					WHEN EXISTS	(	SELECT 1
+									FROM #ciDownline AS ciDownline
+										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_AllBet) s
+									WHERE s.value = 0)
 						THEN 0
 					ELSE 1
 			END AS SyncedAllBetDownline,
@@ -249,16 +288,10 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridgeUpline,
 			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT	1
-									FROM		dbo.CustProductStatus AS cpsDownline WITH (NOLOCK)
-									INNER JOIN	dbo.custInfo AS ciDownline WITH (NOLOCK)
-											ON	ciDownline.custid = cpsDownline.CustID
-									WHERE	Customer.custid =	CASE	WHEN Customer.roleid = 2 THEN ciDownline.recommend
-																		WHEN Customer.roleid = 3 THEN ciDownline.mrecommend
-																		WHEN Customer.roleid = 4 THEN ciDownline.srecommend
-																		ELSE -1
-																END
-										AND	dbo.f_GetProductStatus(cpsDownline.bitmapHasSynced, @bitmapOrder_VoidBridge) = 0)
+					WHEN EXISTS	(	SELECT 1
+									FROM #ciDownline AS ciDownline
+										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_VoidBridge) s
+									WHERE s.value = 0)
 						THEN 0
 					ELSE 1
 			END AS SyncedVoidBridgeDownline,
@@ -297,16 +330,10 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
 			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorldUpline,
 			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT	1
-									FROM		dbo.CustProductStatus AS cpsDownline WITH (NOLOCK)
-									INNER JOIN	dbo.custInfo AS ciDownline WITH (NOLOCK)
-											ON	ciDownline.custid = cpsDownline.CustID
-									WHERE	Customer.custid =	CASE	WHEN Customer.roleid = 2 THEN ciDownline.recommend
-																		WHEN Customer.roleid = 3 THEN ciDownline.mrecommend
-																		WHEN Customer.roleid = 4 THEN ciDownline.srecommend
-																		ELSE -1
-																END
-										AND	dbo.f_GetProductStatus(cpsDownline.bitmapHasSynced, @bitmapOrder_FishingWorld) = 0)
+					WHEN EXISTS	(	SELECT 1
+									FROM #ciDownline AS ciDownline
+										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_FishingWorld) s
+									WHERE s.value = 0)
 						THEN 0
 					ELSE 1
 			END AS SyncedFishingWorldDownline,
@@ -337,7 +364,5 @@ Param's Explanation:
 		    
 		 
 	 WHERE Customer.custid = @custid
-
-	
 END
 GO
