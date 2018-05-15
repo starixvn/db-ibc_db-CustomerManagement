@@ -28,6 +28,7 @@ AS
 		  + ACCUSD: 1,000,000 US$ (USD)
 		  + ACCINDO: 5,000,000 IN (IDR)
 		  + ACCTHAI: 20,000,000 TB (THB)
+
 */
 
 BEGIN
@@ -113,13 +114,14 @@ BEGIN
 	END
 
 	-- Hard-code to update temporary global setting for World Cup event
-	DECLARE @BeginWC DATETIME = '2018-5-9',
+	-- Format date is: yyyy-mm-dd
+	DECLARE @BeginWC DATETIME = '2018-6-11',
 		@EndWC DATETIME = '2018-7-16',
 		@MaxTurnover MONEY,
 		@Creator INT
 	
-	IF CONVERT(DATE, GETDATE()) BETWEEN @BeginWC AND @EndWC
-		AND @GroupName IN ('ACCUSD', 'ACCINDO', 'ACCTHAI')
+	IF @GroupName IN ('ACCUSD', 'ACCINDO', 'ACCTHAI')
+		AND CONVERT(DATE, GETDATE()) BETWEEN @BeginWC AND @EndWC
 	BEGIN
 		IF @GroupName = 'ACCUSD'
 		BEGIN
