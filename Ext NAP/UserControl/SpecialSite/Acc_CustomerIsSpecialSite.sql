@@ -21,10 +21,12 @@ AS
 		- 20170918@Elodie: Output more @SiteCode [RedmineID: #83219]
 		- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 		- 20180130@Elodie: Get @SiteCode value of customer instead of Group Headline [RedmineID: #90192]
+		- 20180515@Elodie: Add new EU88 Alpha site [Redmine: #94865]
+
 	Param's Explanation:
 		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
 		2. Alpha: Consolidation report -> bet list -> show NG2 ticket if @IsSpecialHeadline of login SMA = 1 (only check on link i1; i7 & i9 default show NG2 ticket)
-		3. SiteCode: Use to define link i1, i7 or i9 when internal ALPHA site
+		3. SiteCode: Use to define link i1, i7, Eu88 or i9 when internal ALPHA site
 	Example query:
 		DECLARE @IsSpecialSite BIT = 0,
 				@IsSpecialHeadline BIT = 0,
@@ -78,6 +80,8 @@ BEGIN
 		SELECT @SiteCode = 9
 	ELSE IF @site = '789y'
 		SELECT @SiteCode = 7
+	ELSE IF @site = 'EU88'
+		SELECT @SiteCode = 8
 	ELSE 
 		SELECT @SiteCode = 1
 
