@@ -1,33 +1,32 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 USE [CustDB]
 GO
+
+ALTER PROCEDURE [dbo].[EAS_OTP_CustomerOTPSecretKeyUpd] 
+	@CustID INT,
+	@SecretKey VARCHAR(50),
+	@Enabled BIT = 1,
+	@ErrCode INT = 0 OUTPUT,
+	@ErrMsg NVARCHAR(200) = '' OUTPUT
+AS
 /*
-  Creator: David
+    Creator: David
 	Date: 2018-05-10
-	DB: DBCUST.CustDB
-	Task: Update secret key 
+	Task: Implement External OTP
+	DB: DBCUST/CustDB
 
 	Revisions:
+		- 20180516@David: Update OTP Secret key [Redmine:#94192]
 
 	Param's Explanation:
 */
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-ALTER PROCEDURE [dbo].[EAS_OTP_CustomerOTPSecretKeyUpd] @CustID int,
-@SecretKey nvarchar(50),
-@Enabled bit = 1,
-@ErrCode int = 0 OUTPUT,
-@ErrMsg nvarchar(200) = '' OUTPUT
-AS
 BEGIN
   SET NOCOUNT ON
-  DECLARE @startRun datetime,
-          @endRun datetime,
-          @duration int,
-          @LogSPData varchar(max),
-          @ActionID int
+  DECLARE @startRun DATETIME,
+          @endRun DATETIME,
+          @duration INT,
+          @LogSPData VARCHAR(max),
+          @ActionID INT
   SELECT
     @startRun = GETDATE(),
     @ActionID = 933
@@ -80,6 +79,4 @@ BEGIN
                                                      @duration = @duration
   END CATCH
 END
-GO
-GRANT EXECUTE ON [dbo].[EAS_OTP_CustomerOTPSecretKeyUpd] TO [bodbExtAccNet]
 GO
