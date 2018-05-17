@@ -4,6 +4,7 @@ GO
 
 ALTER PROCEDURE [dbo].[EAS_OTP_CustomerOTPSecretKeyUpd] 
 	@CustID INT,
+	@UserID INT,
 	@SecretKey VARCHAR(50),
 	@Enabled BIT = 1,
 	@ErrCode INT = 0 OUTPUT,
@@ -51,15 +52,16 @@ BEGIN
 
   -- write log
   SELECT
-    @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd="' + COALESCE(CAST(@CustID AS varchar(10)), SPACE(1)) + '" '
-    + 'ErrCode="' + COALESCE(CAST(@ErrCode AS varchar(10)), SPACE(1)) + '" '
+    @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+	+ 'Enabled="' + COALESCE(CAST(@Enabled AS VARCHAR(10)), SPACE(1)) + '" '
+    + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '
     + 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
   SET @endRun = GETDATE()
   SET @duration = DATEDIFF(MILLISECOND, @startRun, @endRun)
 
   BEGIN TRY
     -- try to insert into DBLOG
-    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @CustID,
+    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @UserID,
                                                            @CustID = @CustID,
                                                            @ActionID = @ActionID,
                                                            @TrackingValue = @LogSPData,
@@ -67,12 +69,13 @@ BEGIN
   END TRY
   BEGIN CATCH
     SELECT
-      @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd custid="' + COALESCE(CAST(@CustID AS varchar(10)), SPACE(1)) + '" '
-      + 'ErrCode="' + COALESCE(CAST(@ErrCode AS varchar(10)), SPACE(1)) + '" '
-      + 'ErrMsg="' + ERROR_MESSAGE() + '" />'
+      @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+	+ 'Enabled="' + COALESCE(CAST(@Enabled AS VARCHAR(10)), SPACE(1)) + '" '
+    + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '
+    + 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
 
 
-    EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @CustID,
+    EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @UserID,
                                                      @CustID = @CustID,
                                                      @ActionID = @ActionID,
                                                      @TrackingValue = @LogSPData,
