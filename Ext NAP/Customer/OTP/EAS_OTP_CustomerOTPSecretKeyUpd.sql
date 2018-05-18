@@ -52,7 +52,7 @@ BEGIN
 
   -- write log
   SELECT
-    @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+    @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd custid="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
 	+ 'Enabled="' + COALESCE(CAST(@Enabled AS VARCHAR(10)), SPACE(1)) + '" '
     + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '
     + 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
@@ -69,7 +69,7 @@ BEGIN
   END TRY
   BEGIN CATCH
     SELECT
-      @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
+      @LogSPData = '<EAS_OTP_CustomerOTPSecretKeyUpd custid="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '
 	+ 'Enabled="' + COALESCE(CAST(@Enabled AS VARCHAR(10)), SPACE(1)) + '" '
     + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '
     + 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
