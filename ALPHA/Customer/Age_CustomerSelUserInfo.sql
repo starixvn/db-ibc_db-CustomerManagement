@@ -364,5 +364,7 @@ Param's Explanation:
 		    
 		 
 	 WHERE Customer.custid = @custid
+
+	 DROP TABLE #ciDownline
 END
 GO
