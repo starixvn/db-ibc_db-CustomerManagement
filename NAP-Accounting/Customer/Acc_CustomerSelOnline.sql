@@ -1,45 +1,43 @@
-﻿/****** Object:  Stored Procedure dbo.Acc_CustomerSelOnline    Script Date: 9/20/2011 8:47:06 PM ******/
+﻿/*<info serverAlias="DBONUSER-on_user" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+/****** Object:  Stored Procedure dbo.Acc_CustomerSelOnline    Script Date: 9/20/2011 8:47:06 PM ******/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelOnline]
-	@custid int
+	@custid INT,
+	@availableTime INT = 70
 AS
 /*
 Created: 20090122@nqminh
 Task : Select customer online list
-DB: DB03.on_user
+DB: DBONUSER.on_user
 Original:
 
 Revisions:
 	- 20110803@Lukas: Get lastlogged from bodb02.dbo.customer
 	- 20110912@Sophia: Add table on_user_agent
 	- 20121001@Jamie: Do not get DomainID field 
+	- 20180504@Louis: Update Online List [RedmineID: #94480]
 Param's Explanation:
 • @userid: customer id
+• @availableTime: time-diff between reload time and current time by seconds
 */
 
 SET NOCOUNT ON
 DECLARE @lastlogged DATETIME, @RoleID INT
 
+DECLARE @currentTime DATETIME
+SET @currentTime = getdate()
+
 SELECT @lastlogged = lastlogged , @RoleID = RoleID
 FROM bodb02.dbo.customer WITH(NOLOCK)
 WHERE custid = @custid
 
-
 IF @RoleID = 1 
-SELECT on_sessionid, custid, @lastlogged AS reload_time, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP
-FROM on_user WITH (nolock)
-WHERE custid = @custid
+	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, @lastlogged as reload_time
+	FROM on_user WITH (nolock)
+	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
 ELSE 
-IF @RoleID BETWEEN 2 AND 4
-SELECT on_sessionid, custid, @lastlogged AS reload_time, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP
-FROM on_user_agent WITH (nolock)
-WHERE custid = @custid
-ORDER BY on_userid
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelOnline] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelOnline] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelOnline] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelOnline] TO [bodbExtAccNet] AS [dbo]
+	IF @RoleID BETWEEN 2 AND 4
+	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, LoginTime as reload_time
+	FROM on_user_agent WITH (nolock)
+	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
+	ORDER BY on_userid
+GO	
