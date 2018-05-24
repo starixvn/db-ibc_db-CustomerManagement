@@ -76,6 +76,6 @@ BEGIN
 		
 	
 END
-
+GO
 
 GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckSmartPunter_xtest] TO [bodbAdminNet]
