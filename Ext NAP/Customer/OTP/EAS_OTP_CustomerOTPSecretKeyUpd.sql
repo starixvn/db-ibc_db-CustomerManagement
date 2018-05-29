@@ -5,7 +5,7 @@ GO
 ALTER PROCEDURE [dbo].[EAS_OTP_CustomerOTPSecretKeyUpd] 
 	@CustID INT,
 	@UserID INT,
-	@SecretKey VARCHAR(50),
+	@SecretKey VARCHAR(50) = '',
 	@Enabled BIT = 1,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20180516@David: Update OTP Secret key [Redmine:#94192]
+		- 20180524@David: Only update OTP Secret key in enable case [Redmine:#94192]
 
 	Param's Explanation:
 */
@@ -35,16 +36,17 @@ BEGIN
 
   BEGIN TRY
     UPDATE [dbo].[EASCustOTP] WITH (ROWLOCK, UPDLOCK)
-    SET [SecretKey] = @SecretKey,
-        [Enabled] = @Enabled,
-        [ModifiedDate] = GETDATE()
+    SET [Enabled] = @Enabled,
+        [ModifiedDate] = GETDATE(),
+		[SecretKey] = (CASE WHEN @Enabled = 1 AND @SecretKey <> '' THEN @SecretKey ELSE [SecretKey] END)
     WHERE dbo.EASCustOTP.CustID = @CustID
   END TRY
   BEGIN CATCH
     IF @@Error <> 0
     BEGIN
       SELECT
-        @ErrMsg = 'Error! Error when reset OTP.',
+        @ErrMsg = (CASE WHEN @Enabled = 1 AND @SecretKey <> '' THEN  'Error! Error when reset OTP.' 
+				   ELSE 'Error! Error when '+ (CASE WHEN @Enabled = 1 THEN 'enable' ELSE 'disable' END) +' OTP.' END)  ,
         @ErrCode = 101
       RETURN
     END
