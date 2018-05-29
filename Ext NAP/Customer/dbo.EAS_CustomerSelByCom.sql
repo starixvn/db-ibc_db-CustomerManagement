@@ -280,7 +280,7 @@ BEGIN
 			END AS SyncedVoidBridgeDownline,
 			-- GD
 			CASE	WHEN EXISTS	(	SELECT	1
-									FROM		dbo.custInfo AS ciDownline WITH (NOLOCK)											
+									FROM		dbo.custInfo AS ciDownline WITH (NOLOCK, INDEX = IX_srecommend)											
 									WHERE	ciDownline.srecommend = cu.custid
 											AND ISNULL(HideGoldDeluxe,1)=1)
 						THEN 0
