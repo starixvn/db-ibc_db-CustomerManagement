@@ -1,3 +1,5 @@
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+
 USE [bodb_CustomerLog]
 GO
 
