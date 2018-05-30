@@ -30,6 +30,7 @@ AS
 		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
 		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
 		- 20161018@Winnie: Handle logactionid range of smartpunter RedmineID #63077
+		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -186,7 +187,7 @@ BEGIN
 						UserID,
 						Username =	CASE 
 										when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-										when (la.ActionID BETWEEN 2000 AND 3000 OR la.ActionID BETWEEN 1142 AND 1144) then 'Admin'
+										when (la.ActionID BETWEEN 2000 AND 3000 OR la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
 										ELSE c.Username
 									END,
 						CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -208,10 +209,11 @@ BEGIN
 						AND LogDate BETWEEN @FromDate AND @ToDate
 						AND la.actionid BETWEEN @LowerActionId AND @UpperActionId
 						AND IsInternal <= @IsInternal
-						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						
 			) AS MyTable
 	WHERE   RowNum BETWEEN @lbound AND @ubound
 END
 END
+GO
