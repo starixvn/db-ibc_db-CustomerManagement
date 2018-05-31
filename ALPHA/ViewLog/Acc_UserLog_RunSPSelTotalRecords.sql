@@ -1,8 +1,7 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 USE [bodb_CustomerLog]
 GO
-
-ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSelTotalRecords]    
+CREATE PROCEDURE [dbo].[Acc_UserLog_RunSPSelTotalRecords]    
     @CustId INT, 
     @FromDate DATETIME,
     @ToDate DATETIME,
@@ -28,7 +27,7 @@ AS
 	 Revisions:
 		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 		- 20160115@Dominic: Do not show logactionid=237 if Trackingvalues is null Redmine: #50937
-	
+		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 */
 -- SET NOCOUNT ON added to prevent extra result sets from
 -- interfering with SELECT statements.
@@ -70,6 +69,7 @@ BEGIN
             AND LogDate BETWEEN @FromDate AND @ToDate
             AND la.ActionID BETWEEN @LowerActionId AND @UpperActionId
             AND IsInternal <= @IsInternal
-			AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+			AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 			AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 END
+GO
