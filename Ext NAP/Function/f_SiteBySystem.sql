@@ -35,6 +35,7 @@ Revisions:
 	- 20161005@Harris: Add new group ACCYNG	for Allbet Testing
 	- 20171003@Elodie: Add ACCTESTK68 group
 	- 20171005@Elodie: Add TH999 group
+	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -76,6 +77,8 @@ BEGIN
 		SELECT 147
 		UNION ALL 
 		SELECT 257 --Y987
+		UNION ALL 
+		SELECT 294 --EU88
 	END
 	ELSE IF (@System = 'ACCDDD')
 	BEGIN
@@ -104,7 +107,11 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 257 --Y987
 	END
-
+	ELSE IF (@System IN ('SQ88'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)		
+		SELECT 294 --EU88
+	END
 	RETURN
 END
 GO
