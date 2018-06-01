@@ -35,7 +35,7 @@ Revisions:
 	- 20161005@Harris: Add new group ACCYNG	for Allbet Testing
 	- 20171003@Elodie: Add ACCTESTK68 group
 	- 20171005@Elodie: Add TH999 group
-	- 20180601@Elodie: Add SQ88 group
+	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
