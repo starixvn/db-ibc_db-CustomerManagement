@@ -19,7 +19,7 @@ AS
 
     Param's Explanation:
         . @CustID: ID of agent whose status value has been changed
-        . @UserID: ID of master or admin who made it
+        . @UserID: admin who made it
 */
 BEGIN   
 	-- SET NOCOUNT ON added to prevent extra result sets from
