@@ -24,6 +24,10 @@ AS
 		- 20160729@Percy: insert into setting table if group is extra pt group [RedmineID: #60883]
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
 		- 20180409@Kan: Make this SP nested [RedmineID: #77733]
+		- 20180509@Kan: Hard-code to update temporary global setting for World Cup event [Redmine: #92010]
+		  + ACCUSD: 1,000,000 US$ (USD)
+		  + ACCINDO: 5,000,000 IN (IDR)
+		  + ACCTHAI: 20,000,000 TB (THB)
 */
 
 BEGIN
@@ -80,8 +84,7 @@ BEGIN
 		RETURN
 	END
 	
-	
-	if exists (SELECT 1 FROM dbo.Acc_CustGroup WITH (NOLOCK) WHERE CustID = @CustID AND GroupName = @GroupName)
+	IF EXISTS (SELECT 1 FROM dbo.Acc_CustGroup WITH (NOLOCK) WHERE CustID = @CustID AND GroupName = @GroupName)
 	BEGIN
 		SELECT @ErrMsg = 	N'This username was added before, please check again!'
 			, @ErrCode = 105
@@ -108,6 +111,44 @@ BEGIN
 			@ErrMsg = 'Please select the Extra PT effective date for the customer ' + @Username + '.'
 		END
 	END
+
+	-- Hard-code to update temporary global setting for World Cup event
+	DECLARE @BeginWC DATETIME = '2018-5-9',
+		@EndWC DATETIME = '2018-7-16',
+		@MaxTurnover MONEY,
+		@Creator INT
+	
+	IF CONVERT(DATE, GETDATE()) BETWEEN @BeginWC AND @EndWC
+		AND @GroupName IN ('ACCUSD', 'ACCINDO', 'ACCTHAI')
+	BEGIN
+		IF @GroupName = 'ACCUSD'
+		BEGIN
+			SET @MaxTurnover = 1000000
+		END
+		ELSE IF @GroupName = 'ACCINDO'
+		BEGIN
+			SET @MaxTurnover = 5000000
+		END
+		ELSE --IF @GroupName = 'ACCTHAI'
+		BEGIN
+			SET @MaxTurnover = 20000000
+		END
+
+		SELECT @Creator = CustId
+		FROM bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE Username = 'starix2'
+
+		EXEC DBCUST.CustDB.dbo.NAP_TOControl_GlobalSettingUpdate
+			@CustID = @CustID,
+			@MaxTurnover = @MaxTurnover,
+			@SportType = 1,
+			@IsGroupHeadLine = 0,
+			@UserID = @Creator,
+			@IP	= '::1',
+			@ErrCode = 0,
+			@ErrMsg = ''
+	END
+	-- End of Hard-code ...
 
 	--Write log data
 	DECLARE @LogData NVARCHAR(1000)
