@@ -37,6 +37,7 @@ Revisions:
 	- 20171005@Elodie: Add TH999 group
 	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
+	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -108,7 +109,7 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 257 --Y987
 	END
-	ELSE IF (@System IN ('SQ88','THEU','899EU','789EU'))
+	ELSE IF (@System IN ('SQ88','THEU','899EU','789EU','SQUS'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 294 --EU88
