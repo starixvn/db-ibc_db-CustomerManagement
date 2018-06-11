@@ -28,7 +28,6 @@ AS
 		  + ACCUSD: 1,000,000 US$ (USD)
 		  + ACCINDO: 5,000,000 IN (IDR)
 		  + ACCTHAI: 20,000,000 TB (THB)
-
 */
 
 BEGIN

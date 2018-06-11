@@ -21,8 +21,6 @@ AS
     Notes:
     + Soccer		:    Soccer global setting will be 300K MYR & 789Y SMA will be 200K USD.
     + Other Sports	:	150 K MYR
-                                 
-   
 */
 RETURN (
    SELECT CAST(1 AS SMALLINT) sporttype, CAST('789y' AS NVARCHAR(50)) AS site,CAST(0 AS INT) ExchangeID, CAST(200000 AS MONEY) MaxTurnOver, CAST(3 AS INT) TOCurrency -- US$
