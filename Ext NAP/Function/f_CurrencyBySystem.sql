@@ -34,7 +34,6 @@ Revisions:
 	- 20171005@Elodie: Add TH999 group
 	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
-	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -146,11 +145,6 @@ BEGIN
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 78 --EUR
-	END
-	ELSE IF (@System in ( 'SQUS'))
-	BEGIN
-		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 3 --US$
 	END
 	RETURN
 END
