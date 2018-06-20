@@ -56,6 +56,8 @@ AS
 		- 20171020@Percy: Apply core SP [RedmineID: #84690]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]	
 		- 20180918@Winnie: Esports Product - [Redmine: #101526]	
+		- 20180611@Elodie: Move all status of customer to Age_CustomerSelAllStatus SP [RedmineID: #58776]	
+
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -71,18 +73,10 @@ BEGIN
 
     SELECT @username = RTRIM(LTRIM(@username))
 
-    SELECT @custid = custid
-         , @roleid = roleid
-         , @srecommend = srecommend
-         , @mrecommend = mrecommend
-         , @recommend = recommend
-      FROM custinfo WITH(NOLOCK)
-     WHERE username = @username 
-	   AND (srecommend = @uplineid
-	        OR mrecommend = @uplineid
-	        OR recommend = @uplineid
-	       )
-
+    SELECT @custid = custid, @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
+	FROM custinfo WITH(NOLOCK)
+    WHERE username = @username 
+	   AND (srecommend = @uplineid OR mrecommend = @uplineid OR recommend = @uplineid)
 
     ------20110721: If @isInternal = 1 then searching by nickname, else do not allow
     IF (@custid IS NULL) AND @isInternalAgent = 1
@@ -94,63 +88,27 @@ BEGIN
     END
     --end
 
-
     --Check valid access!
     IF (@custid IS NULL) RETURN
     IF (@recommend <> @uplineid AND @mrecommend <> @uplineid AND @srecommend <> @uplineid) RETURN
-
     	
-    --Downline/Upline status 
-    DECLARE @upLineDisableCS BIT       
-          , @uplineDisabledNumber  BIT
-          , @upLineDisableOutright BIT
-          , @upLineClosed    BIT
-          , @upLineSuspend   BIT
-          , @upLineEnabled   BIT
-          , @upLineEnabledMa BIT
-          --, @uplineDisableVirtualSports BIT
-          , @uplineDoubleCommLosing     BIT        
-          --, @uplineDisableEsports       BIT
-		  , @uplineDisableGoldDeluxe	BIT
-		  , @HasDownline				BIT = 0
-		  , @DisableDownlinesGoldDeluxe	BIT = 0
-		  , @uplineDisableColossusBet	BIT
-		  , @DisableDownlinesColossusBet BIT = 0  
-    DECLARE @DisableAutoMPT BIT    		
+    DECLARE @upLineEnabled   BIT
     DECLARE @Credit_MAg_Min MONEY, @Credit_MAg_Max MONEY, 
-		    @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY, 
+		    @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY , 
 		    @Credit_Mem_Min MONEY, @Credit_Mem_Max MONEY
 
     DECLARE @TotalMemberActive INT, @TotalMemberClosed INT, @TotalMemberSuspended INT,
 		    @TotalAgentActive INT, @TotalAgentClosed INT, @TotalAgentSuspended INT		
-    		
         
     IF @roleID=1 --for member
     BEGIN	
-	    --Upline
 	    DECLARE @Credit_AllOtherMember MONEY, @Credit_Ag MONEY, @MaxCredit_Mem MONEY, @Credit_Ag_Bal MONEY
     		
-	    SELECT @upLineEnabled = ISNULL(Enabled, 0)
-	         , @upLineSuspend = ISNULL(reject, 0)
-	         , @upLineClosed = ISNULL(closed, 0)
-	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	        
-	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	      
-	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
-	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	         
-	         --, @uplineDisableEsports = ISNULL(DisableEsports, 0)
-			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
-			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
-	         , @Credit_Ag = ISNULL(credit, 0)
-	      FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @recommend	
-
-	    SELECT @upLineEnabledMa = ISNULL(Enabled,0)
-	      FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @mrecommend
+		--Upline
+	    SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			,	@Credit_Ag = ISNULL(credit, 0)
+	    FROM custinfo WITH(NOLOCK)
+	    WHERE custID = @recommend	
 
 	    --Member itself
 	    SELECT @Credit_AllOtherMember = ISNULL(SUM(credit), 0) FROM DBCUST.CustDB.dbo.custinfo AS ci WITH (NOLOCK) WHERE recommend = @recommend AND RoleID = 1 AND CustID <> @CustID
@@ -169,30 +127,12 @@ BEGIN
     ELSE IF @roleID = 2 --for agent
     BEGIN
 	    DECLARE @Credit_AllOtherAgent MONEY, @Credit_MAg MONEY
-	    --Upline
-	    SELECT @upLineEnabled = ISNULL(Enabled, 0)
-	         , @upLineSuspend = ISNULL(reject, 0)
-	         , @upLineClosed = ISNULL(closed, 0)			
-	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	       
-	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         
-	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
-	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	        
-		     --, @uplineDisableEsports = ISNULL(DisableEsports, 0)
-			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
-			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
-		     , @Credit_MAg = ISNULL(credit, 0)
-	      FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @mrecommend		
-
-		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
-
-		 SELECT TOP 1 @DisableDownlinesGoldDeluxe = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE recommend = @custid AND roleid = 1 AND DisableGoldDeluxe = 1
-		 
-		 SELECT TOP 1 @DisableDownlinesColossusBet = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE recommend = @custid AND roleid = 1 AND DisableColossusBet = 1
+	    
+		--Upline
+		SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			,	@Credit_MAg = ISNULL(credit, 0)
+	    FROM custinfo WITH(NOLOCK)
+	    WHERE custID = @mrecommend	
 
 	    --Agent Itself		
 	    SELECT @Credit_AllOtherAgent = ISNULL(SUM(credit), 0) FROM DBCUST.CustDB.dbo.custinfo AS ci WITH(NOLOCK) WHERE mrecommend = @mrecommend AND RoleID = 2 AND Custid <> @custID
@@ -205,36 +145,18 @@ BEGIN
 	    FROM custinfo (NOLOCK) 
 	    WHERE recommend = @custID AND RoleID=1
     		
-	    SELECT @Credit_Mem_Min = ISNULL(MAX(credit),0) FROM DBCUST.CustDB.dbo.custinfo with(NOLOCK)
-	    WHERE recommend = @CustID AND Roleid=1
+	    SELECT @Credit_Mem_Min = ISNULL(MAX(credit),0) FROM DBCUST.CustDB.dbo.custinfo with(NOLOCK) WHERE recommend = @CustID AND Roleid=1
     END
     ELSE IF @roleID = 3 --for master
     BEGIN
 	    DECLARE @Credit_AllOtherMaster MONEY, @Credit_SAg MONEY
-	    --Upline
-	    SELECT @upLineEnabled = ISNULL(Enabled, 0)
-	         , @upLineSuspend = ISNULL(reject, 0)
-	         , @upLineClosed = ISNULL(closed, 0)
-	         , @upLineDisableOutright = ISNULL(DisableOutright, 0)
-	        
-	         , @uplineDisableCS = ISNULL(DisableCasino, 0)
-	         
-	         , @uplineDisabledNumber = ISNULL(DisableNumber, 0)
-	         --, @uplineDisableVirtualSports = ISNULL(DisableVirtualSports, 0)
-	         , @uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-	        
-		     --, @uplineDisableEsports = ISNULL(DisableEsports, 0)
-			 , @uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
-			 , @uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
-			 , @Credit_SAg = ISNULL(credit, 0)
-	      FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @srecommend
 
-		 
-		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
-		 SELECT TOP 1 @DisableDownlinesGoldDeluxe = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableGoldDeluxe = 1
-		 SELECT TOP 1 @DisableDownlinesColossusBet = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1
-		
+	    --Upline
+		SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			,	@Credit_SAg = ISNULL(credit, 0)
+	    FROM custinfo WITH(NOLOCK)
+	    WHERE custID = @srecommend	
+
 	    --Master Itself
 	    SELECT @Credit_AllOtherMaster = ISNULL(SUM(credit), 0) FROM DBCUST.CustDB.dbo.custinfo AS ci (NOLOCK) WHERE srecommend = @Srecommend AND RoleID = 3 AND custid <> @CustId
 	    SELECT @Credit_MAg_Max = ISNULL(@Credit_SAg,0) - ISNULL(@Credit_AllOtherMaster,0)	
@@ -248,86 +170,21 @@ BEGIN
 		       @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)
 	    FROM custinfo (NOLOCK) 
 	    WHERE mrecommend = @custID	
-    	
-	    SELECT @DisableAutoMPT=DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
-    	
-	    /* => Need to check member line as below ???
-	    select @Credit_MAg_Min = max(c.credit)
-	    from
-	    (
-		    Select isnull(sum(credit), 0) as credit	from custinfo with (NOLOCK) where mrecommend = @custID and roleid in (1, 2)
-		    group by mrecommend, roleid
-	    ) c
-	    */
-
     END
-	ELSE IF @roleID = 4 --for super
-	BEGIN
-		SELECT TOP 1 @DisableDownlinesGoldDeluxe = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableGoldDeluxe = 1
-		SELECT TOP 1 @DisableDownlinesColossusBet = 1 FROM dbo.custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableColossusBet = 1
-		
-	END
-
-    -------------------------------------------------------------------------
-    --Updater Info
-    DECLARE @TransferOption VARCHAR(8)
-    EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
-    SELECT closed, -- redundant value		
-	    reject AS suspended, -- redundant value
-	    DisableOutright, -- redundant value
-	  
-	    DisableCasino, -- redundant value
-	  
-	    DisableNumber, -- redundant value 
-	    @TransferOption AS [TransferOption]
-    FROM custinfo WITH (NOLOCK) 	
-    WHERE custid = @uplineId
-
+    
 	IF @roleid=1
-		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid=@custid
+		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid = @custid
 	ELSE
 	BEGIN
-		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
+		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid = @custid	
 	END
+
+	-------------------------------------------------------------------------
     --General info
-    SELECT c.custid, ci.roleid, 
-        c.username, c.username2, c.firstname, c.lastname, 	
-	    c.phone, c.mobilephone, c.fax, 		
-	    lastlogged, 
-	    iplogin AS lastloginip, 
-	    pwdexpiry, 
-	    ci.credit,
-		@netPosition AS netPosition,
-	    c.currency,	
-    	
-	    ci.enabled, ci.closed,
-		ISNULL(@ClosedReason,0) AS ClosedReason,
-		 ci.reject AS suspended,
-	    DisableOutright,
-	   
-	    ci.DisableNumber,
-	    @DisableAutoMPT as [DisableAutoMPT],	
-    	
-	    ISNULL(@upLineSuspend,0) AS [uplineSuspend],
-	    ISNULL(@upLineClosed,0) AS [upLineClosed],
+    SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ci.credit, ISNULL(@ClosedReason,0) AS ClosedReason, 
+			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, ci.reject AS suspended, @netPosition AS netPosition,
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, 
 		
-	    ISNULL(@upLineEnabled,0) AS [uplineEnabled],
-	    ISNULL(@upLineEnabledMa,0) AS [upLineEnabledMa],
-	    ISNULL(@upLineDisableOutright,0) AS [upLineDisableOutright],	
-	 
-	    ISNULL(@uplineDisableCS,0) AS [uplineDisableCS],	
-	  
-	    ISNULL(@uplineDisabledNumber,0) AS [uplineDisableNumber],	
-	    --ISNULL(@uplineDisableVirtualSports,0) AS [uplineDisableVirtualSports],	
-	    ISNULL(@uplineDoubleCommLosing,0) as [uplineDoubleCommLosing],
-	  
-	    --ISNULL(@uplineDisableEsports, 0) AS uplineDisableEsports,
-		ISNULL(@uplineDisableGoldDeluxe, 0) AS uplineDisableGoldDeluxe,
-		ISNULL(@uplineDisableColossusBet, 0) AS uplineDisableColossusBet,
-    	@HasDownline AS HasDownline,
-		@DisableDownlinesGoldDeluxe AS DisableDownlinesGoldDeluxe,
-		@DisableDownlinesColossusBet AS DisableDownlinesColossusBet,
-				
 	    @Credit_MAg_Min AS [MasterCredit_Min],
 	    @Credit_MAg_Max AS [MasterCredit_Max],
 	    @Credit_Ag_Min AS [AgentCredit_Min],
@@ -340,26 +197,11 @@ BEGIN
 	    @TotalAgentSuspended AS [TotalAgSuspended],	
 	    @TotalMemberActive AS [TotalMemActive], 
 	    @TotalMemberClosed AS [TotalMemClosed], 
-	    @TotalMemberSuspended AS [TotalMemSuspended],
-    	
-	    ci.synccasino,
-	    ci.disablecasino,
-	 
-	    c.creatdate AS createdate,	 
-	    --ci.DisableVirtualSports,
-	    --ci.HideVirtualSports,
-	    ci.DoubleCommLosing,
- 
-	    ci.HideKeno,
-	    --ci.DisableEsports,
-		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
-		ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
-		ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
-		ISNULL(ci.HideColossusBet,1) AS HideColossusBet
-		
+	    @TotalMemberSuspended AS [TotalMemSuspended]
     FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
+
     -------------------------------------------------------------------------
     --Agency Info
     SELECT CASE WHEN c.roleid = 1 THEN c.custid ELSE NULL END AS memberID,
@@ -374,8 +216,7 @@ BEGIN
 	    LEFT JOIN custinfo a WITH (NOLOCK) ON c.recommend = a.custid
 	    LEFT JOIN custinfo m WITH (NOLOCK) ON c.mrecommend = m.custid
 	    LEFT JOIN custinfo s WITH (NOLOCK) ON c.srecommend = s.custid
-    WHERE
-	    c.custid = @custid
+    WHERE c.custid = @custid
 
 	-- Balance Info
 	CREATE TABLE #BalanceInfo
@@ -537,9 +378,6 @@ BEGIN
 			@UsedCredit						AS masterUsedCredit
 	    FROM #BalanceInfo
     END
-    
-	-- For Sportbook2
-	EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid
 
 	DROP TABLE #BalanceInfo
 END
