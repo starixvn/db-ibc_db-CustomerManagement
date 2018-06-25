@@ -13,7 +13,7 @@ AS
 		- 20171110@Helen: Enhance performance for TO trigger - [Redmine: 86052]
 		- 20171212@Helen: Support UUS - Implement some change request from OPS Team - [Redmine: 85638]
 		- 20180315@Helen: Integrate Super Live product - [Redmine:89986]
-		- 20180315@Don: Tuning trigger - [Redmine:97313]
+		- 20180622@Don: Tuning trigger - [Redmine:97313]
 	
 */
 BEGIN

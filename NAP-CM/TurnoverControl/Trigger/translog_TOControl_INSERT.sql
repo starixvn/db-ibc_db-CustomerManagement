@@ -10,7 +10,7 @@ AS
 	
 	- Revisions:
 		- 20180315@Helen: Integrate Super Live product - [Redmine:89986]
-		- 20180315@Don: Tuning trigger - [Redmine:97313]
+		- 20180622@Don: Tuning trigger - [Redmine:97313]
 	
 */
 BEGIN
