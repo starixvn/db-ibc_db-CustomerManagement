@@ -21,8 +21,8 @@ BEGIN
 			
 	SET NOCOUNT ON;
 
-	DECLARE @srecommend INT, @bettype INT
-	SELECT @srecommend = srecommend, @bettype = bettype 
+	DECLARE @srecommend INT, @bettype INT, @statusID TINYINT
+	SELECT @srecommend = srecommend, @bettype = bettype, @statusID = statusID
 	FROM inserted 
 
 	IF @bettype >= 2000 RETURN -- Process for sportbook bettype for TO Control only
@@ -50,6 +50,10 @@ BEGIN
 		17126538,--GamingSoftSuperRMB
 		17433116--NewhonbetSuperRMB
 	) RETURN -- do not need to control TO for big licensee supers
+
+	-- SUPER LIVE, tickets running in translog, then void/reject/refund
+	IF (@bettype BETWEEN 801 AND 899) AND (@statusID NOT BETWEEN 101 AND 103)
+		RETURN
 
 	SELECT TOP 1 @XMLString = '<r><TransId>' + CAST(transid AS VARCHAR(20)) + '</TransId>' + '<Bettype>' + CAST(bettype AS VARCHAR(10)) + '</Bettype><IsInsert>1</IsInsert></r>' FROM inserted
 
