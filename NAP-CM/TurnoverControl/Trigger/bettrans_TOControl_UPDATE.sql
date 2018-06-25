@@ -21,14 +21,11 @@ BEGIN
 	DECLARE @n TINYINT
 	DECLARE @srecommend INT, @statusid TINYINT
 	
-	SELECT TOP 2 @n = 1
+	SELECT TOP 2 @n = 1, @srecommend = srecommend, @statusid = statusid
 	FROM inserted
 
 	IF @@ROWCOUNT = 1
 	BEGIN
-
-		SELECT @srecommend = srecommend, @statusid = statusid
-		FROM inserted 
 
 		-- 101: reject; 102:void
 		IF @statusid IN (101, 102) AND @srecommend IN ( 
@@ -200,18 +197,16 @@ BEGIN
 		BEGIN
 			SELECT @XMLString = NULL
 
-			SELECT TOP 1 @XMLString = '<r><TransId>' + CAST(transid AS VARCHAR(20)) + '</TransId>' + '<Bettype>' + CAST(bettype AS VARCHAR(10)) + '</Bettype><IsInsert>0</IsInsert></r>' FROM inserted
-
-			----SELECT @XMLString = (SELECT srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player' , matchid AS 'mid',winlostdate AS 'wld'
-			----							, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
-			----							, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
-			----							, 0 AS 'IsInsert'
-			----					 FROM @TmpTable		
-			----					 FOR XML PATH ('r'))
+			SELECT @XMLString = (SELECT srecommend AS 'super',  mrecommend AS 'master', recommend AS 'agent', player 'player' , matchid AS 'mid',winlostdate AS 'wld'
+										, adj_TO AS 'adjTO', adj_TO_withABS AS 'adjTOwithABS',adj_HouseTO AS 'adjHTONoExtraPT'
+										, adj_TO_RM AS 'adjTO_RM', adj_TO_withABS_RM AS 'adjTOwithABS_RM',adj_HouseTO_RM AS 'adjHTONoExtraPT_RM'
+										, 0 AS 'IsInsert'
+								 FROM @TmpTable		
+								 FOR XML PATH ('r'))
 
 			IF @XMLString IS NOT NULL
 				--Input to SB
-			EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
+				EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Multiple', @SB_error = @HasError OUTPUT
 		END
 		ELSE
 		BEGIN
