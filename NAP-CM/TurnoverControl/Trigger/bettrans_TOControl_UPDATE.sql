@@ -12,12 +12,47 @@ AS
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171110@Helen: Enhance performance for TO trigger - [Redmine: 86052]
 		- 20171212@Helen: Support UUS - Implement some change request from OPS Team - [Redmine: 85638]
+		- 20180625@Don: Tuning trigger - [Redmine:97313]
 */
 BEGIN
 	
 	SET NOCOUNT ON;
 
 	DECLARE @n TINYINT
+	DECLARE @srecommend INT, @statusid TINYINT
+	
+	SELECT TOP 2 @n = 1, @srecommend = srecommend, @statusid = statusid
+	FROM inserted
+
+	IF @@ROWCOUNT = 1
+	BEGIN
+
+		-- 101: reject; 102:void
+		IF @statusid IN (101, 102) AND @srecommend IN ( 
+			836203,--12BETSuperTB
+			836226,--12BETSuperRMB
+			932181,--AB88SuperTB
+			932253,--AB88SuperRMB
+			1574008,--MS88SuperRMB
+			1574102,--MS88SuperIN
+			2747989,--ALogSuperTB
+			3167631,--12BETSuperINH
+			3287311,--MS88SuperINH
+			3293743,--TLCSuperRMB
+			3752050,--MFSuperRMB
+			4359240,--HAIFASuperRMB
+			4833492,--AB88SuperINH
+			6630778,--MacaubetSuperIN
+			10566445,--AVIASuperRMB
+			10580767,--W88SuperTB
+			10580785,--W88SuperINH
+			14373729,--KeenOceanSuperRMB
+			14442433,--XTD3SuperRMB
+			17126538,--GamingSoftSuperRMB
+			17433116--NewhonbetSuperRMB
+		) RETURN -- do not need to control TO for big licensee supers 
+	END
+		
 
 	SELECT TOP 2 @n = 1
 	FROM inserted
@@ -171,7 +206,7 @@ BEGIN
 
 			IF @XMLString IS NOT NULL
 				--Input to SB
-			EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
+				EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Multiple', @SB_error = @HasError OUTPUT
 		END
 		ELSE
 		BEGIN
