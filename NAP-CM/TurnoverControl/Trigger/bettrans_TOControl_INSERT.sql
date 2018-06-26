@@ -14,6 +14,7 @@ AS
 		- 20171212@Helen: Support UUS - Implement some change request from OPS Team - [Redmine: 85638]
 		- 20180315@Helen: Integrate Super Live product - [Redmine:89986]
 		- 20180622@Don: Tuning trigger - [Redmine:97313]
+		- 20180626@Helen: Tuning trigger - [Redmine:97442]
 	
 */
 BEGIN
@@ -21,8 +22,8 @@ BEGIN
 			
 	SET NOCOUNT ON;
 
-	DECLARE @srecommend INT, @bettype INT, @statusID TINYINT
-	SELECT @srecommend = srecommend, @bettype = bettype, @statusID = statusID
+	DECLARE @srecommend INT, @bettype INT, @statusID TINYINT, @TransID BIGINT, @RowID BIGINT
+	SELECT @srecommend = srecommend, @bettype = bettype, @statusID = statusID, @TransID = transid
 	FROM inserted 
 
 	IF @bettype >= 2000 RETURN -- Process for sportbook bettype for TO Control only
@@ -54,9 +55,17 @@ BEGIN
 	-- SUPER LIVE, tickets running in translog, then void/reject/refund
 	IF (@bettype BETWEEN 801 AND 899) AND (@statusID NOT BETWEEN 101 AND 103)
 		RETURN
-
-	SELECT TOP 1 @XMLString = '<r><TransId>' + CAST(transid AS VARCHAR(20)) + '</TransId>' + '<Bettype>' + CAST(bettype AS VARCHAR(10)) + '</Bettype><IsInsert>1</IsInsert></r>' FROM inserted
-
+	
+	INSERT INTO TOControl_Tickets (transid)
+	SELECT @TransID
+	
+	SET @RowID = @@IDENTITY
+	
+	INSERT INTO TOControl_TicketDetails (rowid, transid,bettype, statusID)
+	VALUES (@RowID,@TransID,@bettype, @statusID)
+		
+	--SET @XMLString = '<r><TransId>' + CAST(@TransID AS VARCHAR(20)) + '</TransId>' + '<statusID>' + CAST(@statusID AS VARCHAR(20)) + '</statusID>' + '<Bettype>' + CAST(@bettype AS VARCHAR(10)) + '</Bettype><IsInsert>1</IsInsert></r>'
+	
 	------ SUPER LIVE, tickets running in translog, then void/reject/refund.
 	----IF (EXISTS (SELECT 1 FROM inserted WHERE bettype BETWEEN 801 AND 899)) 
 	----BEGIN
@@ -131,9 +140,10 @@ BEGIN
 	----						 FOR XML PATH ('r'))
 	----	END					 
 
-		IF @XMLString IS NOT NULL
-		BEGIN
-			--put string into SB.Queue
-			EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
-		END	
+		--IF @XMLString IS NOT NULL
+		--BEGIN
+		--put string into SB.Queue
+		--EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
+		
+		--END	
 END 

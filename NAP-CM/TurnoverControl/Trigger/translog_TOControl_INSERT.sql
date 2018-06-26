@@ -15,15 +15,51 @@ AS
 */
 BEGIN
 	
-	DECLARE @XMLString XML = NULL, @HasError BIT = 0 
-			
 	SET NOCOUNT ON;
 	
+	DECLARE @XMLString XML = NULL, @HasError BIT = 0 
+	DECLARE  @srecommend INT, @statusID TINYINT, @TransID BIGINT, @RowID BIGINT, @bettype INT, @eventID INT
+	
+	SELECT @srecommend = srecommend, @statusID = statusID, @TransID = translogid, @eventID = eventID, @bettype = gameID
+	FROM inserted 
+		
 	-- SUPER LIVE, tickets insert into translog
-	IF (EXISTS (SELECT 1 FROM inserted WHERE eventID > 0 AND gameID BETWEEN 801 AND 899))
+	--IF (EXISTS (SELECT 1 FROM inserted WHERE eventID > 0 AND gameID BETWEEN 801 AND 899))
+	IF @srecommend in ( 
+		836203,--12BETSuperTB
+		836226,--12BETSuperRMB
+		932181,--AB88SuperTB
+		932253,--AB88SuperRMB
+		1574008,--MS88SuperRMB
+		1574102,--MS88SuperIN
+		2747989,--ALogSuperTB
+		3167631,--12BETSuperINH
+		3287311,--MS88SuperINH
+		3293743,--TLCSuperRMB
+		3752050,--MFSuperRMB
+		4359240,--HAIFASuperRMB
+		4833492,--AB88SuperINH
+		6630778,--MacaubetSuperIN
+		10566445,--AVIASuperRMB
+		10580767,--W88SuperTB
+		10580785,--W88SuperINH
+		14373729,--KeenOceanSuperRMB
+		14442433,--XTD3SuperRMB
+		17126538,--GamingSoftSuperRMB
+		17433116--NewhonbetSuperRMB
+	) RETURN -- do not need to control TO for big licensee supers
+	
+	IF (@eventID > 0 AND @bettype BETWEEN 801 AND 899)
 	BEGIN
-		SELECT TOP 1 @XMLString = '<r><TransId>' + CAST(translogid AS VARCHAR(20)) + '</TransId>' + '<Bettype>' + CAST(gameID AS VARCHAR(10)) + '</Bettype><IsInsert>1</IsInsert></r>' FROM inserted
-
+		
+		INSERT INTO TOControl_Tickets (transid)
+		SELECT @TransID
+		
+		SET @RowID = @@IDENTITY
+		
+		INSERT INTO TOControl_TicketDetails (rowid, transid,bettype, statusID)
+		VALUES (@RowID,@TransID,@bettype, @statusID)
+			
 		--SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
 		--							, tmp.adjTO_RM,tmp.adjTOwithABS_RM,tmp.adjHTONoExtraPT_RM, tmp.IsInsert 
 		--					FROM (SELECT srecommend AS 'super', mrecommend AS 'master', recommend AS 'agent',custid AS 'player', eventID AS 'mid', winlostdate AS 'wld'
@@ -58,11 +94,11 @@ BEGIN
 							 
 		--					 FOR XML PATH ('r'))
 		
-		IF @XMLString IS NOT NULL
-		BEGIN
+		--IF @XMLString IS NOT NULL
+		--BEGIN
 			--put string into SB.Queue
-			EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
-		END
+			--EXEC sb.TOControl_SendMessage @Xml = @XMLString, @ContractName = 'Contract_TOControl_Single', @SB_error = @HasError OUTPUT
+		--END
 	END
 	ELSE
 	BEGIN
