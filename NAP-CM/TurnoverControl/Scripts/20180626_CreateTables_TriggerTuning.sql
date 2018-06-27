@@ -19,7 +19,7 @@ GO
 
 CREATE TABLE TOControl_TicketDetails 
 (	
-	  rowid INT
+	  rowid BIGINT
 	, transid BIGINT
 	, statusID TINYINT
 	, bettype SMALLINT
