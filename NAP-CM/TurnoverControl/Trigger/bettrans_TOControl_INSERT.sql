@@ -18,7 +18,7 @@ AS
 	
 */
 BEGIN
-	DECLARE @XMLString XML = NULL, @HasError BIT = 0 
+	--DECLARE @XMLString XML = NULL, @HasError BIT = 0 
 			
 	SET NOCOUNT ON;
 
