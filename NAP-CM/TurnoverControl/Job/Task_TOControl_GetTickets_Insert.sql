@@ -26,7 +26,9 @@ BEGIN
 	
 
 	SELECT @LastRowId = ISNULL(@LastRowId, 0), @MaxRowId = ISNULL(@MaxRowId, 0)
-
+	
+	IF (@LastRowId = @MaxRowId) RETURN -- no row
+	
 	--wait for all trans can commit
 	WAITFOR DELAY '00:00:00:280'
 
@@ -37,9 +39,6 @@ BEGIN
 	FROM dbo.TOControl_Tickets t WITH(NOLOCK)
 		INNER JOIN TOControl_TicketDetails td WITH (NOLOCK) ON T.rowID = TD.rowID AND T.transid = TD.transid
 	WHERE T.RowId > @LastRowId AND T.RowId <= @MaxRowId
-	
-			
-	IF (@LastRowId = @MaxRowId) RETURN -- no row
 	
 	DECLARE @__TmpIds TABLE(TransId BIGINT, statusID TINYINT, bettype SMALLINT)
 	DECLARE @MessageData NVARCHAR(MAX), @ErrorCode BIT = 0, @Retry INT = 0, @xml XML
