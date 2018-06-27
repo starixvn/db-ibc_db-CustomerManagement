@@ -26,7 +26,7 @@ BEGIN
 	FROM sb.ConversationCount WITH (NOLOCK)
 	WHERE FunctionName = @functionName AND contractName = @ContractName
 	
-	SET @Cnt = ISNULL(@Cnt, 0) - 1
+	SET @Cnt = ISNULL(@Cnt, 0) 
 	
 	IF @Cnt = 0
 	BEGIN
@@ -36,6 +36,9 @@ BEGIN
 	
 	SET @ConversationNo = RAND() * @Cnt + 1
 	
+	IF @ConversationNo > @Cnt 
+		SET @ConversationNo = @Cnt
+		
 	SELECT @handle = ConversationHandle
 	FROM sb.ConversationManagement WITH (NOLOCK)
 	WHERE FunctionName = @functionName
