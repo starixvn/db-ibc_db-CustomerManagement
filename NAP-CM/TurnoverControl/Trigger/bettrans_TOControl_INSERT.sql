@@ -22,7 +22,7 @@ BEGIN
 			
 	SET NOCOUNT ON;
 
-	DECLARE @srecommend INT, @bettype INT, @statusID TINYINT, @TransID BIGINT, @RowID BIGINT
+	DECLARE @srecommend INT, @bettype INT, @statusID TINYINT, @TransID BIGINT
 	SELECT @srecommend = srecommend, @bettype = bettype, @statusID = statusID, @TransID = transid
 	FROM inserted 
 

@@ -19,7 +19,7 @@ BEGIN
 	SET NOCOUNT ON;
 	
 	--DECLARE @XMLString XML = NULL, @HasError BIT = 0 
-	DECLARE  @srecommend INT, @statusID TINYINT, @TransID BIGINT, @RowID BIGINT, @bettype INT, @eventID INT
+	DECLARE  @srecommend INT, @statusID TINYINT, @TransID BIGINT, @bettype INT, @eventID INT
 	
 	SELECT @srecommend = srecommend, @statusID = statusID, @TransID = translogid, @eventID = eventID, @bettype = gameID
 	FROM inserted 
