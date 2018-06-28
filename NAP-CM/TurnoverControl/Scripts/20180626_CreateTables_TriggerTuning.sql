@@ -5,21 +5,21 @@
 */
 USE bodb02
 GO
-CREATE TABLE TOControl_Tickets 
-(	rowid BIGINT IDENTITY (1,1) 
-	, transid BIGINT
-)
-GO
-CREATE CLUSTERED INDEX [CIX_TOControl_Tickets] ON [dbo].[TOControl_Tickets]
-(
-	[RowId] ASC
-)
-GO
+--CREATE TABLE TOControl_Tickets 
+--(	rowid BIGINT IDENTITY (1,1) 
+--	, transid BIGINT
+--)
+--GO
+--CREATE CLUSTERED INDEX [CIX_TOControl_Tickets] ON [dbo].[TOControl_Tickets]
+--(
+--	[RowId] ASC
+--)
+--GO
 
 
 CREATE TABLE TOControl_TicketDetails 
 (	
-	  rowid BIGINT
+	  rowid BIGINT IDENTITY (1,1)
 	, transid BIGINT
 	, statusID TINYINT
 	, bettype SMALLINT
@@ -27,7 +27,7 @@ CREATE TABLE TOControl_TicketDetails
 GO
 CREATE CLUSTERED INDEX [CIX_TOControl_TicketDetails] ON [dbo].[TOControl_TicketDetails]
 (
-	[RowId], transid
+	[RowId]
 )
 GO
 CREATE TABLE [dbo].[TOControl_Tickets_Setting](
@@ -42,4 +42,8 @@ CREATE UNIQUE CLUSTERED INDEX [CIX_TOControl_Tickets_setting] ON [dbo].[TOContro
 )
 GO
 INSERT INTO TOControl_Tickets_Setting (sKey,sValue) VALUES ('TOControl_Insert',0)
+GO
+
+UPDATE sb.ConfigurationReference SET MaxReceiveMsg = 5 WHERE FunctionName = 'TOControl'
+
 GO

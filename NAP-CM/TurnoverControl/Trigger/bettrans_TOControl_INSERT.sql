@@ -56,13 +56,8 @@ BEGIN
 	IF (@bettype BETWEEN 801 AND 899) AND (@statusID NOT BETWEEN 101 AND 103)
 		RETURN
 	
-	INSERT INTO TOControl_Tickets (transid)
-	SELECT @TransID
-	
-	SET @RowID = @@IDENTITY
-	
-	INSERT INTO TOControl_TicketDetails (rowid, transid,bettype, statusID)
-	VALUES (@RowID,@TransID,@bettype, @statusID)
+	INSERT INTO TOControl_TicketDetails (transid,bettype, statusID)
+	VALUES (@TransID,@bettype, @statusID)
 		
 	--SET @XMLString = '<r><TransId>' + CAST(@TransID AS VARCHAR(20)) + '</TransId>' + '<statusID>' + CAST(@statusID AS VARCHAR(20)) + '</statusID>' + '<Bettype>' + CAST(@bettype AS VARCHAR(10)) + '</Bettype><IsInsert>1</IsInsert></r>'
 	

@@ -53,13 +53,8 @@ BEGIN
 	IF (@eventID > 0 AND @bettype BETWEEN 801 AND 899)
 	BEGIN
 		
-		INSERT INTO TOControl_Tickets (transid)
-		SELECT @TransID
-		
-		SET @RowID = @@IDENTITY
-		
-		INSERT INTO TOControl_TicketDetails (rowid, transid,bettype, statusID)
-		VALUES (@RowID,@TransID,@bettype, @statusID)
+		INSERT INTO TOControl_TicketDetails (transid,bettype, statusID)
+		VALUES (@TransID,@bettype, @statusID)
 			
 		--SELECT @XMLString = (SELECT tmp.super,tmp.master, tmp.agent,tmp.player,tmp.mid, tmp.wld, tmp.adjTO,tmp.adjTOwithABS,tmp.adjHTONoExtraPT
 		--							, tmp.adjTO_RM,tmp.adjTOwithABS_RM,tmp.adjHTONoExtraPT_RM, tmp.IsInsert 
