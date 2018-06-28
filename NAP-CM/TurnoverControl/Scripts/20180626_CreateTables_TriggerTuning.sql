@@ -17,7 +17,7 @@ GO
 --GO
 
 
-CREATE TABLE TOControl_TicketDetails 
+CREATE TABLE TOControl_TicketDetails_Insert 
 (	
 	  rowid BIGINT IDENTITY (1,1)
 	, transid BIGINT
@@ -25,7 +25,7 @@ CREATE TABLE TOControl_TicketDetails
 	, bettype SMALLINT
 )
 GO
-CREATE CLUSTERED INDEX [CIX_TOControl_TicketDetails] ON [dbo].[TOControl_TicketDetails]
+CREATE CLUSTERED INDEX [CIX_TOControl_TicketDetails_Insert] ON [dbo].[TOControl_TicketDetails_Insert]
 (
 	[RowId]
 )
@@ -47,3 +47,4 @@ GO
 UPDATE sb.ConfigurationReference SET MaxReceiveMsg = 5 WHERE FunctionName = 'TOControl'
 
 GO
+

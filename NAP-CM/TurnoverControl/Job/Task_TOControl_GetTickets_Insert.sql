@@ -26,7 +26,7 @@ BEGIN
 	
 	INSERT INTO @RowIds(RowId, TransId,statusID,bettype)
 	SELECT TOP (@batchSize) t.rowid, t.TransId, t.statusID, t.bettype 
-	FROM dbo.TOControl_TicketDetails t WITH(NOLOCK)
+	FROM dbo.TOControl_TicketDetails_Insert t WITH(NOLOCK)
 	WHERE rowid > @LastRowId
 	ORDER BY rowid
 	
