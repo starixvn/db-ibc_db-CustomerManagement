@@ -1,6 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0" isNested="1"></info>*/
-
-CREATE PROCEDURE [Sb].[ConversationPick]
+ALTER PROCEDURE [Sb].[ConversationPick]
 ( 
 		@FunctionName VARCHAR(100)
 	,	@ContractName VARCHAR(200)
@@ -14,7 +13,7 @@ AS
 	DB: DBAGE.bodb02 
 	
 	Revision
-
+		- 20180626@Helen: Tuning trigger - [Redmine:97313]
 	Para's explaination
 */
 BEGIN 
@@ -27,7 +26,7 @@ BEGIN
 	FROM sb.ConversationCount WITH (NOLOCK)
 	WHERE FunctionName = @functionName AND contractName = @ContractName
 	
-	SET @Cnt = ISNULL(@Cnt, 0)
+	SET @Cnt = ISNULL(@Cnt, 0) 
 	
 	IF @Cnt = 0
 	BEGIN
@@ -35,8 +34,11 @@ BEGIN
 		RETURN
 	END
 	
-	SET @ConversationNo = @@SPID % @Cnt + 1
+	SET @ConversationNo = RAND() * @Cnt + 1
 	
+	IF @ConversationNo > @Cnt 
+		SET @ConversationNo = @Cnt
+		
 	SELECT @handle = ConversationHandle
 	FROM sb.ConversationManagement WITH (NOLOCK)
 	WHERE FunctionName = @functionName
