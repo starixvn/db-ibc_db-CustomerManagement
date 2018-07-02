@@ -1,7 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="" viewers="vnteam" isFunction="0"></info>*/
 GO
 ALTER PROCEDURE [dbo].[Task_TOControl_GetTickets_Insert]
-	@batchSize int = 100
+	@batchSize int = 300
 AS
 /*
 	Created:20180626@Helen
@@ -33,7 +33,7 @@ BEGIN
 	IF @@ROWCOUNT = 0 RETURN
 	
 	--wait for all trans can commit
-	WAITFOR DELAY '00:00:00:280'
+	WAITFOR DELAY '00:00:00:100'
 	
 	SELECT @MaxRowId = MAX(rowid)
 	FROM @RowIds
