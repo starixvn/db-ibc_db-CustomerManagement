@@ -1,3 +1,7 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Age_CustomerSelCommByProductID_Ag]
 	@ProductID INT,
 	@Recommend INT
@@ -6,7 +10,7 @@ AS
 /*
 	Created: 20151209@Dominic
 	Task : Select member commission information for DCS Products
-	DB: DBCUST.CustDB
+	DB: DBCUST/CustDB
 	Revisions: 
 
 */
@@ -50,8 +54,3 @@ BEGIN
 		cs.SportType
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelCommByProductID_Ag] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelCommByProductID_Ag] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelCommByProductID_Ag] TO [vnteam] AS [dbo]
