@@ -23,11 +23,12 @@ AS
 		- 20130121@Dan: Move sp from DB053/bodb02 to DBAGE/bodb_AGE, change linked server DB03 to DBPOLICY, DB06 to DBARC
 		- 20160729@Percy: insert into setting table if group is extra pt group [RedmineID: #60883]
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
-		- 20180409@Kan: Make this SP nested [RedmineID: #77733]
-		- 20180509@Kan: Hard-code to update temporary global setting for World Cup event [Redmine: #92010]
+		- 20180409@Kan: Make this SP nested [RedmineID: 77733]
+		- 20180509@Kan: Hard-code to update temporary global setting for World Cup event [Redmine: 92010]
 		  + ACCUSD: 1,000,000 US$ (USD)
 		  + ACCINDO: 5,000,000 IN (IDR)
 		  + ACCTHAI: 20,000,000 TB (THB)
+		- 20180706@Kan: Rollback new global setting to old value after World Cup event [Redmine: 97774]
 */
 
 BEGIN
@@ -112,6 +113,7 @@ BEGIN
 		END
 	END
 
+	/* ---------- Keep below code for future use. ----------
 	-- Hard-code to update temporary global setting for World Cup event
 	-- Format date is: yyyy-mm-dd
 	DECLARE @BeginWC DATETIME = '2018-6-11',
@@ -150,6 +152,7 @@ BEGIN
 			@ErrMsg = ''
 	END
 	-- End of Hard-code ...
+	*/
 
 	--Write log data
 	DECLARE @LogData NVARCHAR(1000)
