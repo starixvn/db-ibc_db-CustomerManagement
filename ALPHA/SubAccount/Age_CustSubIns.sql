@@ -1,11 +1,7 @@
-
-SET QUOTED_IDENTIFIER ON 
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE [bodb_Message]
 GO
-SET ANSI_NULLS ON 
-GO
-
-/****** Object:  Stored Procedure dbo.Age_CustSubIns    Script Date: 8/19/2014 12:42:20 PM ******/
-CREATE PROCEDURE [dbo].[Age_CustSubIns]
+ALTER PROCEDURE [dbo].[Age_CustSubIns]
 	@subaccid int OUTPUT,
 	@custid int, -- agentid or masterid or superid
 	@username varchar(30),
@@ -24,7 +20,7 @@ AS
 /*
 Created: 20080508
 Task : Create new sub-account for agent
-DB: DBTXN/CustDB
+DB: DBCust/CustDB
 Original: Age_CustSubIns
 
 Revisions:    
@@ -40,7 +36,7 @@ Revisions:
 	- 20130328@Jamie: Add CustLoginInfoSub 
 	- 20130424@Jamie: Set isForcedChangeSecurityCode = 1 WHEN Upline's SecurityCode NOT NULL
 	- 20140709@Logan: Force using Security Code for SMA from all sites (except 789y) [Redmine:#18121]
-
+	- 20180621@Razor: Add Message Customer Read Status [Redmind: #94705]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -149,7 +145,21 @@ BEGIN
 	RETURN	
 END
 
-
+EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @subaccid, 0, @ErrCode, @ErrMsg
+	
+IF @ErrCode <>0
+BEGIN
+		SELECT @ErrMsg = CASE @Language 
+							WHEN 'E' THEN 'Create sub-account failed. Please try again.'
+							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
+						END
+			, @ErrCode = 106
+	 -- ROLLBACK MANUALLY
+		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
+		
+		RETURN
+END
+	
 DECLARE	@UplineSecurityCode			VARCHAR(50)
 	  , @isForcedChangeSecurityCode	BIT
 
@@ -179,7 +189,8 @@ if @@ERROR <> 0
 BEGIN
 	DELETE FROM custsub WITH(ROWLOCK)
 	      WHERE subaccid = @subaccid
-
+	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid,@subaccid
+	
 	SELECT @ErrMsg = CASE @Language 
 					   WHEN 'E' THEN 'Create sub-account failed. Please try again.'
 			           ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)

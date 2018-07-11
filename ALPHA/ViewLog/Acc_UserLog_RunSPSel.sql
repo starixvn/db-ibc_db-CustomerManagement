@@ -31,6 +31,7 @@ AS
 		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
 		- 20161018@Winnie: Handle logactionid range of smartpunter RedmineID #63077
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
+		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -113,7 +114,8 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-						AND ul.ActionID NOT BETWEEN 31000 AND 31100					
+						AND ul.ActionID NOT BETWEEN 31000 AND 31100
+						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 			) AS MyTable
 	WHERE   RowNum BETWEEN @lbound AND @ubound
 	ELSE
@@ -162,6 +164,7 @@ BEGIN
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						AND ul.ActionID NOT BETWEEN 31000 AND 31100
+						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 
 			) AS MyTable
 	WHERE   RowNum BETWEEN @lbound AND @ubound

@@ -28,6 +28,7 @@ AS
 		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 		- 20160115@Dominic: Do not show logactionid=237 if Trackingvalues is null Redmine: #50937
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
+		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 */
 -- SET NOCOUNT ON added to prevent extra result sets from
 -- interfering with SELECT statements.
@@ -47,6 +48,7 @@ BEGIN
 				AND IsInternal <= @IsInternal
 				AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 				AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+				AND ul.ActionId <> 1050 --Message Customer Read Status Update
 	ELSE
 		SELECT  COUNT(LogID)                           
 		FROM    dbo.UserLog_RunSP AS ul WITH (NOLOCK)
@@ -58,6 +60,7 @@ BEGIN
 				AND la.ActionID NOT BETWEEN @LowerActionId AND @UpperActionId
 				AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 				AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+				AND ul.ActionId <> 1050 --Message Customer Read Status Update
 END
 ELSE
 BEGIN
