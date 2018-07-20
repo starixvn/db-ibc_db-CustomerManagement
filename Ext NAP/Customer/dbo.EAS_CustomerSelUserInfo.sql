@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-CREATE PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
+ALTER PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
 	@custid	int = 0
 AS  
 /*
@@ -17,6 +17,7 @@ AS
 */	
 BEGIN
 	SET NOCOUNT ON  
+	/*
 	DECLARE @roleID					TINYINT,	
 			@HasSecurityCode		BIT = 0,
 			@UplineHasSecurityCode	BIT =0,
@@ -76,5 +77,6 @@ IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID 
 	FROM bodb02.dbo.Customer c WITH (NOLOCK) 
 		INNER JOIN bodb02.dbo.CustInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 	WHERE c.custid = @custid
+	*/
 END
 GO
