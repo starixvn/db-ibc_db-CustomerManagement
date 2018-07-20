@@ -11,6 +11,7 @@ AS
 	Task: Left menu - Search customer - Balance Info
 
 	Revisions:
+		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
 
 	Example: EXEC Age_CustomerBalanceSel @CustID=24471545
 */

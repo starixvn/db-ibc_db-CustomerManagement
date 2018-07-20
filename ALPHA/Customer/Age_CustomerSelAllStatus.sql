@@ -11,7 +11,7 @@ AS
 	Task: Left menu of ALPHA - Search customer - All Status
 
 	Revisions:
-		
+		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.

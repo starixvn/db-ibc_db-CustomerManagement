@@ -11,7 +11,8 @@ AS
 	DB: DBAGE/bodb02
 
 	Revisions:
-	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
+		- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
+		- 20180628@Elodie: Get User Information and their upline info [Redmine: #58776]
 
 */	
 BEGIN
