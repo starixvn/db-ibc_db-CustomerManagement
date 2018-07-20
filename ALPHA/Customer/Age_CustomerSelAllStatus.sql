@@ -134,5 +134,4 @@ BEGIN
 	-- For Product DCS
 	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid
 END
-
-
+GO

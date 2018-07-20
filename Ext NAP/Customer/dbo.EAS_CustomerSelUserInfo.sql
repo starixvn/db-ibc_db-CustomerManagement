@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-CREATE PROCEDURE [dbo].[EAS_CustomerInfoSel]  
+CREATE PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
 	@custid	int = 0
 AS  
 /*
@@ -77,5 +77,4 @@ IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID 
 		INNER JOIN bodb02.dbo.CustInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 	WHERE c.custid = @custid
 END
-
 GO
