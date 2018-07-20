@@ -18,13 +18,13 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @UsedCredit MONEY, @Mem_MaxCredit MONEY
+    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @UsedCredit MONEY, @Mem_MaxCredit MONEY, @Credit MONEY
 	DECLARE @netPosition MONEY = 0 -- for member
     DECLARE @Credit_MAg_Min MONEY, @Credit_MAg_Max MONEY, 
 		    @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY, 
 		    @Credit_Mem_Min MONEY, @Credit_Mem_Max MONEY
 
-	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
+	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend, @Credit = credit
 	FROM custinfo WITH(NOLOCK)
     WHERE custid = @custid 
 
@@ -87,18 +87,6 @@ BEGIN
 	    FROM custinfo (NOLOCK) 
 	    WHERE mrecommend = @custID	
     END
-
-	-------------------------------------------------------------------------
-    --Credit info
-    SELECT	@custid AS CustID, 
-			@netPosition AS netPosition,
-		
-			@Credit_MAg_Min AS [MasterCredit_Min],
-			@Credit_MAg_Max AS [MasterCredit_Max],
-			@Credit_Ag_Min AS [AgentCredit_Min],
-			@Credit_Ag_Max AS [AgentCredit_Max],
-			@Credit_Mem_Min AS [MemMaxCredit_Min],
-			@Credit_Mem_Max AS [MemMaxCredit_Max]
 
     -------------------------------------------------------------------------
 	-- Balance Info
@@ -179,10 +167,14 @@ BEGIN
 			AND ruben = 0
     END
 
-	-- Return balance
     IF @roleid = 1
     BEGIN
 	    SELECT
+			@custid AS CustID, 
+			@Credit AS Credit,
+			@netPosition AS netPosition,		
+			@Credit_Mem_Max AS [MemMaxCredit_Max],
+
 			SUM(memberCash)					AS Cash,
 			SUM(yesterdayMemberCash)		AS yesterday_Cash,
 			SUM(memberOutstanding)			AS outstanding,
@@ -194,6 +186,12 @@ BEGIN
     ELSE IF @roleid = 2
     BEGIN
 		SELECT
+			@custid AS CustID, 
+			@Credit AS Credit,
+			@Credit_Ag_Min AS [AgentCredit_Min],
+			@Credit_Ag_Max AS [AgentCredit_Max],
+			@Credit_Mem_Min AS [MemMaxCredit_Min],
+
 			SUM(agentCash)					AS agentCash,
 			SUM(yesterdayAgentCash)			AS yesterday_agentCash,
 			SUM(agentOutstanding)			AS agentPositionTaking,
@@ -210,6 +208,11 @@ BEGIN
     ELSE IF @roleid = 3
     BEGIN
 		SELECT
+			@custid AS CustID, 
+			@Credit AS Credit,
+			@Credit_MAg_Min AS [MasterCredit_Min],
+			@Credit_MAg_Max AS [MasterCredit_Max],
+
 			SUM(masterCash)					AS masterCash,
 			SUM(yesterdayMasterCash)		AS yesterday_masterCash,
 			SUM(masterOutstanding)			AS masterPositionTaking,
