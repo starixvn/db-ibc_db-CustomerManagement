@@ -88,7 +88,7 @@ BEGIN
 	WHERE custid = @CustID
 	
 	IF @FromDate < @creatdate
-		SELECT @FromDate = @creatdate
+		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 		
 	SET @lbound = @PageIndex * @PageSize       
 		
@@ -151,7 +151,7 @@ BEGIN
 								AND IsInternal <= @IsInternal
 								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-								AND ul.ActionID NOT BETWEEN 31000 AND 31100		
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100								
 					
 					--new range logactionid for status by level
 					SELECT @LowerActionId = CASE @roleid WHEN 4 THEN 60000
@@ -214,7 +214,7 @@ BEGIN
 								--show these actions on alpha
 								--AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-								AND ul.ActionID NOT BETWEEN 31000 AND 31100
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100								
 								
 					SELECT  LogID,
 						UserID,
@@ -296,7 +296,7 @@ BEGIN
 									AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+									AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						) AS MyTable
 					WHERE   RowNum BETWEEN @lbound AND @ubound
 				END	
@@ -350,7 +350,7 @@ BEGIN
 								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100
-						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+								AND ul.ActionId <> 1050 --Message Customer Read Status Update
 
 					) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound

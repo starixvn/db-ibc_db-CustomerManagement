@@ -30,6 +30,7 @@ AS
 		- 20160115@Dominic: Do not show logactionid=237 if Trackingvalues is null Redmine: #50937
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
+		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -51,7 +52,7 @@ BEGIN
 	WHERE custid = @CustID
 	
 	IF @FromDate < @creatdate
-		SELECT @FromDate = @creatdate
+		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 	
 	DECLARE @tmpCust TABLE(Custid INT)
 	CREATE TABLE #tmpLog (LogID BIGINT)
@@ -123,6 +124,7 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 			END			
 		END--@ActionTypeId > 0			
 		ELSE
@@ -138,6 +140,7 @@ BEGIN
 					AND la.ActionID NOT BETWEEN 60000 AND 79999					
 					AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+					AND ul.ActionId <> 1050 --Message Customer Read Status Update
 	END--(@LowerActionId IS NULL OR @UpperActionId IS NULL)  
 	ELSE
 	BEGIN
