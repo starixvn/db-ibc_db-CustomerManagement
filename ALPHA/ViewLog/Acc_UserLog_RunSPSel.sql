@@ -29,6 +29,7 @@ AS
 		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
 		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
 		- 20161018@Winnie: Handle logactionid range of smartpunter RedmineID #63077
+		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 	Description:
