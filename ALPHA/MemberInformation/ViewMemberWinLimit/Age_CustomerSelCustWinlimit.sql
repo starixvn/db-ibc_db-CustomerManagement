@@ -1,9 +1,13 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 					@CustId			INT
 				,	@BetType		SMALLINT
 				,	@SportType		SMALLINT
 				,	@username		NVARCHAR(50)	= ''
+				,	@PlayerId		INT				= NULL
 				,	@mrecommend		INT				= 0
 				,	@recommend		INT				= 0
 				,	@PageSize		INT				= 500
@@ -20,6 +24,7 @@ AS
 		- 20160318@Billy:	Fix MaxLossLimit for RnG Casino - [Redmine: #54335]
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20180703@Elodie: Poker Games Product - Support search by PlayerID [Redmine: #97675]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -51,6 +56,7 @@ BEGIN
 			AND c.mrecommend = @mrecommend
 			AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+			AND	c.custid = ISNULL(@PlayerId, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
@@ -64,6 +70,7 @@ BEGIN
 			AND c.srecommend = @srecommend 
 			AND c.recommend = @recommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+			AND	c.custid = ISNULL(@PlayerId, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
@@ -76,6 +83,7 @@ BEGIN
 			AND roleid = 1
 			AND c.srecommend = @srecommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+			AND	c.custid = ISNULL(@PlayerId, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
@@ -158,11 +166,4 @@ BEGIN
 
 	DROP TABLE #MemberBalance
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelCustWinlimit] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelCustWinlimit] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelCustWinlimit] TO vnteam

@@ -12,7 +12,7 @@ AS
 	Task : Select member commission information for DCS Products
 	DB: DBCUST/CustDB
 	Revisions: 
-
+		- 20180703@Elodie: Add info of SP
 */
 BEGIN
 	SET NOCOUNT ON

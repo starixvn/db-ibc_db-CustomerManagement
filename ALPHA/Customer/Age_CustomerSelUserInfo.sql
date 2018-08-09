@@ -42,6 +42,8 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20180510@Elodie: Enhance performance [RedmineID: #95012]
 	- 20180118@Johnson: remove Downline casino status for new direction [Redmine:#87328]
+	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
+
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 */
@@ -127,8 +129,7 @@ Param's Explanation:
 	
 	-- For DCS
 	 
-    DECLARE	@bitmapOrder_MuayThai		INT
-		
+    DECLARE	@bitmapOrder_MuayThai		INT		
 		,	@bitmapOrder_Cricket		INT
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_VoidBridge		INT
@@ -138,6 +139,10 @@ Param's Explanation:
 		,	@bitmapOrder_FishingWorld	INT	
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_BullFighting	INT
+		,	@bitmapOrder_PokerGames1401	INT
+		,	@bitmapOrder_PokerGames1402	INT
+		,	@bitmapOrder_PokerGames1403	INT
+		,	@bitmapOrder_PokerGames1404	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
   
@@ -150,15 +155,10 @@ Param's Explanation:
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
 	SET @bitmapOrder_BullFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 207 AND Bettype = 1004)
 
-	SELECT	@bitmapOrder_AllBet =	(
-										SELECT	psp.bitmapOrder
-										FROM	dbo.ProductStatusProfile AS psp WITH(NOLOCK)
-										WHERE	psp.Sporttype = 211
-											AND	psp.Bettype = 2401
-									)
+	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
+	SELECT	@bitmapOrder_PokerGames1401 =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 163 AND	psp.Bettype = 1401)
     
-    DECLARE	@IsHidden_MuayThai		INT = 1
-	
+    DECLARE	@IsHidden_MuayThai		INT = 1	
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1	
 		,	@IsHidden_VoidBridge	INT = 1	
@@ -168,9 +168,9 @@ Param's Explanation:
 		,	@IsHidden_FishingWorld	INT = 1	
 		,	@IsHidden_VS			INT = 1
 		,	@IsHidden_BullFighting	INT = 1
+		,	@IsHidden_PokerGames	INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
@@ -180,6 +180,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 33, @IsHide = @IsHidden_PokerGames OUTPUT
 
 	DECLARE @recommend INT, @IsIMBC BIT = 0
 	
@@ -246,6 +247,9 @@ Param's Explanation:
 						THEN 0
 					ELSE 1
 			END AS SyncedAllBetDownline,
+			-- For Poker Games
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1401)) AS DisablePokerGames1401,
+			CAST(CASE WHEN @IsHidden_PokerGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PokerGames1401), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HidePokerGames,
 			-- VoidBridge
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge),1) AS DisableVoidBridge,
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,

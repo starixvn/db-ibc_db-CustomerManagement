@@ -14,6 +14,7 @@ AS
         - 20151021@Billy: Add support for DCS -- UNION with ProductSettingDetail		
 		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20180711@Elodie: Remove setting type 3 of DCS (commission) [RedmineID: #97675]
 */
 
 SET NOCOUNT ON
@@ -40,7 +41,7 @@ FROM
 		SELECT cs3rd.custid, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
         UNION
         SELECT 73104, psd.SportType FROM ProductSettingDetail psd WITH(NOLOCK)
-        WHERE psd.SettingType IN (1,3)
+        WHERE psd.SettingType = 1
 	 ) t
 	INNER JOIN @tmp_Sports s ON t.sporttype = s.sporttype
 WHERE t.custid = 73104 
