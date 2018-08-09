@@ -70,6 +70,8 @@ BEGIN
 			SELECT 30, 1004, 1, 1  -- BullFighting
 			UNION ALL 
 			SELECT 32, 4101, 0, 1 --Pragmatic Integration
+			UNION ALL 
+			SELECT 33, 1401, 1, 1 --PockerGames
 
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
