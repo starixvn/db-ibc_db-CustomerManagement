@@ -25,6 +25,7 @@ AS
 		- 20171001@Elodie: Apply SMA Winlimit and Company Win Limit for BullFighting [Redmine:#81664]
 		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
+		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
 
 	Parameters Explanation:	
 */
