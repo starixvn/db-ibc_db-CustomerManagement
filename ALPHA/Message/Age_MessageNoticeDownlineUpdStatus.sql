@@ -1,5 +1,5 @@
-/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [ON_USER]
+/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+USE [On_User]
 GO
 
 ALTER PROCEDURE [dbo].[Age_MessageNoticeDownlineUpdStatus] 
@@ -13,7 +13,8 @@ AS
     DB: DBONUSER/On_User
     Original:
     Revisions:
-    
+		- 2070417@Elodie: Set value of field "isViewed" in table “MESSAGE_NOTICE”
+
     Param's Explanation:
         . @CustID: ID of agent whose status value has been changed
         . @isViewed: status will be updated
@@ -91,4 +92,4 @@ BEGIN
 		INNER JOIN #TmpTable tmp ON msg.custID = tmp.CustID 	
 	WHERE TypeID = @TypeID
 END
-
+GO

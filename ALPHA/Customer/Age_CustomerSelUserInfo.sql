@@ -41,6 +41,7 @@ Revisions:
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20180510@Elodie: Enhance performance [RedmineID: #95012]
+	- 20180118@Johnson: remove Downline casino status for new direction [Redmine:#87328]
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 */
@@ -123,43 +124,7 @@ Param's Explanation:
 				INNER JOIN dbo.CustProductStatus cs WITH (NOLOCK) ON cs.CustID = ci.custid 
 			WHERE ci.srecommend = @custid
 	end
-	-- casino
-	IF @RoleID=2
-		BEGIN		
-			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE recommend = @CustID AND roleid=1 AND SyncCasino=1)
-					SELECT @HasDownline=1
-			IF @HasDownline=1
-			BEGIN
-				IF EXISTS(SELECT 1 FROM  custInfo WITH(NOLOCK) WHERE recommend=@custid AND DisableCasino=1 AND SyncCasino=1)
-					SELECT @IsDisabledDownline=1			
-			END
-		END		
-		ELSE IF @RoleID=3
-		BEGIN	
-			
-			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE mrecommend = @CustID AND roleid=2 AND SyncCasino=1)
-				SELECT @HasDownline=1
-			IF @HasDownline=1
-			BEGIN
-				IF EXISTS(SELECT 1 FROM  custInfo WITH(NOLOCK) WHERE mrecommend=@custid AND DisableCasino=1 AND SyncCasino=1)
-					SELECT @IsDisabledDownline=1
-			
-			END
-		END
-		ELSE IF @RoleID=4	
-		BEGIN	
-			
-			IF EXISTS(SELECT 1	FROM dbo.CustInfo WITH (NOLOCK)	WHERE srecommend = @CustID AND roleid=3 AND SyncCasino=1)
-				SELECT @HasDownline=1
-			IF @HasDownline=1
-			BEGIN				
-				IF EXISTS(SELECT 1 FROM custInfo WITH(NOLOCK) WHERE srecommend=@custid AND DisableCasino=1 AND SyncCasino=1)
-				BEGIN				
-					SELECT @IsDisabledDownline=1						
-				END
-			
-			END
-		END	
+	
 	-- For DCS
 	 
     DECLARE	@bitmapOrder_MuayThai		INT
@@ -252,8 +217,7 @@ Param's Explanation:
 	
 		   ci.disablecasino,		
 			
-		   @HasDownline AS HasDownline,
-		   @IsDisabledDownline AS DisableCasinoDownline,
+		  
 		   ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
 		   

@@ -1,1 +1,1 @@
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
+ALPHA\SubAccount\Age_CustSubIns.sql

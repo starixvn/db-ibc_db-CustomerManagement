@@ -1,5 +1,5 @@
-/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE [ON_USER]
+/*<info serverAlias="DBONUSER-On_User" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+USE [On_User]
 GO
 
 ALTER PROCEDURE [dbo].[Age_MessageNoticeDownlineUpd] 
@@ -13,11 +13,13 @@ AS
     Task: Update table "MESSAGE_NOTICE" when one upline enable product for downlines.
     DB: DBONUSER/On_User
     Original:
+
     Revisions:
-    
+		- 20180118@Elodie: Only insert message when update enable status for members on NAP & ExtNAP [RedmineID:#87328]
+
     Param's Explanation:
         . @CustID: ID of agent whose status value has been changed
-        . @UserID: ID of master or admin who made it
+        . @UserID: admin who made it
 */
 BEGIN   
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -36,10 +38,15 @@ BEGIN
 	IF @TypeID = 3
 	BEGIN
 		CREATE TABLE #NewDisableStatTbl(
-					SportType SMALLINT,
-					BetType SMALLINT,
-					IsDisabled BIT,
-					IsDisabledDownline BIT
+					SportType			SMALLINT,
+					BetType				SMALLINT,
+					IsDisabled			BIT,
+					UpdateAllMasters	BIT,
+					UpdateAllAgents		BIT,
+					UpdateAllMembers	BIT,
+					DisableAllMasters	BIT,
+					DisableAllAgents	BIT,
+					DisableAllMembers	BIT
 				)
 		
 		--Parse XML	
@@ -50,8 +57,7 @@ BEGIN
 		INSERT INTO #NewDisableStatTbl
 		SELECT *
 		FROM OPENXML (@iDoc, '/ROOT/ProductStatus',1) 
-		WITH(SportType smallint, BetType smallint, IsDisabled BIT,IsDisabledDownline BIT
-			)	
+		WITH(SportType smallint,BetType smallint,IsDisabled BIT,UpdateAllMasters BIT,UpdateAllAgents BIT,UpdateAllMembers BIT,DisableAllMasters BIT,DisableAllAgents BIT,DisableAllMembers BIT)	
 		
 		EXEC sp_xml_removedocument @iDoc
 	
@@ -59,6 +65,7 @@ BEGIN
 		INTO #BitmapOrder
 		FROM bodb02.dbo.ProductStatusProfile ps WITH (NOLOCK)
 			INNER JOIN #NewDisableStatTbl ds ON ds.BetType = ps.Bettype AND ds.SportType = ps.Sporttype
+		WHERE UpdateAllMembers = 1
 
 		IF @RoleID = 4
 		BEGIN
@@ -146,3 +153,4 @@ BEGIN
 			VALUES (SOURCE.CustID, SOURCE.TypeID, @modifiedDate, SOURCE.userID, @isViewed);
 	END
 END
+GO
