@@ -24,6 +24,7 @@ AS
 		- 20171027@Johnson: Add Lucky 3 [Redmine: #75883]
 		- 20171001@Elodie: Apply SMA Winlimit and Company Win Limit for BullFighting [Redmine:#81664]
 		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
+		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
 
 	Parameters Explanation:	
 */
@@ -67,6 +68,9 @@ BEGIN
 			SELECT 26, 1600, 0,1 --Lucky 3
 			UNION ALL
 			SELECT 30, 1004, 1, 1  -- BullFighting
+			UNION ALL 
+			SELECT 32, 4101, 0, 1 --Pragmatic Integration
+
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
 
