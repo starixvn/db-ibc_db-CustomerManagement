@@ -20,7 +20,7 @@ BEGIN
 		Acc_ExchangeRate e WITH(NOLOCK) 
 		INNER JOIN Exchange f WITH(NOLOCK) ON e.FromExchangeID = f.ExchangeID
 		INNER JOIN Exchange t WITH(NOLOCK) ON e.ToExchangeID = t.ExchangeID
-		INNER JOIN customer c WITH(NOLOCK) ON e.creator = c.custid
+		INNER JOIN CUSTDB.dbo.customer c WITH(NOLOCK) ON e.creator = c.custid
 	ORDER BY f.Currency, t.Currency
 
 END

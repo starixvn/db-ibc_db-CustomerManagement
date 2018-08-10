@@ -27,7 +27,7 @@ BEGIN
 	SET @Begin = GETDATE();
 	
 	--Check permission for account site
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = '[UserControl]', @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+	EXEC dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = '[UserControl]', @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
 	IF @ErrCode <> 0
 	   RETURN;
 	DECLARE @GroupName VARCHAR(50)

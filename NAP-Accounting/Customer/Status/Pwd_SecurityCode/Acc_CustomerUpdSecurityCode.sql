@@ -1,12 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_CustomerUpdSecurityCode]    Script Date: 06/10/2015 14:57:08 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Acc_CustomerUpdSecurityCode    Script Date: 12/5/2013 4:34:23 PM ******/
-/****** Object:  Stored Procedure dbo.Acc_CustomerUpdSecurityCode    Script Date: 4/23/2013 10:50:32 AM ******/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode]
 	@custid		INT,
 	@userid		INT,
@@ -26,6 +18,7 @@ GO
 		
 		Revisions:
 			- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		
 		Parameter's Explanation:
 	*/
@@ -44,7 +37,7 @@ SET NOCOUNT ON
 	END
 	ELSE
 	BEGIN
-		EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		If @ErrCode <> 0
 			RETURN
 	END

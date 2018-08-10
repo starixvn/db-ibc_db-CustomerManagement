@@ -27,11 +27,11 @@ BEGIN
 	-- IsAllow: 1:Readonly, 2:Host, 3:All
 	-- Just check permission for admin, ignore when roleid < 5 
 	Declare @roleid tinyint,@IsAllow tinyint
-	Select @roleid = roleid From customer with(nolock) where custid=@custid
+	Select @roleid = roleid From CUSTDB.dbo.customer with(nolock) where custid=@custid
 	IF @RoleID Between 5 and 10
 		BEGIN 
 			SELECT @IsAllow=(isnull(mp.policy,0)|isnull(gp.policy,0)) & isnull(fi.FuncRender,0)
-			FROM AccCustomer ac with(nolock) inner join custinfo ci with(nolock) on ac.custid=ci.custid
+			FROM AccCustomer ac with(nolock) inner join CUSTDB.dbo.custinfo ci with(nolock) on ac.custid=ci.custid
 				Left JOIN acc_functioninfo fi with(nolock) on fi.funcid=@funcid
 				LEFT JOIN Acc_MemberPolicy mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
 				LEFT JOIN Acc_GroupPolicy gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid

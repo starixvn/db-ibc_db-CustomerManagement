@@ -43,7 +43,7 @@ BEGIN
 	 SELECT @permission = '[UserControl]'  
 	  
 	--Check permission for account site: @phuc20080213  
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @permission, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT  
+	EXEC dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @permission, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT  
 	IF @ErrCode <> 0  
 		RETURN  
 	--end  
@@ -53,7 +53,7 @@ BEGIN
 	--EXEC @UserName = DBTRANS.BODB02.[dbo].[f_Get_CustNameByCustID] @UserID  
 	  
 	select @UserName = username
-	from bodb02.dbo.custInfo with(nolock)  
+	from CUSTDB.dbo.custInfo with(nolock)  
 	where custid = @UserID  
 	  
 	DECLARE @GroupPolicy AS NVARCHAR (500), @OldGroupPolicy AS NVARCHAR (500),   
@@ -194,7 +194,7 @@ BEGIN
 	  
 	SELECT @Members = COALESCE (@Members+';', '') + C.Username  
 	FROM accCustomer A WITH (NOLOCK)    
-	INNER JOIN Custinfo C WITH(NOLOCK)    
+	INNER JOIN CUSTDB.dbo.Custinfo C WITH(NOLOCK)    
 	 ON A.CustId = C.CustID  
 	WHERE A.GroupID = @GroupID  
 	ORDER BY  C.Username  

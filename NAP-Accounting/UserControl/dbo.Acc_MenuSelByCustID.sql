@@ -32,7 +32,7 @@ begin
 						 ON ac.custid = mp.custid  
 					   INNER JOIN acc_functioninfo fi WITH (nolock)  
 						 ON mp.funcid = fi.funcid  
-					   INNER JOIN customer c WITH (nolock)  
+					   INNER JOIN CUSTDB.dbo.customer c WITH (nolock)  
 						 ON c.custid = mp.custid  
 					   INNER JOIN acc_grouppolicy gp WITH (nolock)  
 						 ON gp.groupid = ac.groupid  
@@ -55,7 +55,7 @@ begin
 						 ON ac.custid = mp.custid  
 					   INNER JOIN acc_functioninfo fi WITH (nolock)  
 						 ON mp.funcid = fi.funcid  
-					   INNER JOIN customer c WITH (nolock)  
+					   INNER JOIN CUSTDB.dbo.customer c WITH (nolock)  
 						 ON c.custid = mp.custid  
 					   INNER JOIN acc_grouppolicy gp WITH (nolock)  
 						 ON gp.groupid = ac.groupid  

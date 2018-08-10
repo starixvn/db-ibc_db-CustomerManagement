@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoSuspend]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoSuspend]
 	@CustID			INT,
 	@AutoSuspend	BIT = NULL, -- Auto-suspend Soccer
 	@AutoSuspendOther BIT = NULL, -- Auto-suspend non-soccer sports
@@ -32,6 +33,8 @@ AS
 		- 20131108@Elodie: Splitting bodb02 into CustDB (call Acc_ExecRep_Cust_04 instead of Acc_ExecRep_04)								
 		- 20141125@Jamie: Change DB location & Acc_CustomerInfo_Execrep_04 instead of Acc_ExecRep_Cust_04 [Redmine:#26497]
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines, Acc_CustomerSelCheckEnable to DBCUST.CustDB)
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:
 		@IsUpdDownline: auto-suspended all downlines
 
@@ -44,7 +47,7 @@ AS
 	set @startRun = getdate()
 	
 	--Check permission for account site: @phuc20080213
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[AutoSuspend]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[AutoSuspend]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	If @ErrCode <> 0
 		RETURN
 	--Check disable user

@@ -1,11 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_CustomerUpdResetMemberCredit]    Script Date: 06/10/2015 14:51:51 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Acc_CustomerUpdResetMemberCredit    Script Date: 12/25/2013 3:09:38 PM ******/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdResetMemberCredit]
 	@agentID		INT,
 	@closedOnly		BIT = 1,
@@ -28,6 +21,7 @@ AS
 		- 20130218@Dan: Change linked server DB03 to DBPOLICY, DB053 to DBAGE; Write more log on DBTXN server in case of DBLOG server failure
 		- 20131025@Lukas: add system define permission checking when call from external accounting		
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 */
 BEGIN
 SET NOCOUNT ON 
@@ -42,7 +36,7 @@ END
 ELSE
 BEGIN
 	--Check permission for account site: @phuc20080213
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[Credit]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[Credit]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	--end

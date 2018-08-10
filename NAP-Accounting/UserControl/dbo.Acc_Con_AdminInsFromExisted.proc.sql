@@ -27,7 +27,7 @@ BEGIN
 	DECLARE @Begin AS DATETIME;
 	SET @Begin = GETDATE();
 	--Check permission for account site: @phuc20080213
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @creator, @funcname = '[UserControl]', @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+	EXEC dbo.Acc_Con_CheckPermission @custid = @creator, @funcname = '[UserControl]', @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
 	IF @ErrCode <> 0
 	   RETURN;
 	--end
@@ -35,7 +35,7 @@ BEGIN
 	@roleid AS INT;
 	SELECT @custid = custid,
 		   @roleid = roleid
-	FROM   customer AS c WITH (NOLOCK)
+	FROM   CUSTDB.dbo.customer AS c WITH (NOLOCK)
 	WHERE  username = @username
 		   AND roleid BETWEEN 5 AND 10;
 	SELECT @custid = isnull(@custid, 0);

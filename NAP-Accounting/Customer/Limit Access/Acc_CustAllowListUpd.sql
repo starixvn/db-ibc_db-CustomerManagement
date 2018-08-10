@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustAllowListUpd]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustAllowListUpd]
 (
 	@CustID				INT,
 	@IsAllowed			BIT				= 0,
@@ -18,6 +19,8 @@ AS
 
 	Revisions:
 		- 20130310@Lukas: Change linked-server alias & add more write log section
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:
 	
 */
@@ -32,7 +35,7 @@ BEGIN
 	SELECT	@ErrCode	= 0,
 			@ErrMsg		= ''
 	--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@LastModifiedBy,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@LastModifiedBy,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 

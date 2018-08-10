@@ -1,13 +1,4 @@
-﻿USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Acc_OperatorIns]    Script Date: 10/07/2013 2:58:52 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Acc_OperatorIns    Script Date: 5/6/2013 2:05:52 AM ******/
-/****** Object:  Stored Procedure dbo.Acc_OperatorIns    Script Date: 4/16/2013 9:29:24 AM ******/
-
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_OperatorIns]
 	@custid INT OUTPUT, 
 	@firstname NVARCHAR (50), 
@@ -34,7 +25,7 @@ DECLARE @pwdexpiry AS DATETIME;
 /*
 Created: 
 Task : Add account in User control 
-DB: DBTXN/bodb02
+DB: DBCUST/CUSTDB
 Original:saveoperator.asp
 
 Revisions:
@@ -47,6 +38,8 @@ Revisions:
 	- 20130118@Elodie: Change link server DB03 to DBPOLICY	
 					   Write more log on DBTXN server in case of DBLOG server failure
 	- 20130710@Kathy: Synchronize user data between Accounting and AdminSite: Insert data to AdminSiteUser table
+	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+	
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -61,7 +54,7 @@ DECLARE @LogData AS NVARCHAR (200),
 @Duration AS INT;
 SET @Begin = GETDATE();
 --Check permission for account site: @phuc20080213
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid = @creator, @funcname = '[UserControl]', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @creator, @funcname = '[UserControl]', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
 IF @ErrCode <> 0
     BEGIN
         IF @ReturnErrCode = 0
@@ -167,3 +160,4 @@ BEGIN CATCH
 		@actionid = 1851, 
 		@duration = @Duration
 END CATCH
+GO

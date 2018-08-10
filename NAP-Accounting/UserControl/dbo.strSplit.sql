@@ -1,11 +1,11 @@
-/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="1" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-NAP_UserControl,DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
 ALTER function  [dbo].[strSplit] ( @string nvarchar( 4000), @splitter char( 1) )
 returns @res table ( id int primary key, rank int, val nvarchar( 4000) )
 as
 /*  
  Created by: N/A
  Task:  
- DB: DBCUST/NAP_UserControl
+ DB: DBCUST/NAP_UserControl, DBAGE-bodb_Age
   
  Revisions:  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]					 

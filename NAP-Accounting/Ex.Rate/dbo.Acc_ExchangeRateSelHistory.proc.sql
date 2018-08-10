@@ -30,7 +30,7 @@ BEGIN
 			WHERE	FromExchangeID = COALESCE(@FromExchangeID,FromExchangeID) 
 					and ToExchangeID = COALESCE(@ToExchangeID, ToExchangeID)
 					and UserID = COALESCE(@UserID,UserID) 
-		) a INNER JOIN dbo.Customer c WITH(NOLOCK) ON c.CustID = a.UserID
+		) a INNER JOIN CUSTDB.dbo.Customer c WITH(NOLOCK) ON c.CustID = a.UserID
 	ORDER BY a.Actiondate DESC
 END	
 GO

@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustAllowListDel]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustAllowListDel]
 (
 	@CustID				INT,
 	@LastModifiedBy		INT				= NULL,
@@ -11,11 +12,13 @@ AS
 	Created: Elodie
 	Date: 20120301
 	Task : delete test accounts in monitoring list
-	DB: DBTXN/bodb02
+	DB: DBCUST/CUSTDB
 	Original:
 
 	Revisions:
-		20130310@Lukas: Change linked-server alias & add more write log section
+		- 20130310@Lukas: Change linked-server alias & add more write log section
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:
 	
 */
@@ -31,7 +34,7 @@ BEGIN
 			@ErrMsg		= ''
 
 	--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@LastModifiedBy,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@LastModifiedBy,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 

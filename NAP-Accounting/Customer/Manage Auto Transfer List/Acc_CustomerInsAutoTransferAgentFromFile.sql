@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_CustomerInsAutoTransferAgentFromFile]	
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerInsAutoTransferAgentFromFile]	
 	@username		VARCHAR(MAX),
 	@TransferType	TINYINT = 1,
 	@UserID			INT,
@@ -10,7 +11,7 @@
 		Created: Johnson
 		Date: 2014-09-23
 		Task: Manage auto transfer list agents adding from file
-		DB: DBTXN/CustDB
+		DB: DBCUST/CustDB
 		
 		Revisions:
 			- 20141023@Johnson: Set default transfer to 'Transfer all downlines' from upload file
@@ -27,7 +28,7 @@ BEGIN
 	SET	@startRun = GETDATE()
 	
 		--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	

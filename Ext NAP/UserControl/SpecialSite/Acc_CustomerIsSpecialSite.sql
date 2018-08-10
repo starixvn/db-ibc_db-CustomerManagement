@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerIsSpecialSite]
 	@UserName VARCHAR(30),
 	@CheckCustId TINYINT = 0,	
@@ -9,7 +9,7 @@ AS
 /*
 	Created: 20160901@Elodie
 	Task: check if the customer belongs to special site
-	Database: DBCUST/NAP_UserControl
+	Database: DBCUST/CUSTDB
 	
 	Revision:
 		- 20161031@Elodie: Change a type of parameter Username NVARCHAR(30) - > VARCHAR(30) 
@@ -45,7 +45,7 @@ BEGIN
 	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName,@CheckCustId
 	IF @CustID IS NULL 
 		RETURN
-	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM customer WITH (NOLOCK) WHERE custid = @CustID
+	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM dbo.customer WITH (NOLOCK) WHERE custid = @CustID
 
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 

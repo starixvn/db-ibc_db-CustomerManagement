@@ -22,7 +22,7 @@ BEGIN
 	SET NOCOUNT ON;
 	IF (@CustID = 0)
 		SELECT ac.custid
-		FROM   customer AS c WITH (NOLOCK)
+		FROM   CUSTDB.dbo.customer AS c WITH (NOLOCK)
 			   INNER JOIN
 			   acccustomer AS ac WITH (NOLOCK)
 			   ON c.custid = ac.custid
@@ -34,7 +34,7 @@ BEGIN
 			   AND c.username = @Username;
 	ELSE
 		SELECT ac.custid
-		FROM   customer AS c WITH (NOLOCK)
+		FROM   CUSTDB.dbo.customer AS c WITH (NOLOCK)
 			   INNER JOIN
 			   acccustomer AS ac WITH (NOLOCK)
 			   ON c.custid = ac.custid

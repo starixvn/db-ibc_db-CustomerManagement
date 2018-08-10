@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Con_AdminUpdClosed]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Con_AdminUpdClosed]
 	@CustID INT, 
 	@Closed BIT, 
 	@UserID INT, 
@@ -22,80 +23,83 @@ Revisions:
 	- 20120604@Elodie: Modify the content of a log in User Control
 					   Only update admin's status if any changes
 	- 20130118@Elodie: Change link server DB03 to DBPOLICY			  
-					   Write more log on DBTXN server in case of DBLOG server failure					
+					   Write more log on DBTXN server in case of DBLOG server failure	
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   				
+	
 Param's Explanation:
 
 */
-SET NOCOUNT ON;
-DECLARE @LogData AS NVARCHAR (500), 
-@Begin AS DATETIME, 
-@End AS DATETIME, 
-@Duration AS INT;
-SET @Begin = GETDATE();
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @LogData AS NVARCHAR (500), 
+	@Begin AS DATETIME, 
+	@End AS DATETIME, 
+	@Duration AS INT;
+	SET @Begin = GETDATE();
 
-DECLARE @funcname VARCHAR(50)
-IF @isABS = 1 
-	SELECT @funcname = '[ABSAdminUserControl]'
-ELSE 
-	SELECT @funcname = '[UserControl]'
-	
---Check permission for account site: @phuc20080213
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @funcname, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
-IF @ErrCode <> 0
-    RETURN;
---end
+	DECLARE @funcname VARCHAR(50)
+	IF @isABS = 1 
+		SELECT @funcname = '[ABSAdminUserControl]'
+	ELSE 
+		SELECT @funcname = '[UserControl]'
+		
+	--Check permission for account site: @phuc20080213
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @funcname, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+	IF @ErrCode <> 0
+		RETURN;
+	--end
 
-DECLARE @Old_Closed AS BIT, @LoginCount AS INT;
+	DECLARE @Old_Closed AS BIT, @LoginCount AS INT;
 
-SELECT @Old_Closed = closed
-FROM   custinfo WITH (NOLOCK)
-WHERE  custid = @custid;
+	SELECT @Old_Closed = closed
+	FROM   custinfo WITH (NOLOCK)
+	WHERE  custid = @custid;
 
-SELECT @LoginCount = logincount
-FROM   customer WITH (NOLOCK)
-WHERE  custid = @custid;
+	SELECT @LoginCount = logincount
+	FROM   customer WITH (NOLOCK)
+	WHERE  custid = @custid;
 
-IF(@Old_Closed <> @Closed)
-Begin
-	UPDATE  custinfo WITH (ROWLOCK, UPDLOCK)
-		SET Closed = @Closed
-	WHERE   custid = @CustID;
+	IF(@Old_Closed <> @Closed)
+	Begin
+		UPDATE  custinfo WITH (ROWLOCK, UPDLOCK)
+			SET Closed = @Closed
+		WHERE   custid = @CustID;
 
-	IF (@Old_Closed = 1
-		AND @Closed = 0
-		AND @LoginCount > 5)
-		UPDATE  customer WITH (ROWLOCK, UPDLOCK)
-			SET logincount = 0
-		WHERE   custid = @custid;
-	    
-	/**** Write to log table ***/
-	SELECT @LogData = '<Acc_Con_AdminUpdClosed><Status>' + CASE @closed WHEN 0 THEN 'Active' ELSE 'Closed' END + '</Status></Acc_Con_AdminUpdClosed>'
+		IF (@Old_Closed = 1
+			AND @Closed = 0
+			AND @LoginCount > 5)
+			UPDATE  customer WITH (ROWLOCK, UPDLOCK)
+				SET logincount = 0
+			WHERE   custid = @custid;
+		    
+		/**** Write to log table ***/
+		SELECT @LogData = '<Acc_Con_AdminUpdClosed><Status>' + CASE @closed WHEN 0 THEN 'Active' ELSE 'Closed' END + '</Status></Acc_Con_AdminUpdClosed>'
 
-	SET @End = GETDATE();
-	SET @Duration = DATEDIFF(millisecond, @Begin, @End);
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] 
-				@custID = @custid, 
-				@Doing = @LogData, 
-				@userid = @UserID, 
-				@TypeID = 1, 
-				@actionid = 1705, 
-				@duration = @Duration
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = '<Acc_Con_AdminUpdClosed> ErrMsg="' + COALESCE(ERROR_MESSAGE(),SPACE(1)) + '" ' + 
-							'<Status>' + CASE @closed WHEN 0 THEN 'Active' ELSE 'Closed' END + '</Status></Acc_Con_AdminUpdClosed>'
-							
-		EXEC bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] 
-				@custID = @custid, 
-				@Doing = @LogData, 
-				@userid = @UserID, 
-				@TypeID = 1, 
-				@actionid = 1705, 
-				@duration = @Duration
-	END CATCH
-End
-
+		SET @End = GETDATE();
+		SET @Duration = DATEDIFF(millisecond, @Begin, @End);
+		BEGIN TRY
+			EXEC DBLOG.bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] 
+					@custID = @custid, 
+					@Doing = @LogData, 
+					@userid = @UserID, 
+					@TypeID = 1, 
+					@actionid = 1705, 
+					@duration = @Duration
+		END TRY
+		BEGIN CATCH
+			SELECT @LogData = '<Acc_Con_AdminUpdClosed> ErrMsg="' + COALESCE(ERROR_MESSAGE(),SPACE(1)) + '" ' + 
+								'<Status>' + CASE @closed WHEN 0 THEN 'Active' ELSE 'Closed' END + '</Status></Acc_Con_AdminUpdClosed>'
+								
+			EXEC bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] 
+					@custID = @custid, 
+					@Doing = @LogData, 
+					@userid = @UserID, 
+					@TypeID = 1, 
+					@actionid = 1705, 
+					@duration = @Duration
+		END CATCH
+	End
+END
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminUpdClosed] TO [vnteam];
 GO

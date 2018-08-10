@@ -1,7 +1,5 @@
-﻿USE [CustDB]
-GO
-
-ALTER PROC [dbo].[Acc_ExchangeIns]	
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ExchangeIns]	
 	@exchangeid INT OUTPUT,
 	@actualrate FLOAT,
 	@minbet FLOAT = 0,
@@ -18,7 +16,7 @@ ALTER PROC [dbo].[Acc_ExchangeIns]
 	@ErrMsg NVARCHAR(200) = '' OUTPUT,
 	@IP VARCHAR(15) = ''
 AS
-SET NOCOUNT ON
+
 /*
 Created: 
 Task : Insert new currency
@@ -32,51 +30,54 @@ Revisions:
 	- 20110506@Johnson: Add columns @Description, @MultipliedBy, @Code 
 	- 20130822@Lukas: change alias for DB03
 	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	
 Param's Explanation:
 	• @actualrate: specIFy exchange-rate of the currency
 	• @minbet: specIFy minbet of the currency
 
 */
-
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-IF @ErrCode <> 0
-	RETURN
---END
-
---check leaguename
-IF EXISTS (SELECT 1 FROM Exchange WITH (NOLOCK) WHERE Currency = @Currency)
 BEGIN
-	SELECT @ErrMsg = 'This currency name is already used.', @ErrCode = 101	
-	RETURN
+	SET NOCOUNT ON
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	IF @ErrCode <> 0
+		RETURN
+	--END
+
+	--check leaguename
+	IF EXISTS (SELECT 1 FROM Exchange WITH (NOLOCK) WHERE Currency = @Currency)
+	BEGIN
+		SELECT @ErrMsg = 'This currency name is already used.', @ErrCode = 101	
+		RETURN
+	END
+
+	INSERT INTO exchange(actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code)
+	VALUES (@actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code)
+
+
+	SELECT @exchangeid=@@IDENTITY
+
+	DECLARE @LogData NVARCHAR(200)
+	SELECT @LogData = 'Add exchange rate:'
+		+  ' CurrencyName='+ ISNULL(@currency,'') 
+		+  ' ,RMRate=' + ISNULL(convert(VARCHAR(10), @actualrate),'')  
+		+  ' ,minbet='+ ISNULL(convert(VARCHAR(10), @minbet),'') 
+		+  ' ,minbetlive='+ ISNULL(convert(VARCHAR(10), @minbetlive),'') 
+		+  ' ,GBPRate='+ ISNULL(convert(VARCHAR(10), @GBPRate),'') 
+		+  ' ,EURORate='+ ISNULL(convert(VARCHAR(10), @EURORate),'') 
+		+  ' ,US$Rate='+ ISNULL(convert(VARCHAR(10), @US$Rate),'')
+		+  ' ,Description='+ ISNULL(@Description,'')
+		+  ' ,MultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')
+		+  ' ,Code='+ ISNULL(@code,'') 
+
+	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
+		@UserID = @UserID, 
+		@ExchangeID = @exchangeid, 
+		@actualrate = @actualrate, 
+		@IP = @IP, 
+		@Doing = @LogData
+
 END
-
-INSERT INTO exchange(actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code)
-VALUES (@actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code)
-
-
-SELECT @exchangeid=@@IDENTITY
-
-DECLARE @LogData NVARCHAR(200)
-SELECT @LogData = 'Add exchange rate:'
-	+  ' CurrencyName='+ ISNULL(@currency,'') 
-    +  ' ,RMRate=' + ISNULL(convert(VARCHAR(10), @actualrate),'')  
-	+  ' ,minbet='+ ISNULL(convert(VARCHAR(10), @minbet),'') 
-	+  ' ,minbetlive='+ ISNULL(convert(VARCHAR(10), @minbetlive),'') 
-	+  ' ,GBPRate='+ ISNULL(convert(VARCHAR(10), @GBPRate),'') 
-	+  ' ,EURORate='+ ISNULL(convert(VARCHAR(10), @EURORate),'') 
-	+  ' ,US$Rate='+ ISNULL(convert(VARCHAR(10), @US$Rate),'')
-	+  ' ,Description='+ ISNULL(@Description,'')
-	+  ' ,MultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')
-	+  ' ,Code='+ ISNULL(@code,'') 
-
-EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
-	@UserID = @UserID, 
-	@ExchangeID = @exchangeid, 
-	@actualrate = @actualrate, 
-	@IP = @IP, 
-	@Doing = @LogData
-
-
 GO
 GRANT EXECUTE ON [dbo].[Acc_ExchangeIns] TO [bodbAdminNet] AS [dbo]
 GO

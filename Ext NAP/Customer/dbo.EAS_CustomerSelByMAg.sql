@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByMAg] 
     @MRecommend INT
   , @Custid     INT = NULL
@@ -57,7 +54,8 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
-
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
 */
@@ -85,7 +83,7 @@ BEGIN
     FROM dbo.custmaster WITH(NOLOCK)
     WHERE custid = @MRecommend
 
-	EXEC DBPOLICY.bodb02.dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
 
 	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @MRecommend AND cl.SecurityCode IS NOT NULL)
 		SELECT @UplineHasSecurityCode = 1
@@ -157,16 +155,13 @@ BEGIN
 		SET @IsIMBC = 1
 			
 	-- get data for filtered customers	
-	DECLARE @SearchQuery varchar(1024)
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
 	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOLICY, 
-	''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
-
+	
 	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	EXECUTE(@SearchQuery)
+	SELECT siteid , site,SpecialGroup 
+	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@tmpUserid)
 
     SELECT cu.custid,
            cu.username,

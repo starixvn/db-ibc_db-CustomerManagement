@@ -22,7 +22,7 @@ SET NOCOUNT ON
 	
 	INSERT INTO @tmpGroup
 	SELECT val
-	FROM strSplit(@groupid,',')
+	FROM dbo.strSplit(@groupid,',')
 
     SELECT   gi.groupname,
              ac.groupid,
@@ -33,18 +33,18 @@ SET NOCOUNT ON
              ci.closed,
              ac.createdate,
              ct.username AS creator
-    FROM     customer AS c WITH (NOLOCK)
+    FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
              INNER JOIN
-             custinfo AS ci WITH (NOLOCK)
+             CUSTDB.dbo.custinfo AS ci WITH (NOLOCK)
              ON c.custid = ci.custid
              INNER JOIN
-             acccustomer_1 AS ac WITH (NOLOCK)
+             acccustomer AS ac WITH (NOLOCK)
              ON c.custid = ac.custid
              INNER JOIN
-             acc_groupinfo_1 AS gi WITH (NOLOCK)
+             acc_groupinfo AS gi WITH (NOLOCK)
              ON ac.groupid = gi.groupid
              LEFT OUTER JOIN
-             customer AS ct WITH (NOLOCK)
+             CUSTDB.dbo.customer AS ct WITH (NOLOCK)
              ON ac.creator = ct.custid
     WHERE   ac.groupid IN (SELECT groupid FROM @tmpGroup)
     ORDER BY isnull(ci.closed, 0), c.username, ac.groupid

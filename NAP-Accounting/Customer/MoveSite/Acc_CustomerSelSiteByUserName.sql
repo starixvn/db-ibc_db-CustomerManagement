@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerSelSiteByUserName]
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelSiteByUserName]
 	@username VARCHAR(50) = '',
 	@Userid INT=NULL
 AS 
@@ -10,34 +11,32 @@ AS
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20160620@Winnie: #48948 Hide_special_sites_from_unautorized_users
+		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
+		
 	Param's Explanation:
 */
 
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @SearchQuery varchar(1024)
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
 
 	IF @Userid IS NULL
 	BEGIN
-	SELECT site, roleid, custid 
-	FROM customer WITH (NOLOCK) 
-	WHERE username = @username 
+		SELECT site, roleid, custid 
+		FROM dbo.customer WITH (NOLOCK) 
+		WHERE username = @username 
 	END
 	ELSE
 	BEGIN
-	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOLICY, 
-	''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
-
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	EXECUTE(@SearchQuery)
-	
-	SELECT site, roleid, custid 
-	FROM customer WITH (NOLOCK) 
-	WHERE username = @username AND site NOT IN (SELECT site FROM @tmp )
+		SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+		
+		INSERT INTO  @tmp (siteid , site,SpecialGroup)
+		SELECT siteid , [site], SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@tmpUserid)
+		
+		SELECT site, roleid, custid 
+		FROM dbo.customer WITH (NOLOCK) 
+		WHERE username = @username AND site NOT IN (SELECT site FROM @tmp )
 	
 	END
 END

@@ -36,7 +36,7 @@ BEGIN
 			 acc_functioninfo AS fi WITH (NOLOCK)
 			 ON mp.funcid = fi.funcid --or mp.funcid=fi.parentid
 			 INNER JOIN
-			 customer AS c WITH (NOLOCK)
+			 CUSTDB.dbo.customer AS c WITH (NOLOCK)
 			 ON c.custid = mp.custid
 			 INNER JOIN
 			 acc_grouppolicy AS gp WITH (NOLOCK)

@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_VirtualRateMulUpd]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_VirtualRateMulUpd]
     @UserID INT ,
     @IP VARCHAR(20) ,
     @FileName VARCHAR(20) ,
@@ -9,7 +10,7 @@
 AS /*
 	Created: 
 	Task : Update new multi virtual rates for username
-	DB: DBTXN/CustDB
+	DB: DBCUST/CustDB
 	Original: 
 	Revisions:	
 		- 20090812@Simon: Update new multi virtual rates for username
@@ -24,6 +25,7 @@ AS /*
 		- 20150126@Johnson: Separate virtual rate setting into sport types and bet types [Redmine: #25840]						
 						+ Change to use new structure : table Ac_VirtualRateList				
 		- 20151105@Billy: Change to new VirtualRate structure [Redmine: #46541]		 						
+		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 							
 */
 BEGIN
@@ -38,7 +40,7 @@ BEGIN
 	set @startRun = getdate()
 
 --Check permission for account site
-    EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid = @UserID,
+    EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID,
         @funcname = '[UploadVR]', @ErrCode = @ErrCode OUTPUT,
         @ErrMsg = @ErrMsg OUTPUT
     IF @ErrCode <> 0 

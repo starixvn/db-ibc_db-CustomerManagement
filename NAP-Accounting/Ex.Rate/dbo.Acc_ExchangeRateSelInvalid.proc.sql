@@ -128,9 +128,9 @@ BEGIN
 			a.Amount,
 			it.GainLoss
 	FROM	Acc_ExchangeRate_InvalidTransfer a WITH (NOLOCK)
-			INNER JOIN Custinfo c WITH (NOLOCK) ON a.userid = c.custid 
-			INNER JOIN Custinfo f WITH (NOLOCK) ON a.fromcust = f.custid 
-			INNER JOIN Custinfo t WITH (NOLOCK) ON a.tocust = t.custid
+			INNER JOIN CUSTDB.dbo.Custinfo c WITH (NOLOCK) ON a.userid = c.custid 
+			INNER JOIN CUSTDB.dbo.Custinfo f WITH (NOLOCK) ON a.fromcust = f.custid 
+			INNER JOIN CUSTDB.dbo.Custinfo t WITH (NOLOCK) ON a.tocust = t.custid
 			LEFT JOIN #InvalidTransfer it ON a.RefNo = it.Refno
 	WHERE	TransDate >= @FromDate and TransDate < @ToDate and isDeleted = 0
 	ORDER BY a.transdate

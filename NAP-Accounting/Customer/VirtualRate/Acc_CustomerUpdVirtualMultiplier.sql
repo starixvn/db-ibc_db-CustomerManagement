@@ -1,8 +1,4 @@
-﻿SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier   
 					@custid				INT
 				,	@EnableVirtualrate	BIT				= 0
@@ -39,6 +35,8 @@ AS
 		- 20160128@Billy: Update Virtual Rate's range from [-0.8, 1.6] to [-0.9, 1.6] - [Redmine: #51611]
 		- 20160422@Billy:	Exclude Auto Adjusted VR Members when update VR - [Redmine: #56525]
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
 								<Rate SportType="1" BetType="1" IsLive="0" VirtualMultiplier="1.5" />	
@@ -74,7 +72,7 @@ BEGIN
 	IF @IsLicenseeUser = 0 --accounting admin (licensee user will be ignored from this check)  
 	BEGIN  
 		--Check permission for account site: @phuc20080213  
-		EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[VirtualRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output  
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[VirtualRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output  
 		If @ErrCode <> 0  
 			RETURN  
 	END  

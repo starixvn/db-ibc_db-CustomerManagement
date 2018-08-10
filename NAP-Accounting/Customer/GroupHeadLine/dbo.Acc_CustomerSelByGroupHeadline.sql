@@ -1,3 +1,4 @@
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200) = ''
   , @currency INT = 0
@@ -28,22 +29,25 @@ AS
         - 20160829@Elodie: Modify code to get supers who is not assigned to group [Redmine:#63216]
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20170605@Winnie: Apply Color for closed account [Redmine's Ids: #74494]
+		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+		
     Example: exec Acc_CustomerSelByGroupHeadline @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
 
 */    
 BEGIN    
     SET NOCOUNT ON    
     
-    DECLARE @SearchQuery varchar(1024)
     DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
     DECLARE @tmpUserid VARCHAR(50)
     SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-    SELECT @SearchQuery = 'SELECT * 
-    FROM OPENQUERY(DBPOLICY, 
-    ''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
 
-    INSERT INTO  @tmp (siteid , site,SpecialGroup)
-    EXECUTE(@SearchQuery)    
+	DECLARE @SearchQuery varchar(1024)
+	SELECT @SearchQuery = 'SELECT * 
+	FROM OPENQUERY(DBPOL, 
+	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
+
+	INSERT INTO  @tmp (siteid , site,SpecialGroup)
+	EXECUTE(@SearchQuery)
     
     CREATE TABLE #tmpDirectCust 
     (

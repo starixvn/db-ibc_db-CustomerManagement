@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdAbnormal]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdAbnormal]
 	@CustID int,
 	@UpdateDownline bit = 0,
 	@AbnormalLevel int=0,
@@ -16,6 +17,7 @@ AS
 	Revisions:	
 		- 20130306@Lukas: change linked-server alias & add more write log section
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		
 	Param's Explanation:
 		@CustID: Id of member will be updated
@@ -29,7 +31,7 @@ Begin
 	set @startRun = getdate()
 
 	--Check permission for account site:
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	If @ErrCode <> 0
 		RETURN
 	--end

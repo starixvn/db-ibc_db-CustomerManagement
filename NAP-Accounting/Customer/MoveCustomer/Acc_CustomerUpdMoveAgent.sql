@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,vnteam" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveAgent]
 	@mastername		varchar(40),
 	@agentname		varchar(40),
@@ -88,7 +85,7 @@ declare @duration int;
 set @startRun = getdate();
 
 --Check permission for account site: @phuc20080213
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output;
+EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output;
 If @ErrCode <> 0
 	RETURN;
 --end

@@ -113,7 +113,7 @@ BEGIN
 			convert(varchar(10),@MinActualrate) + ';' + 
 			convert(varchar(10),@MaxActualrate) + ';IP:' +
 			convert(varchar(15),@IP)
-	EXEC LOG.bodb02.dbo.WriteLog_UserLog @UserID = @UserID, @Doing = @LogData
+	EXEC dbo.WriteLog_UserLog @UserID = @UserID, @Doing = @LogData
 
 	-- Record history
 	Insert into Acc_ExchangeRate_History(ActionDate, ActionType, UserID, FromExchangeID, ToExchangeID, MinActualrate, MaxActualrate) 

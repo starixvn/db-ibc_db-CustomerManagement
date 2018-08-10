@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_OperatorUpd]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_OperatorUpd]
 	@custid INT, 
 	@firstname NVARCHAR (50), 
 	@lastname NVARCHAR (50), 
@@ -20,7 +21,7 @@ AS
 /*
 Created: 
 Task : Add account in User control 
-DB: DBTXN/bodb02
+DB: DBCUST/CUSTDB
 Original:
 
 Revisions:
@@ -30,6 +31,8 @@ Revisions:
 	- 20120605@Sophia: Modify @Logdata and change the range of ActionID
 	- 20130118@Elodie: Change link server DB03 to DBPOLICY	
 					   Write more log on DBTXN server in case of DBLOG server failure
+	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+					   
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -43,7 +46,7 @@ DECLARE @LogData AS NVARCHAR (2000),
 @Duration AS INT;
 SET @Begin = GETDATE();
 --Check permission for account site: @phuc20080213
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = '[UserControl]', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = '[UserControl]', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
 IF @ErrCode <> 0
     BEGIN
         IF @ReturnErrCode = 0
@@ -234,19 +237,8 @@ BEGIN
 			@duration = @Duration
 	END CATCH
 END
-
-GO
-SET QUOTED_IDENTIFIER OFF;
-
-
-GO
-SET ANSI_NULLS ON;
-
-
 GO
 GRANT EXECUTE ON [dbo].[Acc_OperatorUpd] TO [bodbAdminNet]
-
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorUpd] TO [vnteam]
-
+GO

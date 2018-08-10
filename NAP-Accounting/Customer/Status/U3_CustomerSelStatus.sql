@@ -1,7 +1,4 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[U3_CustomerSelStatus]
 	@CustID		INT,
 	@AdminID	INT			= 0,
@@ -61,7 +58,8 @@ Revisions:
 	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	
 Param's Explanation:
 • @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -185,7 +183,7 @@ Param's Explanation:
 		DECLARE @ErrCode INT
 		IF @system = 'NAP'
 		BEGIN
-			EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission_All @custid=@AdminID,@funcname='[ViewIPVN]',@ErrCode=@ErrCode OUTPUT
+			EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@AdminID,@funcname='[ViewIPVN]',@ErrCode=@ErrCode OUTPUT
 		END
 		ELSE IF @system = 'NAPEXT'
 		BEGIN

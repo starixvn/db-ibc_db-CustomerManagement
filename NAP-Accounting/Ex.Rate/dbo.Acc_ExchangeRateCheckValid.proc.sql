@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeRateCheckValid] 
 	@FromExchangeID	int,
 	@ToExchangeID	int,
@@ -13,10 +13,10 @@ AS
 /*
 	Created: N/A
 	Task : 
-	DB: DBCUST/NAP_UserControl
+	DB: DBTXN/bodb02
 
 	Revisions:
-		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBTRANS [Redmine:99462]				   
 */
 BEGIN
 	SET NOCOUNT ON

@@ -17,7 +17,7 @@ AS
 	DB: DB: DBCUST/NAP_UserControl
 
 	Revisions:
-			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST  [Redmine:99462]
 	Param's Explanation:
 */
 

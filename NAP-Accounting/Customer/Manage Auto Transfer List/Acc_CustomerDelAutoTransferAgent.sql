@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_CustomerDelAutoTransferAgent]
+﻿ /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+ ALTER PROCEDURE [dbo].[Acc_CustomerDelAutoTransferAgent]
 	@custid		INT,
 	@UserID		INT,
 	@IP			VARCHAR(30) = '',
@@ -13,6 +14,8 @@
 		
 		Revisions:
 			- 20150406@Johnson: fix log format [Redmine: #25321]
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -23,7 +26,7 @@ BEGIN
 	SET	@startRun = GETDATE()
 	
 		--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	

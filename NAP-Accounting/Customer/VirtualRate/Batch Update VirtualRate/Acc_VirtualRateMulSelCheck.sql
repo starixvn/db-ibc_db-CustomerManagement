@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_VirtualRateMulSelCheck]	
+﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_VirtualRateMulSelCheck]	
 	@UserID INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -17,13 +18,14 @@ AS
 		- 20131203@Elodie: Expand size of string	
 		- 20150126@Johnson: Separate virtual rate setting into sport types and bet types [Redmine: #25840]						
 						+ Change to use new structure : table Ac_VirtualRateList						 						
-	
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				
+							
 */
 BEGIN
-SET NOCOUNT ON
+	SET NOCOUNT ON
 		
 	--Check permission for account site
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	

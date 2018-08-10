@@ -43,18 +43,18 @@ BEGIN
 		SELECT @permission = '[UserControl]'
 
 	--Check permission for account site: @phuc20080213
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @permission, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @permission, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 	IF @ErrCode <> 0
 	   RETURN
 	--end
 
 	DECLARE @UserName AS NVARCHAR (200), @CustName AS NVARCHAR (200)
 	SELECT @UserName = UserName  
-	from dbo.custInfo with(nolock)  
+	from CUSTDB.dbo.custInfo with(nolock)  
 	where custid = @UserID
 	--
 	SELECT @CustName = UserName  
-	from dbo.custInfo with(nolock)  
+	from CUSTDB.dbo.custInfo with(nolock)  
 	where custid = @CustID
 
 	IF @CustName IS NULL

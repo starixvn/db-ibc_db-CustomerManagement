@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-USE [bodb_Age]
-GO
-
 ALTER PROCEDURE  [dbo].[Acc_CustGroupAddByUsername_Multiple]
 	@GroupName	VARCHAR(MAX),
 	@Username	VARCHAR(MAX),
@@ -18,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20180409@Kan: Insert multiple supers to Group [RedmineID: #77733]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 */
 
 BEGIN
@@ -26,7 +24,7 @@ BEGIN
 	DECLARE @TempErrMsg NVARCHAR(1000)
 	
 	-- Check permission for account site
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission
 		@custid = @UserID,
 		@funcname ='[Admin_ManageExAcc]',
 		@ErrCode = @ErrCode OUTPUT,

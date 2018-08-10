@@ -70,9 +70,9 @@ BEGIN
 					 ci.closed,
 					 ac.createdate,
 					 ct.username AS creator
-			FROM     customer AS c WITH (NOLOCK)
+			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
-					 custinfo AS ci WITH (NOLOCK)
+					 CUSTDB.dbo.custinfo AS ci WITH (NOLOCK)
 					 ON c.custid = ci.custid
 					 INNER JOIN
 					 acccustomer AS ac WITH (NOLOCK)
@@ -81,7 +81,7 @@ BEGIN
 					 acc_groupinfo AS gi WITH (NOLOCK)
 					 ON ac.groupid = gi.groupid
 					 LEFT OUTER JOIN
-					 customer AS ct WITH (NOLOCK)
+					 CUSTDB.dbo.customer AS ct WITH (NOLOCK)
 					 ON ac.creator = ct.custid
 			WHERE    c.username LIKE @Username AND 
 					 c.username LIKE @FirstChar and				 
@@ -114,9 +114,9 @@ BEGIN
 					 ci.closed,
 					 ac.createdate,
 					 ct.username AS creator
-			FROM     customer AS c WITH (NOLOCK)
+			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
-					 custinfo AS ci WITH (NOLOCK)
+					 CUSTDB.dbo.custinfo AS ci WITH (NOLOCK)
 					 ON c.custid = ci.custid
 					 INNER JOIN
 					 (SELECT custid,
@@ -132,7 +132,7 @@ BEGIN
 					 acc_groupinfo AS gi WITH (NOLOCK)
 					 ON ac.groupid = gi.groupid
 					 LEFT OUTER JOIN
-					 customer AS ct WITH (NOLOCK)
+					 CUSTDB.dbo.customer AS ct WITH (NOLOCK)
 					 ON ac.creator = ct.custid
 			WHERE    c.username LIKE @Username
 					 AND c.username LIKE @FirstChar and
