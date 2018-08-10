@@ -1,17 +1,18 @@
-﻿
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_MenuDel] 
     @MenuId     INT,
 	@ErrCode	INT=0 OUTPUT,
     @ErrMsg     VARCHAR(200)='' OUTPUT
 AS
 /*
-Created by: Robert
-Task : delete menu
-DB: DB03.bodb02
+	Created by: Robert
+	Task : delete menu
+	DB: DBCUST/NAP_UserControl
 
-
-Revisions:
-Param's Explanation:
+		Revisions:
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON

@@ -1,6 +1,4 @@
-﻿USE [bodb02]
-GO
-
+﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeRateSelInvalid]
 	@FromDate	DATETIME = NULL OUTPUT,
 	@ToDate		DATETIME = NULL	
@@ -8,11 +6,13 @@ AS
 /*
 	Created by: 2008@[]
 	Task: Show invalid exchange rate 
-	DB: DBPOLICY.bodb02
+	DB: DBTXN/bodb02
 	
 	Revisions:
 		- 20100105@Jamie: Get currency from Cache
 		- 20170307@Percy: Add Forex Gain/Loss (RM) column [RedmineID: #71954]
+		- 20180808@Helen: DB05.DBPOLICY migration - - move to DBTRANS for exchangeRate [Redmine:99462]
+		
 */
 BEGIN
 	SET NOCOUNT ON

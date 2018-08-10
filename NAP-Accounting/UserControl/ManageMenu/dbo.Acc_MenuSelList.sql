@@ -1,15 +1,17 @@
-﻿  ALTER PROCEDURE [dbo].[Acc_MenuSelList] 
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_MenuSelList] 
     
 @System varchar(50) = ''                
 AS 
 
 /*
-Created by: 
-Task : SP select menu list
-DB: DB03.bodb02
+	Created by: 
+	Task : SP select menu list
+	DB: DBCUST/NAP_UserControl
 
-Revisions:
-Param's Explanation: 
+	Revisions:
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	Param's Explanation: 
 */
 
 SET NOCOUNT ON
@@ -17,7 +19,7 @@ SET NOCOUNT ON
 BEGIN
     SELECT MenuId, Menu, ParentId, FuncName,
     Url, Target, IsHide, [Order], System
-    FROM Acc_Menu (nolock) 
+    FROM Acc_Menu WITH (NOLOCK) 
 	WHERE System = @System
 	ORDER BY parentid, [Order]
 END

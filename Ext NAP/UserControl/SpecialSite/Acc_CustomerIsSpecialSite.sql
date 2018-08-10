@@ -1,7 +1,4 @@
-/*<info serverAlias="DBPOLICY-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO 
-
+/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerIsSpecialSite]
 	@UserName VARCHAR(30),
 	@CheckCustId TINYINT = 0,	
@@ -12,7 +9,7 @@ AS
 /*
 	Created: 20160901@Elodie
 	Task: check if the customer belongs to special site
-	Database: DBPOLICY/bodb02
+	Database: DBCUST/NAP_UserControl
 	
 	Revision:
 		- 20161031@Elodie: Change a type of parameter Username NVARCHAR(30) - > VARCHAR(30) 
@@ -22,7 +19,8 @@ AS
 		- 20171107@Vicky: Support to search customer id on Left panel [RedmineID: #86134]
 		- 20180130@Elodie: Get @SiteCode value of customer instead of Group Headline [RedmineID: #90192]
 		- 20180515@Elodie: Add new EU88 Alpha site [Redmine: #94865]
-
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:
 		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
 		2. Alpha: Consolidation report -> bet list -> show NG2 ticket if @IsSpecialHeadline of login SMA = 1 (only check on link i1; i7 & i9 default show NG2 ticket)

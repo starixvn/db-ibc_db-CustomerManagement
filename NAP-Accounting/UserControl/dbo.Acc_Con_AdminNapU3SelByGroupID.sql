@@ -1,15 +1,16 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Con_AdminNapU3SelByGroupID]
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Con_AdminNapU3SelByGroupID]
 	@Groupid VARCHAR(500) = ''
 AS
 /*
 	Created by: Johnson
 	Date: 2015-01-08
 	Task: Get inform of group by Name in User Control for NAPU3 site[Redmine: #28516]
-	DB: DBPOLICY/BODB02
+	DB: DBCUST/NAP_UserControl
 	
  
 	Revisions:
-		
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	Explain @Param
 		-@groupid = '125' if user of Unit3 view
 				= '1,125' if IT view

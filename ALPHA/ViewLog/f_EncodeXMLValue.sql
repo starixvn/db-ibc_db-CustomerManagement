@@ -7,8 +7,9 @@ AS
     DB: DB: DBLOG.bodb_CustomerLog, DB03.BODB02, DBTRANS.BODB02,DB02.bodb02, DB052.bodb_CRM , DBCUST/NAP_UserControl
     
     
+    
 	Revision:
-		- 20180808@Helen: DB05.DBPOLICY migration  - Move to DBCUST [Redmine:99462]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 */
 
 BEGIN
