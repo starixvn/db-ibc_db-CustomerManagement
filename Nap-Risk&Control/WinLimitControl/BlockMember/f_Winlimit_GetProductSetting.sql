@@ -1,10 +1,7 @@
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1"></info>*/
 USE [bodb02]
 GO
-/****** Object:  UserDefinedFunction [dbo].[f_Winlimit_GetProductSetting]    Script Date: 4/17/2018 11:18:10 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
 RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
 AS
@@ -79,3 +76,4 @@ BEGIN
 
 	RETURN
 END
+GO
