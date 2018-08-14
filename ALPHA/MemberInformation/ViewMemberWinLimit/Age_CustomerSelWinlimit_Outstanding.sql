@@ -27,7 +27,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @srecommend INT
+	DECLARE @RoleId TINYINT, @srecommend INT, @PlayerId_IBC INT
 	CREATE TABLE #MemberBalance (CustId INT)
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
@@ -36,6 +36,14 @@ BEGIN
 
 	IF	@username = ''
 		SELECT @username = NULL
+	
+	IF @PlayerId IS NOT NULL
+	BEGIN
+		SELECT @PlayerId_IBC = cm.Custid
+		FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
+			INNER JOIN bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
+		WHERE p.ProductID = @ProductID AND cm.PlayerID3rd = @PlayerId
+	END
 
 	IF @RoleId = 4
 	BEGIN

@@ -4,6 +4,7 @@ GO
 
 ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 					@CustId			INT
+				,	@ProductID		TINYINT
 				,	@BetType		SMALLINT
 				,	@SportType		SMALLINT
 				,	@username		NVARCHAR(50)	= ''
@@ -32,7 +33,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT
+	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @PlayerId_IBC INT
 	SELECT @PageIndex = @PageIndex - 1
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
@@ -46,6 +47,14 @@ BEGIN
 	IF	@username = ''
 		SELECT @username = NULL
 
+	IF @PlayerId IS NOT NULL
+	BEGIN
+		SELECT @PlayerId_IBC = cm.Custid
+		FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
+			INNER JOIN DBAGE.bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
+		WHERE p.ProductID = @ProductID AND cm.PlayerID3rd = @PlayerId
+	END
+
 	IF @RoleId = 4
 	BEGIN
 		INSERT INTO #MemberBalance(CustId)
@@ -56,7 +65,7 @@ BEGIN
 			AND c.mrecommend = @mrecommend
 			AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
@@ -70,7 +79,7 @@ BEGIN
 			AND c.srecommend = @srecommend 
 			AND c.recommend = @recommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
@@ -83,7 +92,7 @@ BEGIN
 			AND roleid = 1
 			AND c.srecommend = @srecommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.Enabled = 1
 		GROUP BY c.custid
 	END
