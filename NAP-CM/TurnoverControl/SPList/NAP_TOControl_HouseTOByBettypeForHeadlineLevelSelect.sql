@@ -1,5 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForHeadlineLevelSelect]
 (
 	@CustID INT,
@@ -18,13 +17,13 @@ AS
 	Revisions:
 			- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
 			- 20180316@Helen: Integrate Super Live product - [Redmine: 89986]
+			- 20180619@Helen: Support to format turnover number in detail page - [Redmine: 97096]
 			
 	Parameter's explaination: 
 	
 */
 BEGIN
 	SET NOCOUNT ON
-	
 	-- CALL wrong SP
 	IF @IsGroupHeadline = 0 RETURN
 	
@@ -480,23 +479,25 @@ BEGIN
 			, Total 
 	FROM
 	(
-	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
+		SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator
 			, Bettype
-			, CASE	WHEN Bettype IN (5,15) THEN CAST(betteam_1 AS VARCHAR(30))  + ' - ' + CAST(betteam_x AS VARCHAR(30)) + ' - ' + CAST(betteam_2 AS VARCHAR(30)) 
-					ELSE CAST(betteam_h AS VARCHAR(30))  + ' - ' + CAST(betteam_a AS VARCHAR(30))  
-			  END AS value
-	  FROM #HouseTO_1_3_5_7_8_15 BT1 WITH (NOLOCK)
-	  
-	  UNION All
-	  
-	  SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
+			, CASE	WHEN Bettype IN (5,15) THEN CAST(CONVERT(VARCHAR, CAST(betteam_1 AS MONEY), 1) AS VARCHAR) + ' - ' + CAST(CONVERT(VARCHAR, CAST(betteam_x AS MONEY), 1) AS VARCHAR)
+												+ ' - ' + CAST(CONVERT(VARCHAR, CAST(betteam_2 AS MONEY), 1) AS VARCHAR)		
+					ELSE CAST(CONVERT(VARCHAR, CAST(betteam_h AS MONEY), 1) AS VARCHAR)	+ ' - ' + CAST(CONVERT(VARCHAR, CAST(betteam_a AS MONEY), 1) AS VARCHAR)		
+			 
+			 END AS value
+		FROM #HouseTO_1_3_5_7_8_15 BT1 WITH (NOLOCK)
+
+		UNION All
+
+		SELECT CASE WHEN liveindicator = 1 THEN 'Live' 
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator
 			, Bettype
-			, CAST (Total AS VARCHAR(30)) AS value
-	 FROM #HouseTO_99 WITH (NOLOCK)
+			, CAST(CONVERT(VARCHAR, CAST(Total AS MONEY), 1) AS VARCHAR)
+		FROM #HouseTO_99 WITH (NOLOCK)
 	) tmp
 	PIVOT
 	(
@@ -506,6 +507,7 @@ BEGIN
 	
 	DROP TABLE #HouseTO_1_3_5_7_8_15
 	DROP TABLE #HouseTO_99
+	DROP TABLE #SportBettype
 	
 END
 GO

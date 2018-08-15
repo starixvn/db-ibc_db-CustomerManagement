@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-alter PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
+ALTER PROCEDURE [dbo].[NAP_TOControl_HouseTOByBettypeForSMALevelSelect]
 (
 	@CustID INT,
 	@matchid INT,
@@ -16,6 +16,7 @@ AS
 	
 	Revisions:
 		- 20180316@Helen: Integrate Super Live product - [Redmine: 89986]
+		- 20180619@Helen: Support to format turnover number in detail page - [Redmine: 97096]
 		
 	Parameter's explaination: 
 	
@@ -60,6 +61,7 @@ BEGIN
 	BEGIN
 		IF(@RoleID=4)
 		BEGIN
+			
 			INSERT INTO #HouseTO_1_3_5_7_8_15 (liveindicator,bettype,betteam_h,betteam_a,betteam_1,betteam_x,betteam_2)
 			SELECT b.liveindicator, b.bettype
 				, SUM(ISNULL(CASE WHEN b.betteam='h' THEN (1-tpositiontaking - @ExtraPT)*abs(stake) ELSE 0 END,0)) AS betteam_h
@@ -342,7 +344,7 @@ BEGIN
 	GROUP BY bettype
 	
 	------- FINAL RESULT --------
-	 
+	
 	SELECT Bettype AS BettypeID
 			, CASE WHEN ISNULL(Live,'') = '' THEN '0 - 0' ELSE Live END AS Live
 			, CASE WHEN ISNULL(NonLive,'') = '' THEN '0 - 0' ELSE NonLive END AS NonLive
@@ -353,8 +355,18 @@ BEGIN
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator
 			, Bettype
-			, CASE	WHEN Bettype IN (5,15) THEN CAST(betteam_1 AS VARCHAR(30))  + ' - ' + CAST(betteam_x AS VARCHAR(30)) + ' - ' + CAST(betteam_2 AS VARCHAR(30)) 
-					ELSE CAST(betteam_h AS VARCHAR(30))  + ' - ' + CAST(betteam_a AS VARCHAR(30))  
+			, CASE	WHEN Bettype IN (5,15) THEN CAST(CONVERT(VARCHAR, CAST(betteam_1 AS MONEY), 1) AS VARCHAR)  + ' - ' 
+					
+					+ CAST(CONVERT(VARCHAR, CAST(betteam_x AS MONEY), 1) AS VARCHAR) + ' - ' 
+					+ CAST(CONVERT(VARCHAR, CAST(betteam_2 AS MONEY), 1) AS VARCHAR)
+					
+					ELSE 
+					CAST(CONVERT(VARCHAR, CAST(betteam_h AS MONEY), 1) AS VARCHAR)
+					
+					  + ' - ' 
+					+ CAST(CONVERT(VARCHAR, CAST(betteam_a AS MONEY), 1) AS VARCHAR) 
+					
+					
 			  END AS value
 	  FROM #HouseTO_1_3_5_7_8_15 BT1 WITH (NOLOCK)
 	  
@@ -364,7 +376,8 @@ BEGIN
 				  WHEN liveindicator = 0 THEN 'NonLive'
 				  ELSE 'Total' END liveindicator
 			, Bettype
-			, CAST (Total AS VARCHAR(30)) AS value
+			, CAST(CONVERT(VARCHAR, CAST(Total AS MONEY), 1) AS VARCHAR)
+		
 	 FROM #HouseTO_99 WITH (NOLOCK)
 	) tmp
 	PIVOT
@@ -372,6 +385,11 @@ BEGIN
 	  MAX(value)
 	  FOR liveindicator in (Live,NonLive,Total)
 	) piv;
+
+	DROP TABLE #HouseTO_1_3_5_7_8_15
+	DROP TABLE #HouseTO_99
+	DROP TABLE #SportBettype
+	
 	
 END
 GO
