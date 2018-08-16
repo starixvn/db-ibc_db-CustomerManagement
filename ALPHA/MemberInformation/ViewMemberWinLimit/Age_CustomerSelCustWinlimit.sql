@@ -8,7 +8,7 @@ ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 				,	@BetType		SMALLINT
 				,	@SportType		SMALLINT
 				,	@username		NVARCHAR(50)	= ''
-				,	@PlayerId		INT				= NULL
+				,	@PlayerId		VARCHAR(20)		= NULL
 				,	@mrecommend		INT				= 0
 				,	@recommend		INT				= 0
 				,	@PageSize		INT				= 500

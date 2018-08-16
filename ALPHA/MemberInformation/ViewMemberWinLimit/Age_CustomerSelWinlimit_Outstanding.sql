@@ -8,8 +8,9 @@ ALTER PROCEDURE	dbo.Age_CustomerSelWinlimit_Outstanding
 				,	@MaxCustID		INT
 				,	@SportType		SMALLINT
 				,	@BetType		SMALLINT
+				,	@ProductID		TINYINT
 				,	@username		NVARCHAR(50)	= ''
-				,	@PlayerId		INT				= NULL
+				,	@PlayerId		VARCHAR(20)		= NULL
 				,	@mrecommend		INT				= 0
 				,	@recommend		INT				= 0
 AS
@@ -55,7 +56,7 @@ BEGIN
 			AND c.mrecommend = @mrecommend
 			AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.custid BETWEEN @MinCustId AND @MaxCustID
 			AND c.Enabled = 1
 		GROUP BY c.custid
@@ -70,7 +71,7 @@ BEGIN
 			AND c.srecommend = @srecommend 
 			AND c.recommend = @recommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.custid BETWEEN @MinCustId AND @MaxCustID
 			AND c.Enabled = 1
 		GROUP BY c.custid
@@ -84,7 +85,7 @@ BEGIN
 			AND roleid = 1
 			AND c.srecommend = @srecommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId, c.custid)
+			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.custid BETWEEN @MinCustId AND @MaxCustID
 			AND c.Enabled = 1
 		GROUP BY c.custid
