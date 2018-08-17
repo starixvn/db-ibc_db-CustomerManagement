@@ -8,7 +8,7 @@ ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 				,	@BetType		SMALLINT
 				,	@SportType		SMALLINT
 				,	@username		NVARCHAR(50)	= ''
-				,	@PlayerId		VARCHAR(20)		= NULL
+				,	@PlayerId_IBC	INT				= NULL
 				,	@mrecommend		INT				= 0
 				,	@recommend		INT				= 0
 				,	@PageSize		INT				= 500
@@ -33,7 +33,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @PlayerId_IBC INT
+	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT
 	SELECT @PageIndex = @PageIndex - 1
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
@@ -44,16 +44,10 @@ BEGIN
 	FROM dbo.CustInfo c WITH(NOLOCK)
 	WHERE CustId = @CustId
 
+	SELECT @VendorID = VendorID FROM DBACC.bodb02.dbo.Products WITH (NOLOCK) WHERE ProductID = @ProductID
+
 	IF	@username = ''
 		SELECT @username = NULL
-
-	IF @PlayerId IS NOT NULL
-	BEGIN
-		SELECT @PlayerId_IBC = cm.Custid
-		FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
-			INNER JOIN DBAGE.bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
-		WHERE p.ProductID = @ProductID AND cm.PlayerID3rd = @PlayerId
-	END
 
 	IF @RoleId = 4
 	BEGIN
@@ -113,6 +107,7 @@ BEGIN
 			,	tmp.lastname
 			,	tmp.credit
 			,	tmp.CustId
+			,	cm.PlayerID3rd AS PlayerId
 			,	tmp.IsAutoReset
 			,	tmp.MaxWinLimit
 			,	tmp.MaxLossLimit
@@ -123,7 +118,7 @@ BEGIN
 				,	ci.enabled
 				,	ISNULL(ci.reject, 0) AS suspended
 				,	ci.credit
-				,	mb.CustId
+				,	mb.CustId				
 				,	c.firstname
 				,	c.lastname
 				,	cwllm.IsAutoReset
@@ -141,6 +136,7 @@ BEGIN
 			GROUP BY	ci.username, ci.closed, ci.Enabled, ISNULL(ci.reject, 0), ci.credit, c.firstname, c.lastname
 					,	cwllm.IsAutoReset, cwllm.MaxWinLimit, cwllm.MaxLossLimit, mb.custid
 		) tmp
+			LEFT JOIN dbo.CustUserMapping3rd cm ON cm.Custid = tmp.CustId AND cm.VendorID = @VendorID
 		WHERE	tmp.RowNumber BETWEEN @RowStart AND @RowEnd
 		ORDER BY	RowNumber
 		OPTION (RECOMPILE)

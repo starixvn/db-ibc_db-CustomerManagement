@@ -63,14 +63,5 @@ BEGIN
 	SELECT BetType, SportType, ProductName, ProductID
 	FROM @Products
 END
-
 GO
 
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitProduct] TO [bodbDownlineNet] AS [dbo]
-GO
-
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitProduct] TO [bodbDownlineNetView] AS [dbo]
-GO
-
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelWinLimitProduct] TO [vnteam] AS [dbo]
-GO

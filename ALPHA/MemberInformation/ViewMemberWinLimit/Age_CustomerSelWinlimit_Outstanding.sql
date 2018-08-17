@@ -10,7 +10,7 @@ ALTER PROCEDURE	dbo.Age_CustomerSelWinlimit_Outstanding
 				,	@BetType		SMALLINT
 				,	@ProductID		TINYINT
 				,	@username		NVARCHAR(50)	= ''
-				,	@PlayerId		VARCHAR(20)		= NULL
+				,	@PlayerId_IBC	INT				= NULL
 				,	@mrecommend		INT				= 0
 				,	@recommend		INT				= 0
 AS
@@ -28,7 +28,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @srecommend INT, @PlayerId_IBC INT
+	DECLARE @RoleId TINYINT, @srecommend INT
 	CREATE TABLE #MemberBalance (CustId INT)
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
@@ -38,14 +38,6 @@ BEGIN
 	IF	@username = ''
 		SELECT @username = NULL
 	
-	IF @PlayerId IS NOT NULL
-	BEGIN
-		SELECT @PlayerId_IBC = cm.Custid
-		FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
-			INNER JOIN bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
-		WHERE p.ProductID = @ProductID AND cm.PlayerID3rd = @PlayerId
-	END
-
 	IF @RoleId = 4
 	BEGIN
 		INSERT INTO #MemberBalance(CustId)
