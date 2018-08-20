@@ -19,7 +19,7 @@ ALTER PROCEDURE [dbo].[Acc_AdminGroupSel]
 	
 	SELECT @groupID = gp.GroupID,
 			@groupName = gp.GroupName
-	FROM customer c WITH(NOLOCK)
+	FROM CUSTDB.dbo.customer c WITH(NOLOCK)
 		INNER JOIN AccCustomer ac WITH(NOLOCK) ON c.custid = ac.custid
 		INNER JOIN Acc_groupinfo gp WITH(NOLOCK) ON ac.GroupID = gp.GroupID
 	WHERE c.username = @username
