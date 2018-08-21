@@ -105,7 +105,7 @@ BEGIN
 	@Duration AS INT;
 	--Get Group Name from DB03.BODB02
 	DECLARE @GroupName NVARCHAR(50)
-	EXEC @GroupName = NAP_UserControl.[dbo].[f_Get_GroupNameByGroupID] @GroupID
+	EXEC @GroupName = NAP_UserControl.dbo.f_Get_GroupNameByGroupID @GroupID
 	SELECT @LogData = '<Acc_Con_AdminIns>'+
 							'<FirstName>' + ISNULL([dbo].[f_EncodeXMLValue](@firstname),'') + '</FirstName>'+
 							'<LastName>' + ISNULL([dbo].[f_EncodeXMLValue](@lastname),'') + '</LastName>'+
