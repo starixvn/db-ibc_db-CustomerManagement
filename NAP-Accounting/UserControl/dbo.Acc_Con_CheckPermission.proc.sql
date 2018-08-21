@@ -16,7 +16,7 @@ AS
 	Revisions:
 		- 20101123@Jamie: Change to use acc_functioninfo instead of acc_functioninfo_1 
 		- 20110526@Tom: Remove condition @System
-		- 20180808@Helen: Get Code from Production + DB05.DBPOLICY migration - [Redmine:99462]
+		- 20180808@Helen: Get Code from Production +  DB05.DBPOLICY migration - [Redmine:99462]
 */
 BEGIN
 	SET NOCOUNT ON 

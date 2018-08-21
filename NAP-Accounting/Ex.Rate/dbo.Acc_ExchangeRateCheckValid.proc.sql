@@ -16,7 +16,7 @@ AS
 	DB: DBTXN/bodb02
 
 	Revisions:
-		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBTRANS [Redmine:99462]				   
+		- 20180808@Helen: DB05.DBPOLICY migration -  Move to DBTRANS [Redmine:99462]				   
 */
 BEGIN
 	SET NOCOUNT ON

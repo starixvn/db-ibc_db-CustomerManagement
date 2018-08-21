@@ -9,7 +9,7 @@ AS
     
     
 	Revision:
-		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20180808@Helen: DB05.DBPOLICY migration  - Move to DBCUST [Redmine:99462]
 */
 
 BEGIN

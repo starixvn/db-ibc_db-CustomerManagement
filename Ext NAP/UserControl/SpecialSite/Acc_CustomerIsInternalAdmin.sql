@@ -13,7 +13,7 @@ AS
 		- 20161111@Elodie: Remove hardcode statrix, add list username who has permission to access special site		
 		- 20161205@Winnie: Remove hardcode like statrix [RedmineID:#67772]
 		- 20170816@Elodie: Add more starix account [Redmine: #81730]
-		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20180808@Helen: DB05.DBPOLICY migration  - Move to DBCUST [Redmine:99462]
 		
 	Param's Explanation:
 */

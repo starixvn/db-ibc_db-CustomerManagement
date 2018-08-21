@@ -14,7 +14,7 @@ AS
 		- 20120531@Sophia: Change the way to write log & add new parameter @OldMemPolicys
 		- 20130118@Elodie: Get Username from currrent server instead of DBTrans 
 						   Write more log on UserLog table in case of DBLOG server failure
-		- 20180808@Helen: DB05.DBPOLICY migration - move to DBTRANS for exchangeRate [Redmine:99462]				   
+		- 20180808@Helen: DB05.DBPOLICY migration -  move to DBTRANS for exchangeRate [Redmine:99462]				   
 */
 BEGIN
 	SET NOCOUNT ON 
