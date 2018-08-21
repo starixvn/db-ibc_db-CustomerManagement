@@ -57,8 +57,6 @@ BEGIN
 
 	SET @Begin = GETDATE()
 
-
-
 	declare @LogData nvarchar(200),
 		@db_userpwd nvarchar(50),
 		@failedcount tinyint, @closed bit--, @Groupname nvarchar(50)
@@ -131,11 +129,14 @@ BEGIN
 	END
 
 	--Get @system by CustID 
-
+	/*	
+	--Consider to remove nested calling Acc_Con_AdminSelSystembyCustID since NAP-Accounting does not support for EXT NAP
 	EXEC NAP_UserControl.dbo.Acc_Con_AdminSelSystembyCustID @CustID = @CustID, @System = @System OUTPUT 
-
+	*/
 	DECLARE @isAccess BIT 
 
+	SET @System = 'ACCOUNTING'
+	
 	-- check time constraint
 	IF (@ErrMsg = '') AND (@logData = '') AND (@System = 'ACCOUNTING')
 	 BEGIN
@@ -146,6 +147,7 @@ BEGIN
 					@LogData = 'Admin:' + @username + ' Logged in to ACCOUNTING SITE' + ' - ' + 'Result:Failed(time constraint) From:' + @From	
 	END
 
+	/*
 	--check for ABS system
 	IF (@ErrMsg = '') AND (@logData = '') AND (@System = 'ABS')
 	 BEGIN
@@ -156,6 +158,7 @@ BEGIN
 				@ErrCode = 110,
 				@LogData = 'Admin:' + @username + ' Logged in to ABS SITE' + ' - ' + 'Result:Failed(Not_Access_VPN) From:' + @From	
 	END
+	*/
 	--IF @Groupname = 'THB'
 	--	SET @System = 'ACCTHAI'
 	--ELSE IF @Groupname = 'INDO'

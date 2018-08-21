@@ -17,6 +17,7 @@ AS
 		- 20110526@Tom: Remove condition @System and Write log into table DBLog.bodb_CustomerLog.dbo.UserLog_UserControl
 		- 20120604@Sophia: Edit @LogData. Get group permission old and new 
 		- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		
 */
 BEGIN

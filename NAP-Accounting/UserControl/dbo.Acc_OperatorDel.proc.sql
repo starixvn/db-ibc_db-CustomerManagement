@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_OperatorDel]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_OperatorDel]
 	@CustID INT, 
 	@Language VARCHAR (2)='E', 
 	@UserID INT=0, 
@@ -9,7 +10,7 @@ AS
 /*
 	Created by: []
 	Task: Delete Customer
-	DB: DBTXN/BODB02
+	DB: DBCUST-CustDB
 	Original: DelOperator.asp
 
 	Revisions:
@@ -80,16 +81,8 @@ BEGIN
 	END CATCH
 END
 GO
-SET QUOTED_IDENTIFIER OFF;
-
-
-GO
-SET ANSI_NULLS ON;
-
-
-GO
 GRANT EXECUTE ON [dbo].[Acc_OperatorDel] TO [bodbAdminNet]
-
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorDel] TO [vnteam]
+GO
 

@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROC [dbo].[Acc_VirtualRateMulDelTmpExcel]	
+ALTER PROCEDURE [dbo].[Acc_VirtualRateMulDelTmpExcel]	
 	@UserID INT,	
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT	
