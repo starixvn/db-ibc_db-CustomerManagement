@@ -87,7 +87,8 @@ BEGIN
 		,	SUM(b.actual_stake) AS Outstanding
 	FROM #MemberBalance mb
 		INNER JOIN	dbo.bettrans AS b WITH (NOLOCK) ON mb.CustId = b.CustId 
-	WHERE b.statusID = 0 AND b.BetType = @BetType AND b.matchid = @SportType
+	WHERE b.statusID = 0 AND b.matchid = @SportType
+		AND b.BetType BETWEEN 1401 AND 1499
 	GROUP BY mb.custid
 
 	DROP TABLE #MemberBalance
