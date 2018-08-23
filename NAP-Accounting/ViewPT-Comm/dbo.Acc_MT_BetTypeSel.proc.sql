@@ -16,6 +16,7 @@ Revisions:
 	- 20160409@Winnie: Fix bug Bug #56129: [NAP] should show only ".: ALL :." option in bettype drop down list
 	- 20160801@Elodie: Modify code to get only bettype for PT
 	- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
+	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 Parameters Explanation:  
 	
 */
@@ -45,7 +46,7 @@ END
 	END CATCH
 ----- 20150610@Kos -------------------
 
-SELECT DISTINCT t.bettype, b.Name 
+SELECT DISTINCT t.bettype, b.Name AS typenamee
 FROM 
 	(	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 		UNION 
