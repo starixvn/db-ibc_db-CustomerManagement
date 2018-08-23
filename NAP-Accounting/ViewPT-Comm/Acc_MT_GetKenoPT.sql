@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_MT_GetKenoPT]
+ALTER PROCEDURE [dbo].[Acc_MT_GetKenoPT]
 	@username	varchar(50),  
 	@Sporttype	int = 202,
 	@Bettype	int,
@@ -16,31 +16,41 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB, use temp table for sports, bettype)
 		- 20150807@Elodie: Correct show PT for deposit customer [Redmine:#36137]
 		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+		- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
 	Parameters Explanation:
  */
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
-DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
-DECLARE @tmp_Bettype TABLE (TypeID INT, TypeNamee NVARCHAR(50))
-	
-BEGIN TRY
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
-END TRY
-BEGIN CATCH
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
-END CATCH
+	BEGIN TRY
+		SELECT *
+		INTO #tmp_Sports
+		FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBAGE')	
+	END TRY
+	BEGIN CATCH
+		IF OBJECT_ID(N'tempdb..#tmp_Sports') IS NOT NULL
+		BEGIN
+			TRUNCATE TABLE #tmp_Sports
+			INSERT INTO #tmp_Sports
+			SELECT *
+			FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBTXN')	
+		END
+	END CATCH
 
-BEGIN TRY
-	INSERT INTO @tmp_Bettype (TypeID, TypeNamee)
-	SELECT TypeID, TypeNamee FROM DBAGE.bodb02.dbo.Bettype WITH (NOLOCK)
-END TRY
-BEGIN CATCH
-	INSERT INTO @tmp_Bettype (TypeID, TypeNamee)
-	SELECT TypeID, TypeNamee FROM DBTXN.bodb02.dbo.Bettype WITH (NOLOCK)
-END CATCH
+	BEGIN TRY			
+		SELECT *
+		INTO #tmp_Bettype
+		FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBAGE')	
+	END TRY
+	BEGIN CATCH		
+		IF OBJECT_ID(N'tempdb..#tmp_Bettype') IS NOT NULL
+		BEGIN
+			TRUNCATE TABLE #tmp_Bettype
+			INSERT INTO #tmp_Bettype
+			SELECT *
+			FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBTXN')	
+		END
+	END CATCH
 ----- 20150610@Kos -------------------
 
 declare @roleid int,
@@ -77,17 +87,17 @@ select @bettype2 = case @Bettype
 
 insert into @tmpSportBetType(sporttype, sportname, bettype, typename, gmaxpt, seq)
      select @Sporttype,
-            b.SportName,
-            a.typeid,
-            a.typenamee,
+            b.Name,
+            a.ID,
+            a.Name,
             pg.MaxPositiontaking,
             ROW_NUMBER() over(order by a.typeid)
-       from @tmp_Bettype a 
- inner join @tmp_Sports b on b.SportType = 202
- inner join ProductGlobalSetting pg with(nolock) on a.typeid = pg.Bettype and b.SportType = pg.Sporttype
+       from #tmp_Bettype a 
+ inner join #tmp_Sports b on b.ID = 202
+ inner join ProductGlobalSetting pg with(nolock) on a.ID = pg.Bettype and b.ID = pg.Sporttype
       where 1 = 1
-        and (b.SportType = 202 and a.typeid between 1501 and 1599)
-        and a.typeid like @bettype2
+        and (b.ID = 202 and a.ID between 1501 and 1599)
+        and a.ID like @bettype2
 
 declare @tmpresult table
 (
