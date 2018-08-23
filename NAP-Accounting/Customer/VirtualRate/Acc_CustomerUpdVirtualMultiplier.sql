@@ -12,7 +12,7 @@ AS
 /*  
 	Created:	
 	Task:		Update virtualmultiplier.  
-	DB:			DBTXN/CustDB
+	DB:			DBCUST/CustDB
 	Original:	
   
 	Revisions:  
