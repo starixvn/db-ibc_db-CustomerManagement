@@ -92,7 +92,7 @@ insert into @tmpSportBetType(sporttype, sportname, bettype, typename, gmaxpt, se
             a.ID		AS typeid,
             a.Name		AS typenamee,
             pg.MaxPositiontaking,
-            ROW_NUMBER() over(order by a.typeid)
+            ROW_NUMBER() over(order by a.ID)
        from #tmp_Bettype a 
  inner join #tmp_Sports b on b.ID = 202
  inner join ProductGlobalSetting pg with(nolock) on a.ID = pg.Bettype and b.ID = pg.Sporttype
