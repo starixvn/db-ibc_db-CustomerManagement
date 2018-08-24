@@ -39,6 +39,7 @@ Revisions:
 	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
+	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -193,7 +194,7 @@ Begin
 	IF(@IsLicensee = 0)
 		BEGIN
 			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, sports.Name, bettype.Name
+			SELECT t.Sporttype, Bettype, sports.Name AS Sportname, bettype.Name AS typenamee
 			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 					UNION
 					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
@@ -207,7 +208,7 @@ Begin
 	ELSE
 		BEGIN
 			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, sports.Name, bettype.Name
+			SELECT t.Sporttype, Bettype, sports.Name AS Sportname, bettype.Name AS typenamee
 			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM dep_CustSetting cs WITH (NOLOCK)
 					UNION
 					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM dep_CustSetting3rd cs3rd WITH (NOLOCK)

@@ -17,6 +17,7 @@ AS
 		- 20150807@Elodie: Correct show PT for deposit customer [Redmine:#36137]
 		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 		- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
+		- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 	Parameters Explanation:
  */
 SET NOCOUNT ON
@@ -87,11 +88,11 @@ select @bettype2 = case @Bettype
 
 insert into @tmpSportBetType(sporttype, sportname, bettype, typename, gmaxpt, seq)
      select @Sporttype,
-            b.Name,
-            a.ID,
-            a.Name,
+            b.Name		AS SportName,
+            a.ID		AS typeid,
+            a.Name		AS typenamee,
             pg.MaxPositiontaking,
-            ROW_NUMBER() over(order by a.typeid)
+            ROW_NUMBER() over(order by a.ID)
        from #tmp_Bettype a 
  inner join #tmp_Sports b on b.ID = 202
  inner join ProductGlobalSetting pg with(nolock) on a.ID = pg.Bettype and b.ID = pg.Sporttype
