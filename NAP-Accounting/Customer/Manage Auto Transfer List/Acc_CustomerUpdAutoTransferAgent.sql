@@ -13,7 +13,8 @@ AS
 		DB: DBTXN/CustDB
 		
 		Revisions:
-		
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+
 		Parameter's Explanation:
 			- @TransferType = 1: Transfer all members
 							= 2: Transfer all downlines
@@ -25,8 +26,8 @@ BEGIN
 			@duration	INT
 	SET	@startRun = GETDATE()
 	
-		--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	--Check permission
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	
