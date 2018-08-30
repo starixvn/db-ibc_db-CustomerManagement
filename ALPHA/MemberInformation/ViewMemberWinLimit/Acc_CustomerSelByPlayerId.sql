@@ -13,6 +13,7 @@ AS
 	DB:		DBCUST/CustDB
 
 	Revisions:
+		- 20180815@Elodie: Get CustID by PlayerId [Redmine: 97675]
 
 	Param's Explanation:
 	Example: EXEC Acc_CustomerSelByPlayerId @PlayerId = '152636', @ProductId = 33
