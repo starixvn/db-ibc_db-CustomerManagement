@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
 	@custid			INT,
 	@TransferType	TINYINT = 1,
 	@userID			INT,
@@ -97,3 +98,6 @@ BEGIN
 	
 	END CATCH
 END
+GO
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdAutoTransferAgent] TO [bodbAdminNet]
+GO
