@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
 	@custid			INT,
 	@TransferType	TINYINT = 1,
 	@userID			INT,
