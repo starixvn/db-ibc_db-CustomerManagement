@@ -1,4 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE bodb02
+GO 
+
 ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct @CustId INT
 AS
 /*  
@@ -10,15 +13,16 @@ AS
 		- 20160216@Billy:	Integrate to support DCS Products - [Redmine: #52268]
 		- 20160413@Billy:	Remove Site Currency check - [Redmine: #54672]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20180814@Winnie: Return ProductID [RedmineID: #97675]
 	Param's Explanation: 
 */  
 BEGIN
-	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50))
+	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)
 	--gold deluxe
 	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND HideGoldDeluxe = 0)
 	BEGIN
-		INSERT INTO @Products(BetType, SportType, ProductName)
-		SELECT 1701, 255, ProductName
+		INSERT INTO @Products(BetType, SportType, ProductName, ProductID)
+		SELECT 1701, 255, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 12
 		--VALUES(1701, 255, 'Gold Deluxe')
 	END
@@ -26,15 +30,14 @@ BEGIN
 	--RnG Casino
 	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND SyncCasino = 1)
 	BEGIN
-		INSERT INTO @Products(BetType, SportType, ProductName)
-		SELECT 2101, 208, ProductName
+		INSERT INTO @Products(BetType, SportType, ProductName, ProductID)
+		SELECT 2101, 208, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
 	END
 
 	-- For DCS Product
-	INSERT INTO	@Products
-				(	BetType     , SportType     , ProductName  )
-	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
 	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6) AS sbss
@@ -57,17 +60,8 @@ BEGIN
 	--		AND	sbhsc.BetType = p.BetType
 	--WHERE	sbhsc.IsHidden = 1
 
-	SELECT BetType, SportType, ProductName
+	SELECT BetType, SportType, ProductName, ProductID
 	FROM @Products
 END
-
 GO
 
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitProduct] TO [bodbDownlineNet] AS [dbo]
-GO
-
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitProduct] TO [bodbDownlineNetView] AS [dbo]
-GO
-
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelWinLimitProduct] TO [vnteam] AS [dbo]
-GO

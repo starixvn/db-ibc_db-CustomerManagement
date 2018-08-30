@@ -55,6 +55,7 @@ Revisions:
 	- 20171027@Johnson: fix the unsynchronized setting, add SyncGDUpline [Redmine: #72973]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
 */
@@ -102,6 +103,10 @@ BEGIN
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_BullFighting	INT
+		,	@bitmapOrder_PokerGames1401	INT
+		,	@bitmapOrder_PokerGames1402	INT
+		,	@bitmapOrder_PokerGames1403	INT
+		,	@bitmapOrder_PokerGames1404	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)   
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
@@ -113,21 +118,14 @@ BEGIN
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
 	SET @bitmapOrder_BullFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 207 AND Bettype = 1004)
 
-	SELECT	@bitmapOrder_AllBet =	(
-										SELECT	psp.bitmapOrder
-										FROM	dbo.ProductStatusProfile AS psp WITH(NOLOCK)
-										WHERE	psp.Sporttype = 211
-											AND	psp.Bettype = 2401
-									)
-	SELECT	@bitmapOrder_AllBetVIP =	(
-										SELECT	psp.bitmapOrder
-										FROM	dbo.ProductStatusProfile AS psp WITH(NOLOCK)
-										WHERE	psp.Sporttype = 211
-											AND	psp.Bettype = 2402
-									)
+	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
+    SELECT	@bitmapOrder_AllBetVIP = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 211 AND	psp.Bettype = 2402)
+	SELECT	@bitmapOrder_PokerGames1401 =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 163 AND	psp.Bettype = 1401)
+    SELECT	@bitmapOrder_PokerGames1402 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1402)
+	SELECT	@bitmapOrder_PokerGames1403 =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 163 AND	psp.Bettype = 1403)
+    SELECT	@bitmapOrder_PokerGames1404 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1404)
     
-    DECLARE	@IsHidden_MuayThai		INT = 1
-	
+    DECLARE	@IsHidden_MuayThai		INT = 1	
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
@@ -137,9 +135,9 @@ BEGIN
 		,	@IsHidden_FishingWorld	INT = 1
 		,	@IsHidden_VS			INT = 1
 		,	@IsHidden_BullFighting	INT = 1
+		,	@IsHidden_PokerGames	INT = 1
 
    	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
@@ -149,6 +147,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 33, @IsHide = @IsHidden_PokerGames OUTPUT
 
 	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @MRecommend AND [Site] = 'IMBC')
 		SET @IsIMBC = 1
@@ -229,6 +228,13 @@ BEGIN
 		   ISNULL(ci.SyncedAllBet,1) AS SyncedAllBet,
 		   ISNULL(ci.SyncedAllBetUpline,1) AS SyncedAllBetUpline,
 		   ISNULL(ci.SyncedAllBetDownline,1) AS SyncedAllBetDownline,
+
+		   ISNULL(ci.DisablePokerGames1401,1) AS DisablePokerGames1401,
+		   ISNULL(ci.DisablePokerGames1402,1) AS DisablePokerGames1402,
+		   ISNULL(ci.DisablePokerGames1403,1) AS DisablePokerGames1403,
+		   ISNULL(ci.DisablePokerGames1404,1) AS DisablePokerGames1404,
+		   ISNULL(ci.HidePokerGames,1) AS HidePokerGames,
+		   ISNULL(ci.HidePokerGamesUpline,1) AS HidePokerGamesUpline,
 
 		   ISNULL(ci.DisableVoidBridge,1) AS DisableVoidBridge,
 		   ISNULL(ci.DisableVoidBridgeUpline,1) AS DisableVoidBridgeUpline,
@@ -326,6 +332,14 @@ BEGIN
 									ELSE 1
 
 							END AS SyncedAllBetDownline,
+
+							-- For Poker Games
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1401)) AS DisablePokerGames1401,
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1402,
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1403,
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1404,
+							CAST(CASE WHEN @IsHidden_PokerGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PokerGames1401), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HidePokerGames,
+							CAST(CASE WHEN @IsHidden_PokerGames = 0 AND ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapIsHidden, @bitmapOrder_PokerGames1401), 1)=0 THEN 0 ELSE 1 END AS BIT) AS HidePokerGamesUpline,
 
 							-- For VoidBridge
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge)) AS DisableVoidBridge,
@@ -462,7 +476,8 @@ BEGIN
 			ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
 			ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery, ci.HideLotteryUpline,
 			ci.DisableBullFighting,ci.DisableBullFightingUpline, ci.HideBullFighting,ci.HideBullFightingUpline,
-			ci.SyncedGoldDeluxeDownline
+			ci.SyncedGoldDeluxeDownline,
+			ci.DisablePokerGames1401,ci.DisablePokerGames1402, ci.DisablePokerGames1403, ci.DisablePokerGames1404, ci.HidePokerGames, ci.HidePokerGamesUpline
 	ORDER BY RowNumber
 END
 GO

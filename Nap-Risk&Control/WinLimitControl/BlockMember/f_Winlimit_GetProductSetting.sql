@@ -1,10 +1,7 @@
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1"></info>*/
 USE [bodb02]
 GO
-/****** Object:  UserDefinedFunction [dbo].[f_Winlimit_GetProductSetting]    Script Date: 4/17/2018 11:18:10 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
 RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
 AS
@@ -25,6 +22,7 @@ AS
 		- 20171001@Elodie: Apply SMA Winlimit and Company Win Limit for BullFighting [Redmine:#81664]
 		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
+		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
 
 	Parameters Explanation:	
 */
@@ -70,9 +68,12 @@ BEGIN
 			SELECT 30, 1004, 1, 1  -- BullFighting
 			UNION ALL 
 			SELECT 32, 4101, 0, 1 --Pragmatic Integration
+			UNION ALL 
+			SELECT 33, 1401, 1, 1 --PockerGames
 
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
 
 	RETURN
 END
+GO
