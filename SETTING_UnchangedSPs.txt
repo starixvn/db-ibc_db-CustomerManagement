@@ -5,3 +5,6 @@ ALPHA\Customer\Agw_CustomerSelInfo.SQL
 ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
 ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_MAg.sql
 
+
+
+
