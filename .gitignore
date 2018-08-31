@@ -1,4 +1,16 @@
-.project
+*.BASE
+*.REMOTE
+*.LOCAL
+*.org
+*.orig
+*.original
+*.bk
+*.backup
+*.del
+*.delete
+del/
+delete/
+bk/
+backup/
 
-.settings/org.eclipse.core.resources.prefs
-git
+.project
