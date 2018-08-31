@@ -55,6 +55,8 @@ Revisions:
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
+	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
+
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
 BEGIN
@@ -120,6 +122,7 @@ BEGIN
 		,	@bitmapOrder_PokerGames1402	INT
 		,	@bitmapOrder_PokerGames1403	INT
 		,	@bitmapOrder_PokerGames1404	INT
+		,	@bitmapOrder_PokerGames1405	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
@@ -133,10 +136,11 @@ BEGIN
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     SELECT	@bitmapOrder_AllBetVIP = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 211 AND	psp.Bettype = 2402)
-	SELECT	@bitmapOrder_PokerGames1401 =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 163 AND	psp.Bettype = 1401)
+	SELECT	@bitmapOrder_PokerGames1401 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1401)
     SELECT	@bitmapOrder_PokerGames1402 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1402)
-	SELECT	@bitmapOrder_PokerGames1403 =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 163 AND	psp.Bettype = 1403)
+	SELECT	@bitmapOrder_PokerGames1403 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1403)
     SELECT	@bitmapOrder_PokerGames1404 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1404)
+	SELECT	@bitmapOrder_PokerGames1405 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1405)
     
     DECLARE	@IsHidden_MuayThai			INT = 1
 		
@@ -252,8 +256,9 @@ BEGIN
 			-- For Poker Games
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1401)) AS DisablePokerGames1401,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1402,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1403,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1402)) AS DisablePokerGames1404,
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1403)) AS DisablePokerGames1403,
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1404)) AS DisablePokerGames1404,
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PokerGames1405)) AS DisablePokerGames1405,
 			CAST(CASE WHEN @IsHidden_PokerGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PokerGames1401), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HidePokerGames,
 			1 AS HidePokerGamesUpline,
 

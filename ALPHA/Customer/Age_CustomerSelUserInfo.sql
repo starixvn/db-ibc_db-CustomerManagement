@@ -140,9 +140,7 @@ Param's Explanation:
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_BullFighting	INT
 		,	@bitmapOrder_PokerGames1401	INT
-		,	@bitmapOrder_PokerGames1402	INT
-		,	@bitmapOrder_PokerGames1403	INT
-		,	@bitmapOrder_PokerGames1404	INT
+		
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
   
