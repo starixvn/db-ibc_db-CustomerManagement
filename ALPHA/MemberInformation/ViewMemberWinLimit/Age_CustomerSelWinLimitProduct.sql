@@ -13,7 +13,8 @@ AS
 		- 20160216@Billy:	Integrate to support DCS Products - [Redmine: #52268]
 		- 20160413@Billy:	Remove Site Currency check - [Redmine: #54672]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
-		- 20180814@Winnie: Return ProductID [RedmineID: #97675]
+		- 20180814@Elodie: Return ProductID [RedmineID: #97675]
+
 	Param's Explanation: 
 */  
 BEGIN
