@@ -34,6 +34,7 @@ AS
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
+		- 20180903@Elodie: Revise SP
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -64,6 +65,8 @@ BEGIN
 			,@mrecommend INT
 			,@recommend INT
 			,@creatdate DATETIME
+			,@LowerActionIdStatus INT
+			,@UpperActionIdStatus INT
 			
 	DECLARE @tmpCust TABLE(Custid INT)		
 	CREATE TABLE #tmpLog (LogID BIGINT,
@@ -128,7 +131,7 @@ BEGIN
 								UserID,
 								Username =	CASE 
 												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -151,25 +154,23 @@ BEGIN
 								AND la.ActionTypeID = @ActionTypeId
 								AND la.ActionID BETWEEN 1100 AND 1199
 								AND IsInternal <= @IsInternal
-								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-								AND ul.ActionID NOT BETWEEN 31000 AND 31100								
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					
 					--new range logactionid for status by level
-					SELECT @LowerActionId = CASE @roleid WHEN 4 THEN 60000
+					SELECT @LowerActionIdStatus = CASE @roleid WHEN 4 THEN 60000
 														WHEN 3 THEN 65000
 														WHEN 2 THEN 70000
 														WHEN 1 THEN 75000 END,
-							@UpperActionId = CASE @roleid WHEN 4 THEN 64999
+							@UpperActionIdStatus = CASE @roleid WHEN 4 THEN 64999
 														WHEN 3 THEN 69999
 														WHEN 2 THEN 74999
 														WHEN 1 THEN 79999 END									
 					
-					INSERT INTO @tmpCust(CustID)
-					SELECT @CustID 
-					UNION SELECT @srecommend WHERE @roleid<4
-					UNION SELECT @mrecommend WHERE @roleid<3
-					UNION SELECT @recommend WHERE @roleid<2
+					--INSERT INTO @tmpCust(CustID)
+					--SELECT @CustID 
+					--UNION SELECT @srecommend WHERE @roleid<4
+					--UNION SELECT @mrecommend WHERE @roleid<3
+					--UNION SELECT @recommend WHERE @roleid<2
 					
 					INSERT INTO #tmpLog
 						(LogID,
@@ -190,12 +191,9 @@ BEGIN
 								UserID,
 								Username =	CASE 
 												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
 												ELSE c.Username
 											END,
-								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
-										THEN REPLACE(TrackingValue,'Hide*Cricket','HideCricket') 
-										ELSE ul.TrackingValue END TrackingValue,
+								ul.TrackingValue,
 								TrackingValue2,
 								LogDate,
 								la.ActionID,
@@ -205,18 +203,17 @@ BEGIN
 								ul.CustID,
 								@CustName AS CustName,
 								la.ActionNameEN AS ActionName
-					  FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK, INDEX = IX_UserLog_RunSP)
+					  FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-					  WHERE     ul.CustID IN (SELECT custid FROM @tmpCust)
+					  WHERE     --ul.CustID IN (SELECT custid FROM @tmpCust)
+								(ul.CustID = @CustID OR (ul.custid = @srecommend AND @roleid < 4) OR (ul.custid = @mrecommend AND @roleid < 3) OR (ul.custid = @recommend AND @roleid < 2))
 								AND LogDate BETWEEN @FromDate AND @ToDate
 								AND la.ActionTypeID = @ActionTypeId
-								AND la.ActionID BETWEEN @LowerActionId AND @UpperActionId
+								AND la.ActionID BETWEEN @LowerActionIdStatus AND @UpperActionIdStatus
 								AND IsInternal <= @IsInternal
 								--dont show these actions on alpha
-								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-								AND ul.ActionID NOT BETWEEN 31000 AND 31100								
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 								
 					SELECT  LogID,
 						UserID,
@@ -276,9 +273,7 @@ BEGIN
 													when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
 													ELSE c.Username
 												END,
-									CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
-											THEN REPLACE(TrackingValue,'Hide*Cricket','HideCricket') 
-											ELSE ul.TrackingValue END TrackingValue,
+									ul.TrackingValue,
 									TrackingValue2,
 									LogDate,
 									la.ActionID,
@@ -295,7 +290,7 @@ BEGIN
 									AND LogDate BETWEEN @FromDate AND @ToDate
 									AND  la.ActionTypeID = @ActionTypeId
 									AND IsInternal <= @IsInternal
-									AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 									AND ul.ActionId <> 1050 --Message Customer Read Status Update
@@ -325,12 +320,10 @@ BEGIN
 								UserID,
 								Username =	CASE 
 												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 2000 AND 3000 OR la.ActionID BETWEEN 1142 AND 1144) then 'Admin'
+												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
 												ELSE c.Username
 											END,
-								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
-										THEN REPLACE(TrackingValue,'Hide*Cricket','HideCricket') 
-										ELSE ul.TrackingValue END TrackingValue,
+								ul.TrackingValue,
 								LogDate,
 								la.ActionID,
 								ActionTypeID,
@@ -346,11 +339,12 @@ BEGIN
 					  WHERE     ul.CustID = @CustId
 								AND LogDate BETWEEN @FromDate AND @ToDate				
 								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 								--exclude log action of status
 								AND la.ActionID NOT BETWEEN 1100 AND 1199
 								AND la.ActionID NOT BETWEEN 60000 AND 79999
-								AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+								--exclude log action of smart punter
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100
 								AND ul.ActionId <> 1050 --Message Customer Read Status Update
 
