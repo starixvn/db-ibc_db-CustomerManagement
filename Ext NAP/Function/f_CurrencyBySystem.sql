@@ -35,6 +35,7 @@ Revisions:
 	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
+	- 20180901@Elodie: Add currency UUS, site 789y into group ACCUT and ACCYEN789  - [Redmine: #100925]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -64,6 +65,8 @@ BEGIN
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 16 --YEN		
+		UNION ALL 
+		SELECT 20 --UUS	
 	END	
 	ELSE IF (@System = 'ACCNTD')
 	BEGIN
@@ -100,6 +103,8 @@ BEGIN
 		SELECT 64	--- 	UT	
 		UNION ALL 
 		SELECT 17	--- 	NTD	
+		UNION ALL 
+		SELECT 20	--- 	UUS	
 	END
 	ELSE IF (@System in ( 'MKK99','ACCMKK'))
 	BEGIN
