@@ -9,7 +9,7 @@ AS
 /*
 Created: 
 Task : Get currencies by system
-DB:   DBTXN/bodb02; DBAGE/bodb02
+DB:   DBCUST/CustDB; DBAGE/bodb02
 
 Revisions:
 	- 20100720@Shifu: Get currencies by System
@@ -35,18 +35,18 @@ Revisions:
 	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
-	- 20180901@Elodie: Add currency UUS, site 789y into group ACCUT and ACCYEN789  - [Redmine: #100925]
+	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
 
 BEGIN
-	IF (@System = 'ACCOUNTING')
+	IF (@System IN ('ACCOUNTING','ACCTEST'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
-		Select ExchangeID 
-		From Exchange (nolock)
-	END
+		INSERT INTO @tbCurrency(exchangeID)
+		SELECT ExchangeID 
+		FROM Exchange WITH (NOLOCK)
+	END	
 	ELSE IF(@System IN ('ACCTHAI','ACCTHAI2','ACCTHAI56','ACCTHAI99'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)

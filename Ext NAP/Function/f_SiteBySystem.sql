@@ -10,7 +10,7 @@ AS
 /*
 Created: 
 Task : Get sites by system
-DB:  DBTRANS.BODB02, DB053.BODB02, DB054.BODB02, DB052.BODB02, DB05.BODB02, DB06.BODB02, DBCUST.CustDB
+DB:  DB053.BODB02, DB054.BODB02, DB052.BODB02, DB05.BODB02, DB06.BODB02, DBCUST.CustDB
 
 Revisions:
 	- 20100819@Ethan: Get sites by System
@@ -38,6 +38,7 @@ Revisions:
 	- 20180601@Elodie: Add SQ88 group - [Redmine: #94865]
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
+	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -45,9 +46,16 @@ Revisions:
 BEGIN
 	IF (@System = 'ACCOUNTING')
 	BEGIN
-		Insert Into @tbSite(siteid)
-		Select siteid 
-		From [Site] (nolock)
+		INSERT INTO @tbSite(siteid)
+		SELECT siteid 
+		FROM [Site] WITH (NOLOCK)
+	END
+	ELSE IF (@System = 'ACCTEST')
+	BEGIN
+		INSERT INTO @tbSite(siteid)
+		SELECT siteid 
+		FROM [Site] WITH (NOLOCK)
+		WHERE isLicensee = 0 AND isActive = 1
 	END
 	ELSE IF(@System IN ('ACCTHAI','ACCTHAI2','ACCTHAI56','ACCTHAI99'))
 	BEGIN
