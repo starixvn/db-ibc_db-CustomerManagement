@@ -64,9 +64,7 @@ BEGIN
 	ELSE IF (@System IN ('ACCYEN','ACCYEN789','ACCYEN889','ACCYEN668','ACCYEN888'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
-		SELECT 16 --YEN		
-		UNION ALL 
-		SELECT 20 --UUS	
+		SELECT 16 --YEN					
 	END	
 	ELSE IF (@System = 'ACCNTD')
 	BEGIN
@@ -102,9 +100,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 64	--- 	UT	
 		UNION ALL 
-		SELECT 17	--- 	NTD	
-		UNION ALL 
-		SELECT 20	--- 	UUS	
+		SELECT 17	--- 	NTD			
 	END
 	ELSE IF (@System in ( 'MKK99','ACCMKK'))
 	BEGIN
