@@ -24,6 +24,7 @@ AS
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
 		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
 
+
 	Parameters Explanation:	
 */
 BEGIN
