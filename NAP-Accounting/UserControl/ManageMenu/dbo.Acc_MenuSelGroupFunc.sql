@@ -1,5 +1,5 @@
 ﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
- Alter PROCEDURE [dbo].[Acc_MenuSelGroupFunc]    
+ALTER PROCEDURE [dbo].[Acc_MenuSelGroupFunc]    
 	@ErrCode		int output,
 	@ErrMsg			varchar(200) output
                 

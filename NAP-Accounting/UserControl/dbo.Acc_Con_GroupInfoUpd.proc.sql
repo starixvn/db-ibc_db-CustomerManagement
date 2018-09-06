@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-Alter PROCEDURE [dbo].[Acc_Con_GroupInfoUpd]
+ALTER PROCEDURE [dbo].[Acc_Con_GroupInfoUpd]
 	@GroupID int,
 	@GroupName nvarchar(50)=null,
 	@GroupDesc nvarchar(50)=null,
