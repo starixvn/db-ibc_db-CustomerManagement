@@ -284,6 +284,7 @@ BEGIN
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 			@UplineHasSecurityCode AS UplineHasSecurityCode,
 			@HasSecurityCode AS HasSecurityCode,
+			CAST(COALESCE(l.LimitDays, l.MinDate,'') AS varchar(20)) AS DataAvailable,
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  isnull(ci.reject, 0), cu.username) as RowNumber
 				                                  
@@ -404,8 +405,8 @@ BEGIN
 						END AS SyncedGoldDeluxeDownline,
 						-- For Cricket
 						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
-						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,					
-						CAST(COALESCE(l.LimitDays, l.MinDate,'') AS varchar(20)) AS DataAvailable
+						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket				
+						
   					  FROM dbo.custinfo c with(NOLOCK)
   						LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = c.custid  
 
@@ -465,6 +466,7 @@ BEGIN
 			   ci.DisableLucky3,ci.HideLucky3Upline,ci.HideLucky3,
 			   ci.DisableBullFighting,ci.HideBullFighting,ci.HideBullFightingUpline,
 			   ci.DisablePokerGames1401,ci.DisablePokerGames1402, ci.DisablePokerGames1403, ci.DisablePokerGames1404, ci.DisablePokerGames1405, ci.HidePokerGames, ci.HidePokerGamesUpline
+			   ,l.LimitDays, l.MinDate
 	ORDER BY RowNumber
 END
 
