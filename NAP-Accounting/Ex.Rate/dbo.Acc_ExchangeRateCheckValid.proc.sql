@@ -25,8 +25,8 @@ BEGIN
 	DECLARE @MinExchangeRate money, @MaxExchangeRate money
 	DECLARE @FromActualRate float, @ToActualRate float, @ActualRate float
 
-	SELECT @FromActualRate = actualrate FROM exchange with (nolock) where exchangeid = @FromExchangeID
-	SELECT @ToActualRate = actualrate FROM exchange with (nolock) where exchangeid = @ToExchangeID
+	SELECT @FromActualRate = actualrate FROM CUSTDB.dbo.exchange with (nolock) where exchangeid = @FromExchangeID
+	SELECT @ToActualRate = actualrate FROM CUSTDB.dbo.exchange with (nolock) where exchangeid = @ToExchangeID
 		   
 	/*--	@Actualrate = x/y  (A->B)  --*/
 	SET	@ActualRate = @FromActualRate/@ToActualRate  

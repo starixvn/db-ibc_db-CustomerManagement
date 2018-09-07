@@ -16,10 +16,9 @@ BEGIN
 	SELECT 
 		e.FromExchangeID, e.ToExchangeID, -e.MinActualrate * 100 AS MinActualrate, e.MaxActualrate * 100 AS MaxActualrate, c.username as creator, e.LastUpdate,
 		f.Currency as FromExchange, t.Currency as ToExchange 
-	FROM 
-		Acc_ExchangeRate e WITH(NOLOCK) 
-		INNER JOIN Exchange f WITH(NOLOCK) ON e.FromExchangeID = f.ExchangeID
-		INNER JOIN Exchange t WITH(NOLOCK) ON e.ToExchangeID = t.ExchangeID
+	FROM Acc_ExchangeRate e WITH(NOLOCK) 
+		INNER JOIN CUSTDB.dbo.Exchange f WITH(NOLOCK) ON e.FromExchangeID = f.ExchangeID
+		INNER JOIN CUSTDB.dbo.Exchange t WITH(NOLOCK) ON e.ToExchangeID = t.ExchangeID
 		INNER JOIN CUSTDB.dbo.customer c WITH(NOLOCK) ON e.creator = c.custid
 	ORDER BY f.Currency, t.Currency
 
