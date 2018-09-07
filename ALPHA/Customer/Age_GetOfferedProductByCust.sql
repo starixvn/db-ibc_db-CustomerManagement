@@ -76,6 +76,7 @@ BEGIN
 		SELECT 3, 0 --NumberGame always offer for all customer
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
+	WHERE p.GroupType = 0
 	ORDER BY r.ProductID
 END
 GO
