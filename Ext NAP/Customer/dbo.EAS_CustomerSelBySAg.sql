@@ -1,11 +1,12 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelBySAg]  
-    @SRecommend int,  
-    @Custid     int = null,  
-    @Enabled    bit = null,  
-    @Closed     bit = null,  
-    @Suspended  bit = NULL, 
-	@UserID		INT = NULL
+    @SRecommend		int,  
+    @Custid			int = null,  
+    @Enabled		bit = null,  
+    @Closed			bit = null,  
+    @Suspended		bit = NULL, 
+	@UserID			INT = NULL,
+	@IsDataLimited	BIT	= 0
 AS  
 /*  
 Created by: Scott  
@@ -52,6 +53,7 @@ Revisions:
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
 	- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
+	- 20180907@Winnie: EXT-Function to control data range for SMA - [Redmine: #100067]
 	
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
@@ -402,8 +404,8 @@ BEGIN
 						END AS SyncedGoldDeluxeDownline,
 						-- For Cricket
 						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
-						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket
-
+						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,					
+						CAST(COALESCE(l.LimitDays, l.MinDate,'') AS varchar(20)) AS DataAvailable
   					  FROM dbo.custinfo c with(NOLOCK)
   						LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = c.custid  
 
@@ -442,6 +444,7 @@ BEGIN
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 
 		LEFT JOIN CustDiscount3rd_Agent cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
+		LEFT JOIN DBAGE.bodb_Age.dbo.Age_CustDateLimit l WITH(NOLOCK) ON cu.CustID=l.CustId
 	WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
