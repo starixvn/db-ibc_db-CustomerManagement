@@ -343,7 +343,8 @@ BEGIN
 
 			1 AS UplineHasSecurityCode,
 			@HasSecurityCode AS HasSecurityCode,
-			CAST(COALESCE(l.LimitDays, l.MinDate,'') AS varchar(20)) AS DataAvailable,
+			l.LimitDays,
+			l.MinDate			
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  ISNULL(ci.reject,0), cu.username) as RowNumber
       FROM dbo.customer cu with(nolock)
