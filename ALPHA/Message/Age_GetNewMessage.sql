@@ -4,7 +4,8 @@ USE [bodb_Message]
 GO
 
 ALTER PROCEDURE [dbo].[Age_GetNewMessage]
-	@LastQueryTime DATETIME,
+	@FromTime DATETIME,
+	@ToTime DATETIME,
 	@Type TINYINT,
 	@IsTest BIT = 0
 AS
@@ -22,59 +23,64 @@ AS
 				3: System Announcement
 
 	Developer's Notes:
-	Example: EXEC Age_GetNewMessage @LastQueryTime = '2017-08-15 01:25:54.343', @Type = 0, @IsTest = 0
+	Example: EXEC Age_GetNewMessage @FromTime = '2017-08-15 01:25:54.343', @ToTime = '2018-09-07 01:39:26.980', @Type = 0, @IsTest = 0
 */
 BEGIN
 	SET NOCOUNT ON
 
-	CREATE TABLE #Msg (MessageId INT,
+	DECLARE @i INT = 1000000, @RowCount BIGINT
+
+	CREATE TABLE #Msg (MessageId INT, MsgType TINYINT,
 						Content_en NVARCHAR(4000) NULL,
 						Content_ch NVARCHAR(4000) NULL,
 						Content_cs NVARCHAR(4000) NULL,
 						Content_jp NVARCHAR(4000) NULL,
-						Content_it NVARCHAR(4000) NULL,
 						Content_th NVARCHAR(4000) NULL,
 						Content_ko NVARCHAR(4000) NULL,
-						Content_es NVARCHAR(4000) NULL,
-						Content_vn NVARCHAR(4000) NULL,
-						Content_id NVARCHAR(4000) NULL,
-						Content_el NVARCHAR(4000) NULL,
-						Content_mx NVARCHAR(4000) NULL)
+						Content_vn NVARCHAR(4000) NULL)
 
 	IF @Type = 0 --Normal Msg
 	BEGIN
-		INSERT INTO #Msg (MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx)
-		SELECT MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx
+		INSERT INTO #Msg (MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn)
+		SELECT MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn
 		FROM dbo.Msg WITH (NOLOCK) 
-		WHERE PostTime > @LastQueryTime
+		WHERE PostTime BETWEEN @FromTime AND @ToTime
 			AND MsgType = 3 AND IsSticky = 0
 			AND isDeleted=0 
 			AND IsTest <=@IsTest
+
+		SELECT @RowCount = @@ROWCOUNT
 	END
 	ELSE IF @Type = 1 --Personal Msg
 	BEGIN
-		INSERT INTO #Msg (MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx)
-		SELECT MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx
+		INSERT INTO #Msg (MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn)
+		SELECT MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn
 		FROM dbo.Msg WITH (NOLOCK) 
-		WHERE PostTime > @LastQueryTime
+		WHERE PostTime BETWEEN @FromTime AND @ToTime
 			AND MsgType = 1
 			AND isDeleted=0 
 			AND IsTest <=@IsTest
+
+		SELECT @RowCount = @@ROWCOUNT
 	END
 	ELSE IF @Type = 2 --Special Msg
 	BEGIN
-		INSERT INTO #Msg (MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx)
-		SELECT MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx
+		INSERT INTO #Msg (MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn)
+		SELECT MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn
 		FROM dbo.Msg WITH (NOLOCK) 
-		WHERE PostTime > @LastQueryTime
+		WHERE PostTime BETWEEN @FromTime AND @ToTime
 			AND IsSticky = 1
 			AND isDeleted=0 
 			AND IsTest <=@IsTest
+
+		SELECT @RowCount = @@ROWCOUNT
 	END
 
-	SELECT m.MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_it,Content_th,Content_ko,Content_es,Content_vn,Content_id,Content_el,Content_mx, mt.TargetId
+	IF @RowCount = 0 RETURN
+
+	SELECT m.MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn,mt.TargetId, mt.BetTransId
 	FROM #Msg m
-		INNER JOIN dbo.MsgTarget mt WITH (NOLOCK) ON mt.MessageId = m.MessageId
-	WHERE mt.isDeleted = 0
-		AND mt.TargetId IN (3000,3100,3200,3300,300000,310000,320000,330000)
+		CROSS APPLY (SELECT TOP (@i) * FROM dbo.MsgTarget WITH (NOLOCK) WHERE MessageId = m.MessageId AND isDeleted = 0) mt
+	WHERE (TargetId IN (3000,3100,3200,3300,300000,310000,320000,330000) OR MsgType = 1)
+	OPTION (OPTIMIZE FOR (@i = 1))
 END
