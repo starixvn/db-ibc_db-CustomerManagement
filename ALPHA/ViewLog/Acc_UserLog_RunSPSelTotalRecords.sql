@@ -32,6 +32,7 @@ AS
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
+		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -43,7 +44,10 @@ BEGIN
 			,@recommend INT
 			,@roleid TINYINT
 			,@creatdate DATETIME 
-	
+			,@LowerActionIdStatus INT
+			,@UpperActionIdStatus INT
+			,@i INT = 1000000
+
 	SELECT @srecommend = srecommend, 
 		@mrecommend = mrecommend, 
 		@recommend = recommend, 
@@ -65,50 +69,54 @@ BEGIN
 		BEGIN
 			IF @ActionTypeID = 5--status
 			BEGIN
+				INSERT INTO @tmpCust(CustID)
+				SELECT @CustID 
+
 				INSERT #tmpLog
 				SELECT ul.LogID
-				FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK)
-					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-				WHERE     ul.CustID = @CustId
-					AND LogDate BETWEEN @FromDate AND @ToDate
-					AND la.ActionTypeID = @ActionTypeId
-					AND la.ActionID BETWEEN 1100 AND 1199
-					AND IsInternal <= @IsInternal
-					AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-					AND ul.ActionID NOT BETWEEN 31000 AND 31100	
+				FROM @tmpCust tmp
+						CROSS APPLY (	SELECT TOP (@i) * 
+										FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+										WHERE ul.custid = tmp.Custid 
+											AND LogDate BETWEEN @FromDate AND @ToDate) ul
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+				WHERE		la.ActionTypeID = @ActionTypeId
+						AND la.ActionID BETWEEN 1100 AND 1199
+						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+				OPTION (OPTIMIZE FOR (@i = 1))
 				
 				--new range logactionid for status by level
-				SELECT @LowerActionId = CASE @roleid WHEN 4 THEN 60000
+				SELECT @LowerActionIdStatus = CASE @roleid WHEN 4 THEN 60000
 													WHEN 3 THEN 65000
 													WHEN 2 THEN 70000
 													WHEN 1 THEN 75000 END,
-						@UpperActionId = CASE @roleid WHEN 4 THEN 64999
+						@UpperActionIdStatus = CASE @roleid WHEN 4 THEN 64999
 													WHEN 3 THEN 69999
 													WHEN 2 THEN 74999
 													WHEN 1 THEN 79999 END									
 				
 				INSERT INTO @tmpCust(CustID)
-				SELECT @CustID 
-				UNION SELECT @srecommend WHERE @roleid<4
+				SELECT @srecommend WHERE @roleid<4
 				UNION SELECT @mrecommend WHERE @roleid<3
 				UNION SELECT @recommend WHERE @roleid<2
 				
 				INSERT #tmpLog
 				SELECT ul.LogID
-				FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK, INDEX = IX_UserLog_RunSP)
-					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-				WHERE     ul.CustID IN (SELECT custid FROM @tmpCust)
-					AND LogDate BETWEEN @FromDate AND @ToDate
-					AND la.ActionTypeID = @ActionTypeId
-					AND la.ActionID BETWEEN @LowerActionId AND @UpperActionId
-					AND IsInternal <= @IsInternal
-					--dont show these actions on alpha
-					AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-					AND ul.ActionID NOT BETWEEN 31000 AND 31100
+				FROM	@tmpCust tmp
+						CROSS APPLY (	SELECT TOP (@i) * 
+										FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+										WHERE ul.custid = tmp.Custid 
+											AND LogDate BETWEEN @FromDate AND @ToDate) ul
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+				WHERE	la.ActionID BETWEEN @LowerActionIdStatus AND @UpperActionIdStatus
+						AND la.ActionTypeID = @ActionTypeId
+						AND IsInternal <= @IsInternal
+						--dont show these actions on alpha
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+				OPTION (OPTIMIZE FOR (@i = 1))
 				
 				SELECT COUNT(LogID)
 				FROM #tmpLog				
