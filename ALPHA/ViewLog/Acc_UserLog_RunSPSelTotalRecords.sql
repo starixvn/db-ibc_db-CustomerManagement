@@ -31,6 +31,7 @@ AS
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
+		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -96,7 +97,7 @@ BEGIN
 				
 				INSERT #tmpLog
 				SELECT ul.LogID
-				FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+				FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK, INDEX = IX_UserLog_RunSP)
 					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 				WHERE     ul.CustID IN (SELECT custid FROM @tmpCust)
