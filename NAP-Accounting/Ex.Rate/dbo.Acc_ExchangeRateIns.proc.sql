@@ -105,8 +105,8 @@ BEGIN
 
 	declare @LogData nvarchar(200), @FromExchange varchar(50), @ToExchange varchar(50)
 
-	Select @FromExchange = currency From Exchange with(nolock) where ExchangeID = @FromExchangeID
-	Select @ToExchange = currency From Exchange with(nolock) where ExchangeID = @ToExchangeID
+	Select @FromExchange = currency From CUSTDB.dbo.Exchange with(nolock) where ExchangeID = @FromExchangeID
+	Select @ToExchange = currency From CUSTDB.dbo.Exchange with(nolock) where ExchangeID = @ToExchangeID
 	Select @LogData = 'Add exchange rate:' + 
 			convert(varchar(50),@FromExchange) + ' -> ' + 
 			convert(varchar(50),@ToExchange) + ';' + 
