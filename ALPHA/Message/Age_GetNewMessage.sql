@@ -78,7 +78,7 @@ BEGIN
 
 	IF @RowCount = 0 RETURN
 
-	SELECT m.MessageId,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn,mt.TargetId, mt.BetTransId
+	SELECT m.MessageId,m.MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn,mt.TargetId, mt.BetTransId
 	FROM #Msg m
 		CROSS APPLY (SELECT TOP (@i) * FROM dbo.MsgTarget WITH (NOLOCK) WHERE MessageId = m.MessageId AND isDeleted = 0) mt
 	WHERE (TargetId IN (3000,3100,3200,3300,300000,310000,320000,330000) OR MsgType = 1)
