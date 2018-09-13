@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_ExchangeRateSelHistory]
+﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ExchangeRateSelHistory]
 	@FromExchangeID int = null,
 	@ToExchangeID int = null,
 	@UserID int = null
@@ -6,29 +7,32 @@ AS
 /*
 	Created by: Peter
 	Task: Show Min Max Rate History 
-	DB: DBPOLICY/BODB02
+	DB: DBTXN/BODB02
 	
 	Revisions:
 		- 20100105@Jamie: Get CurrencyName from cache 
+		- 20180808@Helen: DB05.DBPOLICY migration - - move to DBTRANS for exchangeRate [Redmine:99462]
 */
-SET NOCOUNT ON
-	select	a.Actiondate, 
+BEGIN
+	SET NOCOUNT ON
+	SELECT	a.Actiondate, 
 			a.Actiontype, 
 			c.Username as Username, 
 			a.fromExchangeID,
 			a.toExchangeID,
 			-a.MinActualrate*100 AS MinActualrate, 
 			a.MaxActualrate*100 AS MaxActualrate
-	from 
+	FROM 
 		(
-			select Actiondate, Actiontype, UserID, FromexchangeID, ToexchangeID, 
+			SELECT Actiondate, Actiontype, UserID, FromexchangeID, ToexchangeID, 
 				MinActualrate, MaxActualrate
-			from	Acc_ExchangeRate_History with(nolock)
-			where	FromExchangeID = coalesce(@FromExchangeID,FromExchangeID) 
-					and ToExchangeID = coalesce(@ToExchangeID, ToExchangeID)
-					and UserID = coalesce(@UserID,UserID) 
-		) a inner join Customer c with(nolock) on c.CustID = a.UserID
-	order by a.Actiondate DESC
+			FROM	dbo.Acc_ExchangeRate_History WITH(NOLOCK)
+			WHERE	FromExchangeID = COALESCE(@FromExchangeID,FromExchangeID) 
+					and ToExchangeID = COALESCE(@ToExchangeID, ToExchangeID)
+					and UserID = COALESCE(@UserID,UserID) 
+		) a INNER JOIN CUSTDB.dbo.Customer c WITH(NOLOCK) ON c.CustID = a.UserID
+	ORDER BY a.Actiondate DESC
+END	
 GO
 GRANT EXECUTE ON [dbo].[Acc_ExchangeRateSelHistory] TO [bodbAdminNet]	
 GO

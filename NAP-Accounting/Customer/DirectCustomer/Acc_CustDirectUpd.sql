@@ -1,8 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
-ALTER PROC Acc_CustDirectUpd
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustDirectUpd]
 (
 	@CustID INT
 	, @ProcessedBy NVARCHAR(100)= ''
@@ -27,6 +24,7 @@ DB: DBCUST/CUSTDB
 Revisions:
 	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 
 */
 BEGIN
@@ -48,7 +46,7 @@ BEGIN
 		, @MaxLossHeadline_OLD MONEY 
     
 	--Check permission & Valid @MaxLoss
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[OtherCust]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[OtherCust]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 		

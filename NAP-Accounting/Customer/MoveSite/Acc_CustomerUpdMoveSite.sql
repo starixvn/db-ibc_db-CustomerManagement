@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveSite]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveSite]
 	@UserId			INT,
 	@CustId			INT	,
 	@Site			varchar(50),
@@ -9,7 +10,7 @@ AS
 /*	Created by: [Khoa] 
 	Date: 20091224
 	Task: Move Site for customer
-	DB: DBTXN/bodb02
+	DB: DBCUST/CUSTDB
 
 	Revisions:		
 		- 20100112@Kiwi: amend to write log in xml format.
@@ -20,6 +21,8 @@ AS
 		- 20150904@Helen: commission setting for MO [Redmine #41470]
 		- 20151026@Don: Support moving site from 766666 to other sites
 		- 20160707@Winnie: Feature #48948 Hide_special_sites_from_unautorized_users
+		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
+		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers except members
 		
@@ -37,14 +40,10 @@ BEGIN
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
 	
-	DECLARE @SearchQuery varchar(1024)
 	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOLICY, 
-	''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
-
+	
 	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	EXECUTE(@SearchQuery)	
+	SELECT siteid , [site], SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@tmpUserid)
 	
 	IF (@site IN (SELECT site FROM @tmp ))
 	BEGIN
@@ -53,7 +52,7 @@ BEGIN
 	END
 	
 	--Check permission for account site: @phuc20080213
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MoveSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MoveSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	If @ErrCode <> 0
 		RETURN
 	--end

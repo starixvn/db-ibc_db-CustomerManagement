@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_MenuSelByCustID]  
+﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ ALTER PROCEDURE [dbo].[Acc_MenuSelByCustID]  
 	@CustID  INT,
 	@System varchar(50) = ''  
                  
@@ -6,7 +7,7 @@ AS
 /*
 Created by: 
 Task : SP select menu by user
-DB: DB03.bodb02
+DB: DBCUST/NAP_UserControl
 
 
 Revisions:
@@ -14,6 +15,7 @@ Param's Explanation:
 	- 20101129@Steven: change to use acc_functioninfo instead of acc_functioninfo_1
 	- 20150112@Johnson: filter function and menu by @sytem to support NAPU3 [Redmine: #28516]
 	- 20150114@Johnson: get menu for Beart from accounting
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 */
 SET NOCOUNT ON
 
@@ -25,14 +27,14 @@ begin
 		(
 			  SELECT     
 					  distinct fi.filenames, fi.funcname, (Isnull(mp.policy,0) | Isnull(gp.policy,0)) & Isnull(fi.funcrender,0) AS actual_policy  
-			  FROM     acc_memberpolicy_1 mp WITH (nolock)  
-					   INNER JOIN acccustomer_1 ac WITH (nolock)  
+			  FROM     acc_memberpolicy mp WITH (nolock)  
+					   INNER JOIN acccustomer ac WITH (nolock)  
 						 ON ac.custid = mp.custid  
 					   INNER JOIN acc_functioninfo fi WITH (nolock)  
 						 ON mp.funcid = fi.funcid  
-					   INNER JOIN customer c WITH (nolock)  
+					   INNER JOIN CUSTDB.dbo.customer c WITH (nolock)  
 						 ON c.custid = mp.custid  
-					   INNER JOIN acc_grouppolicy_1 gp WITH (nolock)  
+					   INNER JOIN acc_grouppolicy gp WITH (nolock)  
 						 ON gp.groupid = ac.groupid  
 							AND gp.funcid = mp.funcid  	
 			  WHERE    mp.custid = @CustID   				
@@ -48,14 +50,14 @@ begin
 		(
 			  SELECT     
 					  distinct fi.filenames, fi.funcname, (Isnull(mp.policy,0) | Isnull(gp.policy,0)) & Isnull(fi.funcrender,0) AS actual_policy  
-			  FROM     acc_memberpolicy_1 mp WITH (nolock)  
-					   INNER JOIN acccustomer_1 ac WITH (nolock)  
+			  FROM     acc_memberpolicy mp WITH (nolock)  
+					   INNER JOIN acccustomer ac WITH (nolock)  
 						 ON ac.custid = mp.custid  
 					   INNER JOIN acc_functioninfo fi WITH (nolock)  
 						 ON mp.funcid = fi.funcid  
-					   INNER JOIN customer c WITH (nolock)  
+					   INNER JOIN CUSTDB.dbo.customer c WITH (nolock)  
 						 ON c.custid = mp.custid  
-					   INNER JOIN acc_grouppolicy_1 gp WITH (nolock)  
+					   INNER JOIN acc_grouppolicy gp WITH (nolock)  
 						 ON gp.groupid = ac.groupid  
 							AND gp.funcid = mp.funcid  	
 			  WHERE    mp.custid = @CustID   

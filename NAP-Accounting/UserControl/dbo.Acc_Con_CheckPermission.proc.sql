@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission]
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission]
 	@CustID int, 
 	@FuncID int=null,
 	@FuncName nvarchar(50)='',
@@ -10,12 +11,14 @@ AS
 /*
 	Created by: []
 	Task: Check permission by CustID and Function 
-	DB: DB03.BODB02
+	DB: DBCUST/NAP_UserControl
 	
 	Revisions:
 		- 20101123@Jamie: Change to use acc_functioninfo instead of acc_functioninfo_1 
 		- 20110526@Tom: Remove condition @System
+		- 20180808@Helen: Get Code from Production +  DB05.DBPOLICY migration - [Redmine:99462]
 */
+BEGIN
 	SET NOCOUNT ON 
 	IF @FuncID is null
 		Select @FuncID=funcid from acc_functioninfo with(nolock) where System = @System and FuncName=@Funcname
@@ -24,14 +27,14 @@ AS
 	-- IsAllow: 1:Readonly, 2:Host, 3:All
 	-- Just check permission for admin, ignore when roleid < 5 
 	Declare @roleid tinyint,@IsAllow tinyint
-	Select @roleid = roleid From customer with(nolock) where custid=@custid
+	Select @roleid = roleid From CUSTDB.dbo.customer with(nolock) where custid=@custid
 	IF @RoleID Between 5 and 10
 		BEGIN 
 			SELECT @IsAllow=(isnull(mp.policy,0)|isnull(gp.policy,0)) & isnull(fi.FuncRender,0)
-			FROM AccCustomer_1 ac with(nolock) inner join custinfo ci with(nolock) on ac.custid=ci.custid
+			FROM AccCustomer ac with(nolock) inner join CUSTDB.dbo.custinfo ci with(nolock) on ac.custid=ci.custid
 				Left JOIN acc_functioninfo fi with(nolock) on fi.funcid=@funcid
-				LEFT JOIN Acc_MemberPolicy_1 mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
-				LEFT JOIN Acc_GroupPolicy_1 gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid
+				LEFT JOIN Acc_MemberPolicy mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
+				LEFT JOIN Acc_GroupPolicy gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid
 			WHERE ac.Custid=@Custid and ci.closed=0
 			SELECT @IsAllow = isnull(@IsAllow,0)		
 		END
@@ -55,8 +58,7 @@ AS
 	END
 	ELSE
 		SET @ErrCode=0
-	
-
+END	
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_CheckPermission] TO [vnteam]	
 GO

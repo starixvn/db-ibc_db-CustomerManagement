@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_MenuIns] 
+﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ ALTER PROCEDURE [dbo].[Acc_MenuIns] 
     @Menu           VARCHAR(50),
     @ParentId       INT,
     @FuncName   VARCHAR(50),
@@ -12,18 +13,18 @@
                 
 AS 
 /*
-Created by: Robert
-Task : insert menu
-DB: DB03.bodb02
+	Created by: Robert
+	Task : insert menu
+	DB: DBCUST/NAP_UserControl
 
-
-Revisions:
-Param's Explanation:
+	Revisions:
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		
+	Param's Explanation:
 */
 
-SET NOCOUNT ON
-
 BEGIN
+	SET NOCOUNT ON
     INSERT INTO Acc_MeNu(Menu, ParentId, FuncName, Url, Target, IsHide, [ORDER], [SyStem])
     VALUES(@Menu, @ParentId, @FuncName, @Url, @Target, @IsHide, @ORDER, @System)
 END

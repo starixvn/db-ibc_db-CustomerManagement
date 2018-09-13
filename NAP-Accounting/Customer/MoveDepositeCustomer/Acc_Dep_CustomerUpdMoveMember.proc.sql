@@ -45,7 +45,8 @@ Revisions:
 	- 20131108@Elodie: Splitting bodb02 into CustDB (Roll back updates on custinfo,customer table in main SP)  	
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]			
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  					
-	 
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -54,538 +55,539 @@ Param's Explanation:
 • @ErrMsg: Error description.
 Note: Check Disable status between Agent and Member 
 */
-SET NOCOUNT ON
+BEGIN
+	SET NOCOUNT ON
 
-declare @startRun datetime
-declare @endRun datetime
-declare @duration int
-set @startRun = getdate()
+	declare @startRun datetime
+	declare @endRun datetime
+	declare @duration int
+	set @startRun = getdate()
 
 
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-If @ErrCode <> 0
-	RETURN
---end
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	If @ErrCode <> 0
+		RETURN
+	--end
 
-declare @srecommend			int, 
-		@mrecommend			int, 
-		@recommend			int, 
-		@acurrency			tinyint,
-		--==Member Info ==--
-		@srecommend_old 	int, 
-		@mrecommend_old 	int, 
-		@recommend_old		int, 
-		@currency_old		tinyint,
-		@custid				int, 
-		--== Enable/Disable HR, FI  ==--- 		
-		@adisableFI			bit, 
-		@disableFI			bit,
-		@aDisableOutright	bit,
-		@DisableOutright	bit,
-		@aSyncCasino		bit,
-		@SyncCasino			bit,	
+	declare @srecommend			int, 
+			@mrecommend			int, 
+			@recommend			int, 
+			@acurrency			tinyint,
+			--==Member Info ==--
+			@srecommend_old 	int, 
+			@mrecommend_old 	int, 
+			@recommend_old		int, 
+			@currency_old		tinyint,
+			@custid				int, 
+			--== Enable/Disable HR, FI  ==--- 		
+			@adisableFI			bit, 
+			@disableFI			bit,
+			@aDisableOutright	bit,
+			@DisableOutright	bit,
+			@aSyncCasino		bit,
+			@SyncCasino			bit,	
+			
+			@aDisableNumber		BIT,
+			@DisableNumber		BIT,
+			@aClosed			BIT,
+			@Closed				BIT,
+			@aSuspended			BIT,
+			@Suspended			BIT
+			
+			
+	select	@srecommend			= srecommend, 
+			@mrecommend			= mrecommend, 
+			@recommend			= recommend,
+			@acurrency			= currency, 		
+			
+			@aDisableOutright	= DisableOutright,
+			@aSyncCasino		= syncCasino,	
 		
-		@aDisableNumber		BIT,
-		@DisableNumber		BIT,
-		@aClosed			BIT,
-		@Closed				BIT,
-		@aSuspended			BIT,
-		@Suspended			BIT
+			@aDisableNumber		= DisableNumber,
+			@aClosed			= closed,
+			@aSuspended			= reject
 		
+	from	custinfo with (nolock)
+	where	username = @agentname and roleid = 2
+
+	select	@custid				= custid, 
+			@recommend_old		= recommend, 
+			@srecommend_old		= srecommend, 
+			@mrecommend_old		= mrecommend,
+			@currency_old		= currency,		
 		
-select	@srecommend			= srecommend, 
-		@mrecommend			= mrecommend, 
-		@recommend			= recommend,
-		@acurrency			= currency, 		
+			@DisableOutright	= DisableOutright,
+			@SyncCasino			= SyncCasino ,	
 		
-		@aDisableOutright	= DisableOutright,
-		@aSyncCasino		= syncCasino,	
-	
-		@aDisableNumber		= DisableNumber,
-		@aClosed			= closed,
-		@aSuspended			= reject
-	
-from	custinfo with (nolock)
-where	username = @agentname and roleid = 2
+			@DisableNumber		= DisableNumber,
+			@Closed				= closed,
+			@Suspended			= reject
+			
+	from	custinfo with (nolock) 
+	where	username = @membername and roleid = 1
 
-select	@custid				= custid, 
-		@recommend_old		= recommend, 
-		@srecommend_old		= srecommend, 
-		@mrecommend_old		= mrecommend,
-		@currency_old		= currency,		
-	
-		@DisableOutright	= DisableOutright,
-		@SyncCasino			= SyncCasino ,	
-	
-		@DisableNumber		= DisableNumber,
-		@Closed				= closed,
-		@Suspended			= reject
-		
-from	custinfo with (nolock) 
-where	username = @membername and roleid = 1
-
-if isnull(@recommend, 0) = 0
-BEGIN
-	Select @ErrMsg = 'Error agent ' + @agentname + ': agent not found.',
-		@ErrCode = 101					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-if isnull(@recommend_old, 0) = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent not found.',
-		@ErrCode = 102					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-if isnull(@recommend, 0) = @recommend_old
-BEGIN
-	Select @ErrMsg = 'Error occurs. The member '+ @membername +' already belongs to agent '+ @agentname +'.',
-		@ErrCode = 103					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
---check an account disabled or not 
-EXEC dbo.Acc_CustomerSelCheckEnable @username = @membername, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output 
-if @ErrCode <>0		return 
-
-EXEC dbo.Acc_CustomerSelCheckEnable @username = @agentname, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output 
-if @ErrCode <>0		return 
-
-if @currency_old <> @acurrency
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': currency of new agent and member does not match.',
-		@ErrCode = 104					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-----------------------------------
--- check is closed
-IF @aClosed = 1
-BEGIN
-	SELECT @ErrMsg = 'Error occurs. Cannot move to closed agent.',
-		@ErrCode = 105
-	RETURN
-END
-
-if @adisableFI = 1 and @disableFI = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Finance but new agent is not enabled Finance.',
-		@ErrCode = 112
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-
---Check CS SyncCasino between Agent and Member 
-IF @aSyncCasino = 0 AND @SyncCasino = 1 
-BEGIN
-	SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': member is synchronized Casino but new agent is not synchronized Casino.',
-		@ErrCode = 113	
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return	
-END 
-
-if @adisableNumber = 1 and @disableNumber = 0
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Number Game but new agent is not enabled Number Game.',
-		@ErrCode = 116
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-
-----------------------------------
-
---number game
-if exists(select 1 from dep_custsetting3rd with (nolock) where custid = @custid and sporttype = 161)
-	AND not exists(select 1 from dep_custsetting3rd with (nolock) where custid = @recommend and sporttype = 161)
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Number Game setting.',
-		@ErrCode = 120					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-if exists(select 1 from custinfo with (nolock) where custid = @custid and SyncCasino = 1)
-BEGIN
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already Casino-synchronized.',
-		@ErrCode = 121					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	return
-END
-
-
-
-----------------------------
-DECLARE
-	@apositiontaking_1 SMALLMONEY,
-	@apositiontaking_2 SMALLMONEY,
-	@apositiontaking_3 SMALLMONEY,
-	@apositiontaking_4 SMALLMONEY,
-	@apositiontaking_5 SMALLMONEY,
-	@apositiontaking_6 SMALLMONEY,
-	@apositiontaking_7 SMALLMONEY,
-	@apositiontaking_8 SMALLMONEY,
-	@apositiontaking_9 SMALLMONEY,
-	@apositiontaking_10 SMALLMONEY,
-	
-	@alivepositiontaking_1 SMALLMONEY,
-	@alivepositiontaking_3 SMALLMONEY,
-	@alivepositiontaking_7 SMALLMONEY,
-	@alivepositiontaking_8 SMALLMONEY,
-	
-	@v2apositiontaking_1 SMALLMONEY,
-	@v2apositiontaking_2 SMALLMONEY,
-	@v2apositiontaking_3 SMALLMONEY,
-	@v2apositiontaking_7 SMALLMONEY,
-	@v2apositiontaking_8 SMALLMONEY,
-	--@v2apositiontaking_9 SMALLMONEY,
-	@v2apositiontaking_20 SMALLMONEY,
-	
-	@v3apositiontaking_1 SMALLMONEY,
-	@v3apositiontaking_2 SMALLMONEY,
-	@v3apositiontaking_3 SMALLMONEY,
-	@v3apositiontaking_20 SMALLMONEY,
-
-	@v5apositiontaking_1 SMALLMONEY,
-	@v5apositiontaking_2 SMALLMONEY,
-	@v5apositiontaking_3 SMALLMONEY,
-	@v5apositiontaking_20 SMALLMONEY,
-
-	@v8apositiontaking_1 SMALLMONEY,
-	@v8apositiontaking_3 SMALLMONEY,
-	@v8apositiontaking_20 SMALLMONEY,
-
-	@v10apositiontaking_1 SMALLMONEY,
-	@v10apositiontaking_2 SMALLMONEY,
-	@v10apositiontaking_3 SMALLMONEY,
-	@v10apositiontaking_20 SMALLMONEY,
-
-	@v11apositiontaking_1 SMALLMONEY,
-	@v11apositiontaking_20 SMALLMONEY,
-	
-	@v99apositiontaking_1 SMALLMONEY,
-	@v99apositiontaking_2 SMALLMONEY,
-	@v99apositiontaking_3 SMALLMONEY,
-	@v99apositiontaking_9 SMALLMONEY,
-	@v99apositiontaking_20 SMALLMONEY,
-
-	@v201apositiontaking_2 SMALLMONEY,
-	@v201apositiontaking_3 SMALLMONEY,
-	
-	@v161apositiontaking_81 SMALLMONEY,
-	@v161apositiontaking_83 SMALLMONEY,
-	--@v161apositiontaking_85 SMALLMONEY,
-	@v161apositiontaking_86 SMALLMONEY,
-	@v161apositiontaking_88 SMALLMONEY,
-	
-	@v161alivepositiontaking_85 SMALLMONEY,
-	@v161alivepositiontaking_86 SMALLMONEY,
-	@v161alivepositiontaking_87 SMALLMONEY,
-	@v161alivepositiontaking_89 SMALLMONEY,
-	@v161alivepositiontaking_90 SMALLMONEY
-	
-
-SELECT @apositiontaking_1 = apositiontaking FROm dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=1 AND islive = 0
-SELECT @alivepositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=1 AND islive = 1
-SELECT @apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=1 AND islive = 0
-SELECT @alivepositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=1 AND islive = 1
-SELECT @apositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=1 AND islive =0
-SELECT @alivepositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=1 AND islive =1
-SELECT @apositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=1 AND islive =0
-SELECT @alivepositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=1 AND islive =1
-
-SELECT @apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=1
-SELECT @apositiontaking_4 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=4 AND sporttype=1
-SELECT @apositiontaking_5 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=5 AND sporttype=1
-SELECT @apositiontaking_6 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=6 AND sporttype=1
-SELECT @apositiontaking_9 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=1
-SELECT @apositiontaking_10 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=10 AND sporttype=1
-
-SELECT @v2apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=2
-SELECT @v2apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=2
-SELECT @v2apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=2
-SELECT @v2apositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=2
-SELECT @v2apositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=2
-SELECT @v2apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=2
-
-SELECT @v3apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=3
-SELECT @v3apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=3
-SELECT @v3apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=3
-SELECT @v3apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=3
-
-SELECT @v5apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=5
-SELECT @v5apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=5
-SELECT @v5apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=5
-SELECT @v5apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=5
-
-SELECT @v8apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=8
-SELECT @v8apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=8
-SELECT @v8apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=8
-
-SELECT @v10apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=10
-SELECT @v10apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=10
-SELECT @v10apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=10
-SELECT @v10apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=10
-
-SELECT @v11apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=11
-SELECT @v11apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=11
-
-SELECT @v99apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=99
-SELECT @v99apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=99
-SELECT @v99apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=99
-SELECT @v99apositiontaking_9 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=99
-SELECT @v99apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=99
-
-SELECT @v201apositiontaking_2 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=201
-SELECT @v201apositiontaking_3 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=201
-
-SELECT @v161apositiontaking_81 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=81 AND sporttype=161
-SELECT @v161apositiontaking_83 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=83 AND sporttype=161
-SELECT @v161apositiontaking_86 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161 AND islive = 0
-SELECT @v161apositiontaking_88 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=88 AND sporttype=161
-
-SELECT @v161alivepositiontaking_85 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=85 AND sporttype=161
-SELECT @v161alivepositiontaking_86 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161 AND islive = 1
-SELECT @v161alivepositiontaking_87 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=87 AND sporttype=161
-SELECT @v161alivepositiontaking_89 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=89 AND sporttype=161
-SELECT @v161alivepositiontaking_90 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=90 AND sporttype=161
-
---customer table
-update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend, mrecommend = @mrecommend,
-											recommend = @recommend
-where custid = @custid
-if @@Error <> 0 
-BEGIN
-	
-	--ROLLBACK TRANSACTION MANUALLY
-	update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
-											recommend = @recommend_old
-	where custid = @custid
-
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (customer).',
-		@ErrCode = 303				 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	
-	return
-END
-
---custinfo table
-update custinfo with (ROWLOCK, UPDLOCK) set srecommend = @srecommend, mrecommend = @mrecommend,
-											recommend = @recommend
-where custid = @custid
-if @@Error <> 0 
-BEGIN
-	--ROLLBACK TRANSACTION MANUALLY
-	update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
-											recommend = @recommend_old
-	where custid = @custid
-	
-	update custinfo with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
-											recommend = @recommend_old
-	where custid = @custid
-
-	Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-		@ErrCode = 304					 
-	if @ReturnErrCode = 0
-		RaisError (@ErrMsg, 16, 1)
-	
-	return
-END
-
---- update suspended status
-IF @aSuspended = 1 AND @Suspended = 0
-BEGIN
-	UPDATE Custinfo WITH (UPDLOCK, ROWLOCK)
-	SET	reject = 1 
-	WHERE	custid = @custid
-	IF @@ERROR <>0
+	if isnull(@recommend, 0) = 0
 	BEGIN
-		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-		@ErrCode = 305
+		Select @ErrMsg = 'Error agent ' + @agentname + ': agent not found.',
+			@ErrCode = 101					 
 		if @ReturnErrCode = 0
 			RaisError (@ErrMsg, 16, 1)
 		return
 	END
-END
 
-IF @aDisableOutright = 1 AND (@aDisableOutright <> @DisableOutright)
-BEGIN 
+	if isnull(@recommend_old, 0) = 0
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent not found.',
+			@ErrCode = 102					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
 
-	UPDATE Custinfo WITH (UPDLOCK,ROWLOCK)
-	SET DisableOutright = 1 
-	WHERE custid = @custid 
+	if isnull(@recommend, 0) = @recommend_old
+	BEGIN
+		Select @ErrMsg = 'Error occurs. The member '+ @membername +' already belongs to agent '+ @agentname +'.',
+			@ErrCode = 103					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+	--check an account disabled or not 
+	EXEC dbo.Acc_CustomerSelCheckEnable @username = @membername, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output 
+	if @ErrCode <>0		return 
+
+	EXEC dbo.Acc_CustomerSelCheckEnable @username = @agentname, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output 
+	if @ErrCode <>0		return 
+
+	if @currency_old <> @acurrency
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': currency of new agent and member does not match.',
+			@ErrCode = 104					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+
+	----------------------------------
+	-- check is closed
+	IF @aClosed = 1
+	BEGIN
+		SELECT @ErrMsg = 'Error occurs. Cannot move to closed agent.',
+			@ErrCode = 105
+		RETURN
+	END
+
+	if @adisableFI = 1 and @disableFI = 0
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Finance but new agent is not enabled Finance.',
+			@ErrCode = 112
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+
+
+	--Check CS SyncCasino between Agent and Member 
+	IF @aSyncCasino = 0 AND @SyncCasino = 1 
+	BEGIN
+		SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': member is synchronized Casino but new agent is not synchronized Casino.',
+			@ErrCode = 113	
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return	
+	END 
+
+	if @adisableNumber = 1 and @disableNumber = 0
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Number Game but new agent is not enabled Number Game.',
+			@ErrCode = 116
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+
+
+	----------------------------------
+
+	--number game
+	if exists(select 1 from dep_custsetting3rd with (nolock) where custid = @custid and sporttype = 161)
+		AND not exists(select 1 from dep_custsetting3rd with (nolock) where custid = @recommend and sporttype = 161)
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Number Game setting.',
+			@ErrCode = 120					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+
+	if exists(select 1 from custinfo with (nolock) where custid = @custid and SyncCasino = 1)
+	BEGIN
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already Casino-synchronized.',
+			@ErrCode = 121					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		return
+	END
+
+
+
+	----------------------------
+	DECLARE
+		@apositiontaking_1 SMALLMONEY,
+		@apositiontaking_2 SMALLMONEY,
+		@apositiontaking_3 SMALLMONEY,
+		@apositiontaking_4 SMALLMONEY,
+		@apositiontaking_5 SMALLMONEY,
+		@apositiontaking_6 SMALLMONEY,
+		@apositiontaking_7 SMALLMONEY,
+		@apositiontaking_8 SMALLMONEY,
+		@apositiontaking_9 SMALLMONEY,
+		@apositiontaking_10 SMALLMONEY,
+		
+		@alivepositiontaking_1 SMALLMONEY,
+		@alivepositiontaking_3 SMALLMONEY,
+		@alivepositiontaking_7 SMALLMONEY,
+		@alivepositiontaking_8 SMALLMONEY,
+		
+		@v2apositiontaking_1 SMALLMONEY,
+		@v2apositiontaking_2 SMALLMONEY,
+		@v2apositiontaking_3 SMALLMONEY,
+		@v2apositiontaking_7 SMALLMONEY,
+		@v2apositiontaking_8 SMALLMONEY,
+		--@v2apositiontaking_9 SMALLMONEY,
+		@v2apositiontaking_20 SMALLMONEY,
+		
+		@v3apositiontaking_1 SMALLMONEY,
+		@v3apositiontaking_2 SMALLMONEY,
+		@v3apositiontaking_3 SMALLMONEY,
+		@v3apositiontaking_20 SMALLMONEY,
+
+		@v5apositiontaking_1 SMALLMONEY,
+		@v5apositiontaking_2 SMALLMONEY,
+		@v5apositiontaking_3 SMALLMONEY,
+		@v5apositiontaking_20 SMALLMONEY,
+
+		@v8apositiontaking_1 SMALLMONEY,
+		@v8apositiontaking_3 SMALLMONEY,
+		@v8apositiontaking_20 SMALLMONEY,
+
+		@v10apositiontaking_1 SMALLMONEY,
+		@v10apositiontaking_2 SMALLMONEY,
+		@v10apositiontaking_3 SMALLMONEY,
+		@v10apositiontaking_20 SMALLMONEY,
+
+		@v11apositiontaking_1 SMALLMONEY,
+		@v11apositiontaking_20 SMALLMONEY,
+		
+		@v99apositiontaking_1 SMALLMONEY,
+		@v99apositiontaking_2 SMALLMONEY,
+		@v99apositiontaking_3 SMALLMONEY,
+		@v99apositiontaking_9 SMALLMONEY,
+		@v99apositiontaking_20 SMALLMONEY,
+
+		@v201apositiontaking_2 SMALLMONEY,
+		@v201apositiontaking_3 SMALLMONEY,
+		
+		@v161apositiontaking_81 SMALLMONEY,
+		@v161apositiontaking_83 SMALLMONEY,
+		--@v161apositiontaking_85 SMALLMONEY,
+		@v161apositiontaking_86 SMALLMONEY,
+		@v161apositiontaking_88 SMALLMONEY,
+		
+		@v161alivepositiontaking_85 SMALLMONEY,
+		@v161alivepositiontaking_86 SMALLMONEY,
+		@v161alivepositiontaking_87 SMALLMONEY,
+		@v161alivepositiontaking_89 SMALLMONEY,
+		@v161alivepositiontaking_90 SMALLMONEY
+		
+
+	SELECT @apositiontaking_1 = apositiontaking FROm dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=1 AND islive = 0
+	SELECT @alivepositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=1 AND islive = 1
+	SELECT @apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=1 AND islive = 0
+	SELECT @alivepositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=1 AND islive = 1
+	SELECT @apositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=1 AND islive =0
+	SELECT @alivepositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=1 AND islive =1
+	SELECT @apositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=1 AND islive =0
+	SELECT @alivepositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=1 AND islive =1
+
+	SELECT @apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=1
+	SELECT @apositiontaking_4 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=4 AND sporttype=1
+	SELECT @apositiontaking_5 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=5 AND sporttype=1
+	SELECT @apositiontaking_6 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=6 AND sporttype=1
+	SELECT @apositiontaking_9 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=1
+	SELECT @apositiontaking_10 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=10 AND sporttype=1
+
+	SELECT @v2apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=2
+	SELECT @v2apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=2
+	SELECT @v2apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=2
+	SELECT @v2apositiontaking_7 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=2
+	SELECT @v2apositiontaking_8 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=2
+	SELECT @v2apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=2
+
+	SELECT @v3apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=3
+	SELECT @v3apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=3
+	SELECT @v3apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=3
+	SELECT @v3apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=3
+
+	SELECT @v5apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=5
+	SELECT @v5apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=5
+	SELECT @v5apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=5
+	SELECT @v5apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=5
+
+	SELECT @v8apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=8
+	SELECT @v8apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=8
+	SELECT @v8apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=8
+
+	SELECT @v10apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=10
+	SELECT @v10apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=10
+	SELECT @v10apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=10
+	SELECT @v10apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=10
+
+	SELECT @v11apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=11
+	SELECT @v11apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=11
+
+	SELECT @v99apositiontaking_1 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=1 AND sporttype=99
+	SELECT @v99apositiontaking_2 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=99
+	SELECT @v99apositiontaking_3 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=99
+	SELECT @v99apositiontaking_9 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=99
+	SELECT @v99apositiontaking_20 = apositiontaking FROM dep_custsetting WITH (NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=99
+
+	SELECT @v201apositiontaking_2 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=2 AND sporttype=201
+	SELECT @v201apositiontaking_3 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=201
+
+	SELECT @v161apositiontaking_81 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=81 AND sporttype=161
+	SELECT @v161apositiontaking_83 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=83 AND sporttype=161
+	SELECT @v161apositiontaking_86 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161 AND islive = 0
+	SELECT @v161apositiontaking_88 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=88 AND sporttype=161
+
+	SELECT @v161alivepositiontaking_85 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=85 AND sporttype=161
+	SELECT @v161alivepositiontaking_86 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161 AND islive = 1
+	SELECT @v161alivepositiontaking_87 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=87 AND sporttype=161
+	SELECT @v161alivepositiontaking_89 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=89 AND sporttype=161
+	SELECT @v161alivepositiontaking_90 = apositiontaking FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @custid AND bettype=90 AND sporttype=161
+
+	--customer table
+	update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend, mrecommend = @mrecommend,
+												recommend = @recommend
+	where custid = @custid
+	if @@Error <> 0 
+	BEGIN
+		
+		--ROLLBACK TRANSACTION MANUALLY
+		update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
+												recommend = @recommend_old
+		where custid = @custid
+
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (customer).',
+			@ErrCode = 303				 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		
+		return
+	END
+
+	--custinfo table
+	update custinfo with (ROWLOCK, UPDLOCK) set srecommend = @srecommend, mrecommend = @mrecommend,
+												recommend = @recommend
+	where custid = @custid
+	if @@Error <> 0 
+	BEGIN
+		--ROLLBACK TRANSACTION MANUALLY
+		update customer with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
+												recommend = @recommend_old
+		where custid = @custid
+		
+		update custinfo with (ROWLOCK, UPDLOCK) set srecommend = @srecommend_old, mrecommend = @mrecommend_old,
+												recommend = @recommend_old
+		where custid = @custid
+
+		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
+			@ErrCode = 304					 
+		if @ReturnErrCode = 0
+			RaisError (@ErrMsg, 16, 1)
+		
+		return
+	END
+
+	--- update suspended status
+	IF @aSuspended = 1 AND @Suspended = 0
+	BEGIN
+		UPDATE Custinfo WITH (UPDLOCK, ROWLOCK)
+		SET	reject = 1 
+		WHERE	custid = @custid
+		IF @@ERROR <>0
+		BEGIN
+			Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
+			@ErrCode = 305
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+		END
+	END
+
+	IF @aDisableOutright = 1 AND (@aDisableOutright <> @DisableOutright)
+	BEGIN 
+
+		UPDATE Custinfo WITH (UPDLOCK,ROWLOCK)
+		SET DisableOutright = 1 
+		WHERE custid = @custid 
+		IF @@ERROR<>0
+		BEGIN
+			Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
+			@ErrCode = 306
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+		END 
+	END 
+
+	--Apply ExeReplication
+	-- call Acc_ExecRep_00 two times to update coming bets that not replicated to subcriptions servers yet.
+	EXEC DBTXN.bodb02.dbo.Acc_ExecRep_00 
+		@custid = @custid,
+		@recommend = @recommend,
+		@recommend_old = @recommend_old,
+		@mrecommend = @mrecommend,
+		@mrecommend_old = @mrecommend_old,
+		@srecommend = @srecommend,
+		@srecommend_old = @srecommend_old,
+		@roleid = 1,
+		@ErrCode = @ErrCode OUTPUT,
+		@ErrMsg = @ErrMsg OUTPUT
+	IF @ErrCode <> 0
+	BEGIN			
+		-- 20130808@Elodie: Splitting DBTXN into DBCUST (Roll back updates on custinfo,customer table in main SP)  				
+		--ROLLBACK TRANSACTION MANUALLY     
+		UPDATE customer WITH (ROWLOCK, UPDLOCK) 
+		SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
+		WHERE custid = @custid
+		
+		UPDATE custinfo WITH (ROWLOCK, UPDLOCK) 
+		SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
+		WHERE custid = @custid
+		
+		IF @ReturnErrCode = 0
+			RAISERROR (@ErrMsg, 16, 1)                  
+		RETURN
+	END	
+
+	EXEC DBTXN.bodb02.dbo.Acc_ExecRep_00 
+		@custid = @custid,
+		@recommend = @recommend,
+		@recommend_old = @recommend_old,
+		@mrecommend = @mrecommend,
+		@mrecommend_old = @mrecommend_old,
+		@srecommend = @srecommend,
+		@srecommend_old = @srecommend_old,
+		@roleid = 1,
+		@ErrCode = @ErrCode OUTPUT,
+		@ErrMsg = @ErrMsg OUTPUT
+	IF @ErrCode <> 0
+	BEGIN			
+		-- 20130808@Elodie: Splitting DBTXN into DBCUST (Roll back updates on custinfo,customer table in main SP)  				
+		--ROLLBACK TRANSACTION MANUALLY     
+		UPDATE customer WITH (ROWLOCK, UPDLOCK) 
+		SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
+		WHERE custid = @custid
+		
+		UPDATE custinfo WITH (ROWLOCK, UPDLOCK) 
+		SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
+		WHERE custid = @custid
+		
+		IF @ReturnErrCode = 0
+			RAISERROR (@ErrMsg, 16, 1)                  
+		RETURN
+	END	
+
+	--super 3rd
+	UPDATE	cs WITH (UPDLOCK,ROWLOCK)
+	SET		sdiscount = scs.sdiscount
+	FROM	Dep_CustSetting3rd scs WITH (NOLOCK)
+			INNER JOIN Dep_CustSetting3rd cs ON scs.custid = @srecommend AND cs.custid = @custid 
+											AND scs.sporttype = cs.sporttype AND scs.bettype = cs.bettype 
+	WHERE	scs.sdiscount< cs.sdiscount
 	IF @@ERROR<>0
 	BEGIN
-		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-		@ErrCode = 306
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-	END 
-END 
+			Select @ErrMsg = 'update super commission unsuccessfully.',
+			@ErrCode = 307				 
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+	END
 
---Apply ExeReplication
--- call Acc_ExecRep_00 two times to update coming bets that not replicated to subcriptions servers yet.
-EXEC DBTXN.bodb02.dbo.Acc_ExecRep_00 
-	@custid = @custid,
-	@recommend = @recommend,
-	@recommend_old = @recommend_old,
-	@mrecommend = @mrecommend,
-	@mrecommend_old = @mrecommend_old,
-	@srecommend = @srecommend,
-	@srecommend_old = @srecommend_old,
-	@roleid = 1,
-	@ErrCode = @ErrCode OUTPUT,
-	@ErrMsg = @ErrMsg OUTPUT
-IF @ErrCode <> 0
-BEGIN			
-	-- 20130808@Elodie: Splitting DBTXN into DBCUST (Roll back updates on custinfo,customer table in main SP)  				
-	--ROLLBACK TRANSACTION MANUALLY     
-    UPDATE customer WITH (ROWLOCK, UPDLOCK) 
-    SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
-	WHERE custid = @custid
-	
-	UPDATE custinfo WITH (ROWLOCK, UPDLOCK) 
-	SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
-	WHERE custid = @custid
-	
-	IF @ReturnErrCode = 0
-		RAISERROR (@ErrMsg, 16, 1)                  
-    RETURN
-END	
 
-EXEC DBTXN.bodb02.dbo.Acc_ExecRep_00 
-	@custid = @custid,
-	@recommend = @recommend,
-	@recommend_old = @recommend_old,
-	@mrecommend = @mrecommend,
-	@mrecommend_old = @mrecommend_old,
-	@srecommend = @srecommend,
-	@srecommend_old = @srecommend_old,
-	@roleid = 1,
-	@ErrCode = @ErrCode OUTPUT,
-	@ErrMsg = @ErrMsg OUTPUT
-IF @ErrCode <> 0
-BEGIN			
-	-- 20130808@Elodie: Splitting DBTXN into DBCUST (Roll back updates on custinfo,customer table in main SP)  				
-	--ROLLBACK TRANSACTION MANUALLY     
-    UPDATE customer WITH (ROWLOCK, UPDLOCK) 
-    SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
-	WHERE custid = @custid
-	
-	UPDATE custinfo WITH (ROWLOCK, UPDLOCK) 
-	SET srecommend = @srecommend_old, mrecommend = @mrecommend_old, recommend = @recommend_old
-	WHERE custid = @custid
-	
-	IF @ReturnErrCode = 0
-		RAISERROR (@ErrMsg, 16, 1)                  
-    RETURN
-END	
+	--master 3rd
+	UPDATE	cs WITH (UPDLOCK,ROWLOCK)
+	SET		adiscount = mcs.adiscount 
+	FROM	Dep_CustSetting3rd mcs WITH (NOLOCK)
+			INNER JOIN Dep_CustSetting3rd cs ON mcs.custid = @mrecommend AND cs.custid = @custid 
+											AND mcs.sporttype = cs.sporttype AND mcs.bettype = cs.bettype 
+	WHERE	mcs.adiscount< cs.adiscount
+	IF @@ERROR<>0
+	BEGIN
+			Select @ErrMsg = 'update master commission unsuccessfully.',
+			@ErrCode = 310					 
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+	END
 
---super 3rd
-UPDATE	cs WITH (UPDLOCK,ROWLOCK)
-SET		sdiscount = scs.sdiscount
-FROM	Dep_CustSetting3rd scs WITH (NOLOCK)
-		INNER JOIN Dep_CustSetting3rd cs ON scs.custid = @srecommend AND cs.custid = @custid 
-										AND scs.sporttype = cs.sporttype AND scs.bettype = cs.bettype 
-WHERE	scs.sdiscount< cs.sdiscount
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update super commission unsuccessfully.',
-		@ErrCode = 307				 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
+
+	--agent 3rd
+	UPDATE	cs WITH (UPDLOCK,ROWLOCK)
+	SET		cs.discount = acs.discount
+	FROM	Dep_CustSetting3rd acs WITH (NOLOCK)
+			INNER JOIN Dep_CustSetting3rd cs ON acs.custid = @recommend AND cs.custid = @custid 
+											AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
+	WHERE	acs.discount< cs.discount
+	IF @@ERROR<>0
+	BEGIN
+			Select @ErrMsg = 'update agent commission unsuccessfully.',
+			@ErrCode = 313					 
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+	END
+
+
+		
+	--member 3rd
+	UPDATE	cs WITH (UPDLOCK,ROWLOCK)
+	SET		playerdiscount = acs.discount 
+	FROM	Dep_CustSetting3rd acs WITH (NOLOCK)
+			INNER JOIN Dep_CustSetting3rd cs ON acs.custid = @recommend AND cs.custid = @custid 
+										 AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
+
+	WHERE	acs.discount< cs.playerdiscount
+	IF @@ERROR<>0
+	BEGIN
+			Select @ErrMsg = 'update commission unsuccessfully.',
+			@ErrCode = 316				 
+			if @ReturnErrCode = 0
+				RaisError (@ErrMsg, 16, 1)
+			return
+	END
+
+	DECLARE @LogSPData VARCHAR(4000)
+	SELECT  @LogSPData = '<Acc_CustomerUpdMoveMember  MemberName="' + @membername + '" OldAgentId="'
+				+ CONVERT(VARCHAR(20), @recommend_old) + '" NewAgentName="' + @agentname+ '" '
+				+ 'NewAgentId="' + CONVERT(VARCHAR(20), @recommend) + '" '  
+				+'userid="' + COALESCE(CAST(@userid AS VARCHAR(50)), SPACE(1)) + '" '
+				+'ReturnErrCode="' + COALESCE(CAST(@ReturnErrCode AS VARCHAR(50)), SPACE(1)) + '" '
+				+'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
+				+'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'
+
+	set @endRun = getdate()
+	set @duration  = datediff (millisecond,@startRun,@endRun)
+
+	/*615	Acc_CustomerUpdMoveMember	Move member to new Agent*/
+		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			@UserID = @UserID,
+			@CustID = @custid,
+			@ActionID = 615, 
+			@TrackingValue = @LogSPData,
+			@duration = @duration
 END
-
-
---master 3rd
-UPDATE	cs WITH (UPDLOCK,ROWLOCK)
-SET		adiscount = mcs.adiscount 
-FROM	Dep_CustSetting3rd mcs WITH (NOLOCK)
-		INNER JOIN Dep_CustSetting3rd cs ON mcs.custid = @mrecommend AND cs.custid = @custid 
-										AND mcs.sporttype = cs.sporttype AND mcs.bettype = cs.bettype 
-WHERE	mcs.adiscount< cs.adiscount
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update master commission unsuccessfully.',
-		@ErrCode = 310					 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
-
-
---agent 3rd
-UPDATE	cs WITH (UPDLOCK,ROWLOCK)
-SET		cs.discount = acs.discount
-FROM	Dep_CustSetting3rd acs WITH (NOLOCK)
-		INNER JOIN Dep_CustSetting3rd cs ON acs.custid = @recommend AND cs.custid = @custid 
-										AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-WHERE	acs.discount< cs.discount
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update agent commission unsuccessfully.',
-		@ErrCode = 313					 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
-
-
-	
---member 3rd
-UPDATE	cs WITH (UPDLOCK,ROWLOCK)
-SET		playerdiscount = acs.discount 
-FROM	Dep_CustSetting3rd acs WITH (NOLOCK)
-		INNER JOIN Dep_CustSetting3rd cs ON acs.custid = @recommend AND cs.custid = @custid 
-									 AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-
-WHERE	acs.discount< cs.playerdiscount
-IF @@ERROR<>0
-BEGIN
-		Select @ErrMsg = 'update commission unsuccessfully.',
-		@ErrCode = 316				 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-END
-
-DECLARE @LogSPData VARCHAR(4000)
-SELECT  @LogSPData = '<Acc_CustomerUpdMoveMember  MemberName="' + @membername + '" OldAgentId="'
-            + CONVERT(VARCHAR(20), @recommend_old) + '" NewAgentName="' + @agentname+ '" '
-            + 'NewAgentId="' + CONVERT(VARCHAR(20), @recommend) + '" '  
-			+'userid="' + COALESCE(CAST(@userid AS VARCHAR(50)), SPACE(1)) + '" '
-			+'ReturnErrCode="' + COALESCE(CAST(@ReturnErrCode AS VARCHAR(50)), SPACE(1)) + '" '
-			+'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
-			+'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'
-
-set @endRun = getdate()
-set @duration  = datediff (millisecond,@startRun,@endRun)
-
-/*615	Acc_CustomerUpdMoveMember	Move member to new Agent*/
-    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-		@UserID = @UserID,
-		@CustID = @custid,
-        @ActionID = 615, 
-		@TrackingValue = @LogSPData,
-		@duration = @duration
-
 GO
 GRANT EXECUTE ON [dbo].[Acc_Dep_CustomerUpdMoveMember] TO [bodbAdminNet] AS [dbo]
 GO

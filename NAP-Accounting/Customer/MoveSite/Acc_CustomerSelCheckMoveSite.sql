@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerSelCheckMoveSite]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelCheckMoveSite]
 	@CustId			INT,
 	@UserId			INT,
 	@IsAllow		BIT OUTPUT,
@@ -10,7 +11,9 @@ AS
 	DB: DBAGE/bodb02
 
 	Revisions:		
-		- 20130121@Dan: change linked server DB03 to DBPOLICY	
+		- 20130121@Dan: change linked server DB03 to DBPOLICY
+		- 20180808@Helen: GET CODE FROM PRODUCTION + DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462] 
+			
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We do not allow Member move site
 
@@ -21,7 +24,7 @@ BEGIN
 
 	--Check permission for account site: @phuc20080213
 	DECLARE @ErrCode int, @ErrMsg varchar(200)
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MoveSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MoveSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	If @ErrCode <> 0
 		RETURN
 	

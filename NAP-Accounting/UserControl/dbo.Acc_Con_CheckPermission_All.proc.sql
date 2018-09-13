@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission_All]
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,BODBDownlineNet,BODBDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission_All]
 	@CustID int, 
 	@FuncID int=null,
 	@FuncName nvarchar(50)='',
@@ -7,16 +8,19 @@
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT
 AS
-SET NOCOUNT ON 
-	/*	Created by:Jamie
+/*	Created by:Jamie
 		Date: 2010-02-27
 		Task: Check policy including Read 
-		DB: DB03.bodb02
+		DB: DBCUST/NAP_UserControl
 
 		Revisions:
 			- 20101123@Jamie: Change to use acc_functioninfo instead of acc_functioninfo_1 
 			- 20110526@Tom: Remove condition @System
-	*/
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+*/	
+BEGIN
+	SET NOCOUNT ON 
+	
 	IF @FuncID is null
 		Select @FuncID=funcid from acc_functioninfo with(nolock) where System = @System and FuncName=@Funcname
 	
@@ -24,14 +28,14 @@ SET NOCOUNT ON
 	-- IsAllow: 1:Readonly, 2:Host, 3:All
 	-- Just check permission for admin, ignore when roleid < 5 
 	Declare @roleid tinyint,@IsAllow tinyint
-	Select @roleid = roleid From customer with(nolock) where custid=@custid
+	Select @roleid = roleid From CUSTDB.dbo.customer with(nolock) where custid=@custid
 	IF @RoleID Between 5 and 10
 		BEGIN 
 			SELECT @IsAllow=(isnull(mp.policy,0)|isnull(gp.policy,0)) & isnull(fi.FuncRender,0)
-			FROM AccCustomer_1 ac with(nolock) inner join custinfo ci with(nolock) on ac.custid=ci.custid
+			FROM AccCustomer ac with(nolock) inner join CUSTDB.dbo.custinfo ci with(nolock) on ac.custid=ci.custid
 				Left JOIN acc_functioninfo fi with(nolock) on fi.funcid=@funcid
-				LEFT JOIN Acc_MemberPolicy_1 mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
-				LEFT JOIN Acc_GroupPolicy_1 gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid
+				LEFT JOIN Acc_MemberPolicy mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
+				LEFT JOIN Acc_GroupPolicy gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid
 			WHERE ac.Custid=@Custid and ci.closed=0
 			SELECT @IsAllow = isnull(@IsAllow,0)
 		END
@@ -54,7 +58,7 @@ SET NOCOUNT ON
 	END
 	ELSE
 		SET @ErrCode=0
-	
+END	
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_CheckPermission_All] TO [vnteam]

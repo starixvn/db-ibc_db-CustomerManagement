@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet,BODBDownlineNet,BODBDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerIsInternalAdmin]
 	@CustID INT,
 	@IsInternalAdmin BIT = 0 OUTPUT, 
@@ -6,12 +7,14 @@ AS
 /*
 	Created: 20160901@Elodie
 	Task: check if the account is an internal admin and has permission to access special site
-	Database: DBPOLICY/bodb02
+	Database: DBCUST/CUSTDB
 	
 	Revision:
 		- 20161111@Elodie: Remove hardcode statrix, add list username who has permission to access special site		
 		- 20161205@Winnie: Remove hardcode like statrix [RedmineID:#67772]
 		- 20170816@Elodie: Add more starix account [Redmine: #81730]
+		- 20180808@Helen: DB05.DBPOLICY migration  - Move to DBCUST [Redmine:99462]
+		
 	Param's Explanation:
 */
 BEGIN
@@ -21,12 +24,12 @@ BEGIN
 	SELECT @IsInternalAdmin = 0, @IsAllowAccess = 1
 
 	IF EXISTS (	SELECT 1 
-				FROM dbo.acccustomer_1 ac WITH (NOLOCK)
+				FROM NAP_UserControl.dbo.acccustomer ac WITH (NOLOCK)
 					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = ac.custid
 				WHERE ci.roleid > 4 AND ac.custid = @CustID )
 	BEGIN
 		SELECT @IsInternalAdmin = 1
-		SELECT @UserName=UserName FROM custInfo WITH(NOLOCK) WHERE custid=@CustID
+		SELECT @UserName=UserName FROM dbo.custInfo WITH(NOLOCK) WHERE custid=@CustID
 		
 		IF @CustID NOT IN (	360418		--starix1
 							,15471134	--starix10

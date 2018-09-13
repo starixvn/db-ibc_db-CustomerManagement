@@ -1,19 +1,6 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
-ALTER FUNCTION [dbo].[Acc_SplitIndex]
+﻿CREATE FUNCTION [dbo].[Acc_SplitIndex]
  (@string NVARCHAR(4000), @splitter CHAR, @index INT)  
 RETURNS NVARCHAR(4000) AS  
-/*  
- Created by: N/A
- Task:  
- DB: DBCUST/NAP_UserControl
-  
- Revisions:  
-	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]					 
-     
- Explain @Paramater  
-  -- Format of @GroupPolicys: @FuncID,@Policy@FuncID,@Policy ...   
-*/  
-
 BEGIN 
 
 	IF SUBSTRING(@string, len(@string), 1) <> @splitter
@@ -36,6 +23,6 @@ BEGIN
 	Return @string
 
 END
+
 GO
 GRANT EXECUTE ON [dbo].[Acc_SplitIndex] TO [bodbAdminNet]
-GO

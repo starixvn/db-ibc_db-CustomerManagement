@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_Con_FuncInfoIns]
 	@FuncId int output,
 	@FuncName nvarchar(50),
@@ -16,7 +16,7 @@ AS
 /*
 	Created by: []
 	Task: Insert a new function or sub one into User Control 
-	DB: DBPOLICY/BODB02 
+	DB: DBCUST/NAP_UserControl
 	
 	Revisions:
 		- 20100703@Jamie: Modify to insert policy default = 0 
@@ -27,6 +27,7 @@ AS
 		- 20120604@Elodie: Modify the content of a log in User Control
 		- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
 		- 20140721@Lukas: change function name from [UserControl] to [ManageFunction]	for creating new menu/function
+		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
 */
 	SET NOCOUNT ON 
 	DECLARE @LogData nvarchar(max),@Begin	DATETIME,@End	DATETIME,@Duration	INT;
@@ -75,25 +76,25 @@ AS
 			begin		
 				-- policy = 0 when inserting 
 				--Insert into Acc_GroupPolicy and AccCustomer
-				insert into Acc_GroupPolicy_1(FuncId, GroupId, Policy, CreateDate, ModifyDate, Creator)
+				insert into Acc_GroupPolicy(FuncId, GroupId, Policy, CreateDate, ModifyDate, Creator)
 				select	@FuncId, GroupId, 0 , getdate(), getdate(), @UserId/*0:Policy*/
-					from acc_GroupPolicy_1 with (nolock)	where FuncId = @ParentId
+					from acc_GroupPolicy with (nolock)	where FuncId = @ParentId
 				--add list custid is used on parentid
-				insert into Acc_MemberPolicy_1(CustId, FuncId, Policy, CreateDate, ModifyDate, Creator)
+				insert into Acc_MemberPolicy(CustId, FuncId, Policy, CreateDate, ModifyDate, Creator)
 				select	custid, @FuncId, 0 , getdate(), getdate(), @UserID /*0:Policy*/
-					from acc_MemberPolicy_1 with (nolock)		where funcId = @ParentId
+					from acc_MemberPolicy with (nolock)		where funcId = @ParentId
 
 			end
 		else
 			begin
-				insert into Acc_GroupPolicy_1(FuncId, GroupId, Policy, CreateDate, ModifyDate, Creator)
+				insert into Acc_GroupPolicy(FuncId, GroupId, Policy, CreateDate, ModifyDate, Creator)
 				Select @FuncId, GroupId, 0, getdate(), getdate(), @UserId
-				from Acc_GroupInfo_1 grp with (nolock)	where System = @System				
+				from Acc_GroupInfo grp with (nolock)	where System = @System				
 				
 				--Add user from accounting system
-				insert into Acc_MemberPolicy_1(CustId, FuncId, Policy, CreateDate, ModifyDate, Creator)
+				insert into Acc_MemberPolicy(CustId, FuncId, Policy, CreateDate, ModifyDate, Creator)
 					select custid, @FuncId, 0, getdate(), getdate(), @UserID
-					from accCustomer_1 with (nolock)
+					from accCustomer with (nolock)
 			end
 		
 	IF @@ERROR <> 0
@@ -132,12 +133,7 @@ AS
 			@duration = @Duration  
 	END TRY
 	BEGIN CATCH
-		SELECT @LogData = '<Acc_Con_FuncInfoIns> ' +							
-							'ErrMsg="' + COALESCE(ERROR_MESSAGE(),SPACE(1)) + '" ' + 
-							'</Acc_Con_FuncInfoIns>'
-							
-		EXEC WriteLog_UserLog @UserID = @UserID, 
-						      @Doing = @LogData
+		
 	END CATCH
 
 GO

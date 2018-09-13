@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoTransferAgent]
 	@custid			INT,
 	@TransferType	TINYINT = 1,
 	@userID			INT,
@@ -10,10 +11,12 @@ AS
 		Created: Johnson
 		Date: 2014-09-25
 		Task: Update transfer type for agent
-		DB: DBTXN/CustDB
+		DB: DBCUST/CustDB
 		
 		Revisions:
-		
+			- 20170703@Percy: Add space bar into log content [RedmineID: #79293]
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			
 		Parameter's Explanation:
 			- @TransferType = 1: Transfer all members
 							= 2: Transfer all downlines
@@ -26,7 +29,7 @@ BEGIN
 	SET	@startRun = GETDATE()
 	
 		--Check permission
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherTrans]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	
@@ -58,13 +61,13 @@ BEGIN
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF(millisecond,@startRun,@endRun)
 		
-	SELECT @LogData = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '"'
+	SELECT @LogData = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'TransferType="' + COALESCE(CAST(@TransferType AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" '
 								+ 'ErrMsg="' + COALESCE(@ErrMsg,SPACE(1))+'" '
 								+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" />'																		
 	
-	SELECT @LogData_Old = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '"'
+	SELECT @LogData_Old = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'TransferType="' + COALESCE(CAST(@Old_TransferType AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" '
 								+ 'ErrMsg="' + COALESCE(@ErrMsg,SPACE(1))+'" '
@@ -80,7 +83,7 @@ BEGIN
 			@Duration = @duration
 	END TRY
 	BEGIN CATCH
-		SELECT @LogData = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '"'
+		SELECT @LogData = '<Acc_CustomerUpdAutoTransferAgent CustID="' + COALESCE(CAST(@CustID AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'TransferType="' + COALESCE(CAST(@TransferType AS VARCHAR(10)),SPACE(1)) + '" '
 								+ 'ErrCode="' + coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '
 								+ 'ErrMsg="' + coalesce(ERROR_MESSAGE(),space(1))+'" '
@@ -97,3 +100,4 @@ BEGIN
 END
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerUpdAutoTransferAgent] TO [bodbAdminNet]
+GO

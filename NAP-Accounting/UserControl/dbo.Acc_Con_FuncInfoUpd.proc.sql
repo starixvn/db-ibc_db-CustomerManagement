@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_FuncInfoUpd]
 	@FuncId int,
 	@FuncName nvarchar(50),
@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[Acc_Con_FuncInfoUpd]
 AS
 /*
 Task: Update function info 
-DB: DBPOLICY/BODB02 
+DB: DBCUST/NAP_UserControl
 
 Revision
 	- 20101123@Jamie: Change to use acc_functioninfo instead of acc_functioninfo_1
@@ -24,6 +24,7 @@ Revision
 					   Only update function's infomation if any changes
 	- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
 	- 20140721@Lukas: change function name from [UserControl] to [ManageFunction]	for creating new menu/function
+	- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
 */
 	SET NOCOUNT ON 
 	DECLARE @LogData nvarchar(max),@Begin	DATETIME,@End	DATETIME,@Duration	INT;
@@ -92,12 +93,7 @@ Revision
 				@duration = @Duration
 		END TRY
 		BEGIN CATCH
-			SELECT @LogData = '<Acc_Con_FuncInfoUpd> ' +								
-								'ErrMsg="' + COALESCE(ERROR_MESSAGE(),SPACE(1)) + '" ' + 
-							   '</Acc_Con_FuncInfoUpd>'
-							   
-			EXEC WriteLog_UserLog @UserID = @UserID, 
-						      @Doing = @LogData
+			
 		END CATCH
 	End
 

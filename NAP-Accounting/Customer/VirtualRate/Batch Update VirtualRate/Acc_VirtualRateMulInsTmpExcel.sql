@@ -1,4 +1,5 @@
-﻿ALTER PROC [dbo].[Acc_VirtualRateMulInsTmpExcel]	
+﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_VirtualRateMulInsTmpExcel]	
 	@UserID INT,
 	@virtualrate VARCHAR(MAX),	
 	@ErrCode INT = 0 OUTPUT,
@@ -19,7 +20,7 @@ AS
 		- 20150126@Johnson: Separate virtual rate setting into sport types and bet types [Redmine: #25840]						
 						+ Change to use new structure : table Ac_VirtualRateList						 						
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
-
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	Parameter's Explanation:
 		- @virtualRate = '<ROOT>
 							<customer username="test123">
@@ -40,7 +41,7 @@ BEGIN
 SET NOCOUNT ON
 			
 	--Check permission for account site
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 

@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-USE [bodb_Age]
-GO
-
 ALTER PROCEDURE  [dbo].[Acc_CustGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
 	@Userid		INT			= NULL
@@ -19,6 +16,7 @@ AS
 		- 20160721@Percy: Return NormalGroup and ExtraPTGroup columns [RedmineID: #60883]
 		- 20170413@Percy: Change way get to-be-primary group [RedmineID: #74292]
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 */
 
 BEGIN
@@ -109,8 +107,8 @@ BEGIN
 	
 		SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
 		SELECT @SearchQuery = 'SELECT * 
-		FROM OPENQUERY(DBPOLICY, 
-		''SELECT siteid , site,SpecialGroup FROM bodb02.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
+		FROM OPENQUERY(DBPOL, 
+		''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
 
 		INSERT INTO  @tmp (siteid , site,SpecialGroup)
 		EXECUTE(@SearchQuery)	

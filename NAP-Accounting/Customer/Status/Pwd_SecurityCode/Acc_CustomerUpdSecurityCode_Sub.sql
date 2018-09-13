@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode_Sub]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode_Sub]
 	@subAccid	INT,	
 	@custid		INT,	
 	@userid		INT,	
@@ -12,13 +13,15 @@
 		Created: Johnson
 		Date: 2013-05-02
 		Task: Admin update Security Code for sub-account by tool
-		DB: DBTXN/bodb02
+		DB: DBCUST/CUSTDB
 		
 		Revisions:
-		
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			
 		Parameter's Explanation:
 	*/
-SET NOCOUNT ON
+BEGIN	
+	SET NOCOUNT ON
 	DECLARE @startRun DATETIME
 			,@endRun DATETIME
 			,@duration INT
@@ -26,7 +29,7 @@ SET NOCOUNT ON
 			
 	SET @startRun = GETDATE()
 	
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	If @ErrCode <> 0
 		RETURN
 	
@@ -84,7 +87,7 @@ SET NOCOUNT ON
 			@TrackingValue = @LogSPData,
 			@duration = @duration 
 	END CATCH
-	
+END	
 	
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSecurityCode_Sub] TO [bodbAdminNet]

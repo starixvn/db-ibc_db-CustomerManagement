@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdGroupHeadlineOwner]
 	@HeadlineID INT,
 	@OwnerName NVARCHAR(100),
@@ -16,6 +17,7 @@ AS
 	
 	Revisions:
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 
 */
 BEGIN
@@ -27,7 +29,7 @@ BEGIN
 	Declare @Old_OwnerName NVARCHAR(100) = '', @GroupID SMALLINT = 0
 
 	--Check permission for account site 
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @CustID=@UserID, @funcname='[SMAManagement]', @ErrCode=@ErrCode OUTPUT, @ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @CustID=@UserID, @funcname='[SMAManagement]', @ErrCode=@ErrCode OUTPUT, @ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 

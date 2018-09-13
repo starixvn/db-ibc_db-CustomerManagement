@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CreditTermUpdChecker]
+﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CreditTermUpdChecker]
 	@CustId int,
 	@CheckerID int,
 	@UserID int,
@@ -6,9 +7,7 @@
 	@ErrMsg nvarchar(200)='' OUTPUT, 
 	@Language varchar(2)= 'E'
 AS 
-BEGIN
-	
-SET NOCOUNT ON
+
 --Check permission for account site: @phuc20080213
 /*	Created by: [Creator]
 	Date:  
@@ -19,70 +18,74 @@ SET NOCOUNT ON
 		- 20090828@HuyNguyen: replace [Customer] --> [OtherCust]	
 		- 20130131@Elodie: Change link server DB03 to DBPOLICY
 						   Amend to write log in xml format and write more log on DBTXN server in case of DBLOG server failure
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 						   
 */
-DECLARE @startRun DATETIME
-DECLARE @endRun DATETIME
-DECLARE @duration INT
-SET @startRun = getdate()
-DECLARE @old_CheckerID INT
-
-EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-If @ErrCode <> 0
-	RETURN
-
-if not exists(select 1 from DBPOLICY.bodb02.dbo.AccCustomer_1 with (nolock) where custid = @CheckerID and groupID = 111)
 BEGIN
-	Select 
-		@ErrMsg = 'Invalid checker!',
-		@ErrCode = 102
-	RETURN 
-END
+	
+	SET NOCOUNT ON
+	DECLARE @startRun DATETIME
+	DECLARE @endRun DATETIME
+	DECLARE @duration INT
+	SET @startRun = getdate()
+	DECLARE @old_CheckerID INT
 
-SELECT @old_CheckerID = checker FROM custAccount WITH (NOLOCK) WHERE custid = @CustId
-UPDATE CustAccount SET checker = @CheckerID 
-WHERE custid = @CustId
-IF (@@ERROR <>0)
-BEGIN
-	Select 
-		@ErrMsg = 'Cannot update!!!',
-		@ErrCode = 103
-	RETURN 
-END
-DECLARE @LogSPData NVARCHAR(400)
-DECLARE @TrackingValue2 NVARCHAR(400)
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	If @ErrCode <> 0
+		RETURN
 
-Select @LogSPData = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @CheckerID) + 
-					'" ErrMsg="" />'
-Select @TrackingValue2 = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @old_CheckerID) + 
-						 '" ErrMsg="" />'
+	if not exists(select 1 from DBPOL.NAP_UserControl.dbo.AccCustomer with (nolock) where custid = @CheckerID and groupID = 111)
+	BEGIN
+		Select 
+			@ErrMsg = 'Invalid checker!',
+			@ErrCode = 102
+		RETURN 
+	END
 
-set @endRun = getdate()
-set @duration  = datediff (millisecond,@startRun,@endRun)
+	SELECT @old_CheckerID = checker FROM custAccount WITH (NOLOCK) WHERE custid = @CustId
+	UPDATE CustAccount SET checker = @CheckerID 
+	WHERE custid = @CustId
+	IF (@@ERROR <>0)
+	BEGIN
+		Select 
+			@ErrMsg = 'Cannot update!!!',
+			@ErrCode = 103
+		RETURN 
+	END
+	DECLARE @LogSPData NVARCHAR(400)
+	DECLARE @TrackingValue2 NVARCHAR(400)
 
-BEGIN TRY
-	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-		@UserID = @UserID,
-		@CustID = @CustId,
-		@ActionID = 1005,
-		@TrackingValue = @LogSPData,
-		@TrackingValue2 = @TrackingValue2,
-		@duration = @duration
-END TRY
-BEGIN CATCH		
 	Select @LogSPData = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @CheckerID) + 
-						'" ErrMsg="'+ error_message() + '" />'
+						'" ErrMsg="" />'
 	Select @TrackingValue2 = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @old_CheckerID) + 
-							 '" ErrMsg="'+ error_message() + '" />'
-						
-	EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-		@UserID = @UserID,
-		@CustID = @CustId,
-		@ActionID = 1005,
-		@TrackingValue = @LogSPData,
-		@TrackingValue2 = @TrackingValue2,
-		@duration = @duration
-END CATCH    
+							 '" ErrMsg="" />'
+
+	set @endRun = getdate()
+	set @duration  = datediff (millisecond,@startRun,@endRun)
+
+	BEGIN TRY
+		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+			@UserID = @UserID,
+			@CustID = @CustId,
+			@ActionID = 1005,
+			@TrackingValue = @LogSPData,
+			@TrackingValue2 = @TrackingValue2,
+			@duration = @duration
+	END TRY
+	BEGIN CATCH		
+		Select @LogSPData = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @CheckerID) + 
+							'" ErrMsg="'+ error_message() + '" />'
+		Select @TrackingValue2 = '<Acc_CreditTermUpdChecker Checker="' + convert(varchar(20), @old_CheckerID) + 
+								 '" ErrMsg="'+ error_message() + '" />'
+							
+		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+			@UserID = @UserID,
+			@CustID = @CustId,
+			@ActionID = 1005,
+			@TrackingValue = @LogSPData,
+			@TrackingValue2 = @TrackingValue2,
+			@duration = @duration
+	END CATCH    
 END
 
 GO

@@ -1,4 +1,5 @@
-﻿ALTER PROC [dbo].[Acc_VirtualRateMulDelTmpExcel]	
+﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_VirtualRateMulDelTmpExcel]	
 	@UserID INT,	
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT	
@@ -17,11 +18,13 @@ AS
 						& change linked-server from db03 to DBPOLICY
 		- 20150126@Johnson: Separate virtual rate setting into sport types and bet types [Redmine: #25840]						
 						+ Change to use new structure : table Ac_VirtualRateList						 
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   				
 */
-SET NOCOUNT ON
+BEGIN
+	SET NOCOUNT ON
 		
 	--Check permission for account site
-	EXEC DBPOLICY.bodb02.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UploadVR]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	IF EXISTS (SELECT 1 FROM dbo.Acc_VirtualRateList WHERE UserID=@UserID)
@@ -34,10 +37,8 @@ SET NOCOUNT ON
 			RETURN			
 		END
 	END
-
+END
 GO
-
-
 GRANT EXECUTE ON [dbo].[Acc_VirtualRateMulDelTmpExcel] TO [bodbAdminNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_VirtualRateMulDelTmpExcel] TO [vnteam]
