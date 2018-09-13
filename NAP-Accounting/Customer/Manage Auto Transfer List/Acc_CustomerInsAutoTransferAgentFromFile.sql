@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerInsAutoTransferAgentFromFile]
 		
 		Revisions:
 			- 20141023@Johnson: Set default transfer to 'Transfer all downlines' from upload file
+			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			
 		Parameter's Explanation:
 			- @TransferType = 1: Transfer all members
 							= 2: Transfer all downlines

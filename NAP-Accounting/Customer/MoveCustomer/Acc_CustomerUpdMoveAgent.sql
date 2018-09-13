@@ -68,6 +68,8 @@ Revisions:
 	- 20160819@Winnie: fix  Bug #62755 [NAP - IsDailyAutoReset of downline is changed to 0 after moving downline although both downline and upline has IsDailyAutoReset=1]
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
