@@ -69,7 +69,9 @@ BEGIN
 		SELECT MessageId,MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn
 		FROM dbo.Msg WITH (NOLOCK) 
 		WHERE PostTime BETWEEN @FromTime AND @ToTime
-			AND IsSticky = 1
+			--when a personal message is marked as Sticky Message. the message will be sent via letstalk under 2 type: Special Announcement and Personal Message.
+			--it's not good for the UX. The message should be sent only once as a personal message.
+			AND MsgType = 3 AND IsSticky = 1 
 			AND isDeleted=0 
 			AND IsTest <=@IsTest
 
@@ -81,6 +83,8 @@ BEGIN
 	SELECT m.MessageId,m.MsgType,Content_en,Content_ch,Content_cs,Content_jp,Content_th,Content_ko,Content_vn,mt.TargetId, mt.BetTransId
 	FROM #Msg m
 		CROSS APPLY (SELECT TOP (@i) * FROM dbo.MsgTarget WITH (NOLOCK) WHERE MessageId = m.MessageId AND isDeleted = 0) mt
-	WHERE (TargetId IN (3000,3100,3200,3300,300000,310000,320000,330000) OR MsgType = 1)
+	WHERE (TargetId IN (3000,3100,3200,3300,300000,310000,320000,330000,
+						3110,3210,3310,3100100,3200100,3300100 --for i7 site
+						) OR MsgType = 1)
 	OPTION (OPTIMIZE FOR (@i = 1))
 END
