@@ -15,7 +15,8 @@ AS
 	Database:	DBMSG/bodb_Message
 	
 	Revisions:
-		
+		- 20180907@Elodie: Get New Message to send via chat bot- [Redmine: #95940]
+
 	Parameter's Explaination:
 		@Type:	0: Normal Msg
 				1: Personal Msg
