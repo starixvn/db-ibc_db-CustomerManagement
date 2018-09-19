@@ -205,7 +205,7 @@ BEGIN
 	       ci.DoubleCommLosing,
 	       --ci.HideVirtualSports,
 	       -- For Esports
-	       ci.DisableEsports,
+	       --ci.DisableEsports,
       
 	       ci.DisableCasinoBonus,
 	    
@@ -296,7 +296,9 @@ BEGIN
 						closed, MatchLimit, VirtualMultiplier, Enabled, 
 						DisableCasino, SyncCasino, DisableOutright, 
 						DisableNumber, 
-						DoubleCommLosing, DisableCasinoBonus,  HideKeno, DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet,HideColossusBet,
+						DoubleCommLosing, DisableCasinoBonus,  HideKeno, 
+						--DisableEsports, 
+						DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet,HideColossusBet,
 						(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
 						FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @srecommend) as SyncGoldDeluxeUpline,
 						-- For MuayThai						
@@ -459,7 +461,8 @@ BEGIN
 			   ci.DisableOutright, cm.DisableAutoMPT,			  
 			   ci.synccasino, ci.disablecasino,  
 			   ci.DisableNumber,
-			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, ci.DisableEsports,
+			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, 
+			   --ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableColossusBet,ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,
 			   ci.DisableAllBet,ci.DisableAllBetVIP,ci.HideAllBetUpline, ci.HideAllBet, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 			   ci.DisableCricket, ci.HideCricket, cdm.Discount,

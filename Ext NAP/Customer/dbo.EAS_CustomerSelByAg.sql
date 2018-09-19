@@ -167,7 +167,8 @@ BEGIN
 			DisableCasino, SyncCasino, DisableOutright,
 			DisableNumber,			
 			DoubleCommLosing, Recommend, DisableCasinoBonus,  HideKeno,
-			DisableEsports, DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,
+			--DisableEsports, 
+			DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,
 			(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
 			FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend) as SyncGoldDeluxeUpline,
 			-- For MuayThai
@@ -380,7 +381,7 @@ BEGIN
 	       ci.DoubleCommLosing,	   
            ci.DisableCasinoBonus,
 	       -- For Esports
-	       ci.DisableEsports,	       
+	       --ci.DisableEsports,	       
 	       -- For Keno
 	       ci.HideKeno,
 	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
@@ -493,7 +494,8 @@ BEGIN
 				ci.synccasino,
 				ci.disablecasino,  ci.DisableNumber,  
 			  	ci.DoubleCommLosing, ci.DisableCasinoBonus,
-				ci.HideKeno, ci.DisableEsports, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
+				ci.HideKeno, --ci.DisableEsports,
+				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
 				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,

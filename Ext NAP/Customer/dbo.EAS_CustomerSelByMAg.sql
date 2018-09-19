@@ -207,7 +207,7 @@ BEGIN
 	       ci.DoubleCommLosing,
 	      
 	       -- FOR Esports
-	       ci.DisableEsports,
+	       --ci.DisableEsports,
 
            ci.DisableCasinoBonus,
         

@@ -306,7 +306,7 @@ Param's Explanation:
 			--ISNULL(HideVirtualSports,0) as HideVirtualSports,
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
 			
-			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
+			--ISNULL(ci.DisableEsports, 0) AS DisableEsports,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
 			min(case when g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) then cg.IsDisabled else 1 end) as DisableKeno,
@@ -403,7 +403,7 @@ Param's Explanation:
 			--ci.HideVirtualSports, 
 			ci.DoubleCommLosing,
 		
-			ci.DisableEsports,
+			--ci.DisableEsports,
 			ci.HideKeno,
 			ci.DisableGoldDeluxe, 
 			ci.HideGoldDeluxe,

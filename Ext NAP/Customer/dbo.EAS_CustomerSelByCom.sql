@@ -221,7 +221,7 @@ BEGIN
 	       ci.DisableCasinoBonus,
 	    
 	       -- For Esports
-	       ci.DisableEsports,
+	       --ci.DisableEsports,
 	       -- For Keno
 	       ci.HideKeno,
 	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) as DisableKeno, 
@@ -379,7 +379,7 @@ BEGIN
 	  GROUP BY cu.custid, cu.username, ci.enabled, ci.closed, ci.reject, cu.roleid,
 			   cp.firstname, cp.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,			 
 			   ci.synccasino, ci.disablecasino, ci.DisableNumber,			
-			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, ci.DisableEsports,
+			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, --ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,
 			   cps.bitmapIsDisabled,cps.bitmapIsHidden, cps.bitmapHasSynced,cdm.Discount,cu.[site],cl.ClosedReason
 			   ,l.LimitDays, l.MinDate
