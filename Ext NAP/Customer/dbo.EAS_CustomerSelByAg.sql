@@ -505,7 +505,7 @@ BEGIN
 				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline,
 				ci.DisableBullFighting,ci.DisableBullFightingUpline, ci.HideBullFighting,ci.HideBullFightingUpline,
 				ci.DisablePokerGames1401,ci.DisablePokerGames1402, ci.DisablePokerGames1403, ci.DisablePokerGames1404, ci.DisablePokerGames1405, ci.HidePokerGames, ci.HidePokerGamesUpline,
-				ci.DisableEsports, ci.HideEsports,
+				ci.DisableEsports, ci.HideEsports
 	ORDER BY RowNumber
 
 
