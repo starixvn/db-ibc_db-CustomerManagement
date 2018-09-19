@@ -4,4 +4,4 @@ ALPHA\Customer\Agw_CustomerSelInfo.SQL
 Acc_CheckShowProduct.sql
 Acc_CustSetting_StatusSettingSelect.sql
 f_CustSetting_SportBetTypeSettingSelect.sql
-Ext NAP\Customer\EAS_CustomerSelStatus.sql
+Ext NAP\Customer\dbo.EAS_CustomerSelStatus.sql
