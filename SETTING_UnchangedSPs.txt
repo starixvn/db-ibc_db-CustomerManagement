@@ -1,8 +1,7 @@
 NAP-Accounting\Customer\Acc_CustomerSelAllInfo.SQL
-NAP-Accounting\ViewPT-Comm\dbo.Acc_MT_SportTypeSel.sql
 ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.SQL
 ALPHA\Customer\Agw_CustomerSelInfo.SQL
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_MAg.sql
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelCustWinlimit.sql
+Acc_CheckShowProduct.sql
+Acc_CustSetting_StatusSettingSelect.sql
+f_CustSetting_SportBetTypeSettingSelect.sql
+Ext NAP\Customer\EAS_CustomerSelStatus.sql

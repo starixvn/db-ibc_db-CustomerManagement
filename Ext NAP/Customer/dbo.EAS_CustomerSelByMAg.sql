@@ -55,7 +55,7 @@ Revisions:
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-	
+	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
 */
@@ -91,7 +91,8 @@ BEGIN
 		SELECT @HasSecurityCode = 1
 
 	-- For DCS
-    DECLARE	@bitmapOrder_MuayThai		INT 		
+    DECLARE	@bitmapOrder_MuayThai		INT 	
+		,	@bitmapOrder_Esports		INT 	
 		,	@bitmapOrder_Cricket		INT
 		,	@IsIMBC						BIT = 0
 		,	@bitmapOrder_AllBet			INT
@@ -109,7 +110,8 @@ BEGIN
 		,	@bitmapOrder_PokerGames1404	INT
 		,	@bitmapOrder_PokerGames1405	INT
 
-    SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)   
+    SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)  
+	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)  
     SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
@@ -128,6 +130,7 @@ BEGIN
 	SELECT	@bitmapOrder_PokerGames1405 = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 163 AND	psp.Bettype = 1405)
     
     DECLARE	@IsHidden_MuayThai		INT = 1	
+		,	@IsHidden_Esports		INT = 1	
 		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
@@ -138,7 +141,7 @@ BEGIN
 		,	@IsHidden_VS			INT = 1
 		,	@IsHidden_BullFighting	INT = 1
 		,	@IsHidden_PokerGames	INT = 1
-
+		
    	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
@@ -150,6 +153,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 33, @IsHide = @IsHidden_PokerGames OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
 
 	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @MRecommend AND [Site] = 'IMBC')
 		SET @IsIMBC = 1
@@ -219,6 +223,8 @@ BEGIN
 		   
 		   ISNULL(ci.DisableMuayThai,1) AS DisableMuayThai,
 		   ISNULL(ci.HideMuayThai,1) AS HideMuayThai,
+		   ISNULL(ci.DisableEsports,1) AS DisableEsports,
+		   ISNULL(ci.HideEsports,1) AS HideEsports,
 		
 		   ISNULL(ci.DisableAllBet,1) AS DisableAllBet,
 		   ISNULL(ci.DisableAllBetVIP,1) AS DisableAllBetVIP,
@@ -305,6 +311,9 @@ BEGIN
 							-- For MuayThai
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)) AS DisableMuayThai,
 							CAST(CASE WHEN @IsHidden_MuayThai = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
+							-- For Esports
+							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Esports)) AS DisableEsports,
+							CAST(CASE WHEN @IsHidden_Esports = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 							-- For AllBet
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBet)) AS DisableAllBet,
 							(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)) AS DisableAllBetVIP,
@@ -479,6 +488,7 @@ BEGIN
 			ci.DisableBullFighting,ci.DisableBullFightingUpline, ci.HideBullFighting,ci.HideBullFightingUpline,
 			ci.SyncedGoldDeluxeDownline,
 			ci.DisablePokerGames1401,ci.DisablePokerGames1402, ci.DisablePokerGames1403, ci.DisablePokerGames1404, ci.DisablePokerGames1405, ci.HidePokerGames, ci.HidePokerGamesUpline
+			,ci.DisableEsports,ci.HideEsports
 	ORDER BY RowNumber
 END
 GO
