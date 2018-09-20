@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier   
 					@custid				INT
 				,	@EnableVirtualrate	BIT				= 0
@@ -12,7 +12,7 @@ AS
 /*  
 	Created:	
 	Task:		Update virtualmultiplier.  
-	DB:			DBTXN/CustDB
+	DB:			DBCUST/CustDB
 	Original:	
   
 	Revisions:  
