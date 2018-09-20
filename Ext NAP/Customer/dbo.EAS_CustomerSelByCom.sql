@@ -5,7 +5,8 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]
     @Enabled	bit = null,
     @Closed		bit = null,
     @Suspended	bit = NULL,
-	@UserID		INT = NULL
+	@UserID		INT = NULL,
+	@IsDataLimited	BIT	= 0
 AS  
 
 /*  
@@ -54,6 +55,9 @@ Revisions:
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20180907@Winnie: EXT-Function to control data range for SMA - [Redmine: #100067]
+	- 20180731@Razor: Splitting Super Profile [#86934]
+
 	
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
@@ -182,8 +186,8 @@ BEGIN
            ci.closed,
            ISNULL(ci.reject, 0) as suspended,
            cu.roleid,
-           ISNULL(cu.firstname, '') as firstname,
-           ISNULL(cu.lastname, '') as lastname,
+           ISNULL(cp.firstname, '') as firstname,
+           ISNULL(cp.lastname, '') as lastname,
 	       
 		   MAX(case when cs.bettype = 1 and cs.sporttype=1 then cs.groupa else 0 end) as groupa,
 		   MAX(case when cs.bettype = 1 and cs.sporttype=1 then cs.groupb else 0 end) as groupb,
@@ -340,12 +344,15 @@ BEGIN
 
 			1 AS UplineHasSecurityCode,
 			@HasSecurityCode AS HasSecurityCode,
+			l.LimitDays,
+			l.MinDate,			
 	       ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed,
 	                                  ISNULL(ci.reject,0), cu.username) as RowNumber
       FROM dbo.customer cu with(nolock)
 		INNER JOIN @tmpSuperList sl on sl.custid = cu.custid
 		INNER JOIN CustSuper CSuper WITH (NOLOCK) ON CSuper.Custid = sl.Custid
 		INNER JOIN dbo.custinfo ci with(nolock) on ci.custid = cu.custid
+		INNER JOIN dbo.CustSuperProfile cp WITH(NOLOCK) ON cp.CustId = cu.CustId
 		 LEFT JOIN dbo.CustSetting as cs with(NOLOCK) on cu.custid = cs.custid
 		 LEFT JOIN dbo.custsetting3rd cs3 with(nolock) on cu.custid = cs3.custid
 		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cu.custid = cg.CustID
@@ -357,17 +364,19 @@ BEGIN
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
 		-- Check isHidden AllBet
 		--OUTER APPLY	dbo.f_CustSetting_SportBetTypeHiddenBySiteCurrency(cu.custid, @AllBet) AS sbhsc
-		   
+		LEFT JOIN DBAGE.bodb_Age.dbo.Age_CustDateLimit l WITH(NOLOCK) ON cu.CustID=l.CustId   
 		
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1,5,4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
 			AND (@IsInternalAdmin = 0 OR cu.site NOT IN (SELECT site FROM @tmp ))
+			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
 	  GROUP BY cu.custid, cu.username, ci.enabled, ci.closed, ci.reject, cu.roleid,
-			   cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,			 
+			   cp.firstname, cp.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,			 
 			   ci.synccasino, ci.disablecasino, ci.DisableNumber,			
 			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,
 			   cps.bitmapIsDisabled,cps.bitmapIsHidden, cps.bitmapHasSynced,cdm.Discount,cu.[site],cl.ClosedReason
+			   ,l.LimitDays, l.MinDate
 	ORDER BY RowNumber
 			   
 END
