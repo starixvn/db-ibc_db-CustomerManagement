@@ -1,23 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel];
-GO
-USE [CustDB];
-GO
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
-/****** Object:  StoredProcedure [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel]    Script Date: 07/07/2015 16:09:00 ******/
-
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username VARCHAR(100) = ''
 AS
 	
@@ -30,6 +12,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 
 Parameters Explanation:
 
@@ -116,9 +99,9 @@ EXEC [NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username = 'SPONUUS01
                                        ELSE ProductID
                                    END AS ProductID,
                                    LicenseeId
-                            FROM DBLIC.bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
+                            FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
                         ) AS lp ON p.ProductId = lp.ProductId
-                             INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp.licenseeId
+                             INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp.licenseeId
                              INNER JOIN dbo.[Site] s WITH (NOLOCK) ON l.LicenseeName = s.[site]
                         WHERE s.[siteid] = @SiteId;
              END;
@@ -166,8 +149,4 @@ EXEC [NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username = 'SPONUUS01
                    AND p.LevelId = e.LevelId
          );
      END;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel] TO [vnteam];
 GO

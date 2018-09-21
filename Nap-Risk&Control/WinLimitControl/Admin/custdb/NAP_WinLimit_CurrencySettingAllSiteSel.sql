@@ -1,20 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CurrencySettingAllSiteSel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel];
-GO
-USE [CustDB];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId  INT,
                                                                 @CurrencyId INT = 0
 AS
@@ -28,7 +13,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
-
+20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 Parameters Explanation:
    @ProductId: Product ID
    
@@ -50,8 +35,8 @@ EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
          )
                 SELECT l.LicenseeId,
                        l.LicenseeName
-                FROM DBLIC.bodb_licensee.dbo.LicenseeProduct3rd lp WITH (NOLOCK)
-                     INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeId = lp.LicenseeId
+                FROM bodb_licensee.dbo.LicenseeProduct3rd lp WITH (NOLOCK)
+                     INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeId = lp.LicenseeId
                      INNER JOIN
                 (
                     SELECT DISTINCT
@@ -94,7 +79,7 @@ EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
                        s.siteId,
                        lc.Currency,
                        0 AS IsCreditSite
-                FROM DBLIC.bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
+                FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
                      INNER JOIN @AllLicensees l ON l.LicenseeID = lc.LicenseeID
                      INNER JOIN exchange ex WITH (NOLOCK) ON ex.exchangeid = lc.Currency
                      INNER JOIN dbo.site s ON s.site = l.LicenseeName
@@ -138,8 +123,4 @@ EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
                   p.LevelId;
      END;
      DROP TABLE #ProductSiteCurrencySetting;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel] TO [vnteam];
 GO

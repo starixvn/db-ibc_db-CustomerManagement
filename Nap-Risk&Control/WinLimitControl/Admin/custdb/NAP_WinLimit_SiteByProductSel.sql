@@ -1,21 +1,7 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_SiteByProductSel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_SiteByProductSel];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 CREATE PROCEDURE [dbo].[NAP_WinLimit_SiteByProductSel] @ProductId INT = 0
 AS
-
 /*
 Created: Franklin	
 Date: 2016-06-22
@@ -25,6 +11,7 @@ DB: DBCUST/CustDB
 
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 
 Parameters Explanation:
 	   @ProductId: Product ID
@@ -86,7 +73,7 @@ EXEC [NAP_WinLimit_SiteByProductSel]
                                ELSE ProductID
                            END AS ProductID,
                            LicenseeId
-                    FROM DBLIC.bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
+                    FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
                     WHERE ProductID IN
                     (
                         SELECT CASE
@@ -97,7 +84,7 @@ EXEC [NAP_WinLimit_SiteByProductSel]
                         FROM dbo.f_Nap_WinLimit_ProductSettingSel(@ProductId)
                     )
                 ) AS lp3rd
-                INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp3rd.licenseeId
+                INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp3rd.licenseeId
                 INNER JOIN DBLIC.bodb_licensee.dbo.OAS_Party pt WITH (NOLOCK) ON pt.OldRefID = lp3rd.licenseeId
                                                                                  AND pt.PartyType = 1;
      END;
@@ -125,8 +112,4 @@ EXEC [NAP_WinLimit_SiteByProductSel]
      DROP TABLE #Party;
      DROP TABLE #PartyGroup;
      DROP TABLE #DepositLicenseeProduct;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_SiteByProductSel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_SiteByProductSel] TO [vnteam];
 GO
