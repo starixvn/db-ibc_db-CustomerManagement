@@ -1,28 +1,24 @@
-
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
+/*<info serverAlias="DBCUST-bodb_licensee" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
+USE bodb_licensee 
 GO
 
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee    Script Date: 10/28/2014 9:45:18 AM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee    Script Date: 10/23/2014 12:48:23 PM ******/
-CREATE PROCEDURE [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee]
+ALTER PROCEDURE [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT
 AS
 /*
-Created: Dom
-		Date: 2014-09-03
-		Task: Get List of Agent by Licensee and currency
-		DB: DBLIC/bodb_licensee
+	Created: Dom
+	Date: 2014-09-03
+	Task: Get List of Agent by Licensee and currency
+	DB: DBCUST/bodb_licensee
 		
-		Revisions:
+	Revisions:
 
 */
 BEGIN
 	DECLARE @LicenseeID INT 
 	SELECT @LicenseeID = [site].SiteID
-	FROM bodb02.dbo.[Site] ibcsite (NOLOCK)
+	FROM dbo.[Site] ibcsite (NOLOCK)
      LEFT JOIN view_site_list [site] WITH(NOLOCK) ON ibcsite.siteid=site.IbcSiteID
 	 WHERE ibcsite.[Site] = @licensee
 
