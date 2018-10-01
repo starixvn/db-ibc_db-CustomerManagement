@@ -1,18 +1,22 @@
-/*<info serverAlias="DBLIC-bodb_licensee" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
-USE bodb_licensee 
+
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
 GO
 
-ALTER PROCEDURE [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee]
+/****** Object:  Stored Procedure dbo.NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee    Script Date: 10/28/2014 9:45:18 AM ******/
+/****** Object:  Stored Procedure dbo.NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee    Script Date: 10/23/2014 12:48:23 PM ******/
+CREATE PROCEDURE [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT
 AS
 /*
-	Created: Dom
-	Date: 2014-09-03
-	Task: Get List of Agent by Licensee and currency
-	DB: DBLIC/bodb_licensee
+Created: Dom
+		Date: 2014-09-03
+		Task: Get List of Agent by Licensee and currency
+		DB: DBLIC/bodb_licensee
 		
-	Revisions:
+		Revisions:
 
 */
 BEGIN
@@ -27,4 +31,17 @@ BEGIN
 	SELECT CustID FROM dbo.licenseecust WITH(NOLOCK) WHERE LicenseeID = @LicenseeID AND Currency = @CurrencyID
 
 	SELECT CustID AgentID, UserName AgentName FROM bodb02.dbo.CustInfo WITH(NOLOCK) WHERE CustID IN(SELECT AgentID from @Agent)
-END 
+END
+GO
+
+SET QUOTED_IDENTIFIER OFF 
+GO
+SET ANSI_NULLS ON 
+GO
+
+
+GO 
+ GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee] TO [vnteam]
+GO 
+ GRANT EXECUTE ON [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee] TO [bodbLicenseeNet]
+GO 
