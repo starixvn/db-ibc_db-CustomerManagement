@@ -18,6 +18,7 @@ Revisions:
 	- 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language
     - 20130311@Dan: Write more log on DBTXN server in case of DBLOG server failure
     - 20141117@Johnson: write log IP
+	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 Param's Explanation:
 • @custid: custid that need to be update.   
 */
@@ -35,6 +36,8 @@ BEGIN
 ---Check duplicate Nickname
 IF EXISTS (SELECT TOP 1 1 FROM Customer WITH (NOLOCK) WHERE Username2 = @Nickname OR Username = @Nickname)
    OR EXISTS (SELECT TOP 1 1 FROM CustSub WITH (NOLOCK) WHERE Username = @Nickname)
+   OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @Nickname)
+	OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @Nickname)
 BEGIN 
     SELECT  @ErrMsg = CASE @language
                           WHEN 'E' THEN 'Nickname is not available'

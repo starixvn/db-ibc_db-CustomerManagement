@@ -10,6 +10,7 @@ AS
 	
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+		- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	Parameter's Explanation:
 */	
 BEGIN
@@ -18,6 +19,8 @@ BEGIN
 	IF EXISTS(SELECT 1 FROM customer WITH(NOLOCK) WHERE username = @username)
 		OR EXISTS (SELECT 1 FROM customer WITH (NOLOCK) WHERE username2 = @username)
 		OR EXISTS(SELECT 1 FROM custsub WITH (NOLOCK) WHERE username = @username)
+		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
+		OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
 			SELECT @isExists = 1
 	ELSE 
 			SELECT @isExists = 0

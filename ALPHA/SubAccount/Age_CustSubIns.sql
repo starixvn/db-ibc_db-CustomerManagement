@@ -1,6 +1,4 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_Message]
-GO
 ALTER PROCEDURE [dbo].[Age_CustSubIns]
 	@subaccid int OUTPUT,
 	@custid int, -- agentid or masterid or superid
@@ -37,6 +35,7 @@ Revisions:
 	- 20130424@Jamie: Set isForcedChangeSecurityCode = 1 WHEN Upline's SecurityCode NOT NULL
 	- 20140709@Logan: Force using Security Code for SMA from all sites (except 789y) [Redmine:#18121]
 	- 20180621@Razor: Add Message Customer Read Status [Redmind: #94705]
+	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -87,6 +86,8 @@ select @success = 0, @username = LTRIM(RTRIM(@username))
 --check duplicate username
 IF (exists (select 1 from custsub with (nolock) where username = @username))
 	OR (exists (select 1 from customer with (nolock) where username = @username OR username2 = @username  ) )
+	OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
+	OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
 BEGIN
 	select @ErrMsg = case @Language 
 			when 'E' then 'This user name is not available.'

@@ -31,7 +31,8 @@ Revisions:
 					   Write more log on DBTXN server in case of DBLOG server failure
 	- 20141126@Dom: Synchronize user data between Accounting and AdminSite: Insert data to AdminSiteUser table
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-	
+	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
+
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -66,6 +67,7 @@ BEGIN
 	IF EXISTS (SELECT 1
 			   FROM   customer WITH (NOLOCK)
 			   WHERE  username = @username)
+		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
 		BEGIN
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This username is not available. ' WHEN 'CS' THEN N'This username is not available. ' WHEN 'J' THEN N'This username is not available. ' ELSE N'This username is not available. ' END,
 				   @ErrCode = 102;
