@@ -1,7 +1,4 @@
 /*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_AGE]
-GO
-
 ALTER PROCEDURE [dbo].[NAP_LimitLoss_SMANotificationUpd]
     @CustId				INT = NULL,
     @NotifyLetsTalk		BIT,
@@ -45,7 +42,7 @@ BEGIN
 
     SET		 @startRun = GETDATE()
 
-	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='LossMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey='LossMonitor',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 
