@@ -16,6 +16,7 @@ AS
 	
 	Revisions:
 		- 20180907@Elodie: Get New Message to send via chat bot- [Redmine: #95940]
+		- 20181002@Elodie: Prevent get real messages in test environments- [Redmine: #95940]
 
 	Parameter's Explaination:
 		@Type:	0: Normal Msg
@@ -48,7 +49,7 @@ BEGIN
 		WHERE PostTime BETWEEN @FromTime AND @ToTime
 			AND MsgType = 3 AND IsSticky = 0
 			AND isDeleted=0 
-			AND IsTest <=@IsTest
+			AND IsTest =@IsTest
 
 		SELECT @RowCount = @@ROWCOUNT
 	END
@@ -60,7 +61,7 @@ BEGIN
 		WHERE PostTime BETWEEN @FromTime AND @ToTime
 			AND MsgType = 1
 			AND isDeleted=0 
-			AND IsTest <=@IsTest
+			AND IsTest =@IsTest
 
 		SELECT @RowCount = @@ROWCOUNT
 	END
@@ -74,7 +75,7 @@ BEGIN
 			--it's not good for the UX. The message should be sent only once as a personal message.
 			AND MsgType = 3 AND IsSticky = 1 
 			AND isDeleted=0 
-			AND IsTest <=@IsTest
+			AND IsTest =@IsTest
 
 		SELECT @RowCount = @@ROWCOUNT
 	END
