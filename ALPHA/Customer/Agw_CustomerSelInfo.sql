@@ -31,6 +31,7 @@ AS
 		- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
 		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20180918@Winnie: Esports Product - [Redmine: #101526]	
 */
 BEGIN
     SET NOCOUNT ON
@@ -117,7 +118,7 @@ BEGIN
          , ci.credit
          , ci.DoubleCommLosing
          , ci.HideKeno
-         , ci.DisableEsports
+         --, ci.DisableEsports
 		 , ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe
 		 , ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe
 		 

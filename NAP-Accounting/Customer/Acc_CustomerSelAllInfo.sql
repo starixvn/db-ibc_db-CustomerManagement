@@ -98,6 +98,7 @@ Revisions:
 	- 20180205@Johnson: remove downline NG/CB/GD/CS status for new direction [RedmineID: #87328]
 	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
 	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
+	- 20181003@Winnie: Remove old Esports  - [Redmine: #101526]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -112,7 +113,7 @@ BEGIN
           , @UsedCredit MONEY     
           , @DisableDownlinesNumber BIT
           --, @DisableDownlinesVirtualSports BIT
-          , @DisableDownlinesEsports BIT
+          --, @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT		  
 		  , @IsSyncUplineGoldDeluxe BIT
 		  , @DisabledUplineGoldDeluxe BIT		  
@@ -191,10 +192,10 @@ BEGIN
 				--						     WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableVirtualSports = 1) 											 
 				--						     ELSE 0 END
 
-    SELECT @DisableDownlinesEsports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableEsports = 1)
-											WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
-											WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE recommend = @custid  AND DisableEsports = 1)
-											ELSE 0 END
+    --SELECT @DisableDownlinesEsports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableEsports = 1)
+				--							WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
+				--							WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE recommend = @custid  AND DisableEsports = 1)
+				--							ELSE 0 END
 										      
 	SELECT @DisableDownlinesSuperLive = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableSuperLive = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableSuperLive = 1) 											 
@@ -523,7 +524,7 @@ BEGIN
 		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
-		ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
+		--ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
 		ISNULL(@DisableDownlinesSuperLive,0) DisableDownlinesSuperLive,
 		@IsSyncUplineGoldDeluxe AS IsSyncUplineGoldDeluxe,
 		@DisabledUplineGoldDeluxe AS DisabledUplineGoldDeluxe,
