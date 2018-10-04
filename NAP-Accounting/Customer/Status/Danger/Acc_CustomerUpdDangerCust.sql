@@ -195,22 +195,12 @@ BEGIN
 
 
 
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+	EXEC Acc_WriteLog_UserLog_RunSP_Wrapper
 			@UserID = @UserID,
 			@CustID = @CustID,
 			@ActionID = 1114,
 			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END TRY
-	BEGIN CATCH
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@ActionID = 1114,
-			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END CATCH
+			@duration = @duration	
 END
 
 
