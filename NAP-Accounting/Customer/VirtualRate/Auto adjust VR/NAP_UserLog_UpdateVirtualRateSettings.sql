@@ -33,8 +33,8 @@ AS
 
 	Param's Explanation:  
 		- @PunterVRSettingsDoc = '<ROOT>
-									<Rate CustID="123456" ReportDate="2016-04-04" SiteID="22" SRecommend="123" MRecommend="456" Recommend="789" OldVirtualRate="0.2" NewVirtualRate="0.8" />	
-									<Rate CustID="7891011" ReportDate="2016-04-05" SiteID="122" SRecommend="21123" MRecommend="11456" Recommend="12789" OldVirtualRate="0.5" NewVirtualRate="0.7" />	
+									<Rate CustID="123456" ReportDate="2016-04-04" SiteID="22" SRecommend="123" MRecommend="456" Recommend="789" OldVirtualRate="0.2" NewVirtualRate="0.8" IsBA="1" />	
+									<Rate CustID="7891011" ReportDate="2016-04-05" SiteID="122" SRecommend="21123" MRecommend="11456" Recommend="12789" OldVirtualRate="0.5" NewVirtualRate="0.7" IsBA="0" />	
 								</ROOT>'
 */
 
@@ -89,7 +89,7 @@ BEGIN
 		,	ul.MRecommend
 		,	ul.Recommend
 		,	ul.OldVirtualRate
-		,	CASE WHEN ul.NewVirtualRate = 3 AND ul.IsBA = 1 THEN 1 ELSE NewVirtualRate END
+		,	ul.NewVirtualRate
 		,	ul.IsBA
 		,	@ServiceName
 	FROM #UserLog ul WITH(NOLOCK);
