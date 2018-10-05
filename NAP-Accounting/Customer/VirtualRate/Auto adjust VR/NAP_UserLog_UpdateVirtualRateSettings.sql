@@ -1,12 +1,7 @@
-USE [bodb_CustomerLog]
-GO
-/****** Object:  StoredProcedure [dbo].[NAP_UserLog_UpdateVirtualRateSettings]    Script Date: 11/24/2017 3:14:27 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-/****** Object:  Stored Procedure dbo.NAP_UserLog_UpdateVirtualRateSettings    Script Date: 9/28/2017 10:27:26 AM ******/
-
 
 ALTER PROCEDURE [dbo].[NAP_UserLog_UpdateVirtualRateSettings]	 
 	 @CreatorId					INT = 0,   
@@ -105,3 +100,6 @@ BEGIN
 
 	EXEC sp_xml_removedocument @idoc;
 END;
+
+GO
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
