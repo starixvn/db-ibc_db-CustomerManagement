@@ -13,7 +13,7 @@ ALTER PROCEDURE [dbo].[Acc_WriteLog_UserLog_RunSP_Wrapper]
 /* 
 	Created: 20180924@Elodie
     Task: ViewLog function
-    DB: DBCUST/bodb_Licensee
+    DB: DBCUST/CustDB
 
 	Revisions:
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]

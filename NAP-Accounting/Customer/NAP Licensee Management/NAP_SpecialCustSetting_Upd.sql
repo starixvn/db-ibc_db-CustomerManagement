@@ -1,13 +1,9 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/ 
 
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
+USE CustDB
 GO
 
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Upd    Script Date: 10/28/2014 9:45:19 AM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Upd    Script Date: 10/23/2014 12:48:25 PM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Upd    Script Date: 10/23/2014 8:38:07 AM ******/
-CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_Upd]
+ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Upd]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT,
 	@AgentID INT = NULL,
@@ -18,12 +14,12 @@ CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_Upd]
 	@UserID INT
 AS
 /*
-Created: Dom
-		Date: 2014-09-03
-		Task: Update Hardcode setting
-		DB: DBTXN/CustDB
+	Created: Dom
+	Date: 2014-09-03
+	Task: Update Hardcode setting
+	DB: DBCUST/CustDB
 		
-		Revisions:
+	Revisions:
 
 */
 
@@ -70,8 +66,8 @@ BEGIN
 	DECLARE @HarcodeSetting_Keno TABLE(SportType INT, BetType INT, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY)
 
 	SELECT @LicenseeID = [site].SiteID 
-	FROM DBLIC.bodb02.dbo.[Site] ibcsite 
-		LEFT JOIN DBLIC.bodb_Licensee.dbo.view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
+	FROM dbo.[Site] ibcsite 
+		LEFT JOIN bodb_Licensee.dbo.view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
 	WHERE islicensee=1 AND [site].SiteName = @Licensee
 
 	INSERT INTO @HarcodeSetting(SportType, BetType, MaxBet, MaxPerMatch, MaxPerBall)
@@ -112,14 +108,14 @@ BEGIN
 	)
 	BEGIN
 		PRINT 'DELETE SETTING'
-								EXEC [NAP_SpecialCustSetting_Del]
-				@Licensee = @Licensee,
-				@CurrencyID = @CurrencyID,
-				@AgentID = @AgentID,
-				@ErrCode = @ErrCode OUTPUT,
-				@ErrMsg = @ErrMsg OUTPUT,
-				@IP = @IP,
-				@UserID = @UserID
+		EXEC [NAP_SpecialCustSetting_Del]
+			@Licensee = @Licensee,
+			@CurrencyID = @CurrencyID,
+			@AgentID = @AgentID,
+			@ErrCode = @ErrCode OUTPUT,
+			@ErrMsg = @ErrMsg OUTPUT,
+			@IP = @IP,
+			@UserID = @UserID
 		RETURN;
 	END
 
@@ -188,7 +184,7 @@ BEGIN
 		RETURN;
 	END
 
-				EXEC DBLOG.bodb_customerlog.dbo.NAP_SpecialCustSetting_WriteLog
+	EXEC DBLOG.bodb_customerlog.dbo.NAP_SpecialCustSetting_WriteLog
 		@UserId = @UserID,
 		@IP = @IP,
 		@LicenseeID = @LicenseeID,
