@@ -18,6 +18,7 @@ AS
 		
 		Revisions:
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
+			- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 			
 		Parameter's Explanation:
 	*/
@@ -35,6 +36,7 @@ SET NOCOUNT ON
 		RETURN
 	
 	IF EXISTS (SELECT 1 FROM Customer WITH(NOLOCK) WHERE username = @username)
+		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
 	BEGIN
 		SELECT @ErrMsg = 'This username is not available',
 			@ErrCode = 100
