@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerCheckExists]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerCheckExists]
 	@username	 VARCHAR(50),
 	@isExists	 BIT = 0 OUTPUT
 AS
