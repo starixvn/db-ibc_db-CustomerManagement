@@ -4,7 +4,9 @@ GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@username VARCHAR(30),
-	@CheckCustId TINYINT = 0
+	@CheckCustId TINYINT = 0,
+	@ErrCode INT = 0 OUTPUT,
+	@ErrMsg VARCHAR(500) = '' OUTPUT
 AS
 
 /*
@@ -94,6 +96,7 @@ Revisions:
 		2. Change yesterday balance formula + Integrate Bullfighting [RedmineID: #84692]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180205@Johnson: remove downline NG/CB/GD/CS status for new direction [RedmineID: #87328]
+	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -145,9 +148,19 @@ BEGIN
     --Get CustID FROM DB06, WHERE got index on Username AND Username2 or CustID
     EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
 
+	SELECT @ErrCode = 0, @ErrMsg = ''
+
     IF @custid is NULL
     BEGIN
-	    RETURN
+		IF EXISTS(SELECT 1 FROM Dep_Customer_Archived (NOLOCK) WHERE Username=@username)
+		BEGIN
+			SELECT @ErrMsg = 'This deposit customer has been archived.'
+			SELECT @ErrCode = 1
+
+			RETURN
+		END
+		ELSE
+			RETURN 
     END
     ELSE
     BEGIN
