@@ -13,6 +13,17 @@ ALTER PROCEDURE NAP_SpecialCustSetting_Modify
 	@IP NVARCHAR(20),
 	@UserID INT
 AS
+/*
+	Created: Dom
+	Date: 2014-09-03
+	Task: 
+	DB: DBCUST/CustDB
+		
+	Revisions:
+		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+
+*/
+
 BEGIN
 	IF(
 		NOT EXISTS(SELECT TOP 1 1 FROM [Dep_CustBetLimit_Special] cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID=@CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR (AgentID = @AgentID)) ) AND
