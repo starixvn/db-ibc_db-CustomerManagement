@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserInfoAddNew]
 	@userID	INT = 0,	
 	@Username	VARCHAR(50),
