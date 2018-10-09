@@ -1,4 +1,5 @@
-﻿ALTER  PROCEDURE [dbo].[Age_CustomerInsNickName] 
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+ALTER  PROCEDURE [dbo].[Age_CustomerInsNickName] 
 	@custid			INT,
 	@Nickname		VARCHAR(50) = NULL,
 	@IP				VARCHAR(30) = '',
