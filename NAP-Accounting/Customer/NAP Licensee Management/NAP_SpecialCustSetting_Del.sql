@@ -19,6 +19,7 @@ AS
 	DB: DBCUST/CustDB
 		
 	Revisions:
+		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 
 */
 BEGIN
