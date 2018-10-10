@@ -10,23 +10,31 @@ Original: Accounting site
 
 Revisions:
     - 20180530@Kan: Get existing username list from a string separated by (,) [RedmineId: #84739] 
+	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 Param's Explanation:
     @Usernames: username string want to check
 */		
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @TempUsername TABLE(Username VARCHAR(50))
+    CREATE TABLE #TempUsername (Username VARCHAR(50))
 
-    INSERT INTO @TempUsername(Username)
+    INSERT INTO #TempUsername(Username)
     SELECT DISTINCT LTRIM(RTRIM(val)) FROM dbo.strSplit(@Usernames,',')
 
     SELECT t.Username,
-		CASE WHEN c.username IS NULL AND c2.username2 IS NULL AND cb.username IS NULL THEN 0
+		CASE 
+			WHEN c.username IS NULL 
+			AND c2.username2 IS NULL
+			AND ca.Username IS NULL  
+			AND ca2.Username2 IS NULL  
+			AND cb.username IS NULL THEN 0
 		ELSE 1 END AS Existing
-	FROM @TempUsername t
+	FROM #TempUsername t
 		LEFT JOIN dbo.Customer c WITH (NOLOCK) ON c.username = t.Username
+		LEFT JOIN dbo.Dep_Customer_Archived ca WITH (NOLOCK) ON ca.username = t.Username
 		LEFT JOIN dbo.Customer c2 WITH (NOLOCK) ON c2.username2 = t.Username
+		LEFT JOIN dbo.Dep_Customer_Archived ca2 WITH (NOLOCK) ON ca2.username2 = t.Username
 		LEFT JOIN dbo.custSub cb WITH (NOLOCK) ON cb.username = t.Username
 END
 GO
