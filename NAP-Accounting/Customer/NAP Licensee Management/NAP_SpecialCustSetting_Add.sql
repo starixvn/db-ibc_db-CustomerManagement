@@ -69,7 +69,7 @@ BEGIN
 
 	SELECT @LicenseeID = [site].SiteID 
 	FROM dbo.[Site] ibcsite 
-		LEFT JOIN bodb_Licensee.dbo.view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
+		LEFT JOIN bodb_Licensee.dbo.Lrf_view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
 	WHERE islicensee=1 AND [site].SiteName = @Licensee
 
 
