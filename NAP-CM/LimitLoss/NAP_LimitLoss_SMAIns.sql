@@ -22,7 +22,7 @@ AS
 		- 20170915@Elodie: Support Group Headline Setting [Redmine: #82892]
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 		- 20180301@Elodie: Support send lettalk notification [RedmineID: #91064]
-		- 20180925@Helen: DB052.bodb_NAP Migration to DBCust - [Redmine:100493]
+		- 20180925@Helen: Write log on dbcust if dblog failed + DB052.bodb_NAP Migration to DBCust - [Redmine:100493]
 		
 	Parameter's explaination: 
 		- Mode =	0: SMA setting
@@ -146,7 +146,7 @@ BEGIN
 				@Duration = @duration			
 		END TRY
 		BEGIN CATCH
-			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			EXEC DBCUST.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 				@Userid = @UserID,
 				@CustID = @CustID,
 				@ActionID = 666,
