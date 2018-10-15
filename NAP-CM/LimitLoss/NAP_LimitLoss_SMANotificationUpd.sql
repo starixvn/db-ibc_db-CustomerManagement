@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20180301@Elodie: Support send lettalk notification [RedmineID: #91064]
+		- 20180925@Helen: DB052.bodb_NAP Migration to DBCust - [Redmine:100493]
 			 
 	Parameter's explaination: 
 		- Mode =	0: SMA setting
