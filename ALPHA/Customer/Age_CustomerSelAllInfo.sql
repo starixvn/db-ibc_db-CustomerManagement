@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
+ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo_xpre]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
 	@isInternalAgent BIT = 0
@@ -88,41 +88,43 @@ BEGIN
     --end
 
     --Check valid access!
-    IF (@custid IS NULL) RETURN
-    IF (@recommend <> @uplineid AND @mrecommend <> @uplineid AND @srecommend <> @uplineid) RETURN
+    IF @custid IS NOT NULL
+	BEGIN
+		IF (@recommend <> @uplineid AND @mrecommend <> @uplineid AND @srecommend <> @uplineid) RETURN
     	
-    IF @roleID=1 --for member
-    BEGIN	
-		--Upline
-	    SELECT	@upLineEnabled = ISNULL(Enabled, 0)
-	    FROM custinfo WITH(NOLOCK)
-	    WHERE custID = @recommend	
+		IF @roleID=1 --for member
+		BEGIN	
+			--Upline
+			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			FROM custinfo WITH(NOLOCK)
+			WHERE custID = @recommend	
 		
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
-    END 
-    ELSE IF @roleID = 2 --for agent
-    BEGIN
-		--Upline
-		SELECT	@upLineEnabled = ISNULL(Enabled, 0)
-	    FROM custinfo WITH(NOLOCK)
-	    WHERE custID = @mrecommend	
+			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
+		END 
+		ELSE IF @roleID = 2 --for agent
+		BEGIN
+			--Upline
+			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			FROM custinfo WITH(NOLOCK)
+			WHERE custID = @mrecommend	
 
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
-    END
-    ELSE IF @roleID = 3 --for master
-    BEGIN
-	    --Upline
-		SELECT	@upLineEnabled = ISNULL(Enabled, 0)
-	    FROM custinfo WITH(NOLOCK)
-	    WHERE custID = @srecommend	
+			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
+		END
+		ELSE IF @roleID = 3 --for master
+		BEGIN
+			--Upline
+			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
+			FROM custinfo WITH(NOLOCK)
+			WHERE custID = @srecommend	
 
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
-    END
+			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
+		END
     
-	IF @roleid=1
-		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid = @custid
-	ELSE
-		SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid = @custid	
+		IF @roleid=1
+			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid = @custid
+		ELSE
+			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid = @custid	
+	END
 
 	-------------------------------------------------------------------------
     SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ci.credit, ISNULL(@ClosedReason,0) AS ClosedReason, 
@@ -135,12 +137,13 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn			
     FROM custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid	
 	    LEFT JOIN custinfo a WITH (NOLOCK) ON c.recommend = a.custid
 	    LEFT JOIN custinfo m WITH (NOLOCK) ON c.mrecommend = m.custid
 	    LEFT JOIN custinfo s WITH (NOLOCK) ON c.srecommend = s.custid
     WHERE c.custid = @custid
+
 END	
 GO
