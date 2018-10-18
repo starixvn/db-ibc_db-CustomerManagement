@@ -21,6 +21,7 @@ TASk : Splitting Super Profile
 DB: DBCUST/CustDB
 Revisions:  
 	- 20180731@Razor: Splitting Super Profile [#86934]
+	- 20181018@Razor: Write log to DBCust when write log has exception [redmine:#103415]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -96,7 +97,7 @@ BEGIN
 
 		SELECT @newValue = @newValue + '" ErrMsg="' + ERROR_MESSAGE() + '" />'
 
-		EXEC DBTXN.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @userid
+		EXEC DBCUST.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP @UserID = @userid
 			,@CustID = @CustID
 			,@ActionID = @ActionID
 			,@TrackingValue = @newValue
