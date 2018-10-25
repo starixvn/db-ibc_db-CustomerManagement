@@ -1,4 +1,7 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@CustID int,
 	@UpdateDownline bit = 0,
@@ -35,7 +38,8 @@ Revisions:
 	- 20130201@Daniel: Change link server alias & failover writelog to DBTXN
 	- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-	
+	- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+
 Param's Explanation:
 	@CustID: Id of member will be updated,
 	@DangerType: type of danger,
@@ -82,7 +86,7 @@ BEGIN
 					BEGIN
 						DECLARE @BAMemberAg AS TABLE (CustID INT  PRIMARY KEY)
 						INSERT INTO @BAMemberAg 
-						SELECT lb.CustID FROM DBLIC.bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+						SELECT lb.CustID FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
 						INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
 						WHERE lb.Status='Running' 
 						AND ci.recommend=@custid
@@ -110,7 +114,7 @@ BEGIN
 				else
 				BEGIN
 					IF EXISTS (
-						 SELECT 1 FROM DBLIC.bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+						 SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
 						 WHERE custid=@custid AND status='running'
 						)
 						SET @isBA=1
@@ -191,22 +195,12 @@ BEGIN
 
 
 
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+	EXEC Acc_WriteLog_UserLog_RunSP_Wrapper
 			@UserID = @UserID,
 			@CustID = @CustID,
 			@ActionID = 1114,
 			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END TRY
-	BEGIN CATCH
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@ActionID = 1114,
-			@TrackingValue = @LogSPData,
-			@duration = @duration
-	END CATCH
+			@duration = @duration	
 END
 
 

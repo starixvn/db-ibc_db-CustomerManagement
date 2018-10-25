@@ -1,13 +1,9 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/ 
 
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
+USE CustDB
 GO
 
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Del    Script Date: 10/28/2014 9:45:19 AM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Del    Script Date: 10/23/2014 12:48:24 PM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_Del    Script Date: 10/23/2014 8:38:07 AM ******/
-CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_Del]
+ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Del]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT,
 	@AgentID INT = NULL,
@@ -17,12 +13,13 @@ CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_Del]
 	@UserID INT
 AS
 /*
-Created: Dom
-		Date: 2014-09-03
-		Task: Delete Product Hardcode setting by licensee and currency
-		DB: DBTXN/CustDB
+	Created: Dom
+	Date: 2014-09-03
+	Task: Delete Product Hardcode setting by licensee and currency
+	DB: DBCUST/CustDB
 		
-		Revisions:
+	Revisions:
+		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 
 */
 BEGIN
@@ -35,8 +32,8 @@ BEGIN
 	DECLARE @LicenseeID INT
 	
 	SELECT @LicenseeID = [site].SiteID 
-	FROM DBLIC.bodb02.dbo.[Site] ibcsite 
-		LEFT JOIN DBLIC.bodb_Licensee.dbo.view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
+	FROM dbo.[Site] ibcsite 
+		LEFT JOIN bodb_Licensee.dbo.Lrf_view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
 	WHERE islicensee=1 AND [site].SiteName = @Licensee
 
 	SELECT @OldLog = '<r>'
@@ -69,7 +66,7 @@ BEGIN
 	set @endRun = getdate()
 	set @duration  = datediff (millisecond,@startRun,@endRun)
 
-				EXEC DBLOG.bodb_customerlog.dbo.NAP_SpecialCustSetting_WriteLog
+	EXEC DBLOG.bodb_customerlog.dbo.NAP_SpecialCustSetting_WriteLog
 		@UserId = @UserID,
 		@IP = @IP,
 		@LicenseeID = @LicenseeID,
@@ -83,14 +80,3 @@ BEGIN
 END
 GO
 
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
- GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_Del] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_Del] TO [bodbLicenseeNet]
-GO 

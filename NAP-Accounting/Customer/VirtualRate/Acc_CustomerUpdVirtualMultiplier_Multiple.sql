@@ -2,10 +2,6 @@
 USE CustDB
 GO
 
-/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
@@ -27,6 +23,8 @@ AS
 		- 20170522@Elodie: When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
 		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment [RedmineID:#84112]
+		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+
 	Param's Explanation:  
 		- @SportType = 0 : All
 					 = 1 : Soccer
@@ -129,7 +127,7 @@ BEGIN
 
 		INSERT INTO #BACust(CustID)
 		SELECT CustID
-		FROM DBLIC.bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
+		FROM bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
 		WHERE ba.Status = 'Running'
 
 		SELECT @CustStr =  ISNULL(STUFF(( select ',' + CAST(c.custid AS VARCHAR(20))
