@@ -20,6 +20,7 @@ AS
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171115@Vicky: change location check permission [RedmineID: #86455]
 		- 20171212@Helen: Implement some change request from OPS Team - [Redmine: 85638]
+		- 20180925@Helen: DB052.bodb_NAP Migration to DBCust - [Redmine:100493]
 		
 	Parameter's explaination:
 	 
@@ -46,7 +47,7 @@ BEGIN
 	
 		
 	--Check permission 
-	EXEC DBNAP.bodb_NAP.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey=@FunctionKey,@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@UserID,@SiteKey='CustomerManagement',@FunctionKey=@FunctionKey,@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	IF @ErrCode <> 0
 		RETURN
 	
