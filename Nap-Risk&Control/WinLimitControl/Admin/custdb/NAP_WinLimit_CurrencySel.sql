@@ -1,18 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CurrencySel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CurrencySel];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySel] @SiteId              INT = 0,
                                                   @IsCreditSite        BIT = 0,
                                                   @ExcludeTestCurrency BIT = 0
@@ -28,6 +15,7 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
+20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 Parameters Explanation:  
      @SiteId: Site Or Licensee ID.  
      @IsCreditSite: Is Credit Site.  
@@ -48,8 +36,8 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
              UNION
              SELECT ex.exchangeid,
                     ex.Code+' ('+ex.currency+')'
-             FROM DBLIC.bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
-                  INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
+             FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
+                  INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
                   INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
                   INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName
                                                          AND S.isActive = 1
@@ -74,8 +62,8 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
              SELECT DISTINCT
                     ex.exchangeid AS Id,
                     ex.Code+' ('+ex.currency+')' AS Name
-             FROM DBLIC.bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
-                  INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
+             FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
+                  INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
                   INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
                   INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName
                                                          AND S.isActive = 1
@@ -85,8 +73,4 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
                   AND ex.currency NOT IN('H', 'C')
              ORDER BY Name;
          END;;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CurrencySel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CurrencySel] TO [vnteam];
 GO

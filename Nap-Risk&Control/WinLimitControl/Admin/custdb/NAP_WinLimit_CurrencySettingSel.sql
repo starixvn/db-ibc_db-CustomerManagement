@@ -1,20 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CurrencySettingSel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingSel];
-GO
-USE [CustDB];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingSel] @ProductId    INT,
                                                          @SiteId       INT,
                                                          @IsCreditSite BIT = 0,
@@ -31,6 +16,7 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
+20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 Parameters Explanation:
    @ProductId: Product ID
    @SiteId	: Site or Licensee ID
@@ -76,8 +62,8 @@ EXEC [NAP_WinLimit_CurrencySettingSel] @ProductId=21,@SiteId=32,@IsCreditSite=1,
                                @ProductId,
                                @SiteId,
                                lc.Currency
-                        FROM DBLIC.bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
-                             INNER JOIN DBLIC.bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
+                        FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
+                             INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
                              INNER JOIN exchange ex WITH (NOLOCK) ON ex.exchangeid = lc.Currency
                              INNER JOIN dbo.site s ON s.site = l.LicenseeName
                                                       AND s.isActive = 1
@@ -120,8 +106,4 @@ EXEC [NAP_WinLimit_CurrencySettingSel] @ProductId=21,@SiteId=32,@IsCreditSite=1,
                   p.LevelId;
      END;
      DROP TABLE #ProductSiteCurrencySetting;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CurrencySettingSel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CurrencySettingSel] TO [vnteam];
 GO
