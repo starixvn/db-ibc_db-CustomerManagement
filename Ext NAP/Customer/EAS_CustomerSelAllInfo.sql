@@ -117,8 +117,8 @@ BEGIN
 				ISNULL(cp.lastname, '') AS lastname,
 				c.username2,
 				cp.fax, cp.phone, cp.mobilephone, @ClosedReason AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
-				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal,
-				@srecommend, @mrecommend, @recommend, @SuperName, @MasterName, @AgentName,
+				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
+				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
 				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate
 		FROM CustSuperProfile cp WITH (NOLOCK)
