@@ -44,7 +44,7 @@ BEGIN
 	IF @CustId IS NULL
 		RETURN
 
-	SELECT  @username = username, @RoleId = roleID, @Site = site,
+	SELECT  @RoleId = roleID, @Site = site,
 			@srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM dbo.customer WITH (NOLOCK) 
 	WHERE custid = @CustId
@@ -66,11 +66,9 @@ BEGIN
 	IF (@IsInternalAdmin = 1 AND EXISTS (SELECT 1 FROM @DenySite WHERE site = @Site))
 		RETURN
 
-	SELECT  @SuperName =	CASE WHEN roleid=4 THEN username ELSE @SuperName END,
-			@MasterName =	CASE WHEN roleid=3 THEN username ELSE @MasterName END,
-			@AgentName =	CASE WHEN roleid=2 THEN username ELSE @AgentName END
-	FROM dbo.custinfo WITH (NOLOCK) 
-	WHERE custid IN (@srecommend, @mrecommend, @recommend)
+	SELECT @SuperName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @srecommend
+	SELECT @MasterName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @mrecommend
+	SELECT @AgentName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @recommend
 	
 	SELECT @OTPCreateDate = CreatedDate FROM dbo.CustOTP WITH(NOLOCK) WHERE custid = @CustId
 
@@ -116,7 +114,7 @@ BEGIN
 				ISNULL(cp.firstname, '') AS firstname,
 				ISNULL(cp.lastname, '') AS lastname,
 				c.username2,
-				cp.fax, cp.phone, cp.mobilephone, @ClosedReason AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
+				cp.fax, cp.phone, cp.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
@@ -132,7 +130,7 @@ BEGIN
 				ISNULL(c.firstname, '') AS firstname,
 				ISNULL(c.lastname, '') AS lastname,
 				c.username2,
-				c.fax, c.phone, c.mobilephone, @ClosedReason AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
+				c.fax, c.phone, c.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
