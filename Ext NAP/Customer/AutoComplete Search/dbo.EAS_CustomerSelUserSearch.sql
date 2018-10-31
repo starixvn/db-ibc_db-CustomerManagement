@@ -1,5 +1,5 @@
-/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb_EAS
+/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE bodb02
 GO
 
 ALTER PROC [dbo].[EAS_CustomerSelUserSearch]
@@ -8,16 +8,18 @@ ALTER PROC [dbo].[EAS_CustomerSelUserSearch]
 	@groupname varchar(50)	
 AS
 /*
-Created: 20121105@Dan
-Task : Select downline list of custId based on query string. Used for AutoComplete by "Account Info".
-DB: DBEAS/bodb_EAS
-Original: [Acc_CustomerSelUserSearch]
+	Created: 20121105@Dan
+	Task : Select downline list of custId based on query string. Used for AutoComplete by "Account Info".
+	DB: DBAGE/bodb02
+	Original: [Acc_CustomerSelUserSearch]
 
-Revisions:
-    - 20130121@Dan: change linked server DB06 to DBACC, Move sp from DB053/bodb02 to DBEAS/bodb_EAS
-Param's Explanation:
-• @custid: User who are logging in.
-• @username: part of downline's username.
+	Revisions:
+		- 20130121@Dan: change linked server DB06 to DBACC, Move sp from DB053/bodb02 to DBEAS/bodb_EAS
+		- 20181019@Elodie: Move sp from DBEAS/bodb_EAS to DB053/bodb02
+
+	Param's Explanation:
+		• @custid: User who are logging in.
+		• @username: part of downline's username.
 */
 BEGIN
 	SET ARITHABORT ON -- don't remove it, can cause performance problem
@@ -27,12 +29,12 @@ BEGIN
 		RETURN
 
 	DECLARE @tmpUsername TABLE(username VARCHAR(30),searchcount int)
-
+	
 	INSERT INTO @tmpUsername (username,searchcount)
 	SELECT TOP 10 username, searchcount
-	FROM DBAGE.bodb02.dbo.CustSearch WITH (NOLOCK) 
+	FROM dbo.CustSearch WITH (NOLOCK) 
 	WHERE userid=@custid 
-		AND username LIKE '%' + @username  + '%'
+		AND username LIKE CONVERT(VARCHAR(30),'%'+@UserName+'%')
 		AND groupname = @groupname		
 	ORDER BY [searchcount] DESC
 
@@ -40,10 +42,11 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpUsername (username,searchcount)
 		SELECT TOP 10 username, -1 AS searchcount
-		FROM DBACC.bodb02.dbo.custinfo WITH (NOLOCK)
-		WHERE roleid < 5
-			AND username LIKE @username  + '%'
-			AND srecommend IN (SELECT custid FROM DBAGE.bodb_AGE.dbo.Acc_CustGroup WITH(NOLOCK) WHERE GroupName = @groupname)		
+		FROM dbo.Customer c WITH (NOLOCK)
+			INNER JOIN bodb_AGE.dbo.Acc_CustGroup g WITH(NOLOCK) ON c.srecommend = g.custid
+		WHERE c.roleid < 5
+			AND username LIKE CONVERT(VARCHAR(30), @UserName+'%')
+			AND GroupName = @groupname
 		ORDER BY username
 	END
 
