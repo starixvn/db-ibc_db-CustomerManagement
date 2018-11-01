@@ -1,6 +1,4 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdCredit_SAg]
 	@UserID			INT,
 	@CustID			INT, -- masterID
@@ -30,7 +28,7 @@ AS
 		- 20140423@Elodie: Implement SMA Turnover [Redmine:#14426]
 		- 20150228@Kiwi: Fix for Member's given credit is greater than that of upline [Redmine:31476]
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
-
+		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -125,30 +123,49 @@ BEGIN
 	BEGIN
 		SELECT @LogData = @LogData + ' by Sub-Account ' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1))
 	END
-
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@Doing = @LogData,
-			@OldValue = @OldCredit,
-			@NewValue = @CreditAmt,
-			@IP = @IP,
-			@ActionID = 1205
-	END TRY
-	BEGIN CATCH		
-		SELECT @LogData = @LogData + ' ErrMsg=' + ERROR_MESSAGE()
 	
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@Doing = @LogData,
-			@OldValue = @OldCredit,
-			@NewValue = @CreditAmt,
-			@IP = @IP,
-			@ActionID = 1205
-	END CATCH
+	DECLARE @log xml, @SB_Error BIT = 0
+ 
+	SELECT @log = (SELECT @UserID as '@UserID',
+						@custid as '@CustID',
+						@LogData as '@Doing',
+						@OldCredit as '@OldValue',
+						@CreditAmt as '@NewValue',
+						@IP as '@IP',
+						1205 as '@ActionID'
+					FOR XML PATH('Row')	
+				)
+
+	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @log, 
+													@MessageType='MessageType_CustomerLog_UserLog_Credit', 
+													@functionName = 'UserLog_Credit',
+													@SB_Error = @SB_Error out
+
+	--if ssb error
+	IF @SB_Error = 1
+	BEGIN
+		BEGIN TRY
+			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
+				@UserID = @UserID,
+				@CustID = @CustID,
+				@Doing = @LogData,
+				@OldValue = @OldCredit,
+				@NewValue = @CreditAmt,
+				@IP = @IP,
+				@ActionID = 1205
+		END TRY
+		BEGIN CATCH		
+			SELECT @LogData = @LogData + ' ErrMsg=' + ERROR_MESSAGE()
+		
+			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
+				@UserID = @UserID,
+				@CustID = @CustID,
+				@Doing = @LogData,
+				@OldValue = @OldCredit,
+				@NewValue = @CreditAmt,
+				@IP = @IP,
+				@ActionID = 1205
+		END CATCH
+	END	
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdCredit_SAg] TO [bodbDownlineNet]
 GO
