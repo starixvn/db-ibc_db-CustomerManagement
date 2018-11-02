@@ -2,7 +2,7 @@
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[U3_CustomerSelAllInfo]
+CREATE PROCEDURE [dbo].[U3_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0
 AS
@@ -92,6 +92,7 @@ Revisions:
 	- 20171018@Percy:
 		1. Move code of balance part into new nested sp [RedmineID: #73606]
 		2. Change yesterday balance formula + Integrate Bullfighting [RedmineID: #84692]
+	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -488,15 +489,6 @@ BEGIN
     END
 
     --General info
-    DECLARE @isBA BIT
-    IF EXISTS (
-			     SELECT 1 FROM DBLIC.bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
-			     WHERE custid=@custid AND status='running'
-			    )
-	    SET @isBA=1
-    ELSE
-	    SET @isBA=0
-
 	DECLARE @credit MONEY
 	SELECT @credit = credit
 	FROM DBCUST.CustDB.dbo.CustInfo WITH(NOLOCK)
@@ -580,7 +572,7 @@ BEGIN
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
-	    @isBA IsBA,
+		0 AS IsBA,
 	    @IsDeposit IsDeposit, 
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
 	    c.site,
