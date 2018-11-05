@@ -36,7 +36,8 @@ BEGIN
 			@IsInternal						BIT = 0,
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
-			@OTPCreateDate					DATETIME
+			@OTPCreateDate					DATETIME,
+			@transdate						DATETIME
 
 	--Search Info	
 	--Get CustID from DBCUST, where got index on Username and Username2
@@ -76,6 +77,7 @@ BEGIN
 	BEGIN
 		SELECT @UplineHasSecurityCode = 1
 		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE srecommend = @custid
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
@@ -83,6 +85,7 @@ BEGIN
 				SELECT @UplineHasSecurityCode = 1
 
 		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
@@ -90,6 +93,7 @@ BEGIN
 				SELECT @UplineHasSecurityCode = 1
 
 		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
 	END
 	ELSE IF @RoleId = 1
 	BEGIN
@@ -97,6 +101,7 @@ BEGIN
 				SELECT @UplineHasSecurityCode = 1
 
 		SELECT @IsInternal = IsInternal FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @recommend
+		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
 	END
 	
 	IF @RoleId=1
@@ -118,7 +123,7 @@ BEGIN
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
-				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate
+				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
 		FROM CustSuperProfile cp WITH (NOLOCK)
 			INNER JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
@@ -134,7 +139,7 @@ BEGIN
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
-				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate
+				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
 		FROM dbo.customer c WITH (NOLOCK) 
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 		WHERE c.custid = @CustId	
