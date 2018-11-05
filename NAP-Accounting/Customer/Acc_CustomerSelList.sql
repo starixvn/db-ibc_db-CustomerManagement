@@ -88,6 +88,15 @@ BEGIN
 	) c
 	WHERE c.RowNumber BETWEEN @RowStart AND @RowEnd
 
+	IF @roleid = 2
+		SELECT UserName,cl.ClosedReason
+		FROM #tmpList c
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+	ELSE IF @roleid IN (3,4)
+		SELECT UserName,cl.ClosedReason
+		FROM #tmpList c
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+
 	IF @Mode = 1
 	BEGIN
 		DECLARE @TotalMemberActive INT, @TotalMemberClosed INT, @TotalMemberSuspended INT,
