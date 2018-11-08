@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelListByStatus]
 	@RoleId TINYINT,
 	@Status TINYINT,
 	@PageSize INT = 500,
-	@PageIndex INT = 1
+	@PageIndex INT = 1, 
+	@TotalPages INT = 0
 AS
 /*
 	Creator: 20181108@Elodie
@@ -29,7 +30,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @RowCount int, @RowStart int, @RowEnd INT, @TotalPages INT
+	DECLARE @RowCount int, @RowStart int, @RowEnd INT
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
 
 	DECLARE @CustList TABLE (Username NVARCHAR(30), CustId INT)		
