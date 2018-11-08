@@ -1,2 +1,0 @@
-NAP-CM\TurnoverControl\SPList\NAP_TOControl_GlobalSettingInsertMultiple.sql
-NAP-CM\TurnoverControl\SPList\NAP_TOControl_MatchTurnoverUpdateMultiple.sql
