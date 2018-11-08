@@ -25,7 +25,7 @@ AS
 				2: Closed
 				3: Suppend
 
-	Example: EXEC Age_CustomerSelListByStatus @CustID=24471545, @Status = 1
+	Example: EXEC Age_CustomerSelListByStatus @CustID=24471545, @RoleId = 4, @Status = 1
 */
 BEGIN
 	SET NOCOUNT ON
