@@ -21,65 +21,43 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @TotalMemberActive INT, @TotalMemberClosed INT, @TotalMemberSuspended INT,
-			@TotalAgentActive  INT, @TotalAgentClosed  INT, @TotalAgentSuspended  INT,
-			@TotalMasterActive INT, @TotalMasterClosed INT, @TotalMasterSuspended INT				
+	DECLARE @TotalDownline TABLE (RoleId TINYINT, TotalActive INT, TotalClosed INT, TotalSuspended INT)					
 		
 	IF @RoleId = 2
 	BEGIN
-		SELECT	@TotalMemberActive = ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0) 
+		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
+		SELECT	RoleID,
+				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0) 
 		FROM custinfo (NOLOCK) 
-		WHERE recommend = @custID AND RoleID=1
-
-		SELECT	@TotalMemberActive AS [TotalMemActive], 
-				@TotalMemberClosed AS [TotalMemClosed], 
-				@TotalMemberSuspended AS [TotalMemSuspended]
-
+		WHERE recommend = @custID AND RoleId = 1
+		GROUP BY roleid	
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
-		SELECT	@TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0),			
-				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 0 and ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)
+		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
+		SELECT	RoleID,
+				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)				
 		FROM custinfo (NOLOCK) 
-		WHERE mrecommend = @custID
-
-		SELECT	@TotalAgentActive AS [TotalAgActive], 
-				@TotalAgentClosed AS [TotalAgClosed], 
-				@TotalAgentSuspended AS [TotalAgSuspended],	
-				@TotalMemberActive AS [TotalMemActive], 
-				@TotalMemberClosed AS [TotalMemClosed], 
-				@TotalMemberSuspended AS [TotalMemSuspended]
+		WHERE mrecommend = @custID  AND RoleId IN (2,1)
+		GROUP BY roleid
 	END	
 	ELSE IF @RoleId = 4
 	BEGIN
-		SELECT	@TotalMasterActive = ISNULL(SUM(CASE WHEN RoleID = 3 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMasterClosed = ISNULL(SUM(CASE WHEN RoleID = 3 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMasterSuspended = ISNULL(SUM(CASE WHEN RoleID = 3 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0),			
-				@TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0),		
-				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 0 and ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)
+		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
+		SELECT	RoleID,
+				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)	
 		FROM custinfo (NOLOCK) 
-		WHERE srecommend = @custID
-
-		SELECT	@TotalMasterActive AS [TotalAgActive], 
-				@TotalMasterClosed AS [TotalAgClosed], 
-				@TotalMasterSuspended AS [TotalAgSuspended],	
-				@TotalAgentActive AS [TotalAgActive], 
-				@TotalAgentClosed AS [TotalAgClosed], 
-				@TotalAgentSuspended AS [TotalAgSuspended],	
-				@TotalMemberActive AS [TotalMemActive], 
-				@TotalMemberClosed AS [TotalMemClosed], 
-				@TotalMemberSuspended AS [TotalMemSuspended]
+		WHERE srecommend = @custID  AND RoleId IN (3,2,1)
+		GROUP BY roleid		
 	END	
+
+	SELECT RoleId, TotalActive, TotalClosed, TotalSuspended FROM @TotalDownline
 END
 
 GO
