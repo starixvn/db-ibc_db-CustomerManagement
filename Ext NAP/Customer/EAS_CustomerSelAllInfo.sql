@@ -32,11 +32,7 @@ BEGIN
 			@AgentName						NVARCHAR(50),		 		
 			@UplineHasSecurityCode			BIT = 0,
 			@IsInternalAdmin				BIT = 0,
-			@ClosedReason					TINYINT,
-			@NicknameLoginOnly				BIT = 0,
-			@LastChangedSecurityCodeDate	DATETIME,
-			@OTPCreateDate					DATETIME,
-			@transdate						DATETIME
+			@ClosedReason					TINYINT
 
 	--Search Info	
 	--Get CustID from DBCUST, where got index on Username and Username2
@@ -70,44 +66,32 @@ BEGIN
 	SELECT @MasterName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @mrecommend
 	SELECT @AgentName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @recommend
 	
-	SELECT @OTPCreateDate = CreatedDate FROM dbo.CustOTP WITH(NOLOCK) WHERE custid = @CustId
-
 	IF @RoleId = 4
 	BEGIN
 		SELECT @UplineHasSecurityCode = 1
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE srecommend = @custid
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @srecommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
-
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @mrecommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
-
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE recommend = @custid
 	END
 	ELSE IF @RoleId = 1
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @recommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
-
-		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE custid = @custid
 	END
 	
 	IF @RoleId=1
-		SELECT @LastChangedSecurityCodeDate = LastChangedDate, @ClosedReason = ClosedReason
+		SELECT @ClosedReason = ClosedReason
 	    FROM dbo.CustLoginInfo_Member WITH(NOLOCK)
 	    WHERE custid = @CustId
 	ELSE
-		SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate, @ClosedReason = ClosedReason
+		SELECT @ClosedReason = ClosedReason
 	    FROM dbo.CustLoginInfo WITH(NOLOCK)
 	    WHERE custid = @CustId
 
@@ -119,9 +103,7 @@ BEGIN
 				c.username2,
 				cp.fax, cp.phone, cp.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
-				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
-				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
-				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
+				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
 		FROM CustSuperProfile cp WITH (NOLOCK)
 			INNER JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
@@ -135,9 +117,7 @@ BEGIN
 				c.username2,
 				c.fax, c.phone, c.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
-				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
-				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
-				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
+				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
 		FROM dbo.customer c WITH (NOLOCK) 
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 		WHERE c.custid = @CustId	
