@@ -33,7 +33,6 @@ BEGIN
 			@UplineHasSecurityCode			BIT = 0,
 			@IsInternalAdmin				BIT = 0,
 			@ClosedReason					TINYINT,
-			@IsInternal						BIT = 0,
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
 			@OTPCreateDate					DATETIME,
@@ -76,32 +75,31 @@ BEGIN
 	IF @RoleId = 4
 	BEGIN
 		SELECT @UplineHasSecurityCode = 1
-		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE srecommend = @custid
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE srecommend = @custid
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @srecommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
 
-		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @mrecommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
 
-		SELECT @IsInternal = IsInternal, @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
+		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE recommend = @custid
 	END
 	ELSE IF @RoleId = 1
 	BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @recommend AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
 
-		SELECT @IsInternal = IsInternal FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @recommend
-		SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
+		SELECT @transdate = MAX(transdate) FROM DBAGE.bodb02.dbo.bettrans WITH (NOLOCK) WHERE custid = @custid
 	END
 	
 	IF @RoleId=1
@@ -120,7 +118,7 @@ BEGIN
 				ISNULL(cp.lastname, '') AS lastname,
 				c.username2,
 				cp.fax, cp.phone, cp.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
-				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
+				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
 				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
@@ -136,7 +134,7 @@ BEGIN
 				ISNULL(c.lastname, '') AS lastname,
 				c.username2,
 				c.fax, c.phone, c.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
-				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended, @IsInternal AS IsInternal,
+				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
 				@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
