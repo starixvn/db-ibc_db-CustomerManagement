@@ -97,6 +97,8 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180205@Johnson: remove downline NG/CB/GD/CS status for new direction [RedmineID: #87328]
 	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
+	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
+
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -462,7 +464,7 @@ BEGIN
     --General info
     DECLARE @isBA BIT
     IF EXISTS (
-			     SELECT 1 FROM DBLIC.bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
+			     SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
 			     WHERE custid=@custid AND status='running'
 			    )
 	    SET @isBA=1
