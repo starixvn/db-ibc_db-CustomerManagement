@@ -3,7 +3,8 @@ USE bodb02
 GO
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelLoginInfo]  
-    @CustId	INT
+    @CustId	INT,
+	@GroupName VARCHAR(50)
 AS  
 /*  
 	Creator: 20181030@Elodie  
@@ -21,15 +22,22 @@ BEGIN
 
 	DECLARE @RoleId							TINYINT,
 			@recommend						INT,
+			@srecommend						INT,
 			@Site							NVARCHAR(50),
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
 			@OTPCreateDate					DATETIME,
 			@transdate						DATETIME
 
-	SELECT  @RoleId = roleID, @Site = site, @recommend = recommend
+	SELECT  @RoleId = roleID, @Site = site, @recommend = recommend, @srecommend = srecommend
 	FROM dbo.customer WITH (NOLOCK) 
 	WHERE custid = @CustId
+
+	-- check belong to group 
+	IF NOT EXISTS (SELECT 1 FROM DBAGE.bodb_AGE.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
+	BEGIN
+		RETURN
+	END
 
 	SELECT @OTPCreateDate = CreatedDate FROM dbo.CustOTP WITH(NOLOCK) WHERE custid = @CustId
 
