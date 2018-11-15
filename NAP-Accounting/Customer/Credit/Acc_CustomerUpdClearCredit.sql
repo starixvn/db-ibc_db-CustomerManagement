@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdClearCredit]
 AS
 
 /*	Created by: [Creator]
-	DB: DBTXN/CustDB
+	DB: DBCUST/CustDB
 	Task: clear credit of the specified account and all downline accounts
 	Revisions:
 		- 20090828@HuyNguyen: replace [Customer] --> [OtherCust]	
@@ -27,6 +27,7 @@ AS
 		- 20140306@Dom: add outstanding from translog
 		- 20150612@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines to DBCUST.CustDB, use Acc_CustomerTotalAmountSel to get total amount)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -125,24 +126,36 @@ BEGIN
 	-- Write Log Credit
 	Declare @LogSPCredit varchar(500)
 	Select @LogSPCredit = 'Clear credit of' + @custLine + ': '+ @username 
+	
+	DECLARE @log xml, @SB_Error BIT = 0
+	
+	SELECT @log = (
+		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogSPCredit as Doing, 1201 as ActionID
+		FROM @tmpCust
+		FOR XML RAW('Row')
+	)
 
-	BEGIN TRY
-		INSERT INTO DBLOG.bodb_CustomerLog.dbo.userlog_Credit(userid, custid, OldValue, NewValue, ip, doing, ActionID)
-		SELECT	@UserID, custid, Credit, 0, @ip, @LogSPCredit, 1201 
-		FROM	@tmpCust 
-	END TRY
-	BEGIN CATCH
-		Select @LogSPCredit = @LogSPCredit + ' ErrMsg=' + error_message()
-		
-		INSERT INTO bodb_CustomerLog.dbo.userlog_Credit(userid, custid, OldValue, NewValue, ip, doing, ActionID)
-		SELECT	@UserID, custid, Credit, 0, @ip, @LogSPCredit, 1201 
-		FROM	@tmpCust
-	END CATCH
+	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @log, 
+													@MessageType='MessageType_CustomerLog_UserLog_Credit', 
+													@functionName = 'UserLog_Credit',
+													@SB_Error = @SB_Error out
+
+	--if ssb error
+	IF @SB_Error = 1
+	BEGIN
+		BEGIN TRY
+			INSERT INTO DBLOG.bodb_CustomerLog.dbo.userlog_Credit(userid, custid, OldValue, NewValue, ip, doing, ActionID)
+			SELECT	@UserID, custid, Credit, 0, @ip, @LogSPCredit, 1201 
+			FROM	@tmpCust 
+		END TRY
+		BEGIN CATCH
+			Select @LogSPCredit = @LogSPCredit + ' ErrMsg=' + error_message()
+			
+			INSERT INTO bodb_CustomerLog.dbo.userlog_Credit(userid, custid, OldValue, NewValue, ip, doing, ActionID)
+			SELECT	@UserID, custid, Credit, 0, @ip, @LogSPCredit, 1201 
+			FROM	@tmpCust
+		END CATCH
+	END	
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdClearCredit] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdClearCredit] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdClearCredit] TO [vnteam]  
+ 

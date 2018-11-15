@@ -138,7 +138,7 @@ BEGIN
 
 	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @log, 
 													@MessageType='MessageType_CustomerLog_UserLog_Credit', 
-													@functionName = 'UserLog_Credit',
+													@functionName = 'UserLog_Others',
 													@SB_Error = @SB_Error out
 
 	--if ssb error
