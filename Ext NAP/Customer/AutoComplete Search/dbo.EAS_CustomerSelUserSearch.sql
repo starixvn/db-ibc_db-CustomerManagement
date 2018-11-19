@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20130121@Dan: change linked server DB06 to DBACC, Move sp from DB053/bodb02 to DBEAS/bodb_EAS
 		- 20181019@Elodie: Move sp from DBEAS/bodb_EAS to DB053/bodb02
+		- 20181116@Elodie: Enhance SP
 
 	Param's Explanation:
 		• @custid: User who are logging in.
@@ -38,6 +39,9 @@ BEGIN
 		AND groupname = @groupname		
 	ORDER BY [searchcount] DESC
 
+	DECLARE @_Username VARCHAR(30) 
+	SELECT @_Username = @UserName + '%'
+
 	IF @@ROWCOUNT < 10
 	BEGIN
 		INSERT INTO @tmpUsername (username,searchcount)
@@ -45,7 +49,7 @@ BEGIN
 		FROM dbo.Customer c WITH (NOLOCK)
 			INNER JOIN bodb_AGE.dbo.Acc_CustGroup g WITH(NOLOCK) ON c.srecommend = g.custid
 		WHERE c.roleid < 5
-			AND username LIKE CONVERT(VARCHAR(30), @UserName+'%')
+			AND username LIKE @_Username
 			AND GroupName = @groupname
 		ORDER BY username
 	END
