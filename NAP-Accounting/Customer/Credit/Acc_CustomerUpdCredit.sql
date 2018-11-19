@@ -408,7 +408,8 @@ SELECT @log = (SELECT @UserID as '@UserID',
 					@OldCredit as '@OldValue',
 					@NewCredit as '@NewValue',
 					@IP as '@IP',
-					1200 as '@ActionID'
+					1200 as '@ActionID',
+					getdate() as '@LogDate'
 				FOR XML PATH('Row')	
 			)
 
