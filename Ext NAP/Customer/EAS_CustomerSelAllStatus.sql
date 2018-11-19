@@ -25,6 +25,7 @@ BEGIN
     DECLARE @upLineDisableCS				BIT       
           , @uplineDisabledNumber			BIT
           , @uplineDisableEsports			BIT
+		  , @uplineDisableGoldDeluxe		BIT
 		  , @uplineDisableColossusBet		BIT
 		  , @DisableDownlinesColossusBet	BIT = 0  
 		  
@@ -49,6 +50,7 @@ BEGIN
 				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 
 				,	@uplineid = custid
@@ -66,6 +68,7 @@ BEGIN
 				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
@@ -85,6 +88,7 @@ BEGIN
 				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
@@ -95,15 +99,11 @@ BEGIN
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
-	-------------------------------------------------------------------------
-	DECLARE @TransferOption VARCHAR(8)
-    EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
-    
+	-------------------------------------------------------------------------	    
 	--Non product status
 	SELECT	@HasDownline AS HasDownline,
 			ci.closed,
 			ci.reject AS suspended,
-			@TransferOption AS TransferOption,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,
 			@upLineClosed AS upLineClosed,
@@ -126,6 +126,7 @@ BEGIN
 			ci.DisableColossusBet,
 			ci.HideColossusBet,
 			@uplineDisableColossusBet AS uplineDisableColossusBet,
+			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
 			ci.HideKeno	
