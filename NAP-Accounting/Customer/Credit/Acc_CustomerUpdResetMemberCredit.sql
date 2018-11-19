@@ -70,7 +70,7 @@ BEGIN
 	DECLARE @log xml, @SB_Error BIT = 0
 		
 	SELECT @log = (
-		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogData as Doing, 1202 as ActionID
+		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogData as Doing, 1202 as ActionID, getdate() as LogDate
 		FROM @tmpCust
 		FOR XML RAW('Row')
 	)

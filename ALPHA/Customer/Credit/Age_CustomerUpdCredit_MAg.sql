@@ -131,7 +131,8 @@ BEGIN
 						@OldCredit as '@OldValue',
 						@CreditAmt as '@NewValue',
 						@IP as '@IP',
-						1204 as '@ActionID'
+						1204 as '@ActionID',
+						getdate() as '@LogDate'
 					FOR XML PATH('Row')	
 				)
 
