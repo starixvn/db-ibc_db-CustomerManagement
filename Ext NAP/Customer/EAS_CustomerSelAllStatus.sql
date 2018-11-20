@@ -22,7 +22,8 @@ BEGIN
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
     
 	--Downline/Upline status 
-    DECLARE @upLineDisableCS				BIT       
+    DECLARE @upLineDisableCasino			BIT   
+		  , @uplineSyncCasino				BIT    
           , @uplineDisabledNumber			BIT
           , @uplineDisableEsports			BIT
 		  , @uplineDisableGoldDeluxe		BIT
@@ -47,7 +48,8 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
+				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
+				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
@@ -65,7 +67,8 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
+				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
+				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
@@ -85,7 +88,8 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
+				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
+				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
@@ -118,7 +122,8 @@ BEGIN
 	--Product Status
 	SELECT	ci.SyncCasino,
 			ci.DisableCasino,
-			@upLineDisableCS AS uplineDisableCS,
+			@upLineDisableCasino AS uplineDisableCasino,
+			@uplineSyncCasino AS uplineSyncCasino,
 			ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
 			ci.DisableEsports, 

@@ -100,7 +100,7 @@ BEGIN
 		SELECT	c.CustId, c.RoleId, @Site AS site,			
 				ISNULL(cp.firstname, '') AS firstname,
 				ISNULL(cp.lastname, '') AS lastname,
-				c.username2,
+				c.username, c.username2,
 				cp.fax, cp.phone, cp.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
@@ -114,7 +114,7 @@ BEGIN
 		SELECT	c.CustId, c.RoleId, @Site AS site,			
 				ISNULL(c.firstname, '') AS firstname,
 				ISNULL(c.lastname, '') AS lastname,
-				c.username2,
+				c.username, c.username2,
 				c.fax, c.phone, c.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
 				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
