@@ -22,7 +22,7 @@ AS
 		- 20180627@Elodie: Enhance SP [RedmineID: #95978]	
 	Explanation: 
 			
-	Example: EXEC Acc_CustomerSelList @CustID=24471545, @Mode = 1
+	Example: EXEC Acc_CustomerSelList @CustID=24471545
 */
 BEGIN
 	SET NOCOUNT ON
