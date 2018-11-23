@@ -1,6 +1,3 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.SQL
-ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\Customer\Agw_CustomerSelInfo.SQL
 Acc_CheckShowProduct.sql
 Acc_CustSetting_StatusSettingSelect.sql
 f_CustSetting_SportBetTypeSettingSelect.sql
