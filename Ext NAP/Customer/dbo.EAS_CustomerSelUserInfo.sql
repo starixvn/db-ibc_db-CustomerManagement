@@ -15,6 +15,8 @@ Original:Accounting site
 Revisions:
 	- 20130121@Dan: Move sp from DB053/bodb02 to DBEAS/bodb_EAS, change linked server DB06 to DBACC, call to bodb_AGE for Acc_CustGroup
 	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
+	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
+
 */	
 SET NOCOUNT ON  
 DECLARE @srecommend INT, 
@@ -46,7 +48,7 @@ BEGIN
 END
 
 -- check belong to group 
-IF NOT EXISTS (SELECT 1 FROM DBAGE.bodb_AGE.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
+IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
 BEGIN
 	RETURN
 END
