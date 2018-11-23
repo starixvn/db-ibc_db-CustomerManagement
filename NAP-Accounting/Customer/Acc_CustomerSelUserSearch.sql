@@ -23,6 +23,7 @@ Revisions:
 	- 20130916@Jamie: Change DB06 to DBACC 
 	- 20170120@Percy: add @RoleId to support search by super/master/agent/member [RedmineID: #69445]
 	- 20170227@Percy: don't show username including ',' and ';' (super/master/agent/member) [RedmineID: #71342]
+	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
 
 Param's Explanation:
 	• @custid: User who are logging in.
@@ -141,7 +142,7 @@ BEGIN
 			and (@RoleId = 0 OR @RoleId = roleid)
 			AND username LIKE @username  + '%'
 			AND username NOT LIKE '%[,;]%'
-			AND srecommend IN (SELECT custid FROM bodb_AGE.dbo.Acc_CustGroup WITH(NOLOCK) WHERE GroupName = @System)
+			AND srecommend IN (SELECT custid FROM dbo.Acc_CustGroup WITH(NOLOCK) WHERE GroupName = @System)
 		ORDER BY username
 	END
 END

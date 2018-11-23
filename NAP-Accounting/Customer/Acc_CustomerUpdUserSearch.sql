@@ -1,4 +1,8 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserSearch]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE CustDB 
+GO
+
+ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserSearch]
 	@userid int,
 	@search varchar(30),
 	@firstname nvarchar(50) = NULL,
@@ -6,28 +10,30 @@
 	@system varchar(50) = 'ACCOUNTING'
 AS
 /*
-Created: 20090723@nqminh
-Task : Update to increate number of hits of 'search' term by userid [Used for Agency Site]
-DB: DBAGE/bodb02
-Original:
+	Created: 20090723@nqminh
+	Task : Update to increate number of hits of 'search' term by userid [Used for Agency Site]
+	DB: DBCUST/CustDB
+	Original:
 
-Revisions:
-    - 20090122@[Reviewer]: [Description of revision]    
-	- 20100511@Simon: Add function search by first name and last name.
-	- 20100611@Jamie: Modify updating firstname and lastname for using both acc site and agent site 
-	- 20100720@Shifu: Add currency when update user
-	- 20101119@Johnson: get and add groupname into custsearch
-	- 20110725@Sophia: If @search = username2 then do not save data into CustSearch (allow admin search nickname but allow quick search)
-	- 20111114@Thien: change to refer to DB06.bodb02.dbo.Customer for query condition on username2
-	- 20130121@Dan: change linked server DB06 to DBACC,call to bodb_AGE for Acc_CustGroup
-Param's Explanation:
-• @userid: userid that currently login.
-• @search: the search term.
+	Revisions:
+		- 20090122@[Reviewer]: [Description of revision]    
+		- 20100511@Simon: Add function search by first name and last name.
+		- 20100611@Jamie: Modify updating firstname and lastname for using both acc site and agent site 
+		- 20100720@Shifu: Add currency when update user
+		- 20101119@Johnson: get and add groupname into custsearch
+		- 20110725@Sophia: If @search = username2 then do not save data into CustSearch (allow admin search nickname but allow quick search)
+		- 20111114@Thien: change to refer to DB06.bodb02.dbo.Customer for query condition on username2
+		- 20130121@Dan: change linked server DB06 to DBACC,call to bodb_AGE for Acc_CustGroup
+		- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
+
+	Param's Explanation:
+		• @userid: userid that currently login.
+		• @search: the search term.
 */
 
 SET NOCOUNT ON
 
-IF EXISTS (SELECT 1 FROM DBACC.bodb02.dbo.Customer WITH (NOLOCK) WHERE Username2 = @search )
+IF EXISTS (SELECT 1 FROM dbo.Customer WITH (NOLOCK) WHERE Username2 = @search )
 RETURN
 ELSE
 BEGIN
@@ -51,7 +57,7 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				select @GroupName=groupname from bodb_AGE.dbo.Acc_CustGroup  (nolock)
+				select @GroupName=groupname from dbo.Acc_CustGroup  (nolock)
 				WHERE roleid = 4 AND CustID = (SELECT srecommend from custinfo (NOLOCK) WHERE username = @search)
 				--Insert
 				INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency,groupname)
@@ -73,7 +79,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			select @GroupName=groupname from bodb_AGE.dbo.Acc_CustGroup  (nolock)
+			select @GroupName=groupname from dbo.Acc_CustGroup  (nolock)
 			WHERE roleid = 4 AND CustID = (SELECT srecommend from custinfo (NOLOCK) WHERE username = @search)
 		
 			--Update count
