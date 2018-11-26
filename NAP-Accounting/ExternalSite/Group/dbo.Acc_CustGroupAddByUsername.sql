@@ -1,7 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
-USE [bodb_Age]
-GO
-
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupAddByUsername]
 	@Username	varchar(50),
 	@GroupName	varchar(50),
@@ -9,7 +6,6 @@ ALTER PROCEDURE  [dbo].[Acc_CustGroupAddByUsername]
 	@ErrMsg		nvarchar(1000) = '' OUTPUT,
 	@UserID		int 
 AS
-
 /*
 	Created by: [Henry]
 	Date: 2011-04-01
@@ -29,6 +25,8 @@ AS
 		  + ACCINDO: 5,000,000 IN (IDR)
 		  + ACCTHAI: 20,000,000 TB (THB)
 		- 20180706@Kan: Rollback new global setting to old value after World Cup event [Redmine: 97774]
+		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration - move to DBCUST [Redmine: 104770]
+		
 */
 
 BEGIN
@@ -46,7 +44,7 @@ BEGIN
 	DECLARE @SiteName VARCHAR(50)
 	
 	SELECT @RoleID = RoleID, @CustID = CustID, @Currency = Currency, @SiteName = [Site]
-	FROM bodb02.dbo.Customer WITH (NOLOCK)
+	FROM dbo.Customer WITH (NOLOCK)
 	WHERE Username = @Username
 	
 	--Check custid
@@ -67,7 +65,7 @@ BEGIN
 	
 	--Check belonging group currency
 	
-	IF (@Currency NOT IN (SELECT exchangeID from bodb02.dbo.[f_CurrencyBySystem](@GroupName)))
+	IF (@Currency NOT IN (SELECT exchangeID from dbo.[f_CurrencyBySystem](@GroupName)))
 	BEGIN
 		SELECT @ErrMsg = 	N'The currency of this username does not belong to this group!'
 			, @ErrCode = 103
@@ -75,10 +73,10 @@ BEGIN
 	END
 	
 	--Check belonging site
-	SELECT @SiteID = SiteId From bodb02.dbo.[Site] WITH (NOLOCK)
+	SELECT @SiteID = SiteId From dbo.[Site] WITH (NOLOCK)
 	WHERE [site] = @SiteName
 	
-	IF (@SiteID NOT IN (SELECT siteid FROM bodb02.dbo.[f_SiteBySystem] (@GroupName)))
+	IF (@SiteID NOT IN (SELECT siteid FROM dbo.[f_SiteBySystem] (@GroupName)))
 	BEGIN
 		SELECT @ErrMsg = 	N'The site of this username does not belong to this group!'
 			, @ErrCode = 104
@@ -105,7 +103,7 @@ BEGIN
 		DECLARE @today DATETIME
 		SELECT  @today = CONVERT(DATE, GETDATE())
 
-		IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH(NOLOCK) WHERE SuperId = @CustID AND @today BETWEEN FromDate AND ToDate)
+		IF NOT EXISTS (SELECT 1 FROM dbo.Acc_GroupExtraPTSetting WITH(NOLOCK) WHERE SuperId = @CustID AND @today BETWEEN FromDate AND ToDate)
 		BEGIN
 		SELECT
 			@ErrCode = 106,
@@ -164,12 +162,15 @@ BEGIN
 
 	SET @endRun		= GETDATE()
 	SET @duration	= DATEDIFF(MILLISECOND, @startRun, @endRun)
-
-	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+	
+	
+	-- Write log
+	EXEC Acc_WriteLog_UserLog_RunSP_Wrapper
 		@UserID = @UserID,
 		@CustID = @CustID,
 		@ActionID = 618,
 		@TrackingValue = @LogData,
 		@duration = @duration
+		
 END
 GO

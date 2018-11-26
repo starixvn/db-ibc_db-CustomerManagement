@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupAddByUsername_Multiple]
 	@GroupName	VARCHAR(MAX),
 	@Username	VARCHAR(MAX),
@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20180409@Kan: Insert multiple supers to Group [RedmineID: #77733]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 */
 
 BEGIN
@@ -24,7 +25,7 @@ BEGIN
 	DECLARE @TempErrMsg NVARCHAR(1000)
 	
 	-- Check permission for account site
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission
 		@custid = @UserID,
 		@funcname ='[Admin_ManageExAcc]',
 		@ErrCode = @ErrCode OUTPUT,
@@ -45,7 +46,7 @@ BEGIN
 	INSERT INTO @TempGroupSuper(GroupName, SuperName)
 	SELECT DISTINCT LTRIM(RTRIM(g.val)), LTRIM(RTRIM(s.val))
     FROM dbo.strSplit(@GroupName,',') g
-    CROSS JOIN dbo.strSplit(@Username,',') s
+		CROSS JOIN dbo.strSplit(@Username,',') s
 
 	WHILE (SELECT COUNT(1) FROM @TempGroupSuper) > 0
 	BEGIN
