@@ -10,7 +10,7 @@ AS
 	Created by: [Henry]
 	Date: 2011-04-01
 	Task: Insert an existing customer to External AccSite Group
-	DB: DBAGE/bodb_AGE 
+	DB: DBCUST/CUSTDB 
 	
 	Revisions:
 		- 20110429@Jamie: Remove prefix DBLOG when call write log
