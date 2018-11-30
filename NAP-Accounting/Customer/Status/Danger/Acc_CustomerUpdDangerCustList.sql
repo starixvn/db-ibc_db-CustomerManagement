@@ -17,6 +17,7 @@ Original:
 
 Revisions:	
 	- 20171124@Winnie: Update Danger, Danger2, Danger3 fields , and write log content [RedmineID:#86627]
+	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
 Param's Explanation:
 	@CustList: List usernames of members will be updated,
 	@DangerType:  type of danger,
@@ -138,29 +139,8 @@ BEGIN
 
 	UPDATE @tmpCust SET IsFinished=1 WHERE RoleID=1
 
-	IF EXISTS (SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NOT NULL AND IsFinished=0)
-	BEGIN
-		WHILE (1 = 1)
-		BEGIN
-			UPDATE TOP (1) @tmpCust
-			SET isfinished		= 1
-				,@CustId		= custid				
-				,@roleid		= roleid			
-			WHERE isfinished	= 0 
-				AND Custid IS NOT NULL
-	
-			IF @@ROWCOUNT = 0 BREAK
-	
-			EXEC dbo.Acc_CustomerInfo_Execrep_03	@custid			= @custid, 
-													@roleid			= @roleid, 
-													@DangerType		= @DangerType,
-													@DangerLevel	= @DangerLevel 	
-		
-		END	
-	END
-
 	/* region3: write log*/
-	IF EXISTS (SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NOT NULL)
+	IF EXISTS (SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NOT NULL AND IsFinished=1)
 	BEGIN
 		WHILE (1 = 1)
 		BEGIN
@@ -169,6 +149,7 @@ BEGIN
 				,@CustId				= custid
 				,@DangerOld				= Danger				
 			WHERE IsFinishedWriteLog	= 0 
+				AND IsFinished=1
 				AND Custid IS NOT NULL
 	
 			IF @@ROWCOUNT = 0 BREAK
