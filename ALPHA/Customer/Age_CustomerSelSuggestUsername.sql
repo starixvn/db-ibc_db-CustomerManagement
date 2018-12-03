@@ -102,12 +102,3 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSuggestUsername] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSuggestUsername] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSuggestUsername] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSuggestUsername] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelSuggestUsername] TO [vnteam] AS [dbo]
