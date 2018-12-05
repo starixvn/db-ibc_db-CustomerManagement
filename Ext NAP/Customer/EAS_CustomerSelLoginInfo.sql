@@ -15,7 +15,7 @@ AS
 		- 20181030@Elodie: Search Customer on left panel of EXT NAP (Login Info) [Redmine:#95978]
 
 	Example:	
-		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070
+		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070, @GroupName = 'ACCUUS'
 */
 BEGIN
     SET NOCOUNT ON
@@ -49,7 +49,7 @@ BEGIN
 	ELSE IF @RoleId = 3
 	BEGIN
 		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid
+		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid AND srecommend = @srecommend --to use IX_srecommend index
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
