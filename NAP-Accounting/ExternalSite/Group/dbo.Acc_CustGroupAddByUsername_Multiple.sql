@@ -11,7 +11,7 @@ AS
 	Created by: [Kan]
 	Date: 2018-04-09
 	Task: Insert multiple super(s) to External AccSite Group
-	DB: DBAGE/bodb_AGE 
+	DB: DBCUST/CUSTDB 
 	
 	Revisions:
 		- 20180409@Kan: Insert multiple supers to Group [RedmineID: #77733]
