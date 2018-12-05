@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelSuggestUsername] 
 	@prefix		VARCHAR(50),
 	@custid		INT,
@@ -9,7 +9,7 @@ AS
 		Created: Johnson
 		Date: 2012-07-25
 		Task: Suggest available suffix for new member
-		DB:  DBAGE/bodb02
+		DB:  DBCUST/CUSTDB
 		
 		Revisions:
 			- 20120803@Johnson: revise sp
