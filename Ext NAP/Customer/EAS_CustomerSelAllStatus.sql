@@ -23,10 +23,11 @@ BEGIN
     
 	--Downline/Upline status 
     DECLARE @upLineDisableCasino			BIT   
-		  , @uplineSyncCasino				BIT    
+		  , @uplineSyncCasino				BIT    		   
           , @uplineDisabledNumber			BIT
           , @uplineDisableEsports			BIT
-		  , @uplineDisableGoldDeluxe		BIT
+		  , @uplineHideGoldDeluxe			BIT   
+		  , @uplineDisableGoldDeluxe		BIT		  
 		  , @uplineDisableColossusBet		BIT
 		  , @DisableDownlinesColossusBet	BIT = 0  
 		  
@@ -52,6 +53,7 @@ BEGIN
 				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
+				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 
@@ -68,10 +70,11 @@ BEGIN
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
 				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
+				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)				
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
+				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
@@ -92,6 +95,7 @@ BEGIN
 				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
+				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
@@ -131,6 +135,7 @@ BEGIN
 			ci.DisableColossusBet,
 			ci.HideColossusBet,
 			@uplineDisableColossusBet AS uplineDisableColossusBet,
+			@uplineHideGoldDeluxe AS uplineHideGoldDeluxe,
 			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
