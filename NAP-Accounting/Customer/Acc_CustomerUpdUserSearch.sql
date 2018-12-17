@@ -1,6 +1,4 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" isFunction="0"></info>*/
-USE CustDB 
-GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserSearch]
 	@userid int,

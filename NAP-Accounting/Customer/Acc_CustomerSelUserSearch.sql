@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbadminNet,bodbExtAccNet" isFunction="0"></info>*/
-USE bodb02 
-GO
-
 ALTER PROCEDURE [dbo].[Acc_CustomerSelUserSearch]
 	@custid				int,
 	@username			nvarchar(30),

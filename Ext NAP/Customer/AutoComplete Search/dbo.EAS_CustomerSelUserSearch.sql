@@ -1,6 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
+/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROC [dbo].[EAS_CustomerSelUserSearch]
 	@custid int,
