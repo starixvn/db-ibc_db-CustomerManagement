@@ -25,7 +25,6 @@ BEGIN
     DECLARE @upLineDisableCasino			BIT   
 		  , @uplineSyncCasino				BIT    		   
           , @uplineDisabledNumber			BIT
-          , @uplineDisableEsports			BIT
 		  , @uplineHideGoldDeluxe			BIT   
 		  , @uplineDisableGoldDeluxe		BIT		  
 		  , @uplineDisableColossusBet		BIT
@@ -52,7 +51,6 @@ BEGIN
 				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
 				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -72,7 +70,6 @@ BEGIN
 				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
 				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)				
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -94,7 +91,6 @@ BEGIN
 				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
 				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
@@ -130,8 +126,6 @@ BEGIN
 			@uplineSyncCasino AS uplineSyncCasino,
 			ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			ci.DisableEsports, 
-			@uplineDisableEsports AS uplineDisableEsports,
 			ci.DisableColossusBet,
 			ci.HideColossusBet,
 			@uplineDisableColossusBet AS uplineDisableColossusBet,
