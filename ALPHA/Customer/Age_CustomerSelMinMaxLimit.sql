@@ -12,7 +12,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelMinMaxLimit]
 	@MinBetv99_Max money output, @MaxBetv99_Min money output, @MaxPerMatchv99_Min money = 0  output, @MaxPerMatchv99_Max money output,	
 	@MinBetv99MP_Max money output, @MaxBetv99MP_Min money output, @MaxPerMatchv99MP_Min money = 0  output, @MaxPerMatchv99MP_Max money output,
 	@MinBetv1MP_Max money output, @MaxBetv1MP_Min money output, @MaxPerMatchv1MP_Min money = 0  output, @MaxPerMatchv1MP_Max money output,
-	@MinBetv161_Max money output, @MaxBetv161_Min money output, @MaxPerMatchv161_Min money = 0  output, @MaxPerMatchv161_Max money = 0 output, @MaxPerBallv161_Min money = 0 output, @MaxPerBallv161_Max money = 0 output
+	@MinBetv161_Max money output, @MaxBetv161_Min money output, @MaxPerMatchv161_Min money = 0  output, @MaxPerMatchv161_Max money = 0 output, @MaxPerBallv161_Min money = 0 output, @MaxPerBallv161_Max money = 0 output,
+	@MinBetv164_Max money output, @MaxBetv164_Min money output, @MaxPerMatchv164_Min money = 0  output, @MaxPerMatchv164_Max money = 0 output
 AS
 /*
 Created: 20090714@nqminh
@@ -27,6 +28,7 @@ Revisions:
 	- 20131011@Elodie: Add HR Fixed Odds [Redmine:#6505]
 	- 20161109@Helen: Separate Bet Setting for Soccer - Parlay - [Redmine:66265]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 */
@@ -142,7 +144,15 @@ Begin
 		and cs3.bettype = 81 and cs3.sporttype=161
 	where ci.custid = @CustID
 
-
+	Select 
+		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
+	from 
+		custsetting3rd as cs3 WITH (NOLOCK)
+		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.Recommend or cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
+		and cs3.bettype = 8101 and cs3.sporttype=164
+	where ci.custid = @CustID
+	
 	--MAX PER MATCH
 	Select 
 		@MaxPerMatch_Min = 0, 	
@@ -176,6 +186,9 @@ Begin
 		@MaxPerBallv161_Min = 0,
 		@MaxPerBallv161_Max = MIN(CASE WHEN cs.MaxPerBall161 = 0 THEN NULL ELSE cs.MaxPerBall161 END),
 		
+		@MaxPerMatchv164_Min = 0,	
+		@MaxPerMatchv164_Max = Min(case when cs.MaxPerMatch164 = 0 then NULL else cs.MaxPerMatch164 end),
+				
 		@MaxPerMatchv99MP_Min = 0,	
 		@MaxPerMatchv99MP_Max = Min(case when cs.MaxPerMatch99MP = 0 then NULL else cs.MaxPerMatch99MP end),
 		
@@ -290,7 +303,14 @@ Begin
 		and cs3.bettype = 81 and cs3.sporttype=161
 	where ci.custid = @CustID
 
-
+	Select 
+		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
+	from 
+		custsetting3rd as cs3 WITH (NOLOCK)
+		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
+		and cs3.bettype = 8101 and cs3.sporttype=164
+	where ci.custid = @CustID
 
 	--MAX PER MATCH
 	Select 
@@ -330,7 +350,10 @@ Begin
 		@MaxPerBallv161_Max = MIN(CASE WHEN cs.MaxPerBall161 = 0 THEN NULL ELSE cs.MaxPerBall161 END),
 		
 		@MaxPerMatchv161_Min = 0,	
-		@MaxPerMatchv161_Max = Min(case when cs.MaxPerMatch161 = 0 then NULL else cs.MaxPerMatch161 end)
+		@MaxPerMatchv161_Max = Min(case when cs.MaxPerMatch161 = 0 then NULL else cs.MaxPerMatch161 end),
+		
+		@MaxPerMatchv164_Min = 0,	
+		@MaxPerMatchv164_Max = Min(case when cs.MaxPerMatch164 = 0 then NULL else cs.MaxPerMatch164 end)
 		
 	from 
 		custinfo as cs WITH (NOLOCK) 
@@ -419,6 +442,13 @@ Begin
 		custsetting3rd as cs3 WITH (NOLOCK)
 	where cs3.custid = @userid and cs3.bettype =  81 and cs3.sporttype=161
 	
+	Select 
+		@MinBetv164_Max = MinBet,
+		@MaxBetv164_Min = MaxBet
+	from 
+		custsetting3rd as cs3 WITH (NOLOCK)
+	where cs3.custid = @userid and cs3.bettype =  8101 and cs3.sporttype=164
+	
 	--MAX PER MATCH
 	Select 
 		@MaxPerMatch_Min = 0,
@@ -455,20 +485,13 @@ Begin
 		@MaxPerBallv161_Max = MaxPerBall161,
 		
 		@MaxPerMatchv161_Min = 0,
-		@MaxPerMatchv161_Max = MaxPerMatch161	
-					
+		@MaxPerMatchv161_Max = MaxPerMatch161,
+			
+		@MaxPerMatchv164_Min = 0,
+		@MaxPerMatchv164_Max = MaxPerMatch164			
 	from 
 		custinfo as ci WITH (NOLOCK) 
 	where ci.custid = @userid
 
 End
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMaxLimit] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMaxLimit] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMaxLimit] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelMinMaxLimit] TO [vnteam] AS [dbo]
