@@ -46,7 +46,7 @@ BEGIN
 	WHERE custid = @CustId
 
 	-- check belong to group 
-	IF NOT EXISTS (SELECT 1 FROM DBAGE.bodb_AGE.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
+	IF NOT EXISTS (SELECT 1 FROM dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
 	BEGIN
 		RETURN
 	END
