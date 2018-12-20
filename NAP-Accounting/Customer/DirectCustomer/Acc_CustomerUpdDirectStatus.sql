@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 SET QUOTED_IDENTIFIER ON 
 GO
 SET ANSI_NULLS ON 
@@ -21,6 +21,7 @@ AS
 		- 20170420@Helen:  Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171113@Helen: Support to add default TO setting for new direct customers - [Redmine:86052]
+		- 20181107@Louis: Credit Collection [Redmine: #98621]
 		
     Param's Explanation:
     • @ErrCode:
@@ -98,9 +99,12 @@ BEGIN
       , @mode = 1
 	
 	--[72339]:Add Extra information for Direct Accounts
-	INSERT INTO CustDirectAccount (CustID)
-	SELECT C.custid
+	INSERT INTO CustDirectAccount (CustID, Coll_Status)
+	SELECT C.custid, NULL AS Coll_Status
 	FROM @affectedList C 
+	
+	EXEC dbo.Acc_CreditCollStatusInit @custid = @custid, @UserId = @creator, @IP = @IP
+	
 	-- TO Control: Send Email
 	IF @roleid IN (2,3,4)
 	BEGIN
@@ -244,9 +248,6 @@ GO
 SET ANSI_NULLS ON 
 GO
 
-
-GO 
- GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdDirectStatus] TO [vnteam]
 GO 
  GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [bodbAdminNet]
 GO 
