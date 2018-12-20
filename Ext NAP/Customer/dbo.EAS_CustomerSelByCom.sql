@@ -58,7 +58,7 @@ Revisions:
 	- 20180907@Winnie: EXT-Function to control data range for SMA - [Redmine: #100067]
 	- 20180731@Razor: Splitting Super Profile [#86934]
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
-
+	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
 
 	
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
@@ -85,7 +85,7 @@ BEGIN
     SELECT custID, username 
       FROM dbo.custinfo WITH(NOLOCK)
      WHERE custid in (SELECT custid
-                        from DBAGE.bodb_AGE.dbo.Acc_CustGroup WITH(nolock)
+                        from dbo.Acc_CustGroup WITH(nolock)
                        WHERE GroupName = @GroupName
                      )
        AND (@Custid IS NULL OR custid = @Custid)
@@ -370,7 +370,7 @@ BEGIN
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
 		-- Check isHidden AllBet
 		--OUTER APPLY	dbo.f_CustSetting_SportBetTypeHiddenBySiteCurrency(cu.custid, @AllBet) AS sbhsc
-		LEFT JOIN DBAGE.bodb_Age.dbo.Age_CustDateLimit l WITH(NOLOCK) ON cu.CustID=l.CustId   
+		LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON cu.CustID=l.CustId   
 		
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1,5,4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
