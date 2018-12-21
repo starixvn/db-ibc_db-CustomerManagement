@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb_Age" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
 	@Userid		INT			= NULL
@@ -8,7 +8,7 @@ AS
 	Created by: [Henry]
 	Date: 2011-04-01
 	Task: Select the list super/master of Acc_CustGroup
-	DB: DBAGE/bodb_AGE
+	DB: DBCUST-CUSTDB
 	
 	Revisions:
 		- 20130121@Dan: Move sp from DB053/bodb02 to DBAGE/bodb_AGE
@@ -17,6 +17,7 @@ AS
 		- 20170413@Percy: Change way get to-be-primary group [RedmineID: #74292]
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 */
 
 BEGIN
@@ -43,7 +44,7 @@ BEGIN
 		SELECT
 			SuperId, GroupId, GroupName, MIN(FromDate) AS EffectiveDate,
 			ROW_NUMBER() OVER(PARTITION BY SuperId, GroupId, GroupName ORDER BY MIN(FromDate) DESC) AS RN
-		FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH(NOLOCK)
+		FROM dbo.Acc_GroupExtraPTSetting WITH(NOLOCK)
 		WHERE CONVERT(DATE, GETDATE()) BETWEEN FromDate AND ToDate
 		GROUP BY SuperId, GroupId, GroupName
 	) A
@@ -52,7 +53,7 @@ BEGIN
 	UNION
 	SELECT
 		SuperId, GroupId, GroupName, FromDate, CONVERT(BIT, 0)
-	FROM bodb02.dbo.Acc_GroupExtraPTSetting WITH(NOLOCK)
+	FROM dbo.Acc_GroupExtraPTSetting WITH(NOLOCK)
 	WHERE FromDate > CONVERT(DATE, GETDATE())
 	
 	SELECT TOP 1 @GroupId = GroupId FROM @GroupExtraPTSetting WHERE IsPrimary = 1
@@ -95,34 +96,30 @@ BEGIN
 			WHERE a.GroupName = COALESCE(@GroupName,a.GroupName)
 			GROUP BY a.CustID, a.roleid, a.GroupName
 		) a
-		INNER JOIN bodb02.dbo.customer c WITH(NOLOCK) ON a.CustID = c.CustID
+		INNER JOIN dbo.customer c WITH(NOLOCK) ON a.CustID = c.CustID
 		ORDER BY GroupName, username
 	END
 	ELSE
 	BEGIN
-		DECLARE @SearchQuery varchar(1024)
+		
 		DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 		DECLARE @tmpUserid VARCHAR(50)
 		CREATE TABLE #TempCustGroup(CustID INT,Username VARCHAR(50),Firstname NVARCHAR(50),Lastname NVARCHAR(50),RoleId TINYINT,Groupname VARCHAR(50),iplogin NVARCHAR(20),recommendId INT,site VARCHAR(10))
-	
-		SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-		SELECT @SearchQuery = 'SELECT * 
-		FROM OPENQUERY(DBPOL, 
-		''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
 
 		INSERT INTO  @tmp (siteid , site,SpecialGroup)
-		EXECUTE(@SearchQuery)	
+		SELECT siteid , site,SpecialGroup 
+		FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
 	
 		INSERT INTO #TempCustGroup(CustID, Username, Firstname, Lastname, RoleId, Groupname, iplogin, recommendId, site)
 		SELECT a.CustID, c.username, c.firstname, c.lastname, a.roleid, a.GroupName, c.iplogin, c.recommend, site
 		FROM dbo.Acc_CustGroup a WITH (NOLOCK)
-			INNER JOIN bodb02.dbo.Customer c WITH (NOLOCK) ON a.CustID = c.CustID
+			INNER JOIN dbo.Customer c WITH (NOLOCK) ON a.CustID = c.CustID
 		ORDER BY a.GroupName, c.username	
 	
 		UPDATE a
 		SET a.site = b.site
 		FROM #TempCustGroup a
-			INNER JOIN bodb02.dbo.Customer b (NOLOCK) ON a.recommendId = b.custid
+			INNER JOIN dbo.Customer b (NOLOCK) ON a.recommendId = b.custid
 		WHERE a.RoleId = 1
 	
 		DELETE FROM #TempCustGroup WHERE site IN (SELECT site FROM @tmp)
@@ -154,7 +151,7 @@ BEGIN
 			WHERE a.GroupName = COALESCE(@GroupName,a.GroupName)
 			GROUP BY a.CustID, a.roleid, a.GroupName
 		) a
-			INNER JOIN bodb02.dbo.Customer c WITH(NOLOCK) ON a.CustID = c.CustID
+			INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.CustID = c.CustID
 		ORDER BY GroupName, username
 
 		DROP TABLE #TempCustGroup
