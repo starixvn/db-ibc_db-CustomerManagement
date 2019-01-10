@@ -18,6 +18,7 @@ AS
 		- 20170707@David: Insert Announcement  [Redmine:74338]
 		- 20180621@Razor: Renovation Announcement [Redmind: #94705]
 		- 20180830@Razor: Add emergency popup [Redmind: #100154]
+		- 20190121@Alvin: Update System filter condition
 		- Note: consider later. Not write log now because of nowhere uses it and create new table for useless
 	Param's Explanation:
 		@FilterBy:  1 - Created Date
@@ -47,24 +48,33 @@ BEGIN
 		,[LastEditorName]
 	FROM dbo.Announcements WITH (NOLOCK)
 	WHERE Environments LIKE '%' + @Environment + '%'
-		AND Systems LIKE '%' + @System + '%'
+		AND (
+			@System = ''
+			OR @System IN (
+				SELECT val
+				FROM dbo.strSplit(Systems, ',')
+				)
+			)
 		AND IsActive = COALESCE(@IsActive, IsActive)
 		AND CASE 
 			WHEN (
 					@FilterBy = 1
 					AND CreatedDate BETWEEN @FromDate
 						AND @ToDate
-					) THEN 1
+					)
+				THEN 1
 			WHEN (
 					@FilterBy = 2
 					AND FromDate BETWEEN @FromDate
 						AND @ToDate
-					) THEN 1
+					)
+				THEN 1
 			WHEN (
 					@FilterBy = 3
 					AND ToDate BETWEEN @FromDate
 						AND @ToDate
-					) THEN 1
+					)
+				THEN 1
 			ELSE 0
 			END = 1
 END
