@@ -56,6 +56,7 @@ Revisions:
 
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
+	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
 	
 	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
@@ -162,11 +163,15 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @Recommend AND [Site] = 'IMBC')
 		SET @IsIMBC = 1			
 	
+	DECLARE	@DoubleCommLosingUpline BIT
+	SELECT @DoubleCommLosingUpline = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend
+
     SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
 			MatchLimit, VirtualMultiplier, Enabled,
 			DisableCasino, SyncCasino, DisableOutright,
 			DisableNumber,			
 			DoubleCommLosing, Recommend, DisableCasinoBonus,  HideKeno,
+			@DoubleCommLosingUpline as DoubleCommLosingUpline,
 			--DisableEsports, 
 			DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet, HideColossusBet,
 			(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
@@ -378,7 +383,7 @@ BEGIN
 	       ci.synccasino,
 	       ci.disablecasino,	     
 	       ci.DisableNumber,
-	       ci.DoubleCommLosing,	   
+	       ci.DoubleCommLosingUpline,	   
            ci.DisableCasinoBonus,
 	       -- For Esports
 	       --ci.DisableEsports,	       
@@ -493,7 +498,7 @@ BEGIN
 				ci.DoubleCommLosing, ci.DisableOutright, 		
 				ci.synccasino,
 				ci.disablecasino,  ci.DisableNumber,  
-			  	ci.DoubleCommLosing, ci.DisableCasinoBonus,
+			  	ci.DoubleCommLosingUpline, ci.DisableCasinoBonus,
 				ci.HideKeno, --ci.DisableEsports,
 				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,ci.DisableColossusBet,ci.HideColossusBet,AC.playerdiscount,
 				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,

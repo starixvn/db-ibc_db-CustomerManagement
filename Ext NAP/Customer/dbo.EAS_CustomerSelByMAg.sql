@@ -56,6 +56,7 @@ Revisions:
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
+	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
 exec EAS_CustomerSelByMAg @MRecommend=4797617,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
     
 */
@@ -167,6 +168,9 @@ BEGIN
 	SELECT siteid , site,SpecialGroup 
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@tmpUserid)
 
+	DECLARE	@DoubleCommLosingUpline BIT
+	SELECT @DoubleCommLosingUpline = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @mrecommend
+
     SELECT cu.custid,
            cu.username,
            ci.enabled,
@@ -204,7 +208,7 @@ BEGIN
 	  
 	       ci.DisableNumber,
 	  
-	       ci.DoubleCommLosing,
+	       @DoubleCommLosingUpline as DoubleCommLosingUpline,
 	      
 	       -- FOR Esports
 	       --ci.DisableEsports,
@@ -477,7 +481,7 @@ BEGIN
 			cu.creatdate ,cu.iplogin,ci.DoubleCommLosing,ci.DisableOutright,  	
 			ci.synccasino,ci.disablecasino,  
 			ci.DisableNumber,  
-			ci.DoubleCommLosing, ci.DisableCasinoBonus, ci.HideKeno, 
+			ci.DisableCasinoBonus, ci.HideKeno, 
 			--ci.DisableEsports,
 			ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableColossusBet, ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,
 			ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet,ci.HideAllBetUpline, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
