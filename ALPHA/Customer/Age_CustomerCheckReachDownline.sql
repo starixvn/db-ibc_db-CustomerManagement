@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerCheckReachDownline]
 	@roleid		INT,
 	@ErrCode	INT = 0 OUTPUT,
 	@ErrMsg		VARCHAR(250) = '' OUTPUT,
-	@Language	VARCHAR(2) = 'E'
+	@Langkey VARCHAR(10) = 'en-US'
 
 AS
 	/*
