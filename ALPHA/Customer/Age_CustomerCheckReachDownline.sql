@@ -40,7 +40,7 @@ BEGIN
 			)		
 		SELECT @downline=COUNT(1) 
 		FROM custInfo WITH(NOLOCK)
-			WHERE srecommend = @custid AND roleid IN(2,3,1)
+			WHERE srecommend = @custid AND roleid =3
 
 		IF ISNULL(@seqname,'')='' OR @downline=1296
 		BEGIN
@@ -65,7 +65,7 @@ BEGIN
 			)
 		SELECT @downline=COUNT(1) 
 		FROM custInfo WITH(NOLOCK)
-			WHERE srecommend = @custid AND roleid IN(2,1)
+			WHERE srecommend = @custid AND roleid =2
 
 		IF ISNULL(@seqname,'')='' OR @downline=1296
 		BEGIN
