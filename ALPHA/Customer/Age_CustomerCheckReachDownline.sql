@@ -45,7 +45,7 @@ BEGIN
 		IF ISNULL(@seqname,'')='' OR @downline>=1296
 		BEGIN
 			SELECT @ErrCode=40039
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit. Please contact your upline for further assistance.'
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit (1296 accounts). Please contact your upline for further assistance.'
 							 ELSE [dbo].[f_Get_MsgNamebyMsgID](40039, @Language) END		
 		END
 			
@@ -67,8 +67,8 @@ BEGIN
 		IF ISNULL(@seqname,'')='' OR @downline>=1296
 		BEGIN
 			
-			SELECT @ErrCode=40039
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit. Please contact your upline for further assistance.'
+			SELECT @ErrCode=40040
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit (1296 accounts). Please contact your upline for further assistance.'
 							 ELSE [dbo].[f_Get_MsgNamebyMsgID](40039, @Language) END	
 		END
 	END
@@ -125,8 +125,8 @@ BEGIN
 		
 		IF ISNULL(@seqname,'')='' OR @downline>=46656
 		BEGIN
-			SELECT @ErrCode=40039
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit. Please contact your upline for further assistance.'
+			SELECT @ErrCode=40041
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit (46656 accounts). Please contact your upline for further assistance.'
 							 ELSE [dbo].[f_Get_MsgNamebyMsgID](40039, @Language) END
 		END
 
