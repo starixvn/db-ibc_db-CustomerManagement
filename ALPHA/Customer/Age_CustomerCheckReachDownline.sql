@@ -42,7 +42,7 @@ BEGIN
 		FROM custInfo WITH(NOLOCK)
 			WHERE srecommend = @custid AND roleid =3
 
-		IF ISNULL(@seqname,'')='' OR @downline>=1296
+		IF ISNULL(@seqname,'')='' AND @downline>=1296
 		BEGIN
 			SELECT @ErrCode=40039
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit (1296 accounts). Please contact your upline for further assistance.'
@@ -64,7 +64,7 @@ BEGIN
 		FROM custInfo WITH(NOLOCK)
 			WHERE mrecommend = @custid AND roleid =2
 
-		IF ISNULL(@seqname,'')='' OR @downline>=1296
+		IF ISNULL(@seqname,'')='' AND @downline>=1296
 		BEGIN
 			
 			SELECT @ErrCode=40039
@@ -123,7 +123,7 @@ BEGIN
 		FROM custInfo WITH(NOLOCK)
 			WHERE recommend = @custid AND roleid = 1
 		
-		IF ISNULL(@seqname,'')='' OR @downline>=46656
+		IF ISNULL(@seqname,'')='' AND @downline>=46656
 		BEGIN
 			SELECT @ErrCode=40040
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, you cannot create more accounts because the total downlines have reached the limit (46656 accounts). Please contact your upline for further assistance.'
