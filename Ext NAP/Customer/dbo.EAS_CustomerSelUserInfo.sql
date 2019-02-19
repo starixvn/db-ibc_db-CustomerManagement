@@ -1,49 +1,64 @@
 /*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" isFunction="0"></info>*/
-USE bodb02
-GO
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
-	@custid	int = 0
+	@custid	int = 0,
+	@username varchar(30),
+	@IsGetUplineInfo BIT = 0,
+	@GroupName	VARCHAR(50)
 AS  
 /*
-	Created: 20180628@Elodie
+	Created By: Dan
+	Created Date: 2012-11-15
 	Task : Get User Information and their upline info
-	DB: DBAGE/bodb02
+	DB: DBEAS/bodb_EAS
+	Original:Accounting site
 
 	Revisions:
+		- 20130121@Dan: Move sp from DB053/bodb02 to DBEAS/bodb_EAS, change linked server DB06 to DBACC, call to bodb_AGE for Acc_CustGroup
+		- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
 		- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
 		- 20180628@Elodie: Get User Information and their upline info [Redmine: #58776]
 
 */	
 BEGIN
 	SET NOCOUNT ON  
-	/*
-	DECLARE @roleID					TINYINT,	
-			@HasSecurityCode		BIT = 0,
-			@UplineHasSecurityCode	BIT =0,
-			@ClosedReason			TINYINT,
-			@srecommend				INT, 
+	DECLARE @srecommend				INT, 
 			@mrecommend				INT,
 			@recommend				INT,
 			@SuperName				NVARCHAR(50),
 			@MasterName				NVARCHAR(50),
-			@AgentName				NVARCHAR(50)		 		
+			@AgentName				NVARCHAR(50),	 
 
-	SELECT  @roleID = roleID, 
-			@srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
+			@HasSecurityCode		BIT=0,
+			@UplineHasSecurityCode	BIT =0,
+			@ClosedReason			TINYINT,	
+			@roleID					TINYINT		
+					
+	IF (ISNULL(@custid,0)=0)
+	BEGIN
+		--Get CustID from DB06, where got index on Username and Username2
+		EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+		IF @custid is NULL
+			RETURN
+	END	
+
+	SELECT  @username = username, @roleID=roleID, 
+			@srecommend=srecommend, @mrecommend=mrecommend,@recommend=recommend
 	FROM bodb02.dbo.custinfo WITH (NOLOCK) 
 	WHERE custid = @custid
 
 	IF @roleID IN(2,3,4)
 	BEGIN
-		IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @Custid AND cl.SecurityCode IS NOT NULL)
+		IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@Custid AND cl.SecurityCode IS NOT NULL)
 				SELECT @HasSecurityCode=1
 
 		IF @roleID = 4
 			SELECT @UplineHasSecurityCode = 1
 		ELSE
 		BEGIN
-			IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = CASE WHEN @roleID = 3 THEN @SRecommend AND cl.SecurityCode IS NOT NULL)
+			IF EXISTS (SELECT TOP 1 1 FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = CASE WHEN @roleID = 3 THEN @SRecommend
+																													WHEN @roleID = 2 THEN @mrecommend END 
+																								AND cl.SecurityCode IS NOT NULL)
 				SELECT @UplineHasSecurityCode = 1
 		END
 
@@ -55,7 +70,7 @@ BEGIN
 	END
 
 	-- check belong to group 
-IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
+	IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
 	BEGIN
 		RETURN
 	END
@@ -71,12 +86,12 @@ IF NOT EXISTS (SELECT 1 FROM bodb02.dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID 
 
 	SELECT @custid AS custid, @username AS username, @roleID AS roleID, 
 		ci.Enabled, c.firstname, c.lastname, c.username2, c.phone, c.mobilephone, c.fax, c.creatdate, c.iplogin AS lastloginip, 
-		@ClosedReason AS ClosedReason, @HasSecurityCode AS HasSecurityCode
+		@ClosedReason AS ClosedReason, @HasSecurityCode AS HasSecurityCode, @UplineHasSecurityCode AS UplineHasSecurityCode,
 		@srecommend AS srecommend, @mrecommend AS mrecommend, @recommend AS recommend,
 		@SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
 	FROM bodb02.dbo.Customer c WITH (NOLOCK) 
 		INNER JOIN bodb02.dbo.CustInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 	WHERE c.custid = @custid
-	*/
+
 END
 GO

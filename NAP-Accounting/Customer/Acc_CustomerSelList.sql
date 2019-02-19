@@ -129,7 +129,6 @@ BEGIN
 				@TotalMemberClosed AS [TotalMemClosed], 
 				@TotalMemberSuspended AS [TotalMemSuspended]
 	END
-END
 
 	IF @roleid = 2
 		SELECT UserName,cl.ClosedReason
@@ -139,6 +138,5 @@ END
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	
 END
 GO
