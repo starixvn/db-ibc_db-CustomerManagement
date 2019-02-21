@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB,DBTXN-bodb02,DB05-bodb02,DB052-bodb02,DB053-bodb02,DB054-bodb02,DB06-bodb02,DBLICAPI-bodb02,DBLicApi02-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB,DB05-bodb02,DB052-bodb02,DB053-bodb02,DB054-bodb02,DB06-bodb02" selecters="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_SiteBySystem]
 (
@@ -39,6 +39,7 @@ Revisions:
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
+	- 20190221@Elodie: Add TH001,TH002,TH003 group
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -112,7 +113,7 @@ BEGIN
 		UNION ALL 
 		SELECT 11 --INDO	
 	END	
-	ELSE IF (@System IN ('ACCTESTK68','TH999'))
+	ELSE IF (@System IN ('ACCTESTK68','TH999','TH001','TH002','TH003'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 257 --Y987
