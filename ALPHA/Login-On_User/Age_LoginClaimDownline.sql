@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]  
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]  
     @CustID INT = 0,
     @UserPwd VARCHAR(50),
 	@LoginIP VARCHAR(20)='' OUTPUT,  --- if output=NULL then account is the first login
@@ -55,6 +57,7 @@ Revisions:
 					   Write more log on DBTXN server in case of DBLOG server failure
 	- 20130409@Johnson: Get more fields isForcedChangeSecurityCode and SecurityCode
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
+	- 20190221@Johnson: Add role = 0 for tier0 for cn88 [redmine: #105660]
 	
 Param's Explanation:
 • @IsNickname: is use Nickname or not, parameter Input also Output
@@ -410,7 +413,7 @@ BEGIN
 
 	SET @rowcount = @@ROWCOUNT
 
-	SELECT @ServerID = CASE WHEN @roleid=2 THEN 90 WHEN @roleid=3 THEN 91 ELSE 92 END -- login from web
+	SELECT @ServerID = CASE WHEN @roleid=2 THEN 90 WHEN @roleid=3 THEN 91 WHEN @roleid = 4 THEN 92 ELSE 93 END -- login from web
 
 	-- user not found  
 	IF @rowcount = 0  
@@ -544,7 +547,8 @@ BEGIN
 	END 
 
 
-	SELECT @role = CASE @RoleID WHEN 1 THEN 'Customer:' 
+	SELECT @role = CASE @RoleID WHEN 0 THEN 'Headline:'
+						WHEN 1 THEN 'Customer:' 
 						WHEN 2 THEN 'Agent:' 
 						WHEN 3 THEN 'Master:' 
 						WHEN 4 THEN 'Super:' 
@@ -827,8 +831,3 @@ BEGIN
 	END	
 END	
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginClaimDownline] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginClaimDownline] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginClaimDownline] TO [VNTeam]
