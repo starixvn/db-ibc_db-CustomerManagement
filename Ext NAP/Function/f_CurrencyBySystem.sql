@@ -1,4 +1,6 @@
-﻿ALTER FUNCTION [dbo].[f_CurrencyBySystem]
+﻿/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" selecters="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
+
+ALTER FUNCTION [dbo].[f_CurrencyBySystem]
 (
 	@System varchar(50) = 'ACCOUNTING'
 )
@@ -36,6 +38,7 @@ Revisions:
 	- 20180605@Elodie: Add THEU, 899EU, 789EU group - [Redmine: #94865]
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
+	- 20190221@Elodie: Add TH001,TH002,TH003 group
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -138,7 +141,7 @@ BEGIN
 		SELECT 74 --TH
 		UNION ALL SELECT 20	--UUS
 	END
-	ELSE IF (@System in ( 'TH999'))
+	ELSE IF (@System in ( 'TH999','TH001','TH002','TH003'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 74 --TH
@@ -155,10 +158,3 @@ BEGIN
 	END
 	RETURN
 END
-
-GO
-GRANT SELECT ON [dbo].[f_CurrencyBySystem] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT SELECT ON [dbo].[f_CurrencyBySystem] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[f_CurrencyBySystem] TO [vnteam] AS [dbo]
