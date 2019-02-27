@@ -32,6 +32,7 @@ AS
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
 		- 20180903@Elodie: Revise SP
+		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	

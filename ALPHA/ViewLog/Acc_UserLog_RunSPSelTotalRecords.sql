@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 USE [bodb_CustomerLog]
 GO
 
@@ -33,6 +33,7 @@ AS
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
 		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
 		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
+		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -82,7 +83,7 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 				WHERE		la.ActionTypeID = @ActionTypeId
-						AND la.ActionID BETWEEN 1100 AND 1199
+						AND (la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 				OPTION (OPTIMIZE FOR (@i = 1))
@@ -146,6 +147,7 @@ BEGIN
 					AND IsInternal <= @IsInternal
 					--exclude log action of status
 					AND la.ActionID NOT BETWEEN 1100 AND 1199
+					AND la.ActionID NOT BETWEEN 165000 AND 169999
 					AND la.ActionID NOT BETWEEN 60000 AND 79999					
 					AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
