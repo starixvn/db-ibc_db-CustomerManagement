@@ -6,7 +6,6 @@ ALTER PROCEDURE [dbo].[Acc_CustomerSelList]
 	@custid int,
 	@PageSize int = 500,
 	@PageIndex int = 1,
-	@Mode BIT = 0,
 	@TotalPages int = 1 output
 AS
 /*
@@ -21,12 +20,9 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20170620@Winnie: Apply color for closed accounts [RedmineID: #74494]
 		- 20180627@Elodie: Enhance SP [RedmineID: #95978]	
-		- 20180627@Elodie: Get total downline info [RedmineID: #58776]	
 	Explanation: 
-		@Mode:	0: Don't get total downline info
-				1: Get total downline info
-	
-	Example: EXEC Acc_CustomerSelList @CustID=24471545, @Mode = 1
+			
+	Example: EXEC Acc_CustomerSelList @CustID=24471545
 */
 BEGIN
 	SET NOCOUNT ON
@@ -96,47 +92,6 @@ BEGIN
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-
-	IF @Mode = 1
-	BEGIN
-		DECLARE @TotalMemberActive INT, @TotalMemberClosed INT, @TotalMemberSuspended INT,
-				@TotalAgentActive INT, @TotalAgentClosed INT, @TotalAgentSuspended INT		
-		
-		IF @roleid = 2
-		BEGIN
-			SELECT @TotalMemberActive = ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				   @TotalMemberClosed = ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
-				   @TotalMemberSuspended = ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0) 
-			FROM custinfo (NOLOCK) 
-			WHERE recommend = @custID AND RoleID=1
-		END
-		ELSE IF @roleid = 3
-		BEGIN
-			SELECT @TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				   @TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				   @TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0),			
-				   @TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 0 and ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				   @TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				   @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)
-			FROM custinfo (NOLOCK) 
-			WHERE mrecommend = @custID
-		END
-
-		SELECT	@TotalAgentActive AS [TotalAgActive], 
-				@TotalAgentClosed AS [TotalAgClosed], 
-				@TotalAgentSuspended AS [TotalAgSuspended],	
-				@TotalMemberActive AS [TotalMemActive], 
-				@TotalMemberClosed AS [TotalMemClosed], 
-				@TotalMemberSuspended AS [TotalMemSuspended]
-	END
-
-	IF @roleid = 2
-		SELECT UserName,cl.ClosedReason
-		FROM #tmpList c
-			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	ELSE IF @roleid IN (3,4)
-		SELECT UserName,cl.ClosedReason
-		FROM #tmpList c
-			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	
 END
 GO
