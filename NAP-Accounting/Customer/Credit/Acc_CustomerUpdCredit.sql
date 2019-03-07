@@ -1,5 +1,4 @@
-USE [CustDB]
-GO
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@CustId		INT,
@@ -37,6 +36,7 @@ AS
 		- 20140306@Dom: add outstanding from translog
 		- 20150612@Elodie: Separate CustDB to DBCUST server (use Acc_CustomerTotalAmountSel to get total amount)
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
+		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 */
 
 BEGIN
@@ -352,34 +352,51 @@ BEGIN
 	BEGIN
 		SELECT @LogData = @LogData + ' by Sub-Account:' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1))
 	END
+	
+	---------------------------  
+	DECLARE @log xml, @SB_Error BIT = 0
+	 
+	SELECT @log = (SELECT @UserID as '@UserID',
+						@custid as '@CustID',
+						@LogData as '@Doing',
+						@OldCredit as '@OldValue',
+						@NewCredit as '@NewValue',
+						@IP as '@IP',
+						1200 as '@ActionID',
+						getdate() as '@LogDate'
+					FOR XML PATH('Row')	
+				)
 
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@Doing = @LogData,
-			@OldValue = @OldCredit,
-			@NewValue = @NewCredit,
-			@IP = @IP,
-			@ActionID = 1200
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = @LogData + ' ErrMsg:' + ERROR_MESSAGE()
+	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @log, 
+													@MessageType='MessageType_CustomerLog_UserLog_Credit', 
+													@functionName = 'UserLog_Others',
+													@SB_Error = @SB_Error out
 
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@Doing = @LogData,
-			@OldValue = @OldCredit,
-			@NewValue = @NewCredit,
-			@IP = @IP,
-			@ActionID = 1200
-	END CATCH
+	--if ssb error
+	IF @SB_Error = 1 
+	BEGIN			
+		BEGIN TRY
+			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
+				@UserID = @UserID,
+				@CustID = @CustID,
+				@Doing = @LogData,
+				@OldValue = @OldCredit,
+				@NewValue = @NewCredit,
+				@IP = @IP,
+				@ActionID = 1200
+		END TRY
+		BEGIN CATCH
+			SELECT @LogData = @LogData + ' ErrMsg:' + ERROR_MESSAGE()
+
+			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
+				@UserID = @UserID,
+				@CustID = @CustID,
+				@Doing = @LogData,
+				@OldValue = @OldCredit,
+				@NewValue = @NewCredit,
+				@IP = @IP,
+				@ActionID = 1200
+		END CATCH
+	END	
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdCredit] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdCredit] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdCredit] TO [bodbExtAccNet]
 GO
