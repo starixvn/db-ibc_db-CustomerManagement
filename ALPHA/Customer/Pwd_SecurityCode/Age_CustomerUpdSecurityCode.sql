@@ -1,12 +1,5 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdSecurityCode]    Script Date: 06/11/2015 12:46:37 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdSecurityCode    Script Date: 10/14/2014 1:37:32 AM ******/
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdSecurityCode    Script Date: 10/13/2014 10:29:50 AM ******/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode]
 	@custid		INT,
 	@userid		INT,
@@ -30,6 +23,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode]
 			- 20141008@Johnson: write log in case of updating own security code
 			- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 			- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]
+			- 20190311@Johnson: implement SC for tier0 level to support cn88 [Redmine:#105660]
 		Parameter's Explanation:
 	*/
 BEGIN	
@@ -219,8 +213,69 @@ BEGIN
 					@duration = @duration 
 			END CATCH
 		END
+		--for headline of cn88
+		ELSE IF @roleid = 0
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo WITH(NOLOCK) WHERE custid = @custid)
+			BEGIN
+				SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Invalid user.'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](40002,@Language) END,
+						@ErrCode = 100
+				RETURN
+			END
+			
+			IF @custid = @userid -- reset isForcedChangeSecurityCode = 0 if customer reset his SC
+				SELECT @isForcedChangeSecurityCode = 0, @actionID = 924			
+			ELSE
+				SELECT @isForcedChangeSecurityCode = 1, @actionID = 916 -- hard code to force customer change SC
+						
+			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
+			SET SecurityCode = @SecurityCode
+				,isForcedChangeSecurityCode = @isForcedChangeSecurityCode
+				,LastChangedSecurityCodeDate = GETDATE()		
+			WHERE custid = @custid
+			
+			IF @@Error > 0
+			BEGIN
+				SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Reset security code unsuccesful. Please try again.'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](40023,@Language) END,
+						@ErrCode = 101
+				RETURN
+			END
+			
+			SELECT @LogSPData = '<Age_CustomerUpdSecurityCode custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
+									+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
+									+ 'isForcedChangeSecurityCode="' + COALESCE(CAST(@isForcedChangeSecurityCode AS VARCHAR(10)), SPACE(1)) + '" ' 
+									+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
+									+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
+									+ 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
+					
+			SET @endRun = GETDATE()
+			SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
+			
+			BEGIN TRY
+				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+					@UserID = @UserID,
+					@CustID = @CustID, 
+					@ActionID = @ActionID, 
+					@TrackingValue = @LogSPData,
+					@duration = @duration
+			END TRY
+			BEGIN CATCH
+				SELECT @LogSPData = '<Age_CustomerUpdSecurityCode custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
+									+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
+									+ 'isForcedChangeSecurityCode="' + COALESCE(CAST(@isForcedChangeSecurityCode AS VARCHAR(10)), SPACE(1)) + '" ' 
+									+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
+									+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
+									+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
+									
+				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+					@UserID = @UserID,
+					@CustID = @CustID, 
+					@ActionID = @ActionID, 
+					@TrackingValue = @LogSPData,
+					@duration = @duration 
+			END CATCH
+		END
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [bodbDownlineNetView] AS [dbo]
