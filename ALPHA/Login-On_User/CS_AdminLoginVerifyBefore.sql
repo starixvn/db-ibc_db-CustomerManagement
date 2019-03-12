@@ -682,7 +682,10 @@ BEGIN
 				END CATCH
 			END	
 		END	
-		SELECT @ErrMsg = N'Login Failed.',@ErrCode=111 
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
+				 END ,@ErrCode= 106
+	  return  
 	RETURN  
 	END	
 	
