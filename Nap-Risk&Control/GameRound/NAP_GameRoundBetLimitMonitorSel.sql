@@ -41,5 +41,6 @@ Revisions:
      FROM dbo.GameRoundBetLimitSummary s WITH (NOLOCK)
           INNER JOIN @Products p ON s.ProductID = p.Id
           INNER JOIN @BetTypes b ON s.BetType = b.Id
-     WHERE s.ReachedLimitTime BETWEEN @FromDate AND @EndOfToDate;
+     WHERE s.ReachedLimitTime BETWEEN @FromDate AND @EndOfToDate
+	ORDER BY s.ReachedLimitTime DESC;
 GO
