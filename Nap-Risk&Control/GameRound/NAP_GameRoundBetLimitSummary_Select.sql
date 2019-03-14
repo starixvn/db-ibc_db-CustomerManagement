@@ -1,12 +1,6 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE NAP_GameRoundBetLimitSummary_Select
-	@GameRound           VARCHAR(50)
-   , @SportType           SMALLINT
-   , @BetType             INT
-   , @ProductID           TINYINT
-   , @TotalStake          MONEY
-   , @ReachedLimitTime    DATETIME
 AS
 /*	Creator: 20190313@Robert
 	Task:  When a game round has been reached a limit, need to select information and send email to admin
@@ -15,26 +9,87 @@ AS
 		 - 20190313@Robert: #109866 - Risk & Control - Implement Global Game Round Bet Limit Setting and Report/Notification
 		
 */
+
 BEGIN
     SET NOCOUNT ON;
-    return
-    INSERT INTO dbo.GameRoundBetLimitSummary(GameRound
-								   , SportType
-								   , BetType
-								   , ProductID
-								   , BetCount
-								   , NoOfPlayers
-								   , TotalStake
-								   , ReachedLimitTime
-								   , IsNotified)
-		 SELECT @GameRound AS GameRound
-			 , @SportType AS SportType
-			 , @BetType AS BetType
-			 , @ProductID AS ProductID
-			 , 0 AS BetCount
-			 , 0 AS NoOfPlayers
-			 , @TotalStake AS TotalStake
-			 , @ReachedLimitTime AS ReachedLimitTime
-			 , 0 AS IsNotified;
+
+    CREATE TABLE #Result(
+	    GameRound      VARCHAR(50)
+	    PRIMARY KEY
+	  , BetCount       INT
+	  , NoOfPlayers    INT);
+
+    CREATE TABLE #GameRound_BetCount(
+	    GameRound    VARCHAR(50)
+	    PRIMARY KEY
+	  , BetCount     INT);
+
+    CREATE TABLE #GameRound_NoOfPlayers(
+	    GameRound      VARCHAR(50)
+	    PRIMARY KEY
+	  , NoOfPlayers    INT);
+
+    INSERT INTO #Result(GameRound)
+		 (
+			SELECT GameRound
+			FROM GameRoundBetLimitSummary WITH (NOLOCK)
+			WHERE IsNotified = 0
+		 );
+
+    CREATE UNIQUE INDEX IDX_Result ON #Result(GameRound);
+
+    INSERT INTO #GameRound_BetCount(GameRound
+						    , BetCount)
+		 (
+			SELECT g.GameRound
+				, COUNT(1) AS BetCount
+			FROM Intg_GameRoundBetStake AS g WITH (NOLOCK)
+			    INNER JOIN #Result AS r ON g.GameRound = r.GameRound
+			GROUP BY g.GameRound
+		 );
+
+    INSERT INTO #GameRound_NoOfPlayers(GameRound
+							  , NoOfPlayers)
+		 (
+			SELECT GameRound
+				, COUNT(1) AS NoOfPlayers
+			FROM
+				(
+				    SELECT g.GameRound
+					    , g.CustId
+				    FROM Intg_GameRoundBetStake AS g WITH (NOLOCK)
+					   INNER JOIN #Result AS r ON g.GameRound = r.GameRound
+				    GROUP BY g.GameRound
+						 , g.CustId
+				) AS g1
+			GROUP BY GameRound
+		 );
+
+
+    UPDATE r
+		 SET
+			r.BetCount = c.BetCount
+		   , r.NoOfPlayers = p.NoOfPlayers
+    FROM #Result AS r
+	   INNER JOIN #GameRound_BetCount AS c ON r.GameRound = c.GameRound
+	   INNER JOIN #GameRound_NoOfPlayers AS p ON r.GameRound = p.GameRound;
+
+    SELECT g.ProductID
+	    , p.ProductName
+	    , g.SportType
+	    , g.BetType
+	    , g.GameRound
+	    , r.BetCount
+	    , r.NoOfPlayers
+	    , g.TotalStake
+	    , g.ReachedLimitTime
+	    , g.GameRoundBetLimit
+    FROM GameRoundBetLimitSummary AS g WITH (NOLOCK)
+	   INNER JOIN #Result AS r ON g.GameRound = r.GameRound
+	   INNER JOIN Products AS p WITH (NOLOCK) ON g.ProductID = p.ProductID;
+
+    DROP TABLE #Result;
+    DROP TABLE #GameRound_BetCount;
+    DROP TABLE #GameRound_NoOfPlayers;
 END;
 GO
