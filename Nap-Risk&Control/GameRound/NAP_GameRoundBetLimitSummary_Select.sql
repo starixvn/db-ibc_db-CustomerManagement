@@ -1,6 +1,8 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE NAP_GameRoundBetLimitSummary_Select
+	@SportType    INT = 0
+   , @BetType      INT = 0
 AS
 /*	Creator: 20190313@Robert
 	Task:  When a game round has been reached a limit, need to select information and send email to admin
@@ -32,8 +34,23 @@ BEGIN
     INSERT INTO #Result(GameRound)
 		 (
 			SELECT GameRound
-			FROM GameRoundBetLimitSummary WITH (NOLOCK)
-			WHERE IsNotified = 0
+			FROM GameRoundBetLimitSummary AS g WITH (NOLOCK)
+			WHERE g.SportType = CASE
+							    WHEN @SportType > 0
+							    THEN @SportType
+							    ELSE g.SportType
+							END
+				 AND g.BetType = CASE
+								 WHEN @BetType > 0
+								 THEN @BetType
+								 ELSE g.BetType
+							  END
+				 AND g.IsNotified = CASE
+								    WHEN @SportType > 0
+									    OR @BetType > 0
+								    THEN g.IsNotified
+								    ELSE 0
+								END
 		 );
 
     CREATE UNIQUE INDEX IDX_Result ON #Result(GameRound);
@@ -93,3 +110,5 @@ BEGIN
     DROP TABLE #GameRound_NoOfPlayers;
 END;
 GO
+
+

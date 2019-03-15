@@ -18,6 +18,17 @@ AS
 */
 BEGIN
     SET NOCOUNT ON;
+
+    IF EXISTS
+		    (
+			   SELECT 1
+			   FROM GameRoundBetLimitSummary WITH (NOLOCK)
+			   WHERE GameRound = @GameRound
+				    AND SportType = @SportType
+				    AND BetType = @BetType
+		    )
+	   RETURN;
+
     INSERT INTO dbo.GameRoundBetLimitSummary(GameRound
 								   , SportType
 								   , BetType
@@ -28,15 +39,17 @@ BEGIN
 								   , TotalStake
 								   , ReachedLimitTime
 								   , IsNotified)
-		 SELECT @GameRound AS GameRound
-			 , @SportType AS SportType
-			 , @BetType AS BetType
-			 , @ProductID AS ProductID
-			 , @GameRoundBetLimit AS GameRoundBetLimit
-			 , 0 AS BetCount
-			 , 0 AS NoOfPlayers
-			 , @TotalStake AS TotalStake
-			 , @ReachedLimitTime AS ReachedLimitTime
-			 , 0 AS IsNotified;
+		 (
+			SELECT @GameRound AS GameRound
+				, @SportType AS SportType
+				, @BetType AS BetType
+				, @ProductID AS ProductID
+				, @GameRoundBetLimit AS GameRoundBetLimit
+				, 0 AS BetCount
+				, 0 AS NoOfPlayers
+				, @TotalStake AS TotalStake
+				, @ReachedLimitTime AS ReachedLimitTime
+				, 0 AS IsNotified
+		 );
 END;
 GO
