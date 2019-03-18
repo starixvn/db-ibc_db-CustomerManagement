@@ -1,3 +1,4 @@
+
 /*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[NAP_GameRoundBetLimitSettingSel] @ProductId VARCHAR(200) = NULL
@@ -25,19 +26,23 @@ EXEC [NAP_GameRoundBetLimitSettingSel] @ProductId=0
                     b.SportType,
                     b.BetType,
                     b.GameRoundBetLimit
-             FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK);
+             FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK)
+             ORDER BY b.ProductId,
+                      b.BetType;
          END;
          ELSE
          BEGIN
              DECLARE @Products TABLE(Id INT);
              INSERT INTO @Products
-                    SELECT CAST(val AS INT)
-                    FROM dbo.strSplit(@ProductId, ',');
+             SELECT CAST(val AS INT)
+             FROM dbo.strSplit(@ProductId, ',');
              SELECT b.ProductId,
                     b.SportType,
                     b.BetType,
                     b.GameRoundBetLimit
              FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK)
-                  INNER JOIN @Products p ON b.ProductId = p.Id;
+                  INNER JOIN @Products p ON b.ProductId = p.Id
+             ORDER BY b.ProductId,
+                      b.BetType;
          END;
 GO

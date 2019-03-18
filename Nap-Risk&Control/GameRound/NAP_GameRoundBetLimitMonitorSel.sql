@@ -38,6 +38,7 @@ Revisions:
             s.TotalStake,
             s.ReachedLimitTime,
             s.GameRound
+		  s.GameRoundBetLimit 
      FROM dbo.GameRoundBetLimitSummary s WITH (NOLOCK)
           INNER JOIN @Products p ON s.ProductID = p.Id
           INNER JOIN @BetTypes b ON s.BetType = b.Id
