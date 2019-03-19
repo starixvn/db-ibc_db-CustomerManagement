@@ -1,7 +1,8 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE NAP_GameRoundBetLimitSummary_Select
-	@SportType    INT = 0
+	@IsTest       BIT = 0
+   , @SportType    INT = 0
    , @BetType      INT = 0
 AS
 /*	Creator: 20190313@Robert
@@ -9,6 +10,10 @@ AS
 	DB: DBTXN/bodb02	
 	Revisions: 
 		 - 20190313@Robert: #109866 - Risk & Control - Implement Global Game Round Bet Limit Setting and Report/Notification
+     Param:
+	   @IsTest:
+		  = 0 : just select bets reached limit belong to test currency (UUS, YNG)
+		  = 1 : just select bets reached limit belong to real currency except (UUS, YNG)
 		
 */
 
@@ -54,6 +59,33 @@ BEGIN
 		 );
 
     CREATE UNIQUE INDEX IDX_Result ON #Result(GameRound);
+
+    IF @IsTest = 1 -- delete real currency except test currency: UUS, YNG
+	   BEGIN
+		  DELETE r
+		  FROM #Result AS r
+			 INNER JOIN
+			  (
+				 SELECT DISTINCT
+					   g.GameRound
+				 FROM CustDB.dbo.custInfo AS ci WITH (NOLOCK)
+					INNER JOIN Intg_GameRoundBetStake AS g WITH (NOLOCK) ON ci.custid = g.CustId
+				 WHERE currency NOT IN(20, 72)
+			  ) AS d ON r.GameRound = d.GameRound;
+	   END;
+	   ELSE
+	   BEGIN -- delete test currency: UUS, YNG 
+		  DELETE r
+		  FROM #Result AS r
+			 INNER JOIN
+			  (
+				 SELECT DISTINCT
+					   g.GameRound
+				 FROM CustDB.dbo.custInfo AS ci WITH (NOLOCK)
+					INNER JOIN Intg_GameRoundBetStake AS g WITH (NOLOCK) ON ci.custid = g.CustId
+				 WHERE currency IN(20, 72)
+			  ) AS d ON r.GameRound = d.GameRound;
+	   END;
 
     INSERT INTO #GameRound_BetCount(GameRound
 						    , BetCount)
@@ -110,5 +142,3 @@ BEGIN
     DROP TABLE #GameRound_NoOfPlayers;
 END;
 GO
-
-
