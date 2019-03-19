@@ -20,29 +20,14 @@ EXEC [NAP_GameRoundBetLimitSettingSel] @ProductId=0
 */
 
      SET NOCOUNT ON;
-     IF LEN(@ProductId) = 0
-         BEGIN
-             SELECT b.ProductId,
-                    b.SportType,
-                    b.BetType,
-                    b.GameRoundBetLimit
-             FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK)
-             ORDER BY b.ProductId,
-                      b.BetType;
-         END;
-         ELSE
-         BEGIN
-             DECLARE @Products TABLE(Id INT);
-             INSERT INTO @Products
-             SELECT CAST(val AS INT)
-             FROM dbo.strSplit(@ProductId, ',');
-             SELECT b.ProductId,
-                    b.SportType,
-                    b.BetType,
-                    b.GameRoundBetLimit
-             FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK)
-                  INNER JOIN @Products p ON b.ProductId = p.Id
-             ORDER BY b.ProductId,
-                      b.BetType;
-         END;
+     DECLARE @Products TABLE(Id INT);
+     INSERT INTO @Products
+            SELECT CAST(val AS INT)
+            FROM dbo.strSplit(@ProductId, ',');
+     SELECT b.ProductId,
+            b.SportType,
+            b.BetType,
+            b.GameRoundBetLimit
+     FROM dbo.GameRoundBetLimitSettings b WITH (NOLOCK)
+          INNER JOIN @Products p ON b.ProductId = p.Id;
 GO
