@@ -8,6 +8,7 @@ ALTER PROCEDURE NAP_GameRoundBetLimitSummary_Insert
    , @GameRoundBetLimit    MONEY
    , @TotalStake           MONEY
    , @ReachedLimitTime     DATETIME
+   , @IsTest               BIT
 AS
 /*	Creator: 20190313@Robert
 	Task:  When a game round has been reached a limit, need to capture infomation related to it.
@@ -38,7 +39,8 @@ BEGIN
 								   , NoOfPlayers
 								   , TotalStake
 								   , ReachedLimitTime
-								   , IsNotified)
+								   , IsNotified
+								   , IsTest)
 		 (
 			SELECT @GameRound AS GameRound
 				, @SportType AS SportType
@@ -50,6 +52,7 @@ BEGIN
 				, @TotalStake AS TotalStake
 				, @ReachedLimitTime AS ReachedLimitTime
 				, 0 AS IsNotified
+				, @IsTest AS IsTest
 		 );
 END;
 GO

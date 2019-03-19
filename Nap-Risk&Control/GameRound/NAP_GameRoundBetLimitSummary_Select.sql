@@ -22,29 +22,30 @@ BEGIN
 
     CREATE TABLE #Result(
 	    GameRound      VARCHAR(50)
-	    PRIMARY KEY
+	    PRIMARY KEY CLUSTERED
 	  , BetCount       INT
 	  , NoOfPlayers    INT);
 
     CREATE TABLE #GameRound_BetCount(
 	    GameRound    VARCHAR(50)
-	    PRIMARY KEY
+	    PRIMARY KEY CLUSTERED
 	  , BetCount     INT);
 
     CREATE TABLE #GameRound_NoOfPlayers(
 	    GameRound      VARCHAR(50)
-	    PRIMARY KEY
+	    PRIMARY KEY CLUSTERED
 	  , NoOfPlayers    INT);
 
     INSERT INTO #Result(GameRound)
 		 (
 			SELECT GameRound
 			FROM GameRoundBetLimitSummary AS g WITH (NOLOCK)
-			WHERE g.SportType = CASE
-							    WHEN @SportType > 0
-							    THEN @SportType
-							    ELSE g.SportType
-							END
+			WHERE g.IsTest = @IsTest
+				 AND g.SportType = CASE
+								   WHEN @SportType > 0
+								   THEN @SportType
+								   ELSE g.SportType
+							    END
 				 AND g.BetType = CASE
 								 WHEN @BetType > 0
 								 THEN @BetType
@@ -57,35 +58,6 @@ BEGIN
 								    ELSE 0
 								END
 		 );
-
-    CREATE UNIQUE INDEX IDX_Result ON #Result(GameRound);
-
-    IF @IsTest = 1 -- delete real currency except test currency: UUS, YNG
-	   BEGIN
-		  DELETE r
-		  FROM #Result AS r
-			 INNER JOIN
-			  (
-				 SELECT DISTINCT
-					   g.GameRound
-				 FROM CustDB.dbo.custInfo AS ci WITH (NOLOCK)
-					INNER JOIN Intg_GameRoundBetStake AS g WITH (NOLOCK) ON ci.custid = g.CustId
-				 WHERE currency NOT IN(20, 72)
-			  ) AS d ON r.GameRound = d.GameRound;
-	   END;
-	   ELSE
-	   BEGIN -- delete test currency: UUS, YNG 
-		  DELETE r
-		  FROM #Result AS r
-			 INNER JOIN
-			  (
-				 SELECT DISTINCT
-					   g.GameRound
-				 FROM CustDB.dbo.custInfo AS ci WITH (NOLOCK)
-					INNER JOIN Intg_GameRoundBetStake AS g WITH (NOLOCK) ON ci.custid = g.CustId
-				 WHERE currency IN(20, 72)
-			  ) AS d ON r.GameRound = d.GameRound;
-	   END;
 
     INSERT INTO #GameRound_BetCount(GameRound
 						    , BetCount)
