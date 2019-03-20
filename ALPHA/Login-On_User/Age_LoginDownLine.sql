@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO 
-
 ALTER PROCEDURE [dbo].[Age_LoginDownline]  
 	@UserName varchar(50) = '' OUTPUT,  
 	@UserPwd varchar(50),  
@@ -1654,13 +1651,3 @@ BEGIN
 END
 
 GO
-
-GRANT EXECUTE ON [dbo].[Age_LoginDownline] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline] TO [ITVivi] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline] TO [vnteam] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline] TO [vnteam] AS [dbo]
