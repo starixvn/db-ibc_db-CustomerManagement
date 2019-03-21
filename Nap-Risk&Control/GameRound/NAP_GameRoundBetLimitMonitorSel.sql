@@ -1,10 +1,11 @@
 
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
-CREATE PROCEDURE NAP_GameRoundBetLimitMonitorSel @FromDate  SMALLDATETIME,
-                                                  @ToDate    SMALLDATETIME,
-                                                  @ProductId VARCHAR(200),
-                                                  @BetType   VARCHAR(200)
+ALTER PROCEDURE NAP_GameRoundBetLimitMonitorSel @FromDate        SMALLDATETIME,
+                                                @ToDate          SMALLDATETIME,
+                                                @ProductId       VARCHAR(200),
+                                                @BetType         VARCHAR(200),
+                                                @ExcludeTestData BIT           = 1
 AS  
  
 /*
@@ -31,17 +32,19 @@ Revisions:
             SELECT CAST(val AS INT)
             FROM dbo.strSplit(@BetType, ',');
      SELECT s.ProductID,
-		  s.SportType,
-            s.BetType,		  
+            s.SportType,
+            s.BetType,
             s.BetCount,
             s.NoOfPlayers,
             s.TotalStake,
             s.ReachedLimitTime,
             s.GameRound,
-		    s.GameRoundBetLimit 
+            s.GameRoundBetLimit
      FROM dbo.GameRoundBetLimitSummary s WITH (NOLOCK)
           INNER JOIN @Products p ON s.ProductID = p.Id
           INNER JOIN @BetTypes b ON s.BetType = b.Id
      WHERE s.ReachedLimitTime BETWEEN @FromDate AND @EndOfToDate
-	ORDER BY s.ReachedLimitTime DESC;
+           AND (@ExcludeTestData = 0
+                OR s.IsTest = 0)
+     ORDER BY s.ReachedLimitTime DESC;
 GO
