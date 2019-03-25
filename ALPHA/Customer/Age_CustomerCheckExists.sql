@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerCheckExists]
 	@username	 VARCHAR(50),
 	@isExists	 BIT = 0 OUTPUT
@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
+		- 20190325@Elodie: Grant permission to bodbAdminNet [Redmine:105338]
 	Parameter's Explanation:
 */	
 BEGIN
@@ -26,12 +27,5 @@ BEGIN
 	ELSE 
 			SELECT @isExists = 0
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerCheckExists] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerCheckExists] TO [bodbDownlineNetView]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerCheckExists] TO [bodbExtAccNet]
  
