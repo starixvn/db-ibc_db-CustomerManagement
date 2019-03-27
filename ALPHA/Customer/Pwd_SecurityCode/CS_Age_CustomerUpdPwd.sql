@@ -80,10 +80,7 @@ BEGIN
 	FROM	Customer WITH (NOLOCK) 
 	WHERE	custid = @CustID
 	
-	IF @roleid = 1
-		SELECT  @pwdexpiry = DATEADD(dd, -1, GETDATE())
-	ELSE	
-		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
+	SELECT @pwdexpiry = dbo.f_CS_GetPwdExpiryDate(@roleid)
 	
     UPDATE  customer WITH (ROWLOCK, UPDLOCK)
     SET     userpwd = @UserPwd ,
