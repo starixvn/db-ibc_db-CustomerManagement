@@ -12,6 +12,7 @@ AS
 		- 20100105@Jamie: Get currency from Cache
 		- 20170307@Percy: Add Forex Gain/Loss (RM) column [RedmineID: #71954]
 		- 20180808@Helen: DB05.DBPOLICY migration - - move to DBTRANS for exchangeRate [Redmine:99462]
+		- 20190114@Sophia: Move table transfer_fi from DBSUM.bodb_summary to DBARC.bodb_archive[Redmine: #105415]
 		
 */
 BEGIN
@@ -50,7 +51,7 @@ BEGIN
 
 		INSERT INTO #Transfer(RefNo, custId, GainLoss)
 		SELECT fi.RefNo, fi.custid, fi.winlost - fi.actual_stake
-		FROM DBSUM.bodb_Summary.dbo.transfer_fi fi WITH (NOLOCK)
+		FROM DBARC.bodb_archive.dbo.transfer_fi fi WITH (NOLOCK)
 		WHERE fi.winlostdate BETWEEN @FromDate AND @tmpToDate
 			AND EXISTS (SELECT 1 FROM #RefNo r WHERE r.RefNo = fi.RefNo)
 			AND fi.bettype = 21003
