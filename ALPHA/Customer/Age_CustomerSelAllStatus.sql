@@ -1,20 +1,20 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 USE bodb02
 GO
 
-ALTER PROCEDURE [dbo].[EAS_CustomerSelAllStatus]
+ALTER PROCEDURE [dbo].[Age_CustomerSelAllStatus]
 	@custid INT
 AS
 /*
-	Created: 20180628@Elodie
+	Created: 20180608@Elodie
 	DB: DBAGE/bodb02
-	Task: Left menu of ExtNap - Search customer - All Status
+	Task: Left menu of ALPHA - Search customer - All Status
 
 	Revisions:
-		- 20180628@Elodie: Left menu of ExtNap - Search customer - All Status [Redmine: #58776]
-		
+		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
 	Param's Explanation:
-	
+		• @username: username of customer that need to be viewed.   
+		• @uplineId: the ID of the upline.
 */
 BEGIN
     SET NOCOUNT ON
@@ -22,11 +22,11 @@ BEGIN
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
     
 	--Downline/Upline status 
-    DECLARE @upLineDisableCasino			BIT   
-		  , @uplineSyncCasino				BIT    		   
+    DECLARE @upLineDisableCS				BIT       
           , @uplineDisabledNumber			BIT
 		  , @uplineHideGoldDeluxe			BIT   
-		  , @uplineDisableGoldDeluxe		BIT		  
+		  , @uplineDisableGoldDeluxe		BIT		
+          , @uplineDisableEsports			BIT
 		  , @uplineDisableColossusBet		BIT
 		  , @DisableDownlinesColossusBet	BIT = 0  
 		  
@@ -48,11 +48,11 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
+				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
+				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 
 				,	@uplineid = custid
@@ -67,11 +67,11 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)				
+				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
+				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
@@ -88,11 +88,11 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
+				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
+				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
+				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
@@ -103,11 +103,15 @@ BEGIN
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
-	-------------------------------------------------------------------------	    
+	-------------------------------------------------------------------------
+	DECLARE @TransferOption VARCHAR(8)
+    EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
+    
 	--Non product status
 	SELECT	@HasDownline AS HasDownline,
 			ci.closed,
 			ci.reject AS suspended,
+			@TransferOption AS TransferOption,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,
 			@upLineClosed AS upLineClosed,
@@ -122,18 +126,19 @@ BEGIN
 	--Product Status
 	SELECT	ci.SyncCasino,
 			ci.DisableCasino,
-			@upLineDisableCasino AS uplineDisableCasino,
-			@uplineSyncCasino AS uplineSyncCasino,
+			@upLineDisableCS AS uplineDisableCS,
 			ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
-			@uplineDisableColossusBet AS uplineDisableColossusBet,
 			@uplineHideGoldDeluxe AS uplineHideGoldDeluxe,
 			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
-			ci.HideKeno	
+			ci.DisableEsports, 
+			@uplineDisableEsports AS uplineDisableEsports,
+			ci.DisableColossusBet,
+			ci.HideColossusBet,
+			@uplineDisableColossusBet AS uplineDisableColossusBet,
+			ci.HideKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
