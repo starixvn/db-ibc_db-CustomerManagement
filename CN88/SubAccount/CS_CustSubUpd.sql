@@ -57,7 +57,6 @@ BEGIN
 			'PageAccess="'+ coalesce(cast(@PageAccess AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1)) + '" ' +
 			'LoginIP="'+ COALESCE(CAST(@LoginIP AS VARCHAR(20)),SPACE(1)) + '" ' +
-			'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'ErrCode="'+ coalesce(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(8000)),SPACE(1)) + '" />'
 		
@@ -66,7 +65,6 @@ BEGIN
 			'PageAccess="'+ coalesce(cast(@Old_PageAccess AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1)) + '" ' +
 			'LoginIP="'+ COALESCE(CAST(@LoginIP AS VARCHAR(20)),SPACE(1)) + '" ' +
-			'UserID="'+ COALESCE(CAST(@UserID AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'ErrCode="'+ coalesce(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(8000)),SPACE(1)) + '" />'
 

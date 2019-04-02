@@ -152,7 +152,6 @@ BEGIN
 						'PageAccess="'+ COALESCE(CAST(@PageAccess as varchar(50)),SPACE(1)) + '" ' +
 						'Language="'+ COALESCE(CAST(@Language as varchar(2)),SPACE(1)) + '" ' +
 						'LoginIP="'+ COALESCE(CAST(@LoginIP as varchar(20)),SPACE(1)) + '" ' +
-						'UserID="'+ COALESCE(CAST(@UserID as varchar(50)),SPACE(1)) + '" ' +
 						'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),SPACE(1)) + '" ' +
 						'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(8000)),SPACE(1)) + '" />'
 
