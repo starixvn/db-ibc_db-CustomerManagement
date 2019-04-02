@@ -42,7 +42,7 @@ BEGIN
 		FROM custsub  WITH(NOLOCK)
 		WHERE subaccid = @subaccid and custid = @custid
 		
-		IF @old_firstname = @firstname OR @Old_PageAccess = @PageAccess
+		IF @old_firstname = @firstname AND @Old_PageAccess = @PageAccess
 			RETURN
 
 		UPDATE custsub  WITH(ROWLOCK)
