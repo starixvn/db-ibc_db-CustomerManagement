@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
-CREATE PROCEDURE CS_CustSubSel
+ALTER PROCEDURE CS_CustSubSel
 	@custid INT
 AS
 /*
