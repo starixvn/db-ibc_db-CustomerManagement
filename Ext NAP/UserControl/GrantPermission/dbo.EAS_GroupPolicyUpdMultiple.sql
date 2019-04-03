@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[EAS_GroupPolicyUpdMultiple]
     @FuncID             INT,
 	@Policy				VARCHAR(MAX),
+	@OldPolicy			VARCHAR(MAX) = '',
 	@UserID				INT,
 	@IP					VARCHAR(50),
 	@ErrCode			INT = 0 OUTPUT,
@@ -53,11 +54,14 @@ BEGIN
 	
 	DECLARE @LogData NVARCHAR(MAX)
 	
-	SELECT @LogData =	'<EAS_GroupPolicyUpdMultiple>'+
+	SELECT @LogData =	'<EAS_GroupPolicyUpdMultiple>' +
 							'<FuncID>' + ISNULL(CONVERT(VARCHAR(20),@FuncID), '') + '</FuncID>' +
 							'<IP>' + COALESCE(@IP, '') + '</IP>' +
-							'<GroupPolicy>' + @Policy + '</GroupPolicy>' +
-						'</EAS_GroupPolicyUpdMultiple>'				
+							'<Permission>' +
+								'<Old>' + ISNULL(@OldPolicy, '') + '</Old>' +
+								'<New>' + ISNULL(@Policy, '') + '</New>' +
+							'</Permission>' +
+						'</EAS_GroupPolicyUpdMultiple>'
 
 	SET @EndRun = GETDATE()  
 	SET @Duration  = DATEDIFF(MILLISECOND, @StartRun, @EndRun)   
