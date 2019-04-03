@@ -47,7 +47,7 @@ BEGIN
 		WHERE custid = @custid
 		
 		-- Only direct upline have update permission
-		IF NOT EXISTS (SELECT 1 FROM dbo.f_AGE_IsCrossLevelUpdate(@custid,@roleid,@userid))
+		IF NOT EXISTS (SELECT 1 FROM dbo.f_CS_AGE_IsCrossLevelUpdate(@custid,@userid))
 		BEGIN
 			SELECT @ErrMsg = 'You don''t have permission to perform this action.',
 				   @ErrCode = 103
