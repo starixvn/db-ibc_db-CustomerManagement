@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE Acc_UserLog_LogActionTypeSel
 AS 
@@ -7,7 +7,7 @@ AS
     Task: Get all data of table LogActionType
     DB: DBLOG/bodb_CustomerLog
 
-	Description:
+	Revisions:
 		- 20121212@Elodie: Get more field ActionTypeNameVI
 		- 20190405@Elodie: Get log action with Chinese Traditional (CN88) language
 
