@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION [dbo].[f_CS_AGE_IsCrossLevelUpdate](@custid INT, @userid INT) 
 RETURNS TABLE 
 AS
