@@ -547,7 +547,7 @@ BEGIN
 	    ci.Abnormal,
 	    ci.closed, 
 		ci.reject as suspended,
-		ISNULL(@isDirectSuspend,0) ass isDirectSuspend,
+		ISNULL(@isDirectSuspend,0) as isDirectSuspend,
 		ci.autosuspend,		 
 		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
