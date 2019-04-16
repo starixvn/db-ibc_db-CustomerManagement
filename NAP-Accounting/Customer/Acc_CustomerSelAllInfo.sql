@@ -99,6 +99,7 @@ Revisions:
 	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
 	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
 	- 20181003@Winnie: Remove old Esports  - [Redmine: #101526]
+	- 20190412@Johnson: add suspendInfo [redmine:#105587]
 	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 Param's Explanation:
 	@username: username want to get all info related
@@ -126,6 +127,7 @@ BEGIN
 		  , @HasDownline BIT = 0
 		  , @ClosedReason TINYINT
 		  ,	@UplineHasSecurityCode	BIT=0
+		  , @isDirectSuspend BIT = 0
 		  , @HeadlineName VARCHAR(50)
 		  , @HeadlineID INT
 		  , @HeadlineEnabled BIT
@@ -360,7 +362,7 @@ BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
 		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
-
+				
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
@@ -398,6 +400,7 @@ BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
 		SELECT	@uplineid = mrecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
 		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
+		
 	    SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0),
 		    @LimitPerIP = ISNULL(LimitPerIP, 0),
@@ -418,7 +421,7 @@ BEGIN
 		  WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     ELSE IF @roleid = 1 --member
-    BEGIN
+    BEGIN		
 	    SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0)
 	    FROM custAgent WITH(NOLOCK) WHERE custid = @uplineid
@@ -509,6 +512,10 @@ BEGIN
 
 	END
 
+	--check suspend status is direct or not
+	SELECT @isDirectSuspend = dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)
+	FROM dbo.CustProductStatus WITH(NOLOCK)
+	WHERE custid = @custid
 	--get headline username for cn88
 	SELECT @headlineName = username, @HeadlineID = custID, @headlineEnabled = Enabled
 	FROM custinfo (NOLOCK)
@@ -538,7 +545,10 @@ BEGIN
 	    ci.danger2,
 	    ci.danger3,
 	    ci.Abnormal,
-	    ci.closed, ci.reject as suspended, ci.autosuspend,		 
+	    ci.closed, 
+		ci.reject as suspended,
+		ISNULL(@isDirectSuspend,0) ass isDirectSuspend,
+		ci.autosuspend,		 
 		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,

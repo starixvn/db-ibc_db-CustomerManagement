@@ -57,6 +57,7 @@ AS
 							Move all balance info of customer to Age_CustomerBalanceSel SP 
 							Move total downline info of customer to Acc_CustomerSelList SP 
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
+		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -67,7 +68,8 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
-    DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT
+    DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
+			@isDirectSuspend BIT = 0
 
     SELECT @username = RTRIM(LTRIM(@username))
 
@@ -134,10 +136,17 @@ BEGIN
 		ELSE
 			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid = @custid	
 	END
-
+	
+	--check suspend status is direct or not
+	SELECT @isDirectSuspend = dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)
+	FROM dbo.CustProductStatus WITH(NOLOCK)
+	WHERE custid = @custid
+				
 	-------------------------------------------------------------------------
     SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ci.credit, ISNULL(@ClosedReason,0) AS ClosedReason, 
-			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, ci.reject AS suspended,
+			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, 
+			ci.reject AS suspended,
+			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
 			CASE WHEN c.roleid = 1 THEN c.custid ELSE NULL END AS memberID,
 			CASE WHEN c.roleid = 1 THEN c.username ELSE NULL END AS memberName,	
 			a.custid AS agentID,
