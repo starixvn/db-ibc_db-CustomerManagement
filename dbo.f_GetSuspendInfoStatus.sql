@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="" isFunction="1" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02" executers="" viewers="" isFunction="1" isNested="0"></info>*/
 ALTER FUNCTION dbo.f_GetSuspendInfoStatus(@bitOrder TINYINT,@suspendInfo TINYINT)
 RETURNS BIT
 AS 
