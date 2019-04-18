@@ -29,7 +29,7 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData VARCHAR(MAX)
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData NVARCHAR(MAX)
 	DECLARE @ErrLog NVARCHAR(200), @NoOfSubAcc TINYINT, @MaxOfSubAcc TINYINT, @PwdExpiry DATETIME
 	DECLARE	@UplineSecurityCode	VARCHAR(50) , @isForcedChangeSecurityCode BIT, @subaccid INT
 
@@ -146,14 +146,14 @@ BEGIN
 	END
 
 	--Write log
-	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as varchar(30)),SPACE(1)) + '" ' +
-						'username="'+ COALESCE(CAST(@username as varchar(30)),SPACE(1)) + '" ' +
-						'fname="'+ COALESCE(CAST(@firstname as varchar(100)),SPACE(1)) + '" ' +
-						'PageAccess="'+ COALESCE(CAST(@PageAccess as varchar(50)),SPACE(1)) + '" ' +
-						'Language="'+ COALESCE(CAST(@Language as varchar(2)),SPACE(1)) + '" ' +
-						'LoginIP="'+ COALESCE(CAST(@LoginIP as varchar(20)),SPACE(1)) + '" ' +
-						'ErrCode="'+ COALESCE(CAST(@ErrCode as varchar(50)),SPACE(1)) + '" ' +
-						'ErrMsg="'+ COALESCE(CAST(@ErrMsg as varchar(8000)),SPACE(1)) + '" />'
+	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as VARCHAR(30)),SPACE(1)) + '" ' +
+						'username="'+ COALESCE(CAST(@username as VARCHAR(30)),SPACE(1)) + '" ' +
+						'fname="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@firstname AS NVARCHAR(50)),SPACE(1))) + '" ' +
+						'PageAccess="'+ COALESCE(CAST(@PageAccess as VARCHAR(50)),SPACE(1)) + '" ' +
+						'Language="'+ COALESCE(CAST(@Language as VARCHAR(2)),SPACE(1)) + '" ' +
+						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" ' +
+						'ErrCode="'+ COALESCE(CAST(@ErrCode as VARCHAR(50)),SPACE(1)) + '" ' +
+						'ErrMsg="'+ COALESCE(CAST(@ErrMsg as VARCHAR(8000)),SPACE(1)) + '" />'
 
 	SET @endRun = GETDATE()
 	SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)

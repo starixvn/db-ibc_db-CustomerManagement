@@ -32,7 +32,7 @@ BEGIN
 	IF(EXISTS(SELECT subaccid FROM dbo.custSub WITH(NOLOCK) WHERE subaccid = @subaccid and custid = @custid))
 	BEGIN
 		DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
-		DECLARE @LogSPData VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX)
+		DECLARE @LogSPData NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
 
 		SET @startRun = GETDATE()
 		
@@ -61,7 +61,7 @@ BEGIN
 			'ErrMsg="'+ COALESCE(CAST(@ErrMsg AS VARCHAR(8000)),SPACE(1)) + '" />'
 		
 		SELECT @TrackingValue2 ='<R SubAccName="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + '" ' +
-			'fname="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@old_firstname AS nvarchar(50)),SPACE(1))) + '" ' +
+			'fname="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@old_firstname AS NVARCHAR(50)),SPACE(1))) + '" ' +
 			'PageAccess="'+ coalesce(cast(@Old_PageAccess AS VARCHAR(50)),SPACE(1)) + '" ' +
 			'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1)) + '" ' +
 			'LoginIP="'+ COALESCE(CAST(@LoginIP AS VARCHAR(20)),SPACE(1)) + '" ' +
