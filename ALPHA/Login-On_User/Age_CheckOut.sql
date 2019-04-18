@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet,bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[Age_CheckOut]
+ALTER PROCEDURE [dbo].[Age_CheckOut]
 	@On_UserID int,
 	@UserName varchar(30) = NULL,
 	@RoleID tinyint = NULL,
@@ -15,6 +15,7 @@ DB: DB03.ON_USER
 Original SP: Acc_CheckOut
 
 Revisions:
+	- 20190221@Johnson: add role = 0 for tier0 [redmine: #105660]
 	- 20190329@Johnson: add reason for log logout [redmine:#110409]
 Param's Explanation:
 
@@ -48,7 +49,7 @@ BEGIN
 	RETURN
 END
 
-SELECT @Role = CASE @RoleID WHEN 1 THEN 'Customer:' WHEN 2 THEN 'Agent:' WHEN 3 THEN 'Master:' WHEN 4 THEN 'Super:' ELSE 'Unknown:' END  
+SELECT @Role = CASE @RoleID WHEN 0 THEN 'Headline:' WHEN 1 THEN 'Customer:' WHEN 2 THEN 'Agent:' WHEN 3 THEN 'Master:' WHEN 4 THEN 'Super:' ELSE 'Unknown:' END  
 
 SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + @reason
 
