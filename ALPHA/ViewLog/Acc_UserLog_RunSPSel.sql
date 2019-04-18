@@ -1,7 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-
-USE [bodb_CustomerLog]
-GO
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSel]    
     @CustId INT,
@@ -33,8 +30,8 @@ AS
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
 		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
-		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
-		- 20180903@Elodie: Revise SP
+		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
+		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -157,7 +154,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 					 WHERE		la.ActionTypeID = @ActionTypeId
-								AND la.ActionID BETWEEN 1100 AND 1199
+								AND (la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
@@ -349,6 +346,7 @@ BEGIN
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 								--exclude log action of status
 								AND la.ActionID NOT BETWEEN 1100 AND 1199
+								AND la.ActionID NOT BETWEEN 165000 AND 169999
 								AND la.ActionID NOT BETWEEN 60000 AND 79999
 								--exclude log action of smart punter
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100
