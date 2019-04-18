@@ -44,7 +44,7 @@ BEGIN
 		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
 		OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
 	BEGIN
-		SELECT @ErrMsg = CASE @Language WHEN 'E' then 'This user name is not available.'
+		SELECT @ErrMsg = CASE @Language WHEN 'E' then 'This username is not available.'
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](40001,@Language) END,
 				@ErrCode=102		
 		RETURN	
