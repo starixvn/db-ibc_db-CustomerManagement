@@ -30,8 +30,7 @@ AS
 		- 20160115@Dominic: Do not show logactionid=237 if Trackingvalues is null Redmine: #50937
 		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
 		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
-		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
-		- 20180911@Eloide: Use Index hint IX_UserLog_RunSP
+		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]		
 		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
 		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 */
