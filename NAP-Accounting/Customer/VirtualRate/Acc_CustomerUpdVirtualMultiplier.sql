@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier   
 					@custid				INT
 				,	@EnableVirtualrate	BIT				= 0
@@ -309,4 +309,3 @@ GRANT EXECUTE ON dbo.Acc_CustomerUpdVirtualMultiplier TO bodbAdminNet AS dbo
 GO
 GRANT EXECUTE ON dbo.Acc_CustomerUpdVirtualMultiplier TO bodbLicenseeNet AS dbo
 GO
-GRANT VIEW DEFINITION ON dbo.Acc_CustomerUpdVirtualMultiplier TO vnteam AS dbo
