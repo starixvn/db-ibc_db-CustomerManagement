@@ -138,7 +138,7 @@ BEGIN
 	END
 	
 	--check suspend status is direct or not
-	SELECT @isDirectSuspend = dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)
+	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 				

@@ -1,6 +1,6 @@
-/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02" executers="" viewers="" isFunction="1" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-custDB,DB042-bodb02,Db043-bodb02,DB044-bodb02,DB04Admin1-bodb02,DB04Admin2-bodb02,DB05-bodb02,DB05BK1-bodb02,DBEXT-bodb02,DBLICAPI-bodb02,DBLICAPI02-bodb02,DBACC-bodb02" executers="" viewers="" isFunction="1" isNested="0"></info>*/
 ALTER FUNCTION dbo.f_GetSuspendInfoStatus(@bitOrder TINYINT,@suspendInfo TINYINT)
-RETURNS BIT
+RETURNS TABLE
 AS 
 /*
 	Created by:Johnson
@@ -12,7 +12,5 @@ AS
 		- 20190408@Johnson: initial sp [redmine: #105587]
 	Parameter's Explanation:
 */
-BEGIN
-	RETURN(@suspendInfo&power(2,@bitOrder-1))
-END
+	RETURN(SELECT @suspendInfo&power(2,@bitOrder-1) as suspendInfo)
 GO	
