@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="" viewers="vnteam" isFunction="1"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="" viewers="" isFunction="1"></info>*/
 USE [CustDB]
 GO
 
