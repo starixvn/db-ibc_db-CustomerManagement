@@ -59,7 +59,7 @@ BEGIN
 
 	if @NoOfSubAcc >= @MaxOfSubAcc
 	BEGIN
-		SELECT @ErrMsg = CASE @Language WHEN 'E' then 'You have exceeded the maxiumum number of Sub Account. Unable to proceed with account creation.'
+		SELECT @ErrMsg = CASE @Language WHEN 'E' then 'You have exceeded the maximum number of Sub Account. Unable to proceed with account creation.'
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](40042,@Language) END,
 				@ErrCode=103		
 		RETURN	
