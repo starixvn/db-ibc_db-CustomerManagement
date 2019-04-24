@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_UserControl]
     @CustID INT,
     @TrackingValue NVARCHAR(MAX),
@@ -6,18 +7,19 @@ ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_UserControl]
     @ActionID INT=NULL,
     @Duration INT = NULL
 AS
-/*
-Created: 20121115@Dan
-Task : Write log for User Control in RMS
-DB: DBLog/bodb_CustomerLog, DBTXN/bodb_CustomerLog
-Original: 
+	/*
+		Created: 20121115@Dan
+		Task : Write log for User Control in RMS
+		DB: DBLog/bodb_CustomerLog, DBTXN/bodb_CustomerLog, DBCUST/bodb_CustomerLog
+		Original: 
 
-Revisions:
-	- 20130121@Dan: add one more db DBTXN/bodb_CustomerLog
+		Revisions:
+			- 20130121@Dan: add one more db DBTXN/bodb_CustomerLog
+			- 20190423@Paul: add one more db DBCUST/bodb_CustomerLog
 		
-Parameter's Explanation:
+		Parameter's Explanation:
 
-*/
+	*/
 SET NOCOUNT ON
 INSERT INTO  dbo.eaUserLog_UserControl
            ([CustID]
@@ -37,7 +39,5 @@ INSERT INTO  dbo.eaUserLog_UserControl
             ,@TrackingValue
             )
 
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_WriteLog_UserLog_UserControl] TO [vnteam]
 GO
 GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_UserControl] TO [bodbExtAccNet]
