@@ -1,4 +1,4 @@
-/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
 	@custid	int = 0,
 	@username varchar(30),
@@ -9,14 +9,14 @@ AS
 Created By: Dan
 Created Date: 2012-11-15
 Task : Get User Information and their upline info
-DB: DBEAS/bodb_EAS
+DB: DBAGE/bodb02
 Original:Accounting site
 
 Revisions:
 	- 20130121@Dan: Move sp from DB053/bodb02 to DBEAS/bodb_EAS, change linked server DB06 to DBACC, call to bodb_AGE for Acc_CustGroup
 	- 20170721@Winnie: EXT - Support Security Code on Customer List RedmineID: #78298
 	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
-
+	- 20190422@Kan: DB053/bodb02 Migration, Move sp from DBEAS/bodb_EAS to DB053/bodb02 [Redmine: #111865]
 */	
 SET NOCOUNT ON  
 DECLARE @srecommend INT, 
