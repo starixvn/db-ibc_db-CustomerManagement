@@ -1,0 +1,26 @@
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
+ALTER PROCEDURE  CS_CustSubSelInfo
+	@custid int,
+	@subaccid int
+
+AS
+/*
+	Created: 20190329
+	Task : Sub-account Select
+	DB: DBCust/CustDB
+
+	Revisions:    
+		- 20190329@Elodie: Initial SP [Redmine:#110497]
+
+	Param's Explanation:
+		
+*/
+BEGIN
+	SET NOCOUNT ON
+
+	SELECT username, firstname, PageAccess
+	FROM custsub WITH(NOLOCK)
+	WHERE custid = @custid
+		AND subaccid = @subaccid
+END
