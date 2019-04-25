@@ -99,7 +99,7 @@ Revisions:
 	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
 	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
 	- 20181003@Winnie: Remove old Esports  - [Redmine: #101526]
-
+	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -171,7 +171,15 @@ BEGIN
 	      FROM custinfo WITH(NOLOCK)
 	     WHERE custid = @custid
     END
-
+	
+	--check for headline cn88
+	IF @roleid =0
+	BEGIN
+		EXEC CS_Acc_CustomerInfo_HeadlineSel @custid = @custID
+		
+		RETURN
+	END
+	
 	IF @roleid = 1
 		-- Net Balance
 		SELECT @netPosition = ISNULL(SUM(Credit - Debit), 0) FROM DBTXN.bodb02.dbo.BalNetPosition WITH (NOLOCK) WHERE custid = @custid

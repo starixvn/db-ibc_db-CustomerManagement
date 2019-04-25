@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBONUSER-on_user" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-/****** Object:  Stored Procedure dbo.Acc_CustomerSelOnline    Script Date: 9/20/2011 8:47:06 PM ******/
+
 ALTER PROCEDURE [dbo].[Acc_CustomerSelOnline]
 	@custid INT,
 	@availableTime INT = 70
@@ -15,6 +15,7 @@ Revisions:
 	- 20110912@Sophia: Add table on_user_agent
 	- 20121001@Jamie: Do not get DomainID field 
 	- 20180504@Louis: Update Online List [RedmineID: #94480]
+	- 20190425@Johnson: add headline for cn88 [Redmine: #105338]
 Param's Explanation:
 • @userid: customer id
 • @availableTime: time-diff between reload time and current time by seconds
@@ -35,7 +36,7 @@ IF @RoleID = 1
 	FROM on_user WITH (nolock)
 	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
 ELSE 
-	IF @RoleID BETWEEN 2 AND 4
+	IF @RoleID BETWEEN 2 AND 4 OR @roleid = 0
 	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, LoginTime as reload_time
 	FROM on_user_agent WITH (nolock)
 	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
