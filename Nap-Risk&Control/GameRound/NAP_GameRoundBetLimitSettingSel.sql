@@ -1,5 +1,5 @@
 
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,Dot_Intg" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[NAP_GameRoundBetLimitSettingSel] @ProductId VARCHAR(200) = NULL
 AS
