@@ -18,7 +18,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @custid INT, 
+	DECLARE  
 			@roleID TINYINT,
 			@TotalSAgentActive INT,
 		    @TotalSAgentClosed INT,
