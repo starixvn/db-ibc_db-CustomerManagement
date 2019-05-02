@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserLogout]
 	@on_userid INT,
 	@username  NVARCHAR(50)= NULL
@@ -6,9 +7,10 @@ AS
 		Created: Dan
 		Date: 2012-11-16
 		Task: user log out EAS
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
-		Revsisons:
+		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/ 
@@ -37,7 +39,7 @@ SET NOCOUNT ON
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
-	EXEC DBLOG.bodb_customerlog.dbo.EAS_WriteLog_UserLog_Login 
+	EXEC dbo.EAS_WriteLog_UserLog_Login_Wrapper 
 		 @UserID = @CustID, 		
 		 @LoginIP = @LoginIP,
 		 @ActionID = 20201,	 
@@ -45,6 +47,3 @@ SET NOCOUNT ON
 		 @Duration = @Duration
 		 
 GO 
-GRANT VIEW DEFINITION ON [EAS_UserLogout] TO [vnteam]
-GO
-GRANT EXECUTE ON [EAS_UserLogout] TO [bodbExtAccNet]

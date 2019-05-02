@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserPolicySel]
 	@UserID		INT
 AS
@@ -5,11 +6,13 @@ AS
 		Created: Dan
 		Date: 2012-11-20
 		Task: Get policy of user
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
 			- 20130520@Lukas: get funcKey field
 			- 20140122@Elodie: Get column FuncDesc
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+
 		Parameter's Explanation:
 	*/ 
 SET NOCOUNT ON
@@ -31,6 +34,3 @@ SET NOCOUNT ON
 	ORDER BY f.ParentID ,f.DisplayOrder ASC
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_UserPolicySel] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserPolicySel] TO [vnteam] AS [dbo]

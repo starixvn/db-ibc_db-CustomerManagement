@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserInfoUpdUserPwd]
 	@UserID		INT,
 	@CustID		INT,		
@@ -10,11 +11,13 @@ AS
 		Created: Dan
 		Date: 2012-05-11
 		Task: Update user info 
-		DB: DBTXN/BODB02
+		DB: DBCUST/CUSTDB
 		
-		Revsisions:
+		Revisions:
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
-			- 20130513@Lukas: fix bug - admin cannot reset his password because of checking permission 
+			- 20130513@Lukas: fix bug - admin cannot reset his password because of checking permission
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -27,7 +30,7 @@ SET NOCOUNT ON
 	
 	IF @UserID <> @CustID
 	BEGIN
-		EXEC DBEAS.bodb_EAS.dbo.EAS_UserCheckPermission @UserID = @userID ,@FuncKey = 'ManageUser', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT	
+		EXEC NAP_UserControl.dbo.EAS_UserCheckPermission @UserID = @userID ,@FuncKey = 'ManageUser', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT	
 		IF @ErrCode > 0
 			RETURN
 	END
@@ -104,6 +107,3 @@ SET NOCOUNT ON
 	END CATCH			
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_UserInfoUpdUserPwd] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserInfoUpdUserPwd] TO [vnteam] AS [dbo]

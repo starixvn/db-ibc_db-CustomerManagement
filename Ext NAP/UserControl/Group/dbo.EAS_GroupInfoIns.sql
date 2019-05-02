@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoIns]
 	@UserID		INT,
 	@GroupName		VARCHAR(100),
@@ -11,9 +12,10 @@ AS
 		Created: Dan
 		Date: 2012-11-15
 		Task: Create new group
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 	*/
@@ -48,15 +50,15 @@ SET NOCOUNT ON
 	FROM eaFunction WITH(NOLOCK)	
 	
 	DECLARE @LogData nvarchar(500)	
-	SELECT @LogData = '<EAS_GroupInfoIns><GroupName>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@GroupName),'') + '</GroupName>' +
-										'<Description>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@Description),'') + '</Description>'  +
+	SELECT @LogData = '<EAS_GroupInfoIns><GroupName>' + ISNULL([dbo].[f_EncodeXMLValue](@GroupName),'') + '</GroupName>' +
+										'<Description>' + ISNULL([dbo].[f_EncodeXMLValue](@Description),'') + '</Description>'  +
 										'<IP>' + ISNULL(@IP,'') + '</IP>' 
 					+ '</EAS_GroupInfoIns>'
 
 	SET @endRun = getdate()  
 	SET @duration  = datediff (millisecond,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
 			@custID = @GroupID,
 			@TrackingValue = @LogData,
 			@userid = @UserID,
@@ -65,6 +67,3 @@ SET NOCOUNT ON
 			@duration = @duration  
 
 GO 
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupInfoIns] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupInfoIns] TO [bodbExtAccNet]

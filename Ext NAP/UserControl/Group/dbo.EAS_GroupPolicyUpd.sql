@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupPolicyUpd]
 	@userID				INT,
 	@GroupID			INT,
@@ -11,9 +12,10 @@ AS
 		Created: Dan
 		Date: 2012-11-19
 		Task: grant permission to group
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 			- @Policy: contains ID's function changed and new policy 
@@ -65,7 +67,7 @@ SET NOCOUNT ON
 	SET @endRun = getdate()  
 	SET @duration  = datediff (millisecond,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] 
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper] 
 		@custID = @GroupID, 
 		@TrackingValue = @LogData, 
 		@userid = @userID, 
@@ -74,6 +76,3 @@ SET NOCOUNT ON
 		@duration = @Duration
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupPolicyUpd] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupPolicyUpd] TO [bodbExtAccNet]

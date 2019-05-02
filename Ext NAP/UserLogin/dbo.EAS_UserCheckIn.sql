@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserCheckIn]
 	@custid			INT,
 	@NetSessionID	VARCHAR(50),
@@ -8,9 +9,10 @@ AS
 		Created: Dan
 		Date: 2012-11-16
 		Task: user check in 
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/
@@ -26,6 +28,3 @@ VALUES (@custid, @NetSessionID, 0, @IP)
 SELECT @on_userid = SCOPE_IDENTITY()
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserCheckIn] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_UserCheckIn] TO [bodbExtAccNet]

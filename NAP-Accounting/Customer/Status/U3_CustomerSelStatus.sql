@@ -59,11 +59,12 @@ Revisions:
 	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 	
 Param's Explanation:
-• @system: = NAP : internal login from NAP
+ï¿½ @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
-• @CustID: customer id.   
+ï¿½ @CustID: customer id.   
 */
 
 	SET NOCOUNT ON
@@ -187,7 +188,7 @@ Param's Explanation:
 		END
 		ELSE IF @system = 'NAPEXT'
 		BEGIN
-			EXEC DBEAS.bodb_EAS.dbo.EAS_UserCheckPermission_All @userid=@AdminID,@FuncKey='ViewVNIP',@ErrCode=@ErrCode OUTPUT
+			EXEC DBPOL.NAP_UserControl.dbo.EAS_UserCheckPermission_All @userid=@AdminID,@FuncKey='ViewVNIP',@ErrCode=@ErrCode OUTPUT
 		END
 		
 		IF @ErrCode<> 0 SELECT @IsAdminCanViewVNIP = 0 ELSE SELECT @IsAdminCanViewVNIP = 1     

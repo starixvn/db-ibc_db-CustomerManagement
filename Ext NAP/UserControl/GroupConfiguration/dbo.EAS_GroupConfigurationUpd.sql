@@ -1,17 +1,18 @@
-/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-USE bodb_EAS
-GO
-ALTER PROCEDURE [dbo].[EAS_GroupConfigurationUpd] @userId INT
-	,@data NVARCHAR(MAX)	
-	,@errCode INT = 0 OUTPUT
-	,@errMsg NVARCHAR(200) = '' OUTPUT
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[EAS_GroupConfigurationUpd]
+	@userId INT,
+	@data NVARCHAR(MAX),
+	@errCode INT = 0 OUTPUT,
+	@errMsg NVARCHAR(200) = '' OUTPUT
 AS
 /*  
 Created by: 20181120@Razor
 TASK : Function to control group display
-DB: DBEAS/bodb_EAS
+DB: DBPOL/NAP_UserControl
 Revisions:  
 	- 20181120@Razor: Function to control group display [Redmine: #89929]
+	- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+
 Param's Explanation:
 	- @data:		
 		<ROOT>
@@ -83,7 +84,7 @@ BEGIN
 	UPDATE t
 	SET t.ProductName = p.ProductName
 	FROM @tempUpdatedTbl t
-	INNER JOIN bodb02.dbo.Products p WITH (NOLOCK) ON p.ProductID = t.ProductId
+	INNER JOIN DBPRO.bodb02.dbo.Products p WITH (NOLOCK) ON p.ProductID = t.ProductId
 		
 	UPDATE t
 	SET t.GroupName = g.GroupName
@@ -120,14 +121,12 @@ BEGIN
 							'</EAS_GroupConfigurationUpd>'
 
 		
-		EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] @custID = @userId
+		EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper] @custID = @userId
 			,@TrackingValue = @LogData
 			,@userid = @UserID
 			,@TypeID = 0
 			,@actionid = 20131
 			,@duration = @duration
-		
-		
 
 		DELETE
 		FROM @tempUpdatedTbl

@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserInfoUpdAll]
 	@userID	INT,
 	@CustID		INT,		
@@ -12,10 +13,11 @@ AS
 		Created: Dan
 		Date: 2012-05-11
 		Task: Update user info 
-		DB: DBTXN/BODB02
+		DB: DBCUST/CUSTDB
 		
-		Revsisions:
+		Revisions:
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 	*/
@@ -27,7 +29,7 @@ SET NOCOUNT ON
 	
 	SET @startRun=GETDATE()
 	
-	EXEC DBEAS.bodb_EAS.dbo.EAS_UserCheckPermission @UserID = @userID ,@FuncKey = 'ManageUser', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
+	EXEC NAP_UserControl.dbo.EAS_UserCheckPermission @UserID = @userID ,@FuncKey = 'ManageUser', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 	
 	IF @ErrCode > 0
 		RETURN
@@ -47,7 +49,7 @@ SET NOCOUNT ON
 		RETURN
 	END		
 		
-	EXEC DBEAS.bodb_EAS.dbo.EAS_UserInfoUpdUserGroup 
+	EXEC NAP_UserControl.dbo.EAS_UserInfoUpdUserGroup 
 		@userID = @userID,
 		@CustID	 = @CustID,
 		@GroupID = @GroupID,
@@ -81,38 +83,12 @@ SET NOCOUNT ON
 				
 	SET @endRun = GETDATE()  
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
-	BEGIN TRY
-		EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] 
-			@custID = @CustID, 
-			@TrackingValue = @LogData, 
-			@userid = @userID, 
-			@TypeID = 1, 
-			@actionid = 20007, 
-			@duration = @duration
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = '<EAS_UserInfoUpdAll>' + 
-						'<FirstName>' + 
-							'<Old>' + COALESCE(@db_firstname,'') + '</Old>' +
-							'<New>' + COALESCE(@firstname,'') + '</New>' +
-						'</FirstName>' + 	
-						'<LastName>' + 
-							'<Old>' + COALESCE(@db_lastname,'') + '</Old>' +
-							'<New>' + COALESCE(@lastname,'') + '</New>' +
-						'</LastName>' + 
-						'<IP>' + COALESCE(@IP,'') + '</IP>' + 
-						'<ErrMsg>' + COALESCE(ERROR_MESSAGE(),'') + '</ErrMsg>' + 
-					'</EAS_UserInfoUpdAll>'
-		EXEC bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] 
-			@custID = @CustID, 
-			@TrackingValue = @LogData, 
-			@userid = @userID, 
-			@TypeID = 1, 
-			@actionid = 20007, 
-			@duration = @duration			
-	END CATCH
 	
+	EXEC NAP_UserControl.[dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
+		@custID = @CustID, 
+		@TrackingValue = @LogData, 
+		@userid = @userID, 
+		@TypeID = 1, 
+		@actionid = 20007, 
+		@duration = @duration
 GO 
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserInfoUpdAll] TO [vnteam]
-GO 
-GRANT EXECUTE ON [dbo].[EAS_UserInfoUpdAll] TO [bodbExtAccNet]

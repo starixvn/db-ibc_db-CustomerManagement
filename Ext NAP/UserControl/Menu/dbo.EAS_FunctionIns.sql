@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_FunctionIns]
 	@UserID			INT,
 	@FuncID			INT = 0 OUTPUT,
@@ -17,9 +18,10 @@ AS
 		Created: Dan
 		Date: 2012-11-20
 		Task: Add new funtion
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 	*/ 
@@ -46,7 +48,7 @@ SET NOCOUNT ON
 		IF (ISNULL(@AssigedGroupIDs,'')	<>'')
 			INSERT INTO @Groups (GroupID)
 			SELECT val
-			FROM dbo.[f_EAS_strSplit] (@AssigedGroupIDs,',')	
+			FROM dbo.[strSplit] (@AssigedGroupIDs,',')	
 	
 	INSERT INTO dbo.[eaFunction]
            ([FuncName]
@@ -112,7 +114,7 @@ SET NOCOUNT ON
 	SET @endRun = GETDATE()  
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
 		@custID = @FuncId,
 		@TrackingValue = @LogData,
 		@userid = @UserID,
@@ -121,6 +123,3 @@ SET NOCOUNT ON
 		@duration = @duration
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_FunctionIns] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_FunctionIns] TO [bodbExtAccNet]

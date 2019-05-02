@@ -1,4 +1,4 @@
-/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" isFunction="0"></info>*/
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupPolicyUpdMultiple]
     @FuncID             INT,
 	@Policy				VARCHAR(MAX),
@@ -12,11 +12,12 @@ AS
 		Created: Kan
 		Date: 2019-01-21
 		Task: Grant permission to multiple groups
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
             - 20190121@Kan: Grant permission to multiple groups [Redmine Id: 106667]
-			
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -66,7 +67,7 @@ BEGIN
 	SET @EndRun = GETDATE()  
 	SET @Duration  = DATEDIFF(MILLISECOND, @StartRun, @EndRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] 
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper] 
 		@custID = @FuncID, 
 		@TrackingValue = @LogData, 
 		@userid = @UserID, 

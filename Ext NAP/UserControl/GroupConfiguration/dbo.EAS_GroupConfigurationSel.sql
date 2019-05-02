@@ -1,16 +1,15 @@
-/*<info serverAlias="DBEAS-bodb_EAS" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-USE bodb_EAS
-GO
-
-ALTER PROCEDURE [dbo].[EAS_GroupConfigurationSel] @productId INT = NULL
-	,@groupId INT = NULL
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[EAS_GroupConfigurationSel]
+	@productId INT = NULL,
+	@groupId INT = NULL
 AS
 /*  
 Created by: 20181120@Razor
 TASK : Function to control group display
-DB: DBEAS/bodb_EAS
+DB: DBPOL/NAP_UserControl
 Revisions:  
 	- 20181120@Razor: Function to control group display [Redmine: #89929]
+	- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 */
 SET NOCOUNT ON
 
@@ -34,7 +33,7 @@ SELECT CAST(c.ProductId AS INT) AS ProductId
 	,g.CurrencyCode
 	,g.[Site]
 	,c.IsShow
-FROM bodb02.dbo.Products p WITH (NOLOCK)
+FROM DBPRO.bodb02.dbo.Products p WITH (NOLOCK)
 	INNER JOIN dbo.eaGroupConfiguration c WITH (NOLOCK) ON p.ProductId = c.ProductId
 	INNER JOIN dbo.eaGroup g WITH (NOLOCK) ON g.GroupID = c.GroupId
 WHERE (
@@ -57,7 +56,7 @@ IF (
 BEGIN
 	DECLARE @ProductName VARCHAR(50)
 	SELECT @ProductName = ProductName 
-	FROM bodb02.dbo.Products WITH (NOLOCK)
+	FROM DBPRO.bodb02.dbo.Products WITH (NOLOCK)
 	WHERE ProductId = @productId
 	
 	INSERT INTO @products
@@ -104,7 +103,7 @@ BEGIN
 		,@CurrencyCode
 		,@Site
 		,0
-	FROM bodb02.dbo.Products p WITH (NOLOCK)
+	FROM DBPRO.bodb02.dbo.Products p WITH (NOLOCK)
 	WHERE ProductId = @productId 
 		OR @productId IS NULL
 END

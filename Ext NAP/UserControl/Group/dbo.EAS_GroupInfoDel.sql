@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoDel]
 	@GroupID int,	
 	@UserID int,
@@ -8,9 +9,10 @@ AS
 	Created by: Dan
 	Date: 2012-11-16
 	Task: Delete a group 
-	DB: DBEAS/bodb_EAS
+	DB: DBPOL/NAP_UserControl
  
-	Revisions:		
+	Revisions:
+		- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 */
 SET NOCOUNT ON
@@ -46,7 +48,7 @@ SELECT @LogData = '<EAS_GroupInfoDel>'+
 					'<GroupID>' +  CAST(@GroupID as varchar(20)) + '</GroupID>'+ 					
 				'</EAS_GroupInfoDel>'
 		  
-EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
+EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
 		@custID = @groupid,
 		@TrackingValue = @LogData,
 		@userid = @UserID,
@@ -55,6 +57,3 @@ EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
 		@duration = @Duration  
 
 GO 
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupInfoDel] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupInfoDel] TO [bodbExtAccNet]
