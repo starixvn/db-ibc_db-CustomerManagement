@@ -64,46 +64,21 @@ SET NOCOUNT ON
 					'</EAS_UserInfoUpdUserPwd>'
 				
 	SET @endRun = GETDATE()  
-	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
+	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-	BEGIN TRY
-		--Write log in IBC
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP  
-			@UserID			= @UserID, 
-			@CustID			= @CustID,				
-			@ActionID		= 20301, 
-			@TrackingValue	= @LogData, 
-			@duration		= @duration
-		
-		--Write log in EAS
-		EXEC DBLOG.bodb_CustomerLog.dbo.EAS_WriteLog_UserLog_RunSP  
-			@UserID			= @UserID, 
-			@CustID			= @CustID,				
-			@ActionID		= 20301, 
-			@TrackingValue	= @LogData, 
-			@duration		= @duration	
-	END TRY
-	BEGIN CATCH
-		SELECT @LogData = '<EAS_UserInfoUpdUserPwd>' + 				
-						'<CustID>' + COALESCE(CAST(@CustID AS Varchar(50)),'') + '</CustID>' + 
-						'<IP>' + COALESCE(@IP,'') + '</IP>' + 
-						'<ErrMsg>' + COALESCE(ERROR_MESSAGE(),'') + '</ErrMsg>' + 
-					'</EAS_UserInfoUpdUserPwd>'
-		--Write log in IBC
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP  
-			@UserID			= @UserID, 
-			@CustID			= @CustID,				
-			@ActionID		= 20301, 
-			@TrackingValue	= @LogData, 
-			@duration		= @duration
-		
-		--Write log in EAS
-		EXEC bodb_CustomerLog.dbo.EAS_WriteLog_UserLog_RunSP  
-			@UserID			= @UserID, 
-			@CustID			= @CustID,				
-			@ActionID		= 20301, 
-			@TrackingValue	= @LogData, 
-			@duration		= @duration
-	END CATCH			
+	--Write log in IBC
+	EXEC NAP_UserControl.[dbo].[WriteLog_UserLog_RunSP_Wrapper]
+		@UserID			= @UserID, 
+		@CustID			= @CustID,				
+		@ActionID		= 20301, 
+		@TrackingValue	= @LogData, 
+		@duration		= @duration
 
+	--Write log in EAS
+	EXEC NAP_UserControl.[dbo].[EAS_WriteLog_UserLog_RunSP_Wrapper]
+		@UserID			= @UserID, 
+		@CustID			= @CustID,				
+		@ActionID		= 20301, 
+		@TrackingValue	= @LogData, 
+		@duration		= @duration
 GO
