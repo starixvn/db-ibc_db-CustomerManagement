@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB,DBACC-bodb02" executers="" viewers="" isFunction="1"></info>*/
-USE [CustDB]
-GO
-
 ALTER FUNCTION [dbo].[f_GenerateVirtualSetting_inline] (@Bin BINARY(64), @NewVal VARBINARY(64), @Pos VARBINARY(64))   
 RETURNS TABLE  
 AS  
