@@ -44,7 +44,7 @@ SET NOCOUNT ON
 		RETURN
 	END
 	
-	INSERT INTO [bodb_EAS].[dbo].[eaMenu]
+	INSERT INTO [dbo].[eaMenu]
            ([MenuName]
            ,[MenuDesc]
            ,[Url]

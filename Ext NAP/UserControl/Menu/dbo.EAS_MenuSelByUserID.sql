@@ -40,7 +40,8 @@ SET NOCOUNT ON
 		m.MenuName,
 		m.URL,
 		m.DisplayOrder,
-		m.FuncID
+		m.FuncID,
+		m.active
 	FROM eaMenu m WITH(NOLOCK) 	
 		INNER JOIN @tmpFunction p ON p.funcid = m.funcid
 	WHERE m.active = 1 AND p.policy > 0
@@ -50,5 +51,5 @@ SET NOCOUNT ON
 	FROM @tmpFunction t
 		INNER JOIN eaFunction f WITH(NOLOCK) ON t.funcid = f.funcid
 	WHERE t.policy > 0
-	
+
 GO
