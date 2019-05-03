@@ -22,7 +22,7 @@ SET NOCOUNT ON
 		ISNULL(c.username,'') as Creator, 
 		g.createdDate
 	FROM eaGroup g WITH(NOLOCK) 
-		LEFT JOIN dbcust.dbo.Customer c WITH(NOLOCK) ON g.creator = c.custid
+		LEFT JOIN CUSTDB.dbo.Customer c WITH(NOLOCK) ON g.creator = c.custid
 		LEFT JOIN 
 		(
 			SELECT GroupID, count(1) users

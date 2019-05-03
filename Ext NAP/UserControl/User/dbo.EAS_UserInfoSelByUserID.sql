@@ -16,7 +16,7 @@ AS
 SET NOCOUNT ON
 	SELECT c.custid, c.username, c.firstname, c.lastname, g.groupID, g.groupname, ui.enabled
 	FROM eaUserInfo ui WITH(NOLOCK)
-		INNER JOIN dbcust.dbo.Customer c WITH(NOLOCK) ON ui.UserID = c.custid
+		INNER JOIN CUSTDB.dbo.Customer c WITH(NOLOCK) ON ui.UserID = c.custid
 		INNER JOIN eaGroup g WITH(NOLOCK) ON ui.groupID = g.groupID
 	WHERE ui.UserID = @UserID
 

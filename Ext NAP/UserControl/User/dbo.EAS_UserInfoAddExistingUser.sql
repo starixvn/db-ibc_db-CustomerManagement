@@ -34,7 +34,7 @@ SET NOCOUNT ON
 	DECLARE @roleid INT
 	
 	SELECT @custid = custid, @roleid = roleid
-	FROM dbcust.dbo.Customer WITH(NOLOCK) 
+	FROM CUSTDB.dbo.Customer WITH(NOLOCK) 
 	WHERE username = @username
 	
 	IF ISNULL(@custid,0) = 0

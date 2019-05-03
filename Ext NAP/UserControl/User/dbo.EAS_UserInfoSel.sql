@@ -18,9 +18,9 @@ SET NOCOUNT ON
 
 	SELECT c.custid, c.username, c.firstname, c.lastname, g.groupid, g.groupname, ISNULL(creator.username,'') as creator, ui.CreatedDate, ui.enabled
 	FROM eaUserInfo ui WITH(NOLOCK)
-		INNER JOIN dbcust.dbo.Customer c WITH(NOLOCK) ON ui.userid = c.custid
+		INNER JOIN CUSTDB.dbo.Customer c WITH(NOLOCK) ON ui.userid = c.custid
 		INNER JOIN eaGroup g WITH(NOLOCK) ON ui.groupID = g.groupID
-		LEFT JOIN dbcust.dbo.Customer creator WITH(NOLOCK) ON ui.creator = creator.custid
+		LEFT JOIN CUSTDB.dbo.Customer creator WITH(NOLOCK) ON ui.creator = creator.custid
 	WHERE ui.GroupID = ISNULL(@GroupID,ui.GroupID)
 		AND c.username LIKE ISNULL(@Username,c.username) + '%'
 	ORDER BY ui.enabled DESC, g.groupName ASC, c.username ASC
