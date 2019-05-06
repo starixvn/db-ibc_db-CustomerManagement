@@ -1,77 +1,32 @@
-/*<info serverAlias="DBCUST-CustDB" executers="" viewers="vnteam" isFunction="1"></info>*/
-USE [CustDB]
-GO
-
-ALTER FUNCTION [dbo].[f_GenerateVirtualSetting_inline] (@bitmap binary(64), @xmlStr varchar(max))   
+/*<info serverAlias="DBCUST-CustDB,DBACC-bodb02" executers="" viewers="" isFunction="1"></info>*/
+ALTER FUNCTION [dbo].[f_GenerateVirtualSetting_inline] (@Bin BINARY(64), @NewVal VARBINARY(64), @Pos VARBINARY(64))   
 RETURNS TABLE  
 AS  
 /*
-	Created: Viet @ 15.OCT.2015
+	Created: Paul @ 20180823
 	DB: DBCust.custDB
 
 	Revision:      
 		- 20180823@Paul: Create new [RedmineID:#99839]
+		- 20190411@Paul: Enhance and change to use recursion [RedmineID:#110345]
 	Param's Explanation:   
-		@xmlStr:   
-			+ FORMAT: <root><r p="" v="" /></root>  
-			+ r: row  
-			+ p: profileID  
-			+ v: virtualMultiplier
+		@Pos:  '0x0102030405' 
 */ 
 RETURN  (
-	WITH XmlCTE AS (
-		SELECT CONVERT(XML, @xmlStr) AS XmlStr
-	),
-	PosValCTE AS (
-		SELECT 1 + (T.C.value('./@p', 'smallint') - 1) % 64 AS Pos, 
-				CAST(CASE WHEN CAST(T.C.value('./@v', 'smallmoney') * 100 AS INT) > 200 THEN ((CAST(T.C.value('./@v', 'smallmoney') * 100 AS INT) - 200) / 5 + 200) ELSE CAST(T.C.value('./@v', 'smallmoney') * 100 AS INT) END AS BINARY(1)) AS Val
-		FROM XmlCTE
-			CROSS APPLY XmlCTE.XmlStr.nodes('/root/r') as [T](C) --T: table, C: column
-	),
-	BitmapCTE AS(
-		SELECT CONVERT(binary(64), STUFF(CONVERT(binary(64), '0x00', 1), Pos, 1, Val)) AS UpdateBitmap,
-				CONVERT(binary(64), STUFF(CONVERT(binary(64), '0x00', 1), Pos, 1, CONVERT(BINARY(1), '0xFF', 1))) AS MaskBitmap
-		FROM PosValCTE
-	),
-	SplitCTE AS (
-		SELECT ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 1, 8) AS bigint)), 0) AS ub_1to8,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 9, 8) AS bigint)), 0) AS ub_9to16,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 17, 8) AS bigint)), 0) AS ub_17to24,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 25, 8) AS bigint)), 0) AS ub_24to32,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 33, 8) AS bigint)), 0) AS ub_33to40,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 41, 8) AS bigint)), 0) AS ub_41to48,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 49, 8) AS bigint)), 0) AS ub_49to56,
-				ISNULL(SUM(CAST(SUBSTRING(UpdateBitmap, 57, 8) AS bigint)), 0) AS ub_56to64,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 1, 8) AS bigint)), 0) AS mb_1to8,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 9, 8) AS bigint)), 0) AS mb_9to16,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 17, 8) AS bigint)), 0) AS mb_17to24,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 25, 8) AS bigint)), 0) AS mb_24to32,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 33, 8) AS bigint)), 0) AS mb_33to40,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 41, 8) AS bigint)), 0) AS mb_41to48,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 49, 8) AS bigint)), 0) AS mb_49to56,
-				ISNULL(SUM(CAST(SUBSTRING(MaskBitmap, 57, 8) AS bigint)), 0) AS mb_56to64   
-		FROM BitmapCTE
-	),
-	SplitOrigBitmap AS (
-		SELECT CAST(SUBSTRING(@bitmap, 1, 8) AS bigint) AS bm_1to8,
-				CAST(SUBSTRING(@bitmap, 9, 8) AS bigint) AS bm_9to16,
-				CAST(SUBSTRING(@bitmap, 17, 8) AS bigint) AS bm_17to24,
-				CAST(SUBSTRING(@bitmap, 25, 8) AS bigint) AS bm_24to32,
-				CAST(SUBSTRING(@bitmap, 33, 8) AS bigint) AS bm_33to40,
-				CAST(SUBSTRING(@bitmap, 41, 8) AS bigint) AS bm_41to48,
-				CAST(SUBSTRING(@bitmap, 49, 8) AS bigint) AS bm_49to56,
-				CAST(SUBSTRING(@bitmap, 57, 8) AS bigint) AS bm_56to64
+	WITH cte AS (
+		SELECT CAST(1 AS INT) AS loopcount, @Bin AS val
+
+		UNION ALL
+
+		SELECT  loopcount + 1, 
+				CAST(STUFF(val, CAST(SUBSTRING(@Pos, loopcount, 1) AS INT), 1, SUBSTRING(@NewVal, loopcount, 1)) AS BINARY(64))
+		FROM cte
+		WHERE loopcount <= 64
+			AND loopcount <= LEN(@NewVal)
 	)
-	SELECT CAST((bm_1to8 & ~mb_1to8) | ub_1to8 AS binary(8)) +
-			CAST((bm_9to16 & ~mb_9to16) | ub_9to16 AS binary(8)) +
-			CAST((bm_17to24 & ~mb_17to24) | ub_17to24 AS binary(8)) +
-			CAST((bm_24to32 & ~mb_24to32) | ub_24to32 AS binary(8)) +
-			CAST((bm_33to40 & ~mb_33to40) | ub_33to40 AS binary(8)) +
-			CAST((bm_41to48 & ~mb_41to48) | ub_41to48 AS binary(8)) +
-			CAST((bm_49to56 & ~mb_49to56) | ub_49to56 AS binary(8)) +
-			CAST((bm_56to64 & ~mb_56to64) | ub_56to64 AS binary(8)) AS bitmap
-	FROM SplitCTE
-		CROSS JOIN SplitOrigBitmap
+	SELECT TOP 1 val AS bitmap 
+	FROM cte 
+	ORDER BY loopcount DESC
 )
 
 GO
