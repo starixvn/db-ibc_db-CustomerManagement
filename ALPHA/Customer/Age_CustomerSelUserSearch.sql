@@ -31,7 +31,7 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @tmpUsername TABLE(username VARCHAR(30), firstname NVARCHAR(50), lastname NVARCHAR(50), searchcount INT)
+	DECLARE @tmpUsername TABLE(username VARCHAR(30), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 VARCHAR(50), searchcount INT)
 	DECLARE @roleid TINYINT, @CurrentUsername VARCHAR(30)
 
 	SELECT @roleid = roleid, @CurrentUsername = username
@@ -40,8 +40,8 @@ BEGIN
 
 	IF @isaccinfo = 1
 	BEGIN
-		INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-		SELECT TOP 10 username, firstname, lastname, searchcount
+		INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+		SELECT TOP 10 username, firstname, lastname, username2, searchcount
 		FROM custsearch WITH (NOLOCK) 
 		WHERE userid=@custid 
 			AND (username LIKE '%' + @username  + '%' 
@@ -72,8 +72,8 @@ BEGIN
 		BEGIN
 			IF @excludemember = 1
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-				SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid = 2
 					AND recommend = @custid
@@ -85,8 +85,8 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-				SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid < 2
 					AND recommend = @custid
@@ -101,8 +101,8 @@ BEGIN
 		BEGIN
 			IF @directdownline = 1
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-				SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid =2
 					AND mrecommend = @custid
@@ -116,8 +116,8 @@ BEGIN
 			BEGIN
 				IF @excludemember = 1
 				BEGIN
-					INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-					SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 					FROM customer WITH (NOLOCK)
 					WHERE roleid < 3 AND roleid > 1
 						AND mrecommend = @custid
@@ -129,8 +129,8 @@ BEGIN
 				END
 				ELSE
 				BEGIN
-					INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-					SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 					FROM customer WITH (NOLOCK)
 
 					WHERE roleid < 3
@@ -147,8 +147,8 @@ BEGIN
 		BEGIN
 			IF @directdownline = 1
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-				SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid = 3
 					AND srecommend = @custid
@@ -162,8 +162,8 @@ BEGIN
 			BEGIN
 				IF @excludemember = 1
 					BEGIN
-						INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-						SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+						SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4 AND roleid > 1
 							AND srecommend = @custid
@@ -175,8 +175,8 @@ BEGIN
 					END
 				ELSE
 					BEGIN
-						INSERT INTO @tmpUsername (username, firstname, lastname, searchcount)
-						SELECT TOP 10 username, firstname, lastname, -1 AS searchcount
+						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+						SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4
 							AND srecommend = @custid
@@ -190,7 +190,7 @@ BEGIN
 		END
 	END
 
-	DECLARE @tmpSearchMax TABLE(username VARCHAR(30), firstname NVARCHAR(50), lastname NVARCHAR(50), searchcount INT)
+	DECLARE @tmpSearchMax TABLE(username VARCHAR(30), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 VARCHAR(50), searchcount INT)
 
 	INSERT INTO @tmpSearchMax
 	SELECT username, firstname, lastname, username2, MAX(searchcount) searchcount
