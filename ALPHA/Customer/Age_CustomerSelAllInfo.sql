@@ -58,6 +58,7 @@ AS
 		- 20180611@Elodie:	Move all status of customer to Age_CustomerSelAllStatus SP [RedmineID: #58776]	
 							Move all balance info of customer to Age_CustomerBalanceSel SP 
 							Move total downline info of customer to Acc_CustomerSelList SP 
+		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -84,6 +85,16 @@ BEGIN
         FROM customer WITH (NOLOCK)
         WHERE username2 = @username
 	       AND (srecommend = @uplineid OR mrecommend = @uplineid OR recommend = @uplineid)
+    END
+	
+	IF (@custid IS NULL) AND @isInternalAgent = 0
+	BEGIN
+	    SELECT @custid = custid , @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
+        FROM customer WITH (NOLOCK)
+        WHERE username2 = @username
+			AND ((srecommend = @uplineid AND roleid = 3)
+				OR (mrecommend = @uplineid AND roleid = 2)
+				OR (recommend = @uplineid AND roleid = 1))
     END
     --end
 
