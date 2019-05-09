@@ -130,9 +130,8 @@ BEGIN
 				ELSE
 				BEGIN
 					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-					SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+					SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 2 THEN username2 ELSE NULL END, -1 AS searchcount
 					FROM customer WITH (NOLOCK)
-
 					WHERE roleid < 3
 						AND mrecommend = @custid
 						AND (username LIKE @username  + '%' 
@@ -163,7 +162,7 @@ BEGIN
 				IF @excludemember = 1
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-						SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+						SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4 AND roleid > 1
 							AND srecommend = @custid
@@ -176,7 +175,7 @@ BEGIN
 				ELSE
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-						SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+						SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4
 							AND srecommend = @custid
