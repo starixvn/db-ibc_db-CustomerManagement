@@ -51,7 +51,7 @@ BEGIN
 		AND (
 			@System = ''
 			OR @System IN (
-				SELECT val
+				SELECT ltrim(val)
 				FROM dbo.strSplit(Systems, ',')
 				)
 			)
