@@ -1,6 +1,7 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CustomerSelUserSearch]
+	@UserID INT,
 	@custid INT,  -- roleid1
 	@username VARCHAR(50),
 	@issubaccount BIT = 0,
@@ -24,6 +25,7 @@ AS
 		- 20120326@Sophia: replace "where username like '%' + @username + '%'" (index scan) by "where username like @username + '%'" (index seek)
 		- 20140708@Dom: Do not allow Super search Super name from Account Info section [Redmine: #18125]
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
+		- 20190512@Elodie: Allow to search nickname on customer list[Redmine: #113044]
 
 	Param's Explanation:
 		• @custid: User who are logging in.
@@ -32,23 +34,28 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	DECLARE @tmpUsername TABLE(username VARCHAR(30), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 VARCHAR(50), searchcount INT)
-	DECLARE @roleid TINYINT, @CurrentUsername VARCHAR(30)
+	DECLARE @roleid TINYINT, @CurrentUsername VARCHAR(30), @UserRoleId TINYINT
 
 	SELECT @roleid = roleid, @CurrentUsername = username
 	FROM custinfo WITH (NOLOCK)
 	WHERE custid = @custid
 
+	SELECT @UserRoleId = roleid
+	FROM custinfo WITH (NOLOCK)
+	WHERE custid = @UserID
+
 	IF @isaccinfo = 1
 	BEGIN
 		INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-		SELECT TOP 10 username, firstname, lastname, username2, searchcount
-		FROM custsearch WITH (NOLOCK) 
+		SELECT TOP 10 s.username, s.firstname, s.lastname, CASE WHEN c.roleid = @roleid - 1 THEN s.username2 ELSE NULL END, searchcount
+		FROM custsearch s WITH (NOLOCK) 
+			INNER JOIN customer c (NOLOCK) ON s.username = c.username  
 		WHERE userid=@custid 
-			AND (username LIKE '%' + @username  + '%' 
-				OR username2 LIKE '%' + @username  + '%' 
-				OR firstname LIKE '%' + @username  + '%' 
-				OR lastname LIKE '%' + @username  + '%')
-			AND  CASE WHEN @isInternalAgent = 0 THEN Left(username,7) ELSE 'A' END  <>
+			AND (s.username LIKE '%' + @username  + '%' 
+				OR s.username2 LIKE '%' + @username  + '%' 
+				OR s.firstname LIKE '%' + @username  + '%' 
+				OR s.lastname LIKE '%' + @username  + '%')
+			AND  CASE WHEN @isInternalAgent = 0 THEN Left(s.username,7) ELSE 'A' END  <>
 				 CASE WHEN @isInternalAgent = 0 THEN 'Agency$' ELSE 'B' END 
 		ORDER BY [searchcount] DESC
 	END
@@ -73,7 +80,7 @@ BEGIN
 			IF @excludemember = 1
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid = 2
 					AND recommend = @custid
@@ -86,7 +93,7 @@ BEGIN
 			ELSE
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid < 2
 					AND recommend = @custid
@@ -102,7 +109,7 @@ BEGIN
 			IF @directdownline = 1
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid =2
 					AND mrecommend = @custid
@@ -117,7 +124,7 @@ BEGIN
 				IF @excludemember = 1
 				BEGIN
 					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-					SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+					SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
 					FROM customer WITH (NOLOCK)
 					WHERE roleid < 3 AND roleid > 1
 						AND mrecommend = @custid
@@ -130,7 +137,7 @@ BEGIN
 				ELSE
 				BEGIN
 					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-					SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 2 THEN username2 ELSE NULL END, -1 AS searchcount
+					SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 2 THEN username2 ELSE NULL END, -1 AS searchcount
 					FROM customer WITH (NOLOCK)
 					WHERE roleid < 3
 						AND mrecommend = @custid
@@ -147,7 +154,7 @@ BEGIN
 			IF @directdownline = 1
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 username, firstname, lastname, username2, -1 AS searchcount
+				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
 				FROM customer WITH (NOLOCK)
 				WHERE roleid = 3
 					AND srecommend = @custid
@@ -162,7 +169,7 @@ BEGIN
 				IF @excludemember = 1
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-						SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
+						SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4 AND roleid > 1
 							AND srecommend = @custid
@@ -175,7 +182,7 @@ BEGIN
 				ELSE
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-						SELECT TOP 10 username, firstname, lastname, CASE WHEN roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
+						SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
 						FROM customer WITH (NOLOCK)
 						WHERE roleid < 4
 							AND srecommend = @custid
@@ -210,3 +217,4 @@ BEGIN
 	WHERE a.username <> @CurrentUsername
 	ORDER BY searchcount DESC, username
 END
+
