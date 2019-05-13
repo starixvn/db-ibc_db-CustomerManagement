@@ -85,7 +85,7 @@ BEGIN
 				WHERE roleid = 2
 					AND recommend = @custid
 					AND (username LIKE @username  + '%' 
-						OR username2 LIKE @username  + '%' 
+						OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 						OR firstname LIKE @username  + '%' 
 						OR lastname LIKE @username  + '%')
 				ORDER BY username
@@ -98,7 +98,7 @@ BEGIN
 				WHERE roleid < 2
 					AND recommend = @custid
 					AND (username LIKE @username  + '%' 
-						OR username2 LIKE @username  + '%' 
+						OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 						OR firstname LIKE @username  + '%' 
 						OR lastname LIKE @username  + '%')
 				ORDER BY username
@@ -114,7 +114,7 @@ BEGIN
 				WHERE roleid =2
 					AND mrecommend = @custid
 					AND (username LIKE @username  + '%' 
-						OR username2 LIKE @username  + '%' 
+						OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 						OR firstname LIKE @username  + '%' 
 						OR lastname LIKE @username  + '%')
 				ORDER BY username
@@ -129,7 +129,7 @@ BEGIN
 					WHERE roleid < 3 AND roleid > 1
 						AND mrecommend = @custid
 						AND (username LIKE @username  + '%' 
-							OR username2 LIKE @username  + '%' 
+							OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 							OR firstname LIKE @username  + '%' 
 							OR lastname LIKE @username  + '%')
 					ORDER BY username
@@ -142,7 +142,7 @@ BEGIN
 					WHERE roleid < 3
 						AND mrecommend = @custid
 						AND (username LIKE @username  + '%' 
-							OR (roleid = 2 AND username2 LIKE @username  + '%' )
+							OR (roleid = 2 AND @UserRoleId = @RoleID AND username2 LIKE @username  + '%' )
 							OR firstname LIKE @username  + '%' 
 							OR lastname LIKE @username  + '%')
 					ORDER BY username
@@ -159,7 +159,7 @@ BEGIN
 				WHERE roleid = 3
 					AND srecommend = @custid
 					AND (username LIKE @username  + '%' 
-						OR username2 LIKE @username  + '%' 
+						OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 						OR firstname LIKE @username  + '%' 
 						OR lastname LIKE @username  + '%')
 				ORDER BY username
@@ -174,7 +174,7 @@ BEGIN
 						WHERE roleid < 4 AND roleid > 1
 							AND srecommend = @custid
 							AND (username LIKE @username  + '%' 
-								OR (roleid = 3 AND username2 LIKE @username  + '%' )
+								OR (roleid = 3 AND @UserRoleId = @RoleID AND username2 LIKE @username  + '%' )
 								OR firstname LIKE @username  + '%' 
 								OR lastname LIKE @username  + '%')
 						ORDER BY username
@@ -187,7 +187,7 @@ BEGIN
 						WHERE roleid < 4
 							AND srecommend = @custid
 							AND (username LIKE @username  + '%' 
-								OR (roleid = 3 AND username2 LIKE @username  + '%' )
+								OR (roleid = 3 AND @UserRoleId = @RoleID AND username2 LIKE @username  + '%' )
 								OR firstname LIKE @username  + '%' 
 								OR lastname LIKE @username  + '%')
 						ORDER BY username
