@@ -10,7 +10,7 @@ AS
 
 	Revisions:
 		- 20180628@Elodie: Left menu of ExtNap - Search customer - All Status [Redmine: #58776]
-		
+		- 20190513@Johnson: add suspendinfo [redmine: #105587]
 	Param's Explanation:
 	
 */
@@ -18,7 +18,7 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
-    
+		    
 	--Downline/Upline status 
     DECLARE @upLineDisableCasino			BIT   
 		  , @uplineSyncCasino				BIT    		   
@@ -33,6 +33,7 @@ BEGIN
           , @upLineSuspend			BIT
           , @uplineDoubleCommLosing BIT        
           , @DisableAutoMPT			BIT  
+		  , @isDirectSuspend BIT = 0
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -101,11 +102,17 @@ BEGIN
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
+	--check suspend status is direct or not
+	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
+	FROM dbo.CustProductStatus WITH(NOLOCK)
+	WHERE custid = @custid
+	
 	-------------------------------------------------------------------------	    
 	--Non product status
 	SELECT	@HasDownline AS HasDownline,
 			ci.closed,
 			ci.reject AS suspended,
+			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,
 			@upLineClosed AS upLineClosed,
@@ -139,3 +146,4 @@ BEGIN
 	-- For Product DCS
 		EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid
 END
+GO
