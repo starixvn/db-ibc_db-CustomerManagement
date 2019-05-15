@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[CS_SetCustomerStatus]
+ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]
 	@CustID INT,
 	@Mode TINYINT --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
 AS
