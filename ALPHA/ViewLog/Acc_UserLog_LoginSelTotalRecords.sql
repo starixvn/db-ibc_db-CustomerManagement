@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UserLog_LoginSelTotalRecords]
     @UserId INT,	
 	@UserName AS VARCHAR(50),
@@ -19,6 +19,7 @@ AS
 	- 20101214@Thien: comment out "OR (SubAccID = @UserId)" for performance improvement
 	- 20110526@Jamie: Allow agency/admin view sub-account log
 	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
+	- 20190405@Patrick: Support archive date range [Redmine: #111476]
 	
     Param's Explaination:    
 	- @CustID: a customer which we want to view actions affect to.
@@ -38,31 +39,119 @@ SELECT @RoleID = roleid from bodb02.dbo.custinfo(nolock) where custid = @UserId
 IF (@RoleID = 1)
 	RETURN
 
+DECLARE @__archiveDate DATETIME
+SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
 IF (@LogType = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
 BEGIN
-	SELECT  COUNT(LogID)                           
-	FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
-			INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
-			INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
-	WHERE    LogDate BETWEEN @FromDate AND @ToDate			
-			AND IsInternal = 0
-			AND ((	UserID = @UserId AND SubAccID >= 0)
-					--OR (SubAccID = @UserId)
-					)
-			AND ci.roleid <=4
+	IF @FromDate >= @__archiveDate
+	BEGIN
+		SELECT  COUNT(LogID)                           
+		FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+		WHERE    LogDate BETWEEN @FromDate AND @ToDate			
+				AND IsInternal = 0
+				AND ((	UserID = @UserId AND SubAccID >= 0)
+						--OR (SubAccID = @UserId)
+						)
+				AND ci.roleid <=4
+	END
+	ELSE IF @ToDate < @__archiveDate
+	BEGIN
+		SELECT  COUNT(LogID)                           
+		FROM    bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+		WHERE    LogDate BETWEEN @FromDate AND @ToDate			
+				AND IsInternal = 0
+				AND ((	UserID = @UserId AND SubAccID >= 0)
+						--OR (SubAccID = @UserId)
+						)
+				AND ci.roleid <=4
+	END
+	ELSE
+	BEGIN
+		SELECT SUM(cnt)
+		FROM (
+			SELECT  COUNT(LogID) cnt                         
+			FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+			WHERE    LogDate BETWEEN @__archiveDate AND @ToDate			
+					AND IsInternal = 0
+					AND ((	UserID = @UserId AND SubAccID >= 0)
+							--OR (SubAccID = @UserId)
+							)
+					AND ci.roleid <=4
+
+			UNION ALL
+			SELECT  COUNT(LogID) cnt                        
+			FROM    bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+			WHERE    LogDate >= @FromDate AND LogDate < @__archiveDate			
+					AND IsInternal = 0
+					AND ((	UserID = @UserId AND SubAccID >= 0)
+							--OR (SubAccID = @UserId)
+							)
+					AND ci.roleid <=4
+		)t
+	END
 END
 ELSE
 IF (@LogType = 1 OR @LogType = 2) 
 BEGIN
-	SELECT  COUNT(LogID)                           
-	FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
-			INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
-	WHERE     LogDate BETWEEN @FromDate AND @ToDate			
-			--AND IsInternal <= @IsAdminAccess
-			AND UserID = @UserId 
-					-- AND SubAccID <= 0)
-					--OR (SubAccID = @UserId)
-			AND (la.ActionID <> 1301 OR @LogType = 2)
-				
+
+	IF @FromDate >= @__archiveDate
+	BEGIN
+		SELECT  COUNT(LogID)                           
+		FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+		WHERE     LogDate BETWEEN @FromDate AND @ToDate			
+				--AND IsInternal <= @IsAdminAccess
+				AND UserID = @UserId 
+						-- AND SubAccID <= 0)
+						--OR (SubAccID = @UserId)
+				AND (la.ActionID <> 1301 OR @LogType = 2)
+	END
+	ELSE IF @ToDate < @__archiveDate
+	BEGIN
+		SELECT  COUNT(LogID)                           
+		FROM    bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+		WHERE     LogDate BETWEEN @FromDate AND @ToDate			
+				--AND IsInternal <= @IsAdminAccess
+				AND UserID = @UserId 
+						-- AND SubAccID <= 0)
+						--OR (SubAccID = @UserId)
+				AND (la.ActionID <> 1301 OR @LogType = 2)
+	END
+	ELSE
+	BEGIN
+		SELECT SUM(cnt)
+		FROM (
+			SELECT  COUNT(LogID) cnt
+			FROM    dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+			WHERE   LogDate BETWEEN @__archiveDate AND @ToDate			
+					--AND IsInternal <= @IsAdminAccess
+					AND UserID = @UserId 
+							-- AND SubAccID <= 0)
+							--OR (SubAccID = @UserId)
+					AND (la.ActionID <> 1301 OR @LogType = 2)
+
+			UNION ALL
+			SELECT  COUNT(LogID) cnt
+			FROM    bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+			WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate			
+					--AND IsInternal <= @IsAdminAccess
+					AND UserID = @UserId 
+							-- AND SubAccID <= 0)
+							--OR (SubAccID = @UserId)
+					AND (la.ActionID <> 1301 OR @LogType = 2)
+		)t
+	END
 END
 GO

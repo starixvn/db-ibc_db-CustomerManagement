@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_CustomerSelVirtualRateHistory]	
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelVirtualRateHistory]	
 	@CustID INT
 AS
 /*
@@ -11,12 +12,17 @@ Revisions:
 	- 20100512@Kiwi: Retrieve data from TrackingValue rather than doing.
 	- 20110923@Henry: show logs that updated from LRF
 	- 20141231@Johnson: separate virtual rate settings by sporttype bettype [Redmine: #25840]
+	- 20190405@Patrick: Support archive date range [Redmine: #111476]
+
 Explanations:
 ActionID: 801, SPName: Acc_CustomerUpdVirtualMultiplier
 ActionID: 802, SPName: Acc_VirtualRateMulUpd
 */
 BEGIN
-SET NOCOUNT ON			
+	SET NOCOUNT ON
+	DECLARE @__archiveDate DATETIME
+	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
 	SELECT TOP 10 logdate,	
 		ActionID,	
 		TrackingValue,
@@ -24,13 +30,48 @@ SET NOCOUNT ON
 						when (ActionID IN (2800,2802)) then 'LRF Admin'
 						ELSE c.Username
 					END
-	FROM UserLog_RunSP u WITH(NOLOCK)
-	LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+	INTO #__tempData
+	FROM dbo.UserLog_RunSP u WITH(NOLOCK)
+		LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 	WHERE u.custid = @CustID
 		AND ActionID IN (801,802,806,807,2800,2802)
+		AND logdate >= @__archiveDate
 	ORDER BY logdate DESC
-END	
+
+	IF @@ROWCOUNT >= 10
+	BEGIN
+		SELECT *
+		FROM #__tempData
+		ORDER BY logdate DESC
+		
+		RETURN
+	END
+	ELSE
+	BEGIN
+		SELECT TOP 10 logdate,	
+			ActionID,	
+			TrackingValue,
+			Username =	CASE 
+							when (ActionID IN (2800,2802)) then 'LRF Admin'
+							ELSE c.Username
+						END
+		INTO #__tempData_Archive
+		FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP u WITH(NOLOCK)
+			LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+		WHERE u.custid = @CustID
+			AND ActionID IN (801,802,806,807,2800,2802)
+			AND u.logdate < @__archiveDate
+		ORDER BY logdate DESC
+
+		SELECT TOP 10 *
+		FROM (
+			SELECT *
+			FROM #__tempData
+
+			UNION ALL
+			SELECT *
+			FROM #__tempData_Archive
+		)t ORDER BY logdate DESC
+	END
+END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualRateHistory] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelVirtualRateHistory] TO [vnteam]

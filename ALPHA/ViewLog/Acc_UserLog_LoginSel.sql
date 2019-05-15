@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UserLog_LoginSel]
     @UserId INT,
 	@UserName AS VARCHAR(50),
@@ -27,6 +27,7 @@ AS
 	- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 	- 20160321@Percy: Do not show any Internal Admin's log for External Admin [Redmine: #53932]
 	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
+	- 20190405@Patrick: Support archive date range [Redmine: #111476]
 	
 	
     Param's Explaination:    
@@ -68,9 +69,14 @@ declare @hideLocation bit
 select @hideLocation = case when @srecommend=5532706 and SYSTEM_USER like 'bodbdownlinen%' then 1 else 0 end
 ----------------------------------------------------
 
+DECLARE @__archiveDate DATETIME
+SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
 IF (@LogType = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
 BEGIN
-	SELECT  LogID,
+	IF @FromDate >= @__archiveDate
+	BEGIN
+		SELECT  LogID,
 			UserID,
 			Username,
 			Doing,
@@ -85,47 +91,45 @@ BEGIN
 			Domain,
 			[Platform],
 			case @hideLocation when 1 then '' else CountryCode end CountryCode
-	FROM    (
-				 SELECT    ROW_NUMBER() OVER (ORDER BY  LogDate DESC) AS RowNum,
-							LogID,
-							UserID,
-							@Username as  Username,
-							Doing,
-							LogDate,
-							la.ActionID,	
-							IsInternal,												
-							la.ActionNameEN AS ActionName,
-							la.SPName AS SPName,
-							IP,
-							ServerID, 
-							BrowserName as Browser,
-							DomainName as Domain,
-							[Platform],
-							CountryCode,
-							username2
-				  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
-							INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
-							INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
-				  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
-							AND IsInternal = 0
-							AND ((	UserID = @UserId AND SubAccID >= 0)
-										--OR (SubAccID = @UserId)
-									) 
-							AND ci.roleid <=4
-			) AS MyTable
-	WHERE   RowNum BETWEEN @lbound AND @ubound
-			
-END
-ELSE
-IF (@LogType = 1 OR @LogType = 2) 
-BEGIN
-	SELECT  LogID,
+		FROM    (
+					 SELECT    ROW_NUMBER() OVER (ORDER BY  LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								@Username as  Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,												
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID, 
+								BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode,
+								username2
+					  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+								INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+					  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
+								AND IsInternal = 0
+								AND ((	UserID = @UserId AND SubAccID >= 0)
+											--OR (SubAccID = @UserId)
+										) 
+								AND ci.roleid <=4
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
+	ELSE IF @ToDate < @__archiveDate
+	BEGIN
+		SELECT  LogID,
 			UserID,
 			Username,
-			Doing + CASE WHEN ISNULL(username2,'') <>'' THEN ' - Nickname: '+ username2 ELSE '' END as Doing,
+			Doing,
 			LogDate,
 			ActionID,				
-			IsInternal,
+			IsInternal,				
 			ActionName,
 			SPName,
 			case @hideLocation when 1 then '' else IP end IP,
@@ -134,32 +138,277 @@ BEGIN
 			Domain,
 			[Platform],
 			case @hideLocation when 1 then '' else CountryCode end CountryCode
-	FROM    (
-				 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
-							LogID,
-							UserID,
-							@Username as Username,
-							Doing,
-							LogDate,
-							la.ActionID,	
-							IsInternal,											
-							la.ActionNameEN AS ActionName,
-							la.SPName AS SPName,
-							IP,
-							ServerID,BrowserName as Browser,
-							DomainName as Domain,
-							[Platform],
-							CountryCode, 
-							username2
-				  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
-							INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
-				  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
-							--AND IsInternal <= 1
-							AND UserID = @UserId
-									--AND SubAccID <= 0)
-									--OR (SubAccID = @UserId)
-							AND (la.ActionID <> 1301 OR @LogType = 2)								
-			) AS MyTable
-	WHERE   RowNum BETWEEN @lbound AND @ubound
+		FROM    (
+					 SELECT    ROW_NUMBER() OVER (ORDER BY  LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								@Username as  Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,												
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID, 
+								BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode,
+								username2
+					  FROM     bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+								INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+					  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
+								AND IsInternal = 0
+								AND ((	UserID = @UserId AND SubAccID >= 0)
+											--OR (SubAccID = @UserId)
+										) 
+								AND ci.roleid <=4
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
+	ELSE
+	BEGIN
+		SELECT  LogID,
+			UserID,
+			Username,
+			Doing,
+			LogDate,
+			ActionID,				
+			IsInternal,				
+			ActionName,
+			SPName,
+			case @hideLocation when 1 then '' else IP end IP,
+			ServerID,
+			Browser,
+			Domain,
+			[Platform],
+			case @hideLocation when 1 then '' else CountryCode end CountryCode
+		FROM    (
+					 SELECT ROW_NUMBER() OVER (ORDER BY  LogDate DESC) AS RowNum, *
+					 FROM (
+						SELECT LogID,
+								UserID,
+								@Username as  Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,												
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID, 
+								BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode,
+								username2
+					  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+								INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+					  WHERE     LogDate BETWEEN @__archiveDate AND @ToDate	
+								AND IsInternal = 0
+								AND ((	UserID = @UserId AND SubAccID >= 0)
+											--OR (SubAccID = @UserId)
+										) 
+								AND ci.roleid <= 4
+
+					UNION ALL
+					SELECT LogID,
+								UserID,
+								@Username as  Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,												
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID, 
+								BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode,
+								username2
+					  FROM      bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+								INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
+					  WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate	
+								AND IsInternal = 0
+								AND ((	UserID = @UserId AND SubAccID >= 0)
+											--OR (SubAccID = @UserId)
+										) 
+								AND ci.roleid <= 4
+					) AS MyTable1
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
+END
+ELSE
+IF (@LogType = 1 OR @LogType = 2) 
+BEGIN
+	IF @FromDate >= @__archiveDate
+	BEGIN
+		SELECT  LogID,
+				UserID,
+				Username,
+				Doing + CASE WHEN ISNULL(username2,'') <>'' THEN ' - Nickname: '+ username2 ELSE '' END as Doing,
+				LogDate,
+				ActionID,				
+				IsInternal,
+				ActionName,
+				SPName,
+				case @hideLocation when 1 then '' else IP end IP,
+				ServerID,
+				Browser,
+				Domain,
+				[Platform],
+				case @hideLocation when 1 then '' else CountryCode end CountryCode
+		FROM    (
+					 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								@Username as Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,											
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID,BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode, 
+								username2
+					  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
+								--AND IsInternal <= 1
+								AND UserID = @UserId
+										--AND SubAccID <= 0)
+										--OR (SubAccID = @UserId)
+								AND (la.ActionID <> 1301 OR @LogType = 2)								
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
+	ELSE IF @ToDate < @__archiveDate
+	BEGIN
+		SELECT  LogID,
+				UserID,
+				Username,
+				Doing + CASE WHEN ISNULL(username2,'') <>'' THEN ' - Nickname: '+ username2 ELSE '' END as Doing,
+				LogDate,
+				ActionID,				
+				IsInternal,
+				ActionName,
+				SPName,
+				case @hideLocation when 1 then '' else IP end IP,
+				ServerID,
+				Browser,
+				Domain,
+				[Platform],
+				case @hideLocation when 1 then '' else CountryCode end CountryCode
+		FROM    (
+					 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								@Username as Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,											
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID,BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode, 
+								username2
+					  FROM      bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
+								--AND IsInternal <= 1
+								AND UserID = @UserId
+										--AND SubAccID <= 0)
+										--OR (SubAccID = @UserId)
+								AND (la.ActionID <> 1301 OR @LogType = 2)								
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
+	ELSE
+	BEGIN
+		SELECT  LogID,
+				UserID,
+				Username,
+				Doing + CASE WHEN ISNULL(username2,'') <>'' THEN ' - Nickname: '+ username2 ELSE '' END as Doing,
+				LogDate,
+				ActionID,				
+				IsInternal,
+				ActionName,
+				SPName,
+				case @hideLocation when 1 then '' else IP end IP,
+				ServerID,
+				Browser,
+				Domain,
+				[Platform],
+				case @hideLocation when 1 then '' else CountryCode end CountryCode
+		FROM    (
+					 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum, *
+					 FROM (
+						SELECT LogID,
+								UserID,
+								@Username as Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,											
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID,BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode, 
+								username2
+					  FROM      dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					  WHERE     LogDate BETWEEN @__archiveDate AND @ToDate								
+								--AND IsInternal <= 1
+								AND UserID = @UserId
+										--AND SubAccID <= 0)
+										--OR (SubAccID = @UserId)
+								AND (la.ActionID <> 1301 OR @LogType = 2)	
+
+					UNION ALL
+					SELECT LogID,
+								UserID,
+								@Username as Username,
+								Doing,
+								LogDate,
+								la.ActionID,	
+								IsInternal,											
+								la.ActionNameEN AS ActionName,
+								la.SPName AS SPName,
+								IP,
+								ServerID,BrowserName as Browser,
+								DomainName as Domain,
+								[Platform],
+								CountryCode, 
+								username2
+					  FROM      bodb_CustomerLog_Archive.dbo.UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+								INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
+					  WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate								
+								--AND IsInternal <= 1
+								AND UserID = @UserId
+										--AND SubAccID <= 0)
+										--OR (SubAccID = @UserId)
+								AND (la.ActionID <> 1301 OR @LogType = 2)	
+					) AS MyTable1
+				) AS MyTable
+		WHERE   RowNum BETWEEN @lbound AND @ubound
+	END
 END
 GO
