@@ -132,7 +132,8 @@ BEGIN
 	FROM dbo.custInfo WITH(NOLOCK)
 	WHERE srecommend IN (SELECT custid FROM @tblSupers)
 		 
-	SELECT username,
+	SELECT custid,
+		username,
 		e.currency,
 		firstname,
 		lastname,
