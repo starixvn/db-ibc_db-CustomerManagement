@@ -133,6 +133,7 @@ BEGIN
 	WHERE srecommend IN (SELECT custid FROM @tblSupers)
 		 
 	SELECT custid,
+		roleID,
 		username,
 		e.currency,
 		firstname,
