@@ -108,7 +108,7 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @custid INT
-          , @uplineid INT
+          , @uplineid INT		  
           , @roleid TINYINT
           , @UsedCredit MONEY     
           , @DisableDownlinesNumber BIT
@@ -126,6 +126,7 @@ BEGIN
 		  , @HasDownline BIT = 0
 		  , @ClosedReason TINYINT
 		  ,	@UplineHasSecurityCode	BIT=0
+		  , @HeadlineName VARCHAR(50)
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -480,16 +481,16 @@ BEGIN
     ELSE
 	    SET @isBA=0
 
-	DECLARE @credit MONEY
-	SELECT @credit = credit
+	DECLARE @credit MONEY	
+	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
+		
+	SELECT @credit = credit, @srecommend = srecommend
 	FROM DBCUST.CustDB.dbo.CustInfo WITH(NOLOCK)
 	WHERE custid = @custid
 
 	DECLARE @OTPCreateDate DATETIME
 	SELECT  @OTPCreateDate = CreatedDate FROM DBCUST.CustDB.dbo.CustOTP WITH(NOLOCK)
 	WHERE custid = @custid
-	
-	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
 	
 	IF @IsDeposit = 0
 	BEGIN
@@ -506,7 +507,14 @@ BEGIN
 
 	END
 
-			
+	--get headline username for cn88
+	SELECT @headlineName = username
+	FROM custinfo (NOLOCK)
+	WHERE custid IN (SELECT UplineID 
+					FROM custSuper WITH(NOLOCK) 
+					WHERE custid = @srecommend
+				)
+				
 	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
 			SELECT @UplineHasSecurityCode=1
 
@@ -585,6 +593,7 @@ BEGIN
 					
     WHERE c.custid = @custid
     
+	
     
     ----------------------------
     -------------------------------------------------------------------------
@@ -603,7 +612,8 @@ BEGIN
 	    m.Enabled as masterEnabled,
 	    s.custid as superID,
 	    s.username as superName,
-	    s.Enabled as superEnabled
+	    s.Enabled as superEnabled,
+		@headlineName as headlineName
     	
     FROM custinfo c WITH(NOLOCK)
 	    left join custinfo a WITH(NOLOCK) on c.recommend = a.custid
