@@ -19,7 +19,8 @@ AS
 		- 20110301@Johnson: change the length of username in @CustList upto 30
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20170620@Winnie: Apply color for closed accounts [RedmineID: #74494]
-		- 20180627@Elodie: Enhance SP [RedmineID: #95978]	
+		- 20180627@Elodie: Enhance SP [RedmineID: #95978]
+		- 20190520@Johnson: support customer list for headline cn88 [redmine: #112225]	
 	Explanation: 
 			
 	Example: EXEC Acc_CustomerSelList @CustID=24471545
@@ -40,8 +41,19 @@ BEGIN
 	SELECT @roleid = roleid
 	FROM custinfo WITH (NOLOCK)
 	WHERE custid = @custid
-
-	IF @roleid = 2
+	
+	IF @roleid = 0--headline of cn88
+	BEGIN
+		INSERT INTO @CustList(username,Custid)
+		SELECT c.username,c.Custid
+		FROM custinfo c WITH (NOLOCK)
+		WHERE c.roleid = 4 
+			AND c.custid IN (SELECT custid 
+							FROM custSuper WITH(NOLOCK) 
+							WHERE uplineID = @custid)
+		ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+	END
+	ELSE IF @roleid = 2
 	BEGIN	
 		INSERT INTO @CustList(username,Custid)
 		SELECT c.username,c.Custid
@@ -88,7 +100,7 @@ BEGIN
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	ELSE IF @roleid IN (3,4)
+	ELSE IF @roleid IN (0,3,4)
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID

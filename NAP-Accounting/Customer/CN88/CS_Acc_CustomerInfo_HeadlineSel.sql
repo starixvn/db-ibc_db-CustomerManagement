@@ -31,8 +31,9 @@ BEGIN
 		    @TotalAgentSuspended INT,
 		    @TotalMemberActive INT,
 		    @TotalMemberClosed INT,
-		    @TotalMemberSuspended INT
-	
+		    @TotalMemberSuspended INT,
+			@LastChangedSecurityCodeDate DATETIME
+			
 	DECLARE @tblSupers TABLE(CustID INT)
 		
 	SELECT @roleid = roleID
@@ -131,7 +132,11 @@ BEGIN
                        )
 	FROM dbo.custInfo WITH(NOLOCK)
 	WHERE srecommend IN (SELECT custid FROM @tblSupers)
-		 
+	
+	SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate
+	FROM DBCUST.CustDB.dbo.CustLoginInfo WITH(NOLOCK)
+	WHERE custid = @custid
+		
 	SELECT custid,
 		roleID,
 		username,
@@ -143,8 +148,22 @@ BEGIN
 		mobilephone, 
 		fax,
 		site,
-		
-		@TotalSAgentActive SAgentActive,
+		lastlogged,
+		c.creatdate as createdate,
+		iplogin lastloginip, 
+	    pwdexpiry, 
+		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate
+	FROM customer c WITH(NOLOCK)
+		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
+	WHERE custid = @custid	
+	
+	--hardcode to return data table for web to map current model
+	SELECT 0 as CustID
+	
+	--hardcode to return data table for web to map current cash table
+	SELECT 0 as Cash
+	
+	SELECT @TotalSAgentActive SAgentActive,
 		@TotalSAgentClosed SAgentClosed,
 		@TotalSAgentSuspended SAgentSuspended,
 		
@@ -159,10 +178,9 @@ BEGIN
 		@TotalMemberActive MemberActive,
 		@TotalMemberClosed MemberClosed,
 		@TotalMemberSuspended MemberSuspended
-	FROM customer c WITH(NOLOCK)
-		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
-	WHERE custid = @custid	
 	
+	--hardcode to return data table for web to map current Product status table
+	SELECT 0 as ProductID 
 	
 END
 GO
