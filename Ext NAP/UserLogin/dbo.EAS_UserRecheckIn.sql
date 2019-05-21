@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserRecheckIn]
 	@On_UserID		INT,
 	@isKickedOut	BIT = 0 OUTPUT
@@ -6,8 +7,9 @@ AS
 		Created: Dan
 		Date: 2012-11-16
 		Task: User re-checkin 
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Paramter's Explanation:
 	*/
@@ -28,6 +30,3 @@ SET NOCOUNT ON
 	END
 
 GO 
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserRecheckIn] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_UserRecheckIn] TO [bodbExtAccNet]

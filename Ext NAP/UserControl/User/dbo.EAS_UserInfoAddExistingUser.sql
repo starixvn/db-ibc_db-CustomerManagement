@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserInfoAddExistingUser]
 	@userID		INT,
 	@Username	VARCHAR(50),
@@ -11,9 +12,10 @@ AS
 	Created: Dan
 	Date: 2012-11-19
 	Task: Add EAS's user from IBC
-	DB: DBEAS/bodb_EAS
+	DB: DBPOL/NAP_UserControl
 	
 	Revisions:
+		- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 	Parameter's Explanation:
 */
@@ -32,7 +34,7 @@ SET NOCOUNT ON
 	DECLARE @roleid INT
 	
 	SELECT @custid = custid, @roleid = roleid
-	FROM bodb02.dbo.Customer WITH(NOLOCK) 
+	FROM CUSTDB.dbo.Customer WITH(NOLOCK) 
 	WHERE username = @username
 	
 	IF ISNULL(@custid,0) = 0
@@ -77,7 +79,7 @@ SET NOCOUNT ON
 	SET @endRun = GETDATE()  
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl] 
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper] 
 		@custID = @custid, 
 		@TrackingValue = @LogData, 
 		@userid = @userID, 
@@ -86,6 +88,3 @@ SET NOCOUNT ON
 		@duration = @duration
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserInfoAddExistingUser] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_UserInfoAddExistingUser] TO [bodbExtAccNet]

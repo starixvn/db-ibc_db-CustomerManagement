@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoUpd]
 	@UserID		INT,
 	@GroupID		INT,
@@ -11,9 +12,10 @@ AS
 		Created: Dan
 		Date: 2012-11-15
 		Task: Update group info
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 	*/
@@ -57,19 +59,19 @@ SET NOCOUNT ON
 	SELECT @LogData = 
 					'<EAS_GroupInfoUpd>'+
 						'<Groupname>'+
-							'<Old>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@db_GroupName),'') + '</Old>' +
-							'<New>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@GroupName),'') + '</New>' +
+							'<Old>' + ISNULL([dbo].[f_EncodeXMLValue](@db_GroupName),'') + '</Old>' +
+							'<New>' + ISNULL([dbo].[f_EncodeXMLValue](@GroupName),'') + '</New>' +
 						'</Groupname>'+
 						'<GroupDescription>'+
-							'<Old>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@db_Description),'') + '</Old>' +
-							'<New>' + ISNULL([dbo].[f_EAS_EncodeXMLValue](@Description),'') + '</New>' +
+							'<Old>' + ISNULL([dbo].[f_EncodeXMLValue](@db_Description),'') + '</Old>' +
+							'<New>' + ISNULL([dbo].[f_EncodeXMLValue](@Description),'') + '</New>' +
 						'</GroupDescription>'+
 					'</EAS_GroupInfoUpd>'				
 
 	SET @endRun = GETDATE()  
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
 			@custID = @GroupID,
 			@TrackingValue = @LogData,
 			@userid = @UserID,
@@ -78,8 +80,3 @@ SET NOCOUNT ON
 			@duration = @Duration  
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupInfoUpd] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupInfoUpd] TO [bodbExtAccNet]
-
-	

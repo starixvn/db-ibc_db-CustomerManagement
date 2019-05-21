@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION [dbo].[f_EAS_PolicySplit]
 (
 	@string NVARCHAR( 4000),
@@ -15,9 +16,10 @@ AS
 		Created: Dan
 		Date: 2012-11-19
 		Task: function support to split string 
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		Original Function: [f_RMS_PolicySplit]
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 			-@string : string need to split ex: '7,1;5,2;4,0'
@@ -35,7 +37,7 @@ BEGIN
 	
 	SELECT @i  = 1
 	
-	INSERT INTO @tmp SELECT val FROM f_EAS_strSplit(@string,@splitter1)
+	INSERT INTO @tmp SELECT val FROM strSplit(@string,@splitter1)
 	
 	WHILE (1=1)
 	BEGIN
@@ -59,9 +61,4 @@ BEGIN
 
 	RETURN
 END
-	
-	
 GO
-GRANT VIEW DEFINITION ON [dbo].[f_EAS_PolicySplit] TO [vnteam]
-GO
-GRANT SELECT ON [dbo].[f_EAS_PolicySplit] TO [bodbExtAccNet]

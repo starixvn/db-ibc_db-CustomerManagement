@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_Login]
 	@UserID INT,  
     @LoginIP VARCHAR(50)='', 
@@ -13,10 +14,11 @@ ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_Login]
 		Created: Dan
 		Date: 2012-11-15
 		Task: Write log admin login 
-		DB: DBLog/bodb_CustomerLog, DBTXN/bodb_CustomerLog
+		DB: DBLog/bodb_CustomerLog, DBTXN/bodb_CustomerLog, DBCUST/bodb_CustomerLog
 		
 		Revisions:
 			- 20130121@Dan: add one more db DBTXN/bodb_CustomerLog
+			- 20190423@Paul: add one more db DBCUST/bodb_CustomerLog
 			
 		Parameter's Explanations:
 	*/
@@ -45,7 +47,5 @@ SET NOCOUNT ON
 			@CountryCode,
 			@Duration
 			)
-GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_WriteLog_UserLog_Login] TO [vnteam]
 GO
 GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_Login] TO [bodbExtAccNet]

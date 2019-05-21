@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_MenuSelByUserID]
 	@userid		INT
 AS 
@@ -5,9 +6,10 @@ AS
 		Created: Dan
 		Date: 2012-11-21
 		Task: Get menu by userid
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/
@@ -38,7 +40,8 @@ SET NOCOUNT ON
 		m.MenuName,
 		m.URL,
 		m.DisplayOrder,
-		m.FuncID
+		m.FuncID,
+		m.active
 	FROM eaMenu m WITH(NOLOCK) 	
 		INNER JOIN @tmpFunction p ON p.funcid = m.funcid
 	WHERE m.active = 1 AND p.policy > 0
@@ -48,8 +51,5 @@ SET NOCOUNT ON
 	FROM @tmpFunction t
 		INNER JOIN eaFunction f WITH(NOLOCK) ON t.funcid = f.funcid
 	WHERE t.policy > 0
-	
+
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_MenuSelByUserID] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_MenuSelByUserID] TO [bodbExtAccNet]

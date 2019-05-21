@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_FunctionSelEdit]
 	@funcId	INT
 AS
@@ -5,9 +6,10 @@ AS
 		Created: Dan
 		Date: 2012-12-03
 		Task: Get functions info to edit group
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/ 
@@ -18,6 +20,3 @@ SET NOCOUNT ON
 	ORDER BY g.GroupName ASC
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_FunctionSelEdit] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_FunctionSelEdit] TO [bodbExtAccNet]

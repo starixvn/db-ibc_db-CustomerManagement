@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_MenuUpdStatus]
 	@UserID		INT,
 	@MenuID		INT,
@@ -10,9 +11,10 @@ AS
 		Created: Dan
 		Date: 2012-11-21
 		Task: Update status of menu
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			
 		Parameter's Explanation:
 	*/
@@ -52,7 +54,7 @@ SET NOCOUNT ON
 	SET @endRun = GETDATE()  
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)   
 
-	EXEC DBLOG.bodb_CustomerLog.[dbo].[EAS_WriteLog_UserLog_UserControl]
+	EXEC [dbo].[EAS_WriteLog_UserLog_UserControl_Wrapper]
 			@custID = @MenuID,
 			@TrackingValue = @LogData,
 			@userid = @UserID,
@@ -61,6 +63,3 @@ SET NOCOUNT ON
 			@duration = @duration 
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_MenuUpdStatus] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_MenuUpdStatus] TO [bodbExtAccNet]

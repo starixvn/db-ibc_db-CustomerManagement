@@ -1,11 +1,13 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoSelAllGroup]
 AS
 	/*
 		Created: Dan
 		Date: 2012-11-19
 		Task: Select all group available
-		DB: DBEAS/bodb_EAS
-		Revisons:
+		DB: DBPOL/NAP_UserControl
+		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/ 
@@ -16,6 +18,3 @@ SET NOCOUNT ON
 	ORDER BY groupName
 
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupInfoSelAllGroup] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupInfoSelAllGroup] TO [bodbExtAccNet]

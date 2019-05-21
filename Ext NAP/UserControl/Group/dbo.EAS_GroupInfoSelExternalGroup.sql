@@ -1,12 +1,14 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoSelExternalGroup]	
 AS
 	/*
 		Created: Dan
 		Date: 2012-11-19
 		Task: Get currency groups for external admin
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 			
@@ -20,6 +22,3 @@ SET NOCOUNT ON
 	--groupName LIKE 'ACC%'	
 	ORDER BY groupName
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_GroupInfoSelExternalGroup] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_GroupInfoSelExternalGroup] TO [bodbExtAccNet]	

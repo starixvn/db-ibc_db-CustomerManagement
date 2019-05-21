@@ -1,3 +1,4 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserCheckPermission_All]
 	@UserID		INT,
 	@FuncID		INT = NULL,
@@ -9,9 +10,10 @@ AS
 		Created: Dan
 		Date: 2012-11-15
 		Task: Check user's permission on function, include Read permission
-		DB: DBEAS/bodb_EAS
+		DB: DBPOL/NAP_UserControl
 		
 		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/
@@ -52,6 +54,3 @@ SET NOCOUNT ON
 	END
 	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserCheckPermission_All] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_UserCheckPermission_All] TO [bodbExtAccNet]	 

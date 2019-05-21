@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserLogin]
 	@Username		VARCHAR(50),
 	@Custid			INT = 0 OUTPUT,
@@ -14,11 +15,12 @@ AS
 	/*
 		Created: Dan
 		Date: 2012-11-16
-		DB: DBTXN/BODB02
+		DB: DBCUST/CUSTDB
 		Task: Admin login EAS
 		
 		Revisions:
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		
 		Parameter's Explanation:
 	*/ 
@@ -75,7 +77,7 @@ SET NOCOUNT ON
 	BEGIN
 		--Check existing in EAS
 		SELECT @enabled = enabled, @GroupId = GroupId
-		FROM DBEAS.bodb_EAS.dbo.eaUserInfo WITH(NOLOCK) WHERE UserID = @custid
+		FROM NAP_UserControl.dbo.eaUserInfo WITH(NOLOCK) WHERE UserID = @custid
 		
 		IF @@ROWCOUNT = 0 --User not admin EAS
 		BEGIN
@@ -103,37 +105,17 @@ SET NOCOUNT ON
 	IF @LogData <> ''
 	BEGIN		
 		SET @End = GETDATE()
-		SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
-		
-		BEGIN TRY
-			EXEC DBLOG.bodb_customerlog.dbo.EAS_WriteLog_UserLog_Login 
-				 @UserID = @CustID, 
-				 @LoginIP = @LoginIP,	
-				 @ActionID = 20200,
-				 @TrackingValue = @LogData,
-				 @DomainName = @LoginDomain,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode,
-				 @Duration = @Duration
-		END TRY
-		BEGIN CATCH
-			SELECT @LogData = @LogData + '- ErrMsg:' + ERROR_MESSAGE()
-			
-			EXEC bodb_customerlog.dbo.EAS_WriteLog_UserLog_Login 
-				 @UserID = @CustID, 
-				 @LoginIP = @LoginIP,	
-				 @ActionID = 20200,
-				 @TrackingValue = @LogData,
-				 @DomainName = @LoginDomain,
-				 @BrowserName = @BrowserName,
-				 @Platform = @Platform,
-				 @CountryCode = @CountryCode,
-				 @Duration = @Duration
-		END CATCH		 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		EXEC NAP_UserControl.[dbo].[EAS_WriteLog_UserLog_Login_Wrapper]
+			@UserID = @CustID, 
+			@LoginIP = @LoginIP,	
+			@ActionID = 20200,
+			@TrackingValue = @LogData,
+			@DomainName = @LoginDomain,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
 	END
-	
 GO
-GRANT VIEW DEFINITION ON [dbo].[EAS_UserLogin] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[EAS_UserLogin] TO [bodbExtAccNet]
