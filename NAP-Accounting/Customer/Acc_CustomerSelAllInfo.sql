@@ -128,6 +128,7 @@ BEGIN
 		  ,	@UplineHasSecurityCode	BIT=0
 		  , @HeadlineName VARCHAR(50)
 		  , @HeadlineID INT
+		  , @HeadlineEnabled BIT
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -509,7 +510,7 @@ BEGIN
 	END
 
 	--get headline username for cn88
-	SELECT @headlineName = username, @HeadlineID = custID
+	SELECT @headlineName = username, @HeadlineID = custID, @headlineEnabled = Enabled
 	FROM custinfo (NOLOCK)
 	WHERE custid IN (SELECT UplineID 
 					FROM custSuper WITH(NOLOCK) 
@@ -615,6 +616,7 @@ BEGIN
 	    s.username as superName,
 	    s.Enabled as superEnabled,
 		@headlineName as headlineName,
+		@headlineEnabled as headlineEnabled,
     	@headlineID as headlineID
     FROM custinfo c WITH(NOLOCK)
 	    left join custinfo a WITH(NOLOCK) on c.recommend = a.custid
