@@ -20,6 +20,7 @@ BEGIN
 	
 	DECLARE  
 			@roleID TINYINT,
+			@closed BIT,
 			@TotalSAgentActive INT,
 		    @TotalSAgentClosed INT,
 		    @TotalSAgentSuspended INT, 
@@ -36,7 +37,7 @@ BEGIN
 			
 	DECLARE @tblSupers TABLE(CustID INT)
 		
-	SELECT @roleid = roleID
+	SELECT @roleid = roleID, @closed = closed
 	FROM custinfo WITH(NOLOCK)
 	WHERE custid = @custid
 	
@@ -152,7 +153,8 @@ BEGIN
 		c.creatdate as createdate,
 		iplogin lastloginip, 
 	    pwdexpiry, 
-		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate
+		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate,
+		@closed as closed
 	FROM customer c WITH(NOLOCK)
 		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
 	WHERE custid = @custid	
