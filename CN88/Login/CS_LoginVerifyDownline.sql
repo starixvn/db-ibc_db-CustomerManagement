@@ -1,4 +1,4 @@
-ï»¿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE CS_LoginVerifyDownline
 	@UserName VARCHAR(50) = '' OUTPUT,  
@@ -31,15 +31,15 @@ AS
 		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
 
 	Param's Explanation:
-		â€¢ @IsNickname: is use Nickname or not
-		â€¢ @UserRoleID: login level, user select to login in CN88
-		â€¢ @SiteGroup: Check the site and corresponding domain
+		• @IsNickname: is use Nickname or not
+		• @UserRoleID: login level, user select to login in CN88
+		• @SiteGroup: Check the site and corresponding domain
 				+ ALL: All add domains 
 				+ 789y: Allow customers of 789y ONLY
 				+ IBCBET | Others: Allow all customers except 789y
 				+ CN88: Allow customers of CN88 ONLY
-		â€¢ @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
-		â€¢ @ErrCode:
+		• @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
+		• @ErrCode:
 			= 0: Transaction recorded successfully.
 			> 0: Specific Error.		
 				106: wrong username and password
@@ -47,7 +47,7 @@ AS
 				108: account closed
 				109: login exceed 5 times
 				110: login failed because access from outsite throught test accounts
-		â€¢ @ErrMsg: Error description.
+		• @ErrMsg: Error description.
 */
 BEGIN
 	SET NOCOUNT ON
@@ -1023,6 +1023,7 @@ BEGIN
 			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
 		    
 			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+		
 			
 	    	SELECT @LogSPData = '<CS_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
