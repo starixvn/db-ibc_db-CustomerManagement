@@ -158,7 +158,9 @@ BEGIN
 	WHERE custid = @custid	
 	
 	--hardcode to return data table for web to map current model
-	SELECT 0 as CustID
+	SELECT custID as CustID, Enabled as headlineEnabled
+	FROM custinfo (NOLOCK)
+	WHERE custid = @custid 
 	
 	--hardcode to return data table for web to map current cash table
 	SELECT 0 as Cash
