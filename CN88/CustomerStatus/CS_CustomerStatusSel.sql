@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE CS_CustomerStatusSel
-	@CustID INT
+ALTER PROCEDURE [dbo].[CS_GetCustomerStatus]
+	@CustID INT,
+	@subAccID INT = 0
 AS
 /*  
 	Created by: Paul  
@@ -14,14 +15,34 @@ AS
 */
 
 BEGIN
-	SET NOCOUNT ON
+	SET NOCOUNT ON;
 
-	SELECT	CASE	WHEN InactiveInfo > 0 THEN 1 
+	DECLARE @IsClosed BIT = 1;
+
+	IF @subAccID <> 0
+	BEGIN
+		SELECT @IsClosed = ci.closed | cs.closed
+		FROM dbo.custInfo ci WITH(NOLOCK)
+			INNER JOIN custSub cs WITH(NOLOCK) ON ci.custid = cs.custid
+		WHERE ci.custid = @CustID
+			AND cs.subaccid = @subAccID;
+	END
+	ELSE
+	BEGIN
+		SELECT @IsClosed = ci.closed
+		FROM dbo.custInfo ci WITH(NOLOCK)
+		WHERE ci.custid = @CustID;
+	END
+
+	SELECT	@IsClosed AS IsClosed,
+			CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 ELSE 4 END AS CustStatus		
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS CustStatus		
 	FROM CS_CustomerStatus WITH(NOLOCK)
-	WHERE CustID = @CustID
+	WHERE CustID = @CustID;
 
-	SET NOCOUNT OFF
+	SET NOCOUNT OFF;
 END
 GO
