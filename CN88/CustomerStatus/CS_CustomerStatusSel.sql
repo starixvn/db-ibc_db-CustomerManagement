@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[CS_GetCustomerStatus]
+ALTER PROCEDURE [dbo].[CS_CustomerStatusSel]
 	@CustID INT,
 	@subAccID INT = 0
 AS
