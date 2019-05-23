@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@UserName varchar(50),
 	@LoginIP varchar(20),
 	@LoginTime datetime = null,
@@ -244,7 +245,3 @@ BEGIN
 		RETURN
 	END
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_Admin] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_Admin] TO [bodbDownlineNetView]
