@@ -55,7 +55,8 @@ Revisions:
 	- 20130123@Elodie: Write more log on DBTXN server in case of DBLOG server failure
 	- 20130426@Johnson: get field SecurityCode 
 	- 20130507@Johnson: get field isForcedChangeSecurityCode
-	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
+	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806]
+	- 20190523@Andy: Internal login CN88 for Headline level - [Redmine: 113920]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -84,7 +85,7 @@ BEGIN
 	if not exists (SELECT 1
 					FROM customer as c with (NOLOCK)
 						inner join custinfo as ci with (NOLOCK) on c.custid = ci.custid
-					WHERE  c.roleID in (2,3,4) and c.username = @Username)
+					WHERE  c.roleID in (2,3,4,0) and c.username = @Username)
 	BEGIN
 		RETURN
 	END
@@ -111,7 +112,7 @@ BEGIN
 		--Login from Account site	
 		select @accUsername = username, @accUserPwd = userpwd from customer with (nolock) where custid = @accUserID
 		
-		select @ServerID = case @RoleID when 2 then 90 when 3 then 91 else 92 end  
+		select @ServerID = case @RoleID when 2 then 90 when 3 then 91 when 4 then 92 else 93 end  
 		------------------------
 
 		Select @LogData = 'Admin ' + @accUsername + ' - Login to ' + @UserName 
@@ -247,5 +248,3 @@ GO
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_Admin] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_Admin] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_LoginDownline_Admin] TO [vnteam]
