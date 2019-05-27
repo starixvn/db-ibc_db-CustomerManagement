@@ -1,9 +1,17 @@
-﻿ALTER PROCEDURE [dbo].[Age_CheckOut]
+﻿USE [ON_USER]
+GO
+/****** Object:  StoredProcedure [dbo].[Age_CheckOut]    Script Date: 5/26/2019 9:53:11 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[Age_CheckOut]
 	@On_UserID int,
 	@UserName varchar(30) = NULL,
 	@RoleID tinyint = NULL,
 	@ServerID int = NULL,
-	@Nickname varchar(50) = NULL
+	@Nickname varchar(50) = NULL,
+	@reason NVARCHAR(100) = ' Logout Success'
 AS
 /*
 Created: 20110912@Sophia
@@ -13,6 +21,7 @@ Original SP: Acc_CheckOut
 
 Revisions:
 	- 20190221@Johnson: add role = 0 for tier0 [redmine: #105660]
+	- 20190329@Johnson: add reason for log logout [redmine:#110409]
 Param's Explanation:
 
 */
@@ -47,7 +56,7 @@ END
 
 SELECT @Role = CASE @RoleID WHEN 0 THEN 'Headline:' WHEN 1 THEN 'Customer:' WHEN 2 THEN 'Agent:' WHEN 3 THEN 'Master:' WHEN 4 THEN 'Super:' ELSE 'Unknown:' END  
 
-SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + ' Logout Success'
+SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + @reason
 
 -- ***Check Sub-Account***  
 IF @SubAccID > 0  
@@ -66,6 +75,7 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 	 @Doing = @LogData,
 	 @Duration = @Duration,
 	 @Nickname = @Nickname
+
 GO
 GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [bodbDownlineNet]
 GO
