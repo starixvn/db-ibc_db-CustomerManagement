@@ -130,6 +130,8 @@ BEGIN
 		  ,	@UplineHasSecurityCode	BIT=0
 		  , @isDirectSuspend BIT = 0
 		  , @HeadlineName VARCHAR(50)
+		  , @HeadlineID INT
+		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
 		  , @HeadlineID INT
 		  , @HeadlineEnabled BIT
@@ -286,43 +288,7 @@ BEGIN
 	FROM dbo.Customer WITH(NOLOCK)
 	WHERE custid = @custid
 
-	IF @roleid = 0
-	BEGIN
-		SELECT @UplineHasSecurityCode = 1
-
-		SELECT TOP 1 @HasDownline = 1, @SelectedBetting = ISNULL(SelectedBetting, 0)
-		FROM dbo.CustSuper c WITH (NOLOCK)
-		WHERE UplineId = @custid
-
-		SELECT @TotalSAgentActive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-	        , @TotalSAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalSAgentSuspended = ISNULL(SUM(CASE  WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalSAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
-			
-			,@TotalMAgentActive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-	        , @TotalMAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMAgentSuspended = ISNULL(SUM(CASE  WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
-
-	        , @TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
-
-            , @TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMemberViewOnly = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-			, @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-			, @TotalMemberInactive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
-		FROM dbo.custinfo ci WITH(NOLOCK)
-			INNER JOIN dbo.CS_CustomerStatus cs WITH(NOLOCK) ON ci.custid = cs.CustId
-		WHERE EXISTS (
-				SELECT 1
-				FROM dbo.CustSuper c WITH (NOLOCK)
-				WHERE UplineId = @custid
-					AND ci.srecommend = c.custid
-			)
-	END
-    ELSE IF @roleid = 4 --super
+	IF @roleid = 4 --super
     BEGIN
 		SELECT @UplineHasSecurityCode=1
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
