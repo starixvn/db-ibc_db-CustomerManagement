@@ -1,11 +1,12 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
+CREATE PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200)
   , @currency INT = 0
-  , @open BIT
-  , @suspended BIT
-  , @closed BIT
-  , @disabled BIT
+  , @Active BIT
+  , @ViewOnly BIT
+  , @Suspended BIT
+  , @Inactive BIT
+  , @Disabled BIT
   , @roleid INT=0
   , @username VARCHAR(30) = ''
   , @groupheadline VARCHAR(30) = ''    
@@ -24,7 +25,12 @@ AS
     Revisions:
         - 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
        		
-    Example: exec [CS_CustomerSelByGroupHeadline] @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
+    Example: 
+	exec [CS_CustomerSelByGroupHeadline] @currency=0,@Active =1
+	  , @ViewOnly =1
+	  , @Suspended =1
+	  , @Inactive =1
+		, @Disabled =0,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1',@siteid='329'
 
 */    
 BEGIN    
@@ -67,15 +73,14 @@ BEGIN
       , GroupName NVARCHAR(100)
       , CustID INT
       , UserName NVARCHAR(100)
-      , IsSuspend BIT
-      , IsClosed BIT
-      , IsEnable BIT
+      , Status BIT    
       , Site VARCHAR(50)
       , Currency INT
       , RoleID INT
       , HeadlineType TINYINT
       , OwnerName NVARCHAR(100)
 	  , ClosedReason TINYINT NULL
+	  , Enabled BIT
     )
 
     CREATE TABLE #tmpResultAll
@@ -83,16 +88,14 @@ BEGIN
         CustHeadlineID INT
       , GroupName NVARCHAR(100)
       , CustID INT
-      , UserName NVARCHAR(100)
-      , IsSuspend BIT
-      , IsClosed BIT
-      , IsEnable BIT
+      , UserName NVARCHAR(100)     
       , Site VARCHAR(50)
       , Currency INT
       , RoleID INT
       , HeadlineType TINYINT
       , OwnerName NVARCHAR(100)
 	  , ClosedReason TINYINT NULL
+	  , Enabled BIT
     )    
     
     --get super account     
@@ -163,8 +166,8 @@ BEGIN
 	WHERE (@Owner = '' OR hl.OwnerName = @Owner) AND (@HeadlineType = '' OR hl.HeadlineType IN (SELECT val FROM dbo.strSplit(@HeadlineType, ',')))		
 
     INSERT INTO #tmpResultAll 
-    SELECT  hl.HeadlineID Custheadlineid ,hl.GroupName groupname, ca.custid ,ci.username,isnull(ci.reject,0) issuspend,    
-            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable,d.site, d.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName,'') AS OwnerName,ISNULL(d.ClosedReason,0) AS ClosedReason
+    SELECT  hl.HeadlineID Custheadlineid ,hl.GroupName groupname, ca.custid ,ci.username    
+            ,d.site, d.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName,'') AS OwnerName,ISNULL(d.ClosedReason,0) AS ClosedReason,ci.Enabled 
     FROM custaccount ca WITH(NOLOCK)    
         INNER JOIN #tmpGroupHeadline hl WITH(NOLOCK) ON  hl.groupid = ca.groupid
         INNER JOIN custinfo ci WITH(NOLOCK) ON  ci.custid = ca.custid     
@@ -174,8 +177,8 @@ BEGIN
         AND hl.GroupID <> 0
     
     UNION ALL    
-    SELECT  0 custheadlineid,'Not assigned to group' , c.custid ,ci.username,isnull(ci.reject,0) issuspend,    
-            ISNULL(ci.closed,0) isclosed, ci.[enabled] isEnable, c.site, c.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName, '') AS OwnerName,ISNULL(c.ClosedReason,0) AS ClosedReason
+    SELECT  0 custheadlineid,'Not assigned to group' , c.custid ,ci.username,  
+            c.site, c.currency, ci.roleid, hl.HeadlineType, ISNULL(hl.OwnerName, '') AS OwnerName,ISNULL(c.ClosedReason,0) AS ClosedReason,ci.Enabled 
     FROM #tmpDirectCust c    
         INNER JOIN custinfo ci WITH(NOLOCK) ON  ci.custid = c.custid     
         LEFT JOIN #tmpGroupHeadline hl WITH(NOLOCK) ON  ci.custid = hl.HeadlineID
@@ -183,53 +186,82 @@ BEGIN
         AND (@username = '' OR ci.username=@username) 
         AND @groupheadline='' AND @HeadlineType = '' 
         AND (@Owner = '' OR (@Owner <> '' AND hl.OwnerName = @Owner))
-    
-    --get resulset fOR SELECT all status    
-    IF (@open = 1 AND @suspended  = 1 AND @closed = 1 AND @disabled = 1)    
+
+	IF (@Disabled = 1)    
     BEGIN     
-        SELECT r.*, e.currency AS CurrencyName
-        FROM  #tmpResultAll r
-            INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
-            WHERE (@Userid IS NULL OR (@Userid IS NOT NULL AND site NOT IN (SELECT site FROM @tmp )))
-        ORDER BY custheadlineid,custid    
-    
-     RETURN   
-    END     
-    
-    IF (@open = 1)    
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        SELECT CustHeadlineID, GroupName, t.CustID, UserName,
+		CASE	WHEN InactiveInfo > 0 THEN 1 
+					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS Status,		
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
+        FROM #tmpResultAll t  
+			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
+        WHERE  t.Enabled=0 
+    END    
+
+    IF (@Inactive = 1)    
     BEGIN     
-        INSERT INTO #tmpResult    
-        SELECT *     
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled   )
+        SELECT CustHeadlineID, GroupName, t.CustID, UserName,
+		CASE	WHEN InactiveInfo > 0 THEN 1 
+					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS Status,		
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason  ,Enabled     
         FROM #tmpResultAll    t 
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID
-        WHERE s.SuspendedInfo  = 0  AND isclosed = 0    
+        WHERE  InactiveInfo > 0
     END     
+
+
     
     IF (@suspended = 1)    
     BEGIN     
-        INSERT INTO #tmpResult    
-        SELECT *     
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        SELECT CustHeadlineID, GroupName, t.CustID, UserName,
+		CASE	WHEN InactiveInfo > 0 THEN 1 
+					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS Status,		
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
         FROM #tmpResultAll t  
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
-        WHERE SuspendedInfo  >0  AND isclosed =0      
+        WHERE  InactiveInfo = 0 AND SuspendedInfo > 0    
     END     
     
-    IF (@closed = 1)    
+    IF (@ViewOnly = 1)    
     BEGIN     
-         INSERT INTO #tmpResult    
-         SELECT  *     
-         FROM #tmpResultAll  t 
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        SELECT CustHeadlineID, GroupName, t.CustID, UserName,
+		CASE	WHEN InactiveInfo > 0 THEN 1 
+					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS Status,		
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
+        FROM #tmpResultAll  t 
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
-         WHERE InactiveInfo  = 0  AND isclosed =1    
+         WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0
     END     
     
-    IF (@disabled = 1)    
+    IF (@Active = 1)    
     BEGIN     
-        INSERT INTO #tmpResult    
-        SELECT  *     
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        SELECT CustHeadlineID, GroupName, t.CustID, UserName,
+		CASE	WHEN InactiveInfo > 0 THEN 1 
+					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
+					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
+					ELSE 4 
+			END AS Status,		
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled   
         FROM #tmpResultAll    t
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
-        WHERE  InactiveInfo  >0
+        WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo = 0
     END     
     
     --resulset            
@@ -243,5 +275,5 @@ END
 
 GO 
 
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelByGroupHeadline] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].CS_CustomerSelByGroupHeadline TO [bodbAdminNet]
 GO 
