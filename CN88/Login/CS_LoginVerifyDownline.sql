@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+ï»¿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE CS_LoginVerifyDownline
 	@UserName VARCHAR(50) = '' OUTPUT,  
@@ -31,15 +31,15 @@ AS
 		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
 
 	Param's Explanation:
-		• @IsNickname: is use Nickname or not
-		• @UserRoleID: login level, user select to login in CN88
-		• @SiteGroup: Check the site and corresponding domain
+		â€¢ @IsNickname: is use Nickname or not
+		â€¢ @UserRoleID: login level, user select to login in CN88
+		â€¢ @SiteGroup: Check the site and corresponding domain
 				+ ALL: All add domains 
 				+ 789y: Allow customers of 789y ONLY
 				+ IBCBET | Others: Allow all customers except 789y
 				+ CN88: Allow customers of CN88 ONLY
-		• @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
-		• @ErrCode:
+		â€¢ @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
+		â€¢ @ErrCode:
 			= 0: Transaction recorded successfully.
 			> 0: Specific Error.		
 				106: wrong username and password
@@ -47,14 +47,14 @@ AS
 				108: account closed
 				109: login exceed 5 times
 				110: login failed because access from outsite throught test accounts
-		• @ErrMsg: Error description.
+		â€¢ @ErrMsg: Error description.
 */
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
 	DECLARE @IsSubAccount BIT, @RoleID TINYINT, @SubUserName VARCHAR(50), @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
-		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
+		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency TINYINT,
 		-- For checking login domain
 		@Site VARCHAR(10), @IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT
 
@@ -125,11 +125,17 @@ BEGIN
 		ELSE
 		BEGIN 		
 			---check Nicknameloginonly
-			SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = ISNULL(NicknameLoginOnly,0),
+			--SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = ISNULL(NicknameLoginOnly,0),
+			--		 @failedcount = isnull(logincount,0), @db_userpwd = userpwd, @closed = closed
+			--FROM custsub with (nolock) 	
+			--	CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
+			--WHERE username = @UserName				
+
+			SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = CASE WHEN UserName2 IS NOT NULL AND username2 <> '' THEN 1 ELSE 0 END,
 					 @failedcount = isnull(logincount,0), @db_userpwd = userpwd, @closed = closed
 			FROM custsub with (nolock) 	
 				CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
-			WHERE username = @UserName				
+			WHERE username = @UserName	
 
 			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID
 			SET @rowcount = @@ROWCOUNT
@@ -1023,7 +1029,7 @@ BEGIN
 			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
 		    
 			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
-		
+									
 			
 	    	SELECT @LogSPData = '<CS_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
