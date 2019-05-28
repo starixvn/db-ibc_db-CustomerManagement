@@ -1,8 +1,16 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]
-	@CustID INT,
-	@Mode TINYINT --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
+	@UserId			INT,
+	@SubAccId		INT = 0,
+	@CustID			INT,
+	@OldStatusID	TINYINT, --4: Active, 3: View Only, 2: Suspended, 1: Inactive
+	@NewStatusID	TINYINT,
+	@SystemID		TINYINT = 1,
+	@IP				VARCHAR(15) = '',
+	@Language		VARCHAR(2) = 'E',
+	@ErrCode		INT = 0 OUTPUT,
+	@ErrMsg			NVARCHAR(4000) = '' OUTPUT
 AS
 /*  
 	Created by: Paul  
@@ -20,7 +28,8 @@ BEGIN
 	DECLARE @Pos TINYINT,
 			@NewVal BIT,
 			@RoleID TINYINT,
-			@DirectDownlineRoleID TINYINT;
+			@DirectDownlineRoleID TINYINT,
+			@Mode TINYINT; --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
 
 	CREATE TABLE #TempCust (CustID INT PRIMARY KEY, RoleID TINYINT);
 
@@ -40,6 +49,30 @@ BEGIN
 			END
 	FROM custInfo WITH(NOLOCK)
 	WHERE CustID = @CustID;
+
+	SELECT	@OldStatusID = ISNULL(@OldStatusID, 0),
+			@NewStatusID = ISNULL(@NewStatusID, 0);
+
+	SELECT @Mode = CASE @OldStatusID 
+						WHEN 4 THEN CASE @NewStatusID 
+										WHEN 1 THEN 1
+										WHEN 2 THEN 3
+										WHEN 3 THEN 5
+										ELSE 0
+									END
+						WHEN 1 THEN CASE @NewStatusID WHEN 4 THEN 2 ELSE 0 END
+						WHEN 2 THEN CASE @NewStatusID WHEN 4 THEN 4 ELSE 0 END
+						WHEN 3 THEN CASE @NewStatusID WHEN 4 THEN 6 ELSE 0 END
+						ELSE 0
+					END;
+
+	IF @Mode = 0
+	BEGIN
+		SELECT	@ErrCode = 1104,
+				@ErrMsg = 'Can''t update status from ' + CONVERT(VARCHAR, @OldStatusID) + ' to ' + CONVERT(VARCHAR, @NewStatusID);
+
+		RETURN;
+	END
 
 	IF @Mode IN (1, 3, 5)
 	BEGIN
