@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200) = ''
   , @currency INT = 0
@@ -30,7 +30,7 @@ AS
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20170605@Winnie: Apply Color for closed account [Redmine's Ids: #74494]
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
-		
+		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
     Example: exec Acc_CustomerSelByGroupHeadline @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
 
 */    
@@ -162,6 +162,8 @@ BEGIN
       (site NOT IN (SELECT [site] FROM [site] WHERE siteid IN (SELECT  val FROM dbo.strSplit(@siteid,','))) OR site IS NULL)) 
        OR [site] NOT IN (SELECT [SITE] FROM [SITE] WHERE islicensee = 0 AND isactive=1)    
       
+	DELETE FROM #tmpDirectCust WHERE site='CN88'
+
     --apply filter by Owner and Headline Type    
     INSERT INTO #tmpGroupHeadline(HeadlineID, GroupName, GroupID, HeadlineType, OwnerName)    
 	SELECT hl.CustID, cu.username, hl.GroupID, hl.HeadlineType, hl.OwnerName
@@ -245,7 +247,4 @@ BEGIN
 END
 
 GO 
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelByGroupHeadline] TO [vnteam]
-GO 
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelByGroupHeadline] TO [bodbAdminNet]
-GO 
+
