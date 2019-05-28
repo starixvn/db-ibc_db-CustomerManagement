@@ -32,7 +32,8 @@ ALTER PROCEDURE [dbo].[CS_LoginClaimDownline]
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
-	@isForcedChangeSecurityCode BIT = 0 OUTPUT
+	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@Status TINYINT = 1 OUTPUT
 AS
 /*
 	Created: 20190518@Elodie
@@ -41,6 +42,7 @@ AS
 
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -272,6 +274,12 @@ BEGIN
 		exchange WITH (NOLOCK) 
 	WHERE exchangeid = @db_currency  
 
+	SELECT @Status = CASE	WHEN InactiveInfo > 0 THEN 1 
+							WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2
+							WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 ELSE 4 END
+	FROM dbo.CS_CustomerStatus WITH (NOLOCK)
+	WHERE CustId = @CustID
+     
 	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
 	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
 
