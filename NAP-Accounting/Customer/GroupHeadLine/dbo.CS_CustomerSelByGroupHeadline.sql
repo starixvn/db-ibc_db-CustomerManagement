@@ -1,6 +1,6 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
-    @siteid VARCHAR(200)
+    @siteid VARCHAR(200)='329'
   , @currency INT = 0
   , @Active BIT
   , @ViewOnly BIT
