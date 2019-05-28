@@ -877,7 +877,7 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @Status = CustStatus FROM dbo.f_CS_CustomerStatus (@CustID)
+	SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
 	
 	IF @Status = 1
 	BEGIN

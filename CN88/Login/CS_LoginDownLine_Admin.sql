@@ -89,11 +89,7 @@ BEGIN
 		FROM dbo.CustLoginInfo WITH(NOLOCK)
 		WHERE custid = @custid
 
-		SELECT @Status = CASE	WHEN InactiveInfo > 0 THEN 1 
-								WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2
-								WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 ELSE 4 END
-		FROM dbo.CS_CustomerStatus WITH (NOLOCK)
-		WHERE CustId = @CustID
+		SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
 
 		------------------------
 		--Login from Account site	
