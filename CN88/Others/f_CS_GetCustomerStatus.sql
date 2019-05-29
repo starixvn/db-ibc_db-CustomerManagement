@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB,DBACC-bodb02" selecters="bodbAdminNet,bodbDownlineNet,vnteam" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB,DBAGE-bodb02,DBACC-bodb02" selecters="bodbAdminNet,bodbDownlineNet" viewers="" isFunction="1"></info>*/
 
 CREATE FUNCTION [dbo].[f_CS_GetCustomerStatus] (@CustId INT)   
 RETURNS TABLE  
