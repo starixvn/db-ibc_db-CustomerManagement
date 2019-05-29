@@ -57,27 +57,27 @@ BEGIN
 	FROM CustSuper WITH(NOLOCK)
 	WHERE uplineID = @custid
 	
-	SELECT @TotalSAgentActive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-	        , @TotalSAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalSAgentSuspended = ISNULL(SUM(CASE  WHEN RoleID = 4 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalSAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
+	SELECT @TotalSAgentActive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.CustStatus = 4 THEN 1 ELSE 0 END), 0)
+	        , @TotalSAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.CustStatus = 3 THEN 1 ELSE 0 END), 0)
+            , @TotalSAgentSuspended = ISNULL(SUM(CASE  WHEN RoleID = 4 AND cs.CustStatus = 2 THEN 1 ELSE 0 END), 0)
+            , @TotalSAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 4 AND cs.CustStatus = 1 THEN 1 ELSE 0 END), 0)
 			
-			,@TotalMAgentActive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-	        , @TotalMAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMAgentSuspended = ISNULL(SUM(CASE  WHEN RoleID = 3 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
+			, @TotalMAgentActive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.CustStatus = 4 THEN 1 ELSE 0 END), 0)
+			, @TotalMAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.CustStatus = 3 THEN 1 ELSE 0 END), 0)
+			, @TotalMAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.CustStatus = 2 THEN 1 ELSE 0 END), 0)
+			, @TotalMAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 3 AND cs.CustStatus = 1 THEN 1 ELSE 0 END), 0)
 
-	        , @TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-            , @TotalAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
+			, @TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.CustStatus = 4 THEN 1 ELSE 0 END), 0)
+			, @TotalAgentViewOnly = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.CustStatus = 3 THEN 1 ELSE 0 END), 0)
+			, @TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.CustStatus = 2 THEN 1 ELSE 0 END), 0)
+			, @TotalAgentInactive = ISNULL(SUM(CASE WHEN RoleID = 2 AND cs.CustStatus = 1 THEN 1 ELSE 0 END), 0)
 
-            , @TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo = 0 THEN 1 ELSE 0 END), 0)
-            , @TotalMemberViewOnly = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo = 0 AND cs.ViewOnlyInfo > 0 THEN 1 ELSE 0 END), 0)
-			, @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo = 0 AND cs.SuspendedInfo > 0 THEN 1 ELSE 0 END), 0)
-			, @TotalMemberInactive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.InactiveInfo > 0 THEN 1 ELSE 0 END), 0)
+			, @TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.CustStatus = 4 THEN 1 ELSE 0 END), 0)
+			, @TotalMemberViewOnly = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.CustStatus = 3 THEN 1 ELSE 0 END), 0)
+			, @TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.CustStatus = 2 THEN 1 ELSE 0 END), 0)
+			, @TotalMemberInactive = ISNULL(SUM(CASE WHEN RoleID = 1 AND cs.CustStatus = 1 THEN 1 ELSE 0 END), 0)
 	FROM dbo.custinfo ci WITH(NOLOCK)
-		INNER JOIN dbo.CS_CustomerStatus cs WITH(NOLOCK) ON ci.custid = cs.CustId
+		CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
 	WHERE srecommend IN (SELECT custid FROM @tblSupers)
 	
 	SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate

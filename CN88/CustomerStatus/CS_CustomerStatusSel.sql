@@ -35,13 +35,8 @@ BEGIN
 	END
 
 	SELECT	@IsClosed AS IsClosed,
-			CASE	WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS CustStatus		
-	FROM CS_CustomerStatus WITH(NOLOCK)
-	WHERE CustID = @CustID;
+			CustStatus		
+	FROM dbo.f_CS_GetCustomerStatus(@CustID);
 
 	SET NOCOUNT OFF;
 END
