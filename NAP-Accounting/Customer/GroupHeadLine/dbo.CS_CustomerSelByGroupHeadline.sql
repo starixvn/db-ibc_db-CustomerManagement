@@ -191,7 +191,8 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE	WHEN InactiveInfo > 0 THEN 1 
+		CASE		WHEN Enabled = 0 THEN 0 
+					WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
@@ -206,7 +207,8 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason   )
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE	WHEN InactiveInfo > 0 THEN 1 
+		CASE		WHEN Enabled = 0 THEN 0 
+					WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
@@ -223,7 +225,9 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE	WHEN InactiveInfo > 0 THEN 1 
+		CASE		
+					WHEN Enabled = 0 THEN 0 
+					WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
@@ -238,7 +242,8 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE	WHEN InactiveInfo > 0 THEN 1 
+		CASE		WHEN Enabled = 0 THEN 0 
+					WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
@@ -253,7 +258,8 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE	WHEN InactiveInfo > 0 THEN 1 
+		CASE		WHEN Enabled = 0 THEN 0 
+					WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
