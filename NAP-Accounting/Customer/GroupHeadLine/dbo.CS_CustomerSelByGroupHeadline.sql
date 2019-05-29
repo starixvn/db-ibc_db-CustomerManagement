@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline_UAT4]     
+ALTER PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200)='329'
   , @currency INT = 0
   , @Active BIT
