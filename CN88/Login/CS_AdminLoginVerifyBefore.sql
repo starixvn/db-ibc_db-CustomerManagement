@@ -60,7 +60,7 @@ BEGIN
 		@db_custid INT, @db_userpwd	NVARCHAR(50), @db_Username2 VARCHAR(50), @db_currency TINYINT, @OldUserPwd	VARCHAR(40), @failedcount INT, 		
 		@db_loginip NVARCHAR(20), @db_enabled BIT,			
 		-- For checking login domain
-		@Site varchar(10), @IsMatched bit, @rowcount int, @isAllowed bit, @IsAccess BIT, @isFirstLogin BIT
+		@Site varchar(10), @IsMatched bit, @rowcount int, @isAllowed bit, @IsAccess BIT, @isFirstLogin BIT, @Status TINYINT
 		
 	SELECT @isAllowed = 0
 	 
@@ -354,6 +354,100 @@ BEGIN
 		SELECT @ErrMsg = N'Login Failed.',@ErrCode=107  
 		RETURN  
 	END  
+
+	SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
+
+	IF @Status = 1
+	BEGIN
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been inactive. Please contact your upline for assistance.'  
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
+				END ,@ErrCode=700     
+		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
+	    
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		IF @IsNickname = 1	
+		BEGIN	
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1324,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @db_Username2				
+		END	
+		ELSE
+		BEGIN
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1324,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration				
+		END	
+		RETURN
+	END
+
+	IF @Status = 2
+	BEGIN
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been suspended. Please contact your upline to activate your account!'  
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
+				END ,@ErrCode=701     
+		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
+	    
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		IF @IsNickname = 1	
+		BEGIN	
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1324,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @db_Username2				
+		END	
+		ELSE
+		BEGIN
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1324,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration				
+		END	
+		RETURN
+	END
 
 	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0)
 	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid

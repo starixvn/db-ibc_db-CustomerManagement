@@ -29,6 +29,7 @@ AS
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
+		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -881,7 +882,7 @@ BEGIN
 	
 	IF @Status = 1
 	BEGIN
-		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been inactive. Please contact your upline for assistance.'  
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been inactive. Please contact your upline for assistance.'  
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
 				END ,@ErrCode=700     
 		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
@@ -927,7 +928,7 @@ BEGIN
 	
 	IF @Status = 2
 	BEGIN
-		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been suspended. Please contact your upline to activate your account!'  
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been suspended. Please contact your upline to activate your account!'  
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
 				END ,@ErrCode=701     
 		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
