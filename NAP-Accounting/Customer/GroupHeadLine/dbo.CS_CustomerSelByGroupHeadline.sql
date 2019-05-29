@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
+ALTER PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline_UAT4]     
     @siteid VARCHAR(200)='329'
   , @currency INT = 0
   , @Active BIT
@@ -191,15 +191,9 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE		WHEN Enabled = 0 THEN 0 
-					WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS Status,		
+		0 AS Status,	
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason    
-        FROM #tmpResultAll t  
-			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
+        FROM #tmpResultAll t  			
         WHERE  t.Enabled=0 
     END    
 
@@ -207,16 +201,11 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason   )
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE		WHEN Enabled = 0 THEN 0 
-					WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS Status,		
+		1 AS Status,		
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason  
         FROM #tmpResultAll    t 
-			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID
-        WHERE  InactiveInfo > 0
+			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a			
+        WHERE  a.CustStatus=1
     END     
 
 
@@ -225,49 +214,33 @@ BEGIN
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE		
-					WHEN Enabled = 0 THEN 0 
-					WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS Status,		
+		2 AS Status,		
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll t  
-			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
-        WHERE  InactiveInfo = 0 AND SuspendedInfo > 0    
+			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a			
+        WHERE   a.CustStatus=2
     END     
     
     IF (@ViewOnly = 1)    
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE		WHEN Enabled = 0 THEN 0 
-					WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS Status,		
+		3 AS Status,		
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason 
         FROM #tmpResultAll  t 
-			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
-         WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0
+			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a	
+         WHERE   a.CustStatus=3
     END     
     
     IF (@Active = 1)    
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
-		CASE		WHEN Enabled = 0 THEN 0 
-					WHEN InactiveInfo > 0 THEN 1 
-					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
-					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
-					ELSE 4 
-			END AS Status,		
+		4 AS Status,		
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll    t
-			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
-        WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo = 0
+			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a	
+        WHERE  a.CustStatus=4
     END     
     
     --resulset            
