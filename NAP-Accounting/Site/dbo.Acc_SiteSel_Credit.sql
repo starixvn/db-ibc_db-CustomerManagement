@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROC [Acc_SiteSel_Credit]
 AS
 
