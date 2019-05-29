@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode]
 	@custid		INT,
 	@userid		INT,
@@ -13,13 +13,13 @@
 	/*
 		Created: Johnson
 		Date: 2013-04-09
-		DB: DBTXN/bodb02
+		DB: DBCUST/CUSTDB
 		Task: upline/admin update Security code of customer
 		
 		Revisions:
 			- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+			- 20190529@Johnson: update SC for headline from NAP [redmine: #112225]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -50,7 +50,7 @@ SET NOCOUNT ON
 	FROM custinfo WITH(NOLOCK)
 	WHERE custid = @custid
 	
-	IF @roleid BETWEEN 2 AND 4
+	IF @roleid BETWEEN 2 AND 4 OR @roleid = 0--headline cn88
 	BEGIN	
 		IF NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo WITH(NOLOCK) WHERE custid = @custid)
 		BEGIN
@@ -163,6 +163,3 @@ SET NOCOUNT ON
 	END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSecurityCode] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSecurityCode] TO [bodbExtAccNet] AS [dbo]
