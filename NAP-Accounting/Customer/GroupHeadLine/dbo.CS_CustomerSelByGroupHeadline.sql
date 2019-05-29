@@ -80,7 +80,7 @@ BEGIN
       , HeadlineType TINYINT
       , OwnerName NVARCHAR(100)
 	  , ClosedReason TINYINT NULL
-	  , Enabled BIT
+	  
     )
 
     CREATE TABLE #tmpResultAll
@@ -189,14 +189,14 @@ BEGIN
 
 	IF (@Disabled = 1)    
     BEGIN     
-        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
 		CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
 			END AS Status,		
-		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason    
         FROM #tmpResultAll t  
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
         WHERE  t.Enabled=0 
@@ -204,14 +204,14 @@ BEGIN
 
     IF (@Inactive = 1)    
     BEGIN     
-        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled   )
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason   )
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
 		CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
 			END AS Status,		
-		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason  ,Enabled     
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason  
         FROM #tmpResultAll    t 
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID
         WHERE  InactiveInfo > 0
@@ -221,14 +221,14 @@ BEGIN
     
     IF (@suspended = 1)    
     BEGIN     
-        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
 		CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
 			END AS Status,		
-		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll t  
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID 
         WHERE  InactiveInfo = 0 AND SuspendedInfo > 0    
@@ -236,14 +236,14 @@ BEGIN
     
     IF (@ViewOnly = 1)    
     BEGIN     
-        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
 		CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
 			END AS Status,		
-		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason ,Enabled   
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason 
         FROM #tmpResultAll  t 
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
          WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0
@@ -251,14 +251,14 @@ BEGIN
     
     IF (@Active = 1)    
     BEGIN     
-        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled)
+        INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
         SELECT CustHeadlineID, GroupName, t.CustID, UserName,
 		CASE	WHEN InactiveInfo > 0 THEN 1 
 					WHEN InactiveInfo = 0 AND SuspendedInfo > 0 THEN 2 
 					WHEN InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo > 0 THEN 3 
 					ELSE 4 
 			END AS Status,		
-		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason,Enabled   
+		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll    t
 			INNER JOIN CS_CustomerStatus s WITH(NOLOCK) ON t.CustID=s.CustID  
         WHERE  InactiveInfo = 0 AND SuspendedInfo = 0 AND ViewOnlyInfo = 0
