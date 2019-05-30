@@ -48,6 +48,7 @@ BEGIN
 	INSERT INTO  @tmp (siteid , site,SpecialGroup)
 	EXECUTE(@SearchQuery)
     
+  
     CREATE TABLE #tmpDirectCust 
     (
         CustID INT PRIMARY KEY
@@ -98,8 +99,19 @@ BEGIN
 	  , Enabled BIT
     )    
     
+    IF (@roleid = -1 OR @roleid = 0)    
+    BEGIN     
+		INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
+        SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason
+        FROM dbo.Customer c WITH(NOLOCK) 			
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID  
+        WHERE (@currency = 0 OR c.currency = @currency)
+            AND ((@IsTest = 0 AND c.currency NOT IN (20, 27, 28)) OR @IsTest = 1)
+            AND c.roleID=0
+    END
+    
     --get super account     
-    IF (@roleid = 0 OR @roleid = 4)    
+    IF (@roleid = -1 OR @roleid = 4)    
     BEGIN     
 		INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason
@@ -111,7 +123,7 @@ BEGIN
     END
 
     --get direct master    
-    IF (@roleid = 0 OR @roleid = 3)    
+    IF (@roleid = -1 OR @roleid = 3)    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid ,cl.ClosedReason     
@@ -124,7 +136,7 @@ BEGIN
     END     
     
     --get direct agent    
-    IF (@roleid = 0 OR @roleid = 2 )    
+    IF (@roleid = -1 OR @roleid = 2 )    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason     
@@ -137,7 +149,7 @@ BEGIN
     END
     
     --get direct memeber    
-    IF (@roleid = 0 OR @roleid = 1)    
+    IF (@roleid = -1 OR @roleid = 1)    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason   )
         SELECT c.custid, cc.site, c.currency, c.roleid ,cl.ClosedReason   
@@ -157,7 +169,7 @@ BEGIN
     WHERE (@siteid <> ''  AND     
       (site NOT IN (SELECT [site] FROM [site] WHERE siteid IN (SELECT  val FROM dbo.strSplit(@siteid,','))) OR site IS NULL)) 
        OR [site] NOT IN (SELECT [SITE] FROM [SITE] WHERE islicensee = 0 AND isactive=1)    
-      
+   
     --apply filter by Owner and Headline Type    
     INSERT INTO #tmpGroupHeadline(HeadlineID, GroupName, GroupID, HeadlineType, OwnerName)    
 	SELECT hl.CustID, cu.username, hl.GroupID, hl.HeadlineType, hl.OwnerName
@@ -186,7 +198,7 @@ BEGIN
         AND (@username = '' OR ci.username=@username) 
         AND @groupheadline='' AND @HeadlineType = '' 
         AND (@Owner = '' OR (@Owner <> '' AND hl.OwnerName = @Owner))
-
+	
 	IF (@Disabled = 1)    
     BEGIN     
         INSERT INTO #tmpResult(CustHeadlineID, GroupName, CustID, UserName,Status, Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason)
@@ -251,8 +263,6 @@ BEGIN
     ORDER BY custheadlineid,custid   
 
 END
-
-GO 
-
+GO
 GRANT EXECUTE ON [dbo].CS_CustomerSelByGroupHeadline TO [bodbAdminNet]
 GO 
