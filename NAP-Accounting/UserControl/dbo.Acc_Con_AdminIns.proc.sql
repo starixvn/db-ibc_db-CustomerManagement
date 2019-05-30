@@ -32,6 +32,7 @@ Revisions:
 	- 20141126@Dom: Synchronize user data between Accounting and AdminSite: Insert data to AdminSiteUser table
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
+	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 
 Param's Explanation:
 • @ErrCode:
@@ -58,21 +59,22 @@ BEGIN
 	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = @funcname, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
 	IF @ErrCode <> 0
 		RETURN;
-	DECLARE @pwdexpiry AS DATETIME, 
-	@roleid AS INT, 
-	@closed AS BIT;
+	DECLARE @pwdexpiry AS DATETIME, @roleid AS INT, @closed AS BIT
 	SELECT @RoleID = 6,
 		   @pwdexpiry = DATEADD(month, 1, CURRENT_TIMESTAMP),
-		   @closed = 0;
-	IF EXISTS (SELECT 1
-			   FROM   customer WITH (NOLOCK)
-			   WHERE  username = @username)
-		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
-		BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This username is not available. ' WHEN 'CS' THEN N'This username is not available. ' WHEN 'J' THEN N'This username is not available. ' ELSE N'This username is not available. ' END,
-				   @ErrCode = 102;
-			RETURN;
-		END
+		   @closed = 0
+
+	--check duplicate username
+	DECLARE @IsExists BIT 
+	EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
+
+	IF @IsExists = 1
+	BEGIN
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This username is not available. ' WHEN 'CS' THEN N'This username is not available. ' WHEN 'J' THEN N'This username is not available. ' ELSE N'This username is not available. ' END,
+				@ErrCode = 102;
+		RETURN;
+	END
+
 	BEGIN TRANSACTION;
 	INSERT  INTO customer (username, userpwd, roleid, firstname, lastname, creator, pwdexpiry)
 	VALUES               (@username, @userpwd, @roleid, @firstname, @lastname, @UserID, @pwdexpiry);

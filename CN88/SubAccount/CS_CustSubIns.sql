@@ -39,10 +39,10 @@ BEGIN
 	SELECT @username = LTRIM(RTRIM(@username))
 
 	--check duplicate username
-	IF (EXISTS (SELECT 1 FROM custsub WITH (NOLOCK) WHERE username = @username))
-		OR (EXISTS (SELECT 1 FROM customer WITH (NOLOCK) WHERE username = @username OR username2 = @username))
-		OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
-		OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
+	DECLARE @IsExists BIT 
+	EXEC CS_CustomerCheckExists @username = @username, @Mode = 0, @IsExists = @IsExists OUTPUT
+
+	IF @IsExists = 1
 	BEGIN
 		SELECT @ErrMsg = CASE @Language WHEN 'E' then 'This username is not available.'
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](40001,@Language) END,
