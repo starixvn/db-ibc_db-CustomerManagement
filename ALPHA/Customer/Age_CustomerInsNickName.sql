@@ -20,6 +20,7 @@ Revisions:
     - 20130311@Dan: Write more log on DBTXN server in case of DBLOG server failure
     - 20141117@Johnson: write log IP
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
+	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 Param's Explanation:
 • @custid: custid that need to be update.   
 */
@@ -35,10 +36,10 @@ IF @Username2 =''
 BEGIN 
 
 ---Check duplicate Nickname
-IF EXISTS (SELECT TOP 1 1 FROM Customer WITH (NOLOCK) WHERE Username2 = @Nickname OR Username = @Nickname)
-   OR EXISTS (SELECT TOP 1 1 FROM CustSub WITH (NOLOCK) WHERE Username = @Nickname)
-   OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @Nickname)
-	OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @Nickname)
+DECLARE @IsExists BIT 
+EXEC Age_CustomerCheckExists @username = @Nickname, @IsExists = @IsExists OUTPUT
+
+IF @IsExists = 1
 BEGIN 
     SELECT  @ErrMsg = CASE @language
                           WHEN 'E' THEN 'Nickname is not available'
@@ -51,12 +52,12 @@ END
 
 ------ Create Nickname
 
-	SET @ErrCode = 0
-	SET @ErrMsg = ''
+SET @ErrCode = 0
+SET @ErrMsg = ''
 
-    UPDATE  Customer WITH (ROWLOCK)
-    SET     Username2 = @Nickname
-    WHERE   custid = @custid and ISNULL(Username2,'') = ''
+UPDATE  Customer WITH (ROWLOCK)
+SET     Username2 = @Nickname
+WHERE   custid = @custid and ISNULL(Username2,'') = ''
  
 	
 ----Error return

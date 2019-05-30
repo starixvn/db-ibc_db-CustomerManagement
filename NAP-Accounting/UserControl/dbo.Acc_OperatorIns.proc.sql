@@ -40,7 +40,7 @@ Revisions:
 	- 20130710@Kathy: Synchronize user data between Accounting and AdminSite: Insert data to AdminSiteUser table
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
-	
+	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -63,24 +63,19 @@ IF @ErrCode <> 0
         RETURN;
     END
 --end
-IF EXISTS (SELECT 1
-           FROM   customer WITH (NOLOCK)
-           WHERE  username = @username)
-   OR EXISTS (SELECT 1
-              FROM   customer WITH (NOLOCK)
-              WHERE  username2 = @username)
-   OR EXISTS (SELECT 1
-              FROM   custsub WITH (NOLOCK)
-              WHERE  username = @username)
-	OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
-	OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
-    BEGIN
-        SELECT @ErrMsg = 'This username is not available. ',
-               @ErrCode = 101;
-        IF @ReturnErrCode = 0
-            RAISERROR (@ErrMsg, 16, 1);
-        RETURN;
-    END
+
+DECLARE @IsExists BIT 
+EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
+
+IF @IsExists = 1
+BEGIN
+    SELECT @ErrMsg = 'This username is not available. ',
+            @ErrCode = 101;
+    IF @ReturnErrCode = 0
+        RAISERROR (@ErrMsg, 16, 1);
+    RETURN;
+END
+
 SELECT @pwdexpiry = dateadd(dd, 30, getdate());
 BEGIN TRANSACTION;
 INSERT  INTO customer (username, firstname, lastname, phone, mobilephone, fax, email, address, city, state, country, postal, userpwd, roleid, pwdexpiry, Creatdate, creator)

@@ -36,6 +36,7 @@ Revisions:
 	- 20140709@Logan: Force using Security Code for SMA from all sites (except 789y) [Redmine:#18121]
 	- 20180621@Razor: Add Message Customer Read Status [Redmind: #94705]
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
+	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -84,10 +85,10 @@ SELECT @PwdExpiry = DATEADD(DD, 30, GETDATE())
 select @success = 0, @username = LTRIM(RTRIM(@username))
 
 --check duplicate username
-IF (exists (select 1 from custsub with (nolock) where username = @username))
-	OR (exists (select 1 from customer with (nolock) where username = @username OR username2 = @username  ) )
-	OR EXISTS(SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username= @username)
-	OR EXISTS (SELECT 1 FROM Dep_Customer_Archived WITH (NOLOCK) WHERE username2 = @username)
+DECLARE @IsExists BIT 
+EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
+
+IF @IsExists = 1
 BEGIN
 	select @ErrMsg = case @Language 
 			when 'E' then 'This user name is not available.'
