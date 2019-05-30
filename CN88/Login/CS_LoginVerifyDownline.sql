@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE CS_LoginVerifyDownline
 	@UserName VARCHAR(50) = '' OUTPUT,  
+	@UserRoleId TINYINT,  
 	@UserPwd VARCHAR(50),  
 	@CustID INT OUTPUT, 
 	@SubAccID INT = 0 OUTPUT, --Sub-AccountID,  
@@ -27,9 +28,11 @@ AS
 
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
+		• @UserRoleID: login level, user select to login in CN88
 		• @SiteGroup: Check the site and corresponding domain
 				+ ALL: All add domains 
 				+ 789y: Allow customers of 789y ONLY
@@ -163,6 +166,34 @@ BEGIN
 	-------end 20110608: login using Nickname
 		-- check sub-account --
 		
+		IF @UserRoleID <> @RoleID
+		BEGIN
+			SELECT @LogData = 'Sub-account: ' + @SubUserName + ' - ' + 'Login Result:Failed!'
+					
+			SET	@End = GETDATE() 
+			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+			
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,
+				@ActionID = 1326,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform, 
+				@CountryCode = @CountryCode,
+				@Duration = @Duration
+				
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
+						END ,@ErrCode=106  
+
+			RETURN				
+		END
+
 		-- Checking login domain and site
 		IF(@rowcount <> 0)
 		BEGIN
@@ -508,33 +539,33 @@ BEGIN
 				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @db_custid 
 
 			IF @NicknameLoginOnly = 1 
-																												BEGIN  
-			SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed! - Login Option: Nickname Only.'  
-			SELECT	@failedcount = @failedcount + 1
-			SET @End = GETDATE() 
-			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+			BEGIN  
+				SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed! - Login Option: Nickname Only.'  
+				SELECT	@failedcount = @failedcount + 1
+				SET @End = GETDATE() 
+				SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
-				@UserID = @db_custid, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration 				 
+				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					@UserID = @db_custid, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration 				 
 							
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
-											ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)    
-											END ,
-				   @ErrCode=106  
+				SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)    
+												END ,
+					   @ErrCode=106  
 
-			RETURN  
-		END  
+				RETURN  
+			END  
 		----use username
 			SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @db_currency = currency, @failedcount = isnull(logincount,0),  
 					@site = site , @db_loginip= isnull(iplogin, ''),  @IsNickname = 0, @Nickname = NickName
@@ -548,6 +579,34 @@ BEGIN
 	END 
 
 	SET @rowcount = @@ROWCOUNT
+
+	IF @UserRoleID <> @RoleID
+	BEGIN
+		SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed!'
+					
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+			
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,
+			@ActionID = 1326,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform, 
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+				
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
+					END ,@ErrCode=106  
+
+		RETURN				
+	END
 
 	-- Checking login domain and site
 	IF(@rowcount <> 0)
