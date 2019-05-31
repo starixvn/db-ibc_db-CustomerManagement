@@ -1,4 +1,6 @@
-﻿  ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub]
+﻿  /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+
+ALTER PROCEDURE CS_CustomerUpdSecurityCodeStatus_Sub
 	@custid		INT,
 	@subAccID	INT,
 	@CheckedSecurityCode BIT = 1,
@@ -7,24 +9,29 @@
 	@IP			VARCHAR(20),
 	@ErrCode	INT = 0 OUTPUT,
 	@ErrMsg		NVARCHAR(500) = '' OUTPUT
- AS
-	/*Created: Johnson
-		Date: 2013-04-17
-		Task: Update security code status of sub account
-		DB: DBTXN/bodb02
+AS
+/*	Created: Elodie
+	Date: 20190530
+	Task: Update security code status of sub account
+	DB: DBCUST/CustDB
 		
-		Revisions:
-		
-		Parameter's Explanation:
-			- @CheckedSecurityCode = 1: checked security code success
-								= 0: wrong security code
-			- @FunctionName: name of function which customer is required security code
-			- @ErrCode = 100: failed providing SC
-						= 200: Closed account
-	*/
-SET NOCOUNT ON
+	Revisions:
+		- 20190530@Elodie: Initial SP [Redmine: 113198]
+
+	Parameter's Explanation:
+		- @CheckedSecurityCode = 1: checked security code success
+							= 0: wrong security code
+		- @FunctionName: name of function which customer is required security code
+		- @ErrCode = 100: failed providing SC
+					= 200: Closed account
+*/
+BEGIN
+	SET NOCOUNT ON
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
 	DECLARE @SecurityCodeCount INT
 	
+	SET @startRun = GETDATE()
+
 	SELECT @SecurityCodeCount = ISNULL(SecurityCodeCount,0)
 	FROM CustLoginInfoSub WITH(NOLOCK)
 	WHERE SubAccID = @subAccID AND custid = @custid 
@@ -45,33 +52,21 @@ SET NOCOUNT ON
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](40026,@Language) END,
 				@ErrCode = 100	
 			
-			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus_Sub SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
+			SELECT @LogSPData = '<R SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
+								+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+								+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
+								+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 921, 
-					@TrackingValue = @LogSPData
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus_Sub SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '														
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
-														+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
-				
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 921, 
-					@TrackingValue = @LogSPData
-			END CATCH		
+			SET @endRun = GETDATE()
+			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @CustID,
+				@CustID = @CustID, 
+				@ActionID = 941, 
+				@TrackingValue = @LogSPData,
+				@Duration = @duration			
 		END
 		ELSE
 		BEGIN
@@ -83,33 +78,23 @@ SET NOCOUNT ON
 			SET SecurityCodeCount = 0
 			WHERE subAccID = @subAccID AND custid = @custid 
 			
-			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong SC over 5 times. Please contact CSD or your upline to reopen.'
-									ELSE [dbo].[f_Get_MsgNamebyMsgID](40025,@Language) END,
+			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your sub account has been locked due to multiple failed security check attempts. Please contact the main account user to unlock.'
+									ELSE [dbo].[f_Get_MsgNamebyMsgID](40044,@Language) END,
 				@ErrCode = 200		
 				
-			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus_Sub SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 																												
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
+			SELECT @LogSPData = '<R SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 																												
+								+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
+								+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 922, 
-					@TrackingValue = @LogSPData
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus_Sub SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
-														+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
-				
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 922, 
-					@TrackingValue = @LogSPData
-			END CATCH														
+			SET @endRun = GETDATE()
+			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @CustID,
+				@CustID = @CustID, 
+				@ActionID = 942, 
+				@TrackingValue = @LogSPData,
+				@Duration = @duration																			
 		END
 	END
 	ELSE
@@ -121,9 +106,4 @@ SET NOCOUNT ON
 			WHERE SubAccID = @SubAccID AND custid = @custid
 		END 
 	END
-
-
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNetView]
+END

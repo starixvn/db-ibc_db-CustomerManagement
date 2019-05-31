@@ -1,5 +1,6 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
- ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+
+ ALTER PROCEDURE [dbo].[CS_CustomerUpdSecurityCodeStatus]
 	@custid			INT,
 	@CheckedSecurityCode	BIT = 1,
 	@FunctionName	VARCHAR(100) ='',	
@@ -8,23 +9,25 @@
 	@ErrCode		INT = 0 OUTPUT,
 	@ErrMsg			NVARCHAR(500) = '' OUTPUT
  AS
-	/*
-		Created: Johnson
-		Date: 2013-04-17
-		Task: Update security code status of customer
-		DB: DBTXN/bodb02
+/*
+	Created: Elodie
+	Date: 20190530
+	Task: Update security code status of customer
+	DB: DBCUST/CustDB
 		
-		Revisions:
-		-- 20170619@Winnie: Apply color for closed Accounts RedmineID: #74494
+	Revisions:
+		- 20190530@Elodie: Initial SP [Redmine: 113198]
 
-		Parameter's Explanation:
-			- @CheckedSecurityCode: = 1: check security code success
-								= 0: failed security code
-			- @FunctionName: name of function which customer is required security code
-			- @ErrCode = 100: failed count <= 5
-						= 200: closed account
-	*/
-SET NOCOUNT ON
+	Parameter's Explanation:
+		- @CheckedSecurityCode: = 1: check security code success
+							= 0: failed security code
+		- @FunctionName: name of function which customer is required security code
+		- @ErrCode = 100: failed count <= 5
+					= 200: closed account
+*/
+BEGIN
+	SET NOCOUNT ON
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
 	DECLARE @securityCodeCount INT
 	
 	SELECT @securityCodeCount = ISNULL(securityCodeCount,0)
@@ -47,33 +50,20 @@ SET NOCOUNT ON
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](40026,@Language) END,
 				@ErrCode = 100		
 			
-			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '	
-														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
+			SELECT @LogSPData = '<R CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '
+								+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+								+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
+								+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 917, 
-					@TrackingValue = @LogSPData
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '		
-														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '																										
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
-														+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
-				
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 917, 
-					@TrackingValue = @LogSPData
-			END CATCH	
+			SET @endRun = GETDATE()
+			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @CustID,
+				@CustID = @CustID, 
+				@ActionID = 943, 
+				@TrackingValue = @LogSPData,
+				@Duration = @duration					
 		END
 		ELSE 
 		BEGIN
@@ -85,32 +75,22 @@ SET NOCOUNT ON
 			SET securityCodeCount = 0,ClosedReason=3
 			WHERE custid = @custid
 			
-			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong SC over 5 times. Please contact CSD or your upline to reopen.'
-									ELSE [dbo].[f_Get_MsgNamebyMsgID](40025,@Language) END,
+			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your account has been locked due to multiple failed security check attempts. Please contact your upline to unlock.'
+									ELSE [dbo].[f_Get_MsgNamebyMsgID](40045,@Language) END,
 				@ErrCode = 200		
 				
-			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '																											
-														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
+			SELECT @LogSPData = '<R Language="' + COALESCE(@Language, SPACE(1)) + '" '
+									+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 918, 
-					@TrackingValue = @LogSPData
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '																												
-														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
-														+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
-				
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @CustID,
-					@CustID = @CustID, 
-					@ActionID = 918, 
-					@TrackingValue = @LogSPData
-			END CATCH														
+			SET @endRun = GETDATE()
+			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @CustID,
+				@CustID = @CustID, 
+				@ActionID = 944, 
+				@TrackingValue = @LogSPData,
+				@Duration = @duration																			
 		END
 	END
 	ELSE
@@ -122,7 +102,5 @@ SET NOCOUNT ON
 			WHERE custid = @custid
 		END 
 	END
+END
 
-
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus] TO [bodbDownlineNet]
