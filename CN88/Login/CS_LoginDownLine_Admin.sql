@@ -11,6 +11,7 @@ ALTER PROCEDURE [dbo].[CS_LoginDownline_Admin]
 	@CountryCode VARCHAR(64) = NULL,
 	@RoleID INT OUTPUT,
 	@CustID INT OUTPUT,
+	@NickName VARCHAR(50) = '' OUTPUT,
 	@site VARCHAR(20) = '' OUTPUT,  
 	@On_UserID INT OUTPUT,
 	@Currency VARCHAR(10) = '' OUTPUT,
@@ -80,9 +81,10 @@ BEGIN
 			INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID
 		WHERE CustInfo.username = @UserName
 		
-		SELECT @site = site 
-		FROM Customer WITH(NOLOCK)
-		WHERE CustId = @CustID
+		SELECT @NickName = f.NickName, @site = site 
+		FROM dbo.Customer WITH (NOLOCK)
+			CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
+		WHERE custid = @CustID
 		
 		SELECT @SecurityCode = ISNULL(SecurityCode,''),
 			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
