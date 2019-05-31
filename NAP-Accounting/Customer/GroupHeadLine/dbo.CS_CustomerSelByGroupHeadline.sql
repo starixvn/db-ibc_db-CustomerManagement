@@ -97,21 +97,10 @@ BEGIN
       , OwnerName NVARCHAR(100)
 	  , ClosedReason TINYINT NULL
 	  , Enabled BIT
-    )    
-    
-    IF (@roleid = -1 OR @roleid = 0)    
-    BEGIN     
-		INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
-        SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason
-        FROM dbo.Customer c WITH(NOLOCK) 			
-			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID  
-        WHERE (@currency = 0 OR c.currency = @currency)
-            AND ((@IsTest = 0 AND c.currency NOT IN (20, 27, 28)) OR @IsTest = 1)
-            AND c.roleID=0
-    END
+    )   
     
     --get super account     
-    IF (@roleid = -1 OR @roleid = 4)    
+    IF (@roleid = 0 OR @roleid = 4)    
     BEGIN     
 		INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason
@@ -123,7 +112,7 @@ BEGIN
     END
 
     --get direct master    
-    IF (@roleid = -1 OR @roleid = 3)    
+    IF (@roleid = 0 OR @roleid = 3)    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid ,cl.ClosedReason     
@@ -136,7 +125,7 @@ BEGIN
     END     
     
     --get direct agent    
-    IF (@roleid = -1 OR @roleid = 2 )    
+    IF (@roleid = 0 OR @roleid = 2 )    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason)
         SELECT c.custid, c.site, c.currency, c.roleid,cl.ClosedReason     
@@ -149,7 +138,7 @@ BEGIN
     END
     
     --get direct memeber    
-    IF (@roleid = -1 OR @roleid = 1)    
+    IF (@roleid = 0 OR @roleid = 1)    
     BEGIN     
         INSERT INTO #tmpDirectCust (custid, site, currency, roleid,ClosedReason   )
         SELECT c.custid, cc.site, c.currency, c.roleid ,cl.ClosedReason   
