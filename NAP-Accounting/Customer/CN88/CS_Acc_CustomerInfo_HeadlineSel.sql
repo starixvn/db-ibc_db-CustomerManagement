@@ -100,9 +100,11 @@ BEGIN
 		iplogin lastloginip, 
 	    pwdexpiry, 
 		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate,
-		@closed as closed
+		@closed as closed,
+		cs.CustStatus AS CN88CustStatus
 	FROM customer c WITH(NOLOCK)
 		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
+		CROSS APPLY f_CS_GetCustomerStatus(@custid) cs
 	WHERE custid = @custid	
 	
 	--hardcode to return data table for web to map current model

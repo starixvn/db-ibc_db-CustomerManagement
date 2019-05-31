@@ -669,6 +669,7 @@ BEGIN
 		, ISNULL(GroupHeadline.GroupID,0) AS GroupHeadlineID
 		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
 		,@UplineHasSecurityCode AS UplineHasSecurityCode
+		,cs.CustStatus AS CN88CustStatus
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
@@ -678,7 +679,7 @@ BEGIN
 						INNER JOIN Customer C ON CA.custid = C.custid 
 					 WHERE ca.GroupID = GroupHeadline.GroupID AND ca.IsGroupHeadLine = 1 AND @IsDeposit = 0
 					) AS Headline
-					
+		CROSS APPLY f_CS_GetCustomerStatus(@custid) cs		
     WHERE c.custid = @custid
     
 	
