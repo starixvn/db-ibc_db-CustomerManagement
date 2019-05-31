@@ -16,7 +16,8 @@ AS
 	Original: Acc_CustomerUpdPwdReset 
 	
 	Revisions:
-		- 20190326@Johnson: clone new sp for cn88 [redmine: #105660]		
+		- 20190326@Johnson: clone new sp for cn88 [redmine: #105660]
+		- 20190531@Johnson: update pwd for headline [redmine: #112225]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -72,7 +73,7 @@ BEGIN
  		RETURN
 	END CATCH
 
-	IF @RoleID BETWEEN 2 AND 4
+	IF @RoleID BETWEEN 2 AND 4 OR @roleid = 0-- headline cn88
 	BEGIN
 			
 		UPDATE	CustLoginInfo WITH (UPDLOCK,ROWLOCK)
