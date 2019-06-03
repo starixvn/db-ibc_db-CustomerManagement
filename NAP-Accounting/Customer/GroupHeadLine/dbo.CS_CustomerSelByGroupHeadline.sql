@@ -74,7 +74,7 @@ BEGIN
       , GroupName NVARCHAR(100)
       , CustID INT
       , UserName NVARCHAR(100)
-      , Status BIT    
+      , Status TINYINT    
       , Site VARCHAR(50)
       , Currency INT
       , RoleID INT
