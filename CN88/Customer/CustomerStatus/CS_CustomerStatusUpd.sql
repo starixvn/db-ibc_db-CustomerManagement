@@ -26,12 +26,8 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @StartRun DATETIME, @Duration INT	
-	DECLARE @Pos TINYINT,
-			@NewVal BIT,
-			@RoleID TINYINT,
-			@db_OldStatusID TINYINT,
-			@DirectDownlineRoleID TINYINT,
-			@Mode TINYINT; --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
+	DECLARE @Pos TINYINT, @NewVal BIT, @Mode TINYINT --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
+			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @DirectDownlineRoleID TINYINT, , @UplineID TINYINT
 
 	CREATE TABLE #TempCust (CustID INT PRIMARY KEY, RoleID TINYINT);
 
@@ -67,9 +63,19 @@ BEGIN
 				WHEN 4 THEN 3
 				WHEN 3 THEN 2
 				WHEN 2 THEN 1
-			END
+			END,
+			@UplineID = CASE roleid
+				WHEN 3 THEN srecommend
+				WHEN 2 THEN mrecommend
+				WHEN 1 THEN recommend
+			END,
 	FROM custInfo WITH(NOLOCK)
 	WHERE CustID = @CustID
+
+	IF @RoleID = 4
+	BEGIN
+		SELECT @UplineID = UplineId FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustID
+	END
 
 	IF ISNULL(@RoleId, 0) NOT BETWEEN 1 AND 4
 	BEGIN
@@ -81,10 +87,36 @@ BEGIN
 
 	SELECT @db_OldStatusID = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
 
+	IF @db_OldStatusID = @NewStatusID
+	BEGIN		
+		RETURN
+	END
+
 	IF @db_OldStatusID <> @OldStatusID
 	BEGIN
 		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update account status failed, Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
 				@ErrCode = 102
+		RETURN
+	END
+
+	-- Check allowed downlines during peak hour at weekend
+	EXEC dbo.Acc_CustomerSelCheckAllowedDownlines
+		@CustId		= @CustId,
+		@RoleId		= @RoleId,
+		@isExecRep	= 1,
+		@Language	= @Language,
+		@ErrCode	= @ErrCode OUTPUT,
+		@ErrMsg		= @ErrMsg OUTPUT
+		
+	IF @ErrCode <> 0
+		RETURN
+
+	SELECT @UplineStatus = CustStatus FROM dbo.f_CS_GetCustomerStatus(@UplineID)
+
+	IF @UplineStatus <> 4
+	BEGIN
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'You cannot do this action because this account''s upline is not active.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40043,@Language) END,
+				@ErrCode = 103
 		RETURN
 	END
 
