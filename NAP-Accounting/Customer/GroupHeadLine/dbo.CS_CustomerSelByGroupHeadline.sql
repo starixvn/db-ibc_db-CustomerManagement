@@ -249,9 +249,10 @@ BEGIN
     FROM  #tmpResult r
         INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
         WHERE (@Userid IS NULL OR (@Userid IS NOT NULL AND site NOT IN (SELECT site FROM @tmp )))
-    ORDER BY custheadlineid,custid   
+    ORDER BY custheadlineid,Status DESC,custid
 
 END
+
 GO
 GRANT EXECUTE ON [dbo].CS_CustomerSelByGroupHeadline TO [bodbAdminNet]
 GO 
