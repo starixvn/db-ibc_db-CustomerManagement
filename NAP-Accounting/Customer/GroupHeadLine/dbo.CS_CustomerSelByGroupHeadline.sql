@@ -206,7 +206,7 @@ BEGIN
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason  
         FROM #tmpResultAll    t 
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a			
-        WHERE  a.CustStatus=1
+        WHERE  a.CustStatus=1 AND t.Enabled=1
     END     
 
 
@@ -219,7 +219,7 @@ BEGIN
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll t  
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a			
-        WHERE   a.CustStatus=2
+        WHERE   a.CustStatus=2  AND t.Enabled=1
     END     
     
     IF (@ViewOnly = 1)    
@@ -230,7 +230,7 @@ BEGIN
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason 
         FROM #tmpResultAll  t 
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a	
-         WHERE   a.CustStatus=3
+         WHERE   a.CustStatus=3  AND t.Enabled=1
     END     
     
     IF (@Active = 1)    
@@ -241,7 +241,7 @@ BEGIN
 		Site, Currency, RoleID, HeadlineType, OwnerName , ClosedReason
         FROM #tmpResultAll    t
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(t.CustID) a	
-        WHERE  a.CustStatus=4
+        WHERE  a.CustStatus=4  AND t.Enabled=1
     END     
     
     --resulset            
