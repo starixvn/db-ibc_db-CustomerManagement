@@ -6,7 +6,6 @@ ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]
 	@NewStatusID	TINYINT,
 	@UserId			INT,
 	@SubAccId		INT = 0,
-	@SystemID		TINYINT = 1,
 	@IP				VARCHAR(15) = '',
 	@Language		VARCHAR(2) = 'E',
 	@ErrCode		INT = 0 OUTPUT,
@@ -26,10 +25,8 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @StartRun DATETIME, @Duration INT	
-	DECLARE @Pos TINYINT, @NewVal BIT, @Mode TINYINT --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
-			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @DirectDownlineRoleID TINYINT, , @UplineID TINYINT
-
-	CREATE TABLE #TempCust (CustID INT PRIMARY KEY, RoleID TINYINT);
+	DECLARE @Mode TINYINT, --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
+			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID TINYINT	
 
 	SELECT  @StartRun = GETDATE()
 
@@ -50,25 +47,10 @@ BEGIN
 		RETURN
 	END
 
-	SELECT	@Pos = CASE roleid
-				WHEN 0 THEN 4
-				WHEN 4 THEN 3
-				WHEN 3 THEN 2
-				WHEN 2 THEN 1
-				WHEN 1 THEN 0
-			END,
-			@RoleID = roleid,
-			@DirectDownlineRoleID = CASE roleid
-				WHEN 0 THEN 4
-				WHEN 4 THEN 3
-				WHEN 3 THEN 2
-				WHEN 2 THEN 1
-			END,
-			@UplineID = CASE roleid
-				WHEN 3 THEN srecommend
-				WHEN 2 THEN mrecommend
-				WHEN 1 THEN recommend
-			END,
+	SELECT	@RoleID = roleid,			
+			@UplineID = CASE roleid WHEN 3 THEN srecommend
+									WHEN 2 THEN mrecommend
+									WHEN 1 THEN recommend END
 	FROM custInfo WITH(NOLOCK)
 	WHERE CustID = @CustID
 
@@ -143,135 +125,34 @@ BEGIN
 		RETURN
 	END
 
-	IF @Mode IN (1, 3, 5)
-	BEGIN
-		SELECT @NewVal = 1;
-	END
+	EXEC dbo.CS_DynamicCustomerInfo_01
+		@CustId			= @CustId,
+		@RoleId			= @RoleId,
+		@Action			= 'UpdateStatus',
+		@Mode			= @Mode
 
-	IF @Mode IN (2, 4, 6)
-	BEGIN
-		SELECT @NewVal = 0;
-	END
+	SELECT @Duration = DATEDIFF (MILLISECOND, @startRun, GETDATE())
 
-	--Headline
-	IF @RoleID = 0
-	BEGIN
-		INSERT INTO #TempCust (CustID, RoleID)
-		SELECT @CustID, 0
-
-		UNION ALL
-
-		SELECT custid, roleid
-		FROM custInfo c WITH(NOLOCK)
-		WHERE EXISTS (
-				SELECT 1
-				FROM CustSuper cs WITH(NOLOCK)
-				WHERE c.srecommend = cs.custid
-					AND cs.UplineId = @CustID
-			);
-	END
+	-- Write log
+	DECLARE @LogDataOld VARCHAR(500), @LogDataNew VARCHAR(500)
+	SELECT  @LogDataOld = '<R'
+						+ ' Status="' + COALESCE(CASE @OldStatusID WHEN 1 THEN 'I' WHEN 2 THEN 'S' WHEN 3 THEN 'V' WHEN 4 THEN 'A' END, SPACE(1)) + '"'
+						+ ' SubAcc="' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1)) + '"'
+						+ ' IP="' + COALESCE(@IP, SPACE(1)) + '"'
+						+ ' />',
+			@LogDataNew = '<R'
+						+ ' Status="' + COALESCE(CASE @NewStatusID WHEN 1 THEN 'I' WHEN 2 THEN 'S' WHEN 3 THEN 'V' WHEN 4 THEN 'A' END, SPACE(1)) + '"'
+						+ ' SubAcc="' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1)) + '"'
+						+ ' IP="' + COALESCE(@IP, SPACE(1)) + '"'
+						+ ' />'
 	
-	--Super
-	IF @RoleID = 4
-	BEGIN
-		INSERT INTO #TempCust (CustID, RoleID)
-		SELECT custid, roleid
-		FROM custInfo c WITH(NOLOCK)
-		WHERE srecommend = @CustID;
-	END
-
-	--Master
-	IF @RoleID = 3
-	BEGIN
-		INSERT INTO #TempCust (CustID, RoleID)
-		SELECT custid, roleid
-		FROM custInfo c WITH(NOLOCK)
-		WHERE mrecommend = @CustID;
-	END
-
-	--Agent
-	IF @RoleID = 2
-	BEGIN
-		INSERT INTO #TempCust (CustID, RoleID)
-		SELECT custid, roleid
-		FROM custInfo c WITH(NOLOCK)
-		WHERE recommend = @CustID;
-	END
-
-	--Member
-	IF @RoleID = 1
-	BEGIN
-		INSERT INTO #TempCust (CustID, RoleID)
-		SELECT @CustID, 1;
-	END
-
-	IF @Mode IN (1, 2)
-	BEGIN
-		--Update bit value of user and his downlines at his bit
-		UPDATE cs
-		SET InactiveInfo = (SELECT Val FROM f_SetBit(InactiveInfo, @Pos, @NewVal))
-		FROM CS_CustomerStatus cs WITH(ROWLOCK, UPDLOCK)
-		WHERE EXISTS (
-				SELECT 1
-				FROM #TempCust c
-				WHERE cs.CustID = c.CustID
-			);
-
-		IF @Mode = 1
-		BEGIN
-			--Remove View Only and Suspended status of user
-			UPDATE cs
-			SET SuspendedInfo = (SELECT Val FROM f_SetBit(SuspendedInfo, @Pos, 0)),
-				ViewOnlyInfo = (SELECT Val FROM f_SetBit(ViewOnlyInfo, @Pos, 0))
-			FROM CS_CustomerStatus cs WITH(ROWLOCK, UPDLOCK)
-			WHERE EXISTS (
-					SELECT 1
-					FROM #TempCust c
-					WHERE cs.CustID = c.CustID
-				);
-		END
-
-		IF @Mode = 2 AND @RoleID <> 1
-		BEGIN
-			--Update downlines to inactive
-			UPDATE cs
-			SET InactiveInfo = (SELECT Val FROM f_SetBit(InactiveInfo, @Pos - 1, 1)),
-				SuspendedInfo = (SELECT Val FROM f_SetBit(SuspendedInfo, @Pos - 1, 0)),
-				ViewOnlyInfo = (SELECT Val FROM f_SetBit(ViewOnlyInfo, @Pos - 1, 0))
-			FROM CS_CustomerStatus cs WITH(ROWLOCK, UPDLOCK)
-			WHERE EXISTS (
-					SELECT 1
-					FROM #TempCust c
-					WHERE cs.CustID = c.CustID
-						AND c.RoleID = @DirectDownlineRoleID
-				);
-		END
-	END
-
-	IF @Mode IN (3, 4)
-	BEGIN
-		UPDATE cs
-		SET SuspendedInfo = (SELECT Val FROM f_SetBit(SuspendedInfo, @Pos, @NewVal))
-		FROM CS_CustomerStatus cs WITH(ROWLOCK, UPDLOCK)
-		WHERE EXISTS (
-				SELECT 1
-				FROM #TempCust c
-				WHERE cs.CustID = c.CustID
-			);
-	END
-
-	IF @Mode IN (5, 6)
-	BEGIN
-		UPDATE cs
-		SET ViewOnlyInfo = (SELECT Val FROM f_SetBit(ViewOnlyInfo, @Pos, @NewVal))
-		FROM CS_CustomerStatus cs WITH(ROWLOCK, UPDLOCK)
-		WHERE EXISTS (
-				SELECT 1
-				FROM #TempCust c
-				WHERE cs.CustID = c.CustID
-			);
-	END
-
-	SET NOCOUNT OFF;
+	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+		@UserId			= @UserId,
+		@CustId			= @CustId,
+		@ActionId		= 165004,
+		@TrackingValue	= @LogDataNew,
+		@TrackingValue2	= @LogDataOld,
+		@Duration		= @Duration
+	
 END
 GO
