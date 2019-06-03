@@ -1,11 +1,11 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]
-	@UserId			INT,
-	@SubAccId		INT = 0,
+ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]	
 	@CustID			INT,
 	@OldStatusID	TINYINT, --4: Active, 3: View Only, 2: Suspended, 1: Inactive
 	@NewStatusID	TINYINT,
+	@UserId			INT,
+	@SubAccId		INT = 0,
 	@SystemID		TINYINT = 1,
 	@IP				VARCHAR(15) = '',
 	@Language		VARCHAR(2) = 'E',
@@ -15,23 +15,44 @@ AS
 /*  
 	Created by: Paul  
 	Date: 2019-05-14
-	Task: 
+	Task: Update status of CN88's customer
 	DB: DBCUST/CustDB
-	Original SP:
+	
 	Revisions:
 		- 20190514@Paul: Create new SP [RedmineID: #113198]
 */
 
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT ON
 
+	DECLARE @StartRun DATETIME, @Duration INT	
 	DECLARE @Pos TINYINT,
 			@NewVal BIT,
 			@RoleID TINYINT,
+			@db_OldStatusID TINYINT,
 			@DirectDownlineRoleID TINYINT,
 			@Mode TINYINT; --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
 
 	CREATE TABLE #TempCust (CustID INT PRIMARY KEY, RoleID TINYINT);
+
+	SELECT  @StartRun = GETDATE()
+
+	-- Check disable account
+	EXEC dbo.Acc_CustomerSelCheckEnable
+		@CustId		= @CustId,
+		@ErrCode	= @ErrCode OUTPUT,
+		@ErrMsg		= @ErrMsg OUTPUT
+
+	IF @ErrCode <> 0
+		RETURN
+
+	IF @UserID <> @CustID AND CURRENT_USER <> 'bodbAdminNet' AND EXISTS (SELECT 1 FROM custInfo WITH (NOLOCK) WHERE custid = @CustID AND LockUpd = 1 AND roleid = 1)
+	BEGIN
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'You are currently not authorized to perform this action. Please contact the Customer Service Department for further assistance.' 
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](40033,@Language) END,
+				@ErrCode = 101
+		RETURN
+	END
 
 	SELECT	@Pos = CASE roleid
 				WHEN 0 THEN 4
@@ -48,10 +69,27 @@ BEGIN
 				WHEN 2 THEN 1
 			END
 	FROM custInfo WITH(NOLOCK)
-	WHERE CustID = @CustID;
+	WHERE CustID = @CustID
+
+	IF ISNULL(@RoleId, 0) NOT BETWEEN 1 AND 4
+	BEGIN
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Invalid user!!' 
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](40002,@Language) END,
+				@ErrCode = 102
+		RETURN
+	END
+
+	SELECT @db_OldStatusID = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
+
+	IF @db_OldStatusID <> @OldStatusID
+	BEGIN
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update account status failed, Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
+				@ErrCode = 102
+		RETURN
+	END
 
 	SELECT	@OldStatusID = ISNULL(@OldStatusID, 0),
-			@NewStatusID = ISNULL(@NewStatusID, 0);
+			@NewStatusID = ISNULL(@NewStatusID, 0)
 
 	SELECT @Mode = CASE @OldStatusID 
 						WHEN 4 THEN CASE @NewStatusID 
@@ -68,10 +106,9 @@ BEGIN
 
 	IF @Mode = 0
 	BEGIN
-		SELECT	@ErrCode = 1104,
-				@ErrMsg = 'Can''t update status from ' + CONVERT(VARCHAR, @OldStatusID) + ' to ' + CONVERT(VARCHAR, @NewStatusID);
-
-		RETURN;
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN ' Update account status failed, Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
+				@ErrCode = 102
+		RETURN
 	END
 
 	IF @Mode IN (1, 3, 5)
