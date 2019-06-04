@@ -99,7 +99,7 @@ Revisions:
 	- 20181002@Dominic: Add 2 output parameters and then show "There is no information available." for archived member   [Redmine:99882]
 	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
 	- 20181003@Winnie: Remove old Esports  - [Redmine: #101526]
-
+	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -108,7 +108,7 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @custid INT
-          , @uplineid INT
+          , @uplineid INT		  
           , @roleid TINYINT
           , @UsedCredit MONEY     
           , @DisableDownlinesNumber BIT
@@ -126,6 +126,9 @@ BEGIN
 		  , @HasDownline BIT = 0
 		  , @ClosedReason TINYINT
 		  ,	@UplineHasSecurityCode	BIT=0
+		  , @HeadlineName VARCHAR(50)
+		  , @HeadlineID INT
+		  , @HeadlineEnabled BIT
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -171,7 +174,15 @@ BEGIN
 	      FROM custinfo WITH(NOLOCK)
 	     WHERE custid = @custid
     END
-
+	
+	--check for headline cn88
+	IF @roleid =0
+	BEGIN
+		EXEC CS_Acc_CustomerInfo_HeadlineSel @custid = @custID
+		
+		RETURN
+	END
+	
 	IF @roleid = 1
 		-- Net Balance
 		SELECT @netPosition = ISNULL(SUM(Credit - Debit), 0) FROM DBTXN.bodb02.dbo.BalNetPosition WITH (NOLOCK) WHERE custid = @custid
@@ -472,16 +483,16 @@ BEGIN
     ELSE
 	    SET @isBA=0
 
-	DECLARE @credit MONEY
-	SELECT @credit = credit
+	DECLARE @credit MONEY	
+	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
+		
+	SELECT @credit = credit, @srecommend = srecommend
 	FROM DBCUST.CustDB.dbo.CustInfo WITH(NOLOCK)
 	WHERE custid = @custid
 
 	DECLARE @OTPCreateDate DATETIME
 	SELECT  @OTPCreateDate = CreatedDate FROM DBCUST.CustDB.dbo.CustOTP WITH(NOLOCK)
 	WHERE custid = @custid
-	
-	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
 	
 	IF @IsDeposit = 0
 	BEGIN
@@ -498,7 +509,14 @@ BEGIN
 
 	END
 
-			
+	--get headline username for cn88
+	SELECT @headlineName = username, @HeadlineID = custID, @headlineEnabled = Enabled
+	FROM custinfo (NOLOCK)
+	WHERE custid IN (SELECT UplineID 
+					FROM custSuper WITH(NOLOCK) 
+					WHERE custid = @srecommend
+				)
+				
 	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
 			SELECT @UplineHasSecurityCode=1
 
@@ -577,6 +595,7 @@ BEGIN
 					
     WHERE c.custid = @custid
     
+	
     
     ----------------------------
     -------------------------------------------------------------------------
@@ -595,8 +614,10 @@ BEGIN
 	    m.Enabled as masterEnabled,
 	    s.custid as superID,
 	    s.username as superName,
-	    s.Enabled as superEnabled
-    	
+	    s.Enabled as superEnabled,
+		@headlineName as headlineName,
+		@headlineEnabled as headlineEnabled,
+    	@headlineID as headlineID
     FROM custinfo c WITH(NOLOCK)
 	    left join custinfo a WITH(NOLOCK) on c.recommend = a.custid
 	    left join custinfo m WITH(NOLOCK) on c.mrecommend = m.custid
