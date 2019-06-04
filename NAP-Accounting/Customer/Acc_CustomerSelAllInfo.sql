@@ -677,7 +677,7 @@ BEGIN
 						INNER JOIN Customer C ON CA.custid = C.custid 
 					 WHERE ca.GroupID = GroupHeadline.GroupID AND ca.IsGroupHeadLine = 1 AND @IsDeposit = 0
 					) AS Headline
-		CROSS APPLY f_CS_GetCustomerStatus(@custid) cs		
+		OUTER APPLY f_CS_GetCustomerStatus(@custid) cs		
     WHERE c.custid = @custid
     
 	
