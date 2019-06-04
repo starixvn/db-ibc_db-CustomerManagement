@@ -133,8 +133,6 @@ BEGIN
 		  , @HeadlineID INT
 		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
-		  , @HeadlineID INT
-		  , @HeadlineEnabled BIT
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
