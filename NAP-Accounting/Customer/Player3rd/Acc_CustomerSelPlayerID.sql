@@ -1,13 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0"></info>*/
-/****** Object:  StoredProcedure [dbo].[Acc_CustomerSelPlayerID]    Script Date: 11/26/2018 00:00:00 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
 ALTER PROCEDURE [dbo].[Acc_CustomerSelPlayerID]
 	@UserId			INT,
-	@SiteType		TINYINT = 0,
+	@Permission		VARCHAR(20) = '',
 	@ProductID		INT,
 	@PlayerIDs		VARCHAR(MAX) = NULL,
 	@Usernames		VARCHAR(MAX) = NULL
@@ -20,15 +14,15 @@ AS
 	Original:	
 	
 	Revisions:
-		-20180924@Phillip: Init
-	
+		- 20180924@Phillip: Init
+		- 20190605@Kan: Add new permission control to view CN88 Accounts [RedmineId:#114215]
 	
 	Param's Explanation:
 	- @UserId: User ID
-	- @SiteType:
-		- 0 : Get all
-		- 1 : Exclude deposit sites
-		- 2 : Exclude credit sites
+	- @Permission:
+		- 1: Credit sites
+		- 2: Deposit sites
+		- 3: CN88
 	- @ProductID: Product ID
 	- @PlayerIDs: List 3rd Player IDs
 	- @Usernames: List User Name
@@ -40,19 +34,23 @@ BEGIN
 	INTO #DeniedSites
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@UserId) 
 	
-	IF @SiteType <> 0
+	IF @Permission <> ''
 	BEGIN
-		INSERT INTO  #DeniedSites (SiteId, Site, SpecialGroup)
+		INSERT INTO #DeniedSites (SiteId, Site, SpecialGroup)
 		SELECT
 			s.siteid,
 			s.site,
 			s.SpecialGroup
 		FROM dbo.Site AS s WITH (NOLOCK)
 		WHERE NOT EXISTS (SELECT 1 FROM #DeniedSites WHERE SiteId = s.siteid)
-			AND s.isLicensee = CASE
-				WHEN @SiteType = 1 THEN 1
-				WHEN @SiteType = 2 THEN 0
-			END
+			AND ((s.isLicensee = 0 -- Don't have Credit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,1,%')
+			OR (s.isLicensee = 1 -- Don't have Deposit sites permission
+				AND s.site <> 'cn88'
+				AND ',' + @Permission + ',' NOT LIKE '%,2,%')
+			OR (s.site = 'cn88' -- Don't have CN88 site permission
+				AND ',' + @Permission + ',' NOT LIKE '%,3,%'))
 	END
 	
 	IF (ISNULL(@PlayerIDs, '') <> '')
