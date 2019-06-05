@@ -26,7 +26,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SetBit0 TINYINT, @SetBit1 TINYINT, @SetBit0Downline TINYINT, @SetBit1Downline TINYINT, @Pos TINYINT
+	DECLARE @SetBit0 INT, @SetBit1 INT, @SetBit0Downline INT, @SetBit1Downline INT, @Pos TINYINT
 	CREATE TABLE #TempCust (CustID INT PRIMARY KEY, RoleID TINYINT);
 
 	IF dbo.f_CheckRepTable('custInfo') = 1
