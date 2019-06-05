@@ -110,7 +110,7 @@ BEGIN
 					cs.ViewOnlyInfo = cs.ViewOnlyInfo & @SetBit0Downline
 				FROM dbo.CS_CustomerStatus cs
 					INNER JOIN #TempCust tc ON cs.custid = tc.custid
-				WHERE tc.RoleID = @RoleId - 1
+				WHERE tc.RoleID = @RoleId - 1 OR @RoleId = 1
 			END
 			ELSE IF @Mode = 3 --3: A to S
 			BEGIN
