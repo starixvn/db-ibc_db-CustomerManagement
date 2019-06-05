@@ -26,7 +26,7 @@ BEGIN
 
 	DECLARE @StartRun DATETIME, @Duration INT	
 	DECLARE @Mode TINYINT, --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
-			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID TINYINT	
+			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID INT	
 
 	SELECT  @StartRun = GETDATE()
 
