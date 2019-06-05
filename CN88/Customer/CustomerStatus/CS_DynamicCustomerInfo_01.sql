@@ -94,13 +94,13 @@ BEGIN
 			END
 			ELSE IF @Mode = 2 --2: I to A
 			BEGIN
+				UPDATE cs WITH (ROWLOCK)
+				SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0
+				FROM dbo.CS_CustomerStatus cs
+				WHERE cs.CustId = @CustId
+
 				IF @RoleId <> 1
 				BEGIN
-					UPDATE cs WITH (ROWLOCK)
-					SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0
-					FROM dbo.CS_CustomerStatus cs
-					WHERE cs.CustId = @CustId
-
 					UPDATE cs WITH (ROWLOCK)
 					SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0 | @SetBit1Downline,
 						cs.SuspendedInfo = cs.SuspendedInfo & @SetBit0Downline,
@@ -108,16 +108,7 @@ BEGIN
 					FROM dbo.CS_CustomerStatus cs
 						INNER JOIN #TempCust tc ON cs.custid = tc.custid
 					WHERE cs.CustId <> @CustId					
-				END
-				ELSE --Member
-				BEGIN
-					UPDATE cs WITH (ROWLOCK)
-					SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0,
-						cs.SuspendedInfo = cs.SuspendedInfo & @SetBit0,
-						cs.ViewOnlyInfo = cs.ViewOnlyInfo & @SetBit0
-					FROM dbo.CS_CustomerStatus cs
-					WHERE cs.CustId = @CustId
-				END
+				END				
 			END
 			ELSE IF @Mode = 3 --3: A to S
 			BEGIN
