@@ -97,12 +97,16 @@ BEGIN
 				UPDATE cs WITH (ROWLOCK)
 				SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0
 				FROM dbo.CS_CustomerStatus cs
-					INNER JOIN #TempCust tc ON cs.custid = tc.custid
-				WHERE tc.RoleID <> @RoleId - 1
+				WHERE cs.CustId = @CustId
 
 				UPDATE cs WITH (ROWLOCK)
-				SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0 | @SetBit1Downline,
-					cs.SuspendedInfo = cs.SuspendedInfo & @SetBit0Downline,
+				SET cs.InactiveInfo = cs.InactiveInfo & @SetBit0 | @SetBit1Downline
+				FROM dbo.CS_CustomerStatus cs
+					INNER JOIN #TempCust tc ON cs.custid = tc.custid
+				WHERE cs.CustId <> @CustId
+
+				UPDATE cs WITH (ROWLOCK)
+				SET cs.SuspendedInfo = cs.SuspendedInfo & @SetBit0Downline,
 					cs.ViewOnlyInfo = cs.ViewOnlyInfo & @SetBit0Downline
 				FROM dbo.CS_CustomerStatus cs
 					INNER JOIN #TempCust tc ON cs.custid = tc.custid
