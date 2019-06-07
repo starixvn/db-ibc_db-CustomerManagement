@@ -88,7 +88,7 @@ BEGIN
 		SET @End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 					
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -124,7 +124,7 @@ BEGIN
 		
 		IF @IsNickname = 1
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -141,7 +141,7 @@ BEGIN
 		END			
 		ELSE
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -175,7 +175,7 @@ BEGIN
 		IF @@ROWCOUNT = 0  
 		BEGIN
 			SELECT @LogData = 'Sub-account Login' + ',[After Login] Result:Failed(User_Not_Found)'      
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -217,7 +217,7 @@ BEGIN
 		
 		IF @IsNickname = 1 
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -233,7 +233,7 @@ BEGIN
 		END	
 		ELSE 
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -305,7 +305,7 @@ BEGIN
 		BEGIN 		
 			SELECT @LogData =  @role + @UserName + '[After Login] Result:Failed(Unknown_Login)'	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -366,7 +366,7 @@ BEGIN
 	--------------------------- 
 	IF @IsNickname =1
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -383,7 +383,7 @@ BEGIN
 	END
 	ELSE 
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,

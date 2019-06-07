@@ -108,7 +108,7 @@ BEGIN
 		SET @End = GETDATE()
 		SET @Duration = DATEDIFF(millisecond, @Begin, @End)
 		
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -122,7 +122,7 @@ BEGIN
 			@CountryCode = @CountryCode,
 			@Duration = @Duration
 
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @accUserID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,

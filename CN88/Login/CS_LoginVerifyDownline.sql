@@ -79,7 +79,7 @@ BEGIN
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = 0, 
 			@RoleID = 0, 
 			@SubAccID = @SubAccID,
@@ -148,7 +148,7 @@ BEGIN
 				SET @End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)				
 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -180,7 +180,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -212,7 +212,7 @@ BEGIN
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -248,7 +248,7 @@ BEGIN
 					SET	@End = GETDATE() 
 					SET @Duration = DATEDIFF(millisecond,@Begin,@End)						
 					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -280,7 +280,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -317,7 +317,7 @@ BEGIN
 			
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper								
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper								
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -334,7 +334,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -372,7 +372,7 @@ BEGIN
 				
 				IF @IsNickname = 1
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -389,7 +389,7 @@ BEGIN
 				END	
 				ELSE 
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -418,7 +418,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -455,7 +455,7 @@ BEGIN
 			SET	@End = GETDATE() 		
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper	
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -552,7 +552,7 @@ BEGIN
 				SET @End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 			
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -594,7 +594,7 @@ BEGIN
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -629,7 +629,7 @@ BEGIN
 		
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -646,7 +646,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -685,7 +685,7 @@ BEGIN
 			
 				IF @IsNickname = 1
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @db_custid, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -702,7 +702,7 @@ BEGIN
 				END	
 				ELSE 
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @db_custid, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -736,7 +736,7 @@ BEGIN
 		
 		IF @IsNickname = 1
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -753,7 +753,7 @@ BEGIN
 		END				 
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -790,7 +790,7 @@ BEGIN
 
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -807,7 +807,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -843,7 +843,7 @@ BEGIN
 		
 		IF @IsNickname = 1 
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -860,7 +860,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -892,7 +892,7 @@ BEGIN
 
 		IF @IsNickname = 1	
 		BEGIN						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -909,7 +909,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -938,7 +938,7 @@ BEGIN
 
 		IF @IsNickname = 1	
 		BEGIN						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -955,7 +955,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -987,7 +987,7 @@ BEGIN
 
 		IF @IsNickname = 1	
 		BEGIN						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1004,7 +1004,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1030,7 +1030,7 @@ BEGIN
 
 		IF @isNickname = 1
 		BEGIN							
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1047,7 +1047,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1086,7 +1086,7 @@ BEGIN
 		
 		IF @IsNickname =1
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1103,7 +1103,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1172,7 +1172,7 @@ BEGIN
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 	IF @IsNickname =1 
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @db_custid, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -1189,7 +1189,7 @@ BEGIN
 	END	
 	ELSE
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @db_custid, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,

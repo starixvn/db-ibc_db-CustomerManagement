@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="1"></info>*/
 
-CREATE PROCEDURE [dbo].[CS_WriteLog_UserLog_Login]
+ALTER PROCEDURE [dbo].[CS_WriteLog_UserLog_Login]
 	@UserID int,   
 	@RoleID tinyint,   
 	@SubAccID int,   
@@ -48,7 +48,7 @@ BEGIN
     VALUES( 
 		@UserID,   
         ISNULL(@RoleID,0),   
-        isnull(@SubAccID,0),   
+        ISNULL(@SubAccID,0),   
         @ServerID,  
 		@LoginIP,    
         @ActionID,   
