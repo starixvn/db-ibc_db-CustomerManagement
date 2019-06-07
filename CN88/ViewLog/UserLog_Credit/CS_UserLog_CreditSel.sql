@@ -13,7 +13,7 @@ AS
     DB: DBLOG\bodb_CustomerLog
     
 	Revisions:
-		- 20190606@Elodie: Initial SP
+		- 20190606@Elodie: Initial SP [Redmine: #113198]
 		
     Param's Explaination:    
 		- @CustID: a customer which we want to view actions affect to.
