@@ -96,7 +96,7 @@ BEGIN
 									[Platform],
 									CountryCode,
 									username2
-						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 									INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 						  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
@@ -143,7 +143,7 @@ BEGIN
 									[Platform],
 									CountryCode,
 									username2
-						  FROM     bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM     bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 									INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 						  WHERE     LogDate BETWEEN @FromDate AND @ToDate	
@@ -191,7 +191,7 @@ BEGIN
 									[Platform],
 									CountryCode,
 									username2
-						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 									INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 						  WHERE     LogDate BETWEEN @__archiveDate AND @ToDate	
@@ -218,7 +218,7 @@ BEGIN
 									[Platform],
 									CountryCode,
 									username2
-						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 									INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 						  WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate	
@@ -269,7 +269,7 @@ BEGIN
 									[Platform],
 									CountryCode, 
 									username2
-						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
 									--AND IsInternal <= 1
@@ -314,7 +314,7 @@ BEGIN
 									[Platform],
 									CountryCode, 
 									username2
-						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						  WHERE     LogDate BETWEEN @FromDate AND @ToDate								
 									--AND IsInternal <= 1
@@ -360,7 +360,7 @@ BEGIN
 									[Platform],
 									CountryCode, 
 									username2
-						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						  WHERE     LogDate BETWEEN @__archiveDate AND @ToDate								
 									--AND IsInternal <= 1
@@ -385,7 +385,7 @@ BEGIN
 									[Platform],
 									CountryCode, 
 									username2
-						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+						  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						  WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate								
 									--AND IsInternal <= 1
