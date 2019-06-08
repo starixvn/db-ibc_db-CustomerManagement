@@ -32,6 +32,7 @@ AS
 		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
 		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 		- 20190405@Patrick: Support archive date range [Redmine: #111476]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 

@@ -34,43 +34,24 @@ AS
 -- SET NOCOUNT ON added to prevent extra result sets from
 -- interfering with SELECT statements.
 BEGIN
-	SET NOCOUNT ON ;
+	SET NOCOUNT ON
 
-	SET @PageIndex = ABS(@PageIndex)
-	SET @PageSize = ABS(@PageSize)  
+	SELECT @PageIndex = ABS(@PageIndex), @PageSize = ABS(@PageSize)  
 
-	DECLARE @lbound INT 
-			,@ubound INT
-			,@roleid TINYINT
-			,@srecommend INT
-			,@mrecommend INT
-			,@recommend INT
-			,@creatdate DATETIME
-			,@LowerActionIdStatus INT
-			,@UpperActionIdStatus INT
-			,@i INT = 1000000
+	DECLARE @lbound INT, @ubound INT,
+			@roleid TINYINT, @creatdate DATETIME,
+			@srecommend INT, @mrecommend INT, @recommend INT,
+			@LowerActionIdStatus INT, @UpperActionIdStatus INT, @i INT = 1000000
 
 	DECLARE @tmpCust TABLE(Custid INT)		
-	CREATE TABLE #tmpLog (LogID BIGINT,
-						UserID INT,
-						Username NVARCHAR(100),
-						TrackingValue NVARCHAR(MAX),
-						TrackingValueOld NVARCHAR(MAX),
-						LogDate DATETIME,
-						ActionID INT,
-						ActionTypeID INT,
-						SPName VARCHAR(50),
-						IsInternal BIT,
-						CustID INT,
-						CustName NVARCHAR(100),
-						ActionName NVARCHAR(512)
-					)
+	CREATE TABLE #tmpLog (LogID BIGINT, UserID INT, Username NVARCHAR(100), TrackingValue NVARCHAR(MAX), TrackingValueOld NVARCHAR(MAX), LogDate DATETIME,
+							ActionID INT, ActionTypeID INT, SPName VARCHAR(50), IsInternal BIT, CustID INT, CustName NVARCHAR(100), ActionName NVARCHAR(512))
 					
-	SELECT @srecommend = srecommend, 
-		@mrecommend = mrecommend, 
-		@recommend = recommend, 
-		@roleid = roleid,
-		@creatdate = creatdate
+	SELECT	@srecommend = srecommend, 
+			@mrecommend = mrecommend, 
+			@recommend = recommend, 
+			@roleid = roleid,
+			@creatdate = creatdate
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
@@ -178,6 +159,35 @@ BEGIN
 								AND la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
 								--dont show these actions on alpha
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						OPTION (OPTIMIZE FOR (@i = 1))
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						 SELECT LogID,
+								UserID,
+								Username =	CASE WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin' ELSE c.Username END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName AS CustName,
+								la.ActionNameEN AS ActionName
+						 FROM	@tmpCust tmp
+								CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+												FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 
+													INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+												WHERE lt.custid = tmp.Custid 
+													AND mt.LogDate BETWEEN @FromDate AND @ToDate) ul
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+						WHERE	la.ActionTypeID = @ActionTypeId
+								AND la.ActionID = 165004
+								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
 
