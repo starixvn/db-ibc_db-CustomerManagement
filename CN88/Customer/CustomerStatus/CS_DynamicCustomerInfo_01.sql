@@ -83,7 +83,7 @@ BEGIN
 				SELECT @CustID, 1
 			END
 
-			IF @@SERVERNAME = 'DBCUST' 
+			IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
 			BEGIN
 				--@Mode: 1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
 				IF @Mode = 1
