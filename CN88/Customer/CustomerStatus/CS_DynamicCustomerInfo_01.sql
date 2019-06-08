@@ -167,7 +167,7 @@ BEGIN
 					INNER JOIN #TempCust tc ON cs.custid = tc.custid
 			END
 
-			IF @@SERVERNAME = 'DBCUST' 
+			IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
 			BEGIN
 				IF @Mode IN (4,6)
 				BEGIN
