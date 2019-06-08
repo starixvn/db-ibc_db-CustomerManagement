@@ -26,7 +26,7 @@ BEGIN
 
 	DECLARE @StartRun DATETIME, @Duration INT	
 	DECLARE @Mode TINYINT, --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
-			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID INT	
+			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID INT, @AffectedList VARCHAR(MAX)
 
 	SELECT  @StartRun = GETDATE()
 
@@ -129,7 +129,8 @@ BEGIN
 		@CustId			= @CustId,
 		@RoleId			= @RoleId,
 		@Action			= 'UpdateStatus',
-		@Mode			= @Mode
+		@Mode			= @Mode,
+		@AffectedList	= @AffectedList OUTPUT
 
 	SELECT @Duration = DATEDIFF (MILLISECOND, @startRun, GETDATE())
 
@@ -146,13 +147,15 @@ BEGIN
 						+ ' IP="' + COALESCE(@IP, SPACE(1)) + '"'
 						+ ' />'
 	
-	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-		@UserId			= @UserId,
-		@CustId			= @CustId,
-		@ActionId		= 165004,
-		@TrackingValue	= @LogDataNew,
-		@TrackingValue2	= @LogDataOld,
-		@Duration		= @Duration
+	EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
+		@UserId				= @UserId,
+		@CustId				= @CustId,
+		@SubAccID			= @SubAccID,
+		@ActionId			= 165004,
+		@TrackingValue		= @LogDataNew,
+		@TrackingValue2		= @LogDataOld,
+		@Duration			= @Duration,
+		@AffectedDownlines	= @AffectedList
 	
 END
 GO
