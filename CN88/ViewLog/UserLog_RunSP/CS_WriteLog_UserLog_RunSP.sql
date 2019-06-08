@@ -55,12 +55,7 @@ BEGIN
 	SET @LogID = SCOPE_IDENTITY()
 
 	IF @ActionID = 165004
-	BEGIN
-		INSERT INTO #AffectedDownlines(CustID)
-		SELECT CONVERT(INT, Val)
-		FROM dbo.f_StringSplit(@AffectedDownlines, ',')
-		OPTION(MAXRECURSION 0)
-
+	BEGIN		
 		INSERT INTO dbo.CS_UserLog_RunSP_MultiTarget (
 			UserID,
 			LogDate,
@@ -82,9 +77,17 @@ BEGIN
 
 		SET @MultiTarget_LogID = SCOPE_IDENTITY()
 
-		INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID)
-		SELECT @MultiTarget_LogID, CustID
-		FROM #AffectedDownlines
+		IF ISNULL(@AffectedDownlines,'') <> ''
+		BEGIN
+			INSERT INTO #AffectedDownlines(CustID)
+			SELECT CONVERT(INT, Val)
+			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
+			OPTION(MAXRECURSION 0)
+
+			INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID)
+			SELECT @MultiTarget_LogID, CustID
+			FROM #AffectedDownlines
+		END
 	END
 END
 
