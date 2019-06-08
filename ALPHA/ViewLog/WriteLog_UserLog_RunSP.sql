@@ -3,6 +3,7 @@
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@UserID INT,
 		@CustID INT = 0,
+		@SubAccID INT = 0,
 		@SPName VARCHAR(50)= NULL, -- USE FOR OLD FORMAT AND WILL REMOVE LATER
 		@Doing	VARCHAR(4000) = NULL, --
 		@ActionID INT = NULL,	
@@ -39,6 +40,7 @@ BEGIN
 	BEGIN
 		INSERT INTO dbo.CS_UserLog_RunSP(UserID, 
 										CustID, 
+										SubAccID,
 										ActionID, 
 										TrackingValue,
 										TrackingValue2,
@@ -46,6 +48,7 @@ BEGIN
 										)
 							  VALUES (	@UserID, 
 										@CustID, 
+										@SubAccID,
 										@ActionId, 
 										@TrackingValue,
 										@TrackingValue2,
