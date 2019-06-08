@@ -55,30 +55,30 @@ BEGIN
 	SET @LogID = SCOPE_IDENTITY()
 
 	IF @ActionID = 165004
-	BEGIN		
-		INSERT INTO dbo.CS_UserLog_RunSP_MultiTarget (
-			UserID,
-			LogDate,
-			ActionID,
-			TrackingValue,
-			Duration,
-			TrackingValue2,
-			MainLogID
-		)
-		VALUES (
-			@UserID, 
-			@LogDate,    
-			@ActionID,   
-			@TrackingValue,
-			@Duration,
-			@TrackingValue2,
-			@LogID
-		)
-
-		SET @MultiTarget_LogID = SCOPE_IDENTITY()
-
+	BEGIN	
 		IF ISNULL(@AffectedDownlines,'') <> ''
-		BEGIN
+		BEGIN	
+			INSERT INTO dbo.CS_UserLog_RunSP_MultiTarget (
+				UserID,
+				LogDate,
+				ActionID,
+				TrackingValue,
+				Duration,
+				TrackingValue2,
+				MainLogID
+			)
+			VALUES (
+				@UserID, 
+				@LogDate,    
+				@ActionID,   
+				@TrackingValue,
+				@Duration,
+				@TrackingValue2,
+				@LogID
+			)
+
+			SET @MultiTarget_LogID = SCOPE_IDENTITY()
+
 			INSERT INTO #AffectedDownlines(CustID)
 			SELECT CONVERT(INT, Val)
 			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
