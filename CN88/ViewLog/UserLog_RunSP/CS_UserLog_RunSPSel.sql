@@ -1,6 +1,7 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSel]    
     @CustId INT,
+	@LoginUserId INT,
 	@CustName VARCHAR(50) = '',
     @FromDate DATETIME,
     @ToDate DATETIME,
@@ -39,7 +40,7 @@ BEGIN
 	SELECT @PageIndex = ABS(@PageIndex), @PageSize = ABS(@PageSize)  
 
 	DECLARE @lbound INT, @ubound INT,
-			@roleid TINYINT, @creatdate DATETIME,
+			@roleid TINYINT, @creatdate DATETIME, @LoginUserRoleId TINYINT,
 			@srecommend INT, @mrecommend INT, @recommend INT,
 			@LowerActionIdStatus INT, @UpperActionIdStatus INT, @i INT = 1000000
 
@@ -55,6 +56,10 @@ BEGIN
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
+	SELECT	@LoginUserRoleId = roleid
+	FROM bodb02.dbo.Customer WITH(NOLOCK)
+	WHERE custid = @LoginUserId
+
 	IF @FromDate < @creatdate
 		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 		
@@ -165,8 +170,8 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
-								Username =	CASE WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin' ELSE c.Username END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
+								Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
 								ul.TrackingValue,
 								TrackingValue2,
 								LogDate,
@@ -179,12 +184,13 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						 FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
-												FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 
+												FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
 													INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
 												WHERE lt.custid = tmp.Custid 
-													AND mt.LogDate BETWEEN @FromDate AND @ToDate) ul
+													AND mt.LogDate BETWEEN @FromDate AND @ToDate
+													) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+								LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
 								AND la.ActionID = 165004
 								AND IsInternal <= @IsInternal

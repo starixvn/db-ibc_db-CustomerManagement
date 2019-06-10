@@ -36,13 +36,13 @@ BEGIN
 	BEGIN
 		EXEC CS_UserLog_LoginSel	@UserId = @UserId, @UserName = @UserName, 
 									@FromDate = @FromDate, @ToDate = @ToDate, 
-									@LogType = 1, @PageIndex = @PageIndex, @PageSize = @PageSize
+									@LogType = 2, @PageIndex = @PageIndex, @PageSize = @PageSize
 	END
 	ELSE
 	BEGIN
 		EXEC Acc_UserLog_LoginSel	@UserId = @UserId, @UserName = @UserName, 
 									@FromDate = @FromDate, @ToDate = @ToDate, 
-									@LogType = 1, @PageIndex = @PageIndex, @PageSize = @PageSize
+									@LogType = 2, @PageIndex = @PageIndex, @PageSize = @PageSize
 	END
 END
 GO

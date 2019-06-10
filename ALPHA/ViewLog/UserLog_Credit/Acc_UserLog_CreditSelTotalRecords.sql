@@ -19,75 +19,89 @@ AS
 	Revisions:
 		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 		- 20190405@Patrick: Support archive date range [Redmine: #111476]
-		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 */
 BEGIN
-	DECLARE @Site VARCHAR(10)
+	
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
 
-	SELECT @Site = Site FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
-
-	IF @Site = 'CN88'
+	DECLARE @__archiveDate DATETIME
+	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+	IF @IsInternal = 1
 	BEGIN
-		EXEC CS_UserLog_CreditSelTotalRecords @CustID = @CustID, @IsInternal = @IsInternal, @FromDate = @FromDate, @ToDate = @ToDate
+		IF @FromDate >= @__archiveDate
+		BEGIN
+			SELECT COUNT(LogID)                         
+			FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
+				INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+			WHERE uc.CustID = @CustID
+				AND LogDate BETWEEN @FromDate AND @ToDate                           
+				AND IsInternal <= @IsInternal
+		END
+		ELSE IF @ToDate < @__archiveDate
+		BEGIN
+			SELECT COUNT(LogID)                      
+			FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
+				INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+			WHERE uc.CustID = @CustID
+				AND LogDate BETWEEN @FromDate AND @ToDate                           
+				AND IsInternal <= @IsInternal
+		END
+		ELSE
+		BEGIN
+			SELECT SUM(cnt)
+			FROM (
+				SELECT COUNT(LogID) cnt                          
+				FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+				WHERE uc.CustID = @CustID
+					AND LogDate BETWEEN @__archiveDate AND @ToDate                           
+					AND IsInternal <= @IsInternal
+
+				UNION ALL
+				SELECT COUNT(LogID) cnt                          
+				FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+				WHERE uc.CustID = @CustID
+					AND LogDate >= @FromDate AND LogDate < @__archiveDate                           
+					AND IsInternal <= @IsInternal
+			)t
+		END
 	END
-	ELSE
+	ELSE 
 	BEGIN
-		-- SET NOCOUNT ON added to prevent extra result sets from
-		-- interfering with SELECT statements.
-		SET NOCOUNT ON;
-
-		DECLARE @__archiveDate DATETIME
-		SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
-		IF @IsInternal = 1
+		IF @FromDate >= @__archiveDate
 		BEGIN
-			IF @FromDate >= @__archiveDate
-			BEGIN
-				SELECT COUNT(LogID)                         
-				FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
-					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-				WHERE uc.CustID = @CustID
-					AND LogDate BETWEEN @FromDate AND @ToDate                           
-					AND IsInternal <= @IsInternal
-			END
-			ELSE IF @ToDate < @__archiveDate
-			BEGIN
-				SELECT COUNT(LogID)                      
-				FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
-					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-				WHERE uc.CustID = @CustID
-					AND LogDate BETWEEN @FromDate AND @ToDate                           
-					AND IsInternal <= @IsInternal
-			END
-			ELSE
-			BEGIN
-				SELECT SUM(cnt)
-				FROM (
-					SELECT COUNT(LogID) cnt                          
-					FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
-						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-					WHERE uc.CustID = @CustID
-						AND LogDate BETWEEN @__archiveDate AND @ToDate                           
-						AND IsInternal <= @IsInternal
-
-					UNION ALL
-					SELECT COUNT(LogID) cnt                          
-					FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
-						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-					WHERE uc.CustID = @CustID
-						AND LogDate >= @FromDate AND LogDate < @__archiveDate                           
-						AND IsInternal <= @IsInternal
-				)t
-			END
+			SELECT COUNT(LogID)                           
+			FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
+				INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+			WHERE uc.CustID = @CustID
+				AND LogDate BETWEEN @FromDate AND @ToDate                           
+				AND IsInternal <= @IsInternal
+				AND ci.roleid <= 4
 		END
-		ELSE 
+		ELSE IF @ToDate < @__archiveDate
 		BEGIN
-			IF @FromDate >= @__archiveDate
-			BEGIN
-				SELECT COUNT(LogID)                           
+			SELECT COUNT(LogID)                           
+			FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
+				INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
+				INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
+			WHERE uc.CustID = @CustID
+				AND LogDate BETWEEN @FromDate AND @ToDate                           
+				AND IsInternal <= @IsInternal
+				AND ci.roleid <= 4
+		END
+		ELSE
+		BEGIN
+			SELECT SUM(cnt)
+			FROM (
+				SELECT COUNT(LogID) cnt                       
 				FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
 					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
@@ -95,10 +109,9 @@ BEGIN
 					AND LogDate BETWEEN @FromDate AND @ToDate                           
 					AND IsInternal <= @IsInternal
 					AND ci.roleid <= 4
-			END
-			ELSE IF @ToDate < @__archiveDate
-			BEGIN
-				SELECT COUNT(LogID)                           
+
+				UNION ALL
+				SELECT COUNT(LogID) cnt                        
 				FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
 					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
@@ -106,32 +119,8 @@ BEGIN
 					AND LogDate BETWEEN @FromDate AND @ToDate                           
 					AND IsInternal <= @IsInternal
 					AND ci.roleid <= 4
-			END
-			ELSE
-			BEGIN
-				SELECT SUM(cnt)
-				FROM (
-					SELECT COUNT(LogID) cnt                       
-					FROM dbo.UserLog_Credit AS uc WITH (NOLOCK)
-						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-					WHERE uc.CustID = @CustID
-						AND LogDate BETWEEN @FromDate AND @ToDate                           
-						AND IsInternal <= @IsInternal
-						AND ci.roleid <= 4
-
-					UNION ALL
-					SELECT COUNT(LogID) cnt                        
-					FROM bodb_CustomerLog_Archive.dbo.UserLog_Credit AS uc WITH (NOLOCK)
-						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON uc.ActionID = la.ActionID
-						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = uc.UserID
-					WHERE uc.CustID = @CustID
-						AND LogDate BETWEEN @FromDate AND @ToDate                           
-						AND IsInternal <= @IsInternal
-						AND ci.roleid <= 4
-				)t
-			END			
-		END
+			)t
+		END			
 	END
 END
 GO
