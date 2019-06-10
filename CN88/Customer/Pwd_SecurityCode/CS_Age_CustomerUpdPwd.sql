@@ -18,6 +18,8 @@ Original: Age_CustomerUpdPwd
 
 Revisions:
     - 20190326@Johnson: clone new sp for cn88 alpha [redmine: #105660]
+	- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -109,36 +111,11 @@ BEGIN
 	set @endRun = getdate()
 	set @duration  = datediff (millisecond,@startRun,@endRun)
 	
-	BEGIN TRY	
-		/*901	Age_CustomerUpdPwd	Reset Password*/
-		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@ActionID = 938,
-			@TrackingValue = @LogData	,
-			@duration = @duration
-	END TRY
-	BEGIN CATCH		
-		SELECT  @LogData = '<CS_Age_CustomerUpdPwd  UserID="' + CONVERT(VARCHAR(20), @CustID)
-            + '" IP="' + @LoginIP +'" '
-		---------------------------
-		-- ***Check Sub-Account***
-		IF @SubAccID > 0 
-			BEGIN
-				SET @LogData =  @LogData + 'SubAccount="' + dbo.f_GetSubUsername(@SubAccID) + '" '
-	                
-			END
-		---------------------------
-		SET @LogData = @LogData + 'ErrCode="' + coalesce(cast(ERROR_NUMBER() as varchar(50)),space(1)) + '" ' 
-								+ 'ErrMsg="' + coalesce(cast(ERROR_MESSAGE() as varchar(2000)),space(1)) + '" ' 	
-						+ '/>'
-	
-		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-			@UserID = @UserID,
-			@CustID = @CustID,
-			@ActionID = 938,
-			@TrackingValue = @LogData	,
-			@duration = @duration	
-	END CATCH
+	EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+		@UserID = @UserID,
+		@CustID = @CustID,
+		@ActionID = 938,
+		@TrackingValue = @LogData	,
+		@duration = @duration
 END
 GO
