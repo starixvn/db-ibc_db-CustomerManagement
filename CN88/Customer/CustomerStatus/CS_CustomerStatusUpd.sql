@@ -137,12 +137,12 @@ BEGIN
 	-- Write log
 	DECLARE @LogDataOld VARCHAR(500), @LogDataNew VARCHAR(500)
 	SELECT  @LogDataOld = '<R'
-						+ ' Status="' + COALESCE(CASE @OldStatusID WHEN 1 THEN 'I' WHEN 2 THEN 'S' WHEN 3 THEN 'V' WHEN 4 THEN 'A' END, SPACE(1)) + '"'
+						+ ' Status="' + COALESCE(CASE @OldStatusID WHEN 1 THEN 'Inactive' WHEN 2 THEN 'Suspended' WHEN 3 THEN 'ViewOnly' WHEN 4 THEN 'Active' END, SPACE(1)) + '"'
 						+ ' SubAcc="' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1)) + '"'
 						+ ' IP="' + COALESCE(@IP, SPACE(1)) + '"'
 						+ ' />',
 			@LogDataNew = '<R'
-						+ ' Status="' + COALESCE(CASE @NewStatusID WHEN 1 THEN 'I' WHEN 2 THEN 'S' WHEN 3 THEN 'V' WHEN 4 THEN 'A' END, SPACE(1)) + '"'
+						+ ' Status="' + COALESCE(CASE @NewStatusID WHEN 1 THEN 'Inactive' WHEN 2 THEN 'Suspended' WHEN 3 THEN 'ViewOnly' WHEN 4 THEN 'Active' END, SPACE(1)) + '"'
 						+ ' SubAcc="' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1)) + '"'
 						+ ' IP="' + COALESCE(@IP, SPACE(1)) + '"'
 						+ ' />'
