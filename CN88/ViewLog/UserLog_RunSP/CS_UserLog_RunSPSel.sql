@@ -1,7 +1,7 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSel]    
     @CustId INT,
-	@LoginUserId INT,
+	@LoginUserId INT = 0,
 	@CustName VARCHAR(50) = '',
     @FromDate DATETIME,
     @ToDate DATETIME,

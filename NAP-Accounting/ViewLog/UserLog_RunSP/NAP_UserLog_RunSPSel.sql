@@ -42,7 +42,7 @@ BEGIN
 	IF @Site = 'CN88'
 	BEGIN
 		EXEC CS_UserLog_RunSPSel 
-			@CustId = @CustId, @CustName = @CustName, 
+			@CustId = @CustId, @CustName = @CustName,
 			@FromDate = @FromDate, @ToDate = @ToDate, 
 			@ActionTypeId = @ActionTypeId, @IsInternal = @IsInternal, 
 			@LowerActionId = @LowerActionId, @UpperActionId = @UpperActionId, 

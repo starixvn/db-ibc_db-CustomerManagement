@@ -26,7 +26,7 @@ BEGIN
 
 	DECLARE @StartRun DATETIME, @Duration INT	
 	DECLARE @Mode TINYINT, --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
-			@RoleID TINYINT, @db_OldStatusID TINYINT, @UserStatus TINYINT, @UplineID INT, @AffectedList VARCHAR(MAX)
+			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID INT, @AffectedList VARCHAR(MAX)
 
 	SELECT  @StartRun = GETDATE()
 
@@ -76,7 +76,7 @@ BEGIN
 
 	IF @db_OldStatusID <> @OldStatusID
 	BEGIN
-		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update account status failed, Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update status failed. Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
 				@ErrCode = 102
 		RETURN
 	END
@@ -93,11 +93,11 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN
 
-	SELECT @UserStatus = CustStatus FROM dbo.f_CS_GetCustomerStatus(@UserId)
+	SELECT @UplineStatus = CustStatus FROM dbo.f_CS_GetCustomerStatus(@UplineID)
 
-	IF @UserStatus <> 4
+	IF @UplineStatus <> 4
 	BEGIN
-		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update status failed. Upline level is not active.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40043,@Language) END,
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update status failed. Upline level is not active.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40047,@Language) END,
 				@ErrCode = 103
 		RETURN
 	END
@@ -120,7 +120,7 @@ BEGIN
 
 	IF @Mode = 0
 	BEGIN
-		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN ' Update account status failed, Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN ' Update status failed. Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
 				@ErrCode = 102
 		RETURN
 	END
