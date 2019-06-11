@@ -41,7 +41,7 @@ BEGIN
 		IF @FromDate >= @__archiveDate
 		BEGIN
 			SELECT  COUNT(LogID)                           
-			FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+			FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 			WHERE    LogDate BETWEEN @FromDate AND @ToDate			
@@ -54,7 +54,7 @@ BEGIN
 		ELSE IF @ToDate < @__archiveDate
 		BEGIN
 			SELECT  COUNT(LogID)                           
-			FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+			FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 					INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 			WHERE    LogDate BETWEEN @FromDate AND @ToDate			
@@ -69,7 +69,7 @@ BEGIN
 			SELECT SUM(cnt)
 			FROM (
 				SELECT  COUNT(LogID) cnt                         
-				FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 				WHERE    LogDate BETWEEN @__archiveDate AND @ToDate			
@@ -81,7 +81,7 @@ BEGIN
 
 				UNION ALL
 				SELECT  COUNT(LogID) cnt                        
-				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 						INNER JOIN bodb02.dbo.CustInfo AS ci with(nolock) ON ci.custid = ul.UserID
 				WHERE    LogDate >= @FromDate AND LogDate < @__archiveDate			
@@ -100,7 +100,7 @@ BEGIN
 		IF @FromDate >= @__archiveDate
 		BEGIN
 			SELECT  COUNT(LogID)                           
-			FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+			FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 			WHERE     LogDate BETWEEN @FromDate AND @ToDate			
 					--AND IsInternal <= @IsAdminAccess
@@ -112,7 +112,7 @@ BEGIN
 		ELSE IF @ToDate < @__archiveDate
 		BEGIN
 			SELECT  COUNT(LogID)                           
-			FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+			FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 					INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 			WHERE     LogDate BETWEEN @FromDate AND @ToDate			
 					--AND IsInternal <= @IsAdminAccess
@@ -126,7 +126,7 @@ BEGIN
 			SELECT SUM(cnt)
 			FROM (
 				SELECT  COUNT(LogID) cnt
-				FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				FROM    dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 				WHERE   LogDate BETWEEN @__archiveDate AND @ToDate			
 						--AND IsInternal <= @IsAdminAccess
@@ -137,7 +137,7 @@ BEGIN
 
 				UNION ALL
 				SELECT  COUNT(LogID) cnt
-				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK, index=CIX_LogDate_User)
+				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_Login AS ul WITH(NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH(NOLOCK) ON ul.ActionID = la.ActionID
 				WHERE     LogDate >= @FromDate AND LogDate < @__archiveDate			
 						--AND IsInternal <= @IsAdminAccess

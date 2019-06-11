@@ -48,6 +48,7 @@ BEGIN
 			@LowerActionId = @LowerActionId, @UpperActionId = @UpperActionId, 
 			@PageIndex = @PageIndex, @PageSize = @PageSize
 	END
+	ELSE
 	BEGIN
 		EXEC Acc_UserLog_RunSPSel 
 			@CustId = @CustId, @CustName = @CustName, 
