@@ -115,6 +115,25 @@ BEGIN
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
+
+					SELECT @__cntTemp = COUNT(ul.LogID)
+					FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate BETWEEN @FromDate AND @ToDate
+												) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+					WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID = 165004
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+					OPTION (OPTIMIZE FOR (@i = 1))
+						
+					SET @__cnt = @__cnt + @__cntTemp
+					SET @__cntTemp = 0
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
@@ -164,6 +183,25 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
+					SET @__cnt = @__cnt + @__cntTemp
+					SET @__cntTemp = 0
+
+					SELECT @__cntTemp = COUNT(ul.LogID)
+					FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate BETWEEN @FromDate AND @ToDate
+												) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+					WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID = 165004
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+					OPTION (OPTIMIZE FOR (@i = 1))
+						
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 				END
@@ -251,6 +289,43 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
+					SET @__cnt = @__cnt + @__cntTemp
+					SET @__cntTemp = 0
+
+					SELECT @__cntTemp = COUNT(ul.LogID)
+					FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
+												) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+					WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID = 165004
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+					OPTION (OPTIMIZE FOR (@i = 1))
+						
+					SET @__cnt = @__cnt + @__cntTemp
+					SET @__cntTemp = 0
+
+					SELECT @__cntTemp = COUNT(ul.LogID)
+					FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND LogDate >= @FromDate AND LogDate < @__archiveDate) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+					WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID = 165004
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+					OPTION (OPTIMIZE FOR (@i = 1))
+						
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 				END
