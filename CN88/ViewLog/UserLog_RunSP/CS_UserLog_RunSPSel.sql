@@ -99,10 +99,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID = 165004 THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
-												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN la.ActionID = 165004 AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
