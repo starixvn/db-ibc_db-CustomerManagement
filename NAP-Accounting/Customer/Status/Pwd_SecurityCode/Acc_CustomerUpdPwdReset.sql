@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdPwdReset]
 	@CustID int,
 	@UserPwd nvarchar(50),
 	@UserID int,
+	@isForcedChangePwd BIT = 1,
 	@isABS	BIT = 0,
 	@Language varchar(2) = 'E',
 	@LoginIP VARCHAR(15) ='',
@@ -31,7 +32,7 @@ AS
 		- 20130704@Kathy: Synchronize user data between Accounting and AdminSite: update password in AdminSiteUser table		
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20190611@Johnson: force change pwd for customer [redmine: #114566]	
 */
 BEGIN
 	SET NOCOUNT ON
@@ -63,7 +64,11 @@ BEGIN
 	declare @PwdExpiry datetime,
 			@OldUserPwd VARCHAR(40),
 			@OldPwdExpiry DATETIME
-	select @pwdexpiry = dateadd(dd, 30, getdate())
+	
+	IF @isForcedChangePwd = 1
+		select @pwdexpiry = dateadd(dd, -1, getdate())
+	ELSE	
+		select @pwdexpiry = dateadd(dd, 30, getdate())
 
 	SELECT	@OldUserPwd = userpwd, @OldPwdExpiry = pwdexpiry
 	FROM	customer WITH (NOLOCK)
@@ -96,7 +101,13 @@ BEGIN
 		WHERE	CustID = @CustID
 
 	END
-
+	ELSE IF @roleid = 1
+	BEGIN
+		UPDATE	CustLoginInfo_Member WITH (UPDLOCK,ROWLOCK)
+		SET		gesture 			= NULL
+		WHERE	CustID = @CustID
+	END
+	
 	IF(@RoleID <5)
 		Begin
 			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) +'" IP="' + @LoginIP +'" />'
@@ -154,8 +165,3 @@ BEGIN
 	End
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdPwdReset] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdPwdReset] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdPwdReset] TO [vnteam] AS [dbo]

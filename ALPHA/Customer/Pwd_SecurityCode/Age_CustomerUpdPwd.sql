@@ -1,11 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdPwd]    Script Date: 06/11/2015 12:44:21 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdPwd    Script Date: 5/8/2015 5:41:00 PM ******/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdPwd]
     @CustID INT ,
     @UserPwd NVARCHAR(50) ,
@@ -36,7 +29,7 @@ Revisions:
 	- 20150508@Johnson: Check sub-account not allow to update main account password [Redmine: #35551]
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 	- 20160104@Helen: Disallow SMA changes password or updates account status of members - [Redmine:#49967]
-	
+	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -61,7 +54,13 @@ BEGIN
     DECLARE  @ErrLog NVARCHAR(50)
 			,@PwdExpiry DATETIME
 			,@OldPwd	VARCHAR(40)
-    SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
+			,@roleid TINYINT
+	
+	--force change pwd if upline reset pwd
+	IF @custid <> @userid
+		SELECT  @pwdexpiry = DATEADD(dd, -1, GETDATE())
+	ELSE 
+		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
 
     IF ( @DisCasino = 1
          AND EXISTS ( SELECT    1
@@ -95,7 +94,7 @@ BEGIN
          RETURN
 	END
 	
-	SELECT	@OldPwd	= userpwd
+	SELECT	@OldPwd	= userpwd, @roleid = roleid
 	FROM	Customer WITH (NOLOCK) 
 	WHERE	custid = @CustID
 	
@@ -104,11 +103,20 @@ BEGIN
             pwdexpiry = @PwdExpiry
     WHERE   custid = @CustID
     
-    UPDATE	CustLoginInfo WITH (ROWLOCK, UPDLOCK)
-    SET		OldUserPwd			= @OldPwd
-			,LastChangedPwdDate = GETDATE()
-	WHERE	custid = @CustID
-
+	IF @roleid <> 1
+	BEGIN
+		UPDATE	CustLoginInfo WITH (ROWLOCK, UPDLOCK)
+		SET		OldUserPwd			= @OldPwd
+				,LastChangedPwdDate = GETDATE()				
+		WHERE	custid = @CustID
+	END
+	ELSE
+	BEGIN
+		UPDATE	CustLoginInfo_Member WITH (ROWLOCK, UPDLOCK)
+		SET	gesture = NULL
+		WHERE	custid = @CustID
+	END
+	
     DECLARE @LogData NVARCHAR(4000)
 
     SELECT  @LogData = '<Age_CustomerUpdPwd  UserID="' + CONVERT(VARCHAR(20), @CustID)
@@ -159,8 +167,3 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdPwd] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdPwd] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdPwd] TO [vnteam] AS [dbo]
