@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdPwdReset]
 	@CustID int,
 	@UserPwd nvarchar(50),
@@ -32,7 +32,7 @@ AS
 		- 20130704@Kathy: Synchronize user data between Accounting and AdminSite: update password in AdminSiteUser table		
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		- 20190611@Johnson: force change pwd for customer [redmine: #114566]	
+		- 20190611@Johnson: force change pwd for customer [redmine:#114566]	
 */
 BEGIN
 	SET NOCOUNT ON
