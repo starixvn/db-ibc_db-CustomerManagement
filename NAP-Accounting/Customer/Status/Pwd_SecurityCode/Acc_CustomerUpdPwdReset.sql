@@ -16,7 +16,7 @@ AS
 	Task: Update user's password 
 	DB: DBTXN/bodb02
 	
-	History:
+	Revisions:
 		- 20080213@PhucPham: Check permission for Account site
 		- 20090311@PhuongDao: Write log for updating user's password and add a param - @LoginIP 
 		- 20090321@PhuongDao: Not checking permission if the admin changes his own password. 
