@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdGroupHeadlineOwner]
 	@HeadlineID INT,
 	@OwnerName NVARCHAR(100),
@@ -18,7 +18,7 @@ AS
 	Revisions:
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-
+		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 */
 BEGIN
 	SET NOCOUNT ON
@@ -33,7 +33,7 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN
 
-	IF NOT EXISTS (SELECT 1 FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @HeadlineID AND roleid BETWEEN 1 AND 4)
+	IF NOT EXISTS (SELECT 1 FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @HeadlineID AND roleid BETWEEN 0 AND 4)
 	BEGIN
 		SELECT @ErrMsg = 'Customer is not valid.'
 			 , @ErrCode = 101
@@ -89,4 +89,3 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerUpdGroupHeadlineOwner] TO [bodbAdminNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdGroupHeadlineOwner] TO [vnteam]
