@@ -99,11 +99,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID = 165004 THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID = 165004 AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -156,7 +156,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-								AND la.ActionID = 165004
+								AND la.ActionID IN (165004,165008,165009,165010)
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -205,11 +205,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID = 165004 THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID = 165004 AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -262,7 +262,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID IN (165004,165008,165009,165010)
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -311,11 +311,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID = 165004 THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID = 165004 AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -347,11 +347,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID = 165004 THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID = 165004 AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -404,7 +404,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID IN (165004,165008,165009,165010)
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -433,7 +433,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID IN (165004,165008,165009,165010)
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))

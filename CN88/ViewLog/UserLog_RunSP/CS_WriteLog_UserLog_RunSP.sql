@@ -54,7 +54,7 @@ BEGIN
 
 	SET @LogID = SCOPE_IDENTITY()
 
-	IF @ActionID = 165004
+	IF @ActionID IN (165004,165008,165009,165010)
 	BEGIN	
 		IF ISNULL(@AffectedDownlines,'') <> ''
 		BEGIN	
