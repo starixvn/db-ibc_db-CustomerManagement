@@ -174,7 +174,7 @@ BEGIN
 					SELECT @AffectedList = STUFF((	SELECT ',' + CAST(custid AS VARCHAR(20))
 													FROM #TempCust
 														CROSS APPLY dbo.f_CS_GetCustomerStatus(CustID)
-													WHERE CustStatus <> 4 AND CustID <> @CustId
+													WHERE CustStatus = 4 AND CustID <> @CustId
 													FOR XML PATH('')), 1, 1, '')
 				END
 			END
