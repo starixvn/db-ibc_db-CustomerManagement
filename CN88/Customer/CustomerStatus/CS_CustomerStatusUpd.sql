@@ -24,7 +24,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @StartRun DATETIME, @Duration INT	
+	DECLARE @StartRun DATETIME, @Duration INT, @ActionID INT
 	DECLARE @Mode TINYINT, --1: A to I, 2: I to A, 3: A to S, 4: S to A, 5: A to V, 6: V to A
 			@RoleID TINYINT, @db_OldStatusID TINYINT, @UplineStatus TINYINT, @UplineID INT, @AffectedList VARCHAR(MAX)
 
@@ -47,7 +47,8 @@ BEGIN
 		RETURN
 	END
 
-	SELECT	@RoleID = roleid,			
+	SELECT	@RoleID = roleid,	
+			@ActionID = CASE WHEN roleid = 4 THEN 165004 WHEN roleid = 3 THEN 165008 WHEN roleid = 2 THEN 165009 WHEN roleid = 1 THEN 165010 END,
 			@UplineID = CASE roleid WHEN 3 THEN srecommend
 									WHEN 2 THEN mrecommend
 									WHEN 1 THEN recommend END
@@ -151,7 +152,7 @@ BEGIN
 		@UserId				= @UserId,
 		@CustId				= @CustId,
 		@SubAccID			= @SubAccID,
-		@ActionId			= 165004,
+		@ActionId			= @ActionID,
 		@TrackingValue		= @LogDataNew,
 		@TrackingValue2		= @LogDataOld,
 		@Duration			= @Duration,
