@@ -68,7 +68,7 @@ BEGIN
 	IF NOT EXISTS (	SELECT 1
 					FROM customer AS c WITH(NOLOCK)
 						INNER JOIN custinfo AS ci WITH(NOLOCK) ON c.custid = ci.custid
-					WHERE  c.roleID in (2,3,4) AND c.username = @Username)
+					WHERE  c.roleID in (2,3,4,0) AND c.username = @Username)
 	BEGIN
 		RETURN
 	END
@@ -97,7 +97,7 @@ BEGIN
 		--Login from Account site	
 		SELECT @accUsername = username, @accUserPwd = userpwd FROM customer WITH(NOLOCK) WHERE custid = @accUserID
 		
-		SELECT @ServerID = CASE @RoleID WHEN 2 THEN 90 WHEN 3 THEN 91 ELSE 92 END  
+		SELECT @ServerID = CASE @RoleID WHEN 2 THEN 90 WHEN 3 THEN 91 WHEN 4 THEN 92 ELSE 93 END  
 		------------------------
 
 		SELECT @LogData = 'Admin ' + @accUsername + ' - Login to ' + @UserName 
