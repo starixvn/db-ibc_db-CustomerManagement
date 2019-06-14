@@ -112,7 +112,7 @@ BEGIN
 		Begin
 			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) 
 							+'" IP="' + @LoginIP 
-							+'"@isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)+'" />'
+							+'" isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)+'" />'
 
 			set @endRun = getdate()
 			set @duration  = datediff (millisecond,@startRun,@endRun)
@@ -129,7 +129,7 @@ BEGIN
 			BEGIN CATCH
 				SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) 
 									+ '" IP="' + @LoginIP
-									+'"@isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)
+									+'" isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)
 									+ '" ErrMsg="' + ISNULL(CONVERT(VARCHAR(400),ERROR_MESSAGE()),space(1)) +'" />'
 				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 					@UserID = @UserID,
