@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode_Sub]
 		DB: DBCUST/CustDB
 		Task: Sub-account reset Security code
 		Revisions:
-		
+			- 20190618@Elodie: Input metadata
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
