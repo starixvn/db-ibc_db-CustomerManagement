@@ -1,5 +1,4 @@
-﻿USE [bodb_Message]
-GO
+﻿/*<info serverAlias="DBMSG-bodb_Message" executers="bodbAdminNet,Dot_Admin" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Dot_Msg_SetMessage]
 	@MessageId int = NULL,
@@ -35,6 +34,7 @@ ALTER PROCEDURE [dbo].[Dot_Msg_SetMessage]
 	Revisions:
 		- 20110804@Jamie: Put @MsgContentsType to identify normal message or changed settings message
 		- 20180914@Alan: Support New Chinese Simplified Language [101082]
+		- 20180426@Elodie: Add more Creator info for announcement uploaded by system [112342]
 
 	Param's Explanation:
 		@MessageId: MessageId of a message
@@ -64,8 +64,11 @@ ALTER PROCEDURE [dbo].[Dot_Msg_SetMessage]
 	*/
 
 AS
-SET NOCOUNT ON
 BEGIN
+	SET NOCOUNT ON
+	--hardcode account StarixIT to insert for Creator info
+	SELECT @Creator = 10278938, @CreatorName = 'starixIT'
+
 	IF EXISTS (SELECT MessageId FROM dbo.Msg with (nolock) WHERE MessageId = @MessageId)
 	BEGIN
 		-- update
@@ -124,10 +127,4 @@ BEGIN
 		SELECT @MessageId AS MessageId;
 	END
 END
-
-GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_SetMessage] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_SetMessage] TO [Dot_Admin]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Dot_Msg_SetMessage] TO [vnteam]
+Go
