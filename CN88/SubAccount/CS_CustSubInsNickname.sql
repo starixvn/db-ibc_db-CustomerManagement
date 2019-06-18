@@ -42,7 +42,7 @@ BEGIN
   
         --- Create Nickname  
         SET @ErrCode = 0  
-  SET @ErrMsg = ''  
+		SET @ErrMsg = ''  
         DECLARE @Nickname_DB VARCHAR(50)  
         SELECT @Nickname_DB = NickName FROM dbo.f_CS_GetNickName(@Nickname, 1)  
   
@@ -71,7 +71,7 @@ BEGIN
             + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(30)), SPACE(1)) + '" '     
             + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '     
             + 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'  
-        EXEC [dbo].Acc_WriteLog_UserLog_RunSP_Wrapper  
+        EXEC [dbo].CS_WriteLog_UserLog_RunSP_Wrapper  
             @UserID = @custid,  
             @CustID = @custid,  
             @ActionID = 690,  
