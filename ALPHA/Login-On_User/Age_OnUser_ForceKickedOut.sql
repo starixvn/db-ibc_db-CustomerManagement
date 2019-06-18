@@ -60,10 +60,15 @@ BEGIN
 	END
 	ELSE 
 	BEGIN
-		UPDATE dbo.on_user_agent WITH (ROWLOCK, UPDLOCK)
+		UPDATE t
 		SET iskickedout = 1,
 			kickOutReason = 1
-		WHERE custid = @CustID AND subaccid = @SubAccID
+		FROM(			
+			SELECT top (1) *
+			FROM dbo.on_user_agent WITH (ROWLOCK, UPDLOCK)
+			WHERE custid = @CustID AND subaccid = @SubAccID
+			ORDER BY on_userid desc
+		)t			
 	END
 END
 GO
