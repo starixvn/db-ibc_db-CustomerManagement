@@ -17,6 +17,7 @@
 		
 	Revisions:
 		- 20190530@Elodie: Initial SP [Redmine: 113198]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 
 	Parameter's Explanation:
 		- @CheckedSecurityCode: = 1: check security code success
@@ -58,7 +59,7 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @CustID,
 				@CustID = @CustID, 
 				@ActionID = 943, 
@@ -85,7 +86,7 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @CustID,
 				@CustID = @CustID, 
 				@ActionID = 944, 

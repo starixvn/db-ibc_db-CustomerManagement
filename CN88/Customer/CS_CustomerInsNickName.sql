@@ -72,7 +72,7 @@ BEGIN
 							+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
 							+ 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />' 
 
-		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 			@UserID = @CustID,
 			@CustID = @CustID, 
 			@ActionID = 687, 

@@ -61,7 +61,7 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @CustID,
 				@CustID = @CustID, 
 				@ActionID = 941, 
@@ -89,7 +89,7 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @CustID,
 				@CustID = @CustID, 
 				@ActionID = 942, 

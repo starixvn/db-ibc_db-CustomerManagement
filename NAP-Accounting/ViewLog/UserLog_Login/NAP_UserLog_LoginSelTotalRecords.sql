@@ -3,8 +3,7 @@ ALTER PROCEDURE [dbo].[NAP_UserLog_LoginSelTotalRecords]
     @UserId INT,	
 	@UserName AS VARCHAR(50),
     @FromDate DATETIME,
-    @ToDate DATETIME,    
-    @LogType TINYINT = 0
+    @ToDate DATETIME
 	   
 AS
 /* 

@@ -15,6 +15,7 @@ AS
 
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 
 	Param's Explanation:
 		
@@ -59,7 +60,7 @@ BEGIN
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
-	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login 
+	EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 		 @UserID = @CustID, 
 		 @RoleID = @RoleID, 
 		 @SubAccID = @SubAccID,

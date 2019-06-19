@@ -16,7 +16,8 @@ AS
     
     Revisions:      
         - 20190520@Kan: Initial SP [Redmine:#112287]
-        
+        - 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+
     Param's Explanation:  
 */  
 BEGIN  
