@@ -31,6 +31,8 @@ BEGIN
 	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
 	DECLARE @securityCodeCount INT
 	
+	SET @startRun = GETDATE()
+
 	SELECT @securityCodeCount = ISNULL(securityCodeCount,0)
 	FROM CustLoginInfo WITH(NOLOCK)
 	WHERE custid = @custid
