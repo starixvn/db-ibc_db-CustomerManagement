@@ -60,7 +60,7 @@ BEGIN
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
-	EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+	EXEC DBLOG.bodb_customerlog.dbo.CS_WriteLog_UserLog_Login
 		 @UserID = @CustID, 
 		 @RoleID = @RoleID, 
 		 @SubAccID = @SubAccID,
