@@ -169,7 +169,15 @@ BEGIN
 
 			IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
 			BEGIN
-				IF @Mode IN (4,6)
+				IF @Mode = 4 --4: S to A
+				BEGIN
+					SELECT @AffectedList = STUFF((	SELECT ',' + CAST(custid AS VARCHAR(20))
+													FROM #TempCust
+														CROSS APPLY dbo.f_CS_GetCustomerStatus(CustID)
+													WHERE CustStatus IN (4,3) AND CustID <> @CustId
+													FOR XML PATH('')), 1, 1, '')
+				END
+				ELSE IF @Mode = 6 --6: V to A
 				BEGIN
 					SELECT @AffectedList = STUFF((	SELECT ',' + CAST(custid AS VARCHAR(20))
 													FROM #TempCust
