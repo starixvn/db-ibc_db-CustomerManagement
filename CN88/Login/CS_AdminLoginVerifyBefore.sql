@@ -60,12 +60,12 @@ BEGIN
 		@db_custid INT, @db_userpwd	NVARCHAR(50), @db_Username2 VARCHAR(50), @db_currency TINYINT, @OldUserPwd	VARCHAR(40), @failedcount INT, 		
 		@db_loginip NVARCHAR(20), @db_enabled BIT,			
 		-- For checking login domain
-		@Site varchar(10), @IsMatched bit, @rowcount int, @isAllowed bit, @IsAccess BIT, @isFirstLogin BIT, @Status TINYINT
+		@Site varchar(10), @IsMatched bit, @rowcount int, @isAllowed bit, @IsAccess BIT, @Status TINYINT
 		
 	SELECT @isAllowed = 0
 	 
 	----- begin 20110608: login using Nickname
-	SET  @ServerID = 0
+	SET @ServerID = 0
 	 
 	SELECT @db_Username2 = NickName FROM dbo.f_CS_GetNickName(@UserName,1)
 
@@ -86,7 +86,6 @@ BEGIN
 		FROM customer WITH (NOLOCK)
 			CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
 		WHERE username = @UserName				
-
 	END
 	
 	SET @rowcount = @@ROWCOUNT
@@ -254,12 +253,7 @@ BEGIN
 		 
 	END
 	
-	--check login by NickName for second time or not
-	SELECT @isFirstLogin = isFirstLogin
-	FROM dbo.CustLoginInfo WITH(NOLOCK)
-	WHERE custid = @db_custid
-	
-	IF @isFirstLogin = 0 AND @isNickname = 0
+	IF @isNickname = 0 AND ISNULL(@NickName,'') <> ''
 	BEGIN  
 		SELECT @LogData =  'Account:' + @UserName + ' Result:Failed (Not_Nickname)'
 		

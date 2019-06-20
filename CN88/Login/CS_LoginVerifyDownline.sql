@@ -884,9 +884,13 @@ BEGIN
 	BEGIN
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been inactive. Please contact your upline for assistance.'  
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
-				END ,@ErrCode=700     
-		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
+				END ,@ErrCode=700     		
 	    
+		IF @SubAccID > 0  
+			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Inactive)'
+		ELSE
+			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
@@ -931,8 +935,12 @@ BEGIN
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been suspended. Please contact your upline to activate your account!'  
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
 				END ,@ErrCode=701     
-		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
 	    
+		IF @SubAccID > 0  
+			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Suspended)'
+		ELSE
+			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
