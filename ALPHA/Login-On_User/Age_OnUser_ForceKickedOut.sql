@@ -41,7 +41,7 @@ BEGIN
 		
 		IF @rowcount > 0
 		BEGIN
-			SELECT @LogData = 'Account:' + ISNULL(@UplineUsername,'') + ' - change password of member.'
+			SELECT @LogData = 'Kick out reason: Password has been changed.'
 	
 			SET @End = GETDATE()
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)

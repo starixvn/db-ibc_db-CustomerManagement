@@ -118,6 +118,7 @@ BEGIN
 								AND ((	UserID = @UserId AND SubAccID >= 0)
 											--OR (SubAccID = @UserId)
 										) 
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 								AND ci.roleid <=4
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
