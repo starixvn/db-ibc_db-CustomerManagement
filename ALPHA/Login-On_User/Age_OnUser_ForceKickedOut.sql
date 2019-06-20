@@ -1,8 +1,7 @@
 /*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OnUser_ForceKickedout]
 	@CustID INT,	
-	@roleid TINYINT,	
-	@UplineUsername VARCHAR(50) = '',
+	@roleid TINYINT,		
 	@ServerID int = 0,
 	@SubAccID INT = 0, 
 	@IP VARCHAR(20) = ''
