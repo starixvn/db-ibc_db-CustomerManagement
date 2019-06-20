@@ -263,7 +263,7 @@ BEGIN
 		IF @IsNickname = 1 
 		BEGIN
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
+				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
 				@ServerID = @ServerID,
@@ -280,7 +280,7 @@ BEGIN
 		ELSE
 		BEGIN
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
+				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
 				@ServerID = @ServerID,
@@ -315,7 +315,7 @@ BEGIN
 		IF @IsNickname = 1 
 		BEGIN
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
+				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
 				@ServerID = @ServerID,
@@ -332,7 +332,7 @@ BEGIN
 		ELSE
 		BEGIN
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
+				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
 				@ServerID = @ServerID,

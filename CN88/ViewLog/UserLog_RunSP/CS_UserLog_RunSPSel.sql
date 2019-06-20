@@ -133,7 +133,7 @@ BEGIN
 					
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
-						 SELECT LogID,
+						 SELECT ul.MainLogID,
 								UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
 								Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
 								ul.TrackingValue,
@@ -239,7 +239,7 @@ BEGIN
 					
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
-						SELECT LogID,
+						SELECT ul.MainLogID,
 							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
 							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
 							ul.TrackingValue,
@@ -381,7 +381,7 @@ BEGIN
 					
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
-						SELECT LogID,
+						SELECT ul.MainLogID,
 							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
 							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
 							ul.TrackingValue,
@@ -411,7 +411,7 @@ BEGIN
 
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
-						SELECT LogID,
+						SELECT ul.MainLogID,
 							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
 							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
 							ul.TrackingValue,
