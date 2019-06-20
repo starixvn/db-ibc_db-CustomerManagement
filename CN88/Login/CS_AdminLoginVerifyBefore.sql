@@ -597,7 +597,7 @@ BEGIN
 			
 	    	SELECT @LogSPData = '<CS_AdminLoginVerifyBefore IP="'+ @inputLoginIP + '" />'		    
 
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @db_custid,
 				@CustID = @CustID,
 				@ActionID = 934,
