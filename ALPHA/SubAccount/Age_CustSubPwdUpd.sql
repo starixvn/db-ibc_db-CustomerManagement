@@ -1,10 +1,4 @@
-﻿USE [bodb02]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CustSubPwdUpd]    Script Date: 03/28/2013 21:51:28 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd]
 	@custid int,
 	@subaccid int,
@@ -20,7 +14,7 @@ AS
 /*
 Created: 
 Task : Agent changes password of sub-account
-DB: DBTXN/bodb02
+DB: DBCUST/CustDB
 Original: CustSubPwdUpd
 
 Revisions:
@@ -30,6 +24,7 @@ Revisions:
 	- 20100107@Kiwi: Amend writing log.
 	- 20101021@Henry: Record execution time
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
+
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -110,10 +105,4 @@ BEGIN CATCH
 		@TrackingValue = @LogData,
 		@duration = @duration		
 END CATCH
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustSubPwdUpd] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustSubPwdUpd] TO [bodbDownlineNetView] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustSubPwdUpd] TO [vnteam] AS [dbo]

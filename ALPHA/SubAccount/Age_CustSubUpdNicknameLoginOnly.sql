@@ -46,6 +46,7 @@ BEGIN
         + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' 
         + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
         + 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'
+
     EXEC [dbo].Acc_WriteLog_UserLog_RunSP_Wrapper
         @UserID = @custid,
         @CustID = @custid,
