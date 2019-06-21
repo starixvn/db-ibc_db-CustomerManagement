@@ -21,7 +21,10 @@ AS
 */  
 BEGIN  
     SET NOCOUNT ON  
-  
+	
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
+	SET @startRun = GETDATE()
+
     IF EXISTS (SELECT 1 FROM [dbo].custSub WITH (NOLOCK) WHERE subaccid = @subaccid AND custid = @custid AND closed = 1)  
     BEGIN  
         UPDATE [dbo].custSub WITH (ROWLOCK)    
@@ -43,10 +46,15 @@ BEGIN
             + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(30)), SPACE(1)) + '" '     
             + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '     
             + 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'  
+
+		SET @endRun = GETDATE()
+		SET @duration  = DATEDIFF (millisecond,@startRun,@endRun)
+
         EXEC [dbo].CS_WriteLog_UserLog_RunSP_Wrapper  
             @UserID = @custid,  
             @CustID = @custid,  
-            @ActionID = 691,  
-            @TrackingValue = @LogSPData  
+            @ActionID = 1170,  
+            @TrackingValue = @LogSPData, 
+			@duration = @duration 
     END  
 END  

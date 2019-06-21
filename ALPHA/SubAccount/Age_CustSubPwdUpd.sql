@@ -34,11 +34,9 @@ Param's Explanation:
 */
 SET NOCOUNT ON
 
-declare @startRun datetime
-declare @endRun datetime
-declare @duration int,
-		@OldUserPwd VARCHAR(40)
-set @startRun = getdate()
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
+	DECLARE @OldUserPwd VARCHAR(40)
+	SET @startRun = getdate()
 
 ---------------------------
 -- ***Check Sub-Account***
