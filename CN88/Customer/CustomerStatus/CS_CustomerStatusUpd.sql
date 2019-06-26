@@ -121,7 +121,7 @@ BEGIN
 
 	IF @Mode = 0
 	BEGIN
-		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN ' Update status failed. Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
+		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'Update status failed. Please try again.' ELSE [dbo].[f_Get_MsgNamebyMsgID](40046,@Language) END,
 				@ErrCode = 102
 		RETURN
 	END
