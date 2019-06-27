@@ -1,4 +1,4 @@
-﻿
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubUpdPageAccess]
 	@custid int,
 	@subaccid int,
@@ -14,7 +14,7 @@ AS
 /*
 Created: 
 Task : Edit permission of Sub-Account
-DB: DBTXN/bodb02
+DB: DBCUST/CustDB
 Original: CustSubUpdPageAccess
 
 Revisions:    	
@@ -160,10 +160,3 @@ BEGIN CATCH
 		@TrackingValue2 = @TrackingValue2,
 		@duration = @duration
 END CATCH
-
-GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdPageAccess]  TO [bodbDownlineNet]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdPageAccess]  TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustSubUpdPageAccess] TO [vnteam]

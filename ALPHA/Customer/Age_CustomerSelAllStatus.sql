@@ -12,6 +12,7 @@ AS
 
 	Revisions:
 		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
+		- 20190412@Johnson: add suspendInfo [redmine:#105587]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -35,6 +36,7 @@ BEGIN
           , @upLineSuspend			BIT
           , @uplineDoubleCommLosing BIT        
           , @DisableAutoMPT			BIT  
+		  , @isDirectSuspend 		BIT = 0
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -103,6 +105,11 @@ BEGIN
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
+	--check suspend status is direct or not
+	SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
+	FROM dbo.CustProductStatus WITH(NOLOCK)
+	WHERE custid = @custid
+	
 	-------------------------------------------------------------------------
 	DECLARE @TransferOption VARCHAR(8)
     EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
@@ -111,6 +118,7 @@ BEGIN
 	SELECT	@HasDownline AS HasDownline,
 			ci.closed,
 			ci.reject AS suspended,
+			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
 			@TransferOption AS TransferOption,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,

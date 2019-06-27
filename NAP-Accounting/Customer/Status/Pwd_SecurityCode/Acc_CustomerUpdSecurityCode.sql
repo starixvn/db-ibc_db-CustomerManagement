@@ -20,6 +20,8 @@
 			- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 			- 20190529@Johnson: update SC for headline from NAP [redmine: #112225]
+			- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -83,28 +85,12 @@ SET NOCOUNT ON
 		SET @endRun = GETDATE()
 		SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 	
-		BEGIN TRY
-			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-				@UserID = @UserID,
-				@CustID = @CustID, 
-				@ActionID = 914, 
-				@TrackingValue = @LogSPData,
-				@duration = @duration
-		END TRY
-		BEGIN CATCH
-			SELECT @LogSPData = '<Acc_CustomerUpdSecurityCode custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 
-								+ 'isForcedChangeSecurityCode="' + COALESCE(CAST(@isForcedChangeSecurityCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-								+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
-								+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-								+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
-								
-			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-				@UserID = @UserID,
-				@CustID = @CustID, 
-				@ActionID = 914, 
-				@TrackingValue = @LogSPData,
-				@duration = @duration 
-		END CATCH
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			@UserID = @UserID,
+			@CustID = @CustID, 
+			@ActionID = 914, 
+			@TrackingValue = @LogSPData,
+			@duration = @duration		
 	END
 	ELSE IF @roleid = 1
 	BEGIN	
@@ -139,27 +125,12 @@ SET NOCOUNT ON
 		SET @endRun = GETDATE()
 		SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 	
-		BEGIN TRY
-			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-				@UserID = @UserID,
-				@CustID = @CustID, 
-				@ActionID = 915, 
-				@TrackingValue = @LogSPData,
-				@duration = @duration
-		END TRY
-		BEGIN CATCH
-			SELECT @LogSPData = '<Acc_CustomerUpdSecurityCode custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
-								+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
-								+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-								+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
-								
-			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-				@UserID = @UserID,
-				@CustID = @CustID, 
-				@ActionID = 915, 
-				@TrackingValue = @LogSPData,
-				@duration = @duration 
-		END CATCH
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			@UserID = @UserID,
+			@CustID = @CustID, 
+			@ActionID = 915, 
+			@TrackingValue = @LogSPData,
+			@duration = @duration		
 	END
 
 GO

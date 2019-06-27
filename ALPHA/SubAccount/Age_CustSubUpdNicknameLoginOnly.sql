@@ -16,11 +16,15 @@ AS
 
     Revisions:
         - 20190515@Kan: Initial SP [Redmine:#112287]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 
     Param's Explanation:
 */
 BEGIN
     SET NOCOUNT ON
+
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
+	SET @startRun = GETDATE()
 
     UPDATE dbo.custSub WITH (ROWLOCK, UPDLOCK)
     SET NicknameLoginOnly = @NicknameLoginOnly 
@@ -46,9 +50,14 @@ BEGIN
         + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' 
         + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
         + 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'
+
+	SET @endRun = GETDATE()
+	SET @duration  = DATEDIFF (millisecond,@startRun,@endRun)
+
     EXEC [dbo].Acc_WriteLog_UserLog_RunSP_Wrapper
         @UserID = @custid,
         @CustID = @custid,
         @ActionID = 689,
-        @TrackingValue = @LogSPData
+        @TrackingValue = @LogSPData,
+		@duration = @duration
 END 

@@ -15,11 +15,16 @@ AS
   
     Revisions:       
         - 20190520@Kan: Initial SP [Redmine:#112287]  
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+
     Param's Explanation:  
 */  
 BEGIN  
     SET NOCOUNT ON  
-  
+	
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT
+	SET @startRun = GETDATE()
+
     IF EXISTS (SELECT 1 FROM [dbo].custSub WITH (NOLOCK) WHERE subaccid = @subaccid AND custid = @custid AND closed = 1)  
     BEGIN  
         UPDATE [dbo].custSub WITH (ROWLOCK)    
@@ -35,16 +40,19 @@ BEGIN
   
         --- Write log    
         DECLARE @LogSPData NVARCHAR(4000)  
-        SELECT @LogSPData = '<CS_CustSubUnlock CustID="' + COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" '  
+        SELECT @LogSPData = '<R CustID="' + COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" '  
             + 'SubAccName="'+ coalesce(cast(dbo.f_GetSubUsername(@subaccid) as VARCHAR(30)), SPACE(1)) + '" ' +  
             + 'Closed="0" '  
-            + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(30)), SPACE(1)) + '" '     
-            + 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" '     
-            + 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />'  
-        EXEC [dbo].Acc_WriteLog_UserLog_RunSP_Wrapper  
+            + 'IP="' + COALESCE(CAST(@IP AS VARCHAR(30)), SPACE(1)) + '" />'  
+
+		SET @endRun = GETDATE()
+		SET @duration  = DATEDIFF (millisecond,@startRun,@endRun)
+
+        EXEC [dbo].CS_WriteLog_UserLog_RunSP_Wrapper  
             @UserID = @custid,  
             @CustID = @custid,  
-            @ActionID = 691,  
-            @TrackingValue = @LogSPData  
+            @ActionID = 165011,  
+            @TrackingValue = @LogSPData, 
+			@duration = @duration 
     END  
 END  

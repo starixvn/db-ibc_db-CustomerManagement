@@ -1,6 +1,7 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSel]    
+ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSel]    
     @CustId INT,
+	@LoginUserId INT = 0,
 	@CustName VARCHAR(50) = '',
     @FromDate DATETIME,
     @ToDate DATETIME,
@@ -11,86 +12,54 @@ ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSel]
     @PageIndex INT,
     @PageSize INT
 AS 
-/* Created:20100121@Lewin
-    Task: ViewLog function 331
-    DB: DBLOG/bodb_CustomerLog
+/* 
+	Created:20190606@Elodie
+    Task: Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
+    DB: DBLOG\bodb_CustomerLog
     
-    Revisions:
-		- 20110421@Jamie: Temporiraly fix to show Logs updated from Licensee Risk and Forecast 
-		- 20110511@Henry: Change LRF ActionID to new Range (2000-2299)
-		- 20110513@Amy: Get more column TrackingValue2 
-		- 20110721@Sophia: If is Internal access and @custName is nickname then don't show data
-		- 20121029@Elodie: Get UseName = 'Admin' if ActionID BETWEEN 1142 AND 1144
-		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
-		- 20160115@Dominic: Do not show logactionid=237 if Trackingvalues is null Redmine: #50937
-		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
-		- 20160222@Dominic: Correct TrackingValue when logactionid In (1100,1101,1102,1103) and its value contain 'Hide*Cricket' Redmine: #52667
-		- 20161018@Winnie: Handle logactionid range of smartpunter RedmineID #63077
-		- 20171205@Winnie: Provide API for FPS to update dangerous level for evidence member #86627
-		- 20180123@Johnson: support view log for status by level for new direction[Redmine: #87328]
-		- 20180621@Razor: Exclude log of Message Customer Read Status [Redmind: #94705]
-		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
-		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
-		- 20190405@Patrick: Support archive date range [Redmine: #111476]
-
-	Description:
-	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
-	
+	Revisions:
+		- 20190606@Elodie: Initial SP [Redmine: #113198]
+		
     Param's Explaination:    
-	- @UserId: a customer which we want to view actions affect to.
-	- @CustName: customer name type in textbox to search
-	- @FromDate: date range to view log
-	- @ToDate: date range to view log
-	- @ActionTypeId: action type. If ActionType < 0: select all type
-	- @IsInternal: accounting site = 1, agent = 0
-	- @LowerActionId: query actionid in range
-	- @UpperActionId: query actionid in range	
-	- @PageIndex: from 0
-	- @PageSize: total record per request
+		- @UserId: a customer which we want to view actions affect to.
+		- @CustName: customer name type in textbox to search
+		- @FromDate: date range to view log
+		- @ToDate: date range to view log
+		- @ActionTypeId: action type. If ActionType < 0: select all type
+		- @IsInternal: accounting site = 1, agent = 0
+		- @LowerActionId: query actionid in range
+		- @UpperActionId: query actionid in range	
+		- @PageIndex: from 0
+		- @PageSize: total record per request
 */
 -- SET NOCOUNT ON added to prevent extra result sets from
 -- interfering with SELECT statements.
 BEGIN
-	SET NOCOUNT ON ;
+	SET NOCOUNT ON
 
-	SET @PageIndex = ABS(@PageIndex)
-	SET @PageSize = ABS(@PageSize)  
+	SELECT @PageIndex = ABS(@PageIndex), @PageSize = ABS(@PageSize)  
 
-	DECLARE @lbound INT 
-			,@ubound INT
-			,@roleid TINYINT
-			,@srecommend INT
-			,@mrecommend INT
-			,@recommend INT
-			,@creatdate DATETIME
-			,@LowerActionIdStatus INT
-			,@UpperActionIdStatus INT
-			,@i INT = 1000000
+	DECLARE @lbound INT, @ubound INT,
+			@roleid TINYINT, @creatdate DATETIME, @LoginUserRoleId TINYINT,
+			@srecommend INT, @mrecommend INT, @recommend INT,
+			@LowerActionIdStatus INT, @UpperActionIdStatus INT, @i INT = 1000000
 
 	DECLARE @tmpCust TABLE(Custid INT)		
-	CREATE TABLE #tmpLog (LogID BIGINT,
-						UserID INT,
-						Username NVARCHAR(100),
-						TrackingValue NVARCHAR(MAX),
-						TrackingValueOld NVARCHAR(MAX),
-						LogDate DATETIME,
-						ActionID INT,
-						ActionTypeID INT,
-						SPName VARCHAR(50),
-						IsInternal BIT,
-						CustID INT,
-						CustName NVARCHAR(100),
-						ActionName NVARCHAR(512)
-					)
+	CREATE TABLE #tmpLog (LogID BIGINT, UserID INT, Username NVARCHAR(100), TrackingValue NVARCHAR(MAX), TrackingValueOld NVARCHAR(MAX), LogDate DATETIME,
+							ActionID INT, ActionTypeID INT, SPName VARCHAR(50), IsInternal BIT, CustID INT, CustName NVARCHAR(100), ActionName NVARCHAR(512))
 					
-	SELECT @srecommend = srecommend, 
-		@mrecommend = mrecommend, 
-		@recommend = recommend, 
-		@roleid = roleid,
-		@creatdate = creatdate
+	SELECT	@srecommend = srecommend, 
+			@mrecommend = mrecommend, 
+			@recommend = recommend, 
+			@roleid = roleid,
+			@creatdate = creatdate
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
+	SELECT	@LoginUserRoleId = roleid
+	FROM bodb02.dbo.Customer WITH(NOLOCK)
+	WHERE custid = @LoginUserId
+
 	IF @FromDate < @creatdate
 		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 		
@@ -130,10 +99,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
-												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -150,7 +120,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						 FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @FromDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -161,6 +131,36 @@ BEGIN
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
 					
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						 SELECT ul.MainLogID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
+								Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName AS CustName,
+								la.ActionNameEN AS ActionName
+						 FROM	@tmpCust tmp
+								CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+												FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+													INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+												WHERE lt.custid = tmp.Custid 
+													AND mt.LogDate BETWEEN @FromDate AND @ToDate
+													) ul
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+						WHERE	la.ActionTypeID = @ActionTypeId
+								AND la.ActionID IN (165004,165008,165009,165010)
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						OPTION (OPTIMIZE FOR (@i = 1))
+
 						INSERT INTO @tmpCust(CustID)
 						SELECT @srecommend WHERE @roleid<4
 						UNION SELECT @mrecommend WHERE @roleid<3
@@ -186,7 +186,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @FromDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -205,10 +205,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
-												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -225,7 +226,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						 FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @FromDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -236,6 +237,36 @@ BEGIN
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
 					
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT ul.MainLogID,
+							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
+							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate BETWEEN @FromDate AND @ToDate
+												) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+						WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID IN (165004,165008,165009,165010)
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						OPTION (OPTIMIZE FOR (@i = 1))
+
 						INSERT INTO @tmpCust(CustID)
 						SELECT @srecommend WHERE @roleid<4
 						UNION SELECT @mrecommend WHERE @roleid<3
@@ -261,7 +292,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @FromDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -272,7 +303,7 @@ BEGIN
 								--dont show these actions on alpha
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
-
+						
 					END
 					ELSE
 					BEGIN
@@ -280,10 +311,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
-												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -300,7 +332,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						 FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @__archiveDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -315,10 +347,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
-												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-												when (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -335,7 +368,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						 FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate >= @FromDate AND logdate < @__archiveDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -346,6 +379,65 @@ BEGIN
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
 					
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT ul.MainLogID,
+							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
+							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
+												) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+						WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID IN (165004,165008,165009,165010)
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						OPTION (OPTIMIZE FOR (@i = 1))
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT ul.MainLogID,
+							UserID = CASE WHEN @LoginUserRoleId < c.roleid THEN 0 ELSE ul.UserID END,
+							Username =	CASE WHEN @LoginUserRoleId < c.roleid THEN 'Upline' ELSE c.Username END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM	@tmpCust tmp
+							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
+											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+											WHERE lt.custid = tmp.Custid 
+												AND mt.LogDate > @FromDate AND LogDate < @__archiveDate) ul
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
+						WHERE	la.ActionTypeID = @ActionTypeId
+							AND la.ActionID IN (165004,165008,165009,165010)
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						OPTION (OPTIMIZE FOR (@i = 1))
+
 						INSERT INTO @tmpCust(CustID)
 						SELECT @srecommend WHERE @roleid<4
 						UNION SELECT @mrecommend WHERE @roleid<3
@@ -371,7 +463,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate BETWEEN @__archiveDate AND @ToDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -403,7 +495,7 @@ BEGIN
 								la.ActionNameEN AS ActionName
 						FROM	@tmpCust tmp
 								CROSS APPLY (	SELECT TOP (@i) * 
-												FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+												FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK) 
 												WHERE ul.custid = tmp.Custid 
 													AND LogDate > @FromDate AND LogDate < @__archiveDate) ul
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
@@ -414,6 +506,7 @@ BEGIN
 								--dont show these actions on alpha
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
+						
 					END
 						
 					SELECT  LogID,
@@ -487,7 +580,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							  FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							  FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 							  WHERE     ul.CustID = @CustId
@@ -536,7 +629,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							  FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 							  WHERE     ul.CustID = @CustId
@@ -586,7 +679,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							  FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							  FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 							  WHERE     ul.CustID = @CustId
@@ -616,7 +709,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							  FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 							  WHERE     ul.CustID = @CustId
@@ -670,7 +763,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						  WHERE     ul.CustID = @CustId
@@ -724,7 +817,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						  WHERE     ul.CustID = @CustId
@@ -779,7 +872,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						 WHERE     ul.CustID = @CustId
@@ -813,7 +906,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						 WHERE     ul.CustID = @CustId
@@ -873,7 +966,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID					
 						  WHERE     ul.CustID = @CustId
@@ -922,7 +1015,7 @@ BEGIN
 									ul.CustID,
 									@CustName AS CustName,
 									la.ActionNameEN AS ActionName
-						 FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID					
 						  WHERE     ul.CustID = @CustId
@@ -973,7 +1066,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							 FROM      dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID					
 							  WHERE     ul.CustID = @CustId
@@ -1003,7 +1096,7 @@ BEGIN
 										ul.CustID,
 										@CustName AS CustName,
 										la.ActionNameEN AS ActionName
-							 FROM      bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+							 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID					
 							  WHERE     ul.CustID = @CustId

@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20190326@Johnson: clone new sp for cn88 [redmine: #105660]
 		- 20190531@Johnson: update pwd for headline [redmine: #112225]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -84,59 +85,32 @@ BEGIN
 	END
 
 	IF(@RoleID <5)
-		Begin
-			SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) +'" IP="' + @LoginIP +'" />'
+	BEGIN
+		SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) +'" IP="' + @LoginIP +'" />'
 
-			set @endRun = getdate()
-			set @duration  = datediff (millisecond,@startRun,@endRun)
+		SET @endRun = getdate()
+		SET @duration  = datediff (millisecond,@startRun,@endRun)
 
-			/*900 Acc_CustomerUpdPwdReset Reset downline's password */
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-					@UserID = @UserID,
-					@CustID = @CustID,
-					@ActionID = 937,
-					@TrackingValue = @LogSPData,
-					@duration = @duration
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) 
-									+ '" IP="' + @LoginIP
-									+ '" ErrMsg="' + ISNULL(CONVERT(VARCHAR(400),ERROR_MESSAGE()),space(1)) +'" />'
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
-					@UserID = @UserID,
-					@CustID = @CustID,
-					@ActionID = 937,
-					@TrackingValue = @LogSPData,
-					@duration = @duration
-			END CATCH
-		end
+		EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+			@UserID = @UserID,
+			@CustID = @CustID,
+			@ActionID = 937,
+			@TrackingValue = @LogSPData,
+			@duration = @duration			
+	END
 	Else
-		Begin
-			SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset><IP>' + @LoginIP + '</IP></CS_Acc_CustomerUpdPwdReset>'
+	BEGIN
+		SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset><IP>' + @LoginIP + '</IP></CS_Acc_CustomerUpdPwdReset>'
 
-			set @endRun = getdate()
-			set @duration  = datediff (millisecond,@startRun,@endRun)
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_UserControl
-					@custID = @CustID,
-					@Doing = @LogSPData,
-					@userid = @UserID,
-					@TypeID =1,
-					@actionid =1710,
-					@duration = @duration  
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<CS_Acc_CustomerUpdPwdReset ErrMsg="' + ISNULL(CONVERT(VARCHAR(400),ERROR_MESSAGE()),space(1))			
-							+ '"><IP>' + @LoginIP + '</IP></CS_Acc_CustomerUpdPwdReset>'
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_UserControl
-					@custID = @CustID,
-					@Doing = @LogSPData,
-					@userid = @UserID,
-					@TypeID =1,
-					@actionid =1710,
-					@duration = @duration  
-			END CATCH
-	End
+		SET @endRun = getdate()
+		SET @duration  = datediff (millisecond,@startRun,@endRun)
+		EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+			@custID = @CustID,
+			@Doing = @LogSPData,
+			@userid = @UserID,
+			@TypeID =1,
+			@actionid =1710,
+			@duration = @duration  			
+	END
 END
 GO

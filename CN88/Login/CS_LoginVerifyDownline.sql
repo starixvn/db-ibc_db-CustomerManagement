@@ -29,6 +29,7 @@ AS
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
+		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -54,9 +55,9 @@ BEGIN
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
 	DECLARE @IsSubAccount BIT, @RoleID TINYINT, @SubUserName VARCHAR(50), @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
-		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
+		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency TINYINT,
 		-- For checking login domain
-		@Site VARCHAR(10), @IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT
+		@Site VARCHAR(10), @IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT, @Status TINYINT
 
 	SET @Begin = GETDATE()
 	SELECT @inputLoginIP = @LoginIP		
@@ -78,7 +79,7 @@ BEGIN
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = 0, 
 			@RoleID = 0, 
 			@SubAccID = @SubAccID,
@@ -125,11 +126,17 @@ BEGIN
 		ELSE
 		BEGIN 		
 			---check Nicknameloginonly
-			SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = ISNULL(NicknameLoginOnly,0),
+			--SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = ISNULL(NicknameLoginOnly,0),
+			--		 @failedcount = isnull(logincount,0), @db_userpwd = userpwd, @closed = closed
+			--FROM custsub with (nolock) 	
+			--	CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
+			--WHERE username = @UserName				
+
+			SELECT @SubAccID = subaccid, @SubUserName = UserName, @CustID = custid, @IsNickname = 0, @Nickname = f.NickName, @db_Username2 = UserName2, @SubNicknameLoginOnly = CASE WHEN UserName2 IS NOT NULL AND username2 <> '' THEN 1 ELSE 0 END,
 					 @failedcount = isnull(logincount,0), @db_userpwd = userpwd, @closed = closed
 			FROM custsub with (nolock) 	
 				CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
-			WHERE username = @UserName				
+			WHERE username = @UserName	
 
 			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID
 			SET @rowcount = @@ROWCOUNT
@@ -141,7 +148,7 @@ BEGIN
 				SET @End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)				
 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -173,7 +180,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -205,7 +212,7 @@ BEGIN
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -241,7 +248,7 @@ BEGIN
 					SET	@End = GETDATE() 
 					SET @Duration = DATEDIFF(millisecond,@Begin,@End)						
 					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -273,7 +280,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -310,7 +317,7 @@ BEGIN
 			
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper								
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper								
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -327,7 +334,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @CustID, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -365,7 +372,7 @@ BEGIN
 				
 				IF @IsNickname = 1
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -382,7 +389,7 @@ BEGIN
 				END	
 				ELSE 
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @CustID, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -411,7 +418,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -448,7 +455,7 @@ BEGIN
 			SET	@End = GETDATE() 		
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper	
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -545,7 +552,7 @@ BEGIN
 				SET @End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 			
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -587,7 +594,7 @@ BEGIN
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -622,7 +629,7 @@ BEGIN
 		
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -639,7 +646,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN 				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = 0, 
 					@RoleID = 0, 
 					@SubAccID = @SubAccID,
@@ -678,7 +685,7 @@ BEGIN
 			
 				IF @IsNickname = 1
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @db_custid, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -695,7 +702,7 @@ BEGIN
 				END	
 				ELSE 
 				BEGIN					
-					EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 						@UserID = @db_custid, 
 						@RoleID = @RoleID, 
 						@SubAccID = @SubAccID,
@@ -729,7 +736,7 @@ BEGIN
 		
 		IF @IsNickname = 1
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -746,7 +753,7 @@ BEGIN
 		END				 
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = 0, 
 				@SubAccID = @SubAccID,
@@ -783,7 +790,7 @@ BEGIN
 
 			IF @IsNickname = 1
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -800,7 +807,7 @@ BEGIN
 			END	
 			ELSE
 			BEGIN				
-				EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @db_custid, 
 					@RoleID = @RoleID, 
 					@SubAccID = @SubAccID,
@@ -836,7 +843,7 @@ BEGIN
 		
 		IF @IsNickname = 1 
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -853,7 +860,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -871,22 +878,25 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0)
-	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
-
-	IF @db_enabled <> 1
+	SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
+	
+	IF @Status = 1
 	BEGIN
-		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account was disabled!'  
-				 ELSE [dbo].[f_Get_MsgNamebyMsgID](60020,@Language)
-				END ,@ErrCode=600     
-		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Disabled)'
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been inactive. Please contact your upline for assistance.'  
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
+				END ,@ErrCode=700     		
 	    
+		IF @SubAccID > 0  
+			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Inactive)'
+		ELSE
+			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
 		IF @IsNickname = 1	
 		BEGIN						
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -903,7 +913,57 @@ BEGIN
 		END	
 		ELSE
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1326,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration							
+		END	
+		RETURN
+	END
+	
+	IF @Status = 2
+	BEGIN
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been suspended. Please contact your upline to activate your account!'  
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
+				END ,@ErrCode=701     
+	    
+		IF @SubAccID > 0  
+			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Suspended)'
+		ELSE
+			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
+
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		IF @IsNickname = 1	
+		BEGIN						
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1326,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @db_Username2							
+		END	
+		ELSE
+		BEGIN			
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -920,6 +980,54 @@ BEGIN
 		RETURN
 	END
 
+	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0)
+	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
+	
+	IF @db_enabled <> 1
+	BEGIN
+		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account was disabled!'  
+				 ELSE [dbo].[f_Get_MsgNamebyMsgID](60020,@Language)
+				END ,@ErrCode=600     
+		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Disabled)'
+	    
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		IF @IsNickname = 1	
+		BEGIN						
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1326,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @db_Username2							
+		END	
+		ELSE
+		BEGIN			
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1326,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration							
+		END	
+		RETURN
+	END
 	  
 	IF ISNULL(@closed, 1) = 1
 	BEGIN  
@@ -930,7 +1038,7 @@ BEGIN
 
 		IF @isNickname = 1
 		BEGIN							
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -947,7 +1055,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN				
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -986,7 +1094,7 @@ BEGIN
 		
 		IF @IsNickname =1
 		BEGIN			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1003,7 +1111,7 @@ BEGIN
 		END	
 		ELSE
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @db_custid, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -1023,6 +1131,7 @@ BEGIN
 			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
 		    
 			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+									
 			
 	    	SELECT @LogSPData = '<CS_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
@@ -1071,7 +1180,7 @@ BEGIN
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 	IF @IsNickname =1 
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @db_custid, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -1088,7 +1197,7 @@ BEGIN
 	END	
 	ELSE
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @db_custid, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,

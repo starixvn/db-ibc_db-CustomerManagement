@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd2]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd2]
 	@CustID int,
 	@SubAccID int,	
 	@UserPwd nvarchar(50),

@@ -32,7 +32,8 @@ ALTER PROCEDURE [dbo].[CS_LoginClaimDownline]
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
-	@isForcedChangeSecurityCode BIT = 0 OUTPUT
+	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@Status TINYINT = 1 OUTPUT
 AS
 /*
 	Created: 20190518@Elodie
@@ -41,6 +42,7 @@ AS
 
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -86,7 +88,7 @@ BEGIN
 		SET @End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 					
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -122,7 +124,7 @@ BEGIN
 		
 		IF @IsNickname = 1
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -139,7 +141,7 @@ BEGIN
 		END			
 		ELSE
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -173,7 +175,7 @@ BEGIN
 		IF @@ROWCOUNT = 0  
 		BEGIN
 			SELECT @LogData = 'Sub-account Login' + ',[After Login] Result:Failed(User_Not_Found)'      
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -215,7 +217,7 @@ BEGIN
 		
 		IF @IsNickname = 1 
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -231,7 +233,7 @@ BEGIN
 		END	
 		ELSE 
 		BEGIN
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -272,6 +274,8 @@ BEGIN
 		exchange WITH (NOLOCK) 
 	WHERE exchangeid = @db_currency  
 
+	SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
+     
 	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
 	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
 
@@ -301,7 +305,7 @@ BEGIN
 		BEGIN 		
 			SELECT @LogData =  @role + @UserName + '[After Login] Result:Failed(Unknown_Login)'	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
 				@RoleID = @RoleID, 
 				@SubAccID = @SubAccID,
@@ -362,7 +366,7 @@ BEGIN
 	--------------------------- 
 	IF @IsNickname =1
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,
@@ -379,7 +383,7 @@ BEGIN
 	END
 	ELSE 
 	BEGIN
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustID, 
 			@RoleID = @RoleID, 
 			@SubAccID = @SubAccID,

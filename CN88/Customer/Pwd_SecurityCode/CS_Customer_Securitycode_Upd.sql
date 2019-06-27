@@ -19,6 +19,7 @@ ALTER PROCEDURE [dbo].[CS_Customer_SecurityCode_upd]
 		
 		Revisions:
 			- 20190311@Johnson: clone sp from Age_CustomerUpdSecurityCode to support cn88 [Redmine:#105660]
+			- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 		Parameter's Explanation:
 	*/
 BEGIN	
@@ -125,30 +126,12 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = @ActionID, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<CS_Customer_SecurityCode_upd custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
-									+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-									+ 'isForcedChangeSecurityCode="' + COALESCE(CAST(@isForcedChangeSecurityCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-									+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
-									+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-									+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
-									
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = @ActionID, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration 
-			END CATCH
-			
+			EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @UserID,
+				@CustID = @CustID, 
+				@ActionID = @ActionID, 
+				@TrackingValue = @LogSPData,
+				@duration = @duration 			
 		END
 		ELSE IF @roleid = 1
 		BEGIN
@@ -185,28 +168,12 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = 936, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<CS_Customer_SecurityCode_upd custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
-									+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-									+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
-									+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-									+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
-									
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = 936, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration 
-			END CATCH
+			EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @UserID,
+				@CustID = @CustID, 
+				@ActionID = 936, 
+				@TrackingValue = @LogSPData,
+				@duration = @duration			
 		END
 		--for headline of cn88
 		ELSE IF @roleid = 0
@@ -248,29 +215,12 @@ BEGIN
 			SET @endRun = GETDATE()
 			SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 			
-			BEGIN TRY
-				EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = @ActionID, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration
-			END TRY
-			BEGIN CATCH
-				SELECT @LogSPData = '<CS_Customer_SecurityCode_upd custid="' + COALESCE(CAST(@custid AS VARCHAR(10)),SPACE(1)) + '" ' 								
-									+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' 
-									+ 'isForcedChangeSecurityCode="' + COALESCE(CAST(@isForcedChangeSecurityCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-									+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
-									+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
-									+ 'ErrMsg="' + ERROR_MESSAGE() + '" />'
-									
-				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-					@UserID = @UserID,
-					@CustID = @CustID, 
-					@ActionID = @ActionID, 
-					@TrackingValue = @LogSPData,
-					@duration = @duration 
-			END CATCH
+			EXEC CS_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @UserID,
+				@CustID = @CustID, 
+				@ActionID = @ActionID, 
+				@TrackingValue = @LogSPData,
+				@duration = @duration			
 		END
 END
 GO

@@ -19,6 +19,7 @@ AS
 
 	Revisions:    
 		- 20190329@Elodie: Initial SP [Redmine:#110497]
+		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 
 	Param's Explanation:
 		• @ErrCode:
@@ -158,7 +159,7 @@ BEGIN
 	SET @endRun = GETDATE()
 	SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper 
+	EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper 
 		@UserID = @UserID, 
 		@CustID = @CustID,
 		@ActionID = 685,

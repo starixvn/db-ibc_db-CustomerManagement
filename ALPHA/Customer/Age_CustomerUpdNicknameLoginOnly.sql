@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerUpdNicknameLoginOnly]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerUpdNicknameLoginOnly]
 	@custid				INT,
 	@NicknameLoginOnly	BIT = 0,
 	@IP					VARCHAR(30) ='',
@@ -10,7 +11,7 @@ AS
 /*
 Created: 20110608@Sophia
 Task : Set Nickname Log in only
-DB: DBTXN/bodb02
+DB: DBCUST/CustDB
 Original:
 
 Revisions:

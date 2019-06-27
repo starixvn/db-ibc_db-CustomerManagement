@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode_Sub]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode_Sub]
 	@subAccid	INT,	
 	@custid		INT,			
 	@Securitycode	VARCHAR(50) = '',
@@ -10,10 +11,10 @@
 	/*
 		Created: Johnson
 		Date: 2013-04-12
-		DB: DBTXN/bodb02
+		DB: DBCUST/CustDB
 		Task: Sub-account reset Security code
 		Revisions:
-		
+			- 20190618@Elodie: Input metadata
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
