@@ -1,4 +1,5 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@exchangeid int,
 	@actualrate FLOAT,
@@ -15,36 +16,34 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@ErrMsg NVARCHAR(200) = '' OUTPUT,
 	@IP VARCHAR(15) = ''
 AS
-
 /*
-Created: ?
-Task : Update ex rate
+	Created: ?
+	Task : Update ex rate
 
-DB: DBCUST.CustDB
-Original: 
+	DB: DBCUST.CustDB
+	Original: 
 
-Revisions: 
-	- 20091025@Peter: Call SP update Aff's ex.Rate
-	- 20091027@Daniel: Change to writelog to table userlog_exchange instead
-	- 20100127@Khoa: add columns GBPRate, AUDRate, ZARRate, EURO, USD
-	- 20100504@Peter :  Remove the calling to SP [DB052].[Affiliate_12BET].[dbo].[Aff_AccUpdateExchange]
-	                    coz it will be updated on Affiliate Admin
-	- 20110605@Johnson: Add columns Description, MultipliedBy       
-	- 20130822@Lukas: change alias for DB03
-	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
-	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-	
-Param's Explanation:
-• @actualrate: new rate to update
-• @minbet: update new minbet 
+	Revisions: 
+		- 20091025@Peter: Call SP update Aff's ex.Rate
+		- 20091027@Daniel: Change to writelog to table userlog_exchange instead
+		- 20100127@Khoa: add columns GBPRate, AUDRate, ZARRate, EURO, USD
+		- 20100504@Peter :  Remove the calling to SP [DB052].[Affiliate_12BET].[dbo].[Aff_AccUpdateExchange]
+							coz it will be updated on Affiliate Admin
+		- 20110605@Johnson: Add columns Description, MultipliedBy       
+		- 20130822@Lukas: change alias for DB03
+		- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20190627@Elodie: Apply currency min bet constrain for Bet Setting [Redmine:#115126]
 
-
+	Param's Explanation:
+	• @actualrate: new rate to update
+	• @minbet: update new minbet 
 */
 BEGIN
 	SET NOCOUNT ON
 
 	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 	If @ErrCode <> 0
 		RETURN
 	--end
@@ -62,8 +61,7 @@ BEGIN
 		@old_Description nvarchar(100),
 		@old_MultipliedBy int
 
-
-	select 
+	SELECT 
 		@old_minbet = minbet,
 		@old_minbetlive = minbetlive,
 		@old_actualrate = actualrate,
@@ -73,9 +71,11 @@ BEGIN
 		@old_currency = currency,
 		@old_Description = Description,
 		@old_MultipliedBy = MultipliedBy	
-	from exchange with (nolock) where exchangeid=@exchangeid
+	FROM exchange WITH (NOLOCK) 
+	WHERE exchangeid=@exchangeid
 
-	UPDATE exchange SET 
+	UPDATE exchange 
+	SET 
 		actualrate=@actualrate, 
 		minbet=@minbet,
 		minbetlive=@minbetlive,
@@ -86,7 +86,10 @@ BEGIN
 		MultipliedBy = @MultipliedBy
 	WHERE exchangeid=@exchangeid
 
-
+	UPDATE dbo.CS_ProductBetSetting 
+	SET minbet = CASE WHEN islive = 0 THEN @minbet ELSE @minbetlive END
+	WHERE Currency = @exchangeid AND (SportType BETWEEN 1 AND 99 OR SportType = 154)
+	
 	Select @LogData = 'Update exchange rate:'
 		+  ' currencyName=' + @currency 
 		+  ' ,newRMRate=' + ISNULL(convert(VARCHAR(10), @actualrate),'')  
@@ -116,8 +119,3 @@ BEGIN
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeUpd] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeUpd] TO [ITVivi] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeUpd] TO [vnteam] AS [dbo]
