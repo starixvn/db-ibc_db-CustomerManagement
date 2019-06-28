@@ -86,10 +86,14 @@ BEGIN
 		MultipliedBy = @MultipliedBy
 	WHERE exchangeid=@exchangeid
 
-	UPDATE dbo.CS_ProductBetSetting 
-	SET minbet = CASE WHEN islive = 0 THEN @minbet ELSE @minbetlive END
-	WHERE Currency = @exchangeid AND (SportType BETWEEN 1 AND 99 OR SportType = 154)
-	
+	IF @old_minbet <> @minbet OR @old_minbetlive <> @minbetlive 
+	BEGIN
+		--Sync minbet of SB to CS_ProductBetSetting for CN88
+		UPDATE dbo.CS_ProductBetSetting 
+		SET minbet = CASE WHEN islive = 0 THEN @minbet ELSE @minbetlive END
+		WHERE Currency = @exchangeid AND (SportType BETWEEN 1 AND 99 OR SportType = 154 OR SportType = 9999)
+	END
+
 	Select @LogData = 'Update exchange rate:'
 		+  ' currencyName=' + @currency 
 		+  ' ,newRMRate=' + ISNULL(convert(VARCHAR(10), @actualrate),'')  
@@ -109,7 +113,6 @@ BEGIN
 		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(10),@old_MultipliedBy),'')
 		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')	
 		
-
 	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 		@UserID = @UserID, 
 		@ExchangeID = @exchangeid, 
