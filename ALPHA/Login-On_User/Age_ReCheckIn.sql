@@ -31,7 +31,7 @@ IF @@ROWCOUNT = 0
 	SELECT @IsKickedOut = 1
 ELSE IF EXISTS (SELECT 1 FROM @OUTPUT WHERE IsKickedOut = 1)
 	BEGIN
-		SELECT top (1) @IsKickedOut = 1, @KickOutReason = KickOutReason
+		SELECT top (1) @IsKickedOut = 1, @KickOutReason = ISNULL(KickOutReason,0)
 		FROM @OutPut
 		WHERE isKickedOut = 1
 	END
