@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/ 
 ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd]
 	@custid int,
 	@subaccid int,
@@ -24,7 +24,7 @@ Revisions:
 	- 20100107@Kiwi: Amend writing log.
 	- 20101021@Henry: Record execution time
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
-
+	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -71,7 +71,7 @@ where	subaccid = @subaccid and custid = @custid
 
 UPDATE CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)
 SET		OldUserPwd			= @OldUserPwd
-		,PwdExpiry			= DATEADD(dd,30,GETDATE())
+		,PwdExpiry			= DATEADD(dd,-1,GETDATE())--force change pwd
 		,LastChangedPwdDate	= GETDATE()
 WHERE	subaccid = @subaccid and custid = @custid
 
@@ -103,4 +103,5 @@ BEGIN CATCH
 		@TrackingValue = @LogData,
 		@duration = @duration		
 END CATCH
+
 GO

@@ -28,7 +28,7 @@ AS
 	- 20160321@Percy: Do not show any Internal Admin's log for External Admin [Redmine: #53932]
 	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
 	- 20190405@Patrick: Support archive date range [Redmine: #111476]
-	
+	- 20190619@Johnson: show log kickout for member[redmine: #114566]
 	
     Param's Explaination:    
 	- @UserId: a customer which we want to view actions affect to.
@@ -60,10 +60,11 @@ IF ( @PageIndex > 0 )
 --		PAGING QUERY
 
 --RETURN TO RETRIEVE DATA IF ROLEID = 1 
-DECLARE @RoleID tinyint, @srecommend int
+DECLARE @RoleID tinyint, @srecommend int,@ActionID_KO INT = 1331 --log action of kickout for member
 SELECT @RoleID = roleid, @srecommend = srecommend from bodb02.dbo.custinfo(nolock) where custid = @UserId
-IF (@RoleID = 1)
-	RETURN
+
+--IF (@RoleID = 1)
+--	RETURN
 --------------- hardcode for super ZZ---------------
 declare @hideLocation bit
 select @hideLocation = case when @srecommend=5532706 and SYSTEM_USER like 'bodbdownlinen%' then 1 else 0 end
@@ -117,6 +118,7 @@ BEGIN
 								AND ((	UserID = @UserId AND SubAccID >= 0)
 											--OR (SubAccID = @UserId)
 										) 
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 								AND ci.roleid <=4
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
@@ -163,7 +165,8 @@ BEGIN
 								AND IsInternal = 0
 								AND ((	UserID = @UserId AND SubAccID >= 0)
 											--OR (SubAccID = @UserId)
-										) 
+										)
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)				
 								AND ci.roleid <=4
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
@@ -212,6 +215,7 @@ BEGIN
 								AND ((	UserID = @UserId AND SubAccID >= 0)
 											--OR (SubAccID = @UserId)
 										) 
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 								AND ci.roleid <= 4
 
 					UNION ALL
@@ -239,6 +243,7 @@ BEGIN
 								AND ((	UserID = @UserId AND SubAccID >= 0)
 											--OR (SubAccID = @UserId)
 										) 
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 								AND ci.roleid <= 4
 					) AS MyTable1
 				) AS MyTable
@@ -289,6 +294,7 @@ BEGIN
 								AND UserID = @UserId
 										--AND SubAccID <= 0)
 										--OR (SubAccID = @UserId)
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 								AND (la.ActionID <> 1301 OR @LogType = 2)								
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
@@ -334,7 +340,8 @@ BEGIN
 								AND UserID = @UserId
 										--AND SubAccID <= 0)
 										--OR (SubAccID = @UserId)
-								AND (la.ActionID <> 1301 OR @LogType = 2)								
+								AND (la.ActionID <> 1301 OR @LogType = 2)	
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
 	END
@@ -380,7 +387,8 @@ BEGIN
 								AND UserID = @UserId
 										--AND SubAccID <= 0)
 										--OR (SubAccID = @UserId)
-								AND (la.ActionID <> 1301 OR @LogType = 2)	
+								AND (la.ActionID <> 1301 OR @LogType = 2)
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)						
 
 					UNION ALL
 					SELECT LogID,
@@ -405,7 +413,8 @@ BEGIN
 								AND UserID = @UserId
 										--AND SubAccID <= 0)
 										--OR (SubAccID = @UserId)
-								AND (la.ActionID <> 1301 OR @LogType = 2)	
+								AND (la.ActionID <> 1301 OR @LogType = 2)
+								AND la.ActionID = (CASE WHEN @roleid = 1 THEN @ActionID_KO ELSE la.ActionID END)				
 					) AS MyTable1
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound

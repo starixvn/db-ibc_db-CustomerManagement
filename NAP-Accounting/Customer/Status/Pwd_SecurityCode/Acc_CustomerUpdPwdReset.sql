@@ -1,8 +1,9 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdPwdReset]
 	@CustID int,
 	@UserPwd nvarchar(50),
 	@UserID int,
+	@isForcedChangePwd BIT = 1,
 	@isABS	BIT = 0,
 	@Language varchar(2) = 'E',
 	@LoginIP VARCHAR(15) ='',
@@ -15,7 +16,7 @@ AS
 	Task: Update user's password 
 	DB: DBTXN/bodb02
 	
-	History:
+	Revisions:
 		- 20080213@PhucPham: Check permission for Account site
 		- 20090311@PhuongDao: Write log for updating user's password and add a param - @LoginIP 
 		- 20090321@PhuongDao: Not checking permission if the admin changes his own password. 
@@ -31,7 +32,7 @@ AS
 		- 20130704@Kathy: Synchronize user data between Accounting and AdminSite: update password in AdminSiteUser table		
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20190611@Johnson: force change pwd for customer [Redmine:#114566]	
 */
 BEGIN
 	SET NOCOUNT ON
@@ -63,7 +64,11 @@ BEGIN
 	declare @PwdExpiry datetime,
 			@OldUserPwd VARCHAR(40),
 			@OldPwdExpiry DATETIME
-	select @pwdexpiry = dateadd(dd, 30, getdate())
+	
+	IF @isForcedChangePwd = 1
+		select @pwdexpiry = dateadd(dd, -1, getdate())
+	ELSE	
+		select @pwdexpiry = dateadd(dd, 30, getdate())
 
 	SELECT	@OldUserPwd = userpwd, @OldPwdExpiry = pwdexpiry
 	FROM	customer WITH (NOLOCK)
@@ -96,10 +101,18 @@ BEGIN
 		WHERE	CustID = @CustID
 
 	END
-
+	ELSE IF @roleid = 1
+	BEGIN
+		UPDATE	CustLoginInfo_Member WITH (UPDLOCK,ROWLOCK)
+		SET		gesture 			= NULL
+		WHERE	CustID = @CustID
+	END
+	
 	IF(@RoleID <5)
 		Begin
-			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) +'" IP="' + @LoginIP +'" />'
+			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) 
+							+'" IP="' + @LoginIP 
+							+'" isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)+'" />'
 
 			set @endRun = getdate()
 			set @duration  = datediff (millisecond,@startRun,@endRun)
@@ -116,6 +129,7 @@ BEGIN
 			BEGIN CATCH
 				SELECT @LogSPData = '<Acc_CustomerUpdPwdReset CustID="' + convert(varchar(20), @CustID) 
 									+ '" IP="' + @LoginIP
+									+'" isForcedChangePwd="'+convert(varchar(1),@isForcedChangePwd)
 									+ '" ErrMsg="' + ISNULL(CONVERT(VARCHAR(400),ERROR_MESSAGE()),space(1)) +'" />'
 				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 					@UserID = @UserID,
@@ -127,7 +141,9 @@ BEGIN
 		end
 	Else
 		Begin
-			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset><IP>' + @LoginIP + '</IP></Acc_CustomerUpdPwdReset>'
+			SELECT @LogSPData = '<Acc_CustomerUpdPwdReset><IP>' + @LoginIP + '</IP>'
+							+'<isForcedChangePwd>'+convert(varchar(1),@isForcedChangePwd)+'</isForcedChangePwd>'+	
+			'</Acc_CustomerUpdPwdReset>'
 
 			set @endRun = getdate()
 			set @duration  = datediff (millisecond,@startRun,@endRun)
@@ -142,7 +158,9 @@ BEGIN
 			END TRY
 			BEGIN CATCH
 				SELECT @LogSPData = '<Acc_CustomerUpdPwdReset ErrMsg="' + ISNULL(CONVERT(VARCHAR(400),ERROR_MESSAGE()),space(1))			
-							+ '"><IP>' + @LoginIP + '</IP></Acc_CustomerUpdPwdReset>'
+							+ '"><IP>' + @LoginIP + '</IP>'
+							+'<isForcedChangePwd>'+convert(varchar(1),@isForcedChangePwd)+'</isForcedChangePwd>'
+							+'</Acc_CustomerUpdPwdReset>'
 				EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_UserControl
 					@custID = @CustID,
 					@Doing = @LogSPData,
@@ -154,8 +172,3 @@ BEGIN
 	End
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdPwdReset] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdPwdReset] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdPwdReset] TO [vnteam] AS [dbo]
