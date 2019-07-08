@@ -1,2 +1,2 @@
-NAP-Accounting\ViewLog\UserLog_Login\NAP_UserLog_LoginSel.sql
-NAP-Accounting\ViewLog\UserLog_Login\NAP_UserLog_LoginSelTotalRecords.sql
+NAP-Accounting\Customer\Status\Pwd_SecurityCode\CS_Acc_CustomerUpdPwdReset.sql
+CN88\SubAccount\CS_CustSubIns.sql

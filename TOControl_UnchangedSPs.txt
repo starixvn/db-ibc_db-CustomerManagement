@@ -1,3 +1,0 @@
-Nap-Risk&Control\WinLimitControl\Admin\custdb\NAP_WinLimit_CurrencySettingSel.sql
-Nap-Risk&Control\WinLimitControl\Admin\custdb\NAP_WinLimit_CurrencySel.sql
-Nap-Risk&Control\WinLimitControl\Admin\custdb\NAP_WinLimit_CurrencySettingAllSiteSel.sql
