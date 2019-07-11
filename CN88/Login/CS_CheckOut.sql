@@ -51,13 +51,13 @@ BEGIN
 
 	SELECT @Role = CASE @RoleID WHEN 0 THEN '{Headline}:' WHEN 1 THEN 'Customer:' WHEN 2 THEN '{Agent}:' WHEN 3 THEN '{MA}:' WHEN 4 THEN '{SMA}:' ELSE 'Unknown:' END  
 
-	SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + ' - ' + @Reason
+	SELECT @LogData =  @Role + CASE WHEN isnull(@UserName,'') = '' THEN CAST(@custid AS VARCHAR(30)) ELSE @Username END + ' - ' + @Reason
 
 	-- ***Check Sub-Account***  
 	IF @SubAccID > 0  
 	BEGIN
 		SELECT @Role = CASE @RoleID WHEN 2 THEN '{SubAgent}:' WHEN 3 THEN '{SubMA}:' WHEN 4 THEN '{SubSMA}:' ELSE 'Unknown:' END  
-		SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + ' - ' + @Reason
+		SELECT @LogData =  @Role + CASE WHEN isnull(@UserName,'') = '' THEN CAST(@custid AS VARCHAR(30)) ELSE @Username END + ' - ' + @Reason
 	END
 
 	SET @End = GETDATE()
