@@ -6,7 +6,7 @@ ALTER PROCEDURE CS_CheckOut
 	@RoleID tinyint = NULL,
 	@ServerID int = NULL,
 	@Nickname varchar(50) = NULL,
-	@Reason NVARCHAR(100) = ' Logout Success'
+	@Reason NVARCHAR(100) = '{LogOutSuccess}'
 AS
 /*
 	Created: 20190518@Elodie
@@ -49,13 +49,16 @@ BEGIN
 		RETURN
 	END
 
-	SELECT @Role = CASE @RoleID WHEN 0 THEN 'Headline:' WHEN 1 THEN 'Customer:' WHEN 2 THEN 'Agent:' WHEN 3 THEN 'Master:' WHEN 4 THEN 'Super:' ELSE 'Unknown:' END  
+	SELECT @Role = CASE @RoleID WHEN 0 THEN '{Headline}:' WHEN 1 THEN 'Customer:' WHEN 2 THEN '{Agent}:' WHEN 3 THEN '{MA}:' WHEN 4 THEN '{SMA}:' ELSE 'Unknown:' END  
 
-	SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + @Reason
+	SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + ' - ' + @Reason
 
 	-- ***Check Sub-Account***  
 	IF @SubAccID > 0  
-		SET @LogData = 'Sub-Account ' +  @LogData
+	BEGIN
+		SELECT @Role = CASE @RoleID WHEN 2 THEN '{SubAgent}:' WHEN 3 THEN '{SubMA}:' WHEN 4 THEN '{SubSMA}:' ELSE 'Unknown:' END  
+		SELECT @LogData =  @Role + case when isnull(@UserName,'') = '' then cast(@custid as varchar(30)) else @Username end + ' - ' + @Reason
+	END
 
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
