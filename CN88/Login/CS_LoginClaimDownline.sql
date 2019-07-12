@@ -172,7 +172,7 @@ BEGIN
 
 		IF @@ROWCOUNT = 0  
 		BEGIN
-			SELECT @LogData = @role + @SubUserName + ' - {AfterLoginFailureSubAccNotFound}'  
+			SELECT @LogData = @role + @SubUserName + ' - {AfterLoginFailureUserNotFound}'  
 
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
