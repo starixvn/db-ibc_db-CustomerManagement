@@ -74,8 +74,8 @@ BEGIN
 		)
 		OR (@LoginDomain like '%ibc88.com%')
 	BEGIN
-		SELECT @LogData = 'Unauthorized login (' + @UserName +' - ' + @UserPwd + ')'
-		
+		SELECT @LogData = @UserName + ' - {UnauthorizedLogin}' +' (' + @UserPwd + ')'
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
@@ -203,8 +203,8 @@ BEGIN
 			EXECUTE @IsMatched = [dbo].[f_CheckAgentLoginDomain] @Site, @LoginDomain
 			IF(@IsMatched = 0)
 			BEGIN
-				SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login to wrong domain (' + @Site + '/' + @LoginDomain + ')'
-				
+				SELECT @LogData = @role + @SubUserName + ' - {LoginToWrongDomain}' + ' (' + @Site + '/' + @LoginDomain + ')'
+
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
@@ -239,8 +239,8 @@ BEGIN
 			
 				IF @isAllowed = 0
 				BEGIN
-					SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login to wrong domain (' + @Site + '/' + @LoginDomain + ')'
-					
+					SELECT @LogData = @role + @SubUserName + ' - {LoginToWrongDomain}' + ' (' + @Site + '/' + @LoginDomain + ')'
+
 					SET	@End = GETDATE() 
 					SET @Duration = DATEDIFF(millisecond,@Begin,@End)						
 					
@@ -271,8 +271,8 @@ BEGIN
 	    
 		IF (@rowcount = 0)
 		BEGIN
-			SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login failed (User_Not_Found)'    
-			
+			SELECT @LogData = @role + @SubUserName + ' - {FailureUserNotFound}'  
+	
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 						
@@ -306,7 +306,7 @@ BEGIN
 
 		IF @IsAccess = 0
 		BEGIN
-			SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed (No_Grant_Access)'  
+			SELECT @LogData = @role + @UserName + ' - {FailureNoGrantAccess}'  
 
 			SET @End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -361,8 +361,8 @@ BEGIN
 					
 			IF (@IsAllowed = 0)
 			BEGIN  
-				SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed (IP_Denied)'  
-			 
+				SELECT @LogData = @role + @UserName + ' - {FailureIPDenied}'  
+
 				SET @End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 				
@@ -622,9 +622,8 @@ BEGIN
 		EXEC @IsMatched = [dbo].[f_CheckAgentLoginDomain] @Site, @LoginDomain
 		IF(@IsMatched = 0)
 		BEGIN
+			SELECT @LogData = @role + @UserName + ' - {LoginToWrongDomain}' + ' (' + @Site + '/' + @LoginDomain + ')'
 
-			SELECT @LogData = 'Agent: ' + @UserName + ', login to wrong domain (' + @Site + '/' + @LoginDomain + ')'
-			
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)			
 		
@@ -678,9 +677,9 @@ BEGIN
 				@isAllowed = @isAllowed OUTPUT
 
 			IF @isAllowed = 0 
-			BEGIN
-				SELECT @LogData = 'Agent: ' + @UserName + ', login to wrong domain (' + @Site + '/' + @LoginDomain + ')'
-				
+			BEGIN				
+				SELECT @LogData = @role + @UserName + ' - {LoginToWrongDomain}' + ' (' + @Site + '/' + @LoginDomain + ')'
+
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)			
 			
@@ -784,8 +783,8 @@ BEGIN
 
 		IF @IsAccess = 0
 		BEGIN
-			SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed (No_Grant_Access)'  
-			--SELECT @LogData = @role + @UserName + ' - {FailureUserNotFound}'  
+			SELECT @LogData = @role + @UserName + ' - {FailureNoGrantAccess}'  
+
 			SET @End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
@@ -836,8 +835,8 @@ BEGIN
 	-- check condition  
 	IF @RoleID NOT IN (2,3,4)
 	BEGIN  
-		SELECT @LogData =  @role + @UserName + ' Result:Failed (Not_Agent)'
-		
+		SELECT @LogData = @role + @UserName + ' - {FailureUserNotFound}'  
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 		
@@ -886,10 +885,7 @@ BEGIN
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
 				END ,@ErrCode=700     		
 	    
-		IF @SubAccID > 0  
-			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Inactive)'
-		ELSE
-			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Inactive)'
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserInactivated}'  
 
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -936,10 +932,7 @@ BEGIN
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
 				END ,@ErrCode=701     
 	    
-		IF @SubAccID > 0  
-			SELECT @LogData = 'Sub-account:' +  @SubUserName + ' Result:Failed (User_Suspended)'
-		ELSE
-			SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Suspended)'
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserSuspended}'  
 
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -988,8 +981,9 @@ BEGIN
 		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account was disabled!'  
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](60020,@Language)
 				END ,@ErrCode=600     
-		SELECT @LogData ='Agent:' + @UserName + ' Result:Failed (User_Disabled)'
-	    
+
+	    SELECT @LogData = @role + @UserName + ' - {FailureUserDisabled}'  
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 
@@ -1030,9 +1024,9 @@ BEGIN
 	END
 	  
 	IF ISNULL(@closed, 1) = 1
-	BEGIN  
-		SELECT @LogData =  @role + @UserName + ' Result:Failed(A/C_Locked)'
-		
+	BEGIN  				
+		SELECT @LogData = @role + @UserName + ' - {FailureAccountLocked}'  
+
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 
@@ -1086,8 +1080,8 @@ BEGIN
 			SELECT	@LastChangedPwdDate = @LastChangedPwdDate
 		ELSE	SELECT	@LastChangedPwdDate = NULL 
 
-		SELECT @LogData =  @role + @UserName + ' Result:Failed (Password problem)'  
-		,@failedcount = @failedcount + 1    
+		SELECT @LogData = @role + @UserName + ' - {FailurePasswordProblem}'  
+			,@failedcount = @failedcount + 1    
 	    
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
@@ -1161,20 +1155,14 @@ BEGIN
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
 		iplogin = CASE WHEN @db_loginip<>'' THEN @inputLoginIP ELSE '' END, 		
 		lastlogged = CURRENT_TIMESTAMP 
-	WHERE custid = @db_custid  
+	WHERE custid = @db_custid  	
 
-	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
 	----------------------------------
 	--**Output LoginIP to check the first login**
 	SELECT @LoginIP=isnull(@db_loginip, ''),
 		@LoginTime = CURRENT_TIMESTAMP	
 
-	----------------------------------
-	---------------------------  
-	-- ***Check Sub-Account***  
-	IF @SubAccID > 0  
-		SET @LogData = 'Sub-account:' +  convert(varchar(30), @SubUserName) + ' - ' + ' [Before Login] Result:Success' 
-	---------------------------  
+	SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {BeforeLoginSuccess}'  
 
 	SET	@End = GETDATE() 
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
