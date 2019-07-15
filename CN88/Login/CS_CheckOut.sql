@@ -16,6 +16,7 @@ AS
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 
 	Param's Explanation:
 		

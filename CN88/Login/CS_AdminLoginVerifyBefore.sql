@@ -28,6 +28,7 @@ AS
 	Revisions:
 		- 20190219@Johnson: Clone sp from Age_LoginVerifyDownline for cn88 tier0 login [Redmine: #105660]
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not

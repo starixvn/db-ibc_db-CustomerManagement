@@ -43,6 +43,7 @@ AS
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
+		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
