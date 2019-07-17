@@ -31,6 +31,7 @@ ALTER PROCEDURE [dbo].[CS_LoginClaimDownline]
 	@IsNickname BIT = 0 OUTPUT,
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@Nickname VARCHAR(50) = '' OUTPUT,
+	@IsAllDownline BIT = 0 OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@Status TINYINT = 1 OUTPUT
@@ -44,6 +45,7 @@ AS
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
+		- 20190717@Elodie: Sub Acc Management [Redmine:#116825]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -167,7 +169,8 @@ BEGIN
 		SELECT 
 			@SubUserName = username, 
 			@CustID = custid,			 
-			@SubPageAccess = PageAccess
+			@SubPageAccess = PageAccess,
+			@IsAllDownline = IsAllDownline
 		FROM custSub WITH (NOLOCK)
 		WHERE subaccid = @SubAccID and userpwd = @UserPwd
 
