@@ -43,6 +43,7 @@ AS
 	Revisions:		
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
+		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -61,7 +62,7 @@ BEGIN
 	----- begin 20110608: login using Nickname
 	SET @ServerID = 0 
 
-	SELECT @RoleID = RoleID 
+	SELECT @RoleID = RoleID, @UserName = c.username
 	FROM customer c WITH (NOLOCK) 
 	WHERE CustID = @CustID
 	
@@ -75,15 +76,18 @@ BEGIN
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @CustID  
 		ELSE IF @RoleID = 4  
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
+
+		SELECT @Role = CASE @RoleID WHEN 0 THEN '{Headline}:' WHEN 1 THEN 'Customer:' WHEN 2 THEN '{Agent}:' WHEN 3 THEN '{MA}:' WHEN 4 THEN '{SMA}:' ELSE 'Unknown:' END  
 	END
 	ELSE
 	BEGIN
-		SELECT @NicknameLoginOnly = NicknameLoginOnly FROM dbo.custSub WITH (NOLOCK) WHERE subaccid = @SubAccID  
-	END
+		SELECT @NicknameLoginOnly = NicknameLoginOnly, @SubUserName = username FROM dbo.custSub WITH (NOLOCK) WHERE subaccid = @SubAccID  
+		SELECT @Role = CASE @RoleID WHEN 2 THEN '{SubAgent}:' WHEN 3 THEN '{SubMA}:' WHEN 4 THEN '{SubSMA}:' ELSE 'Unknown:' END  
+	END		
 
 	IF @NicknameLoginOnly = 1 AND @IsNickname = 0
 	BEGIN  
-		SELECT @LogData = '[After Login] Login Result:Failed!'  
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @Username END + ' - {AfterLoginFailure}'  
 				 
 		SET @End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -112,12 +116,7 @@ BEGIN
 
 	IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 10
 	BEGIN
-		SELECT @LogData = '[After Login] Result:Failed(Session_Expired)'
-		-- ***Check Sub-Account***  
-		IF @SubAccID > 0 
-		BEGIN
-			SET @LogData = 'SubAccount:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + @LogData
-		END
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @Username END + ' - {AfterLoginFailureSessionExpired}'  
 
 		SET @End = GETDATE()
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -174,7 +173,8 @@ BEGIN
 
 		IF @@ROWCOUNT = 0  
 		BEGIN
-			SELECT @LogData = 'Sub-account Login' + ',[After Login] Result:Failed(User_Not_Found)'      
+			SELECT @LogData = @role + @SubUserName + ' - {AfterLoginFailureUserNotFound}'  
+
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = 0, 
 				@RoleID = @RoleID, 
@@ -213,8 +213,8 @@ BEGIN
 	-- user not found  
 	IF @rowcount = 0  
 	BEGIN  
-		SELECT @LogData = '[After Login]Result:Failed(User_Not_Found)' 
-		
+		SELECT @LogData = @role + @Username + ' - {AfterLoginFailureUserNotFound}'  
+
 		IF @IsNickname = 1 
 		BEGIN
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
@@ -251,13 +251,6 @@ BEGIN
 					END ,@ErrCode=106  
 		RETURN  
 	END 
-
-	SELECT @role = CASE @RoleID WHEN 0 THEN 'Headline:'
-						WHEN 1 THEN 'Customer:' 
-						WHEN 2 THEN 'Agent:' 
-						WHEN 3 THEN 'Master:' 
-						WHEN 4 THEN 'Super:' 
-					ELSE 'Unknown:' END  
 
 	SELECT 
 		@IsCasinoSync = SyncCasino, 
@@ -303,7 +296,7 @@ BEGIN
 		
 		IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
 		BEGIN 		
-			SELECT @LogData =  @role + @UserName + '[After Login] Result:Failed(Unknown_Login)'	
+			SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @Username END + ' - {AfterLoginFailureUnknownLogin}'  
 			
 			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 				@UserID = @CustID, 
@@ -325,10 +318,7 @@ BEGIN
 			RETURN
 		END 
 	END
-		
-	  
-	SELECT @LogData =  @role + @UserName + ' [After Login] Result:Success'  
-
+			  
 	----------------------------------
 	--**Output LoginIP to check the first login**
 	SELECT @LoginIP=ISNULL(@db_loginip, '')
@@ -355,11 +345,7 @@ BEGIN
 		WHERE	CustID = @CustID
 	END
 
-	-- ***Check Sub-Account***  
-	IF @SubAccID > 0 
-	BEGIN
-		SET @LogData = 'Sub-account:' +  COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) + ' - ' + ' [After Login] Result:Success' 
-	END
+	SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @Username END + ' - {AfterLoginSuccess}'  			
 
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
