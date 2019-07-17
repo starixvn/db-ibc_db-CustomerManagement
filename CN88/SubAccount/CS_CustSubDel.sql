@@ -39,9 +39,8 @@ BEGIN
 	
 	IF @ErrCode <> 0
 	BEGIN
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Delete sub-account failed. Please try again.'
-							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language) END,
-				@ErrCode = 106
+		--Delete sub-account failed. Please try again.
+		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40048, @Language), @ErrCode = 106
 		-- ROLLBACK MANUALLY
 		UPDATE cs SET cs.IsDeleted = 0 FROM dbo.custSub cs WHERE subaccid = @subaccid AND CustId = @CustId
 		RETURN

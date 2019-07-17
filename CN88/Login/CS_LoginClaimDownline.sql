@@ -197,13 +197,14 @@ BEGIN
 			RETURN    
 		END
 	END
-		
+			
 	SELECT 
 		@RoleID = roleid, 
 		@db_currency = currency, 
 		@site = site , 
 		@db_loginip= ISNULL(iplogin, ''), 
-		@UserName = username
+		@UserName = username,
+		@IsAllDownline = 1
 	FROM 
 		customer WITH (NOLOCK)
 	WHERE 
