@@ -20,7 +20,7 @@ AS
 	Revisions:    
 		- 20190329@Elodie: Initial SP [Redmine:#110497]
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
-
+		- 20190716@Elodie: Change maximum sub accounts [Redmine: #116825]
 	Param's Explanation:
 		• @ErrCode:
 			= 0: Create successfully.
@@ -52,11 +52,8 @@ BEGIN
 	END
 
 	--check no of subacc (must <= @MaxOfSubAcc)
-	SELECT @NoOfSubAcc = count(1) FROM custsub WITH(NOLOCK) WHERE custid = @custid
-
-	SELECT @MaxOfSubAcc = CASE roleid WHEN 4 THEN 10 ELSE 5 END
-	FROM customer  WITH(NOLOCK)
-	WHERE custid = @custid
+	SELECT @NoOfSubAcc = count(1) FROM custsub WITH(NOLOCK) WHERE custid = @custid AND IsDeleted = 0
+	SELECT @MaxOfSubAcc = 10
 
 	if @NoOfSubAcc >= @MaxOfSubAcc
 	BEGIN
@@ -152,9 +149,7 @@ BEGIN
 						'fname="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@firstname AS NVARCHAR(50)),SPACE(1))) + '" ' +
 						'PageAccess="'+ COALESCE(CAST(@PageAccess as VARCHAR(50)),SPACE(1)) + '" ' +
 						'Language="'+ COALESCE(CAST(@Language as VARCHAR(2)),SPACE(1)) + '" ' +
-						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" ' +
-						'ErrCode="'+ COALESCE(CAST(@ErrCode as VARCHAR(50)),SPACE(1)) + '" ' +
-						'ErrMsg="'+ COALESCE(CAST(@ErrMsg as VARCHAR(8000)),SPACE(1)) + '" />'
+						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
 	SET @endRun = GETDATE()
 	SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
