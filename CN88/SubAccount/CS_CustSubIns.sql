@@ -21,6 +21,8 @@ AS
 		- 20190329@Elodie: Initial SP [Redmine:#110497]
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 		- 20190716@Elodie: Change maximum sub accounts [Redmine: #116825]
+		- 20190715@Elodie: Sub account management [Redmine:#116825] 
+
 	Param's Explanation:
 		• @ErrCode:
 			= 0: Create successfully.
@@ -72,7 +74,9 @@ BEGIN
 		firstname,
 		lastname,
 		PageAccess,
-		createdate			
+		createdate,
+		IsAllDownline,
+		IsDeleted			
 	)
 	VALUES
 	(
@@ -82,7 +86,9 @@ BEGIN
 		@firstname,
 		'',
 		@PageAccess,
-		GETDATE()
+		GETDATE(),
+		0,
+		0
 	)
 
 	IF @@ERROR <> 0
