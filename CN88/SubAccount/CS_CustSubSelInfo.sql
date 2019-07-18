@@ -12,7 +12,7 @@ AS
 
 	Revisions:    
 		- 20190329@Elodie: Initial SP [Redmine:#110497]
-
+		- 20190715@Elodie: Sub account management [Redmine:#116825] 
 	Param's Explanation:
 		
 */
@@ -22,5 +22,5 @@ BEGIN
 	SELECT username, firstname, PageAccess
 	FROM custsub WITH(NOLOCK)
 	WHERE custid = @custid
-		AND subaccid = @subaccid
+		AND subaccid = @subaccid AND IsDeleted = 0
 END

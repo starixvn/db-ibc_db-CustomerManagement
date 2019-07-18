@@ -45,7 +45,7 @@ AS
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
-		- 20190717@Elodie: Sub Acc Management [Redmine:#116825]
+		- 20190717@Elodie: Sub account management [Redmine:#116825] 
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -164,6 +164,7 @@ BEGIN
 		RETURN    
 	END
 		
+	SELECT @IsAllDownline = 1 --set value 1 for main acc
 	IF @SubAccID > 0
 	BEGIN
 		SELECT 
@@ -203,8 +204,7 @@ BEGIN
 		@db_currency = currency, 
 		@site = site , 
 		@db_loginip= ISNULL(iplogin, ''), 
-		@UserName = username,
-		@IsAllDownline = 1
+		@UserName = username		
 	FROM 
 		customer WITH (NOLOCK)
 	WHERE 

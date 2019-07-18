@@ -35,7 +35,7 @@ BEGIN
 	FROM dbo.custSub cs 
 	WHERE subaccid = @subaccid AND CustId = @CustId
 
-	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid, @subaccid, 0, @ErrCode, @ErrMsg
+	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid, @subaccid
 	
 	IF @ErrCode <> 0
 	BEGIN
