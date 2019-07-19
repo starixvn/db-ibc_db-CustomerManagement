@@ -3,11 +3,13 @@
 ALTER PROCEDURE CS_SubAccManagementUpd	
 	@subaccid INT, 
 	@CustId INT,
+	@RoleId TINYINT,
 	@IsAllDownline BIT, 
-	@DownlineId VARCHAR(MAX),
+	@DownlineId VARCHAR(MAX) = '',
 	@Language VARCHAR(2) = 'E',
 	@LoginIP VARCHAR(20)='',
 	@UserID INT=0,
+	@IsUpdated BIT = 0 OUTPUT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT
 AS
@@ -31,38 +33,11 @@ BEGIN
 	CREATE TABLE #Downlines (CustId INT)
 	CREATE TABLE #AddAcc (CustId INT)
 	CREATE TABLE #RemoveAcc (CustId INT)
-	DECLARE @AddList VARCHAR(MAX), @RemoveList VARCHAR(MAX), @Roleid TINYINT, @Old_IsAllDownline BIT
+	DECLARE @AddList VARCHAR(MAX) ='', @RemoveList VARCHAR(MAX)='', @Old_IsAllDownline BIT
 	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData NVARCHAR(MAX), @LogSPData2 NVARCHAR(MAX)
 	SET @startRun = GETDATE()	
+	SELECT @IsUpdated = 0
 
-	INSERT INTO #Downlines(CustID)
-	SELECT CONVERT(INT, Val)
-	FROM dbo.f_StringSplit(@DownlineId, ',')
-	OPTION(MAXRECURSION 0)
-
-	SELECT @Roleid = roleid FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustId
-	IF ((@Roleid = 4 AND EXISTS(SELECT 1 
-								FROM dbo.custInfo ci WITH (NOLOCK) 
-									INNER JOIN #Downlines d ON d.CustId = ci.custid
-								WHERE (ci.srecommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 3
-								))
-		OR (@Roleid = 3 AND EXISTS (SELECT 1 
-									FROM dbo.custInfo ci WITH (NOLOCK) 
-										INNER JOIN #Downlines d ON d.CustId = ci.custid
-									WHERE (ci.mrecommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 2
-								))
-		OR (@Roleid = 2 AND EXISTS (SELECT 1 
-									FROM dbo.custInfo ci WITH (NOLOCK) 
-										INNER JOIN #Downlines d ON d.CustId = ci.custid
-									WHERE (ci.recommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 1
-								)))
-
-	BEGIN
-		--Action failed. Please try again.
-		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-		RETURN
-	END
-	
 	SELECT @Old_IsAllDownline = IsAllDownline FROM dbo.CustSub WITH (NOLOCK) WHERE SubAccId = @subaccid
 
 	IF @Old_IsAllDownline <> @IsAllDownline
@@ -71,59 +46,99 @@ BEGIN
 		SET s.IsAllDownline = @IsAllDownline
 		FROM dbo.custSub s WITH (ROWLOCK)
 		WHERE subaccid = @subaccid
+
+		SELECT @IsUpdated = 1
 	END
 
-	INSERT INTO #AddAcc (CustId) 
-	SELECT d.CustId
-	FROM #Downlines d WITH (NOLOCK)
-	WHERE NOT EXISTS (SELECT 1 FROM dbo.CS_SubAccManagement cs WITH (NOLOCK) WHERE cs.SubAccId = @subaccid AND cs.DownlineId = d.CustId)
+	IF ISNULL(@DownlineId,'') <> ''
+	BEGIN
+		INSERT INTO #Downlines(CustID)
+		SELECT CONVERT(INT, Val)
+		FROM dbo.f_StringSplit(@DownlineId, ',')
+		OPTION(MAXRECURSION 0)
 
-	INSERT INTO #RemoveAcc (CustId) 
-	SELECT cs.DownlineId
-	FROM CS_SubAccManagement cs WITH (NOLOCK)
-	WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
-		AND cs.SubAccId = @subaccid
+		IF ((@Roleid = 4 AND EXISTS(SELECT 1 
+									FROM dbo.custInfo ci WITH (NOLOCK) 
+										INNER JOIN #Downlines d ON d.CustId = ci.custid
+									WHERE (ci.srecommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 3
+									))
+			OR (@Roleid = 3 AND EXISTS (SELECT 1 
+										FROM dbo.custInfo ci WITH (NOLOCK) 
+											INNER JOIN #Downlines d ON d.CustId = ci.custid
+										WHERE (ci.mrecommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 2
+									))
+			OR (@Roleid = 2 AND EXISTS (SELECT 1 
+										FROM dbo.custInfo ci WITH (NOLOCK) 
+											INNER JOIN #Downlines d ON d.CustId = ci.custid
+										WHERE (ci.recommend <> @CustId AND ci.roleid = 3) OR ci.roleid <> 1
+									)))
 
-	SELECT @AddList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-							FROM #AddAcc
-							FOR XML PATH('')), 1, 1, '')
+		BEGIN
+			--Action failed. Please try again.
+			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
+			RETURN
+		END	
 
-	SELECT @RemoveList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-							FROM #RemoveAcc
-							FOR XML PATH('')), 1, 1, '')
+		INSERT INTO #AddAcc (CustId) 
+		SELECT d.CustId
+		FROM #Downlines d WITH (NOLOCK)
+		WHERE NOT EXISTS (SELECT 1 FROM dbo.CS_SubAccManagement cs WITH (NOLOCK) WHERE cs.SubAccId = @subaccid AND cs.DownlineId = d.CustId)
 
-	INSERT INTO dbo.CS_SubAccManagement (SubAccId, DownlineId)
-	SELECT @subaccid, CustId
-	FROM #AddAcc
+		INSERT INTO #RemoveAcc (CustId) 
+		SELECT cs.DownlineId
+		FROM CS_SubAccManagement cs WITH (NOLOCK)
+		WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
+			AND cs.SubAccId = @subaccid
 
-	DELETE s 
-	FROM dbo.CS_SubAccManagement s 
-		INNER JOIN #RemoveAcc r ON s.DownlineId = r.CustId
-	WHERE SubAccId = @subaccid
+		SELECT @AddList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
+								FROM #AddAcc
+								FOR XML PATH('')), 1, 1, '')
 
-	--Write log
-	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
-						'SelectAll="'+ COALESCE(CAST(@IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
-						'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
-						'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
-						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+		SELECT @RemoveList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
+								FROM #RemoveAcc
+								FOR XML PATH('')), 1, 1, '')
 
-	Select @LogSPData2 ='<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
-						'SelectAll="'+ COALESCE(CAST(@Old_IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
-						'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
-						'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
-						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+		IF ISNULL(@AddList,'') <> '' OR ISNULL(@RemoveList,'') <> ''
+		BEGIN
+			INSERT INTO dbo.CS_SubAccManagement (SubAccId, DownlineId)
+			SELECT @subaccid, CustId
+			FROM #AddAcc
 
-	SET @endRun = GETDATE()
-	SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+			DELETE s 
+			FROM dbo.CS_SubAccManagement s 
+				INNER JOIN #RemoveAcc r ON s.DownlineId = r.CustId
+			WHERE SubAccId = @subaccid
 
-	EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper 
-		@UserID = @UserID, 
-		@CustID = @CustId,
-		@ActionID = 693,
-		@TrackingValue = @LogSPData,
-		@TrackingValue2 = @LogSPData2,
-		@duration = @duration	
+			SELECT @IsUpdated = 1
+		END
+	END
+
+	IF @IsUpdated = 1
+	BEGIN
+		--Write log
+		Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+							'SelectAll="'+ COALESCE(CAST(@IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
+							'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+							'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+							'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+
+		Select @LogSPData2 ='<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+							'SelectAll="'+ COALESCE(CAST(@Old_IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
+							'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+							'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+							'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+
+		SET @endRun = GETDATE()
+		SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
+
+		EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper 
+			@UserID = @UserID, 
+			@CustID = @CustId,
+			@ActionID = 693,
+			@TrackingValue = @LogSPData,
+			@TrackingValue2 = @LogSPData2,
+			@duration = @duration	
+	END
 END	
 GO
 
