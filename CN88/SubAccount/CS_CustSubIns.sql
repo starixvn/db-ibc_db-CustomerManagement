@@ -9,6 +9,7 @@ ALTER PROCEDURE CS_CustSubIns
 	@Language VARCHAR(2) = 'E',
 	@LoginIP VARCHAR(20)='',
 	@UserID INT=0,
+	@SubAccId INT = 0 OUTPUT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT
 AS
@@ -34,7 +35,7 @@ BEGIN
 	SET NOCOUNT ON
 	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData NVARCHAR(MAX)
 	DECLARE @ErrLog NVARCHAR(200), @NoOfSubAcc TINYINT, @MaxOfSubAcc TINYINT, @PwdExpiry DATETIME
-	DECLARE	@UplineSecurityCode	VARCHAR(50) , @isForcedChangeSecurityCode BIT, @subaccid INT
+	DECLARE	@UplineSecurityCode	VARCHAR(50) , @isForcedChangeSecurityCode BIT
 
 	SET @startRun = GETDATE()
 
@@ -99,9 +100,9 @@ BEGIN
 		RETURN	
 	END
 
-	SELECT @subaccid = @@IDENTITY
+	SELECT @SubAccId = @@IDENTITY
 
-	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @subaccid, 0, @ErrCode, @ErrMsg
+	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @SubAccId, 0, @ErrCode, @ErrMsg
 	
 	IF @ErrCode <> 0
 	BEGIN
@@ -109,7 +110,7 @@ BEGIN
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language) END,
 					@ErrCode = 106
 		 -- ROLLBACK MANUALLY
-			DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
+			DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @SubAccId
 		
 			RETURN
 	END
@@ -132,15 +133,15 @@ BEGIN
 	)
 	VALUES
 	(   
-		@subaccid, @CustID, NULL, @PwdExpiry, GETDATE(), 1,
+		@SubAccId, @CustID, NULL, @PwdExpiry, GETDATE(), 1,
 		0, NULL, @isForcedChangeSecurityCode, NULL
 	)
 	
 	if @@ERROR <> 0
 	BEGIN
-		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
+		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @SubAccId
 
-		EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid, @subaccid
+		EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid, @SubAccId
 	
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Create sub-account failed. Please try again.'
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language) END,
@@ -150,7 +151,7 @@ BEGIN
 	END
 
 	--Write log
-	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as VARCHAR(30)),SPACE(1)) + '" ' +
+	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
 						'username="'+ COALESCE(CAST(@username as VARCHAR(30)),SPACE(1)) + '" ' +
 						'fname="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@firstname AS NVARCHAR(50)),SPACE(1))) + '" ' +
 						'PageAccess="'+ COALESCE(CAST(@PageAccess as VARCHAR(50)),SPACE(1)) + '" ' +

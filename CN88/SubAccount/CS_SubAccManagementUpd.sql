@@ -3,6 +3,7 @@
 ALTER PROCEDURE CS_SubAccManagementUpd	
 	@subaccid INT, 
 	@CustId INT,
+	@IsAllDownline BIT, 
 	@DownlineId VARCHAR(MAX),
 	@Language VARCHAR(2) = 'E',
 	@LoginIP VARCHAR(20)='',

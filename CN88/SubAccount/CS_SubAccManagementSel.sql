@@ -1,7 +1,10 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE CS_SubAccManagementSel
-	@subaccid INT
+	@CustId INT,
+	@RoleId TINYINT,
+	@subaccid INT = 0,
+	@IsAllDownline BIT = 0 OUTPUT
 AS
 /*
 	Created: 20190715
@@ -15,42 +18,62 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @RoleId TINYINT, @IsAllDownline BIT, @CustId INT
-
-	SELECT @RoleId = ci.roleid, @IsAllDownline = s.IsAllDownline, @CustId = s.custid
-	FROM dbo.custSub s WITH (NOLOCK) 
-		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = s.custid
-	WHERE subaccid = @subaccid
 	
-	IF @RoleId = 4
+	IF @subaccid > 0
 	BEGIN
-		SELECT ci.custid, 
-			CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
-				 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
-		FROM dbo.custInfo ci WITH (NOLOCK)
-			INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
-		WHERE sm.SubAccId = @subaccid AND ci.srecommend = @CustId AND ci.roleid = 3
-	END
-	ELSE IF @RoleId = 3
-	BEGIN
-		SELECT ci.custid, 
-			CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
-				 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
-		FROM dbo.custInfo ci WITH (NOLOCK)
-			INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
-		WHERE sm.SubAccId = @subaccid AND ci.mrecommend = @CustId AND ci.roleid = 2
-	END
-	ELSE IF @RoleId = 2
-	BEGIN
-		SELECT ci.custid, 
-			CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
-				 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
-		FROM dbo.custInfo ci WITH (NOLOCK)
-			INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
-		WHERE sm.SubAccId = @subaccid AND ci.recommend = @CustId AND ci.roleid = 1
-	END
+		SELECT @IsAllDownline = s.IsAllDownline
+		FROM dbo.custSub s WITH (NOLOCK) 
+		WHERE subaccid = @subaccid
 
-	SELECT @IsAllDownline AS IsAllDownline
+		IF @RoleId = 4
+		BEGIN
+			SELECT c.custid, c.username, c.firstname,
+				CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
+					 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+				LEFT JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId AND sm.SubAccId = @subaccid
+			WHERE sm.SubAccId = @subaccid AND c.srecommend = @CustId AND c.roleid = 3
+		END
+		ELSE IF @RoleId = 3
+		BEGIN
+			SELECT c.custid, c.username, c.firstname,
+				CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
+					 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+				LEFT JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId AND sm.SubAccId = @subaccid
+			WHERE sm.SubAccId = @subaccid AND c.mrecommend = @CustId AND c.roleid = 2
+		END
+		ELSE IF @RoleId = 2
+		BEGIN
+			SELECT c.custid, c.username, c.firstname,
+				CASE WHEN sm.DownlineId IS NULL AND @IsAllDownline = 0 THEN 0 
+					 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+				LEFT JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId AND sm.SubAccId = @subaccid
+			WHERE c.recommend = @CustId AND c.roleid = 1
+		END
+	END
+	ELSE
+	BEGIN
+		IF @RoleId = 4
+		BEGIN
+			SELECT c.custid, c.username, c.firstname, 0 AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+			WHERE c.srecommend = @CustId AND c.roleid = 3
+		END
+		ELSE IF @RoleId = 3
+		BEGIN
+			SELECT c.custid, c.username, c.firstname, 0 AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+			WHERE c.mrecommend = @CustId AND c.roleid = 2
+		END
+		ELSE IF @RoleId = 2
+		BEGIN
+			SELECT c.custid, c.username, c.firstname, 0 AS Assigned 
+			FROM dbo.customer c WITH (NOLOCK)
+			WHERE c.recommend = @CustId AND c.roleid = 1
+		END
+	END
 END	
 GO
 
