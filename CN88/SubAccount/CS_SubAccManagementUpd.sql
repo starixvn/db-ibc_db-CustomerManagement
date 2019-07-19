@@ -31,9 +31,9 @@ BEGIN
 	CREATE TABLE #Downlines (CustId INT)
 	CREATE TABLE #AddAcc (CustId INT)
 	CREATE TABLE #RemoveAcc (CustId INT)
-	DECLARE @AddList VARCHAR(MAX), @RemoveList VARCHAR(MAX), @Roleid TINYINT
-	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData NVARCHAR(MAX)
-	SET @startRun = GETDATE()
+	DECLARE @AddList VARCHAR(MAX), @RemoveList VARCHAR(MAX), @Roleid TINYINT, @Old_IsAllDownline BIT
+	DECLARE @startRun DATETIME, @endRun DATETIME, @duration INT, @LogSPData NVARCHAR(MAX), @LogSPData2 NVARCHAR(MAX)
+	SET @startRun = GETDATE()	
 
 	INSERT INTO #Downlines(CustID)
 	SELECT CONVERT(INT, Val)
@@ -61,6 +61,16 @@ BEGIN
 		--Action failed. Please try again.
 		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
 		RETURN
+	END
+	
+	SELECT @Old_IsAllDownline = IsAllDownline FROM dbo.CustSub WITH (NOLOCK) WHERE SubAccId = @subaccid
+
+	IF @Old_IsAllDownline <> @IsAllDownline
+	BEGIN
+		UPDATE s 
+		SET s.IsAllDownline = @IsAllDownline
+		FROM dbo.custSub s WITH (ROWLOCK)
+		WHERE subaccid = @subaccid
 	END
 
 	INSERT INTO #AddAcc (CustId) 
@@ -98,6 +108,12 @@ BEGIN
 						'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
 						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
+	Select @LogSPData2 ='<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+						'SelectAll="'+ COALESCE(CAST(@Old_IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
+						'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+						'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+
 	SET @endRun = GETDATE()
 	SET @duration = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
@@ -106,6 +122,7 @@ BEGIN
 		@CustID = @CustId,
 		@ActionID = 693,
 		@TrackingValue = @LogSPData,
+		@TrackingValue2 = @LogSPData2
 		@duration = @duration	
 END	
 GO
