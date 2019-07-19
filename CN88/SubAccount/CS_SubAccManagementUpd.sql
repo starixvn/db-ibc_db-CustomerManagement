@@ -122,7 +122,7 @@ BEGIN
 		@CustID = @CustId,
 		@ActionID = 693,
 		@TrackingValue = @LogSPData,
-		@TrackingValue2 = @LogSPData2
+		@TrackingValue2 = @LogSPData2,
 		@duration = @duration	
 END	
 GO
