@@ -60,8 +60,6 @@ BEGIN
 	BEGIN
 		--Action failed. Please try again.
 		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-		-- ROLLBACK MANUALLY
-		UPDATE cs SET cs.IsDeleted = 0 FROM dbo.custSub cs WHERE subaccid = @subaccid AND CustId = @CustId
 		RETURN
 	END
 
@@ -93,18 +91,11 @@ BEGIN
 		INNER JOIN #RemoveAcc r ON s.DownlineId = r.CustId
 	WHERE SubAccId = @subaccid
 
-	IF @ErrCode <> 0
-	BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Delete sub-account failed. Please try again.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language) END,
-					@ErrCode = 106
-		 -- ROLLBACK MANUALLY
-			UPDATE cs SET cs.IsDeleted = 0 FROM dbo.custSub cs WHERE subaccid = @subaccid AND CustId = @CustId
-			RETURN
-	END
-
 	--Write log
-	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as VARCHAR(30)),SPACE(1)) + '" ' +
+	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+						'SelectAll="'+ COALESCE(CAST(@IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
+						'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
+						'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
 						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
 	SET @endRun = GETDATE()
@@ -113,7 +104,7 @@ BEGIN
 	EXEC dbo.CS_WriteLog_UserLog_RunSP_Wrapper 
 		@UserID = @UserID, 
 		@CustID = @CustId,
-		@ActionID = 691,
+		@ActionID = 693,
 		@TrackingValue = @LogSPData,
 		@duration = @duration	
 END	
