@@ -32,7 +32,7 @@ BEGIN
 					 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
 			FROM dbo.customer c WITH (NOLOCK)
 				LEFT JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId AND sm.SubAccId = @subaccid
-			WHERE sm.SubAccId = @subaccid AND c.srecommend = @CustId AND c.roleid = 3
+			WHERE c.srecommend = @CustId AND c.roleid = 3
 		END
 		ELSE IF @RoleId = 3
 		BEGIN
@@ -41,7 +41,7 @@ BEGIN
 					 WHEN sm.DownlineId IS NOT NULL OR @IsAllDownline = 1 THEN 1 END AS Assigned 
 			FROM dbo.customer c WITH (NOLOCK)
 				LEFT JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId AND sm.SubAccId = @subaccid
-			WHERE sm.SubAccId = @subaccid AND c.mrecommend = @CustId AND c.roleid = 2
+			WHERE c.mrecommend = @CustId AND c.roleid = 2
 		END
 		ELSE IF @RoleId = 2
 		BEGIN
