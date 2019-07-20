@@ -3,6 +3,7 @@
 ALTER PROCEDURE [dbo].[CS_Customer_Homepage_Sel]
 	@CustId INT,	
 	@subAccID INT = 0,
+	@IsAllDownline BIT,
 	@fromdate DATETIME,
 	@todate	DATETIME		
 AS
@@ -25,8 +26,7 @@ BEGIN
 			@roleid TINYINT,
 			@cntNewMember INT,
 			@LastLogin SMALLDATETIME,
-			@LastChangePwd DATETIME,
-			@IsAllDownline BIT
+			@LastChangePwd DATETIME
 	
 	CREATE TABLE #tblStatus (roleid TINYINT, cntActive INT, cntViewOnly INT, cntSuspended INT, cntInactive INT)
 	
@@ -84,10 +84,6 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT @IsAllDownline = IsAllDownline
-		FROM dbo.custSub WITH (NOLOCK)
-		WHERE subaccid = @subAccID
-
 		SELECT @LastChangePwd = LastChangedPwdDate
 		FROM dbo.CustLoginInfoSub WITH(NOLOCK)
 		WHERE custid = @custid

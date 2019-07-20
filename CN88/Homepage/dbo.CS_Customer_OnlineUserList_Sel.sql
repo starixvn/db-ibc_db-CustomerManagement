@@ -3,6 +3,7 @@
 ALTER PROCEDURE [dbo].[CS_Customer_OnlineUserList_Sel]
 	@CustId INT,
 	@SubAccId INT,
+	@IsAllDownline BIT, 
 	@pageSize INT = 50,
 	@pageIndex INT = 0,
 	@totalRows INT = 0 OUTPUT
@@ -20,16 +21,12 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @roleid INT, @IsAllDownline BIT
+	DECLARE @roleid INT
 	CREATE TABLE #tblOnlineList (custid INT, username VARCHAR(50), Name NVARCHAR(50), lastlogin DATETIME)
 	
 	SELECT @roleid = roleid
 	FROM bodb02.dbo.custinfo WITH(NOLOCK)
-	WHERE custid = @custid
-	
-	SELECT @IsAllDownline = 1 
-	FROM bodb02.dbo.CustSub WITH (NOLOCK)
-	WHERE subaccid = @SubAccId
+	WHERE custid = @custid	
 
 	IF @IsAllDownline = 1 OR @SubAccId = 0
 	BEGIN

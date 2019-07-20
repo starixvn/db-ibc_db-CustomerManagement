@@ -2,7 +2,8 @@
 
 ALTER PROCEDURE [dbo].[CS_Customer_TotalOnlineUser_Sel]
 	@CustId INT,
-	@SubAccId INT
+	@SubAccId INT, 
+	@IsAllDownline BIT
 AS
 /*
 	Created: 20190304@Johnson
@@ -17,16 +18,12 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @cntOnUsers INT, @roleid TINYINT, @IsAllDownline BIT
+	DECLARE @cntOnUsers INT, @roleid TINYINT
 			
 	SELECT @roleid = roleid
 	FROM bodb02.dbo.custinfo WITH(NOLOCK)
 	WHERE custid = @custid
 	
-	SELECT @IsAllDownline = 1 
-	FROM bodb02.dbo.CustSub WITH (NOLOCK)
-	WHERE subaccid = @SubAccId
-
 	IF @IsAllDownline = 1 OR @SubAccId = 0
 	BEGIN
 		IF @roleid = 4
