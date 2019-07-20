@@ -68,7 +68,7 @@ BEGIN
 			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
 			SELECT c.custid, username, firstname, lastlogged
 			FROM bodb02.dbo.customer c WITH(NOLOCK)
-				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.mrecommend = sm.DownlineId
 				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
 			WHERE srecommend = @custid AND sm.SubAccId = @SubAccId
 				AND roleid = 1
@@ -79,7 +79,7 @@ BEGIN
 			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
 			SELECT c.custid, username, firstname, lastlogged
 			FROM bodb02.dbo.customer c WITH(NOLOCK)
-				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.recommend = sm.DownlineId
 				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
 			WHERE mrecommend = @custid AND sm.SubAccId = @SubAccId
 				AND roleid = 1

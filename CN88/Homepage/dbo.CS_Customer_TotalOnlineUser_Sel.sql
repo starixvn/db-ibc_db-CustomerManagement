@@ -60,7 +60,7 @@ BEGIN
 		BEGIN
 			SELECT @cntOnUsers = count(1)
 			FROM bodb02.dbo.custinfo ci WITH(NOLOCK)
-				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.mrecommend = sm.DownlineId
 				INNER JOIN dbo.On_user o WITH(NOLOCK) ON ci.custid = o.custid
 			WHERE srecommend = @custid AND sm.SubAccId = @SubAccId
 				AND roleid = 1
@@ -70,7 +70,7 @@ BEGIN
 		BEGIN
 			SELECT @cntOnUsers = count(1)
 			FROM bodb02.dbo.custinfo ci WITH(NOLOCK)
-				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.recommend = sm.DownlineId
 				INNER JOIN dbo.On_user o WITH(NOLOCK) ON ci.custid = o.custid
 			WHERE mrecommend = @custid AND sm.SubAccId = @SubAccId 
 				AND roleid = 1

@@ -145,7 +145,7 @@ BEGIN
 				ISNULL(SUM(CASE WHEN cs.CustStatus = 2 THEN 1 ELSE 0 END), 0) AS cntSuspended,
 				ISNULL(SUM(CASE WHEN cs.CustStatus = 1 THEN 1 ELSE 0 END), 0) AS cntInactive
 			FROM custinfo ci WITH(NOLOCK)
-				INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.custid = sm.DownlineId
+				INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.mrecommend = sm.DownlineId
 				CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
 			WHERE srecommend = @custid AND sm.SubAccId = @subAccID
 				AND roleid IN (1,2,3)				
