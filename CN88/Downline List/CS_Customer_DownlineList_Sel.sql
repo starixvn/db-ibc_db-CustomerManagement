@@ -1,17 +1,17 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[CS_Customer_DownlineList_Sel]
 	@CustId				INT,
+	@SubAccId			INT = 0,
 	@DownlineUsername	NVARCHAR(50) = '',
 	@SearchRoleId		TINYINT,
 	@SearchUsername		NVARCHAR(50),
 	@SearchStatusId		TINYINT = 0,
-	@UplineId		INT = 0 OUTPUT,
+	@UplineId			INT = 0 OUTPUT,
 	@UplineStatus		TINYINT = 4 OUTPUT,
 	@IsUplineClosed		BIT = 1 OUTPUT,
-	@PageIndex		INT = 1,
-	@PageSize		INT = 500,
-	@TotalRows		INT = 0 OUTPUT
+	@PageIndex			INT = 1,
+	@PageSize			INT = 500,
+	@TotalRows			INT = 0 OUTPUT
 AS
 
 /*
@@ -23,6 +23,7 @@ AS
 		- 20181218@Percy: Initialize SP [RedmineID: #105338]
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 		- 20190514@Paul: Apply new status [RedmineID: #113198]
+		- 20190720@Percy: Add sub account - permission on downlines [RedmineID: #116825]
 
 	Param's Explanation:
 		@CustId: SMA login
@@ -42,25 +43,50 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @db_Username2 VARCHAR(50)
-
+	DECLARE @RoleId TINYINT
 	SELECT  @RoleId = roleId FROM dbo.custInfo WITH (NOLOCK) WHERE custId = @custId
 
-	SELECT @db_Username2 = Nickname FROM dbo.f_CS_GetNickName(@SearchUsername,1)
+	-- Check Sub Account is view all downlines or not
+	DECLARE @IsAllDownline BIT
 
-	IF @RoleId = 4 AND @SearchRoleId < 3
+	IF ISNULL(@SubAccId, 0) <> 0
 	BEGIN
-		SELECT @UplineId = custid FROM dbo.custInfo WITH (NOLOCK)
-		WHERE username = @DownlineUsername AND srecommend = @CustId AND roleId = @SearchRoleId + 1
-	END
-	ELSE IF @RoleId = 3 AND @SearchRoleId < 2
-	BEGIN
-		SELECT @UplineId = custid FROM dbo.custInfo WITH (NOLOCK)
-		WHERE username = @DownlineUsername AND mrecommend = @CustId AND roleId = @SearchRoleId + 1
+		SELECT @IsAllDownline = IsAllDownline FROM dbo.custSub WITH (NOLOCK)
+		WHERE subaccid = @SubAccId
+
+		SELECT @IsAllDownline = ISNULL(@IsAllDownline, 0)
 	END
 	ELSE
 	BEGIN
+		SELECT @IsAllDownline = 1
+	END
+
+	-- Search direct downline
+	IF @RoleId = @SearchRoleId + 1
+	BEGIN
 		SELECT @UplineId = @CustId
+	END
+	-- Search in-direct downline
+	ELSE
+	BEGIN
+		IF @RoleId = 4 AND @SearchRoleId < 3
+		BEGIN
+			SELECT @UplineId = custid FROM dbo.custInfo WITH (NOLOCK)
+			WHERE username = @DownlineUsername AND srecommend = @CustId AND roleId = @SearchRoleId + 1
+		END
+		ELSE IF @RoleId = 3 AND @SearchRoleId < 2
+		BEGIN
+			SELECT @UplineId = custid FROM dbo.custInfo WITH (NOLOCK)
+			WHERE username = @DownlineUsername AND mrecommend = @CustId AND roleId = @SearchRoleId + 1
+		END
+
+		IF @IsAllDownline = 0
+		BEGIN
+			IF NOT EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) WHERE DownlineId = @UplineId)
+			BEGIN
+				SELECT @UplineId = NULL
+			END
+		END 
 	END
 
 	SELECT @IsUplineClosed = closed
@@ -81,6 +107,7 @@ BEGIN
 			INNER JOIN dbo.Customer cu WITH (NOLOCK) ON ci.custid = cu.custid
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
 		WHERE ci.srecommend = @UplineId
+			AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = ci.custid))
 			AND ci.roleId = 3
 			AND (
 				ci.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -106,6 +133,7 @@ BEGIN
 			INNER JOIN dbo.Customer cu WITH (NOLOCK) ON ci.custid = cu.custid
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
 		WHERE ci.mrecommend = @UplineId
+			AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = ci.custid))
 			AND ci.roleId = 2
 			AND (
 				ci.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -131,6 +159,7 @@ BEGIN
 			INNER JOIN dbo.Customer cu WITH (NOLOCK) ON ci.custid = cu.custid
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
 		WHERE ci.recommend = @UplineId
+			AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = ci.custid))
 			AND ci.roleId = 1
 			AND (
 				ci.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -167,5 +196,3 @@ BEGIN
 	DROP TABLE #CustInfo
 END
 GO
-
-
