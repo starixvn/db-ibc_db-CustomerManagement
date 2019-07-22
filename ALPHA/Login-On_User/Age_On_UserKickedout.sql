@@ -1,3 +1,5 @@
+/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet, bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_On_UserKickedout]
 	@CustID INT,
 	@SubAccID INT = 0
@@ -20,10 +22,4 @@ BEGIN
 	WHERE custid = @CustID AND subaccid = @SubAccID
 
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Age_On_UserKickedout] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_On_UserKickedout] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_On_UserKickedout] TO [vnteam]
