@@ -492,7 +492,7 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
 			
-			IF @NickName = 1
+			IF @IsNickname = 1
 			BEGIN
 				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
 					@UserID = @CustID, 
@@ -549,7 +549,7 @@ BEGIN
 			SET	@End = GETDATE() 		
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			IF @NickName = 1
+			IF @IsNickname = 1
 			BEGIN
 				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
 					@UserID = @CustID, 
