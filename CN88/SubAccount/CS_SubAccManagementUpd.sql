@@ -47,6 +47,11 @@ BEGIN
 		FROM dbo.custSub s WITH (ROWLOCK)
 		WHERE subaccid = @subaccid
 
+		IF @IsAllDownline = 1
+		BEGIN
+			 DELETE FROM dbo.CS_SubAccManagement WITH (ROWLOCK) WHERE SubAccId = @subaccid
+		END
+
 		SELECT @IsUpdated = 1
 	END
 
@@ -56,7 +61,7 @@ BEGIN
 		SELECT CONVERT(INT, Val)
 		FROM dbo.f_StringSplit(@DownlineId, ',')
 		OPTION(MAXRECURSION 0)
-
+	
 		IF ((@Roleid = 4 AND EXISTS(SELECT 1 
 									FROM dbo.custInfo ci WITH (NOLOCK) 
 										INNER JOIN #Downlines d ON d.CustId = ci.custid
@@ -78,39 +83,39 @@ BEGIN
 			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
 			RETURN
 		END	
+	END
 
-		INSERT INTO #AddAcc (CustId) 
-		SELECT d.CustId
-		FROM #Downlines d WITH (NOLOCK)
-		WHERE NOT EXISTS (SELECT 1 FROM dbo.CS_SubAccManagement cs WITH (NOLOCK) WHERE cs.SubAccId = @subaccid AND cs.DownlineId = d.CustId)
+	INSERT INTO #AddAcc (CustId) 
+	SELECT d.CustId
+	FROM #Downlines d WITH (NOLOCK)
+	WHERE NOT EXISTS (SELECT 1 FROM dbo.CS_SubAccManagement cs WITH (NOLOCK) WHERE cs.SubAccId = @subaccid AND cs.DownlineId = d.CustId)
 
-		INSERT INTO #RemoveAcc (CustId) 
-		SELECT cs.DownlineId
-		FROM CS_SubAccManagement cs WITH (NOLOCK)
-		WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
-			AND cs.SubAccId = @subaccid
+	INSERT INTO #RemoveAcc (CustId) 
+	SELECT cs.DownlineId
+	FROM CS_SubAccManagement cs WITH (NOLOCK)
+	WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
+		AND cs.SubAccId = @subaccid
 
-		SELECT @AddList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-								FROM #AddAcc
-								FOR XML PATH('')), 1, 1, '')
+	SELECT @AddList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
+							FROM #AddAcc
+							FOR XML PATH('')), 1, 1, '')
 
-		SELECT @RemoveList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-								FROM #RemoveAcc
-								FOR XML PATH('')), 1, 1, '')
+	SELECT @RemoveList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
+							FROM #RemoveAcc
+							FOR XML PATH('')), 1, 1, '')
 
-		IF ISNULL(@AddList,'') <> '' OR ISNULL(@RemoveList,'') <> ''
-		BEGIN
-			INSERT INTO dbo.CS_SubAccManagement (SubAccId, DownlineId)
-			SELECT @subaccid, CustId
-			FROM #AddAcc
+	IF ISNULL(@AddList,'') <> '' OR ISNULL(@RemoveList,'') <> ''
+	BEGIN
+		INSERT INTO dbo.CS_SubAccManagement (SubAccId, DownlineId)
+		SELECT @subaccid, CustId
+		FROM #AddAcc
 
-			DELETE s 
-			FROM dbo.CS_SubAccManagement s 
-				INNER JOIN #RemoveAcc r ON s.DownlineId = r.CustId
-			WHERE SubAccId = @subaccid
+		DELETE s 
+		FROM dbo.CS_SubAccManagement s 
+			INNER JOIN #RemoveAcc r ON s.DownlineId = r.CustId
+		WHERE SubAccId = @subaccid
 
-			SELECT @IsUpdated = 1
-		END
+		SELECT @IsUpdated = 1
 	END
 
 	IF @IsUpdated = 1
