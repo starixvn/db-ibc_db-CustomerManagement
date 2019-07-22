@@ -38,21 +38,11 @@ BEGIN
 	SET @startRun = GETDATE()	
 	SELECT @IsUpdated = 0
 
-	SELECT @Old_IsAllDownline = IsAllDownline FROM dbo.CustSub WITH (NOLOCK) WHERE SubAccId = @subaccid
-
-	IF @Old_IsAllDownline <> @IsAllDownline
+	IF ISNULL(@DownlineId,'') = '' AND @IsAllDownline = 0
 	BEGIN
-		UPDATE s 
-		SET s.IsAllDownline = @IsAllDownline
-		FROM dbo.custSub s WITH (ROWLOCK)
-		WHERE subaccid = @subaccid
-
-		IF @IsAllDownline = 1
-		BEGIN
-			 DELETE FROM dbo.CS_SubAccManagement WITH (ROWLOCK) WHERE SubAccId = @subaccid
-		END
-
-		SELECT @IsUpdated = 1
+		--You do not have any Managed Accounts selected.Please select a Managed Account or select"All"
+		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40050, @Language), @ErrCode = 107
+		RETURN
 	END
 
 	IF ISNULL(@DownlineId,'') <> ''
@@ -83,6 +73,23 @@ BEGIN
 			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
 			RETURN
 		END	
+	END
+
+	SELECT @Old_IsAllDownline = IsAllDownline FROM dbo.CustSub WITH (NOLOCK) WHERE SubAccId = @subaccid
+
+	IF @Old_IsAllDownline <> @IsAllDownline
+	BEGIN
+		UPDATE s 
+		SET s.IsAllDownline = @IsAllDownline
+		FROM dbo.custSub s WITH (ROWLOCK)
+		WHERE subaccid = @subaccid
+
+		IF @IsAllDownline = 1
+		BEGIN
+			 DELETE FROM dbo.CS_SubAccManagement WITH (ROWLOCK) WHERE SubAccId = @subaccid
+		END
+
+		SELECT @IsUpdated = 1
 	END
 
 	INSERT INTO #AddAcc (CustId) 

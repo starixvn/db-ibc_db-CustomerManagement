@@ -11,7 +11,8 @@ AS
 	Original:
 
 	Revisions:
-	
+		- 20190620@Elodie: Add permission for bodbAdminNet  [Redmine: #116825]
+
 	Param's Explanation:
 */
 BEGIN
