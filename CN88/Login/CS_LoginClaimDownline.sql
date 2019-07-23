@@ -173,25 +173,43 @@ BEGIN
 			@SubPageAccess = PageAccess,
 			@IsAllDownline = IsAllDownline
 		FROM custSub WITH (NOLOCK)
-		WHERE subaccid = @SubAccID and userpwd = @UserPwd
+		WHERE subaccid = @SubAccID and userpwd = @UserPwd AND IsDeleted = 0
 
 		IF @@ROWCOUNT = 0  
 		BEGIN
 			SELECT @LogData = @role + @SubUserName + ' - {AfterLoginFailureUserNotFound}'  
 
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,
-				@ActionID = 1329,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode
-								
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = 0, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,
+					@ActionID = 1329,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Nickname = @db_Username2
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = 0, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,
+					@ActionID = 1329,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode
+			END			
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 						ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
 						END ,@ErrCode=106   
@@ -302,19 +320,39 @@ BEGIN
 		BEGIN 		
 			SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @Username END + ' - {AfterLoginFailureUnknownLogin}'  
 			
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @CustID, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1329,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1329,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@Nickname = @db_Username2
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1329,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration
+			END
 			
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
 					ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
