@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdUserComm]
 	@playerdiscount DECIMAL(9,8),
 	@playerdiscountcs DECIMAL(9,8),
 	@playerdiscount1x2 DECIMAL(9,8),	
-	@playerdiscountnumber DECIMAL(9,8),
+	@playerdiscountnumber DECIMAL(9,8)=0,
 	@playerdiscountMyanmarOdds DECIMAL(9,8) = 0,
 	@userid INT, --updater Id	
 	@subaccid INT = 0, --Sub-AccountID
@@ -49,6 +49,7 @@ Revisions:
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @playerdiscount: Player discount for group			(sportype = 1 and bettype = 1)
