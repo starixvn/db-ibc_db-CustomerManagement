@@ -61,6 +61,8 @@ BEGIN
 		SELECT @IsAllDownline = 1
 	END
 
+	DECLARE @mrecommend INT
+
 	-- Search direct downline
 	IF @RoleId = @SearchRoleId + 1
 	BEGIN
@@ -71,7 +73,7 @@ BEGIN
 	BEGIN
 		IF @RoleId = 4 AND @SearchRoleId < 3
 		BEGIN
-			SELECT @UplineId = custid FROM dbo.custInfo WITH (NOLOCK)
+			SELECT @UplineId = custid, @mrecommend = mrecommend FROM dbo.custInfo WITH (NOLOCK)
 			WHERE username = @DownlineUsername AND srecommend = @CustId AND roleId = @SearchRoleId + 1
 		END
 		ELSE IF @RoleId = 3 AND @SearchRoleId < 2
@@ -82,9 +84,26 @@ BEGIN
 
 		IF @IsAllDownline = 0
 		BEGIN
-			IF NOT EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) WHERE DownlineId = @UplineId)
+			-- Super view agent / Master view member
+			IF @RoleId = @SearchRoleId + 2
 			BEGIN
-				SELECT @UplineId = NULL
+				IF NOT EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) WHERE DownlineId = @UplineId)
+				BEGIN
+					SELECT @UplineId = NULL
+				END
+			END
+			-- Super view member
+			ELSE
+			BEGIN
+				IF NOT EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) WHERE DownlineId = @mrecommend)
+				BEGIN
+					SELECT @UplineId = NULL
+				END
+			END
+
+			IF @UplineId IS NOT NULL
+			BEGIN
+				SELECT @IsAllDownline = 1
 			END
 		END 
 	END
