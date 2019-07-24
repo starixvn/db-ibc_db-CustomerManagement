@@ -40,7 +40,8 @@ BEGIN
 
 	UPDATE cs 
 	SET cs.IsDeleted = 1, 
-		cs.IsAllDownline = 0
+		cs.IsAllDownline = 0,
+		cs.PageAccess = ''
 	FROM dbo.custSub cs WITH (ROWLOCK)
 	WHERE subaccid = @subaccid AND CustId = @CustId	
 
