@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="1"></info>*/
 
-CREATE PROCEDURE [dbo].[CS_WriteLog_UserLog_RunSP]
+ALTER PROCEDURE [dbo].[CS_WriteLog_UserLog_RunSP]
 	@UserID INT,   
 	@CustID	INT,   
 	@SubAccID INT,   
