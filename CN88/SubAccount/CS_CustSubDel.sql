@@ -30,21 +30,23 @@ BEGIN
 
 	SET @startRun = GETDATE()
 
-	UPDATE cs 
-	SET cs.IsDeleted = 1
-	FROM dbo.custSub cs 
-	WHERE subaccid = @subaccid AND CustId = @CustId
-
 	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid, @subaccid
-	
-	IF @ErrCode <> 0
+	IF @@ERROR <> 0
 	BEGIN
 		--Delete sub-account failed. Please try again.
 		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40048, @Language), @ErrCode = 106
-		-- ROLLBACK MANUALLY
-		UPDATE cs SET cs.IsDeleted = 0 FROM dbo.custSub cs WHERE subaccid = @subaccid AND CustId = @CustId
 		RETURN
 	END
+
+	UPDATE cs 
+	SET cs.IsDeleted = 1, 
+		cs.IsAllDownline = 0
+	FROM dbo.custSub cs WITH (ROWLOCK)
+	WHERE subaccid = @subaccid AND CustId = @CustId	
+
+	DELETE sm 
+	FROM dbo.CS_SubAccManagement sm WITH (ROWLOCK)
+	WHERE SubAccId = @subaccid
 
 	--Write log
 	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as VARCHAR(30)),SPACE(1)) + '" ' +
