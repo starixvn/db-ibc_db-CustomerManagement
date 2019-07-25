@@ -103,12 +103,14 @@ BEGIN
 	WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
 		AND cs.SubAccId = @subaccid
 
-	SELECT @AddList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-							FROM #AddAcc
+	SELECT @AddList = STUFF((SELECT ',' + ci.username
+							FROM #AddAcc t
+								INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.CustId
 							FOR XML PATH('')), 1, 1, '')
 
-	SELECT @RemoveList = STUFF((SELECT ',' + CAST(custid AS VARCHAR(20))
-							FROM #RemoveAcc
+	SELECT @RemoveList = STUFF((SELECT ',' + ci.username
+							FROM #RemoveAcc t
+								INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.CustId
 							FOR XML PATH('')), 1, 1, '')
 
 	IF ISNULL(@AddList,'') <> '' OR ISNULL(@RemoveList,'') <> ''
@@ -128,13 +130,13 @@ BEGIN
 	IF @IsUpdated = 1
 	BEGIN
 		--Write log
-		Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+		Select @LogSPData =	'<R SubAcc="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
 							'SelectAll="'+ COALESCE(CAST(@IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
 							'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
 							'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +
 							'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
-		Select @LogSPData2 ='<R subaccid="'+ COALESCE(CAST(@SubAccId as VARCHAR(30)),SPACE(1)) + '" ' +
+		Select @LogSPData2 ='<R SubAcc="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
 							'SelectAll="'+ COALESCE(CAST(@Old_IsAllDownline as VARCHAR(1)),SPACE(1)) + '" ' +
 							'AddedAccount="'+ COALESCE(CAST(@AddList as VARCHAR(MAX)),SPACE(1)) + '" ' +
 							'RemovedAccount="'+ COALESCE(CAST(@RemoveList as VARCHAR(MAX)),SPACE(1)) + '" ' +

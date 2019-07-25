@@ -50,7 +50,7 @@ BEGIN
 	WHERE SubAccId = @subaccid
 
 	--Write log
-	Select @LogSPData =	'<R subaccid="'+ COALESCE(CAST(@SubAccID as VARCHAR(30)),SPACE(1)) + '" ' +
+	Select @LogSPData =	'<R SubAcc="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
 						'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
 	SET @endRun = GETDATE()
