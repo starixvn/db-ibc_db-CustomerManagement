@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE  [dbo].[Acc_CustomerSelVirtualMultiplier] 
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE  [dbo].[Acc_CustomerSelVirtualMultiplier] 
 	@CustID int,
 	@IsTest BIT=0
 AS
@@ -57,12 +59,4 @@ BEGIN
     SELECT custid, sporttype, bettype, islive, virtualMultiplier
     FROM @CustVirtualRate
 END
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbDownlineNetView]
