@@ -36,7 +36,8 @@ AS
 		- 20160422@Billy:	Exclude Auto Adjusted VR Members when update VR - [Redmine: #56525]
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
+
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
 								<Rate SportType="1" BetType="1" IsLive="0" VirtualMultiplier="1.5" />	
@@ -131,7 +132,7 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1
 				FROM @tblVirtualrate
 				WHERE virtualmultiplier > 3 
-					OR virtualmultiplier < 0.1
+					OR virtualmultiplier < 0.05
 				)  
 	BEGIN  
 		select @ErrMsg    = N'Invalid virtual rate.', @ErrCode = 101  

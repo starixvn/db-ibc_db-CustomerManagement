@@ -24,6 +24,7 @@ AS
 		- 20170915@Winnie: Update logic to VR auto-adjustment job Phase 2 RedmineID:#82312
 		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment [RedmineID:#84112]
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 
 	Param's Explanation:  
 		- @SportType = 0 : All
@@ -96,7 +97,7 @@ BEGIN
 	IF	EXISTS	(	SELECT	1
 					FROM	@tblVirtualrate
 					WHERE	virtualmultiplier > 3.0 
-						OR	virtualmultiplier < 0.1
+						OR	virtualmultiplier < 0.05
 				)  
 	BEGIN  
 		SELECT	@ErrMsg = N'Invalid virtual rate.'
