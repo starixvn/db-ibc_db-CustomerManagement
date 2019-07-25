@@ -21,7 +21,6 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @Credit MONEY
-	DECLARE @netPosition MONEY = 0 -- for member
     DECLARE @Credit_Mem_Max MONEY, @Credit_AllOtherMember MONEY, @Credit_Ag MONEY, @MaxCredit_Mem MONEY, @Credit_Ag_Bal MONEY
 
 	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend, @Credit = credit
@@ -69,17 +68,11 @@ BEGIN
 	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId
 
 	SELECT
-		@custid AS CustID, 
+		@custid AS CustID,
 		@Credit AS Credit,
-		@netPosition AS netPosition,		
 		@Credit_Mem_Max AS [MemMaxCredit_Max],
-		SUM(yesterdayMemberCash) AS yesterday_Cash,
+		SUM(yesterdayMemberCash) AS yesterday_Cash
 		-- Cash & Outstanding: get from other SP
-		0 AS Cash,
-		0 AS outstanding,
-		-- Casino, Bingo, P2P
-		0 AS csOutstanding,
-		0 AS csTransfer
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo
