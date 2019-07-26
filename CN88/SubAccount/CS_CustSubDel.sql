@@ -61,7 +61,8 @@ BEGIN
 		@CustID = @CustId,
 		@ActionID = 691,
 		@TrackingValue = @LogSPData,
-		@duration = @duration	
+		@duration = @duration,
+		@subaccid = @subaccid
 END	
 GO
 
