@@ -100,10 +100,18 @@ SET NOCOUNT ON
 
 	INSERT INTO @tblFail(username, sporttype, bettype, isLive, virtualrate, reason)
 	SELECT	username, sporttype, bettype, isLive, virtualrate, 
-			CASE WHEN virtualrate <0.05 OR virtualrate > 3 OR ((virtualrate*100)%5!=0 AND VirtualRate >= 0.2) OR ((virtualrate*100)%1!=0 AND VirtualRate < 0.2) THEN 'Invalid Virtual Rate.'
+			CASE WHEN virtualrate <0.05 OR virtualrate > 3 
+						OR ((virtualrate*100)%5!=0 AND (VirtualRate BETWEEN 0.2 AND 1.05 OR VirtualRate BETWEEN 1.1 AND 1.6)) -- -5,-10,-15,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75, -80, 60,55,50,45,40,35,30,25,20,15,10
+						OR ((virtualrate*100)%1!=0 AND VirtualRate BETWEEN 0.05 AND 0.2) -- -80,-81,-82,-83,-84,-85,-86,-87,-88,-89,-90,-91,-92,-93,-94,-95
+						OR (VirtualRate IN (1.06,1.07,1.08,1.09,2,2.5,3)) --6,7,8,9,100,150,200 
+						THEN 'Invalid Virtual Rate.'
 				 WHEN ISNULL(username,'') ='' THEN 'Username cannot be blanked.' ELSE '' END AS Reason 	
 	FROM	@tblCust 
-	WHERE	virtualrate <0.05 OR virtualrate > 3 OR ((virtualrate*100)%5!=0 AND VirtualRate > 0.2) OR ((virtualrate*100)%1!=0 AND VirtualRate < 0.2)
+	WHERE	virtualrate <0.05 
+			OR virtualrate > 3 
+			OR ((virtualrate*100)%5!=0 AND (VirtualRate BETWEEN 0.2 AND 1.05 OR VirtualRate BETWEEN 1.1 AND 1.6)) -- -5,-10,-15,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75, -80, 60,55,50,45,40,35,30,25,20,15,10
+			OR ((virtualrate*100)%1!=0 AND VirtualRate BETWEEN 0.05 AND 0.2) -- -80,-81,-82,-83,-84,-85,-86,-87,-88,-89,-90,-91,-92,-93,-94,-95
+			OR (VirtualRate IN (1.06,1.07,1.08,1.09,2,2.5,3)) --6,7,8,9,100,150,200
 			OR ISNULL(username,'') ='' 
 	
 	INSERT INTO dbo.Acc_VirtualRateList(userid, username, sporttype, bettype, islive, virtualrate)
