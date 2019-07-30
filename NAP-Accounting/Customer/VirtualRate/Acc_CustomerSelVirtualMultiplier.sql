@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE  [dbo].[Acc_CustomerSelVirtualMultiplier] 
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+
+ALTER PROCEDURE  [dbo].[Acc_CustomerSelVirtualMultiplier] 
 	@CustID int,
 	@IsTest BIT=0
 AS
@@ -14,6 +16,7 @@ AS
 			- 20160128@Billy: Update Virtual Rate's range from [-0.8, 1.6] to [-0.9, 1.6] - [Redmine: #51611]
 			- 20160816@Winnie: Change sp for UAT purpose [Redmine: #61713]			
 			- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
+			- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -35,7 +38,7 @@ BEGIN
 
     SELECT  @ActualRate         AS ActualRate,
             VirtualMultiplier   AS EnableVirtualRate,
-            -0.9                AS Min_VirtualMultiplier,
+            -0.95                AS Min_VirtualMultiplier,
             2.0                 AS Max_VirtualMultiplier
     FROM    custInfo WITH(NOLOCK)
     WHERE   custid = @CustID
@@ -56,12 +59,4 @@ BEGIN
     SELECT custid, sporttype, bettype, islive, virtualMultiplier
     FROM @CustVirtualRate
 END
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelVirtualMultiplier] TO [bodbDownlineNetView]

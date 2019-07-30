@@ -21,6 +21,8 @@ AS
 						+ Change to use new structure : table Ac_VirtualRateList						 						
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
+
 	Parameter's Explanation:
 		- @virtualRate = '<ROOT>
 							<customer username="test123">
@@ -98,11 +100,19 @@ SET NOCOUNT ON
 
 	INSERT INTO @tblFail(username, sporttype, bettype, isLive, virtualrate, reason)
 	SELECT	username, sporttype, bettype, isLive, virtualrate, 
-			CASE WHEN virtualrate <0.1 OR virtualrate > 3 OR virtualrate*100%5!=0 THEN 'Invalid Virtual Rate.'
+			CASE WHEN virtualrate <0.05 OR virtualrate > 3  
+						OR ((virtualrate*100)%5!=0 AND (VirtualRate BETWEEN 0.2 AND 1.05 OR VirtualRate BETWEEN 1.1 AND 1.6)) -- -5,-10,-15,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75, -80, 60,55,50,45,40,35,30,25,20,15,10
+						OR ((virtualrate*100)%1!=0 AND (VirtualRate BETWEEN 0.05 AND 0.2 OR VirtualRate BETWEEN 1.06 AND 1.09)) -- -80,-81,-82,-83,-84,-85,-86,-87,-88,-89,-90,-91,-92,-93,-94,-95, 6,7,8,9,
+						OR ((virtualrate*100)%50!=0 AND VirtualRate BETWEEN 2 AND 3) -- 100,150,200
+						THEN 'Invalid Virtual Rate.'
 				 WHEN ISNULL(username,'') ='' THEN 'Username cannot be blanked.' ELSE '' END AS Reason 	
 	FROM	@tblCust 
-	WHERE	virtualrate <0.1 OR virtualrate > 3 OR virtualrate*100%5!=0
-			OR ISNULL(username,'') ='' 
+	WHERE	virtualrate <0.05 
+		OR virtualrate > 3 
+		OR ((virtualrate*100)%5!=0 AND (VirtualRate BETWEEN 0.2 AND 1.05 OR VirtualRate BETWEEN 1.1 AND 1.6)) -- -5,-10,-15,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70,-75, -80, 60,55,50,45,40,35,30,25,20,15,10
+		OR ((virtualrate*100)%1!=0 AND (VirtualRate BETWEEN 0.05 AND 0.2 OR VirtualRate BETWEEN 1.06 AND 1.09)) -- -80,-81,-82,-83,-84,-85,-86,-87,-88,-89,-90,-91,-92,-93,-94,-95, 6,7,8,9,
+		OR ((virtualrate*100)%50!=0 AND VirtualRate BETWEEN 2 AND 3) --100,150,200
+		OR ISNULL(username,'') ='' 
 	
 	INSERT INTO dbo.Acc_VirtualRateList(userid, username, sporttype, bettype, islive, virtualrate)
 	SELECT	@UserID, 
