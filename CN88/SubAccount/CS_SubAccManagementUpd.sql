@@ -103,12 +103,12 @@ BEGIN
 	WHERE NOT EXISTS (SELECT 1 FROM #Downlines d WITH (NOLOCK) WHERE cs.DownlineId = d.CustId)
 		AND cs.SubAccId = @subaccid
 
-	SELECT @AddList = STUFF((SELECT ',' + ci.username
+	SELECT @AddList = STUFF((SELECT ', ' + ci.username
 							FROM #AddAcc t
 								INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.CustId
 							FOR XML PATH('')), 1, 1, '')
 
-	SELECT @RemoveList = STUFF((SELECT ',' + ci.username
+	SELECT @RemoveList = STUFF((SELECT ', ' + ci.username
 							FROM #RemoveAcc t
 								INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.CustId
 							FOR XML PATH('')), 1, 1, '')
