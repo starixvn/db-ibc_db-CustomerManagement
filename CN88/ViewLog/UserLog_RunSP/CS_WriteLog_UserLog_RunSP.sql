@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="1"></info>*/
 
-CREATE PROCEDURE [dbo].[CS_WriteLog_UserLog_RunSP]
+ALTER PROCEDURE [dbo].[CS_WriteLog_UserLog_RunSP]
 	@UserID INT,   
 	@CustID	INT,   
 	@SubAccID INT,   
@@ -18,7 +18,7 @@ AS
   
 	Revisions:  
 		- 20190605@Paul: Insert log when running SP [Redmine: #113198]
-
+		- 20190722@Elodie: Add LogDate into CS_UserLog_RunSP_LogTarget [Redmine: #113198]
 	Param's Explanation:  
 */  
   
@@ -84,11 +84,10 @@ BEGIN
 			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
 			OPTION(MAXRECURSION 0)
 
-			INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID)
-			SELECT @MultiTarget_LogID, CustID
+			INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID, LogDate)
+			SELECT @MultiTarget_LogID, CustID, @LogDate
 			FROM #AffectedDownlines
 		END
 	END
 END
-
 GO

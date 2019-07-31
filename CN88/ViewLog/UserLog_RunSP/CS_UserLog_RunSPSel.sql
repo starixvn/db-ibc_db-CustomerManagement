@@ -255,7 +255,7 @@ BEGIN
 						FROM	@tmpCust tmp
 							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
 											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
-												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+												INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
 											WHERE lt.custid = tmp.Custid 
 												AND mt.LogDate BETWEEN @FromDate AND @ToDate
 												) ul
@@ -427,9 +427,9 @@ BEGIN
 						FROM	@tmpCust tmp
 							CROSS APPLY (	SELECT TOP (@i) mt.*, lt.CustID
 											FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
-												INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
+												INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID
 											WHERE lt.custid = tmp.Custid 
-												AND mt.LogDate > @FromDate AND LogDate < @__archiveDate) ul
+												AND mt.LogDate > @FromDate AND mt.LogDate < @__archiveDate) ul
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId

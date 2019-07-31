@@ -1,3 +1,1 @@
-NAP-Accounting\Customer\Status\Pwd_SecurityCode\CS_Acc_CustomerUpdPwdReset.sql
-CN88\SubAccount\CS_CustSubIns.sql
-CN88\Customer\Pwd_SecurityCode\CS_Age_CustomerUpdPwd.sql
+CN88\Customer\CustomerStatus\CS_CustomerStatusUpd.sql
