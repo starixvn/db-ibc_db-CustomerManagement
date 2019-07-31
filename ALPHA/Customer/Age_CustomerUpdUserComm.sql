@@ -1,6 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE [CustDB]
-GO
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 
 /****** Object:  Stored Procedure dbo.Age_CustomerUpdUserComm    Script Date: 12/5/2013 4:35:18 PM ******/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdUserComm]	
