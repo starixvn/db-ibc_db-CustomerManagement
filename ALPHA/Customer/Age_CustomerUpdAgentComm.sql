@@ -146,8 +146,3 @@ Param's Explanation:
 	end
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdAgentComm] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdAgentComm] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdAgentComm] TO [vnteam] AS [dbo]
