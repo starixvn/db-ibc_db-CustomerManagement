@@ -1,3 +1,5 @@
+/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet, bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Age_On_UserKickedout]
 	@CustID INT,
 	@SubAccID INT = 0
@@ -9,7 +11,8 @@ AS
 	Original:
 
 	Revisions:
-	
+		- 20190620@Elodie: Add permission for bodbAdminNet  [Redmine: #116825]
+
 	Param's Explanation:
 */
 BEGIN
@@ -20,10 +23,4 @@ BEGIN
 	WHERE custid = @CustID AND subaccid = @SubAccID
 
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Age_On_UserKickedout] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_On_UserKickedout] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_On_UserKickedout] TO [vnteam]

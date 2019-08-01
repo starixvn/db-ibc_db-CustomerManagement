@@ -10,7 +10,7 @@ AS
 
 	Revisions:    
 		- 20190329@Elodie: Initial SP [Redmine:#110497]
-
+		- 20190715@Elodie: Sub account management [Redmine:#116825] 
 	Param's Explanation:
 		
 */
@@ -20,6 +20,6 @@ BEGIN
 	SELECT subaccid, username, n.NickName, firstname, createdate, PageAccess, Closed
 	FROM custsub sb WITH(NOLOCK)
 		CROSS APPLY (SELECT NickName FROM dbo.f_CS_GetNickName(sb.username2,0)) n
-	WHERE custid = @custid
+	WHERE custid = @custid AND sb.IsDeleted = 0
 	ORDER BY username
 END

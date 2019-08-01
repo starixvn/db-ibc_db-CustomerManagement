@@ -3,17 +3,19 @@
 ALTER PROCEDURE [dbo].[CS_Customer_Homepage_Sel]
 	@CustId INT,	
 	@subAccID INT = 0,
+	@IsAllDownline BIT,
 	@fromdate DATETIME,
 	@todate	DATETIME		
 AS
 /*
 	Created: 20190304@Johnson
-	DB: DBCUST.CustDB
+	DB: DBCUST/CustDB
 	Task: get general info for home page
 
 	Revisions:
 		- 20190304@Johnson: Initialize SP [RedmineID: #105338]
 		- 20190527@Paul: Apply new status [RedmineID: #113198]
+		- 20190715@Elodie: Sub account management [Redmine:#116825] 
 */
 
 BEGIN
@@ -31,7 +33,7 @@ BEGIN
 	SELECT	@credit = credit, @roleid = roleid
 	FROM dbo.CustInfo WITH(NOLOCK)
 	WHERE custid = @custid
-	
+		
 	--get credit balance	
 	IF @roleid = 4
 	BEGIN
@@ -78,8 +80,18 @@ BEGIN
 	BEGIN
 		SELECT @LastChangePwd = LastChangedPwdDate
 		FROM dbo.CustLoginInfo WITH(NOLOCK)
+		WHERE custid = @custid				
+	END
+	ELSE
+	BEGIN
+		SELECT @LastChangePwd = LastChangedPwdDate
+		FROM dbo.CustLoginInfoSub WITH(NOLOCK)
 		WHERE custid = @custid
-		
+			AND subAccID = @subAccID
+	END
+	
+	IF @subAccID = 0 OR @IsAllDownline = 1
+	BEGIN
 		IF @roleid = 4
 		BEGIN
 			INSERT INTO #tblStatus(roleid, cntActive, cntViewOnly, cntSuspended, cntInactive)
@@ -123,14 +135,24 @@ BEGIN
 			GROUP BY ci.roleid	
 		END
 	END
-	ELSE
 	BEGIN
-		SELECT @LastChangePwd = LastChangedPwdDate
-		FROM dbo.CustLoginInfoSub WITH(NOLOCK)
-		WHERE custid = @custid
-			AND subAccID = @subAccID
+		IF @roleid = 4
+		BEGIN
+			INSERT INTO #tblStatus(roleid, cntActive, cntViewOnly, cntSuspended, cntInactive)
+			SELECT roleid, 
+				ISNULL(SUM(CASE	WHEN cs.CustStatus = 4 THEN 1 ELSE 0 END), 0) AS cntActive,
+				ISNULL(SUM(CASE WHEN cs.CustStatus = 3 THEN 1 ELSE 0 END), 0) AS cntViewOnly,
+				ISNULL(SUM(CASE WHEN cs.CustStatus = 2 THEN 1 ELSE 0 END), 0) AS cntSuspended,
+				ISNULL(SUM(CASE WHEN cs.CustStatus = 1 THEN 1 ELSE 0 END), 0) AS cntInactive
+			FROM custinfo ci WITH(NOLOCK)
+				INNER JOIN dbo.CS_SubAccManagement sm WITH (NOLOCK) ON ci.mrecommend = sm.DownlineId
+				CROSS APPLY dbo.f_CS_GetCustomerStatus(ci.custid) cs
+			WHERE srecommend = @custid AND sm.SubAccId = @subAccID
+				AND roleid IN (1,2,3)				
+			GROUP BY roleid	
+		END
 	END
-	
+
 	SELECT @credit as Credit,
 		@credit - @CreditBalance as CreditBalance,
 		ISNULL(@cntNewMember,0) as cntNewMember,

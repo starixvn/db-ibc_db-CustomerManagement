@@ -2,17 +2,20 @@
 
 ALTER PROCEDURE [dbo].[CS_Customer_OnlineUserList_Sel]
 	@CustId INT,
+	@SubAccId INT,
+	@IsAllDownline BIT, 
 	@pageSize INT = 50,
 	@pageIndex INT = 0,
 	@totalRows INT = 0 OUTPUT
 AS
 /*
 	Created: 20190304@Johnson
-	DB: DBONUSER.ON_USER
+	DB: DBONUSER/ON_USER
 	Task: get online users list member level only
 
 	Revisions:
 		- 20190304@Johnson: Initialize SP [RedmineID: #105338]
+		- 20190715@Elodie: Sub account management [Redmine:#116825] 
 */
 
 BEGIN
@@ -23,44 +26,82 @@ BEGIN
 	
 	SELECT @roleid = roleid
 	FROM bodb02.dbo.custinfo WITH(NOLOCK)
-	WHERE custid = @custid
-	
-	IF @roleid = 4
+	WHERE custid = @custid	
+
+	IF @IsAllDownline = 1 OR @SubAccId = 0
 	BEGIN
-		INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
-		SELECT c.custid, username, firstname, lastlogged
-		FROM bodb02.dbo.customer c WITH(NOLOCK)
-			INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
-		WHERE srecommend = @custid 
-			AND roleid = 1
-			AND o.iskickedout = 0
+		IF @roleid = 4
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE srecommend = @custid 
+				AND roleid = 1
+				AND o.iskickedout = 0
+		END
+		ELSE IF @roleid = 3
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE mrecommend = @custid 
+				AND roleid = 1
+				AND o.iskickedout = 0
+		END
+		ELSE IF @roleid = 2
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, c.username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE c.recommend = @custid 
+				AND c.roleid = 1
+				AND o.iskickedout = 0
+		END
 	END
-	ELSE IF @roleid = 3
+	ELSE
 	BEGIN
-		INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
-		SELECT c.custid, username, firstname, lastlogged
-		FROM bodb02.dbo.customer c WITH(NOLOCK)
-			INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
-		WHERE mrecommend = @custid 
-			AND roleid = 1
-			AND o.iskickedout = 0
+		IF @roleid = 4
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.mrecommend = sm.DownlineId
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE srecommend = @custid AND sm.SubAccId = @SubAccId
+				AND roleid = 1
+				AND o.iskickedout = 0
+		END
+		ELSE IF @roleid = 3
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.recommend = sm.DownlineId
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE mrecommend = @custid AND sm.SubAccId = @SubAccId
+				AND roleid = 1
+				AND o.iskickedout = 0
+		END
+		ELSE IF @roleid = 2
+		BEGIN
+			INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
+			SELECT c.custid, c.username, firstname, lastlogged
+			FROM bodb02.dbo.customer c WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.CS_SubAccManagement sm WITH (NOLOCK) ON c.custid = sm.DownlineId
+				INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
+			WHERE c.recommend = @custid AND sm.SubAccId = @SubAccId
+				AND c.roleid = 1
+				AND o.iskickedout = 0
+		END
 	END
-	ELSE IF @roleid = 2
-	BEGIN
-		INSERT INTO #tblOnlineList(custid,username,name,lastlogin)
-		SELECT c.custid, c.username, firstname, lastlogged
-		FROM bodb02.dbo.customer c WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.custinfo ci WITH(NOLOCK) ON ci.custid = c.custid
-			INNER JOIN dbo.On_user o WITH(NOLOCK) ON c.custid = o.custid
-		WHERE ci.recommend = @custid 
-			AND ci.roleid = 1
-			AND o.iskickedout = 0
-	END
-	
+
 	DECLARE @RowCount int, @RowStart int, @RowEnd int  
-	SELECT @PageIndex = @PageIndex - 1, 
-		@RowStart = @PageSize * @PageIndex + 1, 
-		@RowEnd = @RowStart + @PageSize - 1   
+	SELECT	@PageIndex = @PageIndex - 1, 
+			@RowStart = @PageSize * @PageIndex + 1, 
+			@RowEnd = @RowStart + @PageSize - 1   
 
 	SELECT @TotalRows = count(1)
 	FROM #tblOnlineList c

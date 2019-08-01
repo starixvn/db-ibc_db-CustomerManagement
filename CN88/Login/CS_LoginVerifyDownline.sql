@@ -31,6 +31,7 @@ AS
 		- 20190520@Elodie: Login by level - [Redmine: ##113008] 
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
+		- 20190717@Elodie: Sub account management [Redmine:#116825] 
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -119,7 +120,7 @@ BEGIN
 			SELECT	@SubAccID = subaccid, @SubUserName = username, @CustID = custid, @db_userpwd = userpwd, @failedcount = isnull(logincount,0), @closed = closed,
 					@Nickname = @UserName, @IsNickname = 1
 			FROM custSub c WITH (NOLOCK)
-			WHERE username2 = @db_Username2	
+			WHERE username2 = @db_Username2	AND c.IsDeleted = 0
 
 			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID
 			SET @rowcount = @@ROWCOUNT	
@@ -131,7 +132,7 @@ BEGIN
 					 @failedcount = isnull(logincount,0), @db_userpwd = userpwd, @closed = closed
 			FROM custsub WITH (NOLOCK) 	
 				CROSS APPLY dbo.f_CS_GetNickName(UserName2,0) f			
-			WHERE username = @UserName	
+			WHERE username = @UserName AND IsDeleted = 0	
 
 			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID			
 			SET @rowcount = @@ROWCOUNT
@@ -139,7 +140,7 @@ BEGIN
 
 			IF @SubNicknameLoginOnly = 1 
 			BEGIN  
-				SELECT @LogData = @role + @SubUserName + ' - {FailureLoginOptionNicknameOnly}'  
+				SELECT @LogData = @role + @SubUserName + ' - {FailureLoginOptionNicknameOnly}'
 
 				SELECT	@failedcount = @failedcount + 1
 				SET @End = GETDATE() 
@@ -176,21 +177,39 @@ BEGIN
 
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
-			
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @CustID, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform, 
-				@CountryCode = @CountryCode,
-				@Duration = @Duration
-				
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform, 
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@NickName = @db_Username2
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform, 
+					@CountryCode = @CountryCode,
+					@Duration = @Duration
+			END
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 						ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
 						END ,@ErrCode=106  
@@ -209,20 +228,40 @@ BEGIN
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
-				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-					@UserID = 0, 
-					@RoleID = 0, 
-					@SubAccID = @SubAccID,
-					@ServerID = @ServerID,
-					@LoginIP = @inputLoginIP,
-					@DomainName = @LoginDomain,
-					@ActionID = 1326,
-					@Doing = @LogData,
-					@BrowserName = @BrowserName,
-					@Platform = @Platform, 
-					@CountryCode = @CountryCode,
-					@Duration = @Duration					
-	 
+				IF @IsNickname = 1
+				BEGIN
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+						@UserID = 0, 
+						@RoleID = 0, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @inputLoginIP,
+						@DomainName = @LoginDomain,
+						@ActionID = 1326,
+						@Doing = @LogData,
+						@BrowserName = @BrowserName,
+						@Platform = @Platform, 
+						@CountryCode = @CountryCode,
+						@Duration = @Duration,
+						@NickName = @db_Username2					
+				END
+				ELSE
+				BEGIN
+					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+						@UserID = 0, 
+						@RoleID = 0, 
+						@SubAccID = @SubAccID,
+						@ServerID = @ServerID,
+						@LoginIP = @inputLoginIP,
+						@DomainName = @LoginDomain,
+						@ActionID = 1326,
+						@Doing = @LogData,
+						@BrowserName = @BrowserName,
+						@Platform = @Platform, 
+						@CountryCode = @CountryCode,
+						@Duration = @Duration		
+				END
+
 				SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
 							END ,@ErrCode=106  
@@ -245,20 +284,39 @@ BEGIN
 					SET	@End = GETDATE() 
 					SET @Duration = DATEDIFF(millisecond,@Begin,@End)						
 					
-					EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-						@UserID = @CustID, 
-						@RoleID = @RoleID, 
-						@SubAccID = @SubAccID,
-						@ServerID = @ServerID,
-						@LoginIP = @inputLoginIP,
-						@DomainName = @LoginDomain,
-						@ActionID = 1327,
-						@Doing = @LogData,
-						@BrowserName = @BrowserName,
-						@Platform = @Platform, 
-						@CountryCode = @CountryCode,
-						@Duration = @Duration						
-							
+					IF @IsNickname = 1
+					BEGIN
+						EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+							@UserID = @CustID, 
+							@RoleID = @RoleID, 
+							@SubAccID = @SubAccID,
+							@ServerID = @ServerID,
+							@LoginIP = @inputLoginIP,
+							@DomainName = @LoginDomain,
+							@ActionID = 1327,
+							@Doing = @LogData,
+							@BrowserName = @BrowserName,
+							@Platform = @Platform, 
+							@CountryCode = @CountryCode,
+							@Duration = @Duration,
+							@NickName = @db_Username2						
+					END
+					ELSE
+					BEGIN
+						EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+							@UserID = @CustID, 
+							@RoleID = @RoleID, 
+							@SubAccID = @SubAccID,
+							@ServerID = @ServerID,
+							@LoginIP = @inputLoginIP,
+							@DomainName = @LoginDomain,
+							@ActionID = 1327,
+							@Doing = @LogData,
+							@BrowserName = @BrowserName,
+							@Platform = @Platform, 
+							@CountryCode = @CountryCode,
+							@Duration = @Duration		
+					END
 					SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 							 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
 							 END ,@ErrCode=106  
@@ -276,21 +334,40 @@ BEGIN
 	
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
-						
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = 0, 
-				@RoleID = 0, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration				
 			
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = 0, 
+					@RoleID = 0, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@NickName = @db_Username2		
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = 0, 
+					@RoleID = 0, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration	
+			END
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 					 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)
 					 END ,@ErrCode=106    
@@ -415,20 +492,40 @@ BEGIN
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
 			
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @CustID, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration				
-			
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@NickName = @db_Username2				
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration	
+			END
+
 			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your sub account has been locked due to multiple failed security check attempts. Please contact the main account user to unlock.'  
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](80008,@Language) 
 							END ,@ErrCode=108    
@@ -452,19 +549,39 @@ BEGIN
 			SET	@End = GETDATE() 		
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 			
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
-				@UserID = @CustID, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode ,
-				@Duration = @Duration 							
+			IF @IsNickname = 1
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode ,
+					@Duration = @Duration, 
+					@NickName = @db_Username2							
+			END
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper	
+					@UserID = @CustID, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode ,
+					@Duration = @Duration 			
+			END
 
 			/* START --Jamie@20130327 Close accounts after 5 logins failed */			
 			IF @failedcount > 5
@@ -886,7 +1003,7 @@ BEGIN
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80009,@Language)
 				END ,@ErrCode=700     		
 	    
-		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserInactivated}'  
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserInactivated}'
 
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -933,7 +1050,7 @@ BEGIN
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80010,@Language)
 				END ,@ErrCode=701     
 	    
-		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserSuspended}'  
+		SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {FailureUserSuspended}'
 
 		SET	@End = GETDATE() 
 		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
@@ -1024,133 +1141,136 @@ BEGIN
 		RETURN
 	END
 	  
-	IF ISNULL(@closed, 1) = 1
-	BEGIN  				
-		SELECT @LogData = @role + @UserName + ' - {FailureAccountLocked}'  
+	IF @SubAccID = 0 -- check for main acc
+	BEGIN
+		IF ISNULL(@closed, 1) = 1 
+		BEGIN  				
+			SELECT @LogData = @role + @UserName + ' - {FailureAccountLocked}'  
 
-		SET	@End = GETDATE() 
-		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+			SET	@End = GETDATE() 
+			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 
-		IF @isNickname = 1
-		BEGIN							
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @db_custid, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration,
-				@Nickname = @db_Username2							
-		END	
-		ELSE
-		BEGIN				
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @db_custid, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration				
-		END	
+			IF @isNickname = 1
+			BEGIN							
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @db_custid, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@Nickname = @db_Username2							
+			END	
+			ELSE
+			BEGIN				
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @db_custid, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration				
+			END	
 
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been locked due to multiple failed security check attempts. Please contact your upline to unlock.'  
-						ELSE [dbo].[f_Get_MsgNamebyMsgID](80007,@Language)
-				   END ,@ErrCode=108  
-		RETURN  
-	END  
-	ELSE IF @db_userpwd <> @UserPWD
-	BEGIN 
-		SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
-				,@LastChangedPwdDate	= LastChangedPwdDate
-		FROM	CustLoginInfo WITH (NOLOCK)
-		WHERE	CustID = @CustID
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been locked due to multiple failed security check attempts. Please contact your upline to unlock.'  
+							ELSE [dbo].[f_Get_MsgNamebyMsgID](80007,@Language)
+					   END ,@ErrCode=108  
+			RETURN  
+		END  
+		ELSE IF @db_userpwd <> @UserPWD
+		BEGIN 
+			SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
+					,@LastChangedPwdDate	= LastChangedPwdDate
+			FROM	CustLoginInfo WITH (NOLOCK)
+			WHERE	CustID = @CustID
 		
-		IF	@UserPWD = @OldUserPwd	
-			SELECT	@LastChangedPwdDate = @LastChangedPwdDate
-		ELSE	SELECT	@LastChangedPwdDate = NULL 
+			IF	@UserPWD = @OldUserPwd	
+				SELECT	@LastChangedPwdDate = @LastChangedPwdDate
+			ELSE	SELECT	@LastChangedPwdDate = NULL 
 
-		SELECT @LogData = @role + @UserName + ' - {FailurePasswordProblem}'  
-			,@failedcount = @failedcount + 1    
+			SELECT @LogData = @role + @UserName + ' - {FailurePasswordProblem}'  
+				,@failedcount = @failedcount + 1    
 	    
-		SET	@End = GETDATE() 
-		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+			SET	@End = GETDATE() 
+			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 		
-		IF @IsNickname =1
-		BEGIN			
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @db_custid, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,   
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration,
-				@Nickname = @db_Username2							
-		END	
-		ELSE
-		BEGIN
-			EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
-				@UserID = @db_custid, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1326,
-				@Doing = @LogData,   
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration				
-		END	
+			IF @IsNickname =1
+			BEGIN			
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @db_custid, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,   
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration,
+					@Nickname = @db_Username2							
+			END	
+			ELSE
+			BEGIN
+				EXEC dbo.CS_WriteLog_UserLog_Login_Wrapper
+					@UserID = @db_custid, 
+					@RoleID = @RoleID, 
+					@SubAccID = @SubAccID,
+					@ServerID = @ServerID,
+					@LoginIP = @inputLoginIP,
+					@DomainName = @LoginDomain,	
+					@ActionID = 1326,
+					@Doing = @LogData,   
+					@BrowserName = @BrowserName,
+					@Platform = @Platform,
+					@CountryCode = @CountryCode,
+					@Duration = @Duration				
+			END	
 		
-		IF @failedcount > 5 	
-		BEGIN
-			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
+			IF @failedcount > 5 	
+			BEGIN
+				UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+				UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
 									
 			
-	    	SELECT @LogSPData = '<CS_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
+	    		SELECT @LogSPData = '<CS_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
-			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-				@UserID = @db_custid,
-				@CustID = @CustID,
-				@ActionID = 940,
-				@TrackingValue = @LogSPData,
-				@Duration = @Duration						
-		END
+				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+					@UserID = @db_custid,
+					@CustID = @CustID,
+					@ActionID = 940,
+					@TrackingValue = @LogSPData,
+					@Duration = @Duration						
+			END
 		
-		IF (@failedcount <= 5) 
-		BEGIN
-			UPDATE	customer WITH (ROWLOCK, UPDLOCK) 
-			SET		logincount = @failedcount 
-			WHERE	custid = @db_custid  
-		END
+			IF (@failedcount <= 5) 
+			BEGIN
+				UPDATE	customer WITH (ROWLOCK, UPDLOCK) 
+				SET		logincount = @failedcount 
+				WHERE	custid = @db_custid  
+			END
 	  
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
-				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
-				 END ,@ErrCode= case when @failedcount > 5 then 109 else 106 end
-	  return  
-	END  
-	  
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+					 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
+					 END ,@ErrCode= case when @failedcount > 5 then 109 else 106 end
+		  return  
+		END  
+	 END
+
 	-- Successful  
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
@@ -1160,7 +1280,7 @@ BEGIN
 
 	----------------------------------
 	--**Output LoginIP to check the first login**
-	SELECT @LoginIP=isnull(@db_loginip, ''),
+	SELECT @LoginIP=  ISNULL(@db_loginip, ''),
 		@LoginTime = CURRENT_TIMESTAMP	
 
 	SELECT @LogData = @role + CASE WHEN @SubAccID > 0 THEN @SubUserName ELSE @UserName END + ' - {BeforeLoginSuccess}'  
