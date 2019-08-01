@@ -1,5 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_LoginDownline_Admin]
 	@UserName VARCHAR(50),
 	@LoginIP VARCHAR(20),
@@ -28,7 +27,8 @@ ALTER PROCEDURE [dbo].[CS_LoginDownline_Admin]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT,
-	@Status TINYINT = 1 OUTPUT
+	@Status TINYINT = 1 OUTPUT,
+	@IsAllDownline BIT = 1 OUTPUT
 AS
 /*
 	Created: 20190518@Elodie
@@ -47,10 +47,12 @@ AS
 
 	Revisions:
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
-
+		- 20190731@Percy: Alway return @IsAllDownline = 1 for internal login [RedmineID: #116825]
 */
 BEGIN
 	SET NOCOUNT ON 
+
+	SELECT @IsAllDownline = 1 -- Alway return 1 for internal login
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT
 	DECLARE @LogData NVARCHAR(200),	@logincount INT, @locked INT
@@ -139,3 +141,4 @@ BEGIN
 		RETURN
 	END
 END
+GO
