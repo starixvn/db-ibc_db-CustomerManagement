@@ -9,7 +9,7 @@ AS
 
 /*
 	Created: 20190723@Percy
-	DB: DBTXN.bodb02
+	DB: DB042.bodb02
 	Task: Get a specific member's outstanding
 		
 	Revisions:
