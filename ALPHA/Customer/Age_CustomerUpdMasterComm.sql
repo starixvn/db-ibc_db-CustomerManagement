@@ -1,6 +1,5 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE [CustDB]
-GO
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+
 
 
 /****** Object:  Stored Procedure dbo.Age_CustomerUpdMasterComm    Script Date: 12/5/2013 4:35:18 PM ******/
@@ -12,7 +11,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMasterComm]
 	@groupd decimal(9,8),
 	@discount1x2 decimal(9,8),
 	@discountcs decimal(9,8),	
-	@discountnumber decimal(9,8),
+	@discountnumber decimal(9,8)=0,
 	@discountMyanmarOdds DECIMAL(9,8)=0,
 	@userid int, --updater Id	
 	@subaccid int = 0, --Sub-AccountID
@@ -40,6 +39,7 @@ Revisions:
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @groupa: groupa's discount value
@@ -149,8 +149,3 @@ Param's Explanation:
 	end
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdMasterComm] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdMasterComm] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdMasterComm] TO [vnteam] AS [dbo]
