@@ -19,6 +19,7 @@ AS
 	Revisions:  
 		- 20190605@Paul: Insert log when running SP [Redmine: #113198]
 		- 20190722@Elodie: Add LogDate into CS_UserLog_RunSP_LogTarget [Redmine: #113198]
+		- 20190808@Elodie: Add new action of problem account [Redmine: #116814]
 	Param's Explanation:  
 */  
   
