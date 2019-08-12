@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CS_ProblemAccount_CustomerList]
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,
@@ -48,8 +48,8 @@ BEGIN
 	BEGIN
 		INSERT INTO #tempProblemAccount(custId, username, name, numberOfDownline, status, createdDate, isReviewed)
 		SELECT c.custid, c.username, c.username2, d.NumberOfDownline, cs.CustStatus, p.CreatedDate, p.IsReviewed
-		FROM  dbo.CS_ProblemAccount p
-			INNER JOIN dbo.Customer c on p.CustId = c.CustId
+		FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
+			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			CROSS APPLY dbo.f_CS_GetCustomerStatus(c.custid) cs
 			OUTER APPLY (
 				SELECT COUNT(1) AS NumberOfDownline
@@ -84,8 +84,8 @@ BEGIN
 		BEGIN
 			INSERT INTO #tempProblemAccount(custId, username, name, numberOfDownline, status, createdDate, isReviewed)
 			SELECT c.custid, c.username, c.username2, d.NumberOfDownline, cs.CustStatus, p.CreatedDate, p.IsReviewed
-			FROM  dbo.CS_ProblemAccount p
-				INNER JOIN dbo.Customer c on p.CustId = c.CustId
+			FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
+				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY dbo.f_CS_GetCustomerStatus(c.custid) cs
 				OUTER APPLY (
 					SELECT COUNT(1) AS NumberOfDownline
@@ -110,8 +110,8 @@ BEGIN
 		BEGIN
 			INSERT INTO #tempProblemAccount(custId, username, name, status, createdDate, isReviewed)
 			SELECT c.custid, c.username, c.username2, cs.CustStatus, p.CreatedDate, p.IsReviewed
-			FROM  dbo.CS_ProblemAccount p
-				INNER JOIN dbo.Customer c on p.CustId = c.CustId
+			FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
+				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY dbo.f_CS_GetCustomerStatus(c.custid) cs
 			WHERE ((@SearchUsername = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
