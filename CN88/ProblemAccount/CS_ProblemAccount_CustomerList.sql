@@ -16,7 +16,7 @@ AS
 
 /*
 	Created: 20190806@Alvin
-	DB: DBAGE.bodb02
+	DB: DBCUST/CustDB
 	Task: Problem Accounts
 
 	Revisions:
@@ -63,9 +63,9 @@ BEGIN
 			AND p.CreatedDate BETWEEN @FromDate AND @ToDate
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			AND (
-				c.username LIKE '%' + @SearchUsername + '%'
-				OR c.username2 LIKE 'CN88$%' + @SearchUsername + '%'
-				OR c.firstname LIKE '%' + @SearchUsername + '%'
+				c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
+				OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
+				OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 			)
 			
 		SELECT @TotalRows = @@ROWCOUNT
@@ -99,9 +99,9 @@ BEGIN
 				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 				AND (
-					c.username LIKE '%' + @SearchUsername + '%'
-					OR c.username2 LIKE 'CN88$%' + @SearchUsername + '%'
-					OR c.firstname LIKE '%' + @SearchUsername + '%'
+					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
+					OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
+					OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 				)
 
 			SELECT @TotalRows = @@ROWCOUNT
@@ -119,9 +119,9 @@ BEGIN
 				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 				AND (
-					c.username LIKE '%' + @SearchUsername + '%'
-					OR c.username2 LIKE 'CN88$%' + @SearchUsername + '%'
-					OR c.firstname LIKE '%' + @SearchUsername + '%'
+					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
+					OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
+					OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 				)
 
 			SELECT @TotalRows = @@ROWCOUNT
