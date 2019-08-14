@@ -22,7 +22,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Site VARCHAR(10)
-	SELECT @Site=@Site FROM bodb02.dbo.Customer c WITH(NOLOCK) WHERE custid=@CustID
+	SELECT @Site=Site FROM bodb02.dbo.Customer c WITH(NOLOCK) WHERE custid=@CustID
 	DECLARE @__archiveDate DATETIME
 	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
 
