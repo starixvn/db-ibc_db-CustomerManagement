@@ -36,7 +36,7 @@ BEGIN
 							when (ActionID IN (2800,2802)) then 'LRF Admin'
 							ELSE c.Username
 						END
-		INTO #__tempData
+		INTO #__tempDataCN88
 		FROM dbo.CS_UserLog_RunSP u WITH(NOLOCK)
 			LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 		WHERE u.custid = @CustID
@@ -47,7 +47,7 @@ BEGIN
 		IF @@ROWCOUNT >= 10
 		BEGIN
 			SELECT *
-			FROM #__tempData
+			FROM #__tempDataCN88
 			ORDER BY logdate DESC
 		
 			RETURN
@@ -61,7 +61,7 @@ BEGIN
 								when (ActionID IN (2800,2802)) then 'LRF Admin'
 								ELSE c.Username
 							END
-			INTO #__tempData_Archive
+			INTO #__tempData_ArchiveCN88
 			FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP u WITH(NOLOCK)
 				LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 			WHERE u.custid = @CustID
@@ -72,11 +72,11 @@ BEGIN
 			SELECT TOP 10 *
 			FROM (
 				SELECT *
-				FROM #__tempData
+				FROM #__tempDataCN88
 
 				UNION ALL
 				SELECT *
-				FROM #__tempData_Archive
+				FROM #__tempData_ArchiveCN88
 			)t ORDER BY logdate DESC
 		END
 	END
