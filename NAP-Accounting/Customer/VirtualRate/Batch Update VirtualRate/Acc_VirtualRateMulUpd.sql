@@ -184,7 +184,8 @@ BEGIN
 			  CustID,
 			  TrackingValue,
 			  ActionID,
-			  Duration
+			  Duration,
+			  SubAccID
 			)
     SELECT  @UserID,
             t.CustID,
@@ -203,7 +204,8 @@ BEGIN
 				FOR XML  RAW('s')          
             )+'</Acc_VirtualRateMulUpd>',
             802,
-            @duration
+            @duration,
+			0
     FROM    @tmpStatus t
 		INNER JOIN Customer c WITH(NOLOCK) ON t.custid=c.custid
 	WHERE Site='CN88'     
