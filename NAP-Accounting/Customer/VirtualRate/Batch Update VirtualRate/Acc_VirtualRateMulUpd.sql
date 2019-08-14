@@ -26,7 +26,7 @@ AS /*
 						+ Change to use new structure : table Ac_VirtualRateList				
 		- 20151105@Billy: Change to new VirtualRate structure [Redmine: #46541]		 						
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
-							
+		- 20190814@Winnie: NAP - UI did not show history of Virtual Rate with CN88 account. [Redmine: #118631]				
 */
 BEGIN
     SET NOCOUNT ON		
@@ -158,9 +158,9 @@ BEGIN
 			  Duration
 			)
     SELECT  @UserID,
-            CustID,
+            t.CustID,
             '<Acc_VirtualRateMulUpd UserName="'
-            + username + '" IP="' + @IP + '" FileName="'
+            + t.username + '" IP="' + @IP + '" FileName="'
             + @FileName + '" Size="'
             + CONVERT(VARCHAR(20), @FileSize) + '">'+
             (
@@ -176,7 +176,37 @@ BEGIN
             802,
             @duration
     FROM    @tmpStatus t
-     
+		INNER JOIN Customer c WITH(NOLOCK) ON t.custid=c.custid
+	WHERE ISNULL(site,'')<>'CN88'     
+
+	INSERT  INTO DBLOG.bodb_CustomerLog.dbo.CS_UserLog_RunSP
+			( UserID,
+			  CustID,
+			  TrackingValue,
+			  ActionID,
+			  Duration
+			)
+    SELECT  @UserID,
+            t.CustID,
+            '<Acc_VirtualRateMulUpd UserName="'
+            + t.username + '" IP="' + @IP + '" FileName="'
+            + @FileName + '" Size="'
+            + CONVERT(VARCHAR(20), @FileSize) + '">'+
+            (
+				SELECT  SportType
+						,BetType
+						,IsLive
+						,Virtualrate as VirtualMultiplier
+				FROM @tmpCust c
+				WHERE c.custid = t.custid   
+				ORDER BY sporttype,isLive DESC,bettype
+				FOR XML  RAW('s')          
+            )+'</Acc_VirtualRateMulUpd>',
+            802,
+            @duration
+    FROM    @tmpStatus t
+		INNER JOIN Customer c WITH(NOLOCK) ON t.custid=c.custid
+	WHERE Site='CN88'     
 
     DECLARE @TotalUsers INT
     SELECT  @TotalUsers = COUNT(DISTINCT username)
