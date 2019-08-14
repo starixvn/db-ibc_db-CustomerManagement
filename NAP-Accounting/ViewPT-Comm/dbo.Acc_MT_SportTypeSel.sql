@@ -16,6 +16,7 @@ AS
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20180711@Elodie: Remove setting type 3 of DCS (commission) [RedmineID: #97675]
 		- 20181214@Johnson: Exclude Happy 5 [Redmine: #104006]
+		- 20190726@Eden: Exclude Poker Games, Bullfighting,Colosus Bet, Lucky 3 [Redmine: #117439]
 */
 
 SET NOCOUNT ON
@@ -26,12 +27,12 @@ DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 BEGIN TRY
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164)
+	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164,160,163,207,204)
 END TRY
 BEGIN CATCH
 	INSERT INTO @tmp_Sports (SportType, SportName)
 	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164)
+	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164,160,163,207,204)
 END CATCH
 ----- 20150610@Kos -------------------
 
