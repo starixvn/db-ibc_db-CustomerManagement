@@ -38,7 +38,8 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #Downlines(CustId INT)
-	DECLARE @CustId INT, @ActionId INT, @StartRun DATETIME, @Duration INT, @LogDataNew VARCHAR(500), @LogDataOld VARCHAR(500)
+	DECLARE @CustId INT, @ActionId INT, @SuccessDownlineList VARCHAR(MAX) = ''
+	DECLARE @StartRun DATETIME, @Duration INT, @LogDataNew VARCHAR(500), @LogDataOld VARCHAR(500)
 
 	SET @startRun = GETDATE()
 
@@ -79,7 +80,7 @@ BEGIN
 	FROM dbo.CS_ProblemAccount pa WITH (NOLOCK)
 		INNER JOIN #tempCust t ON pa.CustId = t.CustId
 
-	-- Write log
+	
 	WHILE (1=1)
 	BEGIN
 		UPDATE TOP (1) #tempCust
@@ -89,6 +90,16 @@ BEGIN
 
 		IF @@ROWCOUNT = 0 BREAK
 
+		IF @RoleId <> 1 AND @IsAffectedAllDownlines = 1
+		BEGIN
+			EXEC dbo.CS_DynamicCustSetting_01
+			@CustId = @CustId,
+			@RoleId = @RoleId,
+			@Action = 'UpdateReviewStatus',
+			@SuccessDownlineList = @SuccessDownlineList OUTPUT
+		END
+
+		-- Write log
 		SELECT @LogDataOld = '<R ReviewStatus="NotReviewed" ' +
 							'SubAcc="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
 							'IsAllAffectedDownlines="' + COALESCE(CAST(@IsAffectedAllDownlines as VARCHAR(1)),SPACE(1)) + '" ' +
@@ -120,6 +131,7 @@ BEGIN
 			@ActionId			= @ActionId,
 			@TrackingValue		= @LogDataNew,
 			@TrackingValue2		= @LogDataOld,
-			@Duration			= @Duration
+			@Duration			= @Duration,
+			@AffectedDownlines	= @SuccessDownlineList
 	END
 END
