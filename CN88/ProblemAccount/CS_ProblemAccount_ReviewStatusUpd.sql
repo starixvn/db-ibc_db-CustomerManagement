@@ -43,12 +43,6 @@ BEGIN
 
 	SET @startRun = GETDATE()
 
-	IF ISNULL(@DownlineList, '') = ''
-	BEGIN
-		SELECT @ErrCode = 107, @ErrMsg = 'You do not have any Problem Accounts selected. Please select a Problem Account'
-		RETURN
-	END
-
 	INSERT INTO #Downlines(CustId)
 	SELECT CONVERT(INT, Val)
 	FROM dbo.f_StringSplit(@DownlineList, ',')
