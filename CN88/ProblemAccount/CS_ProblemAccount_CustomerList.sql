@@ -92,7 +92,7 @@ BEGIN
 						INNER JOIN dbo.Customer dc WITH (NOLOCK) ON dp.CustId = dc.custid
 					WHERE dc.recommend = c.custid AND dc.roleid = 1
 				) AS d
-			WHERE ((@SearchUsername = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
+			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 				AND c.roleid = @SearchRoleId
 				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
@@ -112,7 +112,7 @@ BEGIN
 			FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
-			WHERE ((@SearchUsername = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
+			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 				AND c.roleid = @SearchRoleId
 				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
