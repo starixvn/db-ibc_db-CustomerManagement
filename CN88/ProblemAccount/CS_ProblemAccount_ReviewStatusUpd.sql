@@ -4,10 +4,10 @@ CREATE PROCEDURE [dbo].[CS_ProblemAccount_ReviewStatusUpd]
 	@SubAccId				INT = 0,
 	@RoleId					TINYINT,
 	@IsAllDownline			BIT = 0,
-	@DownlineList			VARCHAR(MAX) = '',
+	@CustomerList			VARCHAR(MAX) = '',
 	@IsAffectedAllDownlines	BIT = 0,
 	@Language				VARCHAR(2) = 'E',
-	@LoginIP				VARCHAR(20)='',
+	@LoginIP				VARCHAR(20) = '',
 	@ErrCode				INT = 0 OUTPUT,
 	@ErrMsg					NVARCHAR(4000) = '' OUTPUT
 AS
@@ -28,7 +28,7 @@ AS
 			2: Agent
 			1: Member
 		@IsAllDownline: is view all downlines
-		@DownlineList: list of downline id
+		@CustomerList: list of downline id
 		@ErrCode:
 			= 0: Update successfully.
 			> 0: Specific Error.
@@ -45,35 +45,56 @@ BEGIN
 
 	INSERT INTO #Downlines(CustId)
 	SELECT CONVERT(INT, Val)
-	FROM dbo.f_StringSplit(@DownlineList, ',')
+	FROM dbo.f_StringSplit(@CustomerList, ',')
 	OPTION(MAXRECURSION 0)
 
 	IF EXISTS (SELECT 1
 				FROM #Downlines d
 					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-				WHERE ci.roleid <> @RoleId
-					OR (ci.srecommend <> @UserId AND ci.roleid = @RoleId)
-					OR (@IsAllDownline = 0 AND NOT EXISTS(SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = d.custid)))
+				WHERE ci.roleid <> @RoleId OR ci.srecommend <> @UserId)
 	BEGIN
 		--Action failed. Please try again.
 		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
 		RETURN
 	END
 
-	CREATE TABLE #tempCust(CustId INT, Username NVARCHAR(50), IsFinished BIT DEFAULT(0))
+	IF @SubAccId > 0 AND @IsAllDownline = 0
+	BEGIN
+		IF EXISTS(SELECT 1 
+					FROM #Downlines d
+					WHERE NOT EXISTS(SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = d.custid))
+		BEGIN
+			--Action failed. Please try again.
+			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
+			RETURN
+		END
+	END
 
-	INSERT INTO #tempCust(CustId, Username)
-	SELECT ci.custid, ci.username 
+	IF @RoleId = 3
+	BEGIN
+		SELECT @ActionId = 31608
+	END
+	ELSE IF @RoleId = 2
+	BEGIN
+		SELECT @ActionId = 31609
+	END
+	ELSE IF @RoleId = 1
+	BEGIN
+		SELECT @ActionId = 31610
+	END
+
+	CREATE TABLE #tempCust(CustId INT, IsFinished BIT DEFAULT(0))
+
+	INSERT INTO #tempCust(CustId)
+	SELECT d.custid
 	FROM #Downlines d
 		INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON d.CustId = pa.CustId
-		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
 	WHERE pa.IsReviewed = 0
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
 	FROM dbo.CS_ProblemAccount pa WITH (NOLOCK)
 		INNER JOIN #tempCust t ON pa.CustId = t.CustId
-
 	
 	WHILE (1=1)
 	BEGIN
@@ -94,28 +115,15 @@ BEGIN
 		END
 
 		-- Write log
-		SELECT @LogDataOld = '<R ReviewStatus="NotReviewed" ' +
+		SELECT @LogDataOld = '<R ReviewStatus="0" ' +
 							'SubAcc="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
-							'IsAllAffectedDownlines="' + COALESCE(CAST(@IsAffectedAllDownlines as VARCHAR(1)),SPACE(1)) + '" ' +
-							'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
+							'AllDownline="' + COALESCE(CAST(@IsAffectedAllDownlines as VARCHAR(1)),SPACE(1)) + '" ' +
+							'IP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
-		SELECT @LogDataNew = '<R ReviewStatus="Reviewed" ' +
+		SELECT @LogDataNew = '<R ReviewStatus="1" ' +
 							'SubAcc="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" ' +
-							'IsAllAffectedDownlines="' + COALESCE(CAST(@IsAffectedAllDownlines as VARCHAR(1)),SPACE(1)) + '" ' +
-							'LoginIP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
-		
-		IF @RoleId = 3
-		BEGIN
-			SELECT @ActionId = 31608
-		END
-		ELSE IF @RoleId = 2
-		BEGIN
-			SELECT @ActionId = 31609
-		END
-		ELSE IF @RoleId = 1
-		BEGIN
-			SELECT @ActionId = 31610
-		END
+							'AllDownline="' + COALESCE(CAST(@IsAffectedAllDownlines as VARCHAR(1)),SPACE(1)) + '" ' +
+							'IP="'+ COALESCE(CAST(@LoginIP as VARCHAR(20)),SPACE(1)) + '" />'
 
 		SELECT @Duration = DATEDIFF (MILLISECOND, @startRun, GETDATE())
 				
