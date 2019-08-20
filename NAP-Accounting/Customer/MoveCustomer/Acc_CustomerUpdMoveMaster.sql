@@ -67,6 +67,7 @@ Revisions:
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20190814@Johnson: dont touch on cn88 customers [redmine:#116691]
 	
 Param's Explanation:
 • @ErrCode:
@@ -157,7 +158,13 @@ BEGIN
 		SELECT @ErrMsg = 'Not allow to move customer between MBC and IMBC sites!',@ErrCode = 911								
 		RETURN	
 	END
-
+	
+	IF (@_SiteSuper = 'cn88' OR @_SiteMaster = 'cn88')
+	BEGIN
+		SELECT @ErrMsg = 'Not allow to move customer of CN88 sites!',@ErrCode = 912							
+		RETURN	
+	END
+	
     --Check Allowed downlines 
      EXEC dbo.Acc_CustomerSelCheckAllowedDownlines 
         @custid=@mrecommend,

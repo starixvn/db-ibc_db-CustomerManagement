@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveSite]
 	@UserId			INT,
 	@CustId			INT	,
@@ -22,6 +22,7 @@ AS
 		- 20151026@Don: Support moving site from 766666 to other sites
 		- 20160707@Winnie: Feature #48948 Hide_special_sites_from_unautorized_users
 		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
+		- 20190814@Johnson: dont move cn88 site [redmine:#116691]
 		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers except members
@@ -83,6 +84,12 @@ BEGIN
 		RETURN
 	END
 	
+	IF @site = 'CN88' OR @OldSite = 'CN88'
+	BEGIN
+		SELECT @ErrCode = 103, @ErrMsg = 'Cannot move site for CN88.'
+		RETURN
+	END
+	
 	IF @RoleId = 4 -- For Super
 	BEGIN
 		UPDATE customer WITH(ROWLOCK,UPDLOCK) SET site = @site WHERE srecommend = @CustId and RoleId IN (4,3,2)
@@ -141,9 +148,4 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveSite] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveSite] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdMoveSite] TO [vnteam]
 
