@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0" ></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelUnSyncRnG]
 AS
 /*   
@@ -7,6 +7,7 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20180315@Johnson: create sp [Redmine: #91989]
+		- 20180731@Winnie: Sync RNG Casino function - exclude CN88 customers [Redmine: #117672]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -24,6 +25,7 @@ BEGIN
 		AND ci.username NOT LIKE 'SM%'
 		AND ci.username NOT IN ( 'SA-ttt', 'SA-TH' )
 		AND site IN (SELECT site FROM site WHERE isLicensee = 0)
+		AND Site<>'CN88'
 	
 	INSERT INTO #tblCust(CustID,username,roleid,UplineID,currency,SyncCS)
 	SELECT custid, username,roleid,

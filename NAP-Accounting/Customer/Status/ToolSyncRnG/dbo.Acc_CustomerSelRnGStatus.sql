@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0" ></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelRnGStatus]
 	@strUserName VARCHAR(4000)
 AS
@@ -8,6 +8,7 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20180315@Johnson: create sp [Redmine: #91989]
+		- 20180731@Winnie: Sync RNG Casino function - exclude CN88 customers [Redmine: #117672]
 */
 BEGIN
 	SET NOCOUNT ON 	
@@ -22,6 +23,7 @@ BEGIN
 	FROM dbo.Custinfo WITH(NOLOCK)
 	WHERE username IN (SELECT val FROM strSplit(@strUserName,','))
 	
+	
 	UPDATE t
 	SET ExistsCSDB = 1
 	FROM @tmpCust t
@@ -29,9 +31,9 @@ BEGIN
 	
 	SELECT t.*, ci.username as UplineUserName, e.currency as currencyName
 	FROM @tmpCust t
-		INNER JOIN dbo.Custinfo ci WITH(NOLOCK) ON t.UplineID = ci.custid
+		INNER JOIN dbo.Customer ci WITH(NOLOCK) ON t.UplineID = ci.custid
 		INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
-	WHERE t.custid IS NOT NULL
+	WHERE t.custid IS NOT NULL AND ISNULL(ci.Site,'')<>'CN88'
 	ORDER BY roleid DESC	
 END
 GO	
