@@ -92,10 +92,7 @@ BEGIN
 		WHERE (gc.GroupName = @uGroup OR gc.GroupID is NULL)
 			AND cs.uGroup = @old_ugroup	
 			AND cs.PlayerDiscount > acs.Discount
-		
-		IF @@ROWCOUNT = 0
-			GOTO Update_uGroup
-			
+					
 		SET @PlayerDiscount_XML =(
 										SELECT (
 												SELECT	bs.ByteOrder	AS '@pos',
@@ -129,18 +126,40 @@ BEGIN
 					uGroup = @uGroup
 				FROM dbo.CS_CustGroupDiscount_Member cm WITH (ROWLOCK)
 					CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
-				WHERE cm.AgentId = @recommend AND cm.uGroup = @uGroup
+				WHERE cm.AgentId = @recommend AND cm.uGroup = @old_uGroup
 			END	
 			ELSE 
 			BEGIN
-				INSERT INTO dbo.CS_CustGroupDiscount_Member([AgentId],[uGroup],[PlayerDiscount],[AgentDiscount],[MasterDiscount],[SuperDiscount])
-				SELECT AgentID, @uGroup, playercomm.binaryStr_new, AgentDiscount, MasterDiscount, SuperDiscount
-				FROM dbo.CS_CustGroupDiscount_Member cm WITH(NOLOCK)
-					CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
-				WHERE AgentID = @recommend
-					AND uGroup = @old_ugroup
+				IF EXISTS (SELECT 1 FROM dbo.CS_CustGroupDiscount_Member WHERE AgentID = @recommend AND uGroup = @uGroup)
+				BEGIN
+					UPDATE cm
+					SET cm.PlayerDiscount = playercomm.binaryStr_new,
+						cm.AgentDiscount = cm2.AgentDiscount,
+						cm.MasterDiscount = cm2.MasterDiscount,
+						cm.SuperDiscount = cm2.SuperDiscount
+					FROM dbo.CS_CustGroupDiscount_Member cm WITH (ROWLOCK)
+						INNER JOIN dbo.CS_CustGroupDiscount_Member cm2 WITH (NOLOCK) ON cm.AgentID = cm2.AgentID 
+						CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
+					WHERE cm.AgentId = @recommend AND cm.uGroup = @uGroup
+						AND cm2.uGroup = @old_ugroup
+				END
+				ELSE
+				BEGIN		
+					INSERT INTO dbo.CS_CustGroupDiscount_Member([AgentId],[uGroup],[PlayerDiscount],[AgentDiscount],[MasterDiscount],[SuperDiscount])
+					SELECT AgentID, @uGroup, playercomm.binaryStr_new, AgentDiscount, MasterDiscount, SuperDiscount
+					FROM dbo.CS_CustGroupDiscount_Member cm WITH(NOLOCK)
+						CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
+					WHERE AgentID = @recommend
+						AND uGroup = @old_ugroup
+				END		
 			END
+			
+			UPDATE cm
+			SET cm.IsGroupComm = 1
+			FROM dbo.CS_CustSettingMode cm WITH (ROWLOCK)
+			WHERE cm.CustId = @CustID	
 		END
+		--already have members in new group
 		ELSE
 		BEGIN
 			IF EXISTS (SELECT 1 FROM CS_CustGroupDiscount_Member WITH (NOLOCK) WHERE AgentId = @recommend AND uGroup = @uGroup)
@@ -186,6 +205,7 @@ BEGIN
 			END					
 		END
 	END
+	--use individual setting
 	ELSE
 	BEGIN
 		SELECT cs.sporttype, cs.bettype, cs.isLive, acs.ValueID
@@ -196,31 +216,30 @@ BEGIN
 		WHERE (gc.GroupName = @uGroup OR gc.GroupID is NULL)				
 			AND cs.PlayerDiscount > acs.Discount
 		
-		IF @@ROWCOUNT = 0
-			GOTO Update_uGroup
+		IF @@ROWCOUNT > 0
+		BEGIN				
+			SET @PlayerDiscount_XML =(
+											SELECT (
+													SELECT	bs.ByteOrder	AS '@pos',
+															comm.ValueId	AS '@val'
+													FROM #CommMem_tmp comm
+														INNER JOIN dbo.CS_ByteSeq bs WITH (NOLOCK) ON bs.SportType = comm.SportType AND bs.BetType = comm.BetType AND bs.IsLive = comm.IsLive
+													WHERE bs.Type = 'DiscountMember'
+													FOR XML PATH('r')
+														, TYPE
+													)
+											FOR XML PATH('root')
+												, TYPE
+											)
 			
-		SET @PlayerDiscount_XML =(
-										SELECT (
-												SELECT	bs.ByteOrder	AS '@pos',
-														comm.ValueId	AS '@val'
-												FROM #CommMem_tmp comm
-													INNER JOIN dbo.CS_ByteSeq bs WITH (NOLOCK) ON bs.SportType = comm.SportType AND bs.BetType = comm.BetType AND bs.IsLive = comm.IsLive
-												WHERE bs.Type = 'DiscountMember'
-												FOR XML PATH('r')
-													, TYPE
-												)
-										FOR XML PATH('root')
-											, TYPE
-										)
-		
-		UPDATE cm
-		SET cm.PlayerDiscount = playercomm.binaryStr_new
-		FROM dbo.CS_CustDiscount_Member cm WITH (ROWLOCK)
-			CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
-		WHERE cm.CustId = @CustID
+			UPDATE cm
+			SET cm.PlayerDiscount = playercomm.binaryStr_new
+			FROM dbo.CS_CustDiscount_Member cm WITH (ROWLOCK)
+				CROSS APPLY dbo.f_SetBinaryValues(cm.PlayerDiscount, @PlayerDiscount_XML) playercomm	
+			WHERE cm.CustId = @CustID
+		END	
 	END
-	
-Update_uGroup:
+
 	UPDATE customer WITH(UPDLOCK,ROWLOCK)
 	SET uGroup = @uGroup	
 	WHERE custid = @custid
