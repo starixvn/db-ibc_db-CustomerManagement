@@ -31,7 +31,7 @@ BEGIN
 		@mrecommend = mrecommend,
 		@recommend = recommend,
 		@site = site
-	FROM db.customer WITH(NOLOCK)
+	FROM dbo.customer WITH(NOLOCK)
 	WHERE username = @username
 	
 	IF @@rowcount = 0  
