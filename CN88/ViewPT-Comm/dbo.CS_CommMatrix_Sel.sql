@@ -1,6 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbadminNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_CommMatrix_Sel]
-   @UserName VARCHAR(30) = ''
+   @UserName VARCHAR(30) = '',
+   @ErrCode INT = 0 OUTPUT,
+   @ErrMsg VARCHAR(100) ='' OUTPUT
 AS  
 /*  
  Created: 20190813@Johnson
@@ -22,17 +24,31 @@ BEGIN
 		@roleid TINYINT,
 		@Srecommend INT,
 		@mrecommend INT,
-		@recommend INT,		
+		@recommend INT,	
+		@site VARCHAR(10),
 		@uGroup VARCHAR(3),
 		@IsGroupComm BIT
 	
 	SELECT @custid = custid,
 		@roleid = roleid,
+		@site = site,
 		@srecommend = srecommend,
 		@mrecommend = mrecommend,
 		@recommend = recommend
 	FROM dbo.customer WITH(NOLOCK)
 	WHERE username = @username
+	
+	IF @@rowcount = 0  
+	BEGIN  
+		SELECT @ErrCode = 101, @ErrMsg ='Invalid UserName!'
+		RETURN  
+	END 
+	
+	IF @site <> 'CN88'
+	BEGIN  
+		SELECT @ErrCode = 102, @ErrMsg ='Invalid account!'
+		RETURN  
+	END 
 	
 	SELECT t.* INTO #SportBettypeFilter2
 	FROM dbo.f_CS_SportBetTypeSettingSelect(null, 2, 0) t

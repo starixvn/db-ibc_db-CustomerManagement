@@ -20,15 +20,29 @@ BEGIN
 			@roleid TINYINT,
 			@Srecommend INT,
 			@mrecommend INT,
-			@recommend INT
+			@recommend INT,
+			@site VARCHAR(10)
 	
 	SELECT @custid = custid,
 		@roleid = roleid,
 		@srecommend = srecommend,
 		@mrecommend = mrecommend,
-		@recommend = recommend
+		@recommend = recommend,
+		@site = site
 	FROM db.customer WITH(NOLOCK)
 	WHERE username = @username
+	
+	IF @@rowcount = 0  
+	BEGIN  
+		SELECT @ErrCode = 101, @ErrMsg ='Invalid UserName!'
+		RETURN  
+	END 
+	
+	IF @site <> 'CN88'
+	BEGIN  
+		SELECT @ErrCode = 102, @ErrMsg ='Invalid account!'
+		RETURN  
+	END 
 	
 	IF @roleid IN (4,3,2,1)
 	BEGIN
