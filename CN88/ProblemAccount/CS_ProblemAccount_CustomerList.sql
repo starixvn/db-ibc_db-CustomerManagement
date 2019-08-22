@@ -59,7 +59,7 @@ BEGIN
 		WHERE c.srecommend = @CustId
 			AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 			AND c.roleid = @SearchRoleId
-			AND p.CreatedDate BETWEEN @FromDate AND @ToDate
+			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			AND (
 				c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -95,7 +95,7 @@ BEGIN
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 				AND c.roleid = @SearchRoleId
-				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
+				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 				AND (
 					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -115,7 +115,7 @@ BEGIN
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 				AND c.roleid = @SearchRoleId
-				AND p.CreatedDate BETWEEN @FromDate AND @ToDate
+				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 				AND (
 					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
