@@ -1,6 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbadminNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_PTMatrix_Sel]  
-   @UserName VARCHAR(30) = ''
+   @UserName VARCHAR(30) = '',
+   @ErrCode INT = 0 OUTPUT,
+   @ErrMsg VARCHAR(100) ='' OUTPUT
 AS  
 /*  
  Created: 20190813@Johnson
