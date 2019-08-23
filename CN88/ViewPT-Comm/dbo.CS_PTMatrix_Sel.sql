@@ -34,7 +34,7 @@ BEGIN
 	FROM dbo.customer WITH(NOLOCK)
 	WHERE username = @username
 		
-	IF @@rowcount = 0 AND @site <> 'CN88'
+	IF @@rowcount = 0 OR @site <> 'CN88'
 	BEGIN  
 		SELECT @ErrCode = 101, @ErrMsg ='Invalid account!'
 		RETURN  
