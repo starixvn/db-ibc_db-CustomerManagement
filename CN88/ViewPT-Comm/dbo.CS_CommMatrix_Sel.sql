@@ -37,21 +37,19 @@ BEGIN
 		@recommend = recommend
 	FROM dbo.customer WITH(NOLOCK)
 	WHERE username = @username
-	
-	IF @@rowcount = 0  
+		
+	IF @@rowcount = 0 OR @site <> 'CN88'
 	BEGIN  
-		SELECT @ErrCode = 101, @ErrMsg ='Invalid UserName!'
-		RETURN  
-	END 
-	
-	IF @site <> 'CN88'
-	BEGIN  
-		SELECT @ErrCode = 102, @ErrMsg ='Invalid account!'
+		SELECT @ErrCode = 101, @ErrMsg ='Invalid account!'
 		RETURN  
 	END 
 	
 	SELECT t.* INTO #SportBettypeFilter2
 	FROM dbo.f_CS_SportBetTypeSettingSelect(null, 2, 0) t
+		
+	SELECT custid, username, roleid
+	FROM customer WITH(NOLOCK)
+	WHERE custid IN (@srecommend,@mrecommend,@recommend,@custid)
 	
 	IF @roleid IN (4,3,2,1)
 	BEGIN

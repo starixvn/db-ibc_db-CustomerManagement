@@ -33,19 +33,17 @@ BEGIN
 		@site = site
 	FROM dbo.customer WITH(NOLOCK)
 	WHERE username = @username
-	
-	IF @@rowcount = 0  
+		
+	IF @@rowcount = 0 AND @site <> 'CN88'
 	BEGIN  
-		SELECT @ErrCode = 101, @ErrMsg ='Invalid UserName!'
+		SELECT @ErrCode = 101, @ErrMsg ='Invalid account!'
 		RETURN  
 	END 
 	
-	IF @site <> 'CN88'
-	BEGIN  
-		SELECT @ErrCode = 102, @ErrMsg ='Invalid account!'
-		RETURN  
-	END 
-	
+	SELECT custid, username, roleid
+	FROM customer WITH(NOLOCK)
+	WHERE custid IN (@srecommend,@mrecommend,@recommend,@custid)
+		
 	IF @roleid IN (4,3,2,1)
 	BEGIN
 		INSERT INTO #PTResult(sporttype,bettype,roleid,MinPT,MaxPT)
