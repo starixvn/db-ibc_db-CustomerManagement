@@ -54,7 +54,7 @@ BEGIN
 	IF @roleid IN (4,3,2,1)
 	BEGIN
 		INSERT INTO #CommResult(sporttype,bettype,isLive,roleid,GroupName,Comm)
-		SELECT cs.sporttype, cs.bettype, cs.isLive, 4, gc.GroupName, cs.Discount
+		SELECT cs.sporttype, cs.bettype, cs.isLive, 4, gc.GroupName, cs.Discount*100
 		FROM dbo.f_CS_GetDiscount_Agent(@srecommend) cs
 			INNER JOIN #SportBettypeFilter2 ft ON cs.SportType = ft.SportType AND cs.BetType = ft.BetType AND cs.IsLive = ft.IsLive
 			LEFT JOIN dbo.CS_GroupConfig gc ON gc.SportType = ft.SportType AND gc.BetType = ft.BetType AND gc.IsLive = ft.IsLive AND  gc.GroupId = cs.GroupId
@@ -63,7 +63,7 @@ BEGIN
 	IF @roleid IN (3,2,1)
 	BEGIN
 		INSERT INTO #CommResult(sporttype,bettype,isLive,roleid,GroupName,Comm)
-		SELECT cs.sporttype, cs.bettype, cs.isLive, 3, gc.GroupName, cs.Discount
+		SELECT cs.sporttype, cs.bettype, cs.isLive, 3, gc.GroupName, cs.Discount*100
 		FROM dbo.f_CS_GetDiscount_Agent(@mrecommend) cs
 			INNER JOIN #SportBettypeFilter2 ft ON cs.SportType = ft.SportType AND cs.BetType = ft.BetType AND cs.IsLive = ft.IsLive
 			LEFT JOIN dbo.CS_GroupConfig gc ON gc.SportType = ft.SportType AND gc.BetType = ft.BetType AND gc.IsLive = ft.IsLive AND  gc.GroupId = cs.GroupId
@@ -72,7 +72,7 @@ BEGIN
 	IF @roleid IN (2,1)
 	BEGIN
 		INSERT INTO #CommResult(sporttype,bettype,isLive,roleid,GroupName,Comm)
-		SELECT cs.sporttype, cs.bettype, cs.isLive, 2, gc.GroupName, cs.Discount
+		SELECT cs.sporttype, cs.bettype, cs.isLive, 2, gc.GroupName, cs.Discount*100
 		FROM dbo.f_CS_GetDiscount_Agent(@recommend) cs
 			INNER JOIN #SportBettypeFilter2 ft ON cs.SportType = ft.SportType AND cs.BetType = ft.BetType AND cs.IsLive = ft.IsLive
 			LEFT JOIN dbo.CS_GroupConfig gc ON gc.SportType = ft.SportType AND gc.BetType = ft.BetType AND gc.IsLive = ft.IsLive AND  gc.GroupId = cs.GroupId
@@ -86,14 +86,14 @@ BEGIN
 		IF @IsGroupComm = 1
 		BEGIN
 			INSERT INTO #CommResult(sporttype,bettype,isLive,roleid,GroupName,Comm)
-			SELECT cs.sporttype, cs.bettype, cs.isLive, 1, cs.uGroup, cs.PlayerDiscount
+			SELECT cs.sporttype, cs.bettype, cs.isLive, 1, cs.uGroup, cs.PlayerDiscount*100
 			FROM dbo.f_CS_GetGroupDiscount_Member(@recommend) cs
 				INNER JOIN #SportBettypeFilter2 ft ON cs.SportType = ft.SportType AND cs.BetType = ft.BetType AND cs.IsLive = ft.IsLive
 		END
 		ELSE
 		BEGIN
 			INSERT INTO #CommResult(sporttype,bettype,isLive,roleid,GroupName,Comm)
-			SELECT cs.sporttype, cs.bettype, cs.isLive, 1, gc.GroupName, cs.PlayerDiscount
+			SELECT cs.sporttype, cs.bettype, cs.isLive, 1, gc.GroupName, cs.PlayerDiscount*100
 			FROM dbo.f_CS_GetDiscount_Member(@CustID) cs
 				INNER JOIN #SportBettypeFilter2 ft ON cs.SportType = ft.SportType AND cs.BetType = ft.BetType AND cs.IsLive = ft.IsLive
 				LEFT JOIN dbo.CS_GroupConfig gc ON gc.SportType = ft.SportType AND gc.BetType = ft.BetType AND gc.IsLive = ft.IsLive 
