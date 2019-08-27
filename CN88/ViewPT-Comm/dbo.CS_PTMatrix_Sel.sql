@@ -17,7 +17,8 @@ AS
  */  
 BEGIN  
 	SET NOCOUNT ON
-	CREATE TABLE #PTResult (Sporttype INT, Bettype INT,roleid TINYINT, MinPT TINYINT, MaxPT TINYINT, SuperPT TINYINT, MasterPT TINYINT, AgentPT TINYINT)
+	CREATE TABLE #PTResult (Sporttype INT, Bettype INT,roleid TINYINT, MinPT TINYINT, MaxPT TINYINT, SuperPT TINYINT, MasterPT TINYINT, AgentPT TINYINT
+							,MinPT2 TINYINT, MaxPT2 TINYINT, SuperPT2 TINYINT, MasterPT2 TINYINT, AgentPT2 TINYINT)
 	DECLARE @custid INT,
 			@roleid TINYINT,
 			@Srecommend INT,
@@ -46,22 +47,22 @@ BEGIN
 		
 	IF @roleid IN (4,3,2,1)
 	BEGIN
-		INSERT INTO #PTResult(sporttype,bettype,roleid,MinPT,MaxPT)
-		SELECT sporttype, bettype, 4, MinPT, MaxPT
+		INSERT INTO #PTResult(sporttype,bettype,roleid,MinPT,MaxPT,MinPT2,MaxPT2)
+		SELECT sporttype, bettype, 4, MinPT, MaxPT, MinPT2, MaxPT2
 		FROM dbo.f_CS_GetPT_Agent(@srecommend)
 	END
 	
 	IF @roleid IN (3,2,1)
 	BEGIN
-		INSERT INTO #PTResult(sporttype,bettype,roleid,SuperPT)
-		SELECT sporttype, bettype, 3, SuperPT
+		INSERT INTO #PTResult(sporttype,bettype,roleid,SuperPT,SuperPT2)
+		SELECT sporttype, bettype, 3, SuperPT,SuperPT2
 		FROM dbo.f_CS_GetPT_Agent(@mrecommend)
 	END
 	
 	IF @roleid IN (2,1)
 	BEGIN
-		INSERT INTO #PTResult(sporttype,bettype,roleid,MasterPT,AgentPT)
-		SELECT sporttype, bettype, 2, MasterPT, AgentPT
+		INSERT INTO #PTResult(sporttype,bettype,roleid,MasterPT,AgentPT,MasterPT2,AgentPT2)
+		SELECT sporttype, bettype, 2, MasterPT, AgentPT,MasterPT2,AgentPT2
 		FROM dbo.f_CS_GetPT_Agent(@recommend)
 	END
 	
