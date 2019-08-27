@@ -1,6 +1,7 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSelTotalRecords]     
 	@CustId INT, 
+	@LoginUserId INT = 0,
     @FromDate DATETIME,
     @ToDate DATETIME,
     @ActionTypeId INT =-1,
@@ -14,7 +15,8 @@ AS
     
 	Revisions:
 		- 20190606@Elodie: Initial SP [Redmine: #113198]
-		
+		- 20190808@Elodie: Don't show log of problem account when master, agent view log [Redmine:#116814]
+
     Param's Explaination:    
 		- @CustID: a customer which we want to view actions affect to.
 		- @FromDate: date range to view log
@@ -35,6 +37,7 @@ BEGIN
 			,@LowerActionIdStatus INT
 			,@UpperActionIdStatus INT
 			,@i INT = 1000000
+			,@LoginUserRoleId TINYINT
 
 	SELECT @srecommend = srecommend, 
 		@mrecommend = mrecommend, 
@@ -44,6 +47,10 @@ BEGIN
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
+	SELECT @LoginUserRoleId = roleid		
+	FROM bodb02.dbo.Customer WITH(NOLOCK)
+	WHERE custid = @LoginUserId
+
 	IF @FromDate < @creatdate
 		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 	
@@ -418,6 +425,7 @@ BEGIN
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 			END
 			ELSE IF @ToDate < @__archiveDate
 			BEGIN
@@ -435,6 +443,7 @@ BEGIN
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 			END
 			ELSE
 			BEGIN
@@ -454,7 +463,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 					UNION ALL
 					SELECT  COUNT(LogID)                           
 					FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
@@ -470,6 +479,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 				)t
 			END
 			
@@ -488,6 +498,7 @@ BEGIN
 					AND IsInternal <= @IsInternal
 					AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 		END
 		ELSE IF @ToDate < @__archiveDate
 		BEGIN
@@ -501,6 +512,7 @@ BEGIN
 					AND IsInternal <= @IsInternal
 					AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 		END
 		ELSE
 		BEGIN
@@ -516,7 +528,7 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 				UNION ALL
 				SELECT  COUNT(LogID) 
 				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
@@ -528,6 +540,7 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 			)t
 		END
 	END

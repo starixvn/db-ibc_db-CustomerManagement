@@ -19,7 +19,8 @@ AS
     
 	Revisions:
 		- 20190606@Elodie: Initial SP [Redmine: #113198]
-		
+		- 20190808@Elodie: Don't show log of problem account when master, agent view log [Redmine:#116814]
+
     Param's Explaination:    
 		- @UserId: a customer which we want to view actions affect to.
 		- @CustName: customer name type in textbox to search
@@ -590,7 +591,7 @@ BEGIN
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 										AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-										AND ul.ActionId <> 1050 --Message Customer Read Status Update
+										AND ul.ActionId <> 1050 --Message Customer Read Status Update										
 							) AS MyTable
 						WHERE   RowNum BETWEEN @lbound AND @ubound
 					END
@@ -778,7 +779,7 @@ BEGIN
 									--exclude log action of smart punter
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100
 									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						) AS MyTable
 					WHERE   RowNum BETWEEN @lbound AND @ubound
 				END
@@ -832,7 +833,7 @@ BEGIN
 									--exclude log action of smart punter
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100
 									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						) AS MyTable
 					WHERE   RowNum BETWEEN @lbound AND @ubound
 				END
@@ -887,7 +888,7 @@ BEGIN
 									--exclude log action of smart punter
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100
 									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						 UNION ALL
 						 SELECT LogID,
 									UserID,
@@ -921,7 +922,7 @@ BEGIN
 									--exclude log action of smart punter
 									AND ul.ActionID NOT BETWEEN 31000 AND 31100
 									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						 	
+						 			AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						 ) AS MyTable1
 					) AS MyTable
 					WHERE   RowNum BETWEEN @lbound AND @ubound
@@ -975,7 +976,7 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-								
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1024,7 +1025,7 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-								
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1075,7 +1076,7 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 							UNION ALL
 							SELECT LogID,
 										UserID,
@@ -1105,6 +1106,7 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
 					) AS MyTable1
 				) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
