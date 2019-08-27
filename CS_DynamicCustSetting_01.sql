@@ -68,18 +68,21 @@ BEGIN
 			
 		SELECT @SetBit1 = POWER(2, @Pos)								
 
-		BEGIN TRY
+		BEGIN TRY			
 			INSERT INTO dbo.CS_ProblemAccount (CustId, ProblemStatus, ReasonId, Comment, MaxBet, MaxPerEvent, CreatedDate, IsReviewed, IsAbnormalMember)
 			SELECT @CustId, @SetBit1, @ReasonId, @Comment, NULL, NULL, GETDATE(), 0, 0
 			WHERE NOT EXISTS (SELECT 1 FROM CS_ProblemAccount WHERE CustId = @CustId)
 
-			UPDATE pa 
-			SET pa.ProblemStatus = ProblemStatus | @SetBit1,
-				pa.ReasonId = @ReasonId,
-				pa.Comment = @Comment
-			FROM dbo.CS_ProblemAccount pa WITH (ROWLOCK)
-			WHERE CustId = @CustId		
-			
+			IF @@ROWCOUNT = 0
+			BEGIN
+				UPDATE pa 
+				SET pa.ProblemStatus = ProblemStatus | @SetBit1,
+					pa.ReasonId = @ReasonId,
+					pa.Comment = @Comment
+				FROM dbo.CS_ProblemAccount pa WITH (ROWLOCK)
+				WHERE CustId = @CustId
+			END
+
 			SELECT @IsSuccess = 1	
 		END TRY
 		BEGIN CATCH
@@ -87,17 +90,17 @@ BEGIN
 			RETURN			
 		END CATCH
 
-		INSERT INTO dbo.CS_ProblemAccount (CustId, ProblemStatus, ReasonId, Comment, MaxBet, MaxPerEvent, CreatedDate, IsReviewed, IsAbnormalMember)
-		OUTPUT Inserted.CustId INTO #DownlineSuccess
-		SELECT CustId, @SetBit1, NULL, NULL, NULL, NULL, GETDATE(), 0, 0
-		FROM #DownlineCust t
-		WHERE NOT EXISTS (SELECT 1 FROM CS_ProblemAccount WHERE CustId = t.CustId)
-
 		UPDATE pa 		
 		SET pa.ProblemStatus = ProblemStatus | @SetBit1
 		OUTPUT Inserted.CustId INTO #DownlineSuccess
 		FROM dbo.CS_ProblemAccount pa WITH (ROWLOCK)
 			INNER JOIN #DownlineCust t ON t.CustID = pa.CustId
+
+		INSERT INTO dbo.CS_ProblemAccount (CustId, ProblemStatus, ReasonId, Comment, MaxBet, MaxPerEvent, CreatedDate, IsReviewed, IsAbnormalMember)
+		OUTPUT Inserted.CustId INTO #DownlineSuccess
+		SELECT CustId, @SetBit1, NULL, NULL, NULL, NULL, GETDATE(), 0, 0
+		FROM #DownlineCust t
+		WHERE NOT EXISTS (SELECT 1 FROM CS_ProblemAccount WHERE CustId = t.CustId)
 
 		SELECT @SuccessDownlineList = STUFF((SELECT ','+ CAST(l.CustID AS VARCHAR(20))
 											FROM #DownlineSuccess l
