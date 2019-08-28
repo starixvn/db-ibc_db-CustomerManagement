@@ -34,6 +34,7 @@ AS
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+		- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -523,40 +524,40 @@ BEGIN
 		RETURN
 	END	
 	
-	--Check commission for Myanmar Odds
-	DECLARE @IsMyanmarOdds_source BIT = 0
-	DECLARE @IsMyanmarOdds_destination BIT = 0
+	----Check commission for Myanmar Odds
+	--DECLARE @IsMyanmarOdds_source BIT = 0
+	--DECLARE @IsMyanmarOdds_destination BIT = 0
 	
-	SET @IsMyanmarOdds_destination =  dbo.fn_IsMyanmarOdds (@mrecommend)
+	--SET @IsMyanmarOdds_destination =  dbo.fn_IsMyanmarOdds (@mrecommend)
 
-	SET @IsMyanmarOdds_source =  dbo.fn_IsMyanmarOdds (@mrecommend_old)
+	--SET @IsMyanmarOdds_source =  dbo.fn_IsMyanmarOdds (@mrecommend_old)
 
-	IF @IsMyanmarOdds_source <> @IsMyanmarOdds_destination
-	BEGIN
-		SELECT @ErrMsg = 'Cannot move customer ' + @agentname + ' since amongs its new and old sites, one has % Odds.',
-					@ErrCode = 218
-		RETURN	
-	END	
+	--IF @IsMyanmarOdds_source <> @IsMyanmarOdds_destination
+	--BEGIN
+	--	SELECT @ErrMsg = 'Cannot move customer ' + @agentname + ' since amongs its new and old sites, one has % Odds.',
+	--				@ErrCode = 218
+	--	RETURN	
+	--END	
 	
-	IF @IsMyanmarOdds_source = 1
-	BEGIN
-		IF EXISTS(
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 1 
-					AND mcs.bettype = 301
-					AND mcs.CommRate < acs.CommRate
-		)
-		BEGIN
-			SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s cash-in share for Colossus Bets is less than agent''s cash-in share.',
-					@ErrCode = 219
-			RETURN	
-		END
-	END
+	--IF @IsMyanmarOdds_source = 1
+	--BEGIN
+	--	IF EXISTS(
+	--		SELECT	1
+	--		FROM	AgentCommRate mcs WITH(NOLOCK) 
+	--			JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
+	--													AND acs.sporttype = mcs.sporttype 
+	--													AND acs.bettype = mcs.bettype
+	--		WHERE	mcs.custid = @mrecommend 
+	--				AND mcs.sporttype = 1 
+	--				AND mcs.bettype = 301
+	--				AND mcs.CommRate < acs.CommRate
+	--	)
+	--	BEGIN
+	--		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s cash-in share for Colossus Bets is less than agent''s cash-in share.',
+	--				@ErrCode = 219
+	--		RETURN	
+	--	END
+	--END
 
 
 	--Check identical autoposition taking
@@ -617,7 +618,7 @@ BEGIN
 			SELECT 1
 			FROM CustSettingGame mcs_old WITH(NOLOCK)
 				INNER JOIN	CustSettingGame mcs_new WITH(NOLOCK) ON mcs_new.custid = @mrecommend AND mcs_new.sporttype = mcs_old.sporttype AND mcs_new.bettype = mcs_old.bettype 
-			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(202) AND (mcs_old.bettype = 1101 OR mcs_old.bettype between 1501 and 1599)
+			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(202) AND (/*mcs_old.bettype = 1101 OR*/ mcs_old.bettype between 1501 and 1599)
 			AND (mcs_old.isautopositiontaking <> mcs_new.isautopositiontaking)
 		)
 	BEGIN
