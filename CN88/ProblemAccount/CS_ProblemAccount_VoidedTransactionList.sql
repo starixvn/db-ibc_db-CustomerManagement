@@ -20,10 +20,11 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT t.CreatedDate, t.TransId, r.ReasonEnglish
+	SELECT t.CreatedDate, t.TransId, s.SubIssueTypeName AS AbnormalReason
 	FROM dbo.TicketVoiding_VoidedTransaction t WITH (NOLOCK)
-		INNER JOIN dbo.TicketVoiding_Reason r WITH (NOLOCK) ON t.ReasonId = r.ReasonId
+		INNER JOIN dbo.TicketVoiding_SubIssueType s WITH (NOLOCK) ON t.SubIssueTypeID = s.SubIssueTypeID
 	WHERE t.CreatedDate BETWEEN @FromDate AND @ToDate
 		AND t.CustID = @CustId
+		AND t.IssueTypeId = 11 -- Abnormal Bets
 END
 GO
