@@ -48,21 +48,29 @@ BEGIN
 	FROM dbo.f_StringSplit(@CustomerList, ',')
 	OPTION(MAXRECURSION 0)
 
-	IF EXISTS (SELECT 1
-				FROM #Downlines d
-					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-				WHERE ci.roleid <> @RoleId OR ci.srecommend <> @UserId)
-	BEGIN
-		--Action failed. Please try again.
-		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-		RETURN
-	END
-
 	IF @SubAccId > 0 AND @IsAllDownline = 0
 	BEGIN
 		IF EXISTS(SELECT 1 
 					FROM #Downlines d
-					WHERE NOT EXISTS(SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = d.custid))
+					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
+					WHERE ci.roleid <> @RoleId 
+						OR ci.srecommend <> @UserId 
+						OR NOT EXISTS(SELECT DownlineId 
+									FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s 
+									WHERE (@RoleId = 3 AND s.DownlineId = ci.custid)
+										OR (@RoleId <> 3 AND s.DownlineId = ci.mrecommend)))
+		BEGIN
+			--Action failed. Please try again.
+			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
+			RETURN
+		END
+	END
+	ELSE
+	BEGIN
+		IF EXISTS (SELECT 1
+					FROM #Downlines d
+						INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
+					WHERE ci.roleid <> @RoleId OR ci.srecommend <> @UserId)
 		BEGIN
 			--Action failed. Please try again.
 			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106

@@ -93,7 +93,7 @@ BEGIN
 					WHERE dc.recommend = c.custid AND dc.roleid = 1
 				) AS d
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
-				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
+				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.mrecommend))
 				AND c.roleid = @SearchRoleId
 				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -113,7 +113,7 @@ BEGIN
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
-				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
+				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.mrecommend))
 				AND c.roleid = @SearchRoleId
 				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
