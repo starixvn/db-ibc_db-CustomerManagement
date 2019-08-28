@@ -130,7 +130,7 @@ BEGIN
 	/* ===== Paging ===== */
 	SELECT custId, uplineUsername, username, firstname as Name, n.NickName, numberOfDownline, status, createdDate, isReviewed
 	FROM (
-		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.username2, t.numberOfDownline, cs.CustStatus as status, t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.username) AS RowId
+		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.username2, t.numberOfDownline, cs.CustStatus as status, t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId
 		FROM #tempProblemAccount t
 		CROSS APPLY dbo.f_CS_GetCustomerStatus(t.custid) cs
 	) AS Result
