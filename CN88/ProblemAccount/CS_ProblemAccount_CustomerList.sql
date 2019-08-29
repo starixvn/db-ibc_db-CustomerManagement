@@ -46,16 +46,10 @@ BEGIN
 	-- Sarch master problem account
 	IF @SearchRoleId = 3
 	BEGIN
-		INSERT INTO #tempProblemAccount(custId, username, firstname, username2, numberOfDownline, createdDate, isReviewed)
-		SELECT c.custid, c.username, c.firstname, c.username2, d.NumberOfDownline, p.CreatedDate, p.IsReviewed
+		INSERT INTO #tempProblemAccount(custId, username, firstname, username2, createdDate, isReviewed)
+		SELECT c.custid, c.username, c.firstname, c.username2, p.CreatedDate, p.IsReviewed
 		FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
-			OUTER APPLY (
-				SELECT COUNT(1) AS NumberOfDownline
-				FROM dbo.CS_ProblemAccount dp WITH (NOLOCK)
-					INNER JOIN dbo.Customer dc WITH (NOLOCK) ON dp.CustId = dc.custid
-				WHERE dc.mrecommend = c.custid AND dc.roleid = 2
-			) AS d
 		WHERE c.srecommend = @CustId
 			AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 			AND c.roleid = @SearchRoleId
@@ -66,7 +60,16 @@ BEGIN
 				OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
 				OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 			)
-			
+		
+		UPDATE t 
+		SET t.numberOfDownline = pa.numberOfDownline
+		FROM #tempProblemAccount t 			
+			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
+						FROM dbo.custInfo ci WITH (NOLOCK) 
+							INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
+						WHERE ci.mrecommend = t.custid AND ci.roleid = 2
+						GROUP BY ci.mrecommend) AS pa		
+
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 	ELSE
@@ -81,17 +84,11 @@ BEGIN
 
 		IF @SearchRoleId = 2
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, uplineUsername, username, firstname, username2, numberOfDownline, createdDate, isReviewed)
-			SELECT c.custid, u.username, c.username, c.firstname, c.username2, d.NumberOfDownline, p.CreatedDate, p.IsReviewed
+			INSERT INTO #tempProblemAccount(custId, uplineUsername, username, firstname, username2, createdDate, isReviewed)
+			SELECT c.custid, u.username, c.username, c.firstname, c.username2, p.CreatedDate, p.IsReviewed
 			FROM  dbo.CS_ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
-				OUTER APPLY (
-					SELECT COUNT(1) AS NumberOfDownline
-					FROM dbo.CS_ProblemAccount dp WITH (NOLOCK)
-						INNER JOIN dbo.Customer dc WITH (NOLOCK) ON dp.CustId = dc.custid
-					WHERE dc.recommend = c.custid AND dc.roleid = 1
-				) AS d
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
 				AND (@IsAllDownline =1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.mrecommend))
 				AND c.roleid = @SearchRoleId
@@ -102,6 +99,15 @@ BEGIN
 					OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
 					OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 				)
+
+			UPDATE t 
+			SET t.numberOfDownline = pa.numberOfDownline
+			FROM #tempProblemAccount t 			
+				CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
+							FROM dbo.custInfo ci WITH (NOLOCK) 
+								INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
+							WHERE ci.recommend = t.custid AND ci.roleid = 1
+							GROUP BY ci.recommend) AS pa
 
 			SELECT @TotalRows = @@ROWCOUNT
 		END
@@ -128,7 +134,7 @@ BEGIN
 	END
 
 	/* ===== Paging ===== */
-	SELECT custId, uplineUsername, username, firstname as Name, n.NickName, numberOfDownline, status, createdDate, isReviewed
+	SELECT custId, uplineUsername, username, firstname as Name, n.NickName, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed
 	FROM (
 		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.username2, t.numberOfDownline, cs.CustStatus as status, t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId
 		FROM #tempProblemAccount t
