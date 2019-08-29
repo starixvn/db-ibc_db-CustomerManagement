@@ -61,6 +61,8 @@ BEGIN
 				OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 			)
 		
+		SELECT @TotalRows = @@ROWCOUNT
+
 		UPDATE t 
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
@@ -69,8 +71,6 @@ BEGIN
 							INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
 						WHERE ci.mrecommend = t.custid AND ci.roleid = 2
 						GROUP BY ci.mrecommend) AS pa		
-
-		SELECT @TotalRows = @@ROWCOUNT
 	END
 	ELSE
 	BEGIN
@@ -100,6 +100,8 @@ BEGIN
 					OR c.firstname LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 				)
 
+			SELECT @TotalRows = @@ROWCOUNT
+
 			UPDATE t 
 			SET t.numberOfDownline = pa.numberOfDownline
 			FROM #tempProblemAccount t 			
@@ -109,7 +111,7 @@ BEGIN
 							WHERE ci.recommend = t.custid AND ci.roleid = 1
 							GROUP BY ci.recommend) AS pa
 
-			SELECT @TotalRows = @@ROWCOUNT
+			
 		END
 		ELSE IF @SearchRoleId = 1
 		BEGIN
