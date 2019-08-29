@@ -53,11 +53,11 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
 	- 20180830@Elodie: Add new bettype of Poker Games Product - [Redmine: #97675]
-
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
 	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
-	
+	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
+
 	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
 BEGIN    
@@ -389,7 +389,7 @@ BEGIN
 	       --ci.DisableEsports,	       
 	       -- For Keno
 	       ci.HideKeno,
-	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
+	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
 	       ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
 		   ISNULL(ci.SyncGoldDeluxeUpline,1) AS SyncGoldDeluxeUpline,
@@ -485,7 +485,7 @@ BEGIN
 		 LEFT JOIN #custsetting3rd cs3 with(nolock) on cu.custid = cs3.custid
 		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cg.CustID = ci.custid
 		 LEFT JOIN @tmp_GameType g ON cg.GameTypeID = g.GameTypeID
-													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516)
+													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)
 		 
 		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 AND @IsMyanmarOdds = 1		 																			
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
