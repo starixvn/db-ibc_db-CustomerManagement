@@ -33,7 +33,11 @@ AS
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+<<<<<<< Updated upstream
 		- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+=======
+		- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+>>>>>>> Stashed changes
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -76,8 +80,6 @@ BEGIN
 			@sGivenCredit			MONEY,
 			@mGivenCredit			MONEY,
 			@sUsedCredit			MONEY,
-			--@sHideVirtualSports		BIT, 
-			--@mHideVirtualSports		BIT,
 			@sDisableEsports	    BIT,
 			@mDisableEsports	    BIT,
 			@sHideKeno				BIT, 
@@ -85,8 +87,6 @@ BEGIN
 			@mHideGoldDeluxe		BIT,
 			@sHideGoldDeluxe		BIT,
 			@mDisableSuperLive		BIT,
-			@mHideColossusBet		BIT,
-			@sHideColossusBet		BIT,
 			@sDisableSuperLive		BIT,
 			@AdminUser				VARCHAR(50)
 			, @DCSSportType			INT
@@ -104,10 +104,8 @@ BEGIN
 	     , @sSuspended			= reject	   
 	     , @sDisableEsports     = DisableEsports
 	     , @sGivenCredit		= credit
-	     --, @sHideVirtualSports  = HideVirtualSports
 	     , @sHideKeno			= HideKeno
 	     , @sHideGoldDeluxe		= HideGoldDeluxe
-	     , @sHideColossusBet	= HideColossusBet
 		 , @sDisableSuperLive	= DisableSuperLive
 	  FROM custinfo WITH(NOLOCK) 
 	 WHERE username = @supername
@@ -126,10 +124,8 @@ BEGIN
 	     , @mClosed			    = closed	     
 	     , @mDisableEsports     = DisableEsports
 	     , @mGivenCredit		= credit
-	     --, @mHideVirtualSports  = HideVirtualSports
 	     , @mHideKeno			= HideKeno 		
 	     , @mHideGoldDeluxe		= HideGoldDeluxe
-	     , @mHideColossusBet	= HideColossusBet
 		 , @mDisableSuperLive	= DisableSuperLive
 	  FROM custinfo WITH(NOLOCK)
 	 WHERE username = @mastername
@@ -322,14 +318,6 @@ BEGIN
 		RETURN
 	END
 
-	----Check Virtual sport enable status
-	--IF @sHideVirtualSports = 1 and @mHideVirtualSports = 0
-	--BEGIN
-	--	SELECT @ErrMsg = 'Master is offered Virtual Sports but new super is not offered Virtual Sports.',
-	--		@ErrCode = 123					 
-	--	return
-	--END	
-
 	--Check Keno sport enable status
 	IF @sHideKeno = 1 and @mHideKeno = 0
 	BEGIN
@@ -347,15 +335,6 @@ BEGIN
 		return
 	END
 	
-	--Check Colossus Bet sport enable status
-	IF @sHideColossusBet = 1 and @mHideColossusBet = 0
-	BEGIN
-		SELECT @ErrMsg = 'Master is offered Colossus Bets but new super is not offered Colossus Bets.',
-			@ErrCode = 126
-		return
-	END
-
-
 	--Check Number Game
 	IF EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 161)
 		AND NOT EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @srecommend AND sporttype = 161)
@@ -364,15 +343,6 @@ BEGIN
 			@ErrCode = 201					 
 		RETURN
 	END
-
-	--Check Casino Syn 
-	--Remove check Casino Sync
-	--IF exists(SELECT 1 from custinfo with (nolock) where custid = @mrecommend and SyncCasino = 1)
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is already Casino-synchronized.',
-	--		@ErrCode = 112					 
-	--	return
-	--END
 
 	IF EXISTS (
 			SELECT 1 
@@ -490,6 +460,7 @@ BEGIN
 		RETURN	
 	END
 	
+<<<<<<< Updated upstream
 	----Check Myanmar Odds
 	--DECLARE @IsMyanmarOdds_source BIT = 0
 	--DECLARE @IsMyanmarOdds_destination BIT = 0
@@ -528,6 +499,8 @@ BEGIN
 	--	END
 	--END
 
+=======
+>>>>>>> Stashed changes
 	--Check Position Taking
 		--n4<=s3+m3<=s4		IF i3=0
 		--m3<=s4 and u3<=s4	IF i3=1
