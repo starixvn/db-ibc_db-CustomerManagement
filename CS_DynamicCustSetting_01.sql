@@ -77,6 +77,7 @@ BEGIN
 			BEGIN
 				UPDATE pa 
 				SET pa.ProblemStatus = ProblemStatus | @SetBit1,
+					pa.CreatedDate = GETDATE(),
 					pa.ReasonId = @ReasonId,
 					pa.Comment = @Comment
 				FROM dbo.CS_ProblemAccount pa WITH (ROWLOCK)
