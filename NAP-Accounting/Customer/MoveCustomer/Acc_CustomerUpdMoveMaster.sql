@@ -827,14 +827,4 @@ INNER JOIN CustSettingGame scs WITH(NOLOCK) ON scs.custid = @srecommend
     END CATCH;
     DROP TABLE #CustInfo;
 END;
-
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMaster] TO [bodbAdminNet] AS [dbo];
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMaster] TO [vnteam] AS [dbo];
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdMoveMaster] TO [vnteam] AS [dbo];
