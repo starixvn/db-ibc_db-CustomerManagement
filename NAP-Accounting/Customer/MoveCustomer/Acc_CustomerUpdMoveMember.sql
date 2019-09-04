@@ -73,6 +73,7 @@ Revisions:
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20190903@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	
 Param's Explanation:
 - @ErrCode:
@@ -119,11 +120,7 @@ BEGIN
           , @aClosed				BIT
           , @Closed					BIT
           , @aSuspended				BIT
-          , @Suspended				BIT
-          --, @aHideVirtualSports 	BIT
-          --, @HideVirtualSports		BIT
-          --, @aDisableVirtualSports	BIT
-          --, @DisableVirtualSports	BIT       
+          , @Suspended				BIT       
           , @aDoubleCommLosing		BIT
           , @DoubleCommLosing		BIT
           , @aHideKeno				BIT
@@ -137,10 +134,6 @@ BEGIN
           , @DisableGoldDeluxe		BIT
           , @aHideGoldDeluxe		BIT
           , @HideGoldDeluxe			BIT
-          , @aDisableColossusBet	BIT
-          , @DisableColossusBet		BIT
-          , @aHideColossusBet		BIT
-          , @HideColossusBet		BIT
 		  , @aDisableSuperLive		BIT
           , @DisableSuperLive		BIT
           , @DCSSportType			INT
@@ -159,16 +152,12 @@ BEGIN
          , @aDisableNumber	      = DisableNumber
          , @aClosed			      = closed
          , @aSuspended		      = reject
-         --, @aDisableVirtualSports = DisableVirtualSports
-         --, @aHideVirtualSports	  = HideVirtualSports
         
          , @aHideKeno			  = HideKeno
          , @aDisableEsports       = DisableEsports
          , @aGivenCredit		  = credit	
          , @aDisableGoldDeluxe	  = DisableGoldDeluxe
          , @aHideGoldDeluxe		  = HideGoldDeluxe
-         , @aDisableColossusBet	  = DisableColossusBet
-         , @aHideColossusBet	  = HideColossusBet
 		 , @aDisableSuperLive	  = DisableSuperLive
       FROM custinfo WITH(NOLOCK)
      WHERE username = @agentname
@@ -187,16 +176,12 @@ BEGIN
          , @DoubleCommLosing	 = DoubleCommLosing
          , @Closed				 = closed
          , @Suspended			 = reject
-         --, @DisableVirtualSports = DisableVirtualSports
-         --, @HideVirtualSports	 = HideVirtualSports
         
          , @HideKeno			 = HideKeno
          , @DisableEsports       = DisableEsports
          , @GivenCredit			 = credit
          , @DisableGoldDeluxe	 = DisableGoldDeluxe 
          , @HideGoldDeluxe		 = HideGoldDeluxe
-         , @DisableColossusBet	 = DisableColossusBet 
-         , @HideColossusBet		 = HideColossusBet
 		 , @DisableSuperLive	 = DisableSuperLive
       FROM custinfo WITH(NOLOCK)
      WHERE username = @membername
@@ -293,16 +278,6 @@ BEGIN
 		    @ErrCode = 105
 	    RETURN
     END
-
-    ----Check VS enable status:
-    --IF @aHideVirtualSports = 1 AND @HideVirtualSports = 0
-    --BEGIN
-	   -- SELECT @ErrMsg = 'Member is offered Virtual Sports but new agent is not offered Virtual Sports.',
-		  --  @ErrCode = 112					 
-	   -- IF @ReturnErrCode = 0
-		  --  RAISERROR(@ErrMsg, 16, 1)
-	   -- return
-    --END
 
     --Check Keno enable status:
     IF @aHideKeno = 1 AND @HideKeno = 0
@@ -469,31 +444,6 @@ BEGIN
         END
     END
 
-	--Check Colossus Bet enable status
-    IF @aHideColossusBet = 1 AND @HideColossusBet = 0
-    BEGIN
-	    SELECT @ErrMsg = 'Member is offered Colossus Bets but new agent is not offered Colossus Bets.',
-		    @ErrCode = 121					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
-
-	--Check Colossus Bet
-    IF @aDisableColossusBet = 1 AND @DisableColossusBet = 0
-    BEGIN
-		UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-           SET DisableColossusBet = 1
-        WHERE custid  = @custid
-        
-        IF @@ERROR <>0 
-        BEGIN
-            SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 310
-            RETURN
-        END
-    END
-
 
     --Check CS SyncCasino between Agent AND Member 
     IF @aSyncCasino = 0 AND @SyncCasino = 1 
@@ -555,19 +505,6 @@ BEGIN
 		    RAISERROR(@ErrMsg, 16, 1)
 	    return
     END
-
-
-    ----VS
-    --IF exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND sporttype = 180)
-	   -- AND not exists(SELECT 1 FROM custsetting3rd WITH(NOLOCK) WHERE custid = @recommend AND sporttype = 180)
-
-    --BEGIN
-	   -- SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Virtual Sports setting.',
-		  --  @ErrCode = 206					 
-	   -- IF @ReturnErrCode = 0
-		  --  RAISERROR(@ErrMsg, 16, 1)
-	   -- return
-    --END
 
     --Check identical auto master position taking
     IF exists (
@@ -648,39 +585,6 @@ BEGIN
 	    return
     END
 
-	 -- Check Myanmar odds
-	DECLARE @IsMyanmarOdds_source BIT = 0
-	DECLARE @IsMyanmarOdds_destination BIT = 0
-	
-	SET @IsMyanmarOdds_destination = dbo.fn_IsMyanmarOdds (@srecommend)
-	SET @IsMyanmarOdds_source = dbo.fn_IsMyanmarOdds (@srecommend_old)
-	
-	IF @IsMyanmarOdds_source <> @IsMyanmarOdds_destination
-	BEGIN
-		SELECT @ErrMsg = 'Cannot move customer ' + @agentname + ' since amongs its new and old sites, one has % Odds.',
-					@ErrCode = 218
-		RETURN	
-	END	
-	
-	DECLARE @playerDiscount_Source_MO DECIMAL(9,8) = 0
-	DECLARE @discount_Destination_MO DECIMAL(9,8) = 0
-	DECLARE @adiscount_Destination_MO DECIMAL(9,8) = 0
-	DECLARE @sdiscount_Destination_MO DECIMAL(9,8) = 0
-	
-	IF @IsMyanmarOdds_source = 1
-	BEGIN
-		
-		SET @discount_Destination_MO = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @recommend AND Sporttype = 1 AND Bettype = 301 )	
-		SET @playerDiscount_Source_MO = (SELECT playerdiscount FROM CustCommRate WITH (NOLOCK) WHERE CustId = @custid AND Sporttype = 1 AND Bettype = 301)	
-						
-		IF @discount_Destination_MO < @playerDiscount_Source_MO 
-		BEGIN
-			SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': Master''s commission for Mysanmar Odds is less than moved member''s commision.',
-					@ErrCode = 219
-			RETURN	
-		END
-	END
-
 	--Check Position Taking for DCS products --all us1<=s4 if is1 = 1
 	IF EXISTS (SELECT TOP 1 1
 		FROM dbo.CustPTSetting3rd_Agent scs WITH (NOLOCK)
@@ -756,7 +660,7 @@ BEGIN
 	    @v2apositiontaking_3 SMALLMONEY,
 	    @v2apositiontaking_7 SMALLMONEY,
 	    @v2apositiontaking_8 SMALLMONEY,
-	    --@v2apositiontaking_9 SMALLMONEY,
+
 	    @v2apositiontaking_20 SMALLMONEY,
 		@v2apositiontaking_9999 SMALLMONEY,
     	
@@ -787,13 +691,9 @@ BEGIN
 	    @v99apositiontaking_3 SMALLMONEY,
 	    @v99apositiontaking_9 SMALLMONEY,
 	    @v99apositiontaking_20 SMALLMONEY,
-
-	    --@v201apositiontaking_2 SMALLMONEY,
-	    --@v201apositiontaking_3 SMALLMONEY,
     
 	    @v161apositiontaking_81 SMALLMONEY,
 	    @v161apositiontaking_83 SMALLMONEY,
-	    --@v161apositiontaking_85 SMALLMONEY,
 	    @v161apositiontaking_86 SMALLMONEY,
 	    @v161apositiontaking_88 SMALLMONEY,
     	
@@ -802,15 +702,6 @@ BEGIN
 	    @v161alivepositiontaking_87 SMALLMONEY,
 	    @v161alivepositiontaking_89 SMALLMONEY,
 	    @v161alivepositiontaking_90 SMALLMONEY,
-
-	    ----VS
-	    --@v180apositiontaking_1201 SMALLMONEY,
-	    --@v181apositiontaking_1231 SMALLMONEY,
-	    --@v182apositiontaking_1231 SMALLMONEY,
-	    --@v183apositiontaking_1231 SMALLMONEY,
-	    --@v184apositiontaking_1231 SMALLMONEY,
-	    --@v185apositiontaking_1231 SMALLMONEY,
-	    --@v186apositiontaking_1220 SMALLMONEY,
 
 	    --Keno
 	    @v202apositiontaking_1501 SMALLMONEY,
@@ -894,7 +785,7 @@ BEGIN
     SELECT @v2apositiontaking_3 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=3 AND sporttype=2
     SELECT @v2apositiontaking_7 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=7 AND sporttype=2
     SELECT @v2apositiontaking_8 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=8 AND sporttype=2
-    --SELECT @v2apositiontaking_9 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=9 AND sporttype=2
+
     SELECT @v2apositiontaking_20 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=20 AND sporttype=2	
 	SELECT @v2apositiontaking_9999 = apositiontaking FROM custsetting WITH(NOLOCK) WHERE custid = @custid AND bettype=9999 AND sporttype=2	
 
@@ -929,7 +820,7 @@ BEGIN
 
     SELECT @v161apositiontaking_81 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=81 AND sporttype=161
     SELECT @v161apositiontaking_83 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=83 AND sporttype=161
-    --SELECT @v161apositiontaking_85 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=85 AND sporttype=161
+
     SELECT @v161apositiontaking_86 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=86 AND sporttype=161
     SELECT @v161apositiontaking_88 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=88 AND sporttype=161
 
@@ -938,14 +829,6 @@ BEGIN
     SELECT @v161alivepositiontaking_87 = alivepositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=87 AND sporttype=161
     SELECT @v161alivepositiontaking_89 = alivepositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=89 AND sporttype=161
     SELECT @v161alivepositiontaking_90 = alivepositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=90 AND sporttype=161
-
-    --SELECT @v180apositiontaking_1201 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1201 AND sporttype=180
-    --SELECT @v181apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=181
-    --SELECT @v182apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=182
-    --SELECT @v183apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=183
-    --SELECT @v184apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=184
-    --SELECT @v185apositiontaking_1231 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1231 AND sporttype=185
-    --SELECT @v186apositiontaking_1220 = apositiontaking FROM custsetting3rd WITH(NOLOCK) WHERE custid = @custid AND bettype=1220 AND sporttype=186
 
     --Keno
     SELECT @v202apositiontaking_1501 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 202 AND bettype = 1501
@@ -2162,74 +2045,6 @@ BEGIN
 		    return
     END
 
-	-- For ColossusBet
-	DECLARE @adiscount_Destination_18001 DECIMAL (9,8) = 0
-	DECLARE @adiscount_Destination_18002 DECIMAL (9,8) = 0
-	
-	DECLARE @sdiscount_Destination_18001 DECIMAL (9,8) = 0
-	DECLARE @sdiscount_Destination_18002 DECIMAL (9,8) = 0
-	
-	DECLARE @discount_Destination_18001 DECIMAL (9,8) = 0
-	DECLARE @discount_Destination_18002 DECIMAL (9,8) = 0
-	
-	SET @discount_Destination_18001 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @recommend AND Sporttype = 204 AND Bettype = 18001 )	
-	SET @discount_Destination_18002 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @recommend AND Sporttype = 204 AND Bettype = 18002 )	
-	
-	SET @adiscount_Destination_18001 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @mrecommend AND Sporttype = 204 AND Bettype = 18001)
-	SET @sdiscount_Destination_18001 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 204 AND Bettype = 18001)
-	
-	SET @adiscount_Destination_18002 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @mrecommend AND Sporttype = 204 AND Bettype = 18002)
-	SET @sdiscount_Destination_18002 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 204 AND Bettype = 18002)
-	
-	
-	UPDATE CustCommRate WITH(UPDLOCK,ROWLOCK)
-		SET  sdiscount = @sdiscount_Destination_18001
-			,adiscount = @adiscount_Destination_18001
-			,discount = @discount_Destination_18001
-	WHERE CustId = @custid	
-		 AND Sporttype = 204 AND Bettype = 18001
-	
-	UPDATE CustCommRate WITH(UPDLOCK,ROWLOCK)
-		SET  sdiscount = @sdiscount_Destination_18002
-			,adiscount = @adiscount_Destination_18002
-			,discount = @discount_Destination_18002
-	WHERE CustId = @custid	
-		 AND Sporttype = 204 AND Bettype = 18002	
-		
-    IF @@ERROR<>0
-    BEGIN
-		    SELECT @ErrMsg = 'update commission unsuccessfully.',
-		    @ErrCode = 518				 
-		    IF @ReturnErrCode = 0
-			    RAISERROR(@ErrMsg, 16, 1)
-		    return
-    END
-
-	
-	-- For Myanmar Odds
-	IF @IsMyanmarOdds_source = 1
-	BEGIN
-		SET @adiscount_Destination_MO = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @mrecommend AND Sporttype = 1 AND Bettype = 301)
-		
-		SET @sdiscount_Destination_MO = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 1 AND Bettype = 301)
-		
-		UPDATE CustCommRate
-			SET  sdiscount = @sdiscount_Destination_MO
-				,adiscount = @adiscount_Destination_MO
-				,discount = @discount_Destination_MO
-		WHERE CustId = @custid	
-			 AND Sporttype = 1 AND Bettype = 301
-		
-	END
-	IF @@ERROR<>0
-    BEGIN
-		    SELECT @ErrMsg = 'update commission unsuccessfully.',
-		    @ErrCode = 519				 
-		    IF @ReturnErrCode = 0
-			    RAISERROR(@ErrMsg, 16, 1)
-		    return
-    END
-
 	
 	-- Update Stake Level for moved member
 	DECLARE	@updateStakeLevel	TABLE (
@@ -2336,10 +2151,4 @@ BEGIN
 		    @duration = @duration	
     END CATCH
 END
-GO 
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMember] TO [vnteam]
-GO 
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdMoveMember] TO [vnteam]
-GO 
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMember] TO [bodbAdminNet]
 GO 

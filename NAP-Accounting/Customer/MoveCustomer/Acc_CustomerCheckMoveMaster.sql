@@ -33,11 +33,7 @@ AS
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
-<<<<<<< Updated upstream
-		- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-=======
 		- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
->>>>>>> Stashed changes
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -459,48 +455,6 @@ BEGIN
 				@ErrCode = 211
 		RETURN	
 	END
-	
-<<<<<<< Updated upstream
-	----Check Myanmar Odds
-	--DECLARE @IsMyanmarOdds_source BIT = 0
-	--DECLARE @IsMyanmarOdds_destination BIT = 0
-	
-	--SET @IsMyanmarOdds_destination =  dbo.fn_IsMyanmarOdds (@srecommend)
-
-	--SET @IsMyanmarOdds_source = dbo.fn_IsMyanmarOdds (@srecommend_old)
-
-	
-	--IF @IsMyanmarOdds_source <> @IsMyanmarOdds_destination
-	--BEGIN
-		
-	--	SELECT @ErrMsg = 'Cannot move customer ' + @mastername + ' since amongs its new and old sites, one has % Odds.',
-	--			@ErrCode = 212
-	--	RETURN	
-	--END	
-	
-	--IF @IsMyanmarOdds_source = 1
-	--BEGIN
-	--	IF EXISTS(
-	--			SELECT	1 
-	--			FROM	AgentCommRate  scs WITH(NOLOCK)
-	--				JOIN AgentCommRate mcs WITH(NOLOCK) 
-	--					ON	mcs.custid = @mrecommend 
-	--						AND scs.sporttype = mcs.sporttype 
-	--						AND scs.bettype = mcs.bettype
-	--			WHERE	scs.custid = @srecommend 
-	--					AND scs.sporttype = 1 
-	--					AND scs.bettype = 301
-	--					AND scs.CommRate < mcs.CommRate
-	--	)
-	--	BEGIN
-	--		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @mastername + ': Super''s commission for Myanmar Odds is less than master''s commission.',
-	--				@ErrCode = 213
-	--		RETURN	
-	--	END
-	--END
-
-=======
->>>>>>> Stashed changes
 	--Check Position Taking
 		--n4<=s3+m3<=s4		IF i3=0
 		--m3<=s4 and u3<=s4	IF i3=1
