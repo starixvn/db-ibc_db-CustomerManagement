@@ -411,7 +411,7 @@ BEGIN
 		ELSE
 			IF @FromDate >= @__archiveDate
 			BEGIN
-				SELECT  COUNT(LogID)                           
+				SELECT  @__cntTemp = COUNT(LogID)                           
 				FROM    dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
@@ -426,10 +426,26 @@ BEGIN
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
+
+				SELECT  @__cntTemp = COUNT(mt.LogID)  
+				FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+					INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+				WHERE	lt.custid = @CustId
+						AND mt.LogDate BETWEEN @FromDate AND @ToDate
+						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
 			END
 			ELSE IF @ToDate < @__archiveDate
 			BEGIN
-				SELECT  COUNT(LogID)                           
+				SELECT  @__cntTemp = COUNT(LogID)                           
 				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
@@ -444,43 +460,88 @@ BEGIN
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
+
+				SELECT  @__cntTemp = COUNT(mt.LogID)  
+				FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+					INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+				WHERE	lt.custid = @CustId
+						AND mt.LogDate BETWEEN @FromDate AND @ToDate
+						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
 			END
 			ELSE
 			BEGIN
-				SELECT SUM(cnt)
-				FROM (
-					SELECT  COUNT(LogID) AS cnt                       
-					FROM    dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-					WHERE   ul.CustID = @CustId
-							AND LogDate BETWEEN @__archiveDate AND @ToDate								
-							AND IsInternal <= @IsInternal
-							--exclude log action of status
-							AND la.ActionID NOT BETWEEN 1100 AND 1199
-							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND la.ActionID NOT BETWEEN 60000 AND 79999					
-							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
-					UNION ALL
-					SELECT  COUNT(LogID)                           
-					FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-					WHERE   ul.CustID = @CustId
-							AND LogDate >= @FromDate AND LogDate < @__archiveDate								
-							AND IsInternal <= @IsInternal
-							--exclude log action of status
-							AND la.ActionID NOT BETWEEN 1100 AND 1199
-							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND la.ActionID NOT BETWEEN 60000 AND 79999					
-							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
-				)t
+				SELECT  @__cntTemp = COUNT(LogID)                           
+				FROM    dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+				WHERE   ul.CustID = @CustId
+						AND LogDate BETWEEN @__archiveDate AND @ToDate								
+						AND IsInternal <= @IsInternal
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 1100 AND 1199
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
+						AND la.ActionID NOT BETWEEN 60000 AND 79999					
+						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+				
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
+
+				SELECT  @__cntTemp = COUNT(LogID)                           
+				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+				WHERE   ul.CustID = @CustId
+						AND LogDate >= @FromDate AND LogDate < @__archiveDate								
+						AND IsInternal <= @IsInternal
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 1100 AND 1199
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
+						AND la.ActionID NOT BETWEEN 60000 AND 79999					
+						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						AND ul.ActionId <> 1050 --Message Customer Read Status Update
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
+
+				SELECT  @__cntTemp = COUNT(mt.LogID)  
+				FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+					INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+				WHERE	lt.custid = @CustId
+						AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
+						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
+
+				SELECT  @__cntTemp = COUNT(mt.LogID)  
+				FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+					INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+				WHERE	lt.custid = @CustId
+						AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate								
+						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+
+				SET @__cnt = @__cnt + @__cntTemp
+				SET @__cntTemp = 0
 			END
 			
 	END--(@LowerActionId IS NULL OR @UpperActionId IS NULL)  
