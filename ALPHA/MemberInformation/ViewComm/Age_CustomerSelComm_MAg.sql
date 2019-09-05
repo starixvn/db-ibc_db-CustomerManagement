@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelComm_MAg]
 	@MRecommend int
 AS
@@ -18,6 +18,7 @@ Revisions:
 	- 20150904@Helen: commission setting for MO [Redmine #41470]
 	- 20160114@Helen: Cricket - [Redmine: #50027]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 */
 
 	SET NOCOUNT ON
@@ -38,29 +39,6 @@ Revisions:
 		max(case when cs.bettype = 5 and cs.sporttype=1 then cs.discount else 0 end)*100 as discount1x2,
 		max(case when cs.bettype = 5 and cs.sporttype=1 then cs.playerdiscount else 0 end)*100 as playerdiscount1x2,
 
-		-- Myanmar Odds
-		ISNULL(ccr.adiscount,0) * 100 AS adiscountMyanmarOdds,
-		ISNULL(ccr.discount,0) * 100 AS discountMyanmarOdds,
-		ISNULL(ccr.playerdiscount,0) * 100 AS playerdiscountMyanmarOdds, 
-		--Get Horse Racing for Tote and Fixed odd
-	--	max(case when cs3rd.bettype = 31 and cs3rd.sporttype=151 then cs3rd.adiscount else 0 end)*100 adiscount_hr_to,
-	--	max(case when cs3rd.bettype = 31 and cs3rd.sporttype=151 then cs3rd.discount else 0 end)*100 discount_hr_to,
-	--	max(case when cs3rd.bettype = 31 and cs3rd.sporttype=151 then cs3rd.playerdiscount else 0 end)*100 playerdiscount_hr_to,	
-	--	
-	--	max(case when cs3rd.bettype = 41 and cs3rd.sporttype=151 then cs3rd.adiscount else 0 end)*100 adiscount_hr_fo,
-	--	max(case when cs3rd.bettype = 41 and cs3rd.sporttype=151 then cs3rd.discount else 0 end)*100 discount_hr_fo,
-	--	max(case when cs3rd.bettype = 41 and cs3rd.sporttype=151 then cs3rd.playerdiscount else 0 end)*100 playerdiscount_hr_fo,
-	--	
-		--Get Financial commission 	
-	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.adiscount else 0 end)*100 adiscount_financial,
-	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.discount else 0 end)*100 discount_financial,
-	--	max(case when cs3rd.bettype = 3 and cs3rd.sporttype=201 then cs3rd.playerdiscount else 0 end)*100 playerdiscount_financial,
-	
-		--Get NumberGame commission 	
-		max(case when cs3rd.bettype = 81 and cs3rd.sporttype=161 then cs3rd.adiscount else 0 end)*100 adiscount_numbergame,
-		max(case when cs3rd.bettype = 81 and cs3rd.sporttype=161 then cs3rd.discount else 0 end)*100 discount_numbergame,
-		max(case when cs3rd.bettype = 81 and cs3rd.sporttype=161 then cs3rd.playerdiscount else 0 end)*100 playerdiscount_numbergame,
-		--End
 		-- Cricket
 		ISNULL(cdm.MasterDiscount,0) * 100 adiscount_cricket,
 		ISNULL(cdm.AgentDiscount,0) * 100 discount_cricket,
@@ -71,12 +49,11 @@ Revisions:
 		INNER JOIN CustInfo as ci with (NOLOCK) on m.CustID = ci.CustID
 		INNER JOIN CustSetting as cs with (NOLOCK) on m.CustID = cs.CustID
 		INNER JOIN CustSetting3rd as cs3rd with (NOLOCK) on m.custID = cs3rd.CustID
-		LEFT JOIN CustCommRate ccr WITH (NOLOCK) ON CCR.CustId = CI.custid AND CCR.Sporttype = 1 AND CCR.Bettype = 301
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON  cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501
 	WHERE m.MRecommend = @MRecommend and m.roleid=1 
 	GROUP BY
 		ci.enabled, ci.closed, ci.reject, m.username, m.custid, m.ugroup, 
-		m.firstname, m.lastname, ci.credit, ci.DoubleCommLosing,ccr.adiscount,ccr.discount,ccr.playerdiscount,cdm.AgentDiscount,cdm.MasterDiscount,cdm.PlayerDiscount
+		m.firstname, m.lastname, ci.credit, ci.DoubleCommLosing,cdm.AgentDiscount,cdm.MasterDiscount,cdm.PlayerDiscount
 	ORDER BY 
 	case when isnull(ci.enabled,0) = 0 then 3 when isnull(ci.closed,0) = 1 then 2 when isnull(ci.reject,0) = 1 then 1 else 0 end, 
 	m.username
@@ -84,8 +61,3 @@ Revisions:
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelComm_MAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelComm_MAg] TO [bodbDownlineNetView]
-Go
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelComm_MAg] TO [vnteam]
