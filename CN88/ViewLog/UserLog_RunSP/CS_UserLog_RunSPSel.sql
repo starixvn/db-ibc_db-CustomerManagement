@@ -158,7 +158,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-								AND la.ActionID IN (165004,165008,165009,165010)
+								AND la.ActionID BETWEEN 165000 AND 169999
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -264,7 +264,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -406,7 +406,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -435,7 +435,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -791,6 +791,8 @@ BEGIN
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
@@ -853,6 +855,8 @@ BEGIN
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 				END
 				ELSE
 				BEGIN
@@ -951,6 +955,8 @@ BEGIN
 							AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -975,6 +981,8 @@ BEGIN
 							AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate				
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 				END
 
 				SELECT  LogID,
