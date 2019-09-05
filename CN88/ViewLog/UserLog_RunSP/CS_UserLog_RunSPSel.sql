@@ -976,6 +976,38 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 				END
+
+				SELECT  LogID,
+						UserID,
+						Username,
+						TrackingValue,
+						TrackingValueOld,
+						LogDate,
+						ActionID,
+						ActionTypeID,
+						SPName,
+						IsInternal,
+						CustID,
+						CustName,
+						ActionName
+				FROM    (
+						SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								Username,
+								TrackingValue,
+								TrackingValueOld,
+								LogDate,
+								ActionID,
+								ActionTypeID,
+								SPName,
+								IsInternal,
+								CustID,
+								CustName,
+								ActionName
+						FROM  #tmpLog
+					) AS MyTable
+				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END	
 		END --end (@LowerActionId IS NULL OR @UpperActionId IS NULL) 
 		ELSE
