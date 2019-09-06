@@ -55,7 +55,7 @@ Revisions:
 	- 20180919@Winnie: Add new bettype of Esports - [Redmine: #101625]
 	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
 	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
-	- 20190805@Eden: Remove inactive products (Poker Games, Bullfighting, Colossus Bet, Lucky 3)  [redmine: #117439]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 exec EAS_CustomerSelBySAg @SRecommend=4792246,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default
 */
@@ -63,8 +63,7 @@ BEGIN
     SET NOCOUNT ON  
 
     DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0, @HasSecurityCode BIT = 0
-	DECLARE @IsMyanmarOdds BIT = 0
-	 DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
+	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
 	 
 	 BEGIN TRY		
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
@@ -78,8 +77,7 @@ BEGIN
     SELECT @TransferOption = case
                                when TransferOption = 0 then 0
                                else 1
-                             end,
-           @IsMyanmarOdds = IsMyanmarOdds                  
+                             end                 
      FROM dbo.custsuper WITH(NOLOCK)
      WHERE custid = @SRecommend
 	 
@@ -172,10 +170,6 @@ BEGIN
 	             when cs.bettype = 4 and cs.sporttype = 1 then cs.adiscount
 	             else 0
 	           end) as discountcs,   
-	       max(case
-	             when cs3.bettype = 81 and cs3.sporttype = 161 then cs3.adiscount
-	             else 0
-	           end) as discountnumber,
            cu.creatdate as createdate,
            isnull(cu.iplogin, '') as lastloginip,
 	       ci.DoubleCommLosing,
@@ -192,8 +186,6 @@ BEGIN
 	       --ci.HideVirtualSports,
 	       -- For Esports
 	       --ci.DisableEsports,
-      
-	       ci.DisableCasinoBonus,
 	    
 	       -- For Keno
 	       ci.HideKeno,
@@ -243,9 +235,6 @@ BEGIN
 		   ISNULL(ci.HideVirtualSports,1) AS HideVirtualSports,
 		   ISNULL(ci.HideVirtualSportsUpline,1) AS HideVirtualSportsUpline,
 
-		   -- For Myanmar Odds
-		   CASE WHEN ac.CustId IS NOT NULL THEN 1 ELSE 0 END AS IsMyanmarOdds,
-		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
 	       --transfer condition
 	       @TransferOption disableTransfer,
 	       -- Cricket
@@ -264,9 +253,9 @@ BEGIN
 						closed, MatchLimit, VirtualMultiplier, Enabled, 
 						DisableCasino, SyncCasino, DisableOutright, 
 						DisableNumber, 
-						DoubleCommLosing, DisableCasinoBonus,  HideKeno, 
+						DoubleCommLosing,  HideKeno, 
 						--DisableEsports, 
-						DisableGoldDeluxe, HideGoldDeluxe,DisableColossusBet,HideColossusBet,
+						DisableGoldDeluxe, HideGoldDeluxe,
 						(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
 						FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @srecommend) as SyncGoldDeluxeUpline,
 						-- For MuayThai						
@@ -399,7 +388,6 @@ BEGIN
 		 LEFT JOIN @tmp_GameType g ON g.GameTypeID = cg.GameTypeID
 													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)
 		INNER JOIN dbo.CustMaster cm with(NOLOCK) on cu.custid = cm.custid
-		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 
 		LEFT JOIN CustDiscount3rd_Agent cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
 	WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
@@ -410,9 +398,9 @@ BEGIN
 			   ci.DisableOutright, cm.DisableAutoMPT,			  
 			   ci.synccasino, ci.disablecasino,  
 			   ci.DisableNumber,
-			   ci.DisableCasinoBonus,  ci.HideKeno, 
+			   ci.HideKeno, 
 			   --ci.DisableEsports,
-			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableColossusBet,ci.HideColossusBet,AC.CommRate,ac.CustId,ci.DisableMuayThai,ci.HideMuayThai,
+			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline,ci.DisableMuayThai,ci.HideMuayThai,
 			   ci.DisableAllBet,ci.DisableAllBetVIP,ci.HideAllBetUpline, ci.HideAllBet, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 			   ci.DisableCricket, ci.HideCricket, cdm.Discount,
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,

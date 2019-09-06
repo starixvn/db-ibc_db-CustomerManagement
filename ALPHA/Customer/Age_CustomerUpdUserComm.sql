@@ -6,8 +6,6 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdUserComm]
 	@playerdiscount DECIMAL(9,8),
 	@playerdiscountcs DECIMAL(9,8),
 	@playerdiscount1x2 DECIMAL(9,8),	
-	@playerdiscountnumber DECIMAL(9,8)=0,
-	@playerdiscountMyanmarOdds DECIMAL(9,8) = 0,
 	@userid INT, --updater Id	
 	@subaccid INT = 0, --Sub-AccountID
 	@language VARCHAR(2) = 'E',
@@ -48,6 +46,7 @@ Revisions:
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @playerdiscount: Player discount for group			(sportype = 1 and bettype = 1)
@@ -89,7 +88,7 @@ Param's Explanation:
 	
 	--Do update
 	DECLARE @username VARCHAR(40), @recommend INT,
-			@discount DECIMAL(9,8), @discountcs DECIMAL(9,8), @ugroup VARCHAR(10),@discount1x2_max DECIMAL(9,8),@discountnumber_max DECIMAL(9,8)
+			@discount DECIMAL(9,8), @discountcs DECIMAL(9,8), @ugroup VARCHAR(10),@discount1x2_max DECIMAL(9,8)
 	SELECT @UserName  = username,
 			@recommend = recommend,
 			@ugroup = c.ugroup
@@ -97,26 +96,11 @@ Param's Explanation:
 
 	DECLARE	@playerdiscount_old DECIMAL(9,8),
 			@playerdiscountcs_old DECIMAL(9,8),		
-			@playerdiscount1x2_old DECIMAL(9,8),
-			
-			@playerdiscountnumber_old DECIMAL(9,8),
-			@playerdiscountMyanmarOdds_old decimal(9,8)
-			
-	 -- For Myanmar Odds  
-	 DECLARE @IsMyanmarOdds BIT = 0  
+			@playerdiscount1x2_old DECIMAL(9,8)			
 	 
 	 SELECT @recommend = recommend
 	 FROM custInfo WITH (NOLOCK)
 	 WHERE custid = @custid  
-	 
-	 SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@recommend)  
-	    
-	 IF @IsMyanmarOdds = 1  
-	 BEGIN  
-	  -- Get old value  
-	  SET @playerdiscountMyanmarOdds_old = (SELECT playerdiscount FROM CustCommRate WITH (NOLOCK) WHERE CustId = @custid AND Sporttype = 1 AND Bettype = 301)  
-	    
-	 END  
 	 		
 	DECLARE @updatecomm_old BIT
 
@@ -129,12 +113,7 @@ Param's Explanation:
 	SELECT @playerdiscount1x2_old = playerdiscount
 	FROM custsetting (NOLOCK) WHERE custid = @custid AND sporttype = 1 AND bettype = 5
 
-
-	SELECT @playerdiscountnumber_old = playerdiscount
-	FROM custsetting3rd (NOLOCK) WHERE custid = @custid AND sporttype = 161 AND bettype = 81
-
-	IF @playerdiscount_old <> @playerdiscount OR @playerdiscountcs_old <> @playerdiscountcs OR @playerdiscount1x2 <> @playerdiscount1x2_old OR @playerdiscountnumber <> @playerdiscountnumber_old 
-		OR (@IsMyanmarOdds = 1 AND @playerdiscountMyanmarOdds <> @playerdiscountMyanmarOdds_old)
+	IF @playerdiscount_old <> @playerdiscount OR @playerdiscountcs_old <> @playerdiscountcs OR @playerdiscount1x2 <> @playerdiscount1x2_old 
 		SET @updatecomm_old = 1
 	ELSE 
 		SET @updatecomm_old = 0
@@ -146,9 +125,6 @@ Param's Explanation:
 	IF	@playerdiscount<0 OR @playerdiscount>0.2
 		OR @playerdiscountcs<0 OR @playerdiscountcs>0.2
 		OR @playerdiscount1x2<0 OR @playerdiscount1x2>0.2
-		
-		OR @playerdiscountnumber<0 OR @playerdiscountnumber>0.2
-		OR @playerdiscountMyanmarOdds < 0  OR @playerdiscountMyanmarOdds > 0.01
 	BEGIN	
 		SELECT @ErrMsg = CASE @Language 
 							WHEN 'E' THEN 'Invalid commission rate.'
@@ -186,26 +162,13 @@ Param's Explanation:
 		FROM custsetting WITH (NOLOCK)
 		WHERE custid = @recommend AND sporttype = 1 AND bettype = 5
 		
-		SELECT @discountnumber_max = discount
-		FROM custsetting3rd WITH (NOLOCK)
-		WHERE custid = @recommend AND sporttype = 161 AND bettype = 81
-
-		
-		SELECT @playerdiscount1x2 = CASE WHEN @playerdiscount1x2 > @discount1x2_max THEN @discount1x2_max ELSE @playerdiscount1x2 END
-		
-		SELECT @playerdiscountnumber = CASE WHEN @playerdiscountnumber > @discountnumber_max THEN @discountnumber_max ELSE @playerdiscountnumber END			
-		
+		SELECT @playerdiscount1x2 = CASE WHEN @playerdiscount1x2 > @discount1x2_max THEN @discount1x2_max ELSE @playerdiscount1x2 END	
 		
 		EXEC dbo.Acc_CustomerUpdMember_Commission
 			@custid = @custid,
 			@playerdiscount = @playerdiscount,
 			@playerdiscountcs = @playerdiscountcs , 
 			@playerdiscount1x2 = @playerdiscount1x2,
-		
-			@playerdiscountnumber =  @playerdiscountnumber, 
-			@IsMyanmarOdds = @IsMyanmarOdds,
-			@discountMyanmarOdds = @playerdiscountMyanmarOdds,
-			@discountMyanmarOdds_old = @playerdiscountMyanmarOdds_old,
 			@updatecomm_old = @updatecomm_old,
 			@SubAccID = @SubAccID,
 			@UserID = @UserID,

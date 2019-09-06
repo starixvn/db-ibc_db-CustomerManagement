@@ -59,7 +59,7 @@ Revisions:
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
 	- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
 	- 20190806@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
-	- 20190805@Eden: Remove inactive products (Poker Games, Bullfighting, Colossus Bet, Lucky 3)  [redmine: #117439]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	
 exec EAS_CustomerSelByCom @GroupName='ACCDDD',@Custid=default,@Enabled=default,@Closed=default,@Suspended=default    
 */
@@ -79,7 +79,7 @@ BEGIN
 		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
 	 END CATCH
 	 
-	 DECLARE @IsMyanmarOdds BIT = 0, @IsInternalAdmin BIT = 0, @HasSecurityCode BIT = 0
+	 DECLARE  @IsInternalAdmin BIT = 0, @HasSecurityCode BIT = 0
 	 
     INSERT INTO @tmpSuperList(CustID, username)
     SELECT custID, username 
@@ -185,10 +185,6 @@ BEGIN
 	             WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount
 	             ELSE 0
 	           end) as discountcs,
-           MAX(case
-                 WHEN cs3.bettype = 81 and cs3.sporttype = 161 then cs3.sdiscount
-                 ELSE 0
-               end) as discountnumber,
            cu.creatdate as createdate,
            ISNULL(cu.iplogin, '') as lastloginip,
 	       ci.DoubleCommLosing,
@@ -198,7 +194,6 @@ BEGIN
 	       ci.synccasino,
 	       ci.disablecasino,	   
 	       ci.DisableNumber,	  
-	       ci.DisableCasinoBonus,
 	    
 	       -- For Esports
 	       --ci.DisableEsports,
@@ -236,10 +231,6 @@ BEGIN
 						THEN 0
 					ELSE 1
 			END AS SyncedAllBetDownline,
-
-		   -- For Myanmar Odds
-		   CASE WHEN ac.CustId IS NOT NULL THEN 1 ELSE 0 END AS  IsMyanmarOdds,
-		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
 		   
 		   -- For Cricket
 		   CASE WHEN cu.[site] = 'IMBC' THEN 1 ELSE 0 END AS IsIMBC,
@@ -322,8 +313,7 @@ BEGIN
 		 LEFT JOIN dbo.custsetting3rd cs3 with(nolock) on cu.custid = cs3.custid
 		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cu.custid = cg.CustID
 		 LEFT JOIN @tmp_GameType g ON g.GameTypeID = cg.GameTypeID
-													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)
-		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 																			
+													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)																			
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid 
 		LEFT JOIN CustDiscount3rd_Agent cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND cu.[site] = 'IMBC' AND @IsHidden_Cricket = 0
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
@@ -338,8 +328,8 @@ BEGIN
 	  GROUP BY cu.custid, cu.username, ci.enabled, ci.closed, ci.reject, cu.roleid,
 			   cp.firstname, cp.lastname, cu.creatdate, cu.iplogin,	ci.DisableOutright,			 
 			   ci.synccasino, ci.disablecasino, ci.DisableNumber,			
-			   ci.DoubleCommLosing, ci.DisableCasinoBonus,  ci.HideKeno, --ci.DisableEsports,
-			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe,AC.CommRate,ac.CustId,
+			   ci.DoubleCommLosing,  ci.HideKeno, --ci.DisableEsports,
+			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe,
 			   cps.bitmapIsDisabled,cps.bitmapIsHidden, cps.bitmapHasSynced,cdm.Discount,cu.[site],cl.ClosedReason
 			   ,l.LimitDays, l.MinDate
 	ORDER BY RowNumber

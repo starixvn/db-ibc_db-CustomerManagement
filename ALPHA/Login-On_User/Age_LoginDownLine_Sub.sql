@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]    
 	@SubUserName varchar(50),    
 	@UserPwd varchar(50),    
@@ -67,6 +67,7 @@ Revisions:
 	- 20130409@Johnson: Get more fields securitycode and isForcedChangeSecuritycode 
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 	- 20170724@Elodie: Don't reset login count of main account when sub account login successfull
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
 • @ErrCode:
@@ -658,8 +659,6 @@ BEGIN
 	 
 	SELECT	@closed = closed,@IsCasinoSync = SyncCasino
 			,@isCasinoDisabled = DisableCasino
-			,@isBingoDisabled = DisableBingo
-			,@isBingoSync = SyncBingo
 			,@db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
 

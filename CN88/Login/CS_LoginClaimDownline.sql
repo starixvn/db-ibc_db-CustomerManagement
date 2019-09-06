@@ -46,6 +46,7 @@ AS
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 		- 20190717@Elodie: Sub account management [Redmine:#116825] 
+		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -276,9 +277,7 @@ BEGIN
 
 	SELECT 
 		@IsCasinoSync = SyncCasino, 
-		@isCasinoDisabled = DisableCasino,
-		@isBingoDisabled = DisableBingo,
-		@isBingoSync = SyncBingo
+		@isCasinoDisabled = DisableCasino
 	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
 	  
 	-- Successful  
@@ -426,3 +425,4 @@ BEGIN
 			@Duration = @Duration		
 	END	
 END	
+GO

@@ -57,7 +57,7 @@ Revisions:
 	- 20180919@Winnie: Add new bettype of Esports Product - [Redmine: #101526]
 	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
 	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
-	- 20190805@Eden: Remove inactive products (Poker Games, Bullfighting, Colossus Bet, Lucky 3)  [redmine: #117439]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
 */  
@@ -65,7 +65,6 @@ BEGIN
     SET NOCOUNT ON  
 
     DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0
-	DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0
 	
 	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
 	 
@@ -77,11 +76,6 @@ BEGIN
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
 		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
 	 END CATCH
-	 
-	 SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@Recommend)
-
-	IF @IsMyanmarOdds = 1
-		SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 301)
 	 
     SELECT @TransferOption = CASE
                                WHEN TransferOption = 0 THEN 0
@@ -151,7 +145,7 @@ BEGIN
 			MatchLimit, VirtualMultiplier, Enabled,
 			DisableCasino, SyncCasino, DisableOutright,
 			DisableNumber,			
-			DoubleCommLosing, Recommend, DisableCasinoBonus,  HideKeno,
+			DoubleCommLosing, Recommend,  HideKeno,
 			@DoubleCommLosingUpline as DoubleCommLosingUpline,
 			--DisableEsports, 
 			DisableGoldDeluxe, HideGoldDeluxe,
@@ -315,10 +309,6 @@ BEGIN
 	             when cs.bettype = 5 and cs.sporttype = 1 then cs.discount
 	             else 0
 	           end) as discount1x2,
-	       max(case
-	             when cs3.bettype = 81 and cs3.sporttype = 161 then cs3.discount
-	             else 0
-	           end) as discountnumber,
 
    	       --player commission
 	       max(case
@@ -333,10 +323,6 @@ BEGIN
 	             when cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount
 	             else 0
 	           end) as playerdiscount1x2,
-	       max(case
-	             when cs3.bettype = 81 and cs3.sporttype = 161 then cs3.playerdiscount
-	             else 0
-	           end) as playerdiscountnumber,
 	       cu.creatdate as createdate,
 	       isnull(cu.iplogin, '') as lastloginip,
 	       ci.DoubleCommLosing,
@@ -346,7 +332,6 @@ BEGIN
 	       ci.disablecasino,	     
 	       ci.DisableNumber,
 	       ci.DoubleCommLosingUpline,	   
-           ci.DisableCasinoBonus,
 	       -- For Esports
 	       --ci.DisableEsports,	       
 	       -- For Keno
@@ -407,10 +392,6 @@ BEGIN
 	                                   isnull(ci.reject, 0),
 	                                   cu.username
 	                         ) as RowNumber,
-			-- Myanmar odds
-			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
-			ISNULL(AC.playerdiscount,0) AS playerdiscountMyanmarOdds,
-			ISNULL(@discountMyanmarOdds,0) AS discountMyanmarOdds,
 			
 			-- Cricket
 			ISNULL(@IsIMBC,0) AS IsIMBC,
@@ -427,9 +408,7 @@ BEGIN
 		 LEFT JOIN #custsetting3rd cs3 with(nolock) on cu.custid = cs3.custid
 		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cg.CustID = ci.custid
 		 LEFT JOIN @tmp_GameType g ON cg.GameTypeID = g.GameTypeID
-													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)
-		 
-		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 301 AND @IsMyanmarOdds = 1		 																			
+													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)	 																			
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
 		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cu.custid=cl.CustID
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
@@ -440,9 +419,9 @@ BEGIN
 				ci.DoubleCommLosing, ci.DisableOutright, 		
 				ci.synccasino,
 				ci.disablecasino,  ci.DisableNumber,  
-			  	ci.DoubleCommLosingUpline, ci.DisableCasinoBonus,
+			  	ci.DoubleCommLosingUpline,
 				ci.HideKeno, --ci.DisableEsports,
-				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,AC.playerdiscount,
+				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,
 				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
