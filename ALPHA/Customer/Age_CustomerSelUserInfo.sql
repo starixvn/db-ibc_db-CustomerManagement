@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelUserInfo]
 	@custid int
 AS
@@ -211,9 +208,6 @@ Param's Explanation:
 		  
 		   ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
 		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
-		   
-		   ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
-		   ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		   
 		   	-- For MuayThai
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
