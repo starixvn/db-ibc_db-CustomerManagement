@@ -47,9 +47,11 @@ BEGIN
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
-	SELECT	@LoginUserRoleId = ISNULL(roleid,0)
+	SELECT	@LoginUserRoleId = roleid
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @LoginUserId
+
+	SELECT	@LoginUserRoleId = ISNULL(@LoginUserRoleId,0)
 
 	IF @FromDate < @creatdate
 		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
