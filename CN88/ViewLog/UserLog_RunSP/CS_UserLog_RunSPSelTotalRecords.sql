@@ -47,7 +47,7 @@ BEGIN
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @CustID
 	
-	SELECT @LoginUserRoleId = roleid		
+	SELECT	@LoginUserRoleId = ISNULL(roleid,0)
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @LoginUserId
 
