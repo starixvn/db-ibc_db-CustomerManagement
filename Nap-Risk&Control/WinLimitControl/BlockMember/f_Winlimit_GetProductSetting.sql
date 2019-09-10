@@ -1,7 +1,4 @@
-/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1"></info>*/
-USE [bodb02]
-GO
-
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
 RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
 AS
@@ -23,6 +20,7 @@ AS
 		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
 		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
+		- 20190910@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 
 	Parameters Explanation:	
@@ -39,10 +37,6 @@ BEGIN
 			UNION ALL
 			SELECT 12, 1701, 1, 1 -- Gold Deluxe
 			UNION ALL
-			SELECT 13, 2001, 0, 1 -- Microgaming - Live Casino
-			UNION ALL 
-			SELECT 17, 2008, 0, 1 -- Microgaming - RNG Casino
-			UNION ALL
 			SELECT 22, 4001, 1, 1 -- Macau Games
 			UNION ALL
 			SELECT 21, 2401, 1, 1 -- Allbet
@@ -56,21 +50,11 @@ BEGIN
 			UNION ALL
 			SELECT 8, 1501, 0, 1  -- Keno
 			UNION ALL		
-			SELECT 28, 1021, 1, 1  -- Lottery 
-			--UNION ALL
-			--SELECT 14, 1900, 0, 1  -- Macau
-			
+			SELECT 28, 1021, 1, 1  -- Lottery 		
 			UNION ALL
 			SELECT 27, 2701, 0, 1  -- BetradarVS
-									
-			UNION ALL
-			SELECT 26, 1600, 0,1 --Lucky 3
-			UNION ALL
-			SELECT 30, 1004, 1, 1  -- BullFighting
 			UNION ALL 
 			SELECT 32, 4101, 0, 1 --Pragmatic Integration
-			UNION ALL 
-			SELECT 33, 1401, 1, 1 --PockerGames
 
 		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
 	)
