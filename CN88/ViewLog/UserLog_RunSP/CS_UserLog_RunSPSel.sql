@@ -1,5 +1,5 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSel]    
+ALTER PROCEDURE [dbo].[CS_UserLog_RunSPSel_xtest]    
     @CustId INT,
 	@LoginUserId INT = 0,
 	@CustName VARCHAR(50) = '',
@@ -62,8 +62,6 @@ BEGIN
 	FROM bodb02.dbo.Customer WITH(NOLOCK)
 	WHERE custid = @LoginUserId
 
-	SELECT	@LoginUserRoleId = ISNULL(@LoginUserRoleId,0)
-
 	IF @FromDate < @creatdate
 		SELECT @FromDate = DATEADD(SECOND,-30,@creatdate)--@Johnson: backward 30s to get log [#97633]
 		
@@ -103,11 +101,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -209,11 +207,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -315,11 +313,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -351,11 +349,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -850,7 +848,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))						
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))					
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -914,7 +913,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))						
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -978,7 +978,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 						 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1014,7 +1015,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						 	AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						 	AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1149,7 +1151,8 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+										OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1198,7 +1201,8 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+										OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1249,7 +1253,8 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+											OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 							UNION ALL
 							SELECT LogID,
 										UserID,
@@ -1279,7 +1284,8 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+											OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 					) AS MyTable1
 				) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
