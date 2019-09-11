@@ -101,11 +101,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -207,11 +207,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -313,11 +313,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
@@ -349,11 +349,11 @@ BEGIN
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 						 SELECT LogID,
-								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010,165012) THEN 0 ELSE ul.UserID END,
+								UserID = CASE WHEN @LoginUserRoleId < c.roleid AND la.ActionID IN (165004,165008,165009,165010) THEN 0 ELSE ul.UserID END,
 								Username =	CASE 
 												WHEN (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
 												WHEN (la.ActionID BETWEEN 1142 AND 1144 OR la.ActionID=1165) then 'Admin'
-												WHEN la.ActionID IN (165004,165008,165009,165010,165012) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
+												WHEN la.ActionID IN (165004,165008,165009,165010) AND @LoginUserRoleId < c.RoleId THEN 'Upline'
 												ELSE c.Username
 											END,
 								CASE WHEN ul.ActionID IN  (1100,1101,1102,1103) AND ul.TrackingValue LIKE '%Hide*Cricket%' 
