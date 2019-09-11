@@ -115,16 +115,14 @@ BEGIN
 	
 	--Implement headline - account page - balance info [Redmine:119961]
 	-- Get Balance Information --
-	DECLARE @balanceInfo TABLE(CustId INT, totalBalance MONEY);
+	DECLARE @balanceInfo TABLE (CustId INT, totalBalance MONEY, TotalBalance_RM MONEY, YesterdayTotalBalance MONEY, YesterdayTotalBalance_RM MONEY)
 	INSERT @balanceInfo
 	EXEC [dbo].[Acc_CustomerSelBalanceInfo] @CustId=@custid
 
-	SELECT tmp.Cash
+	SELECT 0 AS Cash
 		,ISNULL(cash.YesterdayCash,0) AS YesterdayCash
-		,ISNULL(balance.totalBalance,0) AS YesterdayBalance
-	FROM (
-		SELECT 0 as Cash
-	) AS tmp
+		,ISNULL(bal.YesterdayTotalBalance,0) AS YesterdayBalance
+	FROM @balanceInfo bal
 	OUTER APPLY (
 		SELECT 
 			SUM(b.winlost-b.actual_stake) AS yesterdayCash
@@ -133,7 +131,6 @@ BEGIN
 			AND b.bettype > 20000
 			AND b.winlostdate <= @yesterday
 	) AS cash
-	OUTER APPLY @balanceInfo AS balance
 	
 	SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
