@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,vnteam" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveMaster]
     @supername    VARCHAR(40),
     @mastername VARCHAR(40),
@@ -67,6 +67,7 @@ Revisions:
 	- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20190814@Johnson: dont touch on cn88 customers [redmine:#116691]
 	
 Param's Explanation:
 • @ErrCode:
@@ -157,7 +158,13 @@ BEGIN
 		SELECT @ErrMsg = 'Not allow to move customer between MBC and IMBC sites!',@ErrCode = 911								
 		RETURN	
 	END
-
+	
+	IF (@_SiteSuper = 'cn88' OR @_SiteMaster = 'cn88')
+	BEGIN
+		SELECT @ErrMsg = 'Not allow to move customer of CN88 sites!',@ErrCode = 912							
+		RETURN	
+	END
+	
     --Check Allowed downlines 
      EXEC dbo.Acc_CustomerSelCheckAllowedDownlines 
         @custid=@mrecommend,
@@ -820,14 +827,4 @@ INNER JOIN CustSettingGame scs WITH(NOLOCK) ON scs.custid = @srecommend
     END CATCH;
     DROP TABLE #CustInfo;
 END;
-
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMaster] TO [bodbAdminNet] AS [dbo];
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdMoveMaster] TO [vnteam] AS [dbo];
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdMoveMaster] TO [vnteam] AS [dbo];
