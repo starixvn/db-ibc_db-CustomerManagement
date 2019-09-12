@@ -19,6 +19,7 @@ AS
 	Revisions:  
 		- 20190605@Paul: Insert log when running SP [Redmine: #113198]
 		- 20190722@Elodie: Add LogDate into CS_UserLog_RunSP_LogTarget [Redmine: #113198]
+		- 20190808@Elodie: Add new action of problem account [Redmine: #116814]
 	Param's Explanation:  
 */  
   
@@ -54,40 +55,37 @@ BEGIN
 
 	SET @LogID = SCOPE_IDENTITY()
 
-	IF @ActionID IN (165004,165008,165009,165010)
+	IF ISNULL(@AffectedDownlines,'') <> ''
 	BEGIN	
-		IF ISNULL(@AffectedDownlines,'') <> ''
-		BEGIN	
-			INSERT INTO dbo.CS_UserLog_RunSP_MultiTarget (
-				UserID,
-				LogDate,
-				ActionID,
-				TrackingValue,
-				Duration,
-				TrackingValue2,
-				MainLogID
-			)
-			VALUES (
-				@UserID, 
-				@LogDate,    
-				@ActionID,   
-				@TrackingValue,
-				@Duration,
-				@TrackingValue2,
-				@LogID
-			)
+		INSERT INTO dbo.CS_UserLog_RunSP_MultiTarget (
+			UserID,
+			LogDate,
+			ActionID,
+			TrackingValue,
+			Duration,
+			TrackingValue2,
+			MainLogID
+		)
+		VALUES (
+			@UserID, 
+			@LogDate,    
+			@ActionID,   
+			@TrackingValue,
+			@Duration,
+			@TrackingValue2,
+			@LogID
+		)
 
-			SET @MultiTarget_LogID = SCOPE_IDENTITY()
+		SET @MultiTarget_LogID = SCOPE_IDENTITY()
 
-			INSERT INTO #AffectedDownlines(CustID)
-			SELECT CONVERT(INT, Val)
-			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
-			OPTION(MAXRECURSION 0)
+		INSERT INTO #AffectedDownlines(CustID)
+		SELECT CONVERT(INT, Val)
+		FROM dbo.f_StringSplit(@AffectedDownlines, ',')
+		OPTION(MAXRECURSION 0)
 
-			INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID, LogDate)
-			SELECT @MultiTarget_LogID, CustID, @LogDate
-			FROM #AffectedDownlines
-		END
+		INSERT INTO dbo.CS_UserLog_RunSP_LogTarget (LogID, CustID, LogDate)
+		SELECT @MultiTarget_LogID, CustID, @LogDate
+		FROM #AffectedDownlines
 	END
 END
 GO

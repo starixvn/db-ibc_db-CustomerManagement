@@ -19,7 +19,9 @@ AS
     
 	Revisions:
 		- 20190606@Elodie: Initial SP [Redmine: #113198]
-		
+		- 20190808@Elodie: Don't show log of problem account when master, agent view log [Redmine:#116814]
+		- 20190905@Elodie: Show log of problem account for downline [Redmine:#116814]
+
     Param's Explaination:    
 		- @UserId: a customer which we want to view actions affect to.
 		- @CustName: customer name type in textbox to search
@@ -156,7 +158,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-								AND la.ActionID IN (165004,165008,165009,165010)
+								AND la.ActionID BETWEEN 165000 AND 169999
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -262,7 +264,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -404,7 +406,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -433,7 +435,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID IN (165004,165008,165009,165010)
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -544,305 +546,536 @@ BEGIN
 				END--end @ActionTypeID = 5
 				ELSE
 				BEGIN 
-
 					IF @FromDate >= @__archiveDate
 					BEGIN
-						SELECT  LogID,
-							UserID,
-							Username,
-							TrackingValue,
-							TrackingValue2 as TrackingValueOld,
-							LogDate,
-							ActionID,
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT	LogID,
+								UserID,
+								Username =	CASE 
+												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+												ELSE c.Username
+											END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName,
+								la.ActionNameEN
+						FROM    dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+						WHERE   ul.CustID = @CustId
+								AND LogDate BETWEEN @FromDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
+								AND ul.ActionId <> 1050 --Message Customer Read Status Update																	
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT mt.MainLogID,
+							mt.UserID,
+							c.Username,
+							mt.TrackingValue,
+							TrackingValue2,
+							mt.LogDate,
+							la.ActionID,
 							ActionTypeID,
-							SPName,
+							la.SPName,
 							IsInternal,
-							CustID,
-							CustName,
-							ActionName
-									
-						FROM    (
-							 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
-										LogID,
-										UserID,
-										Username =	CASE 
-														when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-														when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-														ELSE c.Username
-													END,
-										ul.TrackingValue,
-										TrackingValue2,
-										LogDate,
-										la.ActionID,
-										ActionTypeID,
-										la.SPName,
-										IsInternal,
-										ul.CustID,
-										@CustName AS CustName,
-										la.ActionNameEN AS ActionName
-							  FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-							  WHERE     ul.CustID = @CustId
-										AND LogDate BETWEEN @FromDate AND @ToDate
-										AND  la.ActionTypeID = @ActionTypeId
-										AND IsInternal <= @IsInternal
-										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-										AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-										AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							) AS MyTable
-						WHERE   RowNum BETWEEN @lbound AND @ubound
-					END
+							lt.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+							INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+						WHERE	lt.custid = @CustId
+								AND mt.LogDate BETWEEN @FromDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END								
+						END
 					ELSE IF @ToDate < @__archiveDate
 					BEGIN
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
 						SELECT  LogID,
-							UserID,
-							Username,
-							TrackingValue,
-							TrackingValue2 as TrackingValueOld,
-							LogDate,
-							ActionID,
+								UserID,
+								Username =	CASE 
+												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+												ELSE c.Username
+											END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName,
+								la.ActionNameEN
+						FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+						WHERE     ul.CustID = @CustId
+								AND LogDate BETWEEN @FromDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
+								AND ul.ActionId <> 1050 --Message Customer Read Status Update							
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT mt.MainLogID,
+							mt.UserID,
+							c.Username,
+							mt.TrackingValue,
+							TrackingValue2,
+							mt.LogDate,
+							la.ActionID,
 							ActionTypeID,
-							SPName,
+							la.SPName,
 							IsInternal,
-							CustID,
-							CustName,
-							ActionName
-									
-						FROM    (
-							 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
-										LogID,
-										UserID,
-										Username =	CASE 
-														when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-														when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-														ELSE c.Username
-													END,
-										ul.TrackingValue,
-										TrackingValue2,
-										LogDate,
-										la.ActionID,
-										ActionTypeID,
-										la.SPName,
-										IsInternal,
-										ul.CustID,
-										@CustName AS CustName,
-										la.ActionNameEN AS ActionName
-							  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-							  WHERE     ul.CustID = @CustId
-										AND LogDate BETWEEN @FromDate AND @ToDate
-										AND  la.ActionTypeID = @ActionTypeId
-										AND IsInternal <= @IsInternal
-										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-										AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-										AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							) AS MyTable
-						WHERE   RowNum BETWEEN @lbound AND @ubound
+							lt.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+							INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+						WHERE	lt.custid = @CustId
+								AND mt.LogDate BETWEEN @FromDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END	
 					END
 					ELSE
 					BEGIN
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
 						SELECT  LogID,
-							UserID,
-							Username,
-							TrackingValue,
-							TrackingValue2 as TrackingValueOld,
-							LogDate,
-							ActionID,
-							ActionTypeID,
-							SPName,
-							IsInternal,
-							CustID,
-							CustName,
-							ActionName
-									
-						FROM    (
-							 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum, *
-							 FROM (
-								SELECT LogID,
-										UserID,
-										Username =	CASE 
-														when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-														when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-														ELSE c.Username
-													END,
-										ul.TrackingValue,
-										TrackingValue2,
-										LogDate,
-										la.ActionID,
-										ActionTypeID,
-										la.SPName,
-										IsInternal,
-										ul.CustID,
-										@CustName AS CustName,
-										la.ActionNameEN AS ActionName
-							  FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-							  WHERE     ul.CustID = @CustId
-										AND LogDate BETWEEN @__archiveDate AND @ToDate
-										AND  la.ActionTypeID = @ActionTypeId
-										AND IsInternal <= @IsInternal
-										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-										AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-										AND ul.ActionId <> 1050 --Message Customer Read Status Update
+								UserID,
+								Username =	CASE 
+												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+												ELSE c.Username
+											END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName,
+								la.ActionNameEN
+						FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+						WHERE     ul.CustID = @CustId
+								AND LogDate BETWEEN @__archiveDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
+								AND ul.ActionId <> 1050 --Message Customer Read Status Update
 
-								UNION ALL
-								SELECT LogID,
-										UserID,
-										Username =	CASE 
-														when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-														when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-														ELSE c.Username
-													END,
-										ul.TrackingValue,
-										TrackingValue2,
-										LogDate,
-										la.ActionID,
-										ActionTypeID,
-										la.SPName,
-										IsInternal,
-										ul.CustID,
-										@CustName AS CustName,
-										la.ActionNameEN AS ActionName
-							  FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-										INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-										LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-							  WHERE     ul.CustID = @CustId
-										AND LogDate >= @FromDate AND LogDate < @__archiveDate
-										AND  la.ActionTypeID = @ActionTypeId
-										AND IsInternal <= @IsInternal
-										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-										AND ul.ActionID NOT BETWEEN 31000 AND 31100					
-										AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							 ) AS MyTable1
-						) AS MyTable
-						WHERE   RowNum BETWEEN @lbound AND @ubound
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT LogID,
+								UserID,
+								Username =	CASE 
+												when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+												when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+												ELSE c.Username
+											END,
+								ul.TrackingValue,
+								TrackingValue2,
+								LogDate,
+								la.ActionID,
+								ActionTypeID,
+								la.SPName,
+								IsInternal,
+								ul.CustID,
+								@CustName,
+								la.ActionNameEN
+						FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+						WHERE     ul.CustID = @CustId
+								AND LogDate >= @FromDate AND LogDate < @__archiveDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
+								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
+								AND ul.ActionId <> 1050 --Message Customer Read Status Update							 
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT mt.MainLogID,
+							mt.UserID,
+							c.Username,
+							mt.TrackingValue,
+							TrackingValue2,
+							mt.LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							lt.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+							INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+						WHERE	lt.custid = @CustId
+								AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END	
+
+						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+						SELECT mt.MainLogID,
+							mt.UserID,
+							c.Username,
+							mt.TrackingValue,
+							TrackingValue2,
+							mt.LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							lt.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+						FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+							INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+						WHERE	lt.custid = @CustId
+								AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate
+								AND  la.ActionTypeID = @ActionTypeId
+								AND IsInternal <= @IsInternal
+								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END	
 					END
+
+					SELECT  LogID,
+						UserID,
+						Username,
+						TrackingValue,
+						TrackingValueOld,
+						LogDate,
+						ActionID,
+						ActionTypeID,
+						SPName,
+						IsInternal,
+						CustID,
+						CustName,
+						ActionName
+					FROM    (
+							SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
+									LogID,
+									UserID,
+									Username,
+									TrackingValue,
+									TrackingValueOld,
+									LogDate,
+									ActionID,
+									ActionTypeID,
+									SPName,
+									IsInternal,
+									CustID,
+									CustName,
+									ActionName
+							FROM  #tmpLog
+						) AS MyTable
+					WHERE   RowNum BETWEEN @lbound AND @ubound
 				END	
 			END--end (@ActionTypeId > 0)	
 			ELSE 
 			BEGIN
 				IF @FromDate >= @__archiveDate
 				BEGIN
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
 					SELECT  LogID,
-						UserID,
-						Username,
-						TrackingValue,
-						TrackingValue2 as TrackingValueOld,
-						LogDate,
-						ActionID,
-						ActionTypeID,
-						SPName,
-						IsInternal,
-						CustID,
-						CustName,
-						ActionName
-								
-					FROM (
-						 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
-									LogID,
-									UserID,
-									Username =	CASE 
-													when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-													when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-													ELSE c.Username
-												END,
-									ul.TrackingValue,
-									LogDate,
-									la.ActionID,
-									ActionTypeID,
-									TrackingValue2,
-									la.SPName,
-									IsInternal,
-									ul.CustID,
-									@CustName AS CustName,
-									la.ActionNameEN AS ActionName
-						 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-						  WHERE     ul.CustID = @CustId
-									AND LogDate BETWEEN @FromDate AND @ToDate				
-									AND IsInternal <= @IsInternal
-									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									--exclude log action of status
-									AND la.ActionID NOT BETWEEN 1100 AND 1199
-									AND la.ActionID NOT BETWEEN 165000 AND 169999
-									AND la.ActionID NOT BETWEEN 60000 AND 79999
-									--exclude log action of smart punter
-									AND ul.ActionID NOT BETWEEN 31000 AND 31100
-									AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							UserID,
+							Username =	CASE 
+											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+											ELSE c.Username
+										END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+					FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+					WHERE     ul.CustID = @CustId
+							AND LogDate BETWEEN @FromDate AND @ToDate				
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 1100 AND 1199
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND la.ActionID NOT BETWEEN 60000 AND 79999
+							--exclude log action of smart punter
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100
+							AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))					
 
-						) AS MyTable
-					WHERE   RowNum BETWEEN @lbound AND @ubound
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+					SELECT mt.MainLogID,
+						mt.UserID,
+						c.Username,
+						mt.TrackingValue,
+						TrackingValue2,
+						mt.LogDate,
+						la.ActionID,
+						ActionTypeID,
+						la.SPName,
+						IsInternal,
+						lt.CustID,
+						@CustName AS CustName,
+						la.ActionNameEN AS ActionName
+					FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+						INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+					WHERE	lt.custid = @CustId
+							AND mt.LogDate BETWEEN @FromDate AND @ToDate
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
 					SELECT  LogID,
-						UserID,
-						Username,
-						TrackingValue,
-						TrackingValue2 as TrackingValueOld,
-						LogDate,
-						ActionID,
-						ActionTypeID,
-						SPName,
-						IsInternal,
-						CustID,
-						CustName,
-						ActionName
-								
-					FROM (
-						 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
-									LogID,
-									UserID,
-									Username =	CASE 
-													when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-													when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-													ELSE c.Username
-												END,
-									ul.TrackingValue,
-									LogDate,
-									la.ActionID,
-									ActionTypeID,
-									TrackingValue2,
-									la.SPName,
-									IsInternal,
-									ul.CustID,
-									@CustName AS CustName,
-									la.ActionNameEN AS ActionName
-						 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-						  WHERE     ul.CustID = @CustId
-									AND LogDate BETWEEN @FromDate AND @ToDate				
-									AND IsInternal <= @IsInternal
-									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									--exclude log action of status
-									AND la.ActionID NOT BETWEEN 1100 AND 1199
-									AND la.ActionID NOT BETWEEN 165000 AND 169999
-									AND la.ActionID NOT BETWEEN 60000 AND 79999
-									--exclude log action of smart punter
-									AND ul.ActionID NOT BETWEEN 31000 AND 31100
-									AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							UserID,
+							Username =	CASE 
+											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+											ELSE c.Username
+										END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,							
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+					FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+					WHERE     ul.CustID = @CustId
+							AND LogDate BETWEEN @FromDate AND @ToDate				
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 1100 AND 1199
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND la.ActionID NOT BETWEEN 60000 AND 79999
+							--exclude log action of smart punter
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100
+							AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
-						) AS MyTable
-					WHERE   RowNum BETWEEN @lbound AND @ubound
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+					SELECT mt.MainLogID,
+						mt.UserID,
+						c.Username,
+						mt.TrackingValue,
+						TrackingValue2,
+						mt.LogDate,
+						la.ActionID,
+						ActionTypeID,
+						la.SPName,
+						IsInternal,
+						lt.CustID,
+						@CustName AS CustName,
+						la.ActionNameEN AS ActionName
+					FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+						INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+					WHERE	lt.custid = @CustId
+							AND mt.LogDate BETWEEN @FromDate AND @ToDate
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
 				END
 				ELSE
 				BEGIN
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
 					SELECT  LogID,
+							UserID,
+							Username =	CASE 
+											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+											ELSE c.Username
+										END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,							
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+					FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+					WHERE     ul.CustID = @CustId
+							AND LogDate BETWEEN @__archiveDate AND @ToDate				
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 1100 AND 1199
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND la.ActionID NOT BETWEEN 60000 AND 79999
+							--exclude log action of smart punter
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100
+							AND ul.ActionId <> 1050 --Message Customer Read Status Update
+							AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+						 
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+					SELECT LogID,
+							UserID,
+							Username =	CASE 
+											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
+											ELSE c.Username
+										END,
+							ul.TrackingValue,
+							TrackingValue2,
+							LogDate,
+							la.ActionID,
+							ActionTypeID,
+							la.SPName,
+							IsInternal,
+							ul.CustID,
+							@CustName AS CustName,
+							la.ActionNameEN AS ActionName
+					FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
+							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+					WHERE     ul.CustID = @CustId
+							AND LogDate >= @FromDate AND LogDate < @__archiveDate				
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 1100 AND 1199
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND la.ActionID NOT BETWEEN 60000 AND 79999
+							--exclude log action of smart punter
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100
+							AND ul.ActionId <> 1050 --Message Customer Read Status Update
+						 	AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+					SELECT mt.MainLogID,
+						mt.UserID,
+						c.Username,
+						mt.TrackingValue,
+						TrackingValue2,
+						mt.LogDate,
+						la.ActionID,
+						ActionTypeID,
+						la.SPName,
+						IsInternal,
+						lt.CustID,
+						@CustName AS CustName,
+						la.ActionNameEN AS ActionName
+					FROM dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+						INNER JOIN dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+					WHERE	lt.custid = @CustId
+							AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+
+					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
+							, SPName, IsInternal, CustID, CustName, ActionName)
+					SELECT mt.MainLogID,
+						mt.UserID,
+						c.Username,
+						mt.TrackingValue,
+						TrackingValue2,
+						mt.LogDate,
+						la.ActionID,
+						ActionTypeID,
+						la.SPName,
+						IsInternal,
+						lt.CustID,
+						@CustName AS CustName,
+						la.ActionNameEN AS ActionName
+					FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_MultiTarget mt WITH (NOLOCK) 													
+						INNER JOIN bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP_LogTarget lt WITH (NOLOCK) ON lt.LogID = mt.LogID										
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
+					WHERE	lt.custid = @CustId
+							AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate				
+							AND IsInternal <= @IsInternal
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 165000 AND 169999
+				END
+
+				SELECT  LogID,
 						UserID,
 						Username,
 						TrackingValue,
-						TrackingValue2 as TrackingValueOld,
+						TrackingValueOld,
 						LogDate,
 						ActionID,
 						ActionTypeID,
@@ -851,81 +1084,24 @@ BEGIN
 						CustID,
 						CustName,
 						ActionName
-								
-					FROM (
-						 SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum, *
-						 FROM (
-							SELECT LogID,
-									UserID,
-									Username =	CASE 
-													when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-													when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-													ELSE c.Username
-												END,
-									ul.TrackingValue,
-									LogDate,
-									la.ActionID,
-									ActionTypeID,
-									TrackingValue2,
-									la.SPName,
-									IsInternal,
-									ul.CustID,
-									@CustName AS CustName,
-									la.ActionNameEN AS ActionName
-						 FROM      dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-						 WHERE     ul.CustID = @CustId
-									AND LogDate BETWEEN @__archiveDate AND @ToDate				
-									AND IsInternal <= @IsInternal
-									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									--exclude log action of status
-									AND la.ActionID NOT BETWEEN 1100 AND 1199
-									AND la.ActionID NOT BETWEEN 165000 AND 169999
-									AND la.ActionID NOT BETWEEN 60000 AND 79999
-									--exclude log action of smart punter
-									AND ul.ActionID NOT BETWEEN 31000 AND 31100
-									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-
-						 UNION ALL
-						 SELECT LogID,
-									UserID,
-									Username =	CASE 
-													when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
-													when (la.ActionID BETWEEN 2000 AND 3000) then 'Admin'
-													ELSE c.Username
-												END,
-									ul.TrackingValue,
-									LogDate,
-									la.ActionID,
-									ActionTypeID,
-									TrackingValue2,
-									la.SPName,
-									IsInternal,
-									ul.CustID,
-									@CustName AS CustName,
-									la.ActionNameEN AS ActionName
-						 FROM      bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
-									INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
-									LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
-						 WHERE     ul.CustID = @CustId
-									AND LogDate >= @FromDate AND LogDate < @__archiveDate				
-									AND IsInternal <= @IsInternal
-									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-									--exclude log action of status
-									AND la.ActionID NOT BETWEEN 1100 AND 1199
-									AND la.ActionID NOT BETWEEN 165000 AND 169999
-									AND la.ActionID NOT BETWEEN 60000 AND 79999
-									--exclude log action of smart punter
-									AND ul.ActionID NOT BETWEEN 31000 AND 31100
-									AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						 	
-						 ) AS MyTable1
+				FROM    (
+						SELECT    ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
+								LogID,
+								UserID,
+								Username,
+								TrackingValue,
+								TrackingValueOld,
+								LogDate,
+								ActionID,
+								ActionTypeID,
+								SPName,
+								IsInternal,
+								CustID,
+								CustName,
+								ActionName
+						FROM  #tmpLog
 					) AS MyTable
-					WHERE   RowNum BETWEEN @lbound AND @ubound
-				END
+				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END	
 		END --end (@LowerActionId IS NULL OR @UpperActionId IS NULL) 
 		ELSE
@@ -975,7 +1151,8 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-								
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+										OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1024,7 +1201,8 @@ BEGIN
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-								
+									AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+										OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 						) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
@@ -1075,7 +1253,8 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+											OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 							UNION ALL
 							SELECT LogID,
 										UserID,
@@ -1105,6 +1284,8 @@ BEGIN
 										AND IsInternal <= @IsInternal
 										AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 										AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+										AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+											OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 					) AS MyTable1
 				) AS MyTable
 				WHERE   RowNum BETWEEN @lbound AND @ubound
