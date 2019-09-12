@@ -104,7 +104,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 					WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
@@ -177,7 +177,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 					WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
@@ -284,7 +284,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = ul.UserID
 					WHERE	la.ActionTypeID = @ActionTypeId
-							AND la.ActionID = 165004
+							AND la.ActionID BETWEEN 165000 AND 169999
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
@@ -360,8 +360,9 @@ BEGIN
 							AND LogDate BETWEEN @FromDate AND @ToDate
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
-							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 					
 					SET @__cnt = @__cnt + @__cntTemp
@@ -394,6 +395,7 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -425,6 +427,7 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 					
 					SET @__cnt = @__cnt + @__cntTemp
@@ -440,6 +443,7 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+							AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 					
 					SET @__cnt = @__cnt + @__cntTemp
@@ -488,14 +492,17 @@ BEGIN
 				WHERE   ul.CustID = @CustId
 						AND LogDate BETWEEN @FromDate AND @ToDate								
 						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						--exclude log action of status
 						AND la.ActionID NOT BETWEEN 1100 AND 1199
 						AND la.ActionID NOT BETWEEN 165000 AND 169999
 						AND la.ActionID NOT BETWEEN 60000 AND 79999					
-						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						--exclude log action of smart punter
+						AND ul.ActionID NOT BETWEEN 31000 AND 31100
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -509,6 +516,8 @@ BEGIN
 						AND mt.LogDate BETWEEN @FromDate AND @ToDate
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -522,14 +531,17 @@ BEGIN
 				WHERE   ul.CustID = @CustId
 						AND LogDate BETWEEN @FromDate AND @ToDate								
 						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						--exclude log action of status
 						AND la.ActionID NOT BETWEEN 1100 AND 1199
 						AND la.ActionID NOT BETWEEN 165000 AND 169999
 						AND la.ActionID NOT BETWEEN 60000 AND 79999					
-						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						--exclude log action of smart punter
+						AND ul.ActionID NOT BETWEEN 31000 AND 31100
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -543,6 +555,8 @@ BEGIN
 						AND mt.LogDate BETWEEN @FromDate AND @ToDate
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -556,14 +570,17 @@ BEGIN
 				WHERE   ul.CustID = @CustId
 						AND LogDate BETWEEN @__archiveDate AND @ToDate								
 						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						--exclude log action of status
 						AND la.ActionID NOT BETWEEN 1100 AND 1199
 						AND la.ActionID NOT BETWEEN 165000 AND 169999
 						AND la.ActionID NOT BETWEEN 60000 AND 79999					
-						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						--exclude log action of smart punter
+						AND ul.ActionID NOT BETWEEN 31000 AND 31100
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 				
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -575,14 +592,17 @@ BEGIN
 				WHERE   ul.CustID = @CustId
 						AND LogDate >= @FromDate AND LogDate < @__archiveDate								
 						AND IsInternal <= @IsInternal
+						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						--exclude log action of status
 						AND la.ActionID NOT BETWEEN 1100 AND 1199
 						AND la.ActionID NOT BETWEEN 165000 AND 169999
 						AND la.ActionID NOT BETWEEN 60000 AND 79999					
-						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
+						--exclude log action of smart punter
+						AND ul.ActionID NOT BETWEEN 31000 AND 31100
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -596,6 +616,8 @@ BEGIN
 						AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -609,6 +631,8 @@ BEGIN
 						AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate								
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						--exclude log action of status
+						AND la.ActionID NOT BETWEEN 165000 AND 169999
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -631,7 +655,8 @@ BEGIN
 					AND IsInternal <= @IsInternal
 					AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+						OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 		END
 		ELSE IF @ToDate < @__archiveDate
 		BEGIN
@@ -645,7 +670,8 @@ BEGIN
 					AND IsInternal <= @IsInternal
 					AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 					AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+					AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+						OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 		END
 		ELSE
 		BEGIN
@@ -661,7 +687,8 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				UNION ALL
 				SELECT  COUNT(LogID) 
 				FROM    bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP AS ul WITH (NOLOCK)
@@ -673,7 +700,8 @@ BEGIN
 						AND IsInternal <= @IsInternal
 						AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 OR @LoginUserRoleId NOT IN (2,3))
+						AND (ul.ActionId NOT BETWEEN 31608 AND 31610 
+							OR ( ul.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 			)t
 		END
 	END
