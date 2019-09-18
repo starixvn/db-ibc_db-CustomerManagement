@@ -1,3 +1,1 @@
-CN88\ViewLog\UserLog_RunSP\CS_WriteLog_UserLog_RunSP_Wrapper.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+CN88\Headline\CS_DBA_Customer_HeadlineIns.sql
