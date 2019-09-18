@@ -288,9 +288,6 @@ Param's Explanation:
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			
-			ISNULL(DisableColossusBet,1) as DisableColossusBet,
-			ISNULL(HideColossusBet,1) as HideColossusBet,
-			
 			-- For MuayThai
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_MuayThai),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -358,8 +355,6 @@ Param's Explanation:
 			ci.HideKeno,
 			ci.DisableGoldDeluxe, 
 			ci.HideGoldDeluxe,
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
