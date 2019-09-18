@@ -97,7 +97,7 @@ BEGIN
 	SELECT d.custid
 	FROM #Downlines d
 		INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON d.CustId = pa.CustId
-	WHERE pa.IsReviewed = 0
+	WHERE pa.IsReviewed = 0 AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
