@@ -39,10 +39,12 @@ BEGIN
 		    @TotalMemberSuspended INT,
 		    @TotalMemberViewOnly INT,
 			@TotalMemberInactive INT,
-			@LastChangedSecurityCodeDate DATETIME
+			@LastChangedSecurityCodeDate DATETIME,
+			@IsInternal BIT,
+			@yesterday SMALLDATETIME
 
-	DECLARE @yesterday SMALLDATETIME
-	SELECT  @yesterday = CONVERT(DATE, DATEADD(DAY, -1, GETDATE()))
+	SELECT @yesterday	= CONVERT(DATE, DATEADD(DAY, -1, GETDATE()))
+		,@IsInternal	= 1 -- hardcode for roleId = 0
 			
 	DECLARE @tblSupers TABLE(CustID INT)
 		
@@ -102,7 +104,8 @@ BEGIN
 	    pwdexpiry, 
 		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate,
 		@closed as closed,
-		cs.CustStatus AS CN88CustStatus
+		cs.CustStatus AS CN88CustStatus,
+		@IsInternal AS IsInternal
 	FROM customer c WITH(NOLOCK)
 		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
 		OUTER APPLY f_CS_GetCustomerStatus(@custid) cs
