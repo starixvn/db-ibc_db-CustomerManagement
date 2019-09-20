@@ -44,7 +44,7 @@ BEGIN
 			@yesterday SMALLDATETIME
 
 	SELECT @yesterday	= CONVERT(DATE, DATEADD(DAY, -1, GETDATE()))
-		,@IsInternal	= 1 -- hardcode for roleId = 0
+		,@IsInternal	= 0 -- hardcode for roleId = 0
 			
 	DECLARE @tblSupers TABLE(CustID INT)
 		
