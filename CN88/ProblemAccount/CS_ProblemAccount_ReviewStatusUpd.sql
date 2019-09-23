@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20190806@Alvin: Initialize SP [RedmineID: #116814]
+		- 20190918@Alvin: Hide indirect marked on Problem Account
 		
 	Param's Explanation:
 		@CustId: Super login
