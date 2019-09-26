@@ -11,6 +11,7 @@ AS
 	Revisions:
 		- 20180628@Elodie: Left menu of ExtNap - Search customer - All Status [Redmine: #58776]
 		- 20190513@Johnson: add suspendinfo [redmine: #105587]
+		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	Param's Explanation:
 	
 */
@@ -25,8 +26,6 @@ BEGIN
           , @uplineDisabledNumber			BIT
 		  , @uplineHideGoldDeluxe			BIT   
 		  , @uplineDisableGoldDeluxe		BIT		  
-		  , @uplineDisableColossusBet		BIT
-		  , @DisableDownlinesColossusBet	BIT = 0  
 		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
@@ -52,7 +51,6 @@ BEGIN
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -71,7 +69,6 @@ BEGIN
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -92,7 +89,6 @@ BEGIN
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -131,9 +127,6 @@ BEGIN
 			@uplineSyncCasino AS uplineSyncCasino,
 			ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
-			@uplineDisableColossusBet AS uplineDisableColossusBet,
 			@uplineHideGoldDeluxe AS uplineHideGoldDeluxe,
 			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,

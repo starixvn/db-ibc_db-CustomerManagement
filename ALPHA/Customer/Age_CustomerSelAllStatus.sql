@@ -1,7 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-USE bodb02
 GO
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllStatus]
 	@custid INT
 AS
@@ -13,6 +11,7 @@ AS
 	Revisions:
 		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
 		- 20190412@Johnson: add suspendInfo [redmine:#105587]
+		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -27,9 +26,7 @@ BEGIN
           , @uplineDisabledNumber			BIT
 		  , @uplineHideGoldDeluxe			BIT   
 		  , @uplineDisableGoldDeluxe		BIT		
-          , @uplineDisableEsports			BIT
-		  , @uplineDisableColossusBet		BIT
-		  , @DisableDownlinesColossusBet	BIT = 0  
+          , @uplineDisableEsports			BIT 
 		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
@@ -55,7 +52,6 @@ BEGIN
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -74,7 +70,6 @@ BEGIN
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -95,7 +90,6 @@ BEGIN
 				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				,	@uplineDisableColossusBet = ISNULL(DisableColossusBet, 0)
 				
 				,	@uplineid = custid
 	     FROM custinfo WITH(NOLOCK)
@@ -143,9 +137,6 @@ BEGIN
 			ci.HideGoldDeluxe,
 			ci.DisableEsports, 
 			@uplineDisableEsports AS uplineDisableEsports,
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
-			@uplineDisableColossusBet AS uplineDisableColossusBet,
 			ci.HideKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
