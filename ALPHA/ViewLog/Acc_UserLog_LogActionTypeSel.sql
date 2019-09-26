@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE Acc_UserLog_LogActionTypeSel
 AS 
@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20121212@Elodie: Get more field ActionTypeNameVI
 		- 20190405@Elodie: Get log action with Chinese Traditional (CN88) language
+		- 20190926@Elodie: Exclude ProblemAccount [Redmine#120934]
 
     Param's Explaination:    
 	
@@ -28,4 +29,5 @@ BEGIN
 		ActionTypeNameVI,
 		ActionTypeNameCN
 	FROM LogActionType WITH (NOLOCK)
+	WHERE ActionTypeID <> 6 --exclude ProblemAccount
 END
