@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE Acc_UserLog_LogActionTypeSel
 AS 
@@ -28,4 +28,5 @@ BEGIN
 		ActionTypeNameVI,
 		ActionTypeNameCN
 	FROM LogActionType WITH (NOLOCK)
+	WHERE ActionTypeID <> 6 --exclude ProblemAccount
 END
