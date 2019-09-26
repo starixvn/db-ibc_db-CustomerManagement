@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20121212@Elodie: Get more field ActionTypeNameVI
 		- 20190405@Elodie: Get log action with Chinese Traditional (CN88) language
+		- 20190926@Elodie: Exclude ProblemAccount [Redmine#120934]
 
     Param's Explaination:    
 	

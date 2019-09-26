@@ -8,7 +8,7 @@ AS
     DB: DBLOG/bodb_CustomerLog
 
 	Revisions:
-		- 20190926@Elodie: Initial SP [Redmine#120133]
+		- 20190926@Elodie: Initial SP [Redmine#120934]
 
     Param's Explaination:    
 	
