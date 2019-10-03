@@ -434,42 +434,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check commission for Colossus Bet
-	IF EXISTS (
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 204 
-					AND mcs.bettype = 18001
-					AND mcs.CommRate < acs.CommRate
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s commission for Colossus Bets is less than agent''s commission.',
-			@ErrCode = 216
-		RETURN
-	END
-
-	--Check Cash-In share for Colossus Bet
-	IF EXISTS (
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 204 
-					AND mcs.bettype = 18002
-					AND mcs.CommRate < acs.CommRate
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s cash-in share for Colossus Bets is less than agent''s cash-in share.',
-			@ErrCode = 217
-		RETURN
-	END	
-
 	--Check identical autoposition taking
 	IF exists (
 		SELECT 1 from 
