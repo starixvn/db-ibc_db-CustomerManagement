@@ -131,8 +131,10 @@ BEGIN
 			SUM(b.winlost-b.actual_stake) AS yesterdayCash
 		FROM dbo.bettrans b WITH(NOLOCK)
 		WHERE b.custid = @custid
-			AND b.bettype > 20000
+			AND b.matchid = 0
+			AND b.bettype >= 20000
 			AND b.winlostdate <= @yesterday
+
 	) AS cash
 	
 	SELECT  @TotalSAgentActive SAgentActive,
