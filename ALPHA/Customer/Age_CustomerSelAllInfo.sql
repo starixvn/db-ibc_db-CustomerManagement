@@ -1,5 +1,4 @@
-ï»¿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
@@ -58,10 +57,11 @@ AS
 							Move total downline info of customer to Acc_CustomerSelList SP 
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
+		- 20191006@Elodie: Get credit from DBCUST [Redmine: #121538]		
 
 	Param's Explanation:
-		â€¢ @username: username of customer that need to be viewed.   
-		â€¢ @uplineId: the ID of the upline.
+		• @username: username of customer that need to be viewed.   
+		• @uplineId: the ID of the upline.
 */
 
 BEGIN
@@ -156,7 +156,7 @@ BEGIN
 			s.custid AS superID,
 			s.username AS superName,
 			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn			
-    FROM custinfo ci WITH (NOLOCK)
+    FROM DBCUST.CustDB.dbo.custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid	
 	    LEFT JOIN custinfo a WITH (NOLOCK) ON c.recommend = a.custid
 	    LEFT JOIN custinfo m WITH (NOLOCK) ON c.mrecommend = m.custid
@@ -164,4 +164,3 @@ BEGIN
     WHERE c.custid = @custid
 
 END	
-GO
