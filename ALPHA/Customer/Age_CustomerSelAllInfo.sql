@@ -2,7 +2,8 @@
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
-	@isInternalAgent BIT = 0
+	@isInternalAgent BIT = 0,
+	@credit MONEY = 0 OUTPUT
 AS
 /*
 	Created: 20090122@nqminh
@@ -57,7 +58,7 @@ AS
 							Move total downline info of customer to Acc_CustomerSelList SP 
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
-		- 20191006@Elodie: Get credit from DBCUST [Redmine: #121538]		
+		- 20191006@Elodie: Get credit from DBCUST & output credit[Redmine: #121538]		
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -141,7 +142,12 @@ BEGIN
 	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
-				
+	
+	--remove later
+	SELECT @credit = credit
+	FROM DBCUST.CustDB.dbo.custinfo ci WITH (NOLOCK)
+	WHERE ci.custid = @custid
+	
 	-------------------------------------------------------------------------
     SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ci.credit, ISNULL(@ClosedReason,0) AS ClosedReason, 
 			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, 
