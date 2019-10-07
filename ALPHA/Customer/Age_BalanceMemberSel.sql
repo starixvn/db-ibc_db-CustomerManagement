@@ -1,6 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet, bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_BalanceMemberSel]
-	@CustID INT
+	@CustID INT,
+	@Credit MONEY = 0 OUTPUT 
 AS
 /*
 	Created: 20180627@Elodie
@@ -10,7 +11,7 @@ AS
 	Revisions:
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
 		- 20190723@Percy: Member level - Don't calculate Cash & Outstanding amount [RedmineID: #117334]
-		- 20191006@Elodie: Get credit from DBCUST [Redmine: #121538]
+		- 20191006@Elodie: Get credit from DBCUST & output credit [Redmine: #121538]
 
 	Example: EXEC Age_BalanceMemberSel @CustID=1382337
 */
@@ -18,7 +19,8 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @Credit MONEY
+    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
+	--, @Credit MONEY
     DECLARE @Credit_Mem_Max MONEY, @Credit_AllOtherMember MONEY, @Credit_Ag MONEY, @MaxCredit_Mem MONEY, @Credit_Ag_Bal MONEY
 
 	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend, @Credit = credit
