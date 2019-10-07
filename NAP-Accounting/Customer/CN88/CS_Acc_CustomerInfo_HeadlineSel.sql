@@ -41,9 +41,11 @@ BEGIN
 			@TotalMemberInactive INT,
 			@LastChangedSecurityCodeDate DATETIME,
 			@IsInternal BIT,
-			@yesterday SMALLDATETIME
+			@yesterday SMALLDATETIME,
+			@today SMALLDATETIME
 
-	SELECT @yesterday	= CONVERT(DATE, DATEADD(DAY, -1, GETDATE()))
+	SELECT @today		= CAST(CURRENT_TIMESTAMP AS DATE) 
+		, @yesterday	= CONVERT(DATE, DATEADD(DAY, -1, @today))
 		,@IsInternal	= 0 -- hardcode for roleId = 0
 			
 	DECLARE @tblSupers TABLE(CustID INT)
@@ -133,7 +135,7 @@ BEGIN
 		WHERE b.custid = @custid
 			AND b.matchid = 0
 			AND b.bettype >= 20000
-			AND b.winlostdate <= @yesterday
+			AND b.winlostdate <= @today
 
 	) AS cash
 	
