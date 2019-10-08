@@ -10,38 +10,21 @@ AS
 
 	Revisions:
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
-
+		- 20191007@Johnson: remove credit info [redmine:#121538]
 	Example: EXEC Age_BalanceAgentSel @CustID=1382167
 */
 
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @UsedCredit MONEY, @Mem_MaxCredit MONEY, @Credit MONEY
-    DECLARE @Credit_Ag_Min MONEY , @Credit_Ag_Max MONEY, @Credit_Mem_Min MONEY
-	DECLARE @Credit_AllOtherAgent MONEY, @Credit_MAg MONEY
-
-	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend, @Credit = credit
+    DECLARE @roleid TINYINT
+	
+	SELECT @roleid = roleid
 	FROM custinfo WITH(NOLOCK)
     WHERE custid = @custid AND roleid = 2
 
 	IF @roleid <> 2 RETURN
-  
-	--Upline
-	SELECT	@Credit_MAg = ISNULL(credit, 0)
-	FROM custinfo WITH(NOLOCK)
-	WHERE custID = @mrecommend	
-
-	--Agent Itself		
-	SELECT @Credit_AllOtherAgent = ISNULL(SUM(credit), 0) FROM DBCUST.CustDB.dbo.custinfo AS ci WITH(NOLOCK) WHERE mrecommend = @mrecommend AND RoleID = 2 AND Custid <> @custID
-    	
-	SELECT @Credit_Ag_Max = ISNULL(@Credit_MAg,0) - ISNULL(@Credit_AllOtherAgent,0)	
-	SELECT @Credit_Ag_Min = ISNULL(SUM(credit),0)
-	FROM custinfo (NOLOCK) 
-	WHERE recommend = @custID AND RoleID=1
-    		
-	SELECT @Credit_Mem_Min = ISNULL(MAX(credit),0) FROM DBCUST.CustDB.dbo.custinfo with(NOLOCK) WHERE recommend = @CustID AND Roleid=1
-
+  	
     -------------------------------------------------------------------------
 	-- Balance Info
 	CREATE TABLE #BalanceInfo
@@ -69,22 +52,11 @@ BEGIN
 		memberOutstanding
 	)
 	EXEC dbo.Acc_CustomerSelOutstanding @CustId = @CustId
-
-	-- Used Credit, last transdate, Casino, Bingo, P2P
-	DECLARE
-		@transdate				DATETIME,
+	
+	DECLARE		
 		@TotalCSTransfer		MONEY,
 		@TotalCSOutstanding		MONEY
-
 	
-	SELECT @UsedCredit = SUM(ISNULL(Credit, 0))
-	FROM DBCUST.CustDB.dbo.custinfo WITH (NOLOCK)
-	WHERE roleid = 1 AND recommend = @custid
-
-	SELECT @Mem_MaxCredit = ISNULL(maxcredit,0)
-	FROM DBCUST.CustDB.dbo.CustAgent WITH (NOLOCK) 
-	WHERE custid = @CustID 
-		
 	SELECT 
 		@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
 		@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0)
@@ -92,13 +64,9 @@ BEGIN
 	WHERE recommend = @CustID
 		AND bettype IN (23001, 23002, 23101, 23102, 23201, 23202)
 		AND ruben = 0
+		
 	SELECT
-		@custid AS CustID, 
-		@Credit AS Credit,
-		@Credit_Ag_Min AS [AgentCredit_Min],
-		@Credit_Ag_Max AS [AgentCredit_Max],
-		@Credit_Mem_Min AS [MemMaxCredit_Min],
-
+		@custid AS CustID, 		
 		SUM(agentCash)					AS agentCash,
 		SUM(yesterdayAgentCash)			AS yesterday_agentCash,
 		SUM(agentOutstanding)			AS agentPositionTaking,
@@ -107,10 +75,9 @@ BEGIN
 		SUM(memberOutstanding)			AS customerOutstanding,
 		-- Casino, Bingo, P2P
 		ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
-		ISNULL(@TotalCSTransfer, 0)		AS csTransfer,
-		@UsedCredit						AS agentUsedCredit,
-		@Mem_MaxCredit					AS memberMaxCredit
+		ISNULL(@TotalCSTransfer, 0)		AS csTransfer		
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo
 END
+GO
