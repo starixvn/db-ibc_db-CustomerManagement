@@ -1,6 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-USE CustDB
-GO
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@CustID int,
@@ -39,7 +37,7 @@ Revisions:
 	- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
-
+	- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
 Param's Explanation:
 	@CustID: Id of member will be updated,
 	@DangerType: type of danger,
@@ -62,120 +60,108 @@ BEGIN
 	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	if @ErrCode <>0 return
 	--end
-
-	if exists (select 1 from customer (NOLOCK) where custid = @CustID)
-	BEGIN
+	
 	select @roleid = roleid from custinfo (nolock) where custid = @custid
-
-	declare @dangerfield as varchar(10)
-	declare @oldvalue as varchar(10)
-
-	if (@DangerType=1)
-		Begin 
-			set @oldvalue=(Select Danger from custInfo (NOLOCK) where custid=@CustID)
-			/*
-			IF CAST(ISNULL(@oldvalue,'0') AS INT) = 100
-			BEGIN
-				Select @ErrMsg = 'Could not update because this is Licensee BA Member!',
-					@ErrCode = 102	
-				return	
-			END
-			*/
-			
-				if @roleid = 2 and @updateDownline = 1 
-					BEGIN
-						DECLARE @BAMemberAg AS TABLE (CustID INT  PRIMARY KEY)
-						INSERT INTO @BAMemberAg 
-						SELECT lb.CustID FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-						INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
-						WHERE lb.Status='Running' 
-						AND ci.recommend=@custid
-						BEGIN
-							IF(@DangerLevel<>0)
-								BEGIN
-									update custinfo with(UPDLOCK,ROWLOCK)
-									set Danger = @DangerLevel
-									where recommend= @custid
-								END
-							ELSE
-								BEGIN
-									update custinfo with(UPDLOCK,ROWLOCK)
-									set Danger = @DangerLevel
-									where recommend= @custid
-									and custid not in (select custid from @BAMemberAg)
-									update custinfo with(UPDLOCK,ROWLOCK)
-									set Danger = 100
-									where recommend= @custid
-									and custid  in (select custid from @BAMemberAg)
-								END
-								
-						END
-					END
-				else
-				BEGIN
-					IF EXISTS (
-						 SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-						 WHERE custid=@custid AND status='running'
-						)
-						SET @isBA=1
-					ELSE
-						SET @isBA=0
-					IF(@isBA=1 AND @DangerLevel =0)
-						BEGIN
-							SELECT @DangerLevel=100
-						END	
-					update custInfo with (UPDLOCK,ROWLOCK)
-					set Danger = @DangerLevel 
-					where custid = @custid
-				END	
-				set @dangerfield='Danger'
-			
-		end
-	if (@DangerType=2)
-		Begin 
-			set @oldvalue=(Select Danger2 from custInfo (NOLOCK) where custid=@CustID)
-			if @roleid = 2 and @updateDownline = 1 
-			BEGIN
-				update custinfo with(UPDLOCK,ROWLOCK)
-				set Danger2 = @DangerLevel
-				where recommend= @custid
-			END
-			else
-			BEGIN
-				update custInfo with (UPDLOCK,ROWLOCK)
-				set Danger2 = @DangerLevel 
-				where custid = @custid
-			END
-			
-			set @dangerfield='Danger2'
-		end
-	if (@DangerType=3)
-		Begin 
-			set @oldvalue=(Select Danger3 from custInfo (NOLOCK) where custid=@CustID)
-			if @roleid = 2 and @updateDownline = 1 
-			BEGIN
-				update custinfo with(UPDLOCK,ROWLOCK)
-				set Danger3 = @DangerLevel
-				where recommend= @custid
-			END
-			else
-			BEGIN
-				update custInfo with (UPDLOCK,ROWLOCK)set 
-					Danger3 = @DangerLevel 
-				where custid = @custid
-			END
-			
-			set @dangerfield='Danger3'
-		end
-			
-	END
-	else
+	
+	IF @roleid NOT IN (1,2,3,4)
 	BEGIN	
 		Select @ErrMsg = 'Invalid user!!',
 			@ErrCode = 101	
 		return	
 	END
-
+	
+	DECLARE @dangerfield AS VARCHAR(10)
+	DECLARE @oldvalue AS VARCHAR(10)
+	DECLARE @BAMemberAg VARCHAR(MAX) = ''
+	
+	IF (@DangerType=1)
+	BEGIN 
+		SET @oldvalue=(Select Danger from custInfo (NOLOCK) where custid=@CustID)
+		SET @dangerfield='Danger'
+		
+		IF @updateDownline = 1 
+		BEGIN
+			IF @roleid = 2
+			BEGIN
+				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
+				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
+				WHERE lb.Status='Running' 
+					AND ci.recommend=@custid
+			END
+			ELSE IF @roleid = 3
+			BEGIN
+				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
+				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
+				WHERE lb.Status='Running' 
+					AND ci.mrecommend=@custid
+			END
+			ELSE IF @roleid = 4
+			BEGIN
+				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
+				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
+				WHERE lb.Status='Running' 
+					AND ci.srecommend=@custid
+			END	
+		END	
+	END
+	ELSE IF (@DangerType=2)
+	BEGIN 
+		SET @oldvalue=(Select Danger2 from custInfo (NOLOCK) where custid=@CustID)
+		SET @dangerfield='Danger2'
+	END	
+	ELSE IF (@DangerType=3)
+	BEGIN 
+		SET @oldvalue=(Select Danger3 from custInfo (NOLOCK) where custid=@CustID)
+		SET @dangerfield='Danger3'
+	END		
+		
+	IF @roleid > 1 AND @updateDownline = 1 
+	BEGIN
+		EXEC Acc_CustomerInfo_Execrep_03
+			@custid	= @custid,		
+			@roleid = @roleid,			
+			@DangerType = @DangerType,		
+			@DangerLevel = @DangerLevel,	
+			@BAMemberAg = @BAMemberAg,		 
+			@mode = 'DangerStatus'
+	END
+	ELSE
+	BEGIN
+		IF (@DangerType=1)
+		BEGIN
+			IF EXISTS (
+				 SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
+				 WHERE custid=@custid AND status='running'
+				)
+				SET @isBA=1
+			ELSE
+				SET @isBA=0
+			IF(@isBA=1 AND @DangerLevel =0)
+				BEGIN
+					SELECT @DangerLevel=100
+				END	
+				
+			UPDATE custInfo with (UPDLOCK,ROWLOCK)
+			SET Danger = @DangerLevel 
+			WHERE custid = @custid
+		END
+		ELSE IF @DangerType= 2
+		BEGIN
+			UPDATE custInfo with (UPDLOCK,ROWLOCK)
+			SET Danger2 = @DangerLevel 
+			WHERE custid = @custid
+		END
+		ELSE IF @DangerType= 3
+		BEGIN
+			UPDATE custInfo with (UPDLOCK,ROWLOCK)
+			SET Danger3 = @DangerLevel 
+			WHERE custid = @custid
+		END
+	END
+		
 	declare @LogSPData varchar(2000)
 
 	Select @LogSPData = '<Acc_CustomerUpdDangercust CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'
@@ -202,9 +188,4 @@ BEGIN
 			@TrackingValue = @LogSPData,
 			@duration = @duration	
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDangercust] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdDangercust] TO [vnteam]
