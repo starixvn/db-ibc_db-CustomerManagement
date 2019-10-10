@@ -10,35 +10,20 @@ AS
 
 	Revisions:
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
-
+		- 20191008@Johnson: remove credit info [redmine:#121538]
 	Example: EXEC Age_BalanceMasterSel @CustID=24471545
 */
 
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @Credit MONEY, @UsedCredit MONEY
-    DECLARE @Credit_MAg_Min MONEY, @Credit_MAg_Max MONEY
-	DECLARE @Credit_AllOtherMaster MONEY, @Credit_SAg MONEY
+    DECLARE @roleid TINYINT
 		  
-	SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend, @Credit = credit
+	SELECT @roleid = roleid
 	FROM custinfo WITH(NOLOCK)
     WHERE custid = @custid AND roleid = 3
 
 	IF @roleid <> 3 RETURN
-
-	--Upline
-	SELECT	@Credit_SAg = ISNULL(credit, 0)
-	FROM custinfo WITH(NOLOCK)
-	WHERE custID = @srecommend	
-
-	--Master Itself
-	SELECT @Credit_AllOtherMaster = ISNULL(SUM(credit), 0) FROM DBCUST.CustDB.dbo.custinfo AS ci (NOLOCK) WHERE srecommend = @Srecommend AND RoleID = 3 AND custid <> @CustId
-	SELECT @Credit_MAg_Max = ISNULL(@Credit_SAg,0) - ISNULL(@Credit_AllOtherMaster,0)	
-    	
-	SELECT @Credit_MAg_Min = ISNULL(SUM(CASE WHEN RoleID=2 THEN credit ELSE 0 END),0)
-	FROM custinfo (NOLOCK) 
-	WHERE mrecommend = @custID	
 
     -------------------------------------------------------------------------
 	-- Balance Info
@@ -68,15 +53,10 @@ BEGIN
 	)
 	EXEC dbo.Acc_CustomerSelOutstanding @CustId = @CustId
 
-	DECLARE
-		@transdate				DATETIME,
+	DECLARE		
 		@TotalCSTransfer		MONEY,
 		@TotalCSOutstanding		MONEY
 	
-	SELECT @UsedCredit = SUM(ISNULL(Credit, 0))
-	FROM DBCUST.CustDB.dbo.custinfo WITH (NOLOCK) 
-	WHERE roleid = 2 AND mrecommend = @custid
-
 	SELECT 
 		@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
 		@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0)
@@ -87,10 +67,7 @@ BEGIN
 
 	SELECT
 		@custid AS CustID, 
-		@Credit AS Credit,
-		@Credit_MAg_Min AS [MasterCredit_Min],
-		@Credit_MAg_Max AS [MasterCredit_Max],
-
+		
 		SUM(masterCash)					AS masterCash,
 		SUM(yesterdayMasterCash)		AS yesterday_masterCash,
 		SUM(masterOutstanding)			AS masterPositionTaking,
@@ -101,9 +78,9 @@ BEGIN
 		SUM(memberOutstanding)			AS customerOutstanding,
 		-- Casino, Bingo, P2P
 		ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
-		ISNULL(@TotalCSTransfer, 0)		AS csTransfer,
-		@UsedCredit						AS masterUsedCredit
+		ISNULL(@TotalCSTransfer, 0)		AS csTransfer
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo
 END
+GO

@@ -1,5 +1,4 @@
-ï»¿/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllInfo]
 	@username VARCHAR(50),
 	@uplineid INT = -1,
@@ -58,10 +57,11 @@ AS
 							Move total downline info of customer to Acc_CustomerSelList SP 
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
+		- 20191008@Johnson: remove credit info[Redmine: #121538]		
 
 	Param's Explanation:
-		â€¢ @username: username of customer that need to be viewed.   
-		â€¢ @uplineId: the ID of the upline.
+		• @username: username of customer that need to be viewed.   
+		• @uplineId: the ID of the upline.
 */
 
 BEGIN
@@ -141,9 +141,9 @@ BEGIN
 	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
-				
+	
 	-------------------------------------------------------------------------
-    SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ci.credit, ISNULL(@ClosedReason,0) AS ClosedReason, 
+    SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ISNULL(@ClosedReason,0) AS ClosedReason, 
 			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, 
 			ci.reject AS suspended,
 			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
