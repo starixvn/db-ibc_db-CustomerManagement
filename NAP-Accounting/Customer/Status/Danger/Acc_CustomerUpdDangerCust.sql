@@ -59,6 +59,8 @@ BEGIN
 		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 		IF @ErrCode <> 0
 			RETURN
+		
+		SELECT @ErrMsg = ''	
 	END
 	--end
 
