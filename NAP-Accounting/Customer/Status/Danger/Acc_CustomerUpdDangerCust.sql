@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@UserID int,
 	@Language varchar(2) = 'E',
 	@isBA INT=0 OUTPUT,
+	@system VARCHAR(50) = 'NAP'
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@IP varchar(15) = ''
@@ -38,11 +39,12 @@ Revisions:
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 	- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
-	- 20191015@Johnson: check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
+	- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
 Param's Explanation:
 	@CustID: Id of member will be updated,
 	@DangerType: type of danger,
 	@DangerLevel: new danger level value,
+	@System: accounting/NAP CM
 */		
 BEGIN
 	SET NOCOUNT ON
@@ -52,15 +54,18 @@ BEGIN
 	set @startRun = getdate()
 
 	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	
-	If @ErrCode <> 0
+	IF @system = 'NAP'
+	BEGIN
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		
+		IF @ErrCode <> 0
+			RETURN
+	END
+	ELSE IF @system = 'NAP-CM'		
 	BEGIN
 		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
 		IF @ErrCode <> 0
-			RETURN
-		
-		SELECT @ErrMsg = ''	
+			RETURN		
 	END
 	--end
 
