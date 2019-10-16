@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@UserID int,
 	@Language varchar(2) = 'E',
 	@isBA INT=0 OUTPUT,
-	@system VARCHAR(50) = 'NAP'
+	@system VARCHAR(50) = 'NAP',
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@IP varchar(15) = ''
@@ -64,6 +64,7 @@ BEGIN
 	ELSE IF @system = 'NAP-CM'		
 	BEGIN
 		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		
 		IF @ErrCode <> 0
 			RETURN		
 	END
