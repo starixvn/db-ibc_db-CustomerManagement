@@ -39,6 +39,7 @@ Revisions:
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
+	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -55,7 +56,7 @@ BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
 	END
-	ELSE IF (@System IN('ACCINDO', 'ACCIN','INDOBS','INDO2'))
+	ELSE IF (@System IN('ACCINDO', 'ACCIN','INDOBS','INDO2','ACCINDO2'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 22 --IND
@@ -158,3 +159,4 @@ BEGIN
 	END
 	RETURN
 END
+
