@@ -40,6 +40,7 @@ Revisions:
 	- 20180611@Elodie: Add SQUS - [Redmine: #96736]
 	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
+	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -68,7 +69,7 @@ BEGIN
 	--	INSERT INTO @tbSite(siteid)
 	--	SELECT 11 --INDO
 	--END
-	ELSE IF (@System IN ('ACCINDO','ACCIN','INDOBS','INDO2','INDO56','INDOWIN','INDO56B') )
+	ELSE IF (@System IN ('ACCINDO','ACCIN','INDOBS','INDO2','INDO56','INDOWIN','INDO56B','ACCINDO2') )
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT 11 --INDO
@@ -125,4 +126,5 @@ BEGIN
 	END
 	RETURN
 END
+
 GO
