@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB,DB05-bodb02,DB052-bodb02,DB053-bodb02,DB054-bodb02,DB06-bodb02" selecters="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB,DBONUSER-bodb02,DBEXT-bodb02,DBAGE-bodb02,DBACC-bodb02" selecters="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_SiteBySystem]
 (
