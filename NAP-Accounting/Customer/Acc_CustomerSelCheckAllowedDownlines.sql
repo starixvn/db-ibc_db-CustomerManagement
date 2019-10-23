@@ -1,4 +1,6 @@
-﻿ALTER PROCEDURE dbo.Acc_CustomerSelCheckAllowedDownlines  
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="" isFunction="0"></info>*/
+
+ALTER PROCEDURE dbo.Acc_CustomerSelCheckAllowedDownlines  
 	@custid			int = 0   
 	,@roleid		int = 0  
 	,@isExecRep		bit = 0  
