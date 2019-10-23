@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE dbo.Acc_CustomerSelCheckAllowedDownlines  
+ALTER PROCEDURE [dbo].[Acc_CustomerSelCheckAllowedDownlines]  
 	@custid			int = 0   
 	,@roleid		int = 0  
 	,@isExecRep		bit = 0  
@@ -12,22 +12,21 @@ ALTER PROCEDURE dbo.Acc_CustomerSelCheckAllowedDownlines
 AS  
   
 /*  
-Created by: Scott        
-Date: 2012-12-06        
-Task : Check Allowed downlines during peak hour at weekend    
-DB: DBCUST/CustDB        
-Original SP:         
+	Created by: Scott        
+	Date: 2012-12-06        
+	Task : Check Allowed downlines during peak hour at weekend    
+	DB: DBCUST/CustDB        
+	Original SP:         
 
-Revisions:       
-	- 20130809@Jamie: Apply checking for Min/Max PT UPDATEs
-		+ Change message error to bodb02 of DBAGE instead of DBLOG
-	- 20140614@Viet: special arrrangment for WC 2014
-	- 20160601@Billy:	Special arrangement for EC2016 - [Redmine: 58621]
-	- 20191023@Elodie:	Not apply "Check Allowed downlines during peak hour at weekend" [Redmine: 122574]
+	Revisions:       
+		- 20130809@Jamie: Apply checking for Min/Max PT UPDATEs
+			+ Change message error to bodb02 of DBAGE instead of DBLOG
+		- 20140614@Viet: special arrrangment for WC 2014
+		- 20191023@Elodie:	Not apply "Check Allowed downlines during peak hour at weekend" [Redmine: 122574]
 
-Param's Explanation: 
-	+ @isUpdatePT: 1: Update Min/Max PT
-	+ @sporttype: 1: Sportsbook 
+	Param's Explanation: 
+		+ @isUpdatePT: 1: Update Min/Max PT
+		+ @sporttype: 1: Sportsbook 
  
 */  
   
@@ -93,11 +92,8 @@ BEGIN
 										THEN  @LimitDownlinesMin  
 									ELSE @LimitDownlinesMax  END   
 	*/
-	-- BEGIN:	20140614@Viet:	special arrrangment for WC 2014		----
-	--			20160601@Billy:	Special arrangment for EC 2016		----
-	IF DATEPART(HOUR, GETDATE()) between 8 and 18	---- 08:00 -> 18:00	(PROD Time	GMT - 04:00)
-													---- 19:00 -> 05:00	(VN Time	GMT + 07:00)
-													---- 20:00 -> 06:00	(TW Time	GMT + 08:00)
+	--BEGIN: 20140614@Viet: special arrrangment for WC 2014 ----
+	IF datepart(hour, getdate()) between 8 and 22 -- from 8PM to 10 AM (WC time)
 	BEGIN
 		SET @LimitDownlines = @LimitDownlinesMin 
 	END
@@ -111,7 +107,7 @@ BEGIN
 	IF @TotalDownlines >  @LimitDownlines  
 	BEGIN       
 		SELECT	@ErrMsg= CASE @Language WHEN 'E' THEN 'This function is not available during peak hour since it might affect the performance of the whole system. Please contact IT for further assistance.'
-										ELSE dbo.f_Get_MsgNamebyMsgID(90010,@Language) END
+										ELSE [dbo].[f_Get_MsgNamebyMsgID](90010,@Language) END
 				,@ErrCode = 113 	     
 	END   
 END
