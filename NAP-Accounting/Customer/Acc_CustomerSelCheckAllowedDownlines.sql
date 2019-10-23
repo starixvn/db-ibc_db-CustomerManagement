@@ -21,6 +21,7 @@ Revisions:
 		+ Change message error to bodb02 of DBAGE instead of DBLOG
 	- 20140614@Viet: special arrrangment for WC 2014
 	- 20160601@Billy:	Special arrangement for EC2016 - [Redmine: 58621]
+	- 20191023@Elodie:	Not apply "Check Allowed downlines during peak hour at weekend" [Redmine: 122574]
 
 Param's Explanation: 
 	+ @isUpdatePT: 1: Update Min/Max PT
@@ -31,6 +32,8 @@ Param's Explanation:
 BEGIN  
  	SET NOCOUNT ON  	
 			
+	RETURN -- 20191023@Elodie: Not apply "Check Allowed downlines during peak hour at weekend" [Redmine: 122574]
+
 	DECLARE @LimitDownlinesMin int,   --Peak hours 
 	  @LimitDownlinesMax int,		  -- Normal 
 	  @LimitDownlines int,  
