@@ -1,7 +1,8 @@
 /*<info serverAlias="DBAGE-BODB02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_CustomerProfilePictureSuggest]
-	@CustId INT
+	@CustId INT,
+	@Mode TINYINT
 AS
 /*
 	Created by: Elodie
@@ -25,13 +26,14 @@ BEGIN
 	UNION ALL
 	SELECT ImageId, Image
 	FROM Age_ProfilePicture WITH(NOLOCK)
-	WHERE ImageId IN (	SELECT CAST(RAND()*200+1 AS INT)
+	WHERE ImageId IN (	SELECT CAST(RAND()*200+1 AS INT) + @Mode * 10000
 						UNION ALL 				 
-						SELECT CAST(RAND()*200+1 AS INT)
+						SELECT CAST(RAND()*200+1 AS INT) + @Mode * 10000
 						UNION ALL 		    	
-						SELECT CAST(RAND()*200+1 AS INT)
+						SELECT CAST(RAND()*200+1 AS INT) + @Mode * 10000
 						UNION ALL 		    	 
-						SELECT CAST(RAND()*200+1 AS INT))
+						SELECT CAST(RAND()*200+1 AS INT) + @Mode * 10000
+						)
 END
 GO
 
