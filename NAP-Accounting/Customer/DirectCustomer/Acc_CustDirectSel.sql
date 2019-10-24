@@ -1,21 +1,17 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
-GO
-
-ALTER PROC Acc_CustDirectSel
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
+ALTER PROCEDURE Acc_CustDirectSel
 (
 	@CustID INT
-	
 )
 AS
 /*
-Created: 20170419@Helen
-Task: Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
-DB: DBAGE/BODB02
+	Created: 20170419@Helen
+	Task: Add Extra information for Direct Accounts, for NAP only - [Redmine:72339]
+	DB: DBAGE/BODB02
 
-Revisions:
-	- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
-	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
+	Revisions:
+		- 20170515@Helen:  Add Extra information for Direct Accounts, for NAP only Change Request - [Redmine:72339]
+		- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 */
 BEGIN
 	DECLARE @IsGroupHeadline BIT

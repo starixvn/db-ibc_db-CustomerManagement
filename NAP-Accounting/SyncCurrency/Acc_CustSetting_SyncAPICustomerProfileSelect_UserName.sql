@@ -1,10 +1,14 @@
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_UserName] 
- @UserNameList	VARCHAR(4000) 
+	@UserNameList VARCHAR(4000)
 AS 
 /*
 	Created: Jamie@20160930
-	Task: Search custID by UserNames [RedmineID:#65873 ]
-	DB:DBAGE.bodb02 
+	Task: Search custID by UserNames
+	DB: DBAGE.bodb02
+	
+	Revisions:
+		- 20160930@Jamie: Initialize SP
 
 	Param's Explanation: 
 		EXEC [Acc_CustSetting_SyncAPICustomerProfileSelect_UserName] @UserNameList ='338HK, 428RM, 312rmb, 831US, 305RM, 922SD, 302RM, 288RM, 832NSD, 333HK,aaa'
@@ -66,7 +70,4 @@ BEGIN
 	DROP TABLE #tmpUserNameList
 	DROP TABLE #tmpCustomer
 END
-
-GO 
-GRANT EXECUTE ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_UserName] TO [bodbAdminNet]
 GO

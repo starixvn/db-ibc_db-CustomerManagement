@@ -1,6 +1,4 @@
-﻿USE [bodb02]
-GO
-
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeSelAccount]
 AS
 
@@ -25,8 +23,4 @@ from
 	exchange with (NOLOCK)
 ORDER BY 
 	CASE WHEN currency in ('M','C','H','TBS','S') Then 0 WHEN currency = 'UUS' THEN 2 ELSE 1 END,currency
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeSelAccount] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeSelAccount] TO [vnteam]
