@@ -21,6 +21,7 @@ AS
 		- 20171113@Helen: Support to add default TO setting for new direct customers - [Redmine:86052]
 		- 20181107@Louis: Credit Collection [Redmine: #98621]
 		- 20200114@Malcolm: Separate setting and notification into Live/Non-Live and bettypes [Redmine : 125076]
+		- 20191024@Eden: Hofix - removed dummy acc from table CustDirectAccount [Redmine:83206]
 
     Param's Explanation:
     • @ErrCode:
@@ -101,6 +102,10 @@ BEGIN
 	INSERT INTO CustDirectAccount (CustID, Coll_Status)
 	SELECT C.custid, NULL AS Coll_Status
 	FROM @affectedList C 
+
+	--> Rmove upline from CustDirectAccount
+	DELETE CustDirectAccount WITH(ROWLOCK,UPDlOCK)
+	WHERE custid = @upline
 	
 	EXEC dbo.Acc_CreditCollStatusInit @custid = @custid, @UserId = @creator, @IP = @IP
 	
