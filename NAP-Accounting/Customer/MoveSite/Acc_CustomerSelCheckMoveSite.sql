@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelCheckMoveSite]
 	@CustId			INT,
 	@UserId			INT,
@@ -34,7 +34,5 @@ BEGIN
 		SELECT @IsAllow = 1		
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckMoveSite] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCheckMoveSite] TO [vnteam]
+
 
