@@ -21,6 +21,7 @@ AS
 
 	Revisions:
 		- 20190806@Alvin: Initialize SP [RedmineID: #116814]
+		- 20190918@Alvin: Hide indirect marked on Problem Account
 		
 	Param's Explanation:
 		@CustId: Super login
@@ -55,6 +56,7 @@ BEGIN
 			AND c.roleid = @SearchRoleId
 			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
+			AND p.ReasonId IS NOT NULL
 			AND (
 				c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 				OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
@@ -69,7 +71,9 @@ BEGIN
 			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
 						FROM dbo.custInfo ci WITH (NOLOCK) 
 							INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
-						WHERE ci.mrecommend = t.custid AND ci.roleid = 2
+						WHERE ci.mrecommend = t.custid 
+							AND ci.roleid = 2
+							AND pa.ReasonId IS NOT NULL
 						GROUP BY ci.mrecommend) AS pa		
 	END
 	ELSE
@@ -94,6 +98,7 @@ BEGIN
 				AND c.roleid = @SearchRoleId
 				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
+				AND p.ReasonId IS NOT NULL
 				AND (
 					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 					OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
@@ -108,7 +113,9 @@ BEGIN
 				CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
 							FROM dbo.custInfo ci WITH (NOLOCK) 
 								INNER JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
-							WHERE ci.recommend = t.custid AND ci.roleid = 1
+							WHERE ci.recommend = t.custid 
+								AND ci.roleid = 1
+								AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 							GROUP BY ci.recommend) AS pa
 
 			
@@ -125,6 +132,7 @@ BEGIN
 				AND c.roleid = @SearchRoleId
 				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
+				AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
 				AND (
 					c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 					OR c.username2 LIKE 'CN88$%' + ISNULL(@SearchUsername, '') + '%'
