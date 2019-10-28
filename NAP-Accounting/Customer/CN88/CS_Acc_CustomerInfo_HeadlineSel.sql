@@ -142,7 +142,7 @@ BEGIN
 			UNION ALL
 			SELECT 
 				SUM(b.winlost-b.actual_stake) AS yesterdayCash
-			FROM dbo.bettrans b WITH(NOLOCK)
+			FROM dbo.bettrans_test b WITH(NOLOCK)
 			WHERE b.custid = @custid
 				AND b.matchid = 0
 				AND b.bettype >= 20000
