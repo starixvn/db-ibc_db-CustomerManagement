@@ -15,8 +15,6 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @custid INT
-
 	IF EXISTS (SELECT 1 FROM RobotUsers WITH(NOLOCK) WHERE custid = @custid)
 		SELECT @isRobot = 1
 	ELSE 
