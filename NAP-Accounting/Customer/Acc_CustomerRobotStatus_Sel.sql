@@ -1,6 +1,6 @@
 /*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerRobotStatus_Sel]
-	@username VARCHAR(30),
+	@custid INT,
 	@isRobot BIT = 0 OUTPUT
 AS
 /*
@@ -10,19 +10,13 @@ AS
 
 	Revisions:
 		- 20190916@Johnson: initial sp [redmine:#119714]	
+		- 20191029@Johnson: get status by custid instead of username [redmine:#122643]
 */	
 BEGIN
 	SET NOCOUNT ON
 	
 	DECLARE @custid INT
-	
-	SELECT @custid = custid
-	FROM bodb02.dbo.customer WITH(NOLOCK)
-	WHERE username = @username
-	
-	IF @@rowcount =0
-		RETURN;
-	
+
 	IF EXISTS (SELECT 1 FROM RobotUsers WITH(NOLOCK) WHERE custid = @custid)
 		SELECT @isRobot = 1
 	ELSE 
