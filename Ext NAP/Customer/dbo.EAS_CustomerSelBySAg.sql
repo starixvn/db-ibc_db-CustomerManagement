@@ -91,8 +91,6 @@ BEGIN
 	-- For DCS
     DECLARE	@bitmapOrder_MuayThai		INT 
 		,	@bitmapOrder_Esports		INT 
-		,	@bitmapOrder_Cricket		INT
-		,	@IsIMBC						BIT = 0
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
@@ -103,7 +101,6 @@ BEGIN
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)   
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
-    SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
     SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
@@ -115,7 +112,6 @@ BEGIN
     
     DECLARE	@IsHidden_MuayThai		INT = 1	
 		,	@IsHidden_Esports		INT = 1	
-		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
 		,	@IsHidden_Lottery		INT = 1
@@ -124,7 +120,6 @@ BEGIN
 		,	@IsHidden_VS			INT = 1
 
     EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
@@ -132,9 +127,6 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT		
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
-
-	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @SRecommend AND [Site] = 'IMBC')
-		SET @IsIMBC = 1
 			
 	-- get data for filtered customers	
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
@@ -237,11 +229,6 @@ BEGIN
 
 	       --transfer condition
 	       @TransferOption disableTransfer,
-	       -- Cricket
-			ISNULL(@IsIMBC,0) AS IsIMBC,
-			ISNULL(ci.DisableCricket,1) AS DisableCricket,
-			ISNULL(ci.HideCricket,1) AS HideCricket,
-			ISNULL(cdm.Discount,0) AS discountCricket,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 			@UplineHasSecurityCode AS UplineHasSecurityCode,
 			@HasSecurityCode AS HasSecurityCode,
@@ -348,10 +335,7 @@ BEGIN
 														AND ISNULL(HideGoldDeluxe,1)=1)
 									THEN 0
 								ELSE 1
-						END AS SyncedGoldDeluxeDownline,
-						-- For Cricket
-						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
-						CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket
+						END AS SyncedGoldDeluxeDownline
 
   					  FROM dbo.custinfo c with(NOLOCK)
   						LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = c.custid  
@@ -388,7 +372,6 @@ BEGIN
 		 LEFT JOIN @tmp_GameType g ON g.GameTypeID = cg.GameTypeID
 													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)
 		INNER JOIN dbo.CustMaster cm with(NOLOCK) on cu.custid = cm.custid
-		LEFT JOIN CustDiscount3rd_Agent cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cu.custid=cl.CustID
 	WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
@@ -402,7 +385,6 @@ BEGIN
 			   --ci.DisableEsports,
 			   ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline,ci.DisableMuayThai,ci.HideMuayThai,
 			   ci.DisableAllBet,ci.DisableAllBetVIP,ci.HideAllBetUpline, ci.HideAllBet, ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
-			   ci.DisableCricket, ci.HideCricket, cdm.Discount,
 			   ci.DisableVoidBridge,ci.HideVoidBridgeUpline,ci.HideAllBetUpline, ci.HideVoidBridge,ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 			   ci.DisableNG2,ci.HideNG2Upline, ci.HideNG2,ci.SyncedNG2,ci.SyncedNG2Upline,
 			   ci.DisableFishingWorld,ci.HideFishingWorldUpline,ci.HideFishingWorld,ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,cl.ClosedReason,ci.SyncedGoldDeluxeDownline,

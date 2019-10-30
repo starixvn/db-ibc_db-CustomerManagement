@@ -93,8 +93,6 @@ BEGIN
 	-- For DCS
     DECLARE	@bitmapOrder_MuayThai		INT 	
 		,	@bitmapOrder_Esports		INT 		
-		,	@bitmapOrder_Cricket		INT
-		,	@IsIMBC						BIT = 0
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
@@ -105,7 +103,6 @@ BEGIN
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3) 
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1) 
-    SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
@@ -117,7 +114,6 @@ BEGIN
     
     DECLARE	@IsHidden_MuayThai		INT = 1		
 		,	@IsHidden_Esports		INT = 1		
-		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge	INT = 1
 		,	@IsHidden_Lottery		INT = 1
@@ -126,7 +122,6 @@ BEGIN
 		,	@IsHidden_VS			INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
@@ -134,9 +129,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
-
-	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @Recommend AND [Site] = 'IMBC')
-		SET @IsIMBC = 1			
+	
 	
 	DECLARE	@DoubleCommLosingUpline BIT
 	SELECT @DoubleCommLosingUpline = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend
@@ -176,9 +169,6 @@ BEGIN
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_AllBet)) AS SyncedAllBet,
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_AllBet)) AS SyncedAllBetUpline,
 			1 AS SyncedAllBetDownline,
-			-- For Cricket
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Cricket)) AS DisableCricket,
-			CAST( CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Cricket)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,
 
 			-- For VoidBridge
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge)) AS DisableVoidBridge,
@@ -331,9 +321,7 @@ BEGIN
 	       ci.synccasino,
 	       ci.disablecasino,	     
 	       ci.DisableNumber,
-	       ci.DoubleCommLosingUpline,	   
-	       -- For Esports
-	       --ci.DisableEsports,	       
+	       ci.DoubleCommLosingUpline,	        
 	       -- For Keno
 	       ci.HideKeno,
 	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
@@ -393,12 +381,6 @@ BEGIN
 	                                   cu.username
 	                         ) as RowNumber,
 			
-			-- Cricket
-			ISNULL(@IsIMBC,0) AS IsIMBC,
-			ISNULL(ci.DisableCricket,1) AS DisableCricket,
-			ISNULL(ci.HideCricket,1) AS HideCricket,
-			ISNULL(cdm.PlayerDiscount,0) AS playerdiscountCricket,
-			ISNULL(cdm.AgentDiscount,0) AS discountCricket,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 			@UplineHasSecurityCode AS UplineHasSecurityCode
       FROM dbo.customer AS cu with(NOLOCK)
@@ -409,7 +391,6 @@ BEGIN
 		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cg.CustID = ci.custid
 		 LEFT JOIN @tmp_GameType g ON cg.GameTypeID = g.GameTypeID
 													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)	 																			
-		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON cdm.CustID = ci.custid AND cdm.SportType = 50 AND cdm.BetType = 501 AND @IsIMBC = 1
 		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cu.custid=cl.CustID
      WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
 				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
@@ -420,14 +401,14 @@ BEGIN
 				ci.synccasino,
 				ci.disablecasino,  ci.DisableNumber,  
 			  	ci.DoubleCommLosingUpline,
-				ci.HideKeno, --ci.DisableEsports,
+				ci.HideKeno,
 				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,
 				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
 				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
 				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
 				ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,
 			  	ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
-			   	ci.HideCricket, ci.DisableCricket, cdm.AgentDiscount, cdm.PlayerDiscount,cl.closedReason,ci.SyncedGoldDeluxeDownline,
+			   	cl.closedReason,ci.SyncedGoldDeluxeDownline,
 			    ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
 				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline,
 				ci.DisableEsports, ci.HideEsports
