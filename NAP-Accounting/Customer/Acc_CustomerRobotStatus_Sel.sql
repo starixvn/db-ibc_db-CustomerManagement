@@ -14,7 +14,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE TABLE @tmpCust (custid INT)
+	DECLARE @tmpCust TABLE(custid INT)
 	
 	INSERT INTO @tmpCust(custid)
 	SELECT val 
