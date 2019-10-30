@@ -1,7 +1,6 @@
 /*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerRobotStatus_Sel]
-	@custid INT,
-	@isRobot BIT = 0 OUTPUT
+	@custids VARCHAR(4000)
 AS
 /*
 	Created: 20190916@Johnson
@@ -15,10 +14,15 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	IF EXISTS (SELECT 1 FROM RobotUsers WITH(NOLOCK) WHERE custid = @custid)
-		SELECT @isRobot = 1
-	ELSE 
-		SELECT @isRobot = 0
+	DECLARE TABLE @tmpCust (custid INT)
 	
+	INSERT INTO @tmpCust(custid)
+	SELECT val 
+	FROM dbo.strSplit(@custids,',')
+	
+	SELECT t.custid, CASE WHEN r.custid IS NULL THEN 0 ELSE 1 END isRobot
+	FROM @tmpCust t
+		LEFT JOIN RobotUsers r WITH(NOLOCK) ON t.custid = r.custid
+			
 END
 GO
