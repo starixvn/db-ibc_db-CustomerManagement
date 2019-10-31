@@ -32,6 +32,7 @@ AS
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
+		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -45,13 +46,8 @@ BEGIN
 		custinfo AS ci WITH (NOLOCK)		
 	WHERE 
 		ci.SRecommend = @SRecommend AND ci.roleid=3
-	
-	DECLARE @IsIMBC BIT = 0
-	
-	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @SRecommend AND [Site] = 'IMBC')
-		SET @IsIMBC = 1
 		
-	SELECT *, @IsIMBC AS IsIMBC  
+	SELECT * 
 	FROM 
 	(
 		SELECT 
@@ -128,11 +124,6 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=11 THEN cs.spositiontaking ELSE 0 END) AS v11spositiontaking_1,
 			MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=11 THEN cs.spositiontaking ELSE 0 END) AS v11spositiontaking_20,
 
-			-- Financial
-		--	MAX(CASE WHEN cs3rd.bettype = 3 AND cs3rd.sporttype=201 THEN cs3rd.spositiontaking ELSE 0 END) v201spositiontaking_3,
-		--	MAX(CASE WHEN cs3rd.bettype = 2 AND cs3rd.sporttype=201 THEN cs3rd.spositiontaking ELSE 0 END) v201spositiontaking_2,
-
-
 			-- Other sports
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_1,
 			MAX(CASE WHEN cs.bettype = 2 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_2,
@@ -145,17 +136,15 @@ BEGIN
 
 			
 			-- Cricket
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_501_Live, 
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 0 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_501_NonLive,
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 1 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_599_Live,
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 0 THEN CAST(pt.SuperPT AS SMALLMONEY) /100 ELSE 0 END) AS v50spositiontaking_599_NonLive,
+			0 AS v50spositiontaking_501_Live, 
+			0 AS v50spositiontaking_501_NonLive,
+			0 AS v50spositiontaking_599_Live,
+			0 AS v50spositiontaking_599_NonLive,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid	
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
-			LEFT JOIN CustPTSetting3rd_Agent pt WITH (NOLOCK) ON pt.CustID = ci.custid 
-								AND pt.SportType = 50 AND pt.BetType IN (501,599) AND @IsIMBC = 1 
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3
 		GROUP BY
 			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
@@ -167,9 +156,3 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingBySAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingBySAg] TO [bodbDownlineNetView]
-GO
-
-

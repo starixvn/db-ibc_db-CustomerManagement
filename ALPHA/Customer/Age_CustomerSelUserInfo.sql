@@ -129,7 +129,6 @@ Param's Explanation:
 	 
     DECLARE	@bitmapOrder_MuayThai		INT		
 		,	@bitmapOrder_Esports		INT		
-		,	@bitmapOrder_Cricket		INT
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
@@ -140,7 +139,6 @@ Param's Explanation:
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
-    SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
@@ -151,7 +149,6 @@ Param's Explanation:
     
     DECLARE	@IsHidden_MuayThai		INT = 1	
 		,	@IsHidden_Esports		INT = 1	
-		,	@IsHidden_Cricket		INT = 1
 		,	@IsHidden_AllBet		INT = 1	
 		,	@IsHidden_VoidBridge	INT = 1	
 		,	@IsHidden_Lottery		INT = 1
@@ -160,7 +157,6 @@ Param's Explanation:
 		,	@IsHidden_VS			INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
@@ -168,21 +164,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
-
-	DECLARE @recommend INT, @IsIMBC BIT = 0
-	
-	IF @roleid = 1
-	BEGIN
-		SET @recommend = (SELECT recommend FROM custInfo WITH (NOLOCK) WHERE custid = @custid)
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @recommend AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
-			
-	END
-	ELSE
-	BEGIN
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @custid AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
-	END
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -274,10 +255,6 @@ Param's Explanation:
 						THEN 0
 					ELSE 1
 			END AS SyncedFishingWorldDownline,
-			-- Cricket
-			@IsIMBC AS IsIMBC,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Cricket),1) AS DisableCricket,
-			CAST(CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Cricket),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,
 						
 		   ci.credit,
 		   e.currency as currencyname,
@@ -287,11 +264,7 @@ Param's Explanation:
 				 on Customer.CustID = ci.CustID --Shifu
 		 INNER JOIN Exchange as e with (NOLOCK)
 				 ON Customer.currency = e.exchangeid
-		 LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid		
-
-		-- Check isHidden AllBet
-		--OUTER APPLY	dbo.f_CustSetting_SportBetTypeHiddenBySiteCurrency(Customer.custid, @AllBet) AS sbhsc
-		
+		 LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid			
 		-- Upline Status
 		LEFT JOIN	dbo.CustProductStatus AS cpsUpline WITH (NOLOCK)
 				ON	cpsUpline.CustID =	CASE	WHEN Customer.roleid = 1 THEN Customer.recommend
