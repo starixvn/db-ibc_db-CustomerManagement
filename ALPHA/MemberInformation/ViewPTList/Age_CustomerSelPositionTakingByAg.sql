@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -35,6 +35,7 @@ AS
 		- 20170302@Helen: BAIO - Cust setting - [Redmine: 71609]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
 	Param's Explanation:  
 	• @Recommend: AgentID 
 
@@ -250,16 +251,19 @@ BEGIN
 		 MAX(CASE WHEN cs.bettype = 2 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_2,  
 		 MAX(CASE WHEN cs.bettype = 3 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_3,  
 		 MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_20,  
+		 MAX(CASE WHEN cs.bettype = 9999 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_9999,  
 		  
 		 MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_1,  
 		 MAX(CASE WHEN cs.bettype = 2 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_2,  
 		 MAX(CASE WHEN cs.bettype = 3 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_3,  
 		 MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_20,  
+		 MAX(CASE WHEN cs.bettype = 9999 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_9999,  
 		  
 		 MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_1,  
 		 MAX(CASE WHEN cs.bettype = 2 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_2,  
 		 MAX(CASE WHEN cs.bettype = 3 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_3,  
-		 MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_20,  
+		 MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_20,
+		 MAX(CASE WHEN cs.bettype = 9999 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_9999,    
 		  
 		 -- MixParlay of Mixed Sports  
 		 MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_9,  
@@ -316,5 +320,3 @@ GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByAg] TO [bodbDownlineNet]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByAg] TO [bodbDownlineNetView]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelPositionTakingByAg] TO [VNTeam]
-GO 
