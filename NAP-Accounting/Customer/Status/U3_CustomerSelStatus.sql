@@ -250,10 +250,18 @@ Param's Explanation:
 			ISNULL (closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
+			1 AS DisableHorseracing,
+			1 AS DisableOpenTote,
+			1 AS DisableFI,
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
-			ISNULL(DisableNumber,0) AS DisableNumber,   
+			1 AS DisableBingo,
+			ISNULL(DisableNumber,0) AS DisableNumber,
+			1 AS DisableP2P,	   
+			0 AS SyncBingo,
+			1 AS DisableLiveCasino,
+			1 AS SyncLiveCasino,
 			ISNULL(srecommend, 0) AS SRecommend,
 			ISNULL(mrecommend, 0) AS MRecommend,
 			ISNULL(recommend, 0) as ARecommend,
@@ -262,6 +270,7 @@ Param's Explanation:
 			@SelectedBetting as SelectedBetting,
 			@IsInternal AS IsInternal,
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
+			1 AS DisableHRFixedOdds,
 			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
@@ -269,6 +278,10 @@ Param's Explanation:
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			
+			1 as DisableColossusBet,
+			1 as HideColossusBet,
+			
+			1 as DisableMicrogameLC,
 			-- For MuayThai
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_MuayThai),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -281,19 +294,25 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_AllBet = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_AllBet), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideAllBet,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0) AS SyncedAllBet,			
 
+			-- For Lucky3
+			1 AS DisableLucky3,		
+			1 AS HideLucky3,
+
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
 			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
 
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
+			0 AS IsMyanmarOdds,
+			1 as DisableMicrogameRNG,
 			-- For VoidBridge
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge), 1) AS DisableVoidBridge,
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 
 			-- Cricket
-			0 AS IsIMBC,
+			1 AS IsIMBC,
 			1 AS DisableCricket,
 			1 AS HideCricket,
 			-- For Lottery
@@ -310,8 +329,11 @@ Param's Explanation:
 
 			-- For VS
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VS), 1) AS DisableVirtualSports,		
-			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports
+			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 
+			-- For BullFighting
+			1 AS DisableBullFighting,		
+			1 AS HideBullFighting
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
@@ -327,7 +349,7 @@ Param's Explanation:
 			ci.SyncCasino, 
 			ci.DisableCasino, 
 			ci.DisableOutright, 
-			ci.DisableNumber,  
+			ci.DisableNumber, 
 			ci.srecommend, 
 			ci.mrecommend, 
 			ci.recommend, 
@@ -339,6 +361,6 @@ Param's Explanation:
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
-			ci.DisableSuperLive
+			ci.DisableSuperLive	
 END
 GO
