@@ -134,12 +134,6 @@ BEGIN
 			-- Mix Parlay of Mixed Sports
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_9,
 
-			
-			-- Cricket
-			0 AS v50spositiontaking_501_Live, 
-			0 AS v50spositiontaking_501_NonLive,
-			0 AS v50spositiontaking_599_Live,
-			0 AS v50spositiontaking_599_NonLive,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason	
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
