@@ -87,7 +87,7 @@ Param's Explanation:
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
-	DECLARE @IsIMBC BIT = 0,@IsAllDayBalTransfer BIT
+	DECLARE @IsAllDayBalTransfer BIT
 	
 	IF ISNULL(@username,'') <> ''
 		SELECT @roleid = roleid, @agentid = recommend, @custid = custid,@srecommend = srecommend
@@ -110,9 +110,6 @@ Param's Explanation:
 			@SelectedBetting =  isnull(SelectedBetting, 0),
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 
 	END
 	ELSE IF @roleid = 3 --master
@@ -122,9 +119,6 @@ Param's Explanation:
 			@LimitPerIP =  isnull(LimitPerIP, 0),
 			@SelectedBetting =  isnull(SelectedBetting, 0)
 		FROM custMaster WITH (NOLOCK) WHERE custid = @custid
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 
 		SELECT 
 		@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
@@ -139,9 +133,6 @@ Param's Explanation:
 			@LimitPerIP =  isnull(LimitPerIP, 0),
 			@SelectedBetting =  isnull(SelectedBetting, 0)
 		FROM custAgent WITH (NOLOCK) WHERE custid = @custid
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 
 		SELECT 
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
@@ -156,8 +147,6 @@ Param's Explanation:
 			@IsInternal = isnull(IsInternal, 0) 
 		FROM custAgent WITH (NOLOCK) WHERE custid = @agentid
 		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @agentid AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 			
 	END
 	
@@ -189,7 +178,6 @@ Param's Explanation:
 	 -- For DCS Product
     DECLARE	@bitmapOrder_MuayThai		INT
 		,	@bitmapOrder_CockFighting	INT
-		,	@bitmapOrder_Cricket		INT
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
@@ -213,7 +201,6 @@ Param's Explanation:
 										AND	psp.Bettype = 2402
 								)
     
-    SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
@@ -222,7 +209,6 @@ Param's Explanation:
     
     DECLARE	@IsHidden_MuayThai			INT = 1
 		,	@IsHidden_CockFighting		INT = 1
-		,	@IsHidden_Cricket			INT = 1
 		,	@IsHidden_AllBet			INT = 1
 		,	@IsHidden_VoidBridge		INT = 1
 		,	@IsHidden_Lottery			INT = 1
@@ -238,11 +224,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
-
-	IF @IsIMBC=0
-		SELECT @IsHidden_Cricket=1
-	ELSE	
-				EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT	
 
 	IF(@roleid=1)
 	BEGIN
@@ -312,9 +293,9 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 
 			-- Cricket
-			@IsIMBC AS IsIMBC,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Cricket),1) AS DisableCricket,
-			CAST(CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Cricket),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,
+			0 AS IsIMBC,
+			1 AS DisableCricket,
+			1 AS HideCricket,
 			-- For Lottery
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1) AS DisableLottery,		
 			CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
