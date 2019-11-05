@@ -16,8 +16,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@CurrencyId int = 0 OUTPUT,
 	@CasinoDisable bit = false OUTPUT,	
 	@CasinoSync bit = false OUTPUT,
-	@BingoDisable bit = false OUTPUT,
-	@BingoSync bit = false OUTPUT,
 	@Language varchar(2)= 'E',
 	@accUserID int = 0, --UserID of Admin
 	@accUsername varchar(50) = '' OUTPUT,
