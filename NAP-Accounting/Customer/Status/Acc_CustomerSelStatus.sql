@@ -263,6 +263,8 @@ Param's Explanation:
 			min(case when g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) then cg.IsDisabled else 1 end) as DisableKeno,
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
+			ISNULL(DisableColossusBet,1) as DisableColossusBet,
+			ISNULL(HideColossusBet,1) as HideColossusBet,
 			-- For MuayThai
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_MuayThai),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -327,6 +329,8 @@ Param's Explanation:
 			ci.HideKeno,
 			ci.DisableGoldDeluxe, 
 			ci.HideGoldDeluxe,
+			ci.DisableColossusBet,
+			ci.HideColossusBet,
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
