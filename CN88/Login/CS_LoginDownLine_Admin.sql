@@ -17,8 +17,6 @@ ALTER PROCEDURE [dbo].[CS_LoginDownline_Admin]
 	@CurrencyId INT = 0 OUTPUT,
 	@CasinoDisable BIT = 0 OUTPUT,	
 	@CasinoSync BIT = 0 OUTPUT,
-	@BingoDisable BIT = 0 OUTPUT,
-	@BingoSync BIT = 0 OUTPUT,
 	@Language VARCHAR(2)= 'E',
 	@accUserID INT = 0, --UserID of Admin
 	@accUsername VARCHAR(50) = '' OUTPUT,
