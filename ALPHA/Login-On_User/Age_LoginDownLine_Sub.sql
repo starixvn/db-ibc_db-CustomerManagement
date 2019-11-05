@@ -23,8 +23,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]
 --	@IsWapLogin bit = false,
 	@isCasinoDisabled bit = false OUTPUT,
 	@IsCasinoSync bit = false OUTPUT,
-	@isBingoDisabled bit = false OUTPUT,
-	@IsBingoSync bit = false OUTPUT,
 	@isFirstLogin	BIT =0 OUTPUT,
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT,

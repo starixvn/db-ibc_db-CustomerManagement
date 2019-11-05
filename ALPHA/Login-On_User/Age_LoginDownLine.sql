@@ -20,8 +20,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline]
 	@site varchar(20) = '' OUTPUT,  
 	@isCasinoDisabled bit = false OUTPUT,
 	@IsCasinoSync bit = false OUTPUT,
-	@isBingoDisabled bit = false OUTPUT,
-	@isBingoSync bit = false OUTPUT,
 	@isFirstLogin	BIT = 0 OUTPUT,
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT, 	

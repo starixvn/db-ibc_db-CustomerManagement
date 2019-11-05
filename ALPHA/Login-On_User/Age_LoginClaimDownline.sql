@@ -20,8 +20,6 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@site VARCHAR(20) = '' OUTPUT,  
 	@isCasinoDisabled BIT = FALSE OUTPUT,
 	@IsCasinoSync BIT = FALSE OUTPUT,
-	@isBingoDisabled bit = false OUTPUT,
-	@isBingoSync bit = false OUTPUT,	
 	@LoginTime DATETIME = null, --VARCHAR(50) = NULL,
 	@Language VARCHAR(2) = 'E',  
 	@isFirstLogin	BIT = 0 OUTPUT,
@@ -288,8 +286,6 @@ BEGIN
 
 	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
 	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
-
-	SELECT	@isBingoDisabled = ISNULL(@isBingoDisabled,1), @isBingoSync = ISNULL(@isBingoSync,0)
 
 	IF @RoleID = 2  
 		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
