@@ -1,2 +1,7 @@
 CN88\ViewLog\UserLog_RunSP\CS_WriteLog_UserLog_RunSP_Wrapper.sql
 NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\Customer\Status\AutoSuspend\Acc_CustomerUpdAutoSuspend.proc.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
+NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\Customer\MoveDepositeCustomer\Acc_Dep_CustomerUpdMoveAgent.StoredProcedure.sql
