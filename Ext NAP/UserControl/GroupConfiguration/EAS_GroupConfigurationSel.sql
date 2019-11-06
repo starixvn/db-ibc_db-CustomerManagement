@@ -59,7 +59,6 @@ BEGIN
 			c.GroupId = @groupId
 			OR @groupId IS NULL
 			)
-		AND p.Enabled = 1
 
 	IF (
 			NOT EXISTS (
