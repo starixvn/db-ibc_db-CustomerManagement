@@ -1,6 +1,15 @@
-/*<info serverAlias="DBTXN-bodb02" executers="" viewers="" isFunction="1"></info>*/
-ALTER FUNCTION [dbo].[f_Winlimit_GetProductSetting] ()
-RETURNS @ProductSetting TABLE (ProductId TINYINT, ProductName VARCHAR(50), BetType SMALLINT, IsActive_SMA BIT, IsActive_Company BIT)
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1"></info>*/
+
+USE [bodb02];
+GO
+
+ALTER FUNCTION dbo.f_Winlimit_GetProductSetting()
+RETURNS @ProductSetting TABLE(
+	ProductId           TINYINT
+   , ProductName         VARCHAR(50)
+   , BetType             SMALLINT
+   , IsActive_SMA        BIT
+   , IsActive_Company    BIT)
 AS
 /*
 	Created: 2015107@Patrick	
@@ -20,45 +29,27 @@ AS
 		- 20180125@Vicky: Apply SMA Winlimit for Virtual Sport [Redmine:#89284]
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
 		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
-		- 20190910@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20191028@Robert: Create new table WinLimit_ProductOffer [#122849]
 
 
 	Parameters Explanation:	
 */
 BEGIN
-	INSERT INTO @ProductSetting(ProductId, ProductName, BetType, IsActive_SMA, IsActive_Company)
-	(
-		SELECT a.ProductId, p.ProductName, a.BetType, a.IsActive_SMA, a.IsActive_Company
-		FROM (
-			
-			SELECT 4 AS ProductId, 1101 AS BetType, 1 AS IsActive_SMA, 1 AS IsActive_Company 
-			UNION ALL
-			SELECT 6, 2101, 1, 1 -- RNG Casino
-			UNION ALL
-			SELECT 12, 1701, 1, 1 -- Gold Deluxe
-			UNION ALL
-			SELECT 22, 4001, 1, 1 -- Macau Games
-			UNION ALL
-			SELECT 21, 2401, 1, 1 -- Allbet
-			UNION ALL
-			SELECT 24, 1011, 1, 1 -- Fishing World
-			UNION ALL
-			-- Phase 3: add more
-			SELECT 3, 81, 0, 1 --Number Game
-			UNION ALL				
-			SELECT 5, 1201, 1, 1 --Virtual Sports
-			UNION ALL
-			SELECT 8, 1501, 0, 1  -- Keno
-			UNION ALL		
-			SELECT 28, 1021, 1, 1  -- Lottery 		
-			UNION ALL
-			SELECT 27, 2701, 0, 1  -- BetradarVS
-			UNION ALL 
-			SELECT 32, 4101, 0, 1 --Pragmatic Integration
+    INSERT INTO @ProductSetting(ProductId
+						, ProductName
+						, BetType
+						, IsActive_SMA
+						, IsActive_Company)
+		 (
+			SELECT a.ProductId
+				, p.ProductName
+				, a.BetType
+				, a.IsActive_SMA
+				, a.IsActive_Company
+			FROM dbo.WinLimit_ProductOffer AS a WITH(NOLOCK)
+			    INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH(NOLOCK) ON a.ProductID = p.ProductID
+		 );
 
-		) a INNER JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON a.ProductId = p.ProductID
-	)
-
-	RETURN
-END
+    RETURN;
+END;
 GO
