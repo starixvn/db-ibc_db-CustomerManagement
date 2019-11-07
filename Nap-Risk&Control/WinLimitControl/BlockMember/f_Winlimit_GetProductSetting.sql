@@ -1,15 +1,7 @@
-/*<info serverAlias="DBTXN-bodb02" executers="" viewers="vnteam" isFunction="1"></info>*/
-
-USE [bodb02];
-GO
+/*<info serverAlias="DBTXN-bodb02" executers="" viewers="" isFunction="1"></info>*/
 
 ALTER FUNCTION dbo.f_Winlimit_GetProductSetting()
-RETURNS @ProductSetting TABLE(
-	ProductId           TINYINT
-   , ProductName         VARCHAR(50)
-   , BetType             SMALLINT
-   , IsActive_SMA        BIT
-   , IsActive_Company    BIT)
+RETURNS TABLE
 AS
 /*
 	Created: 2015107@Patrick	
@@ -34,22 +26,12 @@ AS
 
 	Parameters Explanation:	
 */
-BEGIN
-    INSERT INTO @ProductSetting(ProductId
-						, ProductName
-						, BetType
-						, IsActive_SMA
-						, IsActive_Company)
-		 (
-			SELECT a.ProductId
-				, p.ProductName
-				, a.BetType
-				, a.IsActive_SMA
-				, a.IsActive_Company
-			FROM dbo.WinLimit_ProductOffer AS a WITH(NOLOCK)
-			    INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH(NOLOCK) ON a.ProductID = p.ProductID
-		 );
-
-    RETURN;
-END;
-GO
+RETURN(
+		SELECT a.ProductId
+			, p.ProductName
+			, a.BetType
+			, a.IsActive_SMA
+			, a.IsActive_Company
+		FROM dbo.WinLimit_ProductOffer AS a WITH(NOLOCK)
+			INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH(NOLOCK) ON a.ProductID = p.ProductID
+		)
