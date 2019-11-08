@@ -257,7 +257,7 @@ Param's Explanation:
 			CAST (1 AS BIT) AS DisableP2P,	   
 			CAST (0 AS BIT) AS SyncBingo,
 			CAST (1 AS BIT) AS DisableLiveCasino,
-			CAST (1 AS BIT) AS SyncLiveCasino,
+			CAST (0 AS BIT) AS SyncLiveCasino,
 			ISNULL(srecommend, 0) AS SRecommend,
 			ISNULL(mrecommend, 0) AS MRecommend,
 			ISNULL(recommend, 0) as ARecommend,
