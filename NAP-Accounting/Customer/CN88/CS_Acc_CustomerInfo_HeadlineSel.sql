@@ -1,7 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[CS_Acc_CustomerInfo_HeadlineSel]
 	@custid INT
 AS
@@ -13,6 +10,7 @@ AS
 	Revisions:
 		- 20190425@Johnson: initial sp [redmine: 105338]
 		- 20190527@Paul: Apply new status [RedmineID: #113198]
+		- 20190910@Bobby: Implement headline - balance info [Redmine:119961]
 
 	Param's Explanation:		
 */
@@ -41,7 +39,14 @@ BEGIN
 		    @TotalMemberSuspended INT,
 		    @TotalMemberViewOnly INT,
 			@TotalMemberInactive INT,
-			@LastChangedSecurityCodeDate DATETIME
+			@LastChangedSecurityCodeDate DATETIME,
+			@IsInternal BIT,
+			@yesterday SMALLDATETIME,
+			@today SMALLDATETIME
+
+	SELECT @today		= CAST(CURRENT_TIMESTAMP AS DATE) 
+		, @yesterday	= CONVERT(DATE, DATEADD(DAY, -1, @today))
+		,@IsInternal	= 0 -- hardcode for roleId = 0
 			
 	DECLARE @tblSupers TABLE(CustID INT)
 		
@@ -101,19 +106,38 @@ BEGIN
 	    pwdexpiry, 
 		@LastChangedSecurityCodeDate as LastChangedSecurityCodeDate,
 		@closed as closed,
-		cs.CustStatus AS CN88CustStatus
+		cs.CustStatus AS CN88CustStatus,
+		@IsInternal AS IsInternal
 	FROM customer c WITH(NOLOCK)
 		INNER JOIN exchange e WITH(NOLOCK) on c.currency = e.exchangeid
-		CROSS APPLY f_CS_GetCustomerStatus(@custid) cs
+		OUTER APPLY f_CS_GetCustomerStatus(@custid) cs
 	WHERE custid = @custid	
 	
 	--hardcode to return data table for web to map current model
 	SELECT custID as CustID, Enabled as headlineEnabled
 	FROM custinfo (NOLOCK)
-	WHERE custid = @custid 
+	WHERE custid = @custid
 	
-	--hardcode to return data table for web to map current cash table
-	SELECT 0 as Cash
+	--Implement headline - account page - balance info [Redmine:119961]
+	-- Get Balance Information --
+	DECLARE @balanceInfo TABLE (CustId INT, totalBalance MONEY, TotalBalance_RM MONEY, YesterdayTotalBalance MONEY, YesterdayTotalBalance_RM MONEY)
+	INSERT @balanceInfo
+	EXEC [dbo].[Acc_CustomerSelBalanceInfo] @CustId=@custid
+
+	SELECT 0 AS Cash
+		,ISNULL(cash.YesterdayCash,0) AS YesterdayCash
+		,ISNULL(bal.YesterdayTotalBalance,0) AS YesterdayBalance
+	FROM @balanceInfo bal
+	OUTER APPLY (
+		SELECT 
+			SUM(b.winlost-b.actual_stake) AS yesterdayCash
+		FROM dbo.bettrans b WITH(NOLOCK)
+		WHERE b.custid = @custid
+			AND b.matchid = 0
+			AND b.bettype >= 20000
+			AND b.winlostdate <= @today
+
+	) AS cash
 	
 	SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
