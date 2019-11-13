@@ -32,7 +32,7 @@ AS
 		- 20180903@Elodie: Revise SP for @ActionTypeID = 5 (status)
 		- 20180227@Elodie: Add new range actionID for status of CN88 [Redmind: #105338]
 		- 20190405@Patrick: Support archive date range [Redmine: #111476]
-
+		- 20191113@Winnie: Alpha - View Log : user can view total records when searching by nickname [Redmine: #110148]
 	Description:
 	- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -103,9 +103,6 @@ BEGIN
 	DECLARE @__archiveDate DATETIME
 	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
 
-	IF (@IsInternal = 0 AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @CustName))
-		OR (@IsInternal = 1)
-	BEGIN 
 		IF  (@LowerActionId IS NULL OR @UpperActionId IS NULL)       
 		BEGIN
 			IF (@ActionTypeId > 0)						
@@ -1017,6 +1014,6 @@ BEGIN
 				WHERE   RowNum BETWEEN @lbound AND @ubound
 			END
 		END
-	END
+
 END
 GO
