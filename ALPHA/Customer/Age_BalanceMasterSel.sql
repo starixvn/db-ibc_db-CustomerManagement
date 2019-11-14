@@ -1,6 +1,5 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet, bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-
-ALTER PROCEDURE Age_BalanceMasterSel
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_BalanceMasterSel]
 	@CustID INT
 AS
 /*
@@ -10,6 +9,7 @@ AS
 
 	Revisions:
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
+		- 20190918@Percy: Remove inactive products [RedmineID: #118699]
 		- 20191008@Johnson: remove credit info [redmine:#121538]
 	Example: EXEC Age_BalanceMasterSel @CustID=24471545
 */
@@ -53,18 +53,6 @@ BEGIN
 	)
 	EXEC dbo.Acc_CustomerSelOutstanding @CustId = @CustId
 
-	DECLARE		
-		@TotalCSTransfer		MONEY,
-		@TotalCSOutstanding		MONEY
-	
-	SELECT 
-		@TotalCSTransfer     = ISNULL(SUM(CASE WHEN bettype = 23001 THEN actual_stake ELSE 0 END),0),
-		@TotalCSOutstanding  = ISNULL(SUM(CASE WHEN bettype = 23002 THEN actual_stake ELSE 0 END),0)
-	FROM dbo.bettrans WITH (NOLOCK)  
-	WHERE mrecommend = @CustID
-		AND bettype IN (23001, 23002, 23101, 23102, 23201, 23202)
-		AND ruben = 0
-
 	SELECT
 		@custid AS CustID, 
 		
@@ -75,10 +63,7 @@ BEGIN
 		SUM(yesterdayAgentCash)			AS yesterday_agentCash,
 		SUM(memberCash)					AS customerCash,
 		SUM(yesterdayMemberCash)		AS yesterday_customerCash,
-		SUM(memberOutstanding)			AS customerOutstanding,
-		-- Casino, Bingo, P2P
-		ISNULL(@TotalCSOutstanding, 0)	AS csOutstanding,
-		ISNULL(@TotalCSTransfer, 0)		AS csTransfer
+		SUM(memberOutstanding)			AS customerOutstanding
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo
