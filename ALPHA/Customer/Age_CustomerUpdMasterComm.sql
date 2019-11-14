@@ -11,8 +11,6 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMasterComm]
 	@groupd decimal(9,8),
 	@discount1x2 decimal(9,8),
 	@discountcs decimal(9,8),	
-	@discountnumber decimal(9,8)=0,
-	@discountMyanmarOdds DECIMAL(9,8)=0,
 	@userid int, --updater Id	
 	@subaccid int = 0, --Sub-AccountID
 	@language varchar(2) = 'E',
@@ -40,6 +38,7 @@ Revisions:
 	- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]			            
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @groupa: groupa's discount value
@@ -83,24 +82,9 @@ Param's Explanation:
 		@groupc_old decimal(9,8),
 		@groupd_old decimal(9,8),
 		@discountcs_old decimal(9,8),
-		@discount1x2_old decimal(9,8),	
-	
-		@discountnumber_old decimal(9,8)
+		@discount1x2_old decimal(9,8)
 
 	-- Update Master Commission --
-	-- For Myanmar Odds
-	DECLARE @IsMyanmarOdds BIT = 0
-
-	DECLARE @discountMyanmarOdds_old DECIMAL (9,8) = 0
-
-	SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
-		
-	IF @IsMyanmarOdds = 1
-	BEGIN
-		-- Get old value
-		SET @discountMyanmarOdds_old = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @custid AND Sporttype = 1 AND Bettype = 301)
-		
-	END
 
 	select @groupa_old = groupa, @groupb_old = groupb, @groupc_old = groupc, @groupd_old = groupd
 	from custsetting (nolock) where custid = @custid and sporttype = 1 and bettype = 1
@@ -111,13 +95,8 @@ Param's Explanation:
 	select @discount1x2_old = adiscount
 	from custsetting (nolock) where custid = @custid and sporttype = 1 and bettype = 5
 
-
-	select @discountnumber_old = adiscount
-	from custsetting3rd (nolock) where custid = @custid and sporttype = 161 and bettype = 81
-
 	if (@groupa_old <> @groupa) or (@groupb_old <> @groupb) or (@groupc_old <> @groupc) or (@groupd_old <> @groupd)
-		or (@discountcs_old <> @discountcs) or (@discount1x2_old <> @discount1x2) or (@discountnumber_old <> @discountnumber) 
-		OR (@IsMyanmarOdds = 1 AND @discountMyanmarOdds <> @discountMyanmarOdds_old)
+		or (@discountcs_old <> @discountcs) or (@discount1x2_old <> @discount1x2) 
 		set @updatecomm_old = 1
 	else 
 		set @updatecomm_old = 0
@@ -133,12 +112,6 @@ Param's Explanation:
 			@groupd = @groupd,
 			@discountcs = @discountcs, --other comm
 			@discount1x2 = @discount1x2, --1x2 
-			@discountnumber = @discountnumber,
-			
-			@IsMyanmarOdds = @IsMyanmarOdds,
-			@discountMyanmarOdds = @discountMyanmarOdds,
-			@discountMyanmarOdds_old = @discountMyanmarOdds_old,
-			
 			@updatecomm_old = @updatecomm_old,
 			@SubAccID = @SubAccID,
 			@UserID = @UserID,

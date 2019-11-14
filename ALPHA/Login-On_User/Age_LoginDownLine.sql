@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_LoginDownline]  
 	@UserName varchar(50) = '' OUTPUT,  
@@ -20,8 +20,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline]
 	@site varchar(20) = '' OUTPUT,  
 	@isCasinoDisabled bit = false OUTPUT,
 	@IsCasinoSync bit = false OUTPUT,
-	@isBingoDisabled bit = false OUTPUT,
-	@isBingoSync bit = false OUTPUT,
 	@isFirstLogin	BIT = 0 OUTPUT,
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT, 	
@@ -70,6 +68,7 @@ AS
 		- 20130328@Jamie: Get LastChangedPwdDate in case login via OldUserPwd
 		- 20130409@Johnson: Get more fields SecurityCode and isForcedChangeSecurityCode 
 		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 	
+		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -491,8 +490,6 @@ BEGIN
 	 
 	SELECT	@closed = closed,@IsCasinoSync = SyncCasino
 			,@isCasinoDisabled = DisableCasino
-			,@isBingoDisabled = DisableBingo
-			,@isBingoSync = SyncBingo
 			,@db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
 
@@ -778,3 +775,4 @@ BEGIN
 			@Duration = @Duration			
 	END	
 END
+GO

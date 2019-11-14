@@ -68,6 +68,7 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20190814@Johnson: dont touch on cn88 customers [redmine:#116691]
+	- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	
 Param's Explanation:
 • @ErrCode:
@@ -107,11 +108,7 @@ BEGIN
             @mHideGoldDeluxe		BIT,
             @sHideGoldDeluxe		BIT,
             @sDisableGoldDeluxe		BIT,
-            @mDisableGoldDeluxe		BIT,
-            @mHideColossusBet		BIT,
-            @sHideColossusBet		BIT,
-            @sDisableColossusBet	BIT,
-            @mDisableColossusBet	BIT;        
+            @mDisableGoldDeluxe		BIT      
 
     SELECT    @srecommend            = custid,         
             @sDisableOutright    = DisableOutright,
@@ -120,9 +117,7 @@ BEGIN
           
             @sHideKeno                = HideKeno,
 			@sDisableGoldDeluxe		= DisableGoldDeluxe,
-			@sHideGoldDeluxe	= HideGoldDeluxe,
-			@sDisableColossusBet = DisableColossusBet,
-			@sHideColossusBet	= HideColossusBet
+			@sHideGoldDeluxe	= HideGoldDeluxe
             
       FROM    custinfo WITH(NOLOCK) 
     WHERE    username = @supername AND roleid = 4;
@@ -136,9 +131,7 @@ BEGIN
        
             @mHideKeno                = HideKeno,
 			@mDisableGoldDeluxe		= DisableGoldDeluxe,
-			@mHideGoldDeluxe	= HideGoldDeluxe,
-			@mDisableColossusBet = DisableColossusBet,
-			@mHideColossusBet	= HideColossusBet            
+			@mHideGoldDeluxe	= HideGoldDeluxe          
       FROM    custinfo WITH(NOLOCK) 
     WHERE    username = @mastername AND roleid = 3;
 
@@ -351,21 +344,6 @@ BEGIN
 
     END;
 
-  
-    ---- VS
-    --IF @sDisableVirtualSports = 1 AND (@sDisableVirtualSports <> @mDisableVirtualSports)
-    --BEGIN
-    --    UPDATE    Custinfo WITH (UPDLOCK,ROWLOCK)
-    --       SET        DisableVirtualSports = 1 
-    --    WHERE    custid IN(SELECT CustID FROM #CustInfo);
-    --    IF @@ERROR <>0
-    --    BEGIN
-    --        SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-    --                @ErrCode = 310;
-    --        RETURN; 
-    --    END;
-    --END;
-
     -- Keno
     IF @sHideKeno = 0 AND (@sHideKeno <> @mHideKeno)
     BEGIN
@@ -393,21 +371,6 @@ BEGIN
             RETURN;
         END;
     END;
-
-	IF @sDisableColossusBet = 1 AND @sDisableColossusBet <> @mDisableColossusBet 
-    BEGIN
-        UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-           SET DisableColossusBet = 1
-        WHERE custid IN (SELECT custid FROM #CustInfo);
-        
-        IF @@ERROR <>0 
-        BEGIN
-            SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 310;
-            RETURN;
-        END;
-    END;
-
 
     UPDATE    mcg WITH (UPDLOCK,ROWLOCK)
        SET        mcg.IsDisabled = 1 
@@ -568,44 +531,6 @@ INNER JOIN CustSettingGame scs WITH(NOLOCK) ON scs.custid = @srecommend
                            FROM #CustInfo
                        )
       AND ISNULL(cs.sdiscount, 0) < scs.sdiscount;
-
-	-- For Colossus Bet
-	DECLARE @sdiscountColossusBet_18001 DECIMAL (9,8) = 0;
-	DECLARE @sdiscountColossusBet_18002 DECIMAL (9,8) = 0;
-	
-	SET @sdiscountColossusBet_18001 = (SELECT Commrate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 204 AND Bettype = 18001);
-	SET @sdiscountColossusBet_18002 = (SELECT Commrate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 204 AND Bettype = 18002);
-	UPDATE C
-			SET  sdiscount = @sdiscountColossusBet_18001
-		FROM CustCommRate C WITH(ROWLOCK, UPDLOCK)
-			JOIN custInfo CI WITH (NOLOCK) ON C.CustId = CI.custid			 
-		WHERE CI.srecommend =@srecommend AND CI.roleid = 1
-			 AND C.Sporttype = 204 AND C.Bettype = 18001;
-	
-	UPDATE C
-			SET  sdiscount = @sdiscountColossusBet_18002
-		FROM CustCommRate C WITH(ROWLOCK, UPDLOCK)
-			JOIN custInfo CI WITH (NOLOCK) ON C.CustId = CI.custid			 
-		WHERE CI.srecommend =@srecommend AND CI.roleid = 1
-			 AND C.Sporttype = 204 AND C.Bettype = 18002;
-			 
-		
-	-- For Myanmar Odds
-	DECLARE @IsMyanmarOdds BIT = 0;
-	DECLARE @sdiscountMyanmarOdds DECIMAL (9,8) = 0;
-	SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend);
-	
-	IF @IsMyanmarOdds = 1
-	BEGIN
-		SET @sdiscountMyanmarOdds = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @srecommend AND Sporttype = 1 AND Bettype = 301);
-		
-		UPDATE C
-			SET  sdiscount = @sdiscountMyanmarOdds
-		FROM CustCommRate C WITH(ROWLOCK, UPDLOCK)
-			JOIN custInfo CI WITH (NOLOCK) ON C.CustId = CI.custid			 
-		WHERE CI.srecommend =@srecommend AND CI.roleid = 1
-			 AND C.Sporttype = 1 AND C.Bettype = 301;
-	END;
 	
 	-- Update Stake Level for moved master
 	DECLARE	@removedStakeLevel	TABLE (

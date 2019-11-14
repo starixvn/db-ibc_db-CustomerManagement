@@ -32,6 +32,8 @@ AS
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
+		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -45,13 +47,8 @@ BEGIN
 		custinfo AS ci WITH (NOLOCK)		
 	WHERE 
 		ci.MRecommend = @MRecommend AND ci.roleid=2 
-
-	DECLARE @IsIMBC BIT = 0
 	
-	IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @MRecommend AND [Site] = 'IMBC')
-		SET @IsIMBC = 1
-	
-	SELECT *, @IsIMBC AS IsIMBC
+	SELECT *
 	FROM 
 	(
 		SELECT 
@@ -185,15 +182,7 @@ BEGIN
 
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=11 THEN cs.mpositiontaking ELSE 0 END) AS v11mpositiontaking_1,
 			MAX(CASE WHEN cs.bettype = 20 AND cs.sporttype=11 THEN cs.mpositiontaking ELSE 0 END) AS v11mpositiontaking_20,
-
-			--finance
-		--	MAX(CASE WHEN cs3rd.bettype = 3 AND cs3rd.sporttype=201 THEN cs3rd.apositiontaking ELSE 0 END) v201apositiontaking_3,
-		--	MAX(CASE WHEN cs3rd.bettype = 3 AND cs3rd.sporttype=201 THEN cs3rd.mpositiontaking ELSE 0 END) v201mpositiontaking_3,
-		--
-		--	MAX(CASE WHEN cs3rd.bettype = 2 AND cs3rd.sporttype=201 THEN cs3rd.apositiontaking ELSE 0 END) v201apositiontaking_2,
-		--	MAX(CASE WHEN cs3rd.bettype = 2 AND cs3rd.sporttype=201 THEN cs3rd.mpositiontaking ELSE 0 END) v201mpositiontaking_2,
-
-			
+	
 			--Other sports
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_1,
 			MAX(CASE WHEN cs.bettype = 2 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_2,
@@ -211,24 +200,10 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.apositiontaking ELSE 0 END) AS v99apositiontaking_9,
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_9,
 
-			-- Cricket
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.AgentPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50apositiontaking_501_Live, 
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 1 THEN CAST(pt.MasterPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50mpositiontaking_501_Live, 
-			
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 0 THEN CAST(pt.AgentPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50apositiontaking_501_NonLive, 
-			MAX(CASE WHEN pt.bettype = 501 and pt.IsLive = 0 THEN CAST(pt.MasterPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50mpositiontaking_501_NonLive, 
-			
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 1 THEN CAST(pt.AgentPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50apositiontaking_599_Live, 
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 1 THEN CAST(pt.MasterPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50mpositiontaking_599_Live, 
-			
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 0 THEN CAST(pt.AgentPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50apositiontaking_599_NonLive, 
-			MAX(CASE WHEN pt.bettype = 599 and pt.IsLive = 0 THEN CAST(pt.MasterPT AS SMALLMONEY) / 100 ELSE 0 END) AS v50mpositiontaking_599_NonLive,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason			
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid
-			LEFT JOIN CustPTSetting3rd_Agent pt WITH (NOLOCK) ON pt.CustID = ci.custid 
-								AND pt.SportType = 50 AND pt.BetType IN (501,599) AND @IsIMBC = 1 
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.MRecommend = @MRecommend AND ci.roleid=2 
 		GROUP BY
@@ -246,6 +221,3 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByMAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByMAg] TO [bodbDownlineNetView]

@@ -16,8 +16,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@CurrencyId int = 0 OUTPUT,
 	@CasinoDisable bit = false OUTPUT,	
 	@CasinoSync bit = false OUTPUT,
-	@BingoDisable bit = false OUTPUT,
-	@BingoSync bit = false OUTPUT,
 	@Language varchar(2)= 'E',
 	@accUserID int = 0, --UserID of Admin
 	@accUsername varchar(50) = '' OUTPUT,
@@ -58,6 +56,7 @@ Revisions:
 	- 20130507@Johnson: get field isForcedChangeSecurityCode
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806]
 	- 20190523@Andy: Internal login CN88 for Headline level - [Redmine: 113920]
+	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -94,7 +93,6 @@ BEGIN
 	BEGIN
 		Select	@CustID  = CustInfo.CustID, @RoleID = CustInfo.RoleID, @Currency = Exchange.Currency, @CurrencyId = Exchange.ExchangeId
 				,@CasinoDisable = CustInfo.DisableCasino, @CasinoSync = CustInfo.SyncCasino
-				,@BingoDisable = CustInfo.DisableBingo, @BingoSync = CustInfo.syncBingo 
 		from 
 			CustInfo with (NOLOCK) 
 			INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID
@@ -245,3 +243,4 @@ BEGIN
 		RETURN
 	END
 END
+GO

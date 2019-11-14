@@ -20,8 +20,6 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@site VARCHAR(20) = '' OUTPUT,  
 	@isCasinoDisabled BIT = FALSE OUTPUT,
 	@IsCasinoSync BIT = FALSE OUTPUT,
-	@isBingoDisabled bit = false OUTPUT,
-	@isBingoSync bit = false OUTPUT,	
 	@LoginTime DATETIME = null, --VARCHAR(50) = NULL,
 	@Language VARCHAR(2) = 'E',  
 	@isFirstLogin	BIT = 0 OUTPUT,
@@ -58,6 +56,7 @@ AS
 		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 		- 20190221@Johnson: Add role = 0 for tier0 for cn88 [redmine: #105660]
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
+		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -274,9 +273,7 @@ BEGIN
 
 	SELECT 
 		@IsCasinoSync = SyncCasino, 
-		@isCasinoDisabled = DisableCasino,
-		@isBingoDisabled = DisableBingo,
-		@isBingoSync = SyncBingo
+		@isCasinoDisabled = DisableCasino
 	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
 	  
 	-- Successful  
@@ -289,8 +286,6 @@ BEGIN
 
 	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
 	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
-
-	SELECT	@isBingoDisabled = ISNULL(@isBingoDisabled,1), @isBingoSync = ISNULL(@isBingoSync,0)
 
 	IF @RoleID = 2  
 		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
@@ -409,3 +404,4 @@ BEGIN
 			@Duration = @Duration		
 	END	
 END	
+GO

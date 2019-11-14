@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Dep_CustomerCheckMoveAgent]
 	@mastername		varchar(40),
 	@agentname		varchar(40),
@@ -15,7 +15,8 @@ Original:
 
 Revisions:
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20180125@Winnie: Hide inactive products [RedmineID: #86086] 
+	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699] 
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -362,25 +363,8 @@ BEGIN
 		return
 	END
 
-	--Check P2P :Game Comm
-	IF exists(
-		SELECT TOP 1 1
-		FROM dbo.P2PGROUPCOMM m WITH(NOLOCK)
-			INNER JOIN dbo.P2PGROUPCOMM a WITH(NOLOCK)
-				ON a.GroupID = M.GroupID
-			WHERE  m.custid = @mrecommend AND A.custid = @recommend
-					AND (m.adiscount < a.discount )
-	)
-	BEGIN
-		Select @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': P2P''s commission of agent is is greater than P2P''s commission of new master .',
-			@ErrCode = 214
-		return
-	END
 END
 
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_Dep_CustomerCheckMoveAgent] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Dep_CustomerCheckMoveAgent] TO [vnteam] AS [dbo]

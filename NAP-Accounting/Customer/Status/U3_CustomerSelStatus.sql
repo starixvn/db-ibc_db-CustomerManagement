@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[U3_CustomerSelStatus]
 	@CustID		INT,
 	@AdminID	INT			= 0,
@@ -60,6 +60,7 @@ Revisions:
 	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+	- 20190917@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -83,11 +84,10 @@ Param's Explanation:
 	----- 20150610@Kos -------------------
 
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
-			,@IsMyanmarOdds BIT = 0
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
-	DECLARE @IsIMBC BIT = 0,@IsAllDayBalTransfer BIT
+	DECLARE @IsAllDayBalTransfer BIT
 	
 	IF ISNULL(@username,'') <> ''
 		SELECT @roleid = roleid, @agentid = recommend, @custid = custid,@srecommend = srecommend
@@ -111,11 +111,6 @@ Param's Explanation:
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
 
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
-
 	END
 	ELSE IF @roleid = 3 --master
 	BEGIN
@@ -124,11 +119,6 @@ Param's Explanation:
 			@LimitPerIP =  isnull(LimitPerIP, 0),
 			@SelectedBetting =  isnull(SelectedBetting, 0)
 		FROM custMaster WITH (NOLOCK) WHERE custid = @custid
-		
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 
 		SELECT 
 		@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
@@ -143,11 +133,6 @@ Param's Explanation:
 			@LimitPerIP =  isnull(LimitPerIP, 0),
 			@SelectedBetting =  isnull(SelectedBetting, 0)
 		FROM custAgent WITH (NOLOCK) WHERE custid = @custid
-		
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @CustID AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 
 		SELECT 
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
@@ -162,10 +147,6 @@ Param's Explanation:
 			@IsInternal = isnull(IsInternal, 0) 
 		FROM custAgent WITH (NOLOCK) WHERE custid = @agentid
 		
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@agentid)
-		
-		IF EXISTS (SELECT 1 FROM Customer WITH (NOLOCK) WHERE custid = @agentid AND [Site] = 'IMBC')
-			SET @IsIMBC = 1
 			
 	END
 	
@@ -196,20 +177,15 @@ Param's Explanation:
 
 	 -- For DCS Product
     DECLARE	@bitmapOrder_MuayThai		INT
-		,	@bitmapOrder_CockFighting	INT
-		,	@bitmapOrder_Cricket		INT
 		,	@bitmapOrder_AllBet			INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
-		,	@bitmapOrder_Lucky3			INT
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
-		,	@bitmapOrder_BullFighting	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
-    SET @bitmapOrder_CockFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 206 AND Bettype = 1003)
 	SET	@bitmapOrder_AllBet =	(
 									SELECT	psp.bitmapOrder
 									FROM	dbo.ProductStatusProfile AS psp WITH(NOLOCK)
@@ -223,42 +199,27 @@ Param's Explanation:
 										AND	psp.Bettype = 2402
 								)
     
-    SET @bitmapOrder_Cricket = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 50 AND Bettype = 501)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
-	SET @bitmapOrder_Lucky3 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 160 AND Bettype = 1600)
 	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
     SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
-    SET @bitmapOrder_BullFighting = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 207 AND Bettype = 1004)
     
     DECLARE	@IsHidden_MuayThai			INT = 1
-		,	@IsHidden_CockFighting		INT = 1
-		,	@IsHidden_Cricket			INT = 1
 		,	@IsHidden_AllBet			INT = 1
 		,	@IsHidden_VoidBridge		INT = 1
 		,	@IsHidden_Lottery			INT = 1
-		,	@IsHidden_NG2				INT = 1
-		,	@IsHidden_Lucky3			INT = 1    
+		,	@IsHidden_NG2				INT = 1 
 		,	@IsHidden_FishingWorld		INT = 1
 		,	@IsHidden_VS				INT = 1
-		,	@IsHidden_BullFighting		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 19, @IsHide = @IsHidden_CockFighting OUTPUT	
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 26, @IsHide = @IsHidden_Lucky3 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 30, @IsHide = @IsHidden_BullFighting OUTPUT
-
-	IF @IsIMBC=0
-		SELECT @IsHidden_Cricket=1
-	ELSE	
-				EXEC Acc_CheckShowProduct @ProductID = 20, @IsHide = @IsHidden_Cricket OUTPUT	
 
 	IF(@roleid=1)
 	BEGIN
@@ -285,18 +246,18 @@ Param's Explanation:
 			ISNULL (closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
-			ISNULL(DisableHorseracing,0) AS DisableHorseracing,
-			ISNULL(DisableOpenTote,0) AS DisableOpenTote,
-			ISNULL(DisableFinancial,0) AS DisableFI,
+			CAST (1 AS BIT) AS DisableHorseracing,
+			CAST (1 AS BIT) AS DisableOpenTote,
+			CAST (1 AS BIT) AS DisableFI,
 			ISNULL(SyncCasino,0) AS SyncCasino,
 			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
-			ISNULL(DisableBingo,0) AS DisableBingo,
+			CAST (1 AS BIT) AS DisableBingo,
 			ISNULL(DisableNumber,0) AS DisableNumber,
-			ISNULL(DisableP2P,0) AS DisableP2P,	   
-			ISNULL(SyncBingo,0) AS SyncBingo,
-			ISNULL(DisableLiveCasino,0) AS DisableLiveCasino,
-			ISNULL(SyncLiveCasino,0) AS SyncLiveCasino,
+			CAST (1 AS BIT) AS DisableP2P,	   
+			CAST (0 AS BIT) AS SyncBingo,
+			CAST (1 AS BIT) AS DisableLiveCasino,
+			CAST (0 AS BIT) AS SyncLiveCasino,
 			ISNULL(srecommend, 0) AS SRecommend,
 			ISNULL(mrecommend, 0) AS MRecommend,
 			ISNULL(recommend, 0) as ARecommend,
@@ -304,10 +265,8 @@ Param's Explanation:
 			@LimitPerIP as LimitPerIP,
 			@SelectedBetting as SelectedBetting,
 			@IsInternal AS IsInternal,
-			--ISNULL(DisableVirtualSports,0) as DisableVirtualSports,
-			--ISNULL(HideVirtualSports,0) as HideVirtualSports,
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
-			ISNULL(DisableHRFixedOdds,0) AS DisableHRFixedOdds,
+			CAST (1 AS BIT) AS DisableHRFixedOdds,
 			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
@@ -315,16 +274,16 @@ Param's Explanation:
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			
-			ISNULL(DisableColossusBet,1) as DisableColossusBet,
-			ISNULL(HideColossusBet,1) as HideColossusBet,
+			CAST (1 AS BIT) AS DisableColossusBet,
+			CAST (1 AS BIT) AS HideColossusBet,
 			
-			ISNULL(DisableMicrogameLC,1) as DisableMicrogameLC,
+			CAST (1 AS BIT) AS DisableMicrogameLC,
 			-- For MuayThai
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_MuayThai),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
 			-- For CockFighting
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_CockFighting),1) AS DisableCockFighting,
-			CAST(CASE WHEN @IsHidden_CockFighting = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_CockFighting),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCockFighting,
+			CAST (1 AS BIT) AS DisableCockFighting,
+			CAST (1 AS BIT) AS HideCockFighting,
 			-- For AllBet
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1) AS DisableAllBet,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,		
@@ -332,8 +291,8 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0) AS SyncedAllBet,			
 
 			-- For Lucky3
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lucky3), 1) AS DisableLucky3,		
-			CAST(CASE WHEN @IsHidden_Lucky3 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lucky3), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLucky3,
+			CAST (1 AS BIT) AS DisableLucky3,		
+			CAST (1 AS BIT) AS HideLucky3,
 
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
@@ -341,17 +300,17 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
 
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
-			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
-			ISNULL(DisableMicrogameRNG,1) as DisableMicrogameRNG,
+			CAST (0 AS BIT) AS IsMyanmarOdds,
+			CAST (1 AS BIT) AS DisableMicrogameRNG,
 			-- For VoidBridge
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge), 1) AS DisableVoidBridge,
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 
 			-- Cricket
-			@IsIMBC AS IsIMBC,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Cricket),1) AS DisableCricket,
-			CAST(CASE WHEN @IsIMBC = 1 AND @IsHidden_Cricket = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Cricket),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCricket,
+			CAST (1 AS BIT) AS IsIMBC,
+			CAST (1 AS BIT) AS DisableCricket,
+			CAST (1 AS BIT) AS HideCricket,
 			-- For Lottery
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1) AS DisableLottery,		
 			CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
@@ -369,8 +328,8 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 
 			-- For BullFighting
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BullFighting), 1) AS DisableBullFighting,		
-			CAST(CASE WHEN @IsHidden_BullFighting = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BullFighting), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBullFighting
+			CAST (1 AS BIT) AS DisableBullFighting,		
+			CAST (1 AS BIT) AS HideBullFighting
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
@@ -383,36 +342,21 @@ Param's Explanation:
 			ci.closed,
 			ci.autosuspend,
 			cm.DisableAutoMPT,
-			ci.DisableHorseracing, 
-			ci.DisableOpenTote, 
-			ci.DisableFinancial, 
 			ci.SyncCasino, 
 			ci.DisableCasino, 
 			ci.DisableOutright, 
-			ci.DisableBingo, 
 			ci.DisableNumber, 
-			ci.DisableP2P, 
-			ci.SyncBingo, 
-			ci.DisableLiveCasino, 
-			ci.SyncLiveCasino, 
 			ci.srecommend, 
 			ci.mrecommend, 
 			ci.recommend, 
-			--ci.DisableVirtualSports, 
-			--ci.HideVirtualSports, 
 			ci.DoubleCommLosing,
-			ci.DisableHRFixedOdds,
 			ci.DisableEsports,
 			ci.HideKeno,
 			ci.DisableGoldDeluxe, 
 			ci.HideGoldDeluxe,
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
-			ci.DisableMicrogameLC,
-			ci.DisableSuperLive,
-			ci.DisableMicrogameRNG	
+			ci.DisableSuperLive	
 END
 GO

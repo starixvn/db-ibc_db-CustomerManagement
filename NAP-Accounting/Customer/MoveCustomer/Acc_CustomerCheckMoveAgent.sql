@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 USE CustDB
 GO
 
@@ -34,6 +34,8 @@ AS
 		- 20160201@Billy: Apply for AllBet product - [Redmine: #51590]
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+		- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -77,14 +79,10 @@ BEGIN
 	      , @aGivenCredit			MONEY
 	      , @mGivenCredit			MONEY
 	      , @mUsedCredit			MONEY
-	      --, @aHideVirtualSports		BIT
-	      --, @mHideVirtualSports		BIT
 	      , @aHideKeno				BIT
 	      , @mHideKeno				BIT
 	      ,	@mHideGoldDeluxe		BIT
 	      , @aHideGoldDeluxe		BIT
-		  ,	@mHideColossusBet		BIT
-	      , @aHideColossusBet		BIT
 		  , @mDisableSuperLive		BIT
 	      , @aDisableSuperLive		BIT
 	      , @AdminUser				VARCHAR(50)
@@ -107,11 +105,9 @@ BEGIN
 	     , @mSuspended			= reject
 	     
 	     , @mGivenCredit		= credit
-	     --, @mHideVirtualSports  = HideVirtualSports
 	     , @mHideKeno			= HideKeno
 	     , @mDisableEsports     = DisableEsports
 	     , @mHideGoldDeluxe		= HideGoldDeluxe
-	     , @mHideColossusBet	= HideColossusBet
 		 , @mDisableSuperLive	= DisableSuperLive
 	  FROM custinfo WITH(NOLOCK)
 	 WHERE username = @mastername
@@ -134,11 +130,9 @@ BEGIN
 	     , @aSuspended			= reject
 	    
 	     , @aGivenCredit		= credit
-	     --, @aHideVirtualSports  = HideVirtualSports
 	     , @aHideKeno			= HideKeno
 	     , @aDisableEsports     = DisableEsports
 	     , @aHideGoldDeluxe		= HideGoldDeluxe
-	     , @aHideColossusBet	= HideColossusBet
 		 , @aDisableSuperLive	= DisableSuperLive
 	  FROM custinfo WITH(NOLOCK)
 	 WHERE username = @agentname
@@ -301,34 +295,13 @@ BEGIN
 		RETURN
 	END
 
-
-
-	/*
-	--Check Casino enable status
-	IF @mDisableCasino = 1 AND (@aDisableCasino = 0)
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Casino but new master is not enabled Casino.',
-			@ErrCode = 115					
-		RETURN
-	END
-	*/
-
-
 	--Check Number Game + Bingo enable status
 	IF @mdisableNumber = 1 and @adisableNumber = 0
 	BEGIN
 		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Number Game but new master is not enabled Number Game.',
 			@ErrCode = 117					 
 		return
-	END
-	
-	----Check Virtual sport enable status
-	--IF @mHideVirtualSports = 1 and @aHideVirtualSports = 0
-	--BEGIN
-	--	SELECT @ErrMsg = 'Agent is offered Virtual Sports but new master is not offered Virtual Sports.',
-	--		@ErrCode = 123					 
-	--	return
-	--END		
+	END	
 
 	--Check Keno enable status
 	IF @mHideKeno = 1 and @aHideKeno = 0
@@ -365,14 +338,6 @@ BEGIN
 		return
 	END	
 	
-	--Check Colossus Bet enable status	
-	IF @mHideColossusBet = 1 and @aHideColossusBet = 0
-	BEGIN
-		SELECT @ErrMsg = 'Agent is offered Colossus Bets but new master is not offered Colossus Bets.',
-			@ErrCode = 129
-		RETURN
-	END	
-	
 	--Check identical auto master PT 
 	IF (@DisableAutoMPT_old = 0 and @DisableAutoMPT = 1)
 	begin
@@ -390,24 +355,6 @@ BEGIN
 			@ErrCode = 122					 
 		return
 	END
-
-	---- Virtual sports
-	--IF exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @recommend and sporttype = 180)
-	--	AND not exists(SELECT 1 from custsetting3rd  WITH(NOLOCK)where custid = @mrecommend and sporttype = 180)		
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': master does not have Virtual Sports setting.',
-	--		@ErrCode = 124					 
-	--	return
-	--END
-
-	--Check casino Syn
-	--Remove checking Casino 
-	--IF exists(SELECT 1 from custinfo  WITH(NOLOCK)where custid = @recommend and SyncCasino = 1)
-	--BEGIN
-	--	SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is already Casino-synchronized.',
-	--		@ErrCode = 112					 
-	--	return
-	--END
 
 	--Check commission 
 	IF exists (
@@ -487,78 +434,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check commission for Colossus Bet
-	IF EXISTS (
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 204 
-					AND mcs.bettype = 18001
-					AND mcs.CommRate < acs.CommRate
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s commission for Colossus Bets is less than agent''s commission.',
-			@ErrCode = 216
-		RETURN
-	END
-
-	--Check Cash-In share for Colossus Bet
-	IF EXISTS (
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 204 
-					AND mcs.bettype = 18002
-					AND mcs.CommRate < acs.CommRate
-		)
-	BEGIN
-		SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s cash-in share for Colossus Bets is less than agent''s cash-in share.',
-			@ErrCode = 217
-		RETURN
-	END	
-	
-	--Check commission for Myanmar Odds
-	DECLARE @IsMyanmarOdds_source BIT = 0
-	DECLARE @IsMyanmarOdds_destination BIT = 0
-	
-	SET @IsMyanmarOdds_destination =  dbo.fn_IsMyanmarOdds (@mrecommend)
-
-	SET @IsMyanmarOdds_source =  dbo.fn_IsMyanmarOdds (@mrecommend_old)
-
-	IF @IsMyanmarOdds_source <> @IsMyanmarOdds_destination
-	BEGIN
-		SELECT @ErrMsg = 'Cannot move customer ' + @agentname + ' since amongs its new and old sites, one has % Odds.',
-					@ErrCode = 218
-		RETURN	
-	END	
-	
-	IF @IsMyanmarOdds_source = 1
-	BEGIN
-		IF EXISTS(
-			SELECT	1
-			FROM	AgentCommRate mcs WITH(NOLOCK) 
-				JOIN AgentCommRate acs WITH(NOLOCK) ON	acs.custid = @recommend 
-														AND acs.sporttype = mcs.sporttype 
-														AND acs.bettype = mcs.bettype
-			WHERE	mcs.custid = @mrecommend 
-					AND mcs.sporttype = 1 
-					AND mcs.bettype = 301
-					AND mcs.CommRate < acs.CommRate
-		)
-		BEGIN
-			SELECT @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': Master''s cash-in share for Colossus Bets is less than agent''s cash-in share.',
-					@ErrCode = 219
-			RETURN	
-		END
-	END
-
-
 	--Check identical autoposition taking
 	IF exists (
 		SELECT 1 from 
@@ -617,7 +492,7 @@ BEGIN
 			SELECT 1
 			FROM CustSettingGame mcs_old WITH(NOLOCK)
 				INNER JOIN	CustSettingGame mcs_new WITH(NOLOCK) ON mcs_new.custid = @mrecommend AND mcs_new.sporttype = mcs_old.sporttype AND mcs_new.bettype = mcs_old.bettype 
-			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(202) AND (mcs_old.bettype = 1101 OR mcs_old.bettype between 1501 and 1599)
+			WHERE mcs_old.custid = @mrecommend_old AND mcs_old.sporttype in(202) AND (/*mcs_old.bettype = 1101 OR*/ mcs_old.bettype between 1501 and 1599)
 			AND (mcs_old.isautopositiontaking <> mcs_new.isautopositiontaking)
 		)
 	BEGIN
@@ -1108,6 +983,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerCheckMoveAgent] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerCheckMoveAgent] TO [vnteam] AS [dbo]

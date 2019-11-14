@@ -1,7 +1,5 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 GO
-
 ALTER PROCEDURE [dbo].[Age_GetOfferedProductByCust]
 	@custid INT
 AS
@@ -12,6 +10,8 @@ AS
 
 	Revisions:
 		- 20180906@Elodie: Get all product which offered for customer [Redmine: #95940]
+		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+
 	Param's Explanation:
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
@@ -19,11 +19,10 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-	DECLARE @SyncCasino BIT, @HideColossusBet BIT, @HideKeno BIT, @HideGoldDeluxe BIT
+	DECLARE @SyncCasino BIT, @HideKeno BIT, @HideGoldDeluxe BIT
 
 	--Product Status
 	SELECT	@SyncCasino = ci.SyncCasino,
-			@HideColossusBet = ci.HideColossusBet,
 			@HideKeno = ci.HideKeno,
 			@HideGoldDeluxe = ci.HideGoldDeluxe
 	FROM customer c WITH (NOLOCK)
@@ -65,11 +64,7 @@ BEGIN
 		UNION ALL
 		SELECT 8, @HideKeno
 		UNION ALL
-		SELECT 15, @HideColossusBet
-		UNION ALL
 		SELECT 6, CASE WHEN @SyncCasino = 1 THEN 0 ELSE 1 END
-		UNION ALL
-		SELECT 12, @HideColossusBet
 		UNION ALL
 		SELECT 1, 0 --Sportbook always offer for all customer
 		UNION ALL

@@ -17,8 +17,6 @@ ALTER PROCEDURE [dbo].[CS_LoginDownline_Admin]
 	@CurrencyId INT = 0 OUTPUT,
 	@CasinoDisable BIT = 0 OUTPUT,	
 	@CasinoSync BIT = 0 OUTPUT,
-	@BingoDisable BIT = 0 OUTPUT,
-	@BingoSync BIT = 0 OUTPUT,
 	@Language VARCHAR(2)= 'E',
 	@accUserID INT = 0, --UserID of Admin
 	@accUsername VARCHAR(50) = '' OUTPUT,
@@ -48,6 +46,7 @@ AS
 	Revisions:
 		- 20190527@Elodie: New account status for CN88 [Redmine: 113198]
 		- 20190731@Percy: Alway return @IsAllDownline = 1 for internal login [RedmineID: #116825]
+		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -78,7 +77,6 @@ BEGIN
 	BEGIN
 		SELECT	@CustID  = CustInfo.CustID, @RoleID = CustInfo.RoleID, @Currency = Exchange.Currency, @CurrencyId = Exchange.ExchangeId
 				,@CasinoDisable = CustInfo.DisableCasino, @CasinoSync = CustInfo.SyncCasino
-				,@BingoDisable = CustInfo.DisableBingo, @BingoSync = CustInfo.syncBingo 
 		FROM CustInfo with (NOLOCK) 
 			INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID
 		WHERE CustInfo.username = @UserName
