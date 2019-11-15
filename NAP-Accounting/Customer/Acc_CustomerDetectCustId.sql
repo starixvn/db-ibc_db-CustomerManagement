@@ -6,7 +6,7 @@ AS
 /*  
     Created: 20191115@Elodie
     Task: Detect custid from search text on Left panel of NAP
-    DB:  DBACC/bodb02
+    DB: DBACC/bodb02
     
     Revisions:
         - 20191115@Elodie: Detect custid from search text on Left panel of NAP [Redmine: #123918]
@@ -32,12 +32,15 @@ BEGIN
 			FROM dbo.Customer c WITH (NOLOCK) 
 			WHERE c.username2 = @SearchText AND roleid IN (0,1,2,3,4)
 			
-			IF @CustId IS NULL AND ISNUMERIC(@SearchText) = 1
+			IF @CustId IS NULL AND ISNUMERIC(@SearchText) = 1				
 			BEGIN
-				--Search custid if there is not nickname
-				SELECT @CustId = custid 
-				FROM dbo.Customer c WITH (NOLOCK) 
-				WHERE c.custid = CAST(@SearchText AS INT) AND roleid IN (0,1,2,3,4)
+				IF LEN(@SearchText) BETWEEN 1 AND 9 OR (LEN(@SearchText) = 10 AND @SearchText <= '2147483647') --check overflow 
+				BEGIN
+					--Search custid if there is not nickname
+					SELECT @CustId = custid 
+					FROM dbo.Customer c WITH (NOLOCK) 
+					WHERE c.custid = CAST(@SearchText AS INT) AND roleid IN (0,1,2,3,4)
+				END
 			END
 		END
     END    
