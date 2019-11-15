@@ -1,7 +1,7 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE Acc_CustomerDetectCustId
     @SearchText VARCHAR(30) = '',
-	@CustId INT OUTPUT
+	@CustId INT = NULL OUTPUT
 AS
 /*  
     Created: 20191115@Elodie
