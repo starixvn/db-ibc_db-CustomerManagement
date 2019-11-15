@@ -32,7 +32,7 @@ BEGIN
 			FROM dbo.Customer c WITH (NOLOCK) 
 			WHERE c.username2 = @SearchText AND roleid IN (0,1,2,3,4)
 			
-			IF @CustId IS NULL AND ISNUMERIC(@SearchText) = 1				
+			IF @CustId IS NULL AND ~(CAST(PATINDEX('%[^0-9]%',@SearchText) as BIT)) = 1				
 			BEGIN
 				IF LEN(@SearchText) BETWEEN 1 AND 9 OR (LEN(@SearchText) = 10 AND @SearchText <= '2147483647') --check overflow 
 				BEGIN
