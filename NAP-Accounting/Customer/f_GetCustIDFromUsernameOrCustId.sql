@@ -14,6 +14,7 @@ Original:Accounting site
 	Revisions:
 		- 20120423@Lukas: add filer by roleid 
 		- 20171107@Vicky: Support to search customer id on Left panel (#86134)
+		- 20191119@Tiara: Replacing ISNUMERIC function by PATINDEX to check numeric (#123972)
 */
 BEGIN
 	DECLARE @custID INT
@@ -31,7 +32,7 @@ BEGIN
 		FROM customer WITH (NOLOCK)
 		WHERE username2 = @Username  AND roleid <= 4
 	
-	IF (@CheckCustId <> 0 AND @custID IS NULL AND ISNUMERIC(@Username) = 1
+	IF (@CheckCustId <> 0 AND @custID IS NULL AND ~(CAST(PATINDEX('%[^0-9]%',@Username) as BIT)) = 1
 		AND ((LEN(@Username) BETWEEN 1 AND 9) OR (LEN(@Username) = 10 AND @Username <= '2147483647'))) --check overflow 
 	BEGIN
 		SELECT @custID = custid
