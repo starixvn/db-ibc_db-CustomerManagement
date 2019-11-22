@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]  
     @GroupName		VARCHAR(50) = 'ACCTHAI',
-    @CustId			INT = NULL,
+    @UserName		VARCHAR(30) = NULL,
     @Status			TINYINT = 0,
 	@UserID			INT,
 	@IsDataLimited	BIT	= 0,
@@ -68,9 +68,13 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
+    DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	DECLARE @IsInternalAdmin BIT = 0
+	DECLARE @IsInternalAdmin BIT = 0, @HasSecurityCode BIT = 0
+	DECLARE @RowStart INT, @RowEnd INT
+
+	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
+	SELECT @RowEnd = @RowStart + @PageSize - 1 
 
 	-- get data for filtered customers		
 	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
@@ -78,13 +82,14 @@ BEGIN
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
 
     --@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	IF @CustId IS NULL
+	IF @UserName IS NULL
 	BEGIN
-		INSERT INTO @tmpSuperList(CustID, username, RowNumber)
-		SELECT ci.custID, ci.username,
+		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
+		SELECT ci.custID, ci.username, LimitDays, MinDate,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4		
 			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
@@ -96,14 +101,18 @@ BEGIN
 			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
+			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
+
+		SELECT @TotalRows = @@ROWCOUNT
 	END
 	ELSE
 	BEGIN
-		INSERT INTO @tmpSuperList(CustID, username, RowNumber)
-		SELECT ci.custID, ci.username,
+		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
+		SELECT ci.custID, ci.username, LimitDays, MinDate,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4		
 			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
@@ -115,10 +124,13 @@ BEGIN
 			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
-			AND ci.custid = @CustId
+			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
+			AND c.username LIKE @UserName + '%'
+
+		SELECT @TotalRows = @@ROWCOUNT
 	END
 
-	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT	
 
 	SELECT	c.custid,
 			c.username,
@@ -132,8 +144,10 @@ BEGIN
 			ISNULL(c.iplogin, '') as lastloginip,
 			ci.DoubleCommLosing,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
-			l.LimitDays,
-			l.MinDate,	
+			1 AS UplineHasSecurityCode,
+			CASE WHEN cl.SecurityCode IS NOT NULL THEN 1 ELSE 0 END AS HasSecurityCode,
+			sl.LimitDays,
+			sl.MinDate,	
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
@@ -141,23 +155,20 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
 
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs,
-			MAX(CASE WHEN cs3.bettype = 81 and cs3.sporttype = 161 then cs3.sdiscount ELSE 0 END) AS discountnumber
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
            			
 	FROM @tmpSuperList sl
 		INNER JOIN dbo.customer c WITH(NOLOCK) on sl.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
 		INNER JOIN dbo.CustSuperProfile cp WITH(NOLOCK) ON cp.CustId = c.CustId
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
-		LEFT JOIN dbo.custsetting3rd cs3 WITH(NOLOCK) on c.custid = cs3.custid AND cs3.sporttype = 161 AND cs3.bettype = 181
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-		LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId   
-		
-	WHERE (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
+	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			l.LimitDays, l.MinDate, sl.RowNumber
+			sl.LimitDays, sl.MinDate, cl.SecurityCode, sl.RowNumber
+	
 	ORDER BY RowNumber
 			   
 END
