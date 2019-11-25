@@ -16,6 +16,7 @@ AS
 		- 20190304@Johnson: Initialize SP [RedmineID: #105338]
 		- 20190527@Paul: Apply new status [RedmineID: #113198]
 		- 20190715@Elodie: Sub account management [Redmine:#116825] 
+		- 20191125@Johnson: fix Credit Balance incase no downline [redmine:#124354]
 */
 
 BEGIN
@@ -154,7 +155,7 @@ BEGIN
 	END
 
 	SELECT @credit as Credit,
-		@credit - @CreditBalance as CreditBalance,
+		@credit - ISNULL(@CreditBalance,0) as CreditBalance,
 		ISNULL(@cntNewMember,0) as cntNewMember,
 		@LastLogin as LastLogin,
 		@LastChangePwd as LastChangePwd
@@ -162,3 +163,4 @@ BEGIN
 	SELECT roleid, cntActive, cntViewOnly, cntSuspended, cntInactive
 	FROM #tblStatus
 END	
+GO
