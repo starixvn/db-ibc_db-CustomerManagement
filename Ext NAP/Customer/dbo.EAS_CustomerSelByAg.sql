@@ -83,7 +83,7 @@ BEGIN
 	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
 
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	IF @IsInternalAdmin = 1 AND @AgentSite IN (SELECT site FROM @DenySite )
+	IF @IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @DenySite )
 	BEGIN
 		IF @UserName IS NULL
 		BEGIN
