@@ -70,7 +70,7 @@ BEGIN
 
     DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	DECLARE @IsInternalAdmin BIT = 0, @HasSecurityCode BIT = 0
+	DECLARE @IsInternalAdmin BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT
 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
@@ -80,6 +80,8 @@ BEGIN
 	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
 	SELECT siteid , site, SpecialGroup 
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
+
+	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT	
 
     --@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @UserName IS NULL
@@ -128,9 +130,7 @@ BEGIN
 			AND c.username LIKE @UserName + '%'
 
 		SELECT @TotalRows = @@ROWCOUNT
-	END
-
-	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT	
+	END	
 
 	SELECT	c.custid,
 			c.username,
@@ -142,10 +142,9 @@ BEGIN
 			ISNULL(cp.lastname, '') AS lastname,			
 			c.creatdate as createdate,
 			ISNULL(c.iplogin, '') as lastloginip,
+			1 AS UplineDoubleCommLosing,
 			ci.DoubleCommLosing,
-			ISNULL(cl.ClosedReason,0) AS ClosedReason,
-			1 AS UplineHasSecurityCode,
-			CASE WHEN cl.SecurityCode IS NOT NULL THEN 1 ELSE 0 END AS HasSecurityCode,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 			sl.LimitDays,
 			sl.MinDate,	
 
