@@ -1,11 +1,12 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
-    @Recommend	int,  
-    @Custid		int = null,  
-    @Enabled	bit = null,  
-    @Closed		bit = null,  
-    @Suspended	bit = NULL,
-	@UserID		INT = NULL
+    @recommend		INT,  
+    @UserName		VARCHAR(30) = NULL,
+    @Status			TINYINT = 0,
+	@UserID			INT,
+	@PageIndex		INT = 1,
+	@PageSize		INT = 500,
+	@TotalRows		INT = 0 OUTPUT
 AS
 /*  
 Created by: Scott  
@@ -58,365 +59,114 @@ Revisions:
 	- 20190119@Kan: Add DoubleCommLosingUpline - [Redmine: #106591]
 	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 
-	exec EAS_CustomerSelByAg @Recommend=9367272,@Custid=default,@Enabled=default,@Closed=default,@Suspended=default	
+	Example: EXEC EAS_CustomerSelBySAg @srecommend=9367272, @UserID = 8   
 */  
 BEGIN    
     SET NOCOUNT ON  
 
-    DECLARE @TransferOption BIT, @IsInternalAdmin BIT = 0, @UplineHasSecurityCode BIT = 0
-	
-	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
+    DECLARE @tmpMemberList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
+	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
+	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0, @AgentSite VARCHAR(10)
+	DECLARE @RowStart INT, @RowEnd INT
 	 
-	 BEGIN TRY		
-		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
-	 END TRY
-	 BEGIN CATCH		
-		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
-	 END CATCH
-	 
-    SELECT @TransferOption = CASE
-                               WHEN TransferOption = 0 THEN 0
-                               ELSE 1
-                             END
-                             
-     FROM dbo.custagent WITH(NOLOCK)
-     WHERE custid = @Recommend
+	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
+	SELECT @RowEnd = @RowStart + @PageSize - 1 
 
-	 EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
+	-- get data for filtered customers		
+	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
+	SELECT siteid , site, SpecialGroup 
+	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
 
-	IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid = @Recommend AND cl.SecurityCode IS NOT NULL)
-		SELECT @UplineHasSecurityCode = 1
+	SELECT @AgentSite = site FROM Customer WITH (NOLOCK) WHERE custid = @recommend
+	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
 
-	-- For DCS
-    DECLARE	@bitmapOrder_MuayThai		INT 	
-		,	@bitmapOrder_Esports		INT 		
-		,	@bitmapOrder_AllBet			INT
-		,	@bitmapOrder_AllBetVIP		INT
-		,	@bitmapOrder_VoidBridge		INT
-		,	@bitmapOrder_Lottery		INT
-		,	@bitmapOrder_NG2			INT
-		,	@bitmapOrder_FishingWorld	INT
-		,	@bitmapOrder_VS				INT
+	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
+	IF @IsInternalAdmin = 1 AND @AgentSite IN (SELECT site FROM @DenySite )
+	BEGIN
+		IF @UserName IS NULL
+		BEGIN
+			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
+			SELECT ci.custID, ci.username,
+				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+			FROM dbo.custinfo ci WITH(NOLOCK)
+				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			WHERE ci.recommend = @recommend
+				AND ci.roleid = 1	
+				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
+											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-    SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3) 
-	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1) 
-	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
-	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
-	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
-	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
-    SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
+				AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
 
-	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
-    SELECT	@bitmapOrder_AllBetVIP = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 211 AND	psp.Bettype = 2402)
-    
-    DECLARE	@IsHidden_MuayThai		INT = 1		
-		,	@IsHidden_Esports		INT = 1		
-		,	@IsHidden_AllBet		INT = 1
-		,	@IsHidden_VoidBridge	INT = 1
-		,	@IsHidden_Lottery		INT = 1
-		,	@IsHidden_NG2			INT = 1  
-		,	@IsHidden_FishingWorld	INT = 1
-		,	@IsHidden_VS			INT = 1
-
-	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 5, @IsHide = @IsHidden_VS OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
-	
-	
-	DECLARE	@DoubleCommLosingUpline BIT
-	SELECT @DoubleCommLosingUpline = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend
-
-    SELECT custinfo.custid, custInfo.currency, roleid, autosuspend, reject, closed,
-			MatchLimit, VirtualMultiplier, Enabled,
-			DisableCasino, SyncCasino, DisableOutright,
-			DisableNumber,			
-			DoubleCommLosing, Recommend,  HideKeno,
-			@DoubleCommLosingUpline as DoubleCommLosingUpline,
-			--DisableEsports, 
-			DisableGoldDeluxe, HideGoldDeluxe,
-			(SELECT CASE WHEN HideGoldDeluxe = 0 THEN 1 ELSE 0 END 
-			FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend) as SyncGoldDeluxeUpline,
-			-- For MuayThai
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)) AS DisableMuayThai,
-			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
-			-- For Esports
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Esports)) AS DisableEsports,
-			CAST(CASE WHEN @IsHidden_Esports = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
-			-- For AllBet
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBet)) AS DisableAllBet,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)) AS DisableAllBetVIP,
-			CAST(	CASE	WHEN	@IsHidden_AllBet = 0 
-								--AND	sbhsc.IsHidden = 0
-								AND	(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_AllBet)) = 0 
-								THEN 0
-							ELSE 1 
-					END AS BIT) AS HideAllBet,
-			CAST(	CASE	WHEN	@IsHidden_AllBet = 0 
-											--AND	sbhsc.IsHidden = 0
-											AND	(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_AllBet)) = 0 
-											THEN 0
-										ELSE 1 
-								END AS BIT) AS HideAllBetUpline,
-
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_AllBet)) AS SyncedAllBet,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_AllBet)) AS SyncedAllBetUpline,
-			1 AS SyncedAllBetDownline,
-
-			-- For VoidBridge
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge)) AS DisableVoidBridge,
-			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_VoidBridge)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridgeUpline,						
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_VoidBridge)) AS DisableVoidBridgeUpline,
-			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VoidBridge)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_VoidBridge)) AS SyncedVoidBridge,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_VoidBridge)) AS SyncedVoidBridgeUpline,
-			1 AS SyncedVoidBridgeDownline,
+				AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
+											 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
 			
-			-- For FishingWorld
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)) AS DisableFishingWorld,
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_FishingWorld)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorldUpline,						
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_FishingWorld)) AS DisableFishingWorldUpline,
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_FishingWorld)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_FishingWorld)) AS SyncedFishingWorld,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld)) AS SyncedFishingWorldUpline,
-			1 AS SyncedFishingWorldDownline,
-			-- GD
-			1 AS SyncedGoldDeluxeDownline,
-			
-			-- For Lottery
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLottery,
-			CAST(CASE WHEN @IsHidden_Lottery = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_Lottery)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLotteryUpline,						
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_Lottery)) AS DisableLotteryUpline,
-			CAST(CASE WHEN @IsHidden_Lottery = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lottery)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
-			-- For NG2
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2,
-			CAST(CASE WHEN @IsHidden_NG2 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_NG2)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2Upline,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_NG2)) AS DisableNG2Upline,
-			CAST(CASE WHEN @IsHidden_NG2 = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_NG2)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_NG2)) AS SyncedNG2,
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_NG2)) AS SyncedNG2Upline,
 
-			-- For VS
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSports,
-			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSportsUpline,						
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_VS)) AS DisableVirtualSportsUpline,
-			CAST(CASE WHEN @IsHidden_VS = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports
+			SELECT @TotalRows = @@ROWCOUNT
+		END
+		ELSE
+		BEGIN
+			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
+			SELECT ci.custID, ci.username,
+				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+			FROM dbo.custinfo ci WITH(NOLOCK)
+				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			WHERE ci.recommend = @recommend
+				AND ci.roleid = 1			
+				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
+											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-    INTO #custinfo
-    FROM dbo.custinfo WITH(NOLOCK)
-		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = custinfo.custid  
+				AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
 
-		-- Check isHidden AllBet
-		--OUTER APPLY	dbo.f_CustSetting_SportBetTypeHiddenBySiteCurrency(custInfo.custid, @AllBet) AS sbhsc
-		
-		-- Upline Status
-		INNER JOIN	dbo.CustProductStatus AS cpsUpline WITH (NOLOCK)
-				ON	cpsUpline.CustID =	CASE	WHEN custInfo.roleid = 1 THEN custInfo.recommend
-												WHEN custInfo.roleid = 2 THEN custInfo.mrecommend
-												ELSE custInfo.srecommend
-										END
-		   
-     WHERE Recommend = @Recommend
-       AND roleid = 1
-       AND (@custid is null or custinfo.custid = @custid)
-       AND enabled = case
-                       when coalesce(@Closed, @Suspended) is not null then 1
-                       else coalesce(@enabled, enabled)
-                     end
-       AND isnull(closed, 0) = case
-                                 when @suspended = 1 then 0
-                                 else coalesce(@closed, isnull(closed, 0))
-                               end
-       AND isnull(reject, 0) = case
-                                 when @Closed = 0 then 0
-                                 else coalesce(@suspended, isnull(reject, 0))
-                               end
+				AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
+											 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
+				AND c.username LIKE @UserName + '%'
 
-    --temp custsetting
-    SELECT cs.custid,
-           bettype,
-           sporttype,
-           discount,
-           playerdiscount
-      INTO #CustSetting
-      FROM dbo.custsetting cs WITH(NOLOCK)
-		INNER JOIN #custinfo ci on cs.custid = ci.custid
-     WHERE bettype in (1, 4, 5)
-       and sporttype = 1
+			SELECT @TotalRows = @@ROWCOUNT
+		END
+	END
 
-    --temp custsetting3rd
-    SELECT cs3.custid,
-           bettype,
-           sporttype,
-           discount,
-           playerdiscount
-      INTO #custsetting3rd
-      FROM dbo.custsetting3rd cs3 WITH(NOLOCK)
-		INNER JOIN #custinfo ci on cs3.custid = ci.custid
-     WHERE bettype = 81
-       and sporttype = 161
-       
-	-- get data for filtered customers	
-	DECLARE @AgentSite VARCHAR(10)
-	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
-	DECLARE @tmpUserid VARCHAR(50)
-	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+	SELECT @UplineDoubleCommLosing = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend
+
+	SELECT	c.custid,
+			c.username,
+			ci.enabled,
+			ci.closed,
+			ISNULL(ci.reject, 0) AS suspended,
+			c.roleid,
+			ISNULL(c.firstname, '') AS firstname,
+			ISNULL(c.lastname, '') AS lastname,			
+			c.creatdate as createdate,
+			ISNULL(c.iplogin, '') as lastloginip,
+			@UplineDoubleCommLosing AS UplineDoubleCommLosing,
+			ci.DoubleCommLosing,
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
+
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
+
+			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
+           			
+	FROM @tmpMemberList ml
+		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
+		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
+		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
+		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
+	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.reject, c.roleid, 
+			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
+			ci.DoubleCommLosing, cl.ClosedReason,
+			cl.SecurityCode, ml.RowNumber
 	
-	SELECT @AgentSite = site FROM Customer WITH (NOLOCK) WHERE custid = @Recommend
-
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@tmpUserid)
-	
-
-    SELECT cu.custid,
-           cu.username,
-           isnull(cu.username2,'') NickName,
-           ci.enabled,
-           ci.closed,
-           isnull(ci.reject, 0) as suspended,
-           cu.roleid,
-           isnull(cu.firstname, '') as firstname,
-           isnull(cu.lastname, '') as lastname,
-           cu.ugroup,
-	       --agent commission
-	       max(case
-	             when cs.bettype = 1 and cs.sporttype = 1 then cs.discount
-	             else 0
-	           end) as discount,
-	       max(case
-	             when cs.bettype = 4 and cs.sporttype = 1 then cs.discount
-	             else 0
-	           end) as discountcs,
-	       max(case
-	             when cs.bettype = 5 and cs.sporttype = 1 then cs.discount
-	             else 0
-	           end) as discount1x2,
-
-   	       --player commission
-	       max(case
-	             when cs.bettype = 1 and cs.sporttype = 1 then cs.playerdiscount
-	             else 0
-	           end) as playerdiscount,
-	       max(case
-	             when cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount
-	             else 0
-	           end) as playerdiscountcs,
-	       max(case
-	             when cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount
-	             else 0
-	           end) as playerdiscount1x2,
-	       cu.creatdate as createdate,
-	       isnull(cu.iplogin, '') as lastloginip,
-	       ci.DoubleCommLosing,
-	       isnull(ci.DisableOutright, 0) as DisableOutright,
-	       -- For casino
-	       ci.synccasino,
-	       ci.disablecasino,	     
-	       ci.DisableNumber,
-	       ci.DoubleCommLosingUpline,	        
-	       -- For Keno
-	       ci.HideKeno,
-	       MIN(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526) THEN cg.IsDisabled ELSE 1 END) as DisableKeno,
-	       ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
-		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
-		   ISNULL(ci.SyncGoldDeluxeUpline,1) AS SyncGoldDeluxeUpline,
-		   
-		   ISNULL(ci.DisableMuayThai,1) AS DisableMuayThai,
-		   ISNULL(ci.HideMuayThai,1) AS HideMuayThai,
-		   ISNULL(ci.DisableEsports,1) AS DisableEsports,
-		   ISNULL(ci.HideEsports,1) AS HideEsports,
-		   ISNULL(ci.DisableAllBet,1) AS DisableAllBet,
-		   ISNULL(ci.DisableAllBetVIP,1) AS DisableAllBetVIP,
-		   ISNULL(ci.HideAllBet,1) AS HideAllBet,
-		   ISNULL(ci.HideAllBetUpline,1) AS HideAllBetUpline,
-		   ISNULL(ci.SyncedAllBet,1) AS SyncedAllBet,
-		   ISNULL(ci.SyncedAllBetUpline,1) AS SyncedAllBetUpline,
-		   ISNULL(ci.SyncedAllBetDownline,1) AS SyncedAllBetDownline,
-
-		   ISNULL(ci.DisableVoidBridge,1) AS DisableVoidBridge,
-		   ISNULL(ci.DisableVoidBridgeUpline,1) AS DisableVoidBridgeUpline,
-		   ISNULL(ci.HideVoidBridge,1) AS HideVoidBridge,
-		   ISNULL(ci.HideVoidBridgeUpline,1) AS HideVoidBridgeUpline,
-		   ISNULL(ci.SyncedVoidBridge,1) AS SyncedVoidBridge,
-		   ISNULL(ci.SyncedVoidBridgeUpline,1) AS SyncedVoidBridgeUpline,
-		   ISNULL(ci.SyncedVoidBridgeDownline,1) AS SyncedVoidBridgeDownline,
-		   
-		   ISNULL(ci.DisableLottery,1) AS DisableLottery,
-		   ISNULL(ci.DisableLotteryUpline,1) AS DisableLotteryUpline,
-		   ISNULL(ci.HideLottery,1) AS HideLottery,
-		   ISNULL(ci.HideLotteryUpline,1) AS HideLotteryUpline,
-
-		   ISNULL(ci.DisableNG2,1) AS DisableNG2,
-		   ISNULL(ci.DisableNG2Upline,1) AS DisableNG2Upline,
-		   ISNULL(ci.HideNG2,1) AS HideNG2,
-		   ISNULL(ci.HideNG2Upline,1) AS HideNG2Upline,
-		   ISNULL(ci.SyncedNG2,1) AS SyncedNG2,
-		   ISNULL(ci.SyncedNG2Upline,1) AS SyncedNG2Upline,
-
-		   ISNULL(ci.DisableFishingWorld,1) AS DisableFishingWorld,
-		   ISNULL(ci.DisableFishingWorldUpline,1) AS DisableFishingWorldUpline,
-		   ISNULL(ci.HideFishingWorld,1) AS HideFishingWorld,
-		   ISNULL(ci.HideFishingWorldUpline,1) AS HideFishingWorldUpline,
-		   ISNULL(ci.SyncedFishingWorld,1) AS SyncedFishingWorld,
-		   ISNULL(ci.SyncedFishingWorldUpline,1) AS SyncedFishingWorldUpline,
-		   ISNULL(ci.SyncedFishingWorldDownline,1) AS SyncedFishingWorldDownline,
-		   ISNULL(ci.SyncedGoldDeluxeDownline,0) AS SyncedGoldDeluxeDownline,
-		   ISNULL(ci.DisableVirtualSports,1) AS DisableVirtualSports,
-		   ISNULL(ci.DisableVirtualSportsUpline,1) AS DisableVirtualSportsUpline,
-		   ISNULL(ci.HideVirtualSports,1) AS HideVirtualSports,
-		   ISNULL(ci.HideVirtualSportsUpline,1) AS HideVirtualSportsUpline,
-	       --transfer condition
-	       @TransferOption disableTransfer,	
-	       ROW_NUMBER() OVER (ORDER BY ci.enabled desc,
-	                                   ci.closed,
-	                                   isnull(ci.reject, 0),
-	                                   cu.username
-	                         ) as RowNumber,
-			
-			ISNULL(cl.ClosedReason,0) AS ClosedReason,
-			@UplineHasSecurityCode AS UplineHasSecurityCode
-      FROM dbo.customer AS cu with(NOLOCK)
-		INNER JOIN #Custinfo ci with(nolock) on cu.custid = ci.custid
-		
-		 LEFT JOIN #CustSetting as cs with(NOLOCK) on cu.custid = cs.custid
-		 LEFT JOIN #custsetting3rd cs3 with(nolock) on cu.custid = cs3.custid
-		 LEFT JOIN dbo.CustGameType cg WITH(NOLOCK) ON cg.CustID = ci.custid
-		 LEFT JOIN @tmp_GameType g ON cg.GameTypeID = g.GameTypeID
-													 AND g.IBCBetTypeID IN (1501,1503,1504,1505,1508,1511,1513,1514,1515,1516,1517,1519,1520,1521,1522,1524,1525,1526)	 																			
-		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cu.custid=cl.CustID
-     WHERE ((cs.sporttype IN (1) AND cs.bettype IN (1, 5, 4) AND cs3.sporttype IN (161) AND cs3.bettype IN (81))
-				OR (cs.sporttype IS NULL AND cs.bettype IS NULL AND cs3.sporttype IS NULL AND cs3.bettype IS NULL))
-			AND (@IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @tmp ))
-	 GROUP BY cu.custid, cu.username, cu.username2, cu.ugroup, ci.enabled, ci.closed,
-				ci.reject, cu.roleid, cu.firstname, cu.lastname, cu.creatdate, cu.iplogin,
-				ci.DoubleCommLosing, ci.DisableOutright, 		
-				ci.synccasino,
-				ci.disablecasino,  ci.DisableNumber,  
-			  	ci.DoubleCommLosingUpline,
-				ci.HideKeno,
-				ci.HideGoldDeluxe, ci.SyncGoldDeluxeUpline, ci.DisableGoldDeluxe,
-				ci.DisableMuayThai, ci.HideMuayThai, ci.DisableAllBet,ci.DisableAllBetVIP, ci.HideAllBet, ci.HideAllBetUpline,  ci.SyncedAllBet, ci.SyncedAllBetUpline, ci.SyncedAllBetDownline,
-				ci.DisableVoidBridge,ci.DisableVoidBridgeUpline, ci.HideVoidBridge,ci.HideVoidBridgeUpline, ci.SyncedVoidBridge,ci.SyncedVoidBridgeUpline, ci.SyncedVoidBridgeDownline,
-				ci.DisableNG2,ci.DisableNG2Upline, ci.HideNG2,ci.HideNG2Upline, ci.SyncedNG2,ci.SyncedNG2Upline,
-				ci.DisableFishingWorld,ci.DisableFishingWorldUpline, ci.HideFishingWorld,ci.HideFishingWorldUpline, ci.SyncedFishingWorld,ci.SyncedFishingWorldUpline, ci.SyncedFishingWorldDownline,
-			  	ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
-			   	cl.closedReason,ci.SyncedGoldDeluxeDownline,
-			    ci.DisableVirtualSports,ci.HideVirtualSportsUpline,ci.HideVirtualSports, ci.DisableVirtualSportsUpline,
-				ci.DisableLottery,ci.DisableLotteryUpline, ci.HideLottery,ci.HideLotteryUpline,
-				ci.DisableEsports, ci.HideEsports
 	ORDER BY RowNumber
 
-
-    DROP TABLE #Custinfo,
-               #CustSetting,
-               #custsetting3rd  
 END
 GO

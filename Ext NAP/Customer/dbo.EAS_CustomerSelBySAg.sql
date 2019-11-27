@@ -66,7 +66,7 @@ BEGIN
 
 	DECLARE @tmpMasterList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 1
+	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
@@ -161,9 +161,7 @@ BEGIN
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber
 	
-	ORDER BY RowNumber
-
-   
+	ORDER BY RowNumber   
 END
 
 GO

@@ -114,7 +114,7 @@ BEGIN
 	    SELECT		@upLineSuspend = 0
 				,	@upLineClosed = 0
 				,	@upLineDisableOutright = 0
-				,	@uplineDoubleCommLosing = 0
+				,	@uplineDoubleCommLosing = 1
 				
 				,	@upLineDisableCasino = 0
 				,	@uplineSyncCasino = 0
@@ -144,8 +144,8 @@ BEGIN
 			@uplineDoubleCommLosing AS uplineDoubleCommLosing,
 			ci.DisableOutright,
 			@upLineDisableOutright AS upLineDisableOutright,
-			@HasSecurityCode, 
-			@UplineHasSecurityCode
+			@HasSecurityCode AS HasSecurityCode, 
+			@UplineHasSecurityCode AS UplineHasSecurityCode
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
