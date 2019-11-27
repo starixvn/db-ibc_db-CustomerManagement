@@ -139,6 +139,8 @@ BEGIN
 			ci.closed,
 			ISNULL(ci.reject, 0) AS suspended,
 			c.roleid,
+			c.ugroup,
+			ISNULL(c.username2,'') AS NickName,
 			ISNULL(c.firstname, '') AS firstname,
 			ISNULL(c.lastname, '') AS lastname,			
 			c.creatdate as createdate,
@@ -154,7 +156,7 @@ BEGIN
 
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
-           			
+           	
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
