@@ -182,6 +182,7 @@ BEGIN
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.srecommend) AS u
 			WHERE c.srecommend = @CustId
+				AND (@IsAllDownline = 1 OR EXISTS (SELECT DownlineId FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s WHERE s.DownlineId = c.custid))
 				AND c.roleid = @SearchRoleId
 				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
