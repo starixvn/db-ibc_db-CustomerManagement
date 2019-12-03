@@ -3,7 +3,6 @@ CREATE PROCEDURE [dbo].[CS_ProblemAccount_ReviewStatusUpd]
 	@UserId					INT,
 	@SubAccId				INT = 0,
 	@RoleId					TINYINT,
-	@TargetRoleId			TINYINT,
 	@IsAllDownline			BIT = 0,
 	@CustomerList			VARCHAR(MAX) = '',
 	@IsAffectedAllDownlines	BIT = 0,
@@ -50,80 +49,45 @@ BEGIN
 	FROM dbo.f_StringSplit(@CustomerList, ',')
 	OPTION(MAXRECURSION 0)
 
-	IF @RoleId = 0
+	IF @SubAccId > 0 AND @IsAllDownline = 0
 	BEGIN
-		IF @TargetRoleId = 4
+		IF EXISTS(SELECT 1 
+					FROM #Downlines d
+					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
+					WHERE ci.roleid <> @RoleId 
+						OR ci.srecommend <> @UserId 
+						OR NOT EXISTS(SELECT DownlineId 
+									FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s 
+									WHERE (@RoleId = 3 AND s.DownlineId = ci.custid)
+										OR (@RoleId <> 3 AND s.DownlineId = ci.mrecommend)))
 		BEGIN
-			IF EXISTS (SELECT 1
-						FROM #Downlines d
-							INNER JOIN dbo.CustSuper cs WITH (NOLOCK) on d.CustId = cs.custid
-						WHERE cs.UplineId <> @UserId)
-			BEGIN
-				--Action failed. Please try again.
-				SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-				RETURN
-			END
+			--Action failed. Please try again.
+			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
+			RETURN
 		END
-		ELSE
-		BEGIN
-			IF EXISTS (SELECT 1
-						FROM #Downlines d
-							INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-							WHERE ci.roleid <> @TargetRoleId
-								OR ci.srecommend NOT IN (SELECT CustId FROM dbo.CustSuper cs WHERE cs.UplineId = @UserId))
-			BEGIN
-				--Action failed. Please try again.
-				SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-				RETURN
-			END
-		END
-	END 
+	END
 	ELSE
 	BEGIN
-		IF @SubAccId > 0 AND @IsAllDownline = 0
-		BEGIN
-			IF EXISTS(SELECT 1 
-						FROM #Downlines d
+		IF EXISTS (SELECT 1
+					FROM #Downlines d
 						INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-						WHERE ci.roleid <> @TargetRoleId 
-							OR ci.srecommend <> @UserId 
-							OR NOT EXISTS(SELECT DownlineId 
-										FROM dbo.CS_f_GetDownlineBySubAcc(@SubAccId) s 
-										WHERE (@TargetRoleId = 3 AND s.DownlineId = ci.custid)
-											OR (@TargetRoleId <> 3 AND s.DownlineId = ci.mrecommend)))
-			BEGIN
-				--Action failed. Please try again.
-				SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-				RETURN
-			END
-		END
-		ELSE
+					WHERE ci.roleid <> @RoleId OR ci.srecommend <> @UserId)
 		BEGIN
-			IF EXISTS (SELECT 1
-						FROM #Downlines d
-							INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-						WHERE ci.roleid <> @TargetRoleId OR ci.srecommend <> @UserId)
-			BEGIN
-				--Action failed. Please try again.
-				SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
-				RETURN
-			END
+			--Action failed. Please try again.
+			SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
+			RETURN
 		END
-	ENd
-
-	IF @TargetRoleId = 4
-	BEGIN
-		SELECT @ActionId = 31605
 	END
-	ELSE IF @TargetRoleId = 3
+
+	IF @RoleId = 3
 	BEGIN
 		SELECT @ActionId = 31608
 	END
-	ELSE IF @TargetRoleId = 2
+	ELSE IF @RoleId = 2
 	BEGIN
 		SELECT @ActionId = 31609
 	END
-	ELSE IF @TargetRoleId = 1
+	ELSE IF @RoleId = 1
 	BEGIN
 		SELECT @ActionId = 31610
 	END
@@ -150,11 +114,11 @@ BEGIN
 
 		IF @@ROWCOUNT = 0 BREAK
 
-		IF @TargetRoleId <> 1 AND @IsAffectedAllDownlines = 1
+		IF @RoleId <> 1 AND @IsAffectedAllDownlines = 1
 		BEGIN
 			EXEC dbo.CS_DynamicCustSetting_01
 			@CustId = @CustId,
-			@RoleId = @TargetRoleId,
+			@RoleId = @RoleId,
 			@Action = 'UpdateReviewStatus',
 			@SuccessDownlineList = @SuccessDownlineList OUTPUT
 		END
