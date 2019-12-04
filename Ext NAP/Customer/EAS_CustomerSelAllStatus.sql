@@ -37,6 +37,7 @@ BEGIN
           , @DisableAutoMPT			BIT  
 		  , @isDirectSuspend		BIT = 0
 		  , @HasSecurityCode		BIT = 0
+		  , @TransferOption			BIT
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -62,6 +63,7 @@ BEGIN
 
 		SELECT @HasSecurityCode = 1 FROM dbo.CustLoginInfo_Member WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @recommend AND SecurityCode IS NOT NULL
+		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustAgent WITH(NOLOCK) WHERE custid = @recommend
     END 
     ELSE IF @roleID = 2 --for agent
     BEGIN
@@ -84,6 +86,7 @@ BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
 		SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @mrecommend AND SecurityCode IS NOT NULL
+		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustMaster WITH(NOLOCK) WHERE custid = @mrecommend
     END
     ELSE IF @roleID = 3 --for master
     BEGIN
@@ -105,6 +108,7 @@ BEGIN
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
+		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustSuper WITH(NOLOCK) WHERE custid = @srecommend
 		SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @srecommend AND SecurityCode IS NOT NULL
     END
@@ -143,6 +147,7 @@ BEGIN
 			@upLineSuspend AS upLineSuspend,
 			@uplineDoubleCommLosing AS uplineDoubleCommLosing,
 			ci.DisableOutright,
+			@TransferOption AS DisableTransfer,
 			@upLineDisableOutright AS upLineDisableOutright,
 			@HasSecurityCode AS HasSecurityCode, 
 			@UplineHasSecurityCode AS UplineHasSecurityCode
@@ -161,10 +166,13 @@ BEGIN
 			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
-			ci.HideKeno	
+			ci.HideKeno,
+			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,7,8,9,11,13) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
+		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
     WHERE c.custid = @custid
+	GROUP BY ci.SyncCasino, ci.DisableCasino, ci.DisableNumber, ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.HideKeno
 
 	-- For Product DCS
 	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid
