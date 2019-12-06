@@ -21,6 +21,7 @@ AS
 		- 20190606@Elodie: Initial SP [Redmine: #113198]
 		- 20190808@Elodie: Don't show log of problem account when master, agent view log [Redmine:#116814]
 		- 20190905@Elodie: Show log of problem account for downline [Redmine:#116814]
+		- 20191206@Tiara: Add condition to where clause to prevent agent view problem account log [Redmine: #124886]
 
     Param's Explaination:    
 		- @UserId: a customer which we want to view actions affect to.
@@ -599,6 +600,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
+								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @FromDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -657,6 +659,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
+								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @FromDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -746,6 +749,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
+								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -771,6 +775,7 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
+								AND c.custid = @CustId
 								AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -871,6 +876,7 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
+							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
@@ -936,6 +942,7 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
+							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
@@ -1038,6 +1045,7 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
+							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
@@ -1064,6 +1072,7 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
+							AND c.custid = @CustId
 							AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate				
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
