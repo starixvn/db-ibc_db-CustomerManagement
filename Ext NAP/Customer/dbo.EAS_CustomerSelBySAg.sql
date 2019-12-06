@@ -58,6 +58,7 @@ AS
 		- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
+	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
 
 	Example: EXEC EAS_CustomerSelBySAg @srecommend=4792246, @UserID = 8   
 */
@@ -95,10 +96,12 @@ BEGIN
 
 			AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
 										 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+		,	@bitmapOrder_VG				INT
 
 			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
+	SET @bitmapOrder_VG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 245 AND Bettype = 4601)
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -117,11 +120,13 @@ BEGIN
 
 			AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
 										 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+		,	@IsHidden_VG			INT = 1
 
 			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND c.username LIKE @UserName + '%'
+	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -148,12 +153,21 @@ BEGIN
 			ISNULL(c.iplogin, '') as lastloginip,
 			@UplineDoubleCommLosing AS UplineDoubleCommLosing,
 			ci.DoubleCommLosing,
+		   ISNULL(ci.DisableVirtualGames,1) AS DisableVirtualGames,
+		   ISNULL(ci.HideVirtualGames,1) AS HideVirtualGames,
+		   ISNULL(ci.HideVirtualGamesUpline,1) AS HideVirtualGamesUpline,
+
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
+						-- For VG
+						(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VG)) AS DisableVirtualGames,						
+						CAST(CASE WHEN @IsHidden_VG = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VG)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames,
+						CAST(CASE WHEN @IsHidden_VG = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_VG)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGamesUpline,
+
 
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.adiscount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.adiscount ELSE 0 END) AS discountcs
@@ -169,6 +183,7 @@ BEGIN
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber
 	
+			   ci.DisableVirtualGames,ci.HideVirtualGamesUpline,ci.HideVirtualGames,
 	ORDER BY RowNumber   
 END
 

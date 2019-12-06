@@ -60,6 +60,7 @@ Revisions:
 	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
+	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
 
 	Example: EXEC EAS_CustomerSelBySAg @srecommend=9367272, @UserID = 8   
 */  
@@ -73,7 +74,7 @@ BEGIN
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
-
+EAS_CustomerSelAllInfo
 	-- get data for filtered customers		
 	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
 	SELECT siteid , site, SpecialGroup 
@@ -95,11 +96,20 @@ BEGIN
 				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			WHERE ci.recommend = @recommend
 				AND ci.roleid = 1	
-				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
+		,	@bitmapOrder_VG				INT
 											 WHEN @Status = 4 THEN 0 ELSE enabled END
+	SET @bitmapOrder_VG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 245 AND Bettype = 4601)
+		,	@IsHidden_VG			INT = 1
+	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
 
 				AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
 											 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+
+			-- For VG
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VG)) AS DisableVirtualGames,
+			CAST(CASE WHEN @IsHidden_VG = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsHidden, @bitmapOrder_VG)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGamesUpline,						
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapIsDisabled, @bitmapOrder_VG)) AS DisableVirtualGamesUpline,
+			CAST(CASE WHEN @IsHidden_VG = 0 AND (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VG)) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames
 
 				AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
 											 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
@@ -164,6 +174,11 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END) AS playerdiscount,			
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscountcs,
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscount1x2
+
+		   ISNULL(ci.DisableVirtualGames,1) AS DisableVirtualGames,
+		   ISNULL(ci.DisableVirtualGamesUpline,1) AS DisableVirtualGamesUpline,
+		   ISNULL(ci.HideVirtualGames,1) AS HideVirtualGames,
+		   ISNULL(ci.HideVirtualGamesUpline,1) AS HideVirtualGamesUpline,
            	
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
@@ -176,6 +191,7 @@ BEGIN
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber
 	
+				ci.DisableVirtualGames,ci.HideVirtualGamesUpline,ci.HideVirtualGames,ci.DisableVirtualGamesUpline,
 	ORDER BY RowNumber
 
 END
