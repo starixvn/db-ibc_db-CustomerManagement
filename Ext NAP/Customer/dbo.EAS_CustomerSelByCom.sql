@@ -142,7 +142,7 @@ BEGIN
 			ISNULL(cp.lastname, '') AS lastname,			
 			c.creatdate as createdate,
 			ISNULL(c.iplogin, '') as lastloginip,
-			1 AS UplineDoubleCommLosing,
+			CAST(1 AS BIT) AS UplineDoubleCommLosing,
 			ci.DoubleCommLosing,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 			sl.LimitDays,
