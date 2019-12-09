@@ -600,7 +600,6 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
-								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @FromDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -659,7 +658,6 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
-								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @FromDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -735,7 +733,7 @@ BEGIN
 							mt.UserID,
 							c.Username,
 							mt.TrackingValue,
-							TrackingValue2,
+							mt.TrackingValue2,
 							mt.LogDate,
 							la.ActionID,
 							ActionTypeID,
@@ -749,7 +747,6 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
-								AND c.custid = @CustId
 								AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -775,7 +772,6 @@ BEGIN
 							INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 							LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 						WHERE	lt.custid = @CustId
-								AND c.custid = @CustId
 								AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate
 								AND  la.ActionTypeID = @ActionTypeId
 								AND IsInternal <= @IsInternal
@@ -862,7 +858,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -876,12 +872,13 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
-							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
@@ -928,7 +925,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -942,12 +939,13 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
-							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @FromDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				END
 				ELSE
 				BEGIN
@@ -1031,7 +1029,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -1045,20 +1043,21 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
-							AND c.custid = @CustId
 							AND mt.LogDate BETWEEN @__archiveDate AND @ToDate
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 					SELECT mt.MainLogID,
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -1072,12 +1071,13 @@ BEGIN
 						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON mt.ActionID = la.ActionID
 						LEFT JOIN bodb02.dbo.CustInfo c WITH (NOLOCK) ON c.custid = mt.UserID
 					WHERE	lt.custid = @CustId
-							AND c.custid = @CustId
 							AND mt.LogDate >= @FromDate AND mt.LogDate < @__archiveDate				
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				END
 
 				SELECT  LogID,
