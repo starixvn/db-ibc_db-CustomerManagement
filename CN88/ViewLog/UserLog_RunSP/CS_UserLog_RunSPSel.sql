@@ -21,6 +21,7 @@ AS
 		- 20190606@Elodie: Initial SP [Redmine: #113198]
 		- 20190808@Elodie: Don't show log of problem account when master, agent view log [Redmine:#116814]
 		- 20190905@Elodie: Show log of problem account for downline [Redmine:#116814]
+		- 20191206@Tiara: Add condition to where clause to prevent agent view problem account log [Redmine: #124886]
 
     Param's Explaination:    
 		- @UserId: a customer which we want to view actions affect to.
@@ -732,7 +733,7 @@ BEGIN
 							mt.UserID,
 							c.Username,
 							mt.TrackingValue,
-							TrackingValue2,
+							mt.TrackingValue2,
 							mt.LogDate,
 							la.ActionID,
 							ActionTypeID,
@@ -857,7 +858,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -876,6 +877,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
@@ -922,7 +925,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -941,6 +944,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				END
 				ELSE
 				BEGIN
@@ -1024,7 +1029,7 @@ BEGIN
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -1043,14 +1048,16 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
 					SELECT mt.MainLogID,
 						mt.UserID,
 						c.Username,
 						mt.TrackingValue,
-						TrackingValue2,
+						mt.TrackingValue2,
 						mt.LogDate,
 						la.ActionID,
 						ActionTypeID,
@@ -1069,6 +1076,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
+							AND (mt.ActionId NOT BETWEEN 31608 AND 31610 
+								OR ( mt.ActionId BETWEEN 31608 AND 31610 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				END
 
 				SELECT  LogID,

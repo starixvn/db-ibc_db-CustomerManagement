@@ -1,1 +1,1 @@
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
