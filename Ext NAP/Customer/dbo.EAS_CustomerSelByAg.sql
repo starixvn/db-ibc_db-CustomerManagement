@@ -149,13 +149,13 @@ BEGIN
 			ci.DoubleCommLosing,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.discount ELSE 0 END) AS discount,			
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discountcs,
+			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discount1x2,
 
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
+			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END) AS playerdiscount,			
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscountcs,
+			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscount1x2
            	
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid

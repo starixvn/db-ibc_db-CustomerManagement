@@ -151,8 +151,8 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
 
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
+			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discount1x2,
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discountcs
            			
 	FROM @tmpAgentList al
 		INNER JOIN dbo.customer c WITH(NOLOCK) on al.custid = c.custid
