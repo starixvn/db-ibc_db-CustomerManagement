@@ -1,4 +1,5 @@
-
-NAP-Accounting\UserControl\HideSpecialSite\Acc_CustomerIsAllowedAccess.sql
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-Ext NAP\UserControl\SpecialSite\Acc_CustomerIsSpecialSite.sql
+CN88\Login\CS_AdminLoginVerifyBefore.sql
+CN88\Downline List\CS_Customer_Credit_Upd.sql
+CN88\Login\CS_LoginVerifyDownline.sql
+CN88\Login\CS_LoginClaimDownline.sql
+CN88\Login\CS_LoginDownline_Admin.sql
