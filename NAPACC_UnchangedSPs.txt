@@ -1,1 +1,4 @@
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+<<<<<<< 123972-NAP-Left_panel-_Error_when_search_an_exponent
+NAP-Accounting\UserControl\HideSpecialSite\Acc_CustomerIsAllowedAccess.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+Ext NAP\UserControl\SpecialSite\Acc_CustomerIsSpecialSite.sql
