@@ -1,12 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_List    Script Date: 10/28/2014 9:45:19 AM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_List    Script Date: 10/23/2014 12:48:24 PM ******/
-/****** Object:  Stored Procedure dbo.NAP_SpecialCustSetting_List    Script Date: 10/23/2014 8:38:07 AM ******/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
 	@Licensee NVARCHAR(100)
 	,@Currency NVARCHAR(1000) = ''
@@ -24,6 +16,7 @@ Created: Dom
 		Revisions:
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+			- 20191218@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 */
 
 BEGIN
@@ -43,11 +36,11 @@ BEGIN
 	
 	BEGIN TRY		
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END TRY
 	BEGIN CATCH		
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END CATCH
 	
 	DECLARE @Sport TABLE(SportID INT)
@@ -62,7 +55,7 @@ BEGIN
 		SELECT 10 UNION ALL 
 		SELECT 11 UNION ALL 
 		SELECT 99 UNION ALL 
-		SELECT 154
+		SELECT 43
 
 	IF(@ShowNumberGame=1)
 		INSERT INTO @Sport 
@@ -141,10 +134,3 @@ END
 
 GO
 
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
