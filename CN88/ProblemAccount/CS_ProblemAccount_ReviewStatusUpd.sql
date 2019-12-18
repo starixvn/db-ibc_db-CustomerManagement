@@ -20,6 +20,7 @@ AS
 	Revisions:
 		- 20190806@Alvin: Initialize SP [RedmineID: #116814]
 		- 20190918@Alvin: Hide indirect marked on Problem Account
+		- 20191218@Percy: Change using SP CS_DynamicCustSetting_01 to CS_DynamicCustomerInfo_02 [RedmineID: #125186]
 		
 	Param's Explanation:
 		@CustId: Super login
@@ -116,7 +117,7 @@ BEGIN
 
 		IF @RoleId <> 1 AND @IsAffectedAllDownlines = 1
 		BEGIN
-			EXEC dbo.CS_DynamicCustSetting_01
+			EXEC dbo.CS_DynamicCustomerInfo_02
 			@CustId = @CustId,
 			@RoleId = @RoleId,
 			@Action = 'UpdateReviewStatus',
