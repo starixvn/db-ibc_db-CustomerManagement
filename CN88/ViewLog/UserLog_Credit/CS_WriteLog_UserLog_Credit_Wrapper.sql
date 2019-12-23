@@ -31,7 +31,7 @@ BEGIN
 	SET NOCOUNT ON  
 
 	-- SB Parameters -----
-	DECLARE @SB_xml XML, @SB_currentDate DATETIME, @SB_Error BIT = 0
+	DECLARE @SB_xml XML, @SB_currentDate DATETIME, @SB_Error BIT = 1
 	SET @SB_currentDate = GETDATE()
 	-- SB Parameters ----------
 
@@ -49,12 +49,12 @@ BEGIN
 					FOR XML PATH ('row')
 					)
 			
-	EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @functionName = 'UserLog_Others', @MessageType = 'MessageType_CustomerLog_CS_UserLog_Credit', @SB_Error = @SB_Error OUT
+	--EXEC bodb_CustomerLog.sb.CustomerLog_SendMessage @xml = @SB_xml, @functionName = 'UserLog_Others', @MessageType = 'MessageType_CustomerLog_CS_UserLog_Credit', @SB_Error = @SB_Error OUT
     
 	IF @SB_Error = 1 
 	BEGIN
 		BEGIN TRY
-			EXEC DBLOG.bodb_CustomerLog.dbo.CS_WriteLog_UserLog_Credit
+			EXEC DBLOG.bodb_CustomerLog.dbo.CS_WriteLog_UserLog_Credit_Elodie
 				@UserID = @UserID,
 				@CustID = @CustID,
 				@SubAccID = @SubAccID,
