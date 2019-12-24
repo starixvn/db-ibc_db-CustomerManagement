@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]
     @Status			TINYINT = 0,
 	@UserID			INT,
 	@IsDataLimited	BIT	= 0,
-	@PageIndex		INT = 1,
+	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
 	@TotalRows		INT = 0 OUTPUT
 AS  
@@ -131,6 +131,13 @@ BEGIN
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END	
+
+	IF @RowStart > @TotalRows
+	BEGIN
+		SET @PageIndex = 1
+		SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
+		SELECT @RowEnd = @RowStart + @PageSize - 1 
+	END
 
 	SELECT	c.custid,
 			c.username,

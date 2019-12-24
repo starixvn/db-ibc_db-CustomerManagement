@@ -130,6 +130,13 @@ BEGIN
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 
+	IF @RowStart > @TotalRows
+	BEGIN
+		SET @PageIndex = 1
+		SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
+		SELECT @RowEnd = @RowStart + @PageSize - 1 
+	END
+
 	SELECT @UplineDoubleCommLosing = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @mrecommend
 
 	SELECT	c.custid,
