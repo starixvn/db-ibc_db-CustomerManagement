@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Sel]
 	@Licensee NVARCHAR(100)
 	,@CurrencyID INT
@@ -11,11 +11,12 @@ AS
 	Created: Dom
 		Date: 2014-09-03
 		Task: Get list Product Hardcode setting by licensee and currency
-		DB: DBTXN/CustDB
+		DB: DBCUST/CustDB
 		
 		Revisions:
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+			- 20191225@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 			
 */
 SET NOCOUNT ON
@@ -33,11 +34,11 @@ SET NOCOUNT ON
 
 	BEGIN TRY		
 	INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
+	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END TRY
 	BEGIN CATCH		
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END CATCH
 BEGIN
 	
@@ -48,6 +49,7 @@ BEGIN
 	INSERT INTO @SportTable
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=2, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=43, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=3, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=5, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=8, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
@@ -55,7 +57,6 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=11, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=154, bettype=20, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='NG' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
@@ -197,11 +198,3 @@ BEGIN
 END
 
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 

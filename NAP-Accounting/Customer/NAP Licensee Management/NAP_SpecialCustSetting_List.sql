@@ -11,7 +11,7 @@ AS
 Created: Dom
 		Date: 2014-09-03
 		Task: Get list Product Hardcode setting by licensee and currency
-		DB: DBTXN/CustDB
+		DB: DBCUST/CustDB
 		
 		Revisions:
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
