@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelAllStatus]
 AS
 /*
 	Created: 20180628@Elodie
-	DB: DBAGE/bodb02
+	DB: DBCUST/CustDB
 	Task: Left menu of ExtNap - Search customer - All Status
 
 	Revisions:
@@ -19,7 +19,7 @@ AS
 */
 BEGIN
     SET NOCOUNT ON
-
+	DECLARE @GameType TABLE (GameTypeID INT, IBCBetTypeID INT)
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
 		    	
 	--Downline/Upline status 
@@ -153,7 +153,10 @@ BEGIN
 			@UplineHasSecurityCode AS UplineHasSecurityCode
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
-    WHERE c.custid = @custid
+    WHERE c.custid = @custid	
+
+	INSERT INTO @GameType (GameTypeID, IBCBetTypeID)
+	SELECT GameTypeID, IBCBetTypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE IBCBetTypeID BETWEEN 1501 AND 1599 AND IsDisabled = 0
 
 	--Product Status
 	SELECT	ci.SyncCasino,
@@ -167,10 +170,11 @@ BEGIN
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
 			ci.HideKeno,
-			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,7,8,9,11,13) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
+			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,7,8,9,11,13,14,17,19,20,21,22,24,25,26) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
 		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
+		INNER JOIN @GameType g ON g.GameTypeID = cg.GameTypeID
     WHERE c.custid = @custid
 	GROUP BY ci.SyncCasino, ci.DisableCasino, ci.DisableNumber, ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.HideKeno
 
