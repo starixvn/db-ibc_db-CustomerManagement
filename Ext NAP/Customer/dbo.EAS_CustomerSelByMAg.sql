@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByMAg]
 	@UserName		VARCHAR(30) = NULL,
     @Status			TINYINT = 0,
 	@UserID			INT,
-	@PageIndex		INT = 1,
+	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
 	@TotalRows		INT = 0 OUTPUT
  
