@@ -121,7 +121,7 @@ BEGIN
 			
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE recommend = @custid
-			OPTION (RECOMPLILE)
+			OPTION (RECOMPILE)
 			
 			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
@@ -134,7 +134,7 @@ BEGIN
 
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE mrecommend = @custid
-			OPTION (RECOMPLILE)
+			OPTION (RECOMPILE)
 			
 			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
