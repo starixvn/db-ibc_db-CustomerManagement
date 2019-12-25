@@ -170,7 +170,7 @@ BEGIN
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
 			ci.HideKeno,
-			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,7,8,9,11,13,14,17,19,20,21,22,24,25,26) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
+			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,8,11,13,14,15,16,17,19,20,21,22,24,25,26) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
 		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
