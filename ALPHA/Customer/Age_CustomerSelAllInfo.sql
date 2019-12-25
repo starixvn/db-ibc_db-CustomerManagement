@@ -58,7 +58,7 @@ AS
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
 		- 20191008@Johnson: remove credit info[Redmine: #121538]		
-
+		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -69,7 +69,7 @@ BEGIN
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
     DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
-			@isDirectSuspend BIT = 0
+			@isDirectSuspend BIT = 0, @transid BIGINT
 
     SELECT @username = RTRIM(LTRIM(@username))
 
@@ -97,7 +97,7 @@ BEGIN
 				OR (recommend = @uplineid AND roleid = 1))
     END
     --end
-
+	
     --Check valid access!
     IF @custid IS NOT NULL
 	BEGIN
@@ -118,8 +118,12 @@ BEGIN
 			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
 			FROM custinfo WITH(NOLOCK)
 			WHERE custID = @mrecommend	
-
-			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE recommend = @custid
+			
+			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
+			WHERE recommend = @custid
+			OPTION (RECOMPLILE)
+			
+			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
 		ELSE IF @roleID = 3 --for master
 		BEGIN
@@ -128,7 +132,11 @@ BEGIN
 			FROM custinfo WITH(NOLOCK)
 			WHERE custID = @srecommend	
 
-			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE mrecommend = @custid
+			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
+			WHERE mrecommend = @custid
+			OPTION (RECOMPLILE)
+			
+			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
     
 		IF @roleid=1
