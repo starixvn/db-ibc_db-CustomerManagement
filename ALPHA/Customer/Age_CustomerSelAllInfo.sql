@@ -121,7 +121,8 @@ BEGIN
 			
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE recommend = @custid
-			OPTION (RECOMPILE)
+				AND bettype NOT IN (20000,19999)
+			OPTION(OPTIMIZE FOR	UNKNOWN)
 			
 			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
@@ -134,7 +135,8 @@ BEGIN
 
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE mrecommend = @custid
-			OPTION (RECOMPILE)
+				AND bettype NOT IN (20000,19999)
+			OPTION(OPTIMIZE FOR	UNKNOWN)
 			
 			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 		END
