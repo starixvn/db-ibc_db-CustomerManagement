@@ -113,7 +113,7 @@ BEGIN
 		,cbs.gametypeid
 		,AgentName = NULL
 		,SportName = 'Keno'
-		,bt.GameTypeName SportGameType
+		,'RNG Keno' AS SportGameType
 		,maxbet
 		,maxpergametype MaxPerMatch
 		,MaxPerBall = NULL
