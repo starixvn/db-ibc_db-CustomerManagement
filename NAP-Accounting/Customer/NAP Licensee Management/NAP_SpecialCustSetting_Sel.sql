@@ -160,7 +160,7 @@ BEGIN
 					,SportType=202
 					,sp.[Group]
 					,sp.Bettype
-					,bt.GameTypeName SportName
+					,'RNG Keno' AS SportName
 					,SportNameA = 'Keno'
 					,sp.MaxBet
 					,sp.MaxPerMatch
@@ -179,7 +179,7 @@ BEGIN
 				,SportType=202
 				,sp.[Group]
 				,sp.Bettype
-				,bt.GameTypeName SportName
+				,'RNG Keno' AS SportName
 				,SportNameA = 'Keno'
 				,cbs.MaxBet
 				,cbs.maxpergametype MaxPerMatch
