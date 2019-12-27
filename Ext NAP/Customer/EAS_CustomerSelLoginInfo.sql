@@ -1,7 +1,4 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[EAS_CustomerSelLoginInfo]  
     @CustId	INT,
 	@GroupName VARCHAR(50)
@@ -13,7 +10,7 @@ AS
 
 	Revisions:  
 		- 20181030@Elodie: Search Customer on left panel of EXT NAP (Login Info) [Redmine:#95978]
-
+		- 20191227@Johnson: enhance sp get max transdate [redmine: #125894]
 	Example:	
 		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070, @GroupName = 'ACCUUS'
 */
@@ -27,7 +24,8 @@ BEGIN
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
 			@OTPCreateDate					DATETIME,
-			@transdate						DATETIME
+			@transdate						DATETIME,
+			@transid						BIGINT
 
 	SELECT  @RoleId = roleID, @Site = site, @recommend = recommend, @srecommend = srecommend
 	FROM dbo.customer WITH (NOLOCK) 
@@ -44,17 +42,35 @@ BEGIN
 	IF @RoleId = 4
 	BEGIN
 		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE srecommend = @custid
+		
+		SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
+		WHERE srecommend = @custid
+			AND bettype NOT IN (20000,19999)
+		OPTION(OPTIMIZE FOR	UNKNOWN)
+		
+		SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid		
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
 		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid AND srecommend = @srecommend --to use IX_srecommend index
+		
+		SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
+		WHERE mrecommend = @custid
+			AND bettype NOT IN (20000,19999)
+		OPTION(OPTIMIZE FOR	UNKNOWN)
+		
+		SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
 		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE recommend = @custid
+		
+		SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
+		WHERE recommend = @custid
+			AND bettype NOT IN (20000,19999)
+		OPTION(OPTIMIZE FOR	UNKNOWN)
+		
+		SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
 	END
 	ELSE IF @RoleId = 1
 	BEGIN
