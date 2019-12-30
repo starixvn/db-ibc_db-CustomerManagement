@@ -143,6 +143,7 @@ BEGIN
 			c.username,
 			ci.enabled,
 			ci.closed,
+			ci.SyncCasino,
 			ISNULL(ci.reject, 0) AS suspended,
 			c.roleid,
 			ISNULL(cp.firstname, '') AS firstname,
@@ -170,7 +171,7 @@ BEGIN
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.reject, c.roleid, 
+	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
 			sl.LimitDays, sl.MinDate, cl.SecurityCode, sl.RowNumber
