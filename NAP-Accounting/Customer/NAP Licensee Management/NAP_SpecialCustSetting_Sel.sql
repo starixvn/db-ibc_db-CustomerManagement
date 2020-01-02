@@ -65,15 +65,7 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=184, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=185, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=186, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=3, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=4, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=5, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=7, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=8, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=11, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=13, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN'
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' 
 
 	IF(
 		NOT EXISTS(SELECT TOP 1 1 FROM [Dep_CustBetLimit_Special] cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID=@CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR (AgentID = @AgentID)) ) AND
@@ -89,7 +81,7 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' WHEN sp.SportType=154 THEN 'HRFO' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
 			,sp.MaxBet
 			,sp.MaxPerMatch
 			,sp.MaxPerBall
@@ -125,7 +117,7 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' WHEN sp.SportType=154 THEN 'HRFO' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
 			,tmp.MaxBet
 			,tmp.MaxPerMatch
 			,tmp.MaxPerBall

@@ -93,7 +93,7 @@ BEGIN
 		,cbs.Bettype
 		,ci.UserName AgentName
 		,s.SportName SportName
-		,CASE WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay' WHEN cbs.SportType=154 THEN 'HRFO' ELSE s.SportName END SportGameType
+		,CASE WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportGameType
 		,cbs.MaxBet
 		,cbs.MaxPerMatch
 		,cbs.MaxPerBall
