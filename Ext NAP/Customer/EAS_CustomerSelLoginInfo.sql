@@ -1,7 +1,4 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[EAS_CustomerSelLoginInfo]  
     @CustId	INT,
 	@GroupName VARCHAR(50)
@@ -13,7 +10,7 @@ AS
 
 	Revisions:  
 		- 20181030@Elodie: Search Customer on left panel of EXT NAP (Login Info) [Redmine:#95978]
-
+		- 20191227@Johnson: change to get max transdate from sp EAS_CustomerSelBalanceInfo [redmine: #125894]
 	Example:	
 		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070, @GroupName = 'ACCUUS'
 */
@@ -26,8 +23,7 @@ BEGIN
 			@Site							NVARCHAR(50),
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
-			@OTPCreateDate					DATETIME,
-			@transdate						DATETIME
+			@OTPCreateDate					DATETIME			
 
 	SELECT  @RoleId = roleID, @Site = site, @recommend = recommend, @srecommend = srecommend
 	FROM dbo.customer WITH (NOLOCK) 
@@ -43,22 +39,18 @@ BEGIN
 
 	IF @RoleId = 4
 	BEGIN
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE srecommend = @custid
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @CustId		
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE mrecommend = @custid AND srecommend = @srecommend --to use IX_srecommend index
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustMaster WITH (NOLOCK) WHERE custid = @CustId		
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
-		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE recommend = @custid
+		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId		
 	END
 	ELSE IF @RoleId = 1
-	BEGIN
-		SELECT @transdate = MAX(transdate) FROM dbo.bettrans WITH (NOLOCK) WHERE custid = @custid
+	BEGIN		
 		SELECT  @Site = site FROM dbo.customer WITH (NOLOCK) WHERE custid = @recommend
 	END
 	
@@ -73,7 +65,7 @@ BEGIN
 
 	SELECT	c.CustId, c.RoleId, @Site AS site,			
 			c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
-			@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate, @transdate AS LastTxn
+			@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate
 	FROM dbo.customer c WITH (NOLOCK) 
 	WHERE c.custid = @CustId	
 END
