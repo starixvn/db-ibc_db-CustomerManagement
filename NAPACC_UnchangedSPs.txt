@@ -1,5 +1,1 @@
-CN88\Login\CS_AdminLoginVerifyBefore.sql
-CN88\Downline List\CS_Customer_Credit_Upd.sql
-CN88\Login\CS_LoginVerifyDownline.sql
-CN88\Login\CS_LoginClaimDownline.sql
-CN88\Login\CS_LoginDownline_Admin.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
