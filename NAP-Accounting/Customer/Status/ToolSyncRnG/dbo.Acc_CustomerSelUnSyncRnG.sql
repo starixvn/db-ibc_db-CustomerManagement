@@ -8,6 +8,7 @@ AS
 	Revisions:
 		- 20180315@Johnson: create sp [Redmine: #91989]
 		- 20180731@Winnie: Sync RNG Casino function - exclude CN88 customers [Redmine: #117672]
+		- 20200106@Johnson: exclude dummy super SM% with custid <= 100 [redmine:#126625]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -22,7 +23,7 @@ BEGIN
 		AND ci.currency NOT IN (0,20,72)
 		AND ci.custid NOT IN (SELECT custid from Dep_CustSuper (nolock))
 		AND ci.username NOT LIKE '%3rdSuper%'
-		AND ci.username NOT LIKE 'SM%'
+		AND 1 = CASE WHEN ci.username LIKE 'SM%' AND ci.custid <=100 THEN 0 ELSE 1 END
 		AND ci.username NOT IN ( 'SA-ttt', 'SA-TH' )
 		AND site IN (SELECT site FROM site WHERE isLicensee = 0)
 		AND Site<>'CN88'
