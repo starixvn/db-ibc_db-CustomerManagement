@@ -54,7 +54,7 @@ BEGIN
 	IF @SB_Error = 1 
 	BEGIN
 		BEGIN TRY
-			EXEC DBLOG.bodb_CustomerLog.dbo.CS_WriteLog_UserLog_Credit_Elodie
+			EXEC DBLOG.bodb_CustomerLog.dbo.CS_WriteLog_UserLog_Credit
 				@UserID = @UserID,
 				@CustID = @CustID,
 				@SubAccID = @SubAccID,
