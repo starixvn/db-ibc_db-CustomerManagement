@@ -18,6 +18,7 @@ AS
 
 	Revisions: 
 		- 20190530@Paul: Insert log when updating credit [Redmine: #113198]
+		- 20190530@Paul: Cannot write log on CustDB if service broker is failed to write log [Redmine: #125244]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -25,14 +26,28 @@ BEGIN
 	DECLARE @Date DATE , @ActualRate FLOAT, @ExchangeId TINYINT
 	SELECT @Date = CURRENT_TIMESTAMP
  
-	SELECT  @ExchangeId = Currency
-	FROM	bodb02.dbo.Customer WITH (NOLOCK)
-	WHERE	CustId = @CustID
+	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
+	BEGIN
+		SELECT  @ExchangeId = Currency
+		FROM	CustDB.dbo.Customer WITH (NOLOCK)
+		WHERE	CustId = @CustID
 
-	SELECT @ActualRate = ActualRate
-	FROM  bodb02.dbo.ExchangeDailyOanda WITH (NOLOCK)
-	WHERE ExchangeDate = @Date
-		  AND ExchangeId = @ExchangeId 
+		SELECT @ActualRate = ActualRate
+		FROM  CustDB.dbo.ExchangeDailyOanda WITH (NOLOCK)
+		WHERE ExchangeDate = @Date
+			  AND ExchangeId = @ExchangeId 
+	END
+	ELSE
+	BEGIN
+		SELECT  @ExchangeId = Currency
+		FROM	bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE	CustId = @CustID
+
+		SELECT @ActualRate = ActualRate
+		FROM  bodb02.dbo.ExchangeDailyOanda WITH (NOLOCK)
+		WHERE ExchangeDate = @Date
+			  AND ExchangeId = @ExchangeId 
+	END
 
 	INSERT INTO CS_UserLog_Credit (
 		UserID,
