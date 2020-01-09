@@ -73,7 +73,7 @@ select @hideLocation = case when @srecommend=5532706 and SYSTEM_USER like 'bodbd
 DECLARE @__archiveDate DATETIME
 SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
 
-IF (@LogType = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
+IF @LogType = 0
 BEGIN
 	IF @FromDate >= @__archiveDate
 	BEGIN
