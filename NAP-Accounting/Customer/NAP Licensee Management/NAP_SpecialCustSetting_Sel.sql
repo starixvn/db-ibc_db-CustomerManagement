@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Sel]
 	@Licensee NVARCHAR(100)
 	,@CurrencyID INT
@@ -11,11 +11,12 @@ AS
 	Created: Dom
 		Date: 2014-09-03
 		Task: Get list Product Hardcode setting by licensee and currency
-		DB: DBTXN/CustDB
+		DB: DBCUST/CustDB
 		
 		Revisions:
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+			- 20191225@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 			
 */
 SET NOCOUNT ON
@@ -33,11 +34,11 @@ SET NOCOUNT ON
 
 	BEGIN TRY		
 	INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
+	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END TRY
 	BEGIN CATCH		
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
 	END CATCH
 BEGIN
 	
@@ -48,6 +49,7 @@ BEGIN
 	INSERT INTO @SportTable
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=2, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=43, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=3, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=5, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=8, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
@@ -55,7 +57,6 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=11, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=154, bettype=20, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='NG' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
@@ -64,15 +65,7 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=184, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=185, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=186, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=3, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=4, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=5, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=7, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=8, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=11, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=13, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN'
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='KN' 
 
 	IF(
 		NOT EXISTS(SELECT TOP 1 1 FROM [Dep_CustBetLimit_Special] cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID=@CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR (AgentID = @AgentID)) ) AND
@@ -88,7 +81,7 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' WHEN sp.SportType=154 THEN 'HRFO' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
 			,sp.MaxBet
 			,sp.MaxPerMatch
 			,sp.MaxPerBall
@@ -103,7 +96,7 @@ BEGIN
 				,SportType=202
 				,sp.[Group]
 				,sp.Bettype
-				,bt.GameTypeName SportName
+				,'RNG Keno' AS SportName
 				,SportNameA = 'Keno'
 				,sp.MaxBet
 				,sp.MaxPerMatch
@@ -124,7 +117,7 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' WHEN sp.SportType=154 THEN 'HRFO' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
 			,tmp.MaxBet
 			,tmp.MaxPerMatch
 			,tmp.MaxPerBall
@@ -159,7 +152,7 @@ BEGIN
 					,SportType=202
 					,sp.[Group]
 					,sp.Bettype
-					,bt.GameTypeName SportName
+					,'RNG Keno' AS SportName
 					,SportNameA = 'Keno'
 					,sp.MaxBet
 					,sp.MaxPerMatch
@@ -178,7 +171,7 @@ BEGIN
 				,SportType=202
 				,sp.[Group]
 				,sp.Bettype
-				,bt.GameTypeName SportName
+				,'RNG Keno' AS SportName
 				,SportNameA = 'Keno'
 				,cbs.MaxBet
 				,cbs.maxpergametype MaxPerMatch
@@ -197,11 +190,3 @@ BEGIN
 END
 
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
