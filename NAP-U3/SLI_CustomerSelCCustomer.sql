@@ -200,7 +200,7 @@ BEGIN
 	
 	SELECT	
 		@firstname AS firstname, 
-		@lAStname lAStname, 
+		@lastname lastname, 
 		4 AS roleid, 
 		CI.username,
 		ISNULL(@phone,'') AS phone, 
