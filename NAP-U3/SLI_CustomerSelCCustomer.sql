@@ -174,7 +174,7 @@ BEGIN
 	GROUP BY CI.CustID 
 
 	DECLARE	@firstname	nvarchar(50),
-			@lAStname	nvarchar(50),
+			@lastname	nvarchar(50),
 			@phone		nvarchar(50),
 			@mobilephone	nvarchar(50),
 			@email		nvarchar(50),
@@ -182,7 +182,7 @@ BEGIN
 			@Site varchar(10)
 
 	SELECT	@firstname	= C.firstname,
-			@lAStname	= C.lAStname,
+			@lastname	= C.lastname,
 			@phone		= C.phone,
 			@mobilephone	= C.mobilephone,
 			@email		= C.email,
