@@ -1,4 +1,1 @@
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_Login\NAP_UserLog_LoginSel.sql
-NAP-Accounting\ViewLog\UserLog_Credit\NAP_UserLog_CreditSel.sql
-
+NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
