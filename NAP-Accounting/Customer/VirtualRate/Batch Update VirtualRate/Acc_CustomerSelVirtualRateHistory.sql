@@ -119,7 +119,7 @@ BEGIN
 			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP u WITH(NOLOCK)
 				LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 			WHERE u.custid = @CustID
-				AND ActionID IN (801,802,806,807,2800,2802)
+				AND ActionID IN (801,802,806,807,810,2800,2802)
 				AND u.logdate < @__archiveDate
 			ORDER BY logdate DESC
 
