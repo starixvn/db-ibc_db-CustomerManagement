@@ -1,14 +1,12 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDirectStatus]
+(
     @custid  	INT
   , @creator    INT
   , @IP         VARCHAR(20) = ''
   , @ErrCode    INT = 0 OUTPUT
   , @ErrMsg	    NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
 	Created: 
@@ -22,7 +20,8 @@ AS
 		- 20170920@Helen: TO Control Phase 3 - [Redmine: 75557]
 		- 20171113@Helen: Support to add default TO setting for new direct customers - [Redmine:86052]
 		- 20181107@Louis: Credit Collection [Redmine: #98621]
-		
+		- 20200114@Malcolm: Separate setting and notification into Live/Non-Live and bettypes [Redmine : 125076]
+
     Param's Explanation:
     • @ErrCode:
         = 0:  Successful update.
@@ -121,7 +120,7 @@ BEGIN
 										
 		FROM @affectedList
 		 
-		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine)
+		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine, ProfileID)
 		SELECT al.custid
 				-- Since there are many kinds of currency default setting, default setting will be converted to RM before convert to orginal curency
 				, CASE 
@@ -130,21 +129,21 @@ BEGIN
 						-- NOT currency RM in default Setting
 						ELSE  CONVERT(MONEY,(TO_tmp.MaxTurnOver * E.actualrate)/E1.actualrate)
 				END AS MaxTurnOver
-				, TO_tmp.Sporttype, 0
+				, TO_tmp.Sporttype, 0, TO_tmp.ProfileID
         
 		FROM @affectedList al
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON al.custid = c.custid 
 			CROSS APPLY 
 			(        
 				-- Soccer 
-				SELECT TOP 1 f1.sporttype, f1.MaxTurnOver,f1.TOCurrency
+				SELECT TOP 10 f1.sporttype, f1.MaxTurnOver,f1.TOCurrency, f1.ProfileID
 				FROM dbo.f_TOControl_GlobalSettingSel () f1                
 				WHERE f1.site IN (c.site,'') AND f1.ExchangeID IN (c.currency,0) AND f1.sporttype = 1        
 				ORDER BY f1.site DESC, f1.ExchangeID DESC                
                 
 				UNION ALL
 				-- Others sport
-				SELECT TOP 1 sporttype, MaxTurnOver,TOCurrency
+				SELECT TOP 10 sporttype, MaxTurnOver,TOCurrency, f2.ProfileID
 				FROM dbo.f_TOControl_GlobalSettingSel () f2                
 				WHERE f2.site IN (c.site,'') AND f2.ExchangeID IN (c.currency,0) AND f2.sporttype = 99
 				ORDER BY f2.site DESC, f2.ExchangeID DESC
