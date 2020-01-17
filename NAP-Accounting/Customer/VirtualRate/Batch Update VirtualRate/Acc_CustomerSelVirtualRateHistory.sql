@@ -14,6 +14,7 @@ Revisions:
 	- 20141231@Johnson: separate virtual rate settings by sporttype bettype [Redmine: #25840]
 	- 20190405@Patrick: Support archive date range [Redmine: #111476]
 	- 20190814@Winnie: NAP - UI did not show history of Virtual Rate with CN88 account. [Redmine: #118631]
+	- 20200115@Johnson: add new logaction for auto update VR [redmine:#126998]
 Explanations:
 ActionID: 801, SPName: Acc_CustomerUpdVirtualMultiplier
 ActionID: 802, SPName: Acc_VirtualRateMulUpd
@@ -93,7 +94,7 @@ BEGIN
 		FROM dbo.UserLog_RunSP u WITH(NOLOCK)
 			LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 		WHERE u.custid = @CustID
-			AND ActionID IN (801,802,806,807,2800,2802)
+			AND ActionID IN (801,802,806,807,810,2800,2802)
 			AND logdate >= @__archiveDate
 		ORDER BY logdate DESC
 
@@ -118,7 +119,7 @@ BEGIN
 			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP u WITH(NOLOCK)
 				LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
 			WHERE u.custid = @CustID
-				AND ActionID IN (801,802,806,807,2800,2802)
+				AND ActionID IN (801,802,806,807,810,2800,2802)
 				AND u.logdate < @__archiveDate
 			ORDER BY logdate DESC
 
