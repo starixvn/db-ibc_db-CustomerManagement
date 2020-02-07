@@ -21,8 +21,8 @@ AS
 	Revisions:    
 		- 20190626@Dominic : First commit
 		- 20191105@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
+		- 20200113@Tiara: New Virtual Rate Setting structure for Soccer [Redmine: #126243]
 		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
-  
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -239,8 +239,9 @@ BEGIN
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
 				@custid = @CustID
 				, @roleid = @RoleID
-				, @action = 'EsportVRUpd'
+				, @action = 'NewVRUpd'
 				, @virtualmultiplier = @virtualmultiplier
+				, @SportType = @SportType
 
 
 	SELECT @EndRun = GETDATE()    
