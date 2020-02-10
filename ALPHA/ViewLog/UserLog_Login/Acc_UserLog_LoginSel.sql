@@ -29,7 +29,8 @@ AS
 	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
 	- 20190405@Patrick: Support archive date range [Redmine: #111476]
 	- 20190619@Johnson: show log kickout for member[redmine: #114566]
-	
+	- 20191113@Winnie: Alpha - View Log : user can view total records when searching by nickname [Redmine: #110148]
+
     Param's Explaination:    
 	- @UserId: a customer which we want to view actions affect to.
 	- @UserName: customer name type in textbox to search

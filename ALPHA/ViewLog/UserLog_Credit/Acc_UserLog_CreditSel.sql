@@ -20,6 +20,7 @@ AS
 		- 20110623@Sophia: Do not allow to search for Nickname if @IsAdminAccess = 0
 		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 		- 20190405@Patrick: Support archive date range [Redmine: #111476]
+		- 20191113@Winnie: Alpha - View Log : user can view total records when searching by nickname [Redmine: #110148]
 
     Param's Explaination:    
 		- @CustID: a customer which we want to view actions affect to.
