@@ -1,7 +1,7 @@
 
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Acc_CustRealMultiplier_Sel]
+CREATE PROCEDURE [dbo].[Acc_CustRealMultiplier_Sel]
 	@CustID INT
 	, @SportType INT
 	, @ErrCode TINYINT OUT
@@ -14,6 +14,7 @@ AS
 	    
 	Revisions:    
 		- 20190722@Dominic : First commit
+		- 20200210@Tiara : New VR structure for Soccer [Redmine: #126243] 
   
 */ 
 BEGIN
@@ -136,9 +137,9 @@ BEGIN
 		, h.LevelID
 		--Live
 		, vrl.FollowingLevelID Live_FollowingLevelID
-		, v1.Value Live_FollowingValue
+		, CASE WHEN vrl.FollowingCustID = 0 THEN NULL ELSE v1.Value END Live_FollowingValue
 		, CASE 
-				WHEN vrl.FollowingCustID = 0 THEN 'Global'
+				WHEN vrl.FollowingCustID = 0 THEN 'Follow Old VR'
 				WHEN vrl.FollowingCustID = @CustID THEN NULL
 				WHEN cl.roleid = 4 THEN 'Super'
 				WHEN cl.roleid = 3 THEN 'Master'
@@ -149,9 +150,9 @@ BEGIN
 		, hl.VRLeagueGroupName Live_FollowingLeagueGroup
 		--NonLive
 		, vrnl.FollowingLevelID NonLive_FollowingLevelID
-		, v2.Value NonLive_FollowingValue
+		, CASE WHEN vrl.FollowingCustID = 0 THEN NULL ELSE v2.Value END NonLive_FollowingValue
 		, CASE 
-				WHEN vrnl.FollowingCustID = 0 THEN 'Global'
+				WHEN vrnl.FollowingCustID = 0 THEN 'Follow Old VR'
 				WHEN vrnl.FollowingCustID = @CustID THEN NULL
 				WHEN cnl.roleid = 4 THEN 'Super'
 				WHEN cnl.roleid = 3 THEN 'Master'
