@@ -1,5 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelUnSyncRnG]
+	@fromdate DATETIME,
+	@todate	DATETIME
 AS
 /*   
 	Create: 20180315@Johnson
@@ -8,12 +10,14 @@ AS
 	Revisions:
 		- 20180315@Johnson: create sp [Redmine: #91989]
 		- 20180731@Winnie: Sync RNG Casino function - exclude CN88 customers [Redmine: #117672]
+		- 20200106@Johnson: exclude dummy super SM% with custid <= 100 [redmine:#126625]
 */
 BEGIN
 	SET NOCOUNT ON 
 	
 	CREATE TABLE #Supers (custid INT)
 	CREATE TABLE #tblCust(CustID INT, username VARCHAR(50), roleid TINYINT,UplineID INT, currency INT, SyncCS BIT, ExistsCSDB BIT DEFAULT 0)
+	CREATE TABLE #tblCustSync(CustID INT, username VARCHAR(50), roleid TINYINT,UplineID INT, currency INT, SyncCS BIT, ExistsCSDB BIT DEFAULT 0)
 	
 	INSERT INTO #Supers(custid)
 	SELECT custid 
@@ -22,7 +26,7 @@ BEGIN
 		AND ci.currency NOT IN (0,20,72)
 		AND ci.custid NOT IN (SELECT custid from Dep_CustSuper (nolock))
 		AND ci.username NOT LIKE '%3rdSuper%'
-		AND ci.username NOT LIKE 'SM%'
+		AND 1 = CASE WHEN ci.username LIKE 'SM%' AND ci.custid <=100 THEN 0 ELSE 1 END
 		AND ci.username NOT IN ( 'SA-ttt', 'SA-TH' )
 		AND site IN (SELECT site FROM site WHERE isLicensee = 0)
 		AND Site<>'CN88'
@@ -38,14 +42,34 @@ BEGIN
 		AND SyncCasino = 0
 		AND Enabled = 1
 	
+	INSERT INTO #tblCustSync(CustID,username,roleid,UplineID,currency,SyncCS)
+	SELECT ci.custid, ci.username,ci.roleid,
+		CASE ci.roleid WHEN 1 THEN ci.recommend
+					WHEN 2 THEN ci.mrecommend
+					WHEN 3 THEN ci.srecommend END,
+		ci.currency, syncCasino
+	FROM dbo.Customer c (NOLOCK)
+		INNER JOIN custinfo ci (NOLOCK) ON ci.custid = c.custid
+	WHERE ci.srecommend IN (SELECT custid FROM #Supers) 
+		AND ci.SyncCasino = 1
+		AND ci.Enabled = 1
+		AND creatdate BETWEEN @fromdate AND @todate
+		
 	UPDATE t
 	SET ExistsCSDB = 1
 	FROM #tblCust t
 		INNER JOIN DBCasino.Casinoadmin.dbo.Customer cs WITH(NOLOCK) ON t.custid = cs.ibccustid
+		
+	DELETE t
+	FROM #tblCustSync t 
+		INNER JOIN DBCasino.Casinoadmin.dbo.Customer cs WITH(NOLOCK) ON t.custid = cs.ibccustid
+		
 	SELECT *
 	FROM(	
 		SELECT t.*,upline.username as UplineUserName, e.currency as currencyName
-		FROM #tblCust t
+		FROM (SELECT * FROM #tblCust 
+			UNION ALL SELECT * FROM #tblCustSync
+			)t
 			INNER JOIN dbo.custinfo ci (nolock) on t.custid = ci.custid
 			INNER JOIN dbo.Custinfo upline WITH(NOLOCK) ON t.UplineID = upline.custid
 			INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
@@ -56,7 +80,9 @@ BEGIN
 		)
 		and ci.roleid > 1
 		UNION 	SELECT t.*,upline.username as UplineUserName, e.currency as currencyName
-		FROM #tblCust t
+		FROM (SELECT * FROM #tblCust 
+			UNION ALL SELECT * FROM #tblCustSync
+			)t
 			INNER JOIN dbo.custinfo ci WITH(NOLOCK) ON t.custid = ci.custid
 			INNER JOIN dbo.Custinfo upline WITH(NOLOCK) ON t.UplineID = upline.custid
 			INNER JOIN dbo.Exchange e WITH(NOLOCK) ON t.currency = e.exchangeid
