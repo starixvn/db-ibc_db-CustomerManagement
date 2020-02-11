@@ -29,7 +29,8 @@ AS
 	- 20171214@Vicky: NAP - View Log - The login log of Internal Admin arenot shown when NAP Admin views SMA's logs [Redmine: #87841]
 	- 20190405@Patrick: Support archive date range [Redmine: #111476]
 	- 20190619@Johnson: show log kickout for member[redmine: #114566]
-	
+	- 20191113@Winnie: Alpha - View Log : user can view total records when searching by nickname [Redmine: #110148]
+
     Param's Explaination:    
 	- @UserId: a customer which we want to view actions affect to.
 	- @UserName: customer name type in textbox to search
@@ -73,7 +74,7 @@ select @hideLocation = case when @srecommend=5532706 and SYSTEM_USER like 'bodbd
 DECLARE @__archiveDate DATETIME
 SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
 
-IF (@LogType = 0) AND NOT EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE username2 = @UserName)
+IF @LogType = 0
 BEGIN
 	IF @FromDate >= @__archiveDate
 	BEGIN
