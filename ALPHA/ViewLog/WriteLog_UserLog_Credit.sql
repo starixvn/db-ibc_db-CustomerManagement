@@ -1,5 +1,4 @@
-﻿USE [bodb_CustomerLog]
-GO
+﻿/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="1"></info>*/
 
  ALTER PROCEDURE [dbo].[WriteLog_UserLog_Credit]
 	@UserID INT,
@@ -12,55 +11,63 @@ GO
 	@ActionID int = NULL
 AS
 /*
-Created: 
-Task : Write Credit Log .	
-DB: DBLOG.bodb_CustomerLog
-Original:
+	Created: 
+	Task : Write Credit Log .	
+	DB: DBLOG.bodb_CustomerLog
+	Original:
 
-Revisions: 
-    - 20090903@Simon: Write Credit Log.	
-    - 20100102@Kiwi: Add ActionID Log.
-	- 20150513@Sophia: Add Column ActualRate for Credit Movement Report [#30638]
+	Revisions: 
+		- 20090903@Simon: Write Credit Log.	
+		- 20100102@Kiwi: Add ActionID Log.
+		- 20150513@Sophia: Add Column ActualRate for Credit Movement Report [#30638]
+		- 20200115@Elodie: Cannot write log on CustDB if service broker is failed to write log [Redmine: #89038]
 */
-SET NOCOUNT ON
+BEGIN
+	SET NOCOUNT ON
 
-DECLARE @Date DATE , @ActualRate FLOAT, @ExchangeId TINYINT
-SELECT @Date = CURRENT_TIMESTAMP
- 
-SELECT  @ExchangeId = Currency
-FROM	bodb02.dbo.Customer WITH (NOLOCK)
-WHERE	CustId = @CustID
+	DECLARE @Date DATE , @ActualRate FLOAT, @ExchangeId TINYINT
+	SELECT @Date = CURRENT_TIMESTAMP 	
 
-SELECT @ActualRate = ActualRate
-FROM  bodb02.dbo.ExchangeDailyOanda WITH (NOLOCK)
-WHERE ExchangeDate = @Date
-	  AND ExchangeId = @ExchangeId
+	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
+	BEGIN
+		SELECT  @ExchangeId = Currency
+		FROM	CustDB.dbo.Customer WITH (NOLOCK)
+		WHERE	CustId = @CustID
 
- 
+		SELECT @ActualRate = ActualRate
+		FROM  CustDB.dbo.ExchangeDailyOanda WITH (NOLOCK)
+		WHERE ExchangeDate = @Date
+			  AND ExchangeId = @ExchangeId 
+	END
+	ELSE
+	BEGIN
+		SELECT  @ExchangeId = Currency
+		FROM	bodb02.dbo.Customer WITH (NOLOCK)
+		WHERE	CustId = @CustID
 
-INSERT INTO UserLog_Credit (UserID, 
-							CustID,
-							SPName, 
-							Doing, 
-							OldValue, 
-							NewValue, 
-							IP, 
-							ActionID,
-							ActualRate) 
-					VALUES (@UserID, 
-							@CustID,
-							@SPName, 
-							@Doing, 
-							@OldValue, 
-							@NewValue, 
-							@IP, 
-							@ActionID,
-							@ActualRate)
+		SELECT @ActualRate = ActualRate
+		FROM  bodb02.dbo.ExchangeDailyOanda WITH (NOLOCK)
+		WHERE ExchangeDate = @Date
+			  AND ExchangeId = @ExchangeId 
+	END
+
+	INSERT INTO UserLog_Credit (UserID, 
+								CustID,
+								SPName, 
+								Doing, 
+								OldValue, 
+								NewValue, 
+								IP, 
+								ActionID,
+								ActualRate) 
+						VALUES (@UserID, 
+								@CustID,
+								@SPName, 
+								@Doing, 
+								@OldValue, 
+								@NewValue, 
+								@IP, 
+								@ActionID,
+								@ActualRate)
+END
 GO
-GRANT EXECUTE ON [dbo].[WriteLog_UserLog_Credit] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[WriteLog_UserLog_Credit] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[WriteLog_UserLog_Credit] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[WriteLog_UserLog_Credit] TO [vnteam] AS [dbo]
