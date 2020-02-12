@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION [dbo].[f_GetFinanceUser]()
 RETURNS TABLE 
 /*
