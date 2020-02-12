@@ -1,10 +1,10 @@
 /*<info serverAlias="DBCUST-CustDB" executers="" viewers="" isFunction="1"></info>*/
 
-ALTER FUNCTION [dbo].[f_GetFIPermission]()
+ALTER FUNCTION [dbo].[f_GetAdminUser]()
 RETURNS TABLE 
 /*
     Created: 20200211@Tiara
-    Task: Arrange detail permission for finance account
+    Task: Get Admin user permission info
     DB: DBCUST/CustDB, DBONUSER/ON_USER, DBAGE/bodb02
     Original versions:                
     Revision:
@@ -14,9 +14,15 @@ RETURNS TABLE
 
 */
 RETURN
-	SELECT CONVERT(VARCHAR(3), 'A') AS GroupName
-	, CONVERT (VARCHAR(5),'All') AS Permission
-	UNION ALL SELECT 'B', 'B'
+	SELECT CONVERT (INT,111) AS UserID
+	,CONVERT(VARCHAR(3), 'A') AS GroupName
+	UNION ALL SELECT 151, 'A'
+	UNION ALL SELECT 161, 'A'
+	UNION ALL SELECT 888, 'B'
+	UNION ALL SELECT 8627, 'B'
+	UNION ALL SELECT 8646, 'B'
+	UNION ALL SELECT 8652, 'B'
+	UNION ALL SELECT 12667, 'B'
 
 GO
 

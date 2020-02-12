@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_SelFIPermission]
-	@custid int,
-	@ViewGroup NVARCHAR (3)
+	@UserID int,
+	@ViewCustID NVARCHAR (3)
 AS
 /*
 Created: 20200212@Tiara
@@ -16,28 +16,35 @@ BEGIN
 	SET NOCOUNT ON
 	DECLARE @IsAllow BIT = 0,
 			@GroupName NVARCHAR(3),
-			@Permission NVARCHAR(5)
-			
+			@GroupNameV NVARCHAR(3)
+					
 	IF NOT EXISTS (SELECT 1 
 					FROM f_GetFinanceUser () 
-					WHERE CustID = @custid)
-		SET @IsAllow = 0
+					WHERE CustID = @ViewCustID)
+		SET @IsAllow = 1
 	ELSE
 	BEGIN
-		SELECT @GroupName = GroupName
-		FROM f_GetFinanceUser ()
-		WHERE CustID = @custid
+			IF NOT EXISTS (SELECT 1 
+					FROM f_GetAdminUser () 
+					WHERE UserID = @UserID)
+				SET @IsAllow = 0
+			ELSE 
+				BEGIN
+					SELECT @GroupName = GroupName
+					FROM f_GetAdminUser()
+					WHERE UserId = @UserId
 
-		SELECT @Permission = Permission
-		FROM f_GetFIPermission ()
-		WHERE GroupName = @GroupName
-		
-		IF @Permission = 'All'
-			SET @IsAllow = 1
-		ELSE IF @Permission = 'B' AND @ViewGroup = 'A'
-			SET @IsAllow = 0
-		ELSE IF @Permission = 'B' AND (@ViewGroup = 'B' OR @ViewGroup = 'C')
-			SET @IsAllow = 1
+					SELECT @GroupNameV = GroupName
+					FROM f_GetFinanceUser ()
+					WHERE CustID = @ViewCustID
+
+					IF @GroupName = 'A' 
+						SET @IsAllow = 1
+					ELSE IF @GroupName = 'B' AND @GroupNameV = 'A'
+						SET @IsAllow = 0
+					ELSE IF @GroupName = 'B' AND @GroupNameV = 'B'
+						SET @IsAllow = 1
+				END
 	END
 	SELECT @IsAllow AS IsAllow
 END
