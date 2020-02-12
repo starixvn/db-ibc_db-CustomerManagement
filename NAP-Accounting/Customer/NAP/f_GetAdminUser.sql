@@ -5,7 +5,7 @@ RETURNS TABLE
 /*
     Created: 20200211@Tiara
     Task: Get Admin user permission info
-    DB: DBCUST/CustDB, DBONUSER/ON_USER, DBAGE/bodb02
+    DB: DBCUST/CustDB
     Original versions:                
     Revision:
 		- 20200211@Tiara: Arrange detail permission for finance account [Redmine: #128128]

@@ -4,7 +4,7 @@ RETURNS TABLE
 /*
     Created: 20200210@Tiara
     Task: Arrange detail permission for finance account
-    DB: DBCUST/CustDB, DBONUSER/ON_USER, DBAGE/bodb02
+    DB: DBCUST/CustDB
     Original versions:                
     Revision:
 		- 20200210@Tiara: Arrange detail permission for finance account [Redmine: #128128]
