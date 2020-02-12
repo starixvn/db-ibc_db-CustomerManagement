@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
 
-CREATE FUNCTION [dbo].[f_GetFIPermission]()
+ALTER FUNCTION [dbo].[f_GetFIPermission]()
 RETURNS TABLE 
 /*
     Created: 20200211@Tiara

@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_SelFIPermission]
+ALTER PROCEDURE [dbo].[Acc_SelFIPermission]
 	@custid int,
 	@ViewGroup NVARCHAR (3)
 AS
