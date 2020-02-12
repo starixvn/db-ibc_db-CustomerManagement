@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_SelFIPermission]
 	@UserID int,
-	@ViewCustID NVARCHAR (3)
+	@ViewCustID int
 AS
 /*
 Created: 20200212@Tiara
