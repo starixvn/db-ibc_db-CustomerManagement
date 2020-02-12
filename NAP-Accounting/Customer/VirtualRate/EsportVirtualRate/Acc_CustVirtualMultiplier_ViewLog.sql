@@ -265,7 +265,7 @@ BEGIN
 			LEFT JOIN bodb02..Customer u (NOLOCK) ON u.custid = m.UserID
 			LEFT JOIN bodb02..Customer c (NOLOCK) ON c.custid = m.CustID
 			LEFT JOIN bodb02..Customer cl (NOLOCK) ON cl.custid = d.FollowingCustIDLive
-			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingValueNonLive
+			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingCustIDNonLive
 			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
 			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
 		ORDER BY m.LogID DESC, d.SortOrder, IsNew
@@ -328,7 +328,7 @@ BEGIN
 			LEFT JOIN bodb02..Customer u (NOLOCK) ON u.custid = m.UserID
 			LEFT JOIN bodb02..Customer c (NOLOCK) ON c.custid = m.CustID
 			LEFT JOIN bodb02..Customer cl (NOLOCK) ON cl.custid = d.FollowingCustIDLive
-			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingValueNonLive
+			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingCustIDNonLive
 			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
 			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
 		ORDER BY m.LogID DESC, d.SortOrder, IsNew
