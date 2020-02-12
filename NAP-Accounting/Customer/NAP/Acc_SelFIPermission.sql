@@ -19,7 +19,7 @@ BEGIN
 			@Permission NVARCHAR(5)
 			
 	IF NOT EXISTS (SELECT 1 
-					FROM f_CS_GetFinanceUser () 
+					FROM f_GetFinanceUser () 
 					WHERE CustID = @custid)
 		SET @IsAllow = 0
 	ELSE
@@ -29,7 +29,7 @@ BEGIN
 		WHERE CustID = @custid
 
 		SELECT @Permission = Permission
-		FROM f_CS_GetFIPermission ()
+		FROM f_GetFIPermission ()
 		WHERE GroupName = @GroupName
 		
 		IF @Permission = 'All'

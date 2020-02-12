@@ -1,14 +1,14 @@
 USE [CustDB]
 GO
 
-/****** Object:  UserDefinedFunction [dbo].[f_CS_GetFinanceUser]    Script Date: 2/10/2020 5:04:10 PM ******/
+/****** Object:  UserDefinedFunction [dbo].[f_GetFinanceUser]    Script Date: 2/10/2020 5:04:10 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION [dbo].[f_CS_GetFinanceUser]()
+CREATE FUNCTION [dbo].[f_GetFinanceUser]()
 RETURNS TABLE 
 /*
     Created: 20200210@Tiara
