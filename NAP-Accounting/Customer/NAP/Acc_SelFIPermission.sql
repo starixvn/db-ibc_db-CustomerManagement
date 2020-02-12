@@ -25,7 +25,7 @@ BEGIN
 	ELSE
 	BEGIN
 		SELECT @GroupName = GroupName
-		FROM f_CS_GetFinanceUser ()
+		FROM f_GetFinanceUser ()
 		WHERE CustID = @custid
 
 		SELECT @Permission = Permission
