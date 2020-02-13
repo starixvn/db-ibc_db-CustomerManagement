@@ -1,7 +1,7 @@
 
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[Acc_CustRealMultiplier_Sel]
+ALTER PROCEDURE [dbo].[Acc_CustRealMultiplier_Sel]
 	@CustID INT
 	, @SportType INT
 	, @ErrCode TINYINT OUT
@@ -14,7 +14,6 @@ AS
 	    
 	Revisions:    
 		- 20190722@Dominic : First commit
-		- 20200210@Tiara : New VR structure for Soccer [Redmine: #126243] 
   
 */ 
 BEGIN
