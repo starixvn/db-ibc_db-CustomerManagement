@@ -207,8 +207,6 @@ BEGIN
 			, SortOrder SMALLINT
 	)	
 
-	IF @SportType = 43 
-	BEGIN
 		INSERT INTO #Hierarchy (LevelID, VRLeagueGroupID, VRBetTypeGroupID, BetType, VRBetTypeGroupName, VRLeagueGroupName, SortOrder)
 		SELECT h.LevelID,h.VRLeagueGroupID, h.VRBetTypeGroupID,CASE WHEN h.BetType = -1 THEN NULL ELSE h.BetType END BetType
 				, bg.GroupName VRBetTypeGroupName
@@ -269,70 +267,7 @@ BEGIN
 			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
 			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
 		ORDER BY m.LogID DESC, d.SortOrder, IsNew
-	END
-	ELSE IF @SportType = 1
-	BEGIN
-		INSERT INTO #Hierarchy (LevelID, VRLeagueGroupID, VRBetTypeGroupID, BetType, VRBetTypeGroupName, VRLeagueGroupName, SortOrder)
-		SELECT h.LevelID,h.VRLeagueGroupID, h.VRBetTypeGroupID,CASE WHEN h.BetType = -1 THEN NULL ELSE h.BetType END BetType
-				, bg.GroupName VRBetTypeGroupName
-				, lg.GroupName VRLeagueGroupName
-				, SortOrder
-		FROM (
-			SELECT DISTINCT VRLeagueGroupID, VRBetTypeGroupID, LevelID, CASE WHEN BetType = -1 THEN NULL ELSE BetType END BetType, SortOrder 
-			FROM #Data 
-		) as h
-		LEFT JOIN #VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
-		LEFT JOIN #VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
-
-		CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
-
-		SELECT m.LogID
-			, CASE WHEN m.custid = 0 THEN 'Follow Old VR' ELSE c.username END username
-			, CASE WHEN m.custid = 0 THEN NULL ELSE m.CurrencyRate END CurrencyRate
-			, m.LogTime UpdatedTime, u.username UpdatedBy
-			, 1 SportType
-			, h.VRLeagueGroupID LeagueGroupID , h.VRLeagueGroupName LeagueGroup
-			, h.VRBetTypeGroupID BettypeGroupID, h.VRBetTypeGroupName BettypeGroup
-			, d.BetType
-			, d.LevelID
-			, d.IsNew
-			--Live
-			, d.FollowingLevelIDLive Live_FollowingLevelID
-			, CASE WHEN d.FollowingCustIDLive = 0 THEN NULL ELSE d.FollowingValueLive END Live_FollowingValue
-			, CASE 
-					WHEN d.FollowingCustIDLive = m.CustID THEN NULL
-					WHEN d.FollowingCustIDLive = 0 THEN 'Follow Old VR'
-					WHEN cl.roleid = 4 THEN 'Super'
-					WHEN cl.roleid = 3 THEN 'Master'
-					WHEN cl.roleid = 2 THEN 'Agent'
-				END Live_FollowingRole
-			, hl.BetType Live_FollowingBetTypeID
-			, hl.VRBetTypeGroupName Live_FollowingBettypeGroup
-			, hl.VRLeagueGroupName Live_FollowingLeagueGroup
-			--NonLive
-			, d.FollowingLevelIDNonLive NonLive_FollowingLevelID
-			, CASE WHEN d.FollowingCustIDNonLive = 0 THEN NULL ELSE d.FollowingValueNonLive END NonLive_FollowingValue
-			, CASE 
-					WHEN d.FollowingCustIDNonLive = m.CustID THEN NULL
-					WHEN d.FollowingCustIDNonLive = 0 THEN 'Follow Old VR'
-					WHEN cnl.roleid = 4 THEN 'Super'
-					WHEN cnl.roleid = 3 THEN 'Master'
-					WHEN cnl.roleid = 2 THEN 'Agent'
-				END NonLive_FollowingRole
-			, hnl.BetType NonLive_FollowingBetTypeID
-			, hnl.VRBetTypeGroupName NonLive_FollowingBettypeGroup
-			, hnl.VRLeagueGroupName NonLive_FollowingLeagueGroup
-		FROM #VRCustLog m
-			INNER JOIN #Data d ON m.LogID = d.LogID
-			INNER JOIN #Hierarchy h ON h.LevelID = d.LevelID
-			LEFT JOIN bodb02..Customer u (NOLOCK) ON u.custid = m.UserID
-			LEFT JOIN bodb02..Customer c (NOLOCK) ON c.custid = m.CustID
-			LEFT JOIN bodb02..Customer cl (NOLOCK) ON cl.custid = d.FollowingCustIDLive
-			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingCustIDNonLive
-			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
-			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
-		ORDER BY m.LogID DESC, d.SortOrder, IsNew
-	END 
+	
 
 	DROP TABLE #VRCustLog
 	DROP TABLE #VRLineCustID

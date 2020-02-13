@@ -137,9 +137,9 @@ BEGIN
 		, h.LevelID
 		--Live
 		, vrl.FollowingLevelID Live_FollowingLevelID
-		, CASE WHEN vrl.FollowingCustID = 0 THEN NULL ELSE v1.Value END Live_FollowingValue
+		, v1.Value Live_FollowingValue
 		, CASE 
-				WHEN vrl.FollowingCustID = 0 THEN 'Follow Old VR'
+				WHEN vrl.FollowingCustID = 0 THEN 'Global'
 				WHEN vrl.FollowingCustID = @CustID THEN NULL
 				WHEN cl.roleid = 4 THEN 'Super'
 				WHEN cl.roleid = 3 THEN 'Master'
@@ -150,9 +150,9 @@ BEGIN
 		, hl.VRLeagueGroupName Live_FollowingLeagueGroup
 		--NonLive
 		, vrnl.FollowingLevelID NonLive_FollowingLevelID
-		, CASE WHEN vrl.FollowingCustID = 0 THEN NULL ELSE v2.Value END NonLive_FollowingValue
+		, v2.Value NonLive_FollowingValue
 		, CASE 
-				WHEN vrnl.FollowingCustID = 0 THEN 'Follow Old VR'
+				WHEN vrnl.FollowingCustID = 0 THEN 'Global'
 				WHEN vrnl.FollowingCustID = @CustID THEN NULL
 				WHEN cnl.roleid = 4 THEN 'Super'
 				WHEN cnl.roleid = 3 THEN 'Master'
