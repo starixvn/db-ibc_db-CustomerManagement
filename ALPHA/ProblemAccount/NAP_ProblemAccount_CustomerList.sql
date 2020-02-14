@@ -39,13 +39,13 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	CREATE TABLE #tempProblemAccount (custId INT, uplineUsername NVARCHAR(50),username NVARCHAR(50), firstname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate datetime, isReviewed bit)
+	CREATE TABLE #tempProblemAccount (custId INT, uplineUsername NVARCHAR(50), username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate datetime, isReviewed bit)
 
 	-- Sarch master problem account
 	IF @SearchRoleId = 3
 	BEGIN
-		INSERT INTO #tempProblemAccount(custId, username, firstname, username2, createdDate, isReviewed)
-		SELECT c.custid, c.username, c.firstname, c.username2, p.CreatedDate, p.IsReviewed
+		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
+		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
 		FROM  dbo.ProblemAccount p WITH (NOLOCK)
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 		WHERE c.srecommend = @CustId
@@ -80,8 +80,8 @@ BEGIN
 
 		IF @SearchRoleId = 2
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, uplineUsername, username, firstname, username2, createdDate, isReviewed)
-			SELECT c.custid, u.username, c.username, c.firstname, c.username2, p.CreatedDate, p.IsReviewed
+			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
+			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
 			FROM  dbo.ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
@@ -109,8 +109,8 @@ BEGIN
 		END
 		ELSE IF @SearchRoleId = 1
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, uplineUsername, username, firstname, username2, createdDate, isReviewed)
-			SELECT c.custid, u.username, c.username, c.firstname, c.username2, p.CreatedDate, p.IsReviewed
+			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
+			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
 			FROM  dbo.ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
@@ -126,9 +126,9 @@ BEGIN
 	END
 
 	/* ===== Paging ===== */
-	SELECT custId, uplineUsername, username, firstname as Name, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed
+	SELECT custId, uplineUsername, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed
 	FROM (
-		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.username2, t.numberOfDownline, 
+		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, 
 			CASE WHEN ci.Enabled = 1 THEN CASE WHEN ci.closed = 1 THEN 3 WHEN ci.reject = 1 THEN 2 ELSE 1 END ELSE 4 END AS Status,
 			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId
 		FROM #tempProblemAccount t
