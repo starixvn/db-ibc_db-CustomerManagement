@@ -31,7 +31,7 @@ BEGIN
 	SET @StartRun = GETDATE()
 
 	INSERT INTO #CustList (UserName)
-	SELECT LTRIM(RTRIM((val)))
+	SELECT LTRIM(RTRIM(val))
 	FROM dbo.strSplit(@CustList,',') t
 		
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
