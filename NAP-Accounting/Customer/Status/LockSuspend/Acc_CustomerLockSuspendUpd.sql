@@ -15,7 +15,7 @@ AS
 	Revisions:
 		- 20200216@Elodie: Initial SP [Redmine:#128451]
 	Param's Explanation:
-		@@CustIDList: id of customer
+		@CustIDList: id of customer
 		@Lock: 1:Lock, 2:Unlock
 */
 BEGIN
