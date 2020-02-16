@@ -36,9 +36,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #CustList (UserName NVARCHAR(50))
-	CREATE TABLE #CustLog  (CustId INT, RoleId TINYINT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CustLog  (CustId INT, RoleId TINYINT, Reject BIT, IsFinished BIT DEFAULT(0))
 
-	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT, @RoleId TINYINT
+	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT, @RoleId TINYINT, @isDirectSuspend BIT, @Reject BIT
 	DECLARE @StartRun			DATETIME
 			,@EndRun			DATETIME
 			,@Duration			INT
@@ -81,18 +81,55 @@ BEGIN
 
 	IF @Lock = 1
 	BEGIN
-		INSERT INTO CustSuspendLockUpd (CustId) OUTPUT INSERTED.CustId, ci.roleid, 0 AS IsFinished INTO #CustLog
-		SELECT ci.custid
+		SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 		FROM #CustList t
-			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username 
-		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
+			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON t.UserName = ci.username
+			INNER JOIN dbo.CustSuspendLockUpd cs WITH (NOLOCK) ON cs.custid = ci.custid		
+
+		IF @WrongUserName <> ''
+		BEGIN
+			SELECT	@ErrCode = 103, 
+					@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' exist. Please check username again.' 
+			RETURN
+		END
 	END
 	ELSE
 	BEGIN
-		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, NULL AS roleID, 0 AS IsFinished INTO #CustLog
-		WHERE custid IN (	SELECT custid 
-							FROM #CustList t
-								INNER JOIN dbo.custInfo ci ON t.UserName = ci.username)
+		SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
+		FROM #CustList t
+			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON t.UserName = ci.username
+		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
+
+		IF @WrongUserName <> ''
+		BEGIN
+			SELECT	@ErrCode = 103, 
+					@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' doesn''t exist in the list. Please check username again.' 
+			RETURN
+		END
+	END
+
+	IF @Lock = 1
+	BEGIN
+		INSERT INTO #CustLog (CustId, RoleId, Reject)
+		SELECT ci.custid, ci.roleid, ci.reject
+		FROM #CustList t
+			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username 
+		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
+
+		INSERT INTO CustSuspendLockUpd (CustId)
+		SELECT t.custid
+		FROM #CustLog t			
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #CustLog (CustId, RoleId, Reject)
+		SELECT ci.custid, ci.roleid, ci.reject
+		FROM #CustList t
+			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username
+			INNER JOIN CustSuspendLockUpd cs WITH (NOLOCK) ON ci.custid = cs.custid		
+
+		DELETE CustSuspendLockUpd
+		WHERE custid IN (SELECT custid FROM #CustLog t)
 	END
 
 	IF(@@ERROR<>0)
@@ -113,25 +150,36 @@ BEGIN
 		UPDATE TOP (1) #CustLog
 		SET IsFinished = 1
 			,@CustIdLog = CustId
-			,@RoleId = RoleId			
+			,@RoleId = RoleId
+			,@Reject = Reject			
 		WHERE IsFinished = 0
 	
 		IF @@ROWCOUNT = 0 BREAK
-
-		UPDATE	cs 
-		SET	SuspendInfo = (SELECT suspendinfo FROM dbo.f_GenerateSuspendInfo(@roleid,1,ISNULL(SuspendInfo,0)))	
-		FROM CustProductStatus cs WITH (ROWLOCK, UPDLOCK)			
-		WHERE custid = @CustIdLog
-	
-		IF @RoleID BETWEEN 2 AND 4 
+		
+		IF @Reject = 1
 		BEGIN
-			EXEC Acc_DynamicCustomerInfo_04
-				@CustID		= @CustIdLog
-				,@RoleID	= @RoleID
-				,@Action	= 'SuspendInfo'
-				,@Suspended	= 1					
-		END
+			--check suspend status is direct or not
+			SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
+			FROM dbo.CustProductStatus WITH(NOLOCK)
+			WHERE custid = @CustIdLog
 
+			IF @isDirectSuspend = 0
+			BEGIN
+				UPDATE	cs 
+				SET	SuspendInfo = (SELECT suspendinfo FROM dbo.f_GenerateSuspendInfo(@roleid,1,ISNULL(SuspendInfo,0)))	
+				FROM CustProductStatus cs WITH (ROWLOCK, UPDLOCK)			
+				WHERE custid = @CustIdLog
+	
+				IF @RoleID BETWEEN 2 AND 4 
+				BEGIN
+					EXEC Acc_DynamicCustomerInfo_04
+						@CustID		= @CustIdLog
+						,@RoleID	= @RoleID
+						,@Action	= 'SuspendInfo'
+						,@Suspended	= 1					
+				END
+			END
+		END
 		SET @EndRun = GETDATE()
 		SET @Duration  = DATEDIFF(MILLISECOND,@startRun,@endRun)
 
