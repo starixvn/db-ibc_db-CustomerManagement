@@ -61,7 +61,7 @@ BEGIN
 
 	IF(@@ERROR<>0)
 	BEGIN
-		SELECT	@ErrCode = 100, @ErrMsg = 'Insert unsuccessfully'
+		SELECT	@ErrCode = 100, @ErrMsg = 'Updated unsuccessfully'
 		RETURN
 	END
 
