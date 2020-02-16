@@ -47,15 +47,15 @@ BEGIN
 
 	IF @Lock = 1
 	BEGIN
-		INSERT INTO CustSuspendLockUpd (CustId)
-		SELECT ci.custid OUTPUT INSERTED.CustId, 0 AS IsFinished #CustLog
+		INSERT INTO CustSuspendLockUpd (CustId) OUTPUT INSERTED.CustId, 0 AS IsFinished INTO #CustLog
+		SELECT ci.custid
 		FROM #CustList t
-			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON t.UserName = ci.username 
+			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username 
 		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
 	END
 	ELSE
 	BEGIN
-		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, 0 AS IsFinished #CustLog
+		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, 0 AS IsFinished INTO #CustLog
 		WHERE custid IN (SELECT custid FROM #CustList)
 	END
 
