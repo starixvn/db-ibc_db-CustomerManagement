@@ -156,7 +156,7 @@ BEGIN
 	
 		IF @@ROWCOUNT = 0 BREAK
 		
-		IF @Reject = 1
+		IF @Reject = 1 AND @Lock = 1
 		BEGIN
 			--check suspend status is direct or not
 			SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
