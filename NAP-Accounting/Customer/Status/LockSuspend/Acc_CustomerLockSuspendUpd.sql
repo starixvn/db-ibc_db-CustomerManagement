@@ -36,9 +36,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #CustList (UserName NVARCHAR(50))
-	CREATE TABLE #CustLog  (CustId INT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CustLog  (CustId INT, RoleId TINYINT, IsFinished BIT DEFAULT(0))
 
-	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT
+	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT, @RoleId TINYINT
 	DECLARE @StartRun			DATETIME
 			,@EndRun			DATETIME
 			,@Duration			INT
@@ -62,9 +62,20 @@ BEGIN
 		RETURN
 	END
 
+	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
+	FROM #CustList t
+	WHERE NOT EXISTS (SELECT 1 FROM dbo.custInfo ci WITH (NOLOCK) WHERE t.UserName = ci.username)
+
+	IF @WrongUserName <> ''
+	BEGIN
+		SELECT	@ErrCode = 100, 
+				@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' is invalid. Please check username again.' 
+		RETURN
+	END
+
 	IF @Lock = 1
 	BEGIN
-		INSERT INTO CustSuspendLockUpd (CustId) OUTPUT INSERTED.CustId, 0 AS IsFinished INTO #CustLog
+		INSERT INTO CustSuspendLockUpd (CustId) OUTPUT INSERTED.CustId, ci.roleid, 0 AS IsFinished INTO #CustLog
 		SELECT ci.custid
 		FROM #CustList t
 			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username 
@@ -72,7 +83,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, 0 AS IsFinished INTO #CustLog
+		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, NULL AS roleID, 0 AS IsFinished INTO #CustLog
 		WHERE custid IN (	SELECT custid 
 							FROM #CustList t
 								INNER JOIN dbo.custInfo ci ON t.UserName = ci.username)
@@ -82,12 +93,9 @@ BEGIN
 	BEGIN
 		SELECT	@ErrCode = 100, @ErrMsg = 'Updated unsuccessfully'
 		RETURN
-	END
+	END	
 
-	-- Write log
-	SET @EndRun = GETDATE()
-	SET @Duration  = DATEDIFF(MILLISECOND,@startRun,@endRun)
-
+	-- Write log and mard direct suspend	
 	SELECT @LogSPData = '<R Lock="'+ CASE WHEN @Lock = 1 THEN '1' ELSE '0' END + '" ' +
 						'IP="'+ COALESCE(CAST(@IP AS VARCHAR(15)),SPACE(1)) + '" />'
 
@@ -98,10 +106,28 @@ BEGIN
 	BEGIN
 		UPDATE TOP (1) #CustLog
 		SET IsFinished = 1
-			,@CustIdLog = CustId			
+			,@CustIdLog = CustId
+			,@RoleId = RoleId			
 		WHERE IsFinished = 0
 	
 		IF @@ROWCOUNT = 0 BREAK
+
+		UPDATE	cs 
+		SET	SuspendInfo = (SELECT suspendinfo FROM dbo.f_GenerateSuspendInfo(@roleid,1,ISNULL(SuspendInfo,0)))	
+		FROM CustProductStatus cs WITH (ROWLOCK, UPDLOCK)			
+		WHERE custid = @CustIdLog
+	
+		IF @RoleID BETWEEN 2 AND 4 
+		BEGIN
+			EXEC Acc_DynamicCustomerInfo_04
+				@CustID		= @CustIdLog
+				,@RoleID	= @RoleID
+				,@Action	= 'SuspendInfo'
+				,@Suspended	= 1					
+		END
+
+		SET @EndRun = GETDATE()
+		SET @Duration  = DATEDIFF(MILLISECOND,@startRun,@endRun)
 
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper 
 			@UserID = @UserID,

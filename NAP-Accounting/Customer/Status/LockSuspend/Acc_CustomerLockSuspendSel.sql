@@ -13,7 +13,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	SELECT ci.custid, ci.username, ci.roleid
+	SELECT ci.custid, ci.username, ci.roleid,
+		--1:Open, 2:Suspended, 3:Closed
+		CASE WHEN ci.Enabled = 1 THEN CASE WHEN ci.closed = 1 THEN 'Closed' WHEN ci.reject = 1 THEN 'Suspended' ELSE 'Open' END ELSE 'Disabled' END AS CustStatus						
 	FROM CustSuspendLockUpd cs WITH (NOLOCK)
 		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON cs.custid = ci.custid	
 	ORDER BY ci.username, ci.roleid
