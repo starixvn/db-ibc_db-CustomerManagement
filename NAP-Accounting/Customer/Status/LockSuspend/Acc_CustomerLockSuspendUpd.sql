@@ -17,6 +17,21 @@ AS
 	Param's Explanation:
 		@CustIDList: id of customer
 		@Lock: 1:Lock, 2:Unlock
+	Example: 
+	DECLARE @ErrCode	INT	= 0,	
+		@ErrMsg		VARCHAR(MAX) = '',
+		@CustList	VARCHAR(MAX) = 'supertest1, member01'
+
+	EXEC Acc_CustomerLockSuspendUpd 
+		@CustList	= @CustList,
+		@Lock		= 1,
+		@UserID		= 8, 
+		@IP			= '',
+		@ErrCode	= @ErrCode OUTPUT,
+		@ErrMsg     = @ErrMsg OUTPUT
+
+	SELECT @ErrCode, @ErrMsg
+
 */
 BEGIN
 	SET NOCOUNT ON
@@ -58,7 +73,9 @@ BEGIN
 	ELSE
 	BEGIN
 		DELETE CustSuspendLockUpd OUTPUT DELETED.CustId, 0 AS IsFinished INTO #CustLog
-		WHERE custid IN (SELECT custid FROM #CustList)
+		WHERE custid IN (	SELECT custid 
+							FROM #CustList t
+								INNER JOIN dbo.custInfo ci ON t.UserName = ci.username)
 	END
 
 	IF(@@ERROR<>0)
