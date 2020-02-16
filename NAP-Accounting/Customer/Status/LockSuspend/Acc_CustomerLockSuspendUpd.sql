@@ -21,6 +21,8 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #CustList (UserName NVARCHAR(50))
+	CREATE TABLE #CustLog  (CustId INT, IsFinished BIT DEFAULT(0))
+
 	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT
 	DECLARE @StartRun			DATETIME
 			,@EndRun			DATETIME
