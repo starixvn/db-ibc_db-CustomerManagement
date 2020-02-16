@@ -64,12 +64,18 @@ BEGIN
 
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 	FROM #CustList t
-	WHERE NOT EXISTS (SELECT 1 FROM dbo.custInfo ci WITH (NOLOCK) WHERE t.UserName = ci.username)
+	WHERE NOT EXISTS (	SELECT 1 
+						FROM dbo.custInfo ci WITH (NOLOCK) 
+							INNER JOIN Customer c WITH (NOLOCK) ON c.custid = ci.custid
+						WHERE t.UserName = ci.username 
+							AND c.site <> 'CN88'
+							AND ci.srecommend NOT IN (SELECT custid FROM dbo.Dep_CustSuper WITH (NOLOCK))
+					)
 
 	IF @WrongUserName <> ''
 	BEGIN
-		SELECT	@ErrCode = 100, 
-				@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' is invalid. Please check username again.' 
+		SELECT	@ErrCode = 101, 
+				@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' is invalid. Please enter only username of credit sites (except for china credit site).' 
 		RETURN
 	END
 
@@ -91,7 +97,7 @@ BEGIN
 
 	IF(@@ERROR<>0)
 	BEGIN
-		SELECT	@ErrCode = 100, @ErrMsg = 'Updated unsuccessfully'
+		SELECT	@ErrCode = 102, @ErrMsg = 'Updated unsuccessfully'
 		RETURN
 	END	
 
