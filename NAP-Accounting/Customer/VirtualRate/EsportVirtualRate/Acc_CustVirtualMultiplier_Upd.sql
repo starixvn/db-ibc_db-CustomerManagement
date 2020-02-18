@@ -21,6 +21,7 @@ AS
 	Revisions:    
 		- 20190626@Dominic : First commit
 		- 20191105@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
+		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
   
 */ 
 BEGIN
@@ -81,6 +82,8 @@ BEGIN
 			RETURN  
 		END CATCH
 	END	
+
+	DELETE FROM #New_VRCustSetting WHERE ValueIDLive = 0 AND ValueIDNonLive = 0
 
 	CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #New_VRCustSetting(CustID, LevelID)
 
