@@ -84,9 +84,9 @@ BEGIN
 		return	
 	END
 	
-	IF CURRENT_USER = 'bodbAdminNet' AND @DangerLevel BETWEEN 41 AND 50 AND @DangerType = 1
+	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
 	BEGIN	
-		SELECT	@ErrMsg = 'You are not authorized on this function',
+		SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',
 				@ErrCode = 102
 		RETURN	
 	END
