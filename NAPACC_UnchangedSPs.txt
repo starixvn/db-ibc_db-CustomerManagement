@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
+ALPHA\ViewLog\Acc_WriteLog_UserLog_RunSP_Wrapper.sql
