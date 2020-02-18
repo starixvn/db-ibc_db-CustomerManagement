@@ -13,38 +13,38 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@IP varchar(15) = ''
 AS
-
 /*
-Created: 
-Task : Update Danger, Danger2, Danger3 fields , and write log content
-DB: DBCUST/CUSTDB
-Original:Accounting site
+	Created: 
+	Task : Update Danger, Danger2, Danger3 fields , and write log content
+	DB: DBCUST/CUSTDB
+	Original:Accounting site
 
-Revisions:	
-	- 20090717@pluto: update danger by dangertype.
-	- 20090801@Shifu: check disabled user
-	- 20090828@HuyNguyen: replace [Customer] --> [OtherCust]		
-	- 20090917@Phuc: Write log to dblog
-	- 20091008@Kiwi: Remove WriteLog_UserLog	
-	- 20091231@pluto: Writelog old value	
-	- 20100102@Lewin: Change @LogSPData, using WriteLog_UserLog_RunSPNew to write log
-	- 20101021@Henry: Record execution time
-	- 20110506@Johnson: update dangerous status of agent
-	- 20110804@Johnson: change name old value when write log
-	- 20110829@Henry: not allow Licensee BA Member to be updated
-	- 20110907@Sophia: Change Linked Server from DB052 to DB053
-	- 20120306@Jim: Edit dangerous level of BA accounts
-	- 20130201@Daniel: Change link server alias & failover writelog to DBTXN
-	- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
-	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-	- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
-	- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
-	- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
-Param's Explanation:
-	@CustID: Id of member will be updated,
-	@DangerType: type of danger,
-	@DangerLevel: new danger level value,
-	@System: accounting/NAP CM
+	Revisions:	
+		- 20090717@pluto: update danger by dangertype.
+		- 20090801@Shifu: check disabled user
+		- 20090828@HuyNguyen: replace [Customer] --> [OtherCust]		
+		- 20090917@Phuc: Write log to dblog
+		- 20091008@Kiwi: Remove WriteLog_UserLog	
+		- 20091231@pluto: Writelog old value	
+		- 20100102@Lewin: Change @LogSPData, using WriteLog_UserLog_RunSPNew to write log
+		- 20101021@Henry: Record execution time
+		- 20110506@Johnson: update dangerous status of agent
+		- 20110804@Johnson: change name old value when write log
+		- 20110829@Henry: not allow Licensee BA Member to be updated
+		- 20110907@Sophia: Change Linked Server from DB052 to DB053
+		- 20120306@Jim: Edit dangerous level of BA accounts
+		- 20130201@Daniel: Change link server alias & failover writelog to DBTXN
+		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
+		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+		- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
+		- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
+		- 20200218@Elodie: Prevent update level 41 -> 50 on NAP site [Redmine:#128250]
+	Param's Explanation:
+		@CustID: Id of member will be updated,
+		@DangerType: type of danger,
+		@DangerLevel: new danger level value,
+		@System: accounting/NAP CM
 */		
 BEGIN
 	SET NOCOUNT ON
@@ -84,6 +84,13 @@ BEGIN
 		return	
 	END
 	
+	IF CURRENT_USER = 'bodbAdminNet' AND @DangerLevel BETWEEN 41 AND 50 AND @DangerType = 1
+	BEGIN	
+		SELECT	@ErrMsg = 'You are not authorized on this function',
+				@ErrCode = 102
+		RETURN	
+	END
+
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
