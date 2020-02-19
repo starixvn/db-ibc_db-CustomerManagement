@@ -126,6 +126,7 @@ BEGIN
 	END
 
 	/* ===== Paging ===== */
+	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	SELECT custId, uplineUsername, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed
 	FROM (
 		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, 
