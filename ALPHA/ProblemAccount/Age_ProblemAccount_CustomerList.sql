@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_ProblemAccount_CustomerList]
+CREATE PROCEDURE [dbo].[Age_ProblemAccount_CustomerList]
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,
 	@CustId				INT,
