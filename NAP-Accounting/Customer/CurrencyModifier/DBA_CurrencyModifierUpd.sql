@@ -17,6 +17,8 @@ AS
 	Example: EXEC DBA_CurrencyModifierUpd @CustId = 24972511, @CurrencyModifier = 0.7
 */
 BEGIN
+	DECLARE @FromDate DATETIME = GETDATE()
+
 	IF EXISTS (SELECT 1 FROM dbo.Dep_CustSuper WITH (NOLOCK) WHERE custid = @CustId)
 	BEGIN
 		UPDATE s
@@ -31,4 +33,12 @@ BEGIN
 		FROM dbo.CustSuper s WITH (ROWLOCK)
 		WHERE custid = @CustId
 	END
+
+	UPDATE dbo.CurrencyModifier_History
+	SET ToDate = @FromDate
+	WHERE CustId = @CustId AND ToDate = '9999-12-31 0:00:00.000'
+
+	INSERT INTO CurrencyModifier_History(CustId, CurrencyModifier, FromDate, ToDate)
+	SELECT @CustId, @CurrencyModifier, @FromDate, '9999-12-31 0:00:00.000'
+
 END
