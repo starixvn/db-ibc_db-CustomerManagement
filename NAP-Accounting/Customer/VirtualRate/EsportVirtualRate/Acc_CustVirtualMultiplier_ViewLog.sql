@@ -1,5 +1,5 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE Acc_CustVirtualMultiplier_ViewLog 
+ALTER PROCEDURE Acc_CustVirtualMultiplier_ViewLog
 	@Username NVARCHAR(100)
 	, @SportType INT
 	, @IncludingUpline BIT
@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20190725@Dominic: First commit
 		- 20191106@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
+		- 20200207@Tiara: New VR structure for Soccer [Redmind: #126243]
 	Parameter:
 
 	
@@ -194,75 +195,84 @@ BEGIN
 	INTO #VRBettypeGroup
 	FROM
 	OPENQUERY(DBACC,'SELECT * FROM bodb02.dbo.VRBettypeGroup bg (NOLOCK)') 
-
 	
+	CREATE TABLE #Hierarchy 
+	(
+			 LevelID INT --LevelID
+			, VRLeagueGroupID SMALLINT --VRLeagueGroupID
+			, VRBetTypeGroupID SMALLINT --VRBetTypeGroupID
+			, BetType SMALLINT --BetType
+			, VRBetTypeGroupName VARCHAR(200)--VRBetTypeGroupName
+			, VRLeagueGroupName VARCHAR(200)--VRLeagueGroupName
+			, SortOrder SMALLINT
+	)	
 
+		INSERT INTO #Hierarchy (LevelID, VRLeagueGroupID, VRBetTypeGroupID, BetType, VRBetTypeGroupName, VRLeagueGroupName, SortOrder)
+		SELECT h.LevelID,h.VRLeagueGroupID, h.VRBetTypeGroupID,CASE WHEN h.BetType = -1 THEN NULL ELSE h.BetType END BetType
+				, bg.GroupName VRBetTypeGroupName
+				, lg.GroupName VRLeagueGroupName
+				, SortOrder
+		FROM (
+			SELECT DISTINCT VRLeagueGroupID, VRBetTypeGroupID, LevelID, CASE WHEN BetType = -1 THEN NULL ELSE BetType END BetType, SortOrder 
+			FROM #Data 
+		) as h
+		LEFT JOIN #VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
+		LEFT JOIN #VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
 
-	SELECT h.LevelID,h.VRLeagueGroupID, h.VRBetTypeGroupID,CASE WHEN h.BetType = -1 THEN NULL ELSE h.BetType END BetType
-			, bg.GroupName VRBetTypeGroupName
-			, lg.GroupName VRLeagueGroupName
-			, SortOrder
-	INTO #Hierarchy
-	FROM (
-		SELECT DISTINCT VRLeagueGroupID, VRBetTypeGroupID, LevelID, CASE WHEN BetType = -1 THEN NULL ELSE BetType END BetType, SortOrder 
-		FROM #Data 
-	) as h
-	LEFT JOIN #VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
-	LEFT JOIN #VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
+		CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
 
-	CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
-
-	SELECT m.LogID
-		, CASE WHEN m.custid = 0 THEN 'Global Setting' ELSE c.username END username
-		, CASE WHEN m.custid = 0 THEN NULL ELSE m.CurrencyRate END CurrencyRate
-		, m.LogTime UpdatedTime, u.username UpdatedBy
-		, @SportType SportType
-		, h.VRLeagueGroupID LeagueGroupID , h.VRLeagueGroupName LeagueGroup
-		, h.VRBetTypeGroupID BettypeGroupID, h.VRBetTypeGroupName BettypeGroup
-		, d.BetType
-		, d.LevelID
-		, d.IsNew
-		--Live
-		, d.FollowingLevelIDLive Live_FollowingLevelID
-		, d.FollowingValueLive Live_FollowingValue
-		, CASE 
-				WHEN d.FollowingCustIDLive = m.CustID THEN NULL
-				WHEN d.FollowingCustIDLive = 0 THEN 'Global'
-				WHEN cl.roleid = 4 THEN 'Super'
-				WHEN cl.roleid = 3 THEN 'Master'
-				WHEN cl.roleid = 2 THEN 'Agent'
-			END Live_FollowingRole
-		, hl.BetType Live_FollowingBetTypeID
-		, hl.VRBetTypeGroupName Live_FollowingBettypeGroup
-		, hl.VRLeagueGroupName Live_FollowingLeagueGroup
-		--NonLive
-		, d.FollowingLevelIDNonLive NonLive_FollowingLevelID
-		, d.FollowingValueNonLive NonLive_FollowingValue
-		, CASE 
-				WHEN d.FollowingCustIDNonLive = m.CustID THEN NULL
-				WHEN d.FollowingCustIDNonLive = 0 THEN 'Global'
-				WHEN cnl.roleid = 4 THEN 'Super'
-				WHEN cnl.roleid = 3 THEN 'Master'
-				WHEN cnl.roleid = 2 THEN 'Agent'
-			END NonLive_FollowingRole
-		, hnl.BetType NonLive_FollowingBetTypeID
-		, hnl.VRBetTypeGroupName NonLive_FollowingBettypeGroup
-		, hnl.VRLeagueGroupName NonLive_FollowingLeagueGroup
-	FROM #VRCustLog m
-		INNER JOIN #Data d ON m.LogID = d.LogID
-		INNER JOIN #Hierarchy h ON h.LevelID = d.LevelID
-		LEFT JOIN bodb02..Customer u (NOLOCK) ON u.custid = m.UserID
-		LEFT JOIN bodb02..Customer c (NOLOCK) ON c.custid = m.CustID
-		LEFT JOIN bodb02..Customer cl (NOLOCK) ON cl.custid = d.FollowingCustIDLive
-		LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingValueNonLive
-		INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
-		INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
-	ORDER BY m.LogID DESC, d.SortOrder, IsNew
-
+		SELECT m.LogID
+			, CASE WHEN m.custid = 0 THEN 'Global Setting' ELSE c.username END username
+			, CASE WHEN m.custid = 0 THEN NULL ELSE m.CurrencyRate END CurrencyRate
+			, m.LogTime UpdatedTime, u.username UpdatedBy
+			, @SportType SportType
+			, h.VRLeagueGroupID LeagueGroupID , h.VRLeagueGroupName LeagueGroup
+			, h.VRBetTypeGroupID BettypeGroupID, h.VRBetTypeGroupName BettypeGroup
+			, d.BetType
+			, d.LevelID
+			, d.IsNew
+			--Live
+			, d.FollowingLevelIDLive Live_FollowingLevelID
+			, d.FollowingValueLive Live_FollowingValue
+			, CASE 
+					WHEN d.FollowingCustIDLive = m.CustID THEN NULL
+					WHEN d.FollowingCustIDLive = 0 THEN 'Global'
+					WHEN cl.roleid = 4 THEN 'Super'
+					WHEN cl.roleid = 3 THEN 'Master'
+					WHEN cl.roleid = 2 THEN 'Agent'
+				END Live_FollowingRole
+			, hl.BetType Live_FollowingBetTypeID
+			, hl.VRBetTypeGroupName Live_FollowingBettypeGroup
+			, hl.VRLeagueGroupName Live_FollowingLeagueGroup
+			--NonLive
+			, d.FollowingLevelIDNonLive NonLive_FollowingLevelID
+			, d.FollowingValueNonLive NonLive_FollowingValue
+			, CASE 
+					WHEN d.FollowingCustIDNonLive = m.CustID THEN NULL
+					WHEN d.FollowingCustIDNonLive = 0 THEN 'Global'
+					WHEN cnl.roleid = 4 THEN 'Super'
+					WHEN cnl.roleid = 3 THEN 'Master'
+					WHEN cnl.roleid = 2 THEN 'Agent'
+				END NonLive_FollowingRole
+			, hnl.BetType NonLive_FollowingBetTypeID
+			, hnl.VRBetTypeGroupName NonLive_FollowingBettypeGroup
+			, hnl.VRLeagueGroupName NonLive_FollowingLeagueGroup
+		FROM #VRCustLog m
+			INNER JOIN #Data d ON m.LogID = d.LogID
+			INNER JOIN #Hierarchy h ON h.LevelID = d.LevelID
+			LEFT JOIN bodb02..Customer u (NOLOCK) ON u.custid = m.UserID
+			LEFT JOIN bodb02..Customer c (NOLOCK) ON c.custid = m.CustID
+			LEFT JOIN bodb02..Customer cl (NOLOCK) ON cl.custid = d.FollowingCustIDLive
+			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingCustIDNonLive
+			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
+			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
+		ORDER BY m.LogID DESC, d.SortOrder, IsNew
+	
 
 	DROP TABLE #VRCustLog
 	DROP TABLE #VRLineCustID
 	DROP TABLE #Data
 	DROP TABLE #Hierarchy
-	
+	DROP TABLE #VRLeagueGroup
+	DROP TABLE #VRBettypeGroup
 END
