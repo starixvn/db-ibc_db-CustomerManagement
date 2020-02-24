@@ -758,8 +758,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
+							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -786,8 +786,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND (mt.ActionId NOT BETWEEN 31620 AND 31622
-								OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
+							--AND (mt.ActionId NOT BETWEEN 31620 AND 31622
+							--	OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 				END
 				ELSE IF @ToDate < @__archiveDate
 				BEGIN
@@ -825,8 +825,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -853,8 +853,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
+							--AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 				END
 				ELSE
 				BEGIN
@@ -892,8 +892,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -929,8 +929,8 @@ BEGIN
 							--exclude log action of smart punter
 							AND ul.ActionID NOT BETWEEN 31000 AND 31100
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-						 	AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+						 	--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
+								--OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -957,8 +957,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+							--AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -985,8 +985,8 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							--exclude log action of status
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
-							AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
-								OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
+							--AND (mt.ActionId NOT BETWEEN 31620 AND 31622 
+							--	OR ( mt.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
 				END
 
 				SELECT  LogID,
