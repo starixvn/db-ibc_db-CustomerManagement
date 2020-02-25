@@ -39,15 +39,16 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	CREATE TABLE #tempProblemAccount (custId INT, uplineUsername NVARCHAR(50), username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate datetime, isReviewed bit)
+	CREATE TABLE #tempProblemAccount (custId INT, uplineUsername NVARCHAR(50), username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate DATETIME, isReviewed BIT, ClosedReason TINYINT)
 
 	-- Sarch master problem account
 	IF @SearchRoleId = 3
 	BEGIN
-		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
-		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
+		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
+		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
 		FROM  dbo.ProblemAccount p WITH (NOLOCK)
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
+			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 		WHERE c.srecommend = @CustId
 			AND c.roleid = @SearchRoleId
 			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
@@ -80,10 +81,11 @@ BEGIN
 
 		IF @SearchRoleId = 2
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
-			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
+			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
+			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
 			FROM  dbo.ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
+				LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
 				AND c.roleid = @SearchRoleId
@@ -109,10 +111,11 @@ BEGIN
 		END
 		ELSE IF @SearchRoleId = 1
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed)
-			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed
+			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
+			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
 			FROM  dbo.ProblemAccount p WITH (NOLOCK)
 				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
+				LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
 				AND c.roleid = @SearchRoleId
@@ -127,9 +130,9 @@ BEGIN
 
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	SELECT custId, uplineUsername, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed
+	SELECT custId, uplineUsername, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason
 	FROM (
-		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, 
+		SELECT t.custId, t.uplineUsername, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, t.ClosedReason,
 			CASE WHEN ci.Enabled = 1 THEN CASE WHEN ci.closed = 1 THEN 3 WHEN ci.reject = 1 THEN 2 ELSE 1 END ELSE 4 END AS Status,
 			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId
 		FROM #tempProblemAccount t
