@@ -40,7 +40,14 @@ BEGIN
 			@LogDate DATETIME = GETDATE()
 	CREATE TABLE #AffectedDownlines(CustID INT)
 
-	SELECT @Site = Site FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
+	BEGIN
+		SELECT @Site = Site FROM CustDB.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	END
+	ELSE
+	BEGIN
+		SELECT @Site = Site FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	END
 
 	IF @Site = 'CN88'
 	BEGIN
