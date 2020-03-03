@@ -22,14 +22,14 @@ AS
 		- 20180319@Robert: CWL - Pragmatic Integration [Redmine:#91762]
 		- 20180703@Elodie: Apply SMA Winlimit and CWL for Poker Games Product - [Redmine: #97675]
 		- 20191028@Robert: Create new table WinLimit_ProductOffer [#122849]
-		- 20200303@Tiara: Prepare for SA Gaming Product [Redmine: #128058]
+
 
 	Parameters Explanation:	
 */
 RETURN(
 		SELECT a.ProductId
 			, p.ProductName
-			, a.BettypeID
+			, a.BetType
 			, a.IsActive_SMA
 			, a.IsActive_Company
 		FROM dbo.WinLimit_ProductOffer AS a WITH(NOLOCK)
