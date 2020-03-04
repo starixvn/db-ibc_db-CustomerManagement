@@ -40,7 +40,9 @@ BEGIN
 	SET NOCOUNT ON
 	
 	CREATE TABLE #tempProblemAccount (custId INT, uplineUsername NVARCHAR(50), username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate DATETIME, isReviewed BIT, ClosedReason TINYINT)
+	DECLARE @RoleId TINYINT
 
+	SELECT @RoleId = roleid FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustId
 	-- Sarch master problem account
 	IF @SearchRoleId = 3
 	BEGIN
@@ -76,55 +78,65 @@ BEGIN
 		IF @UplineUsername <> ''
 		BEGIN
 			SELECT @UplineId = custid FROM dbo.Customer WITH (NOLOCK)
-			WHERE username = @UplineUsername AND roleid = @SearchRoleId + 1
+			WHERE username = @UplineUsername AND roleid = @SearchRoleId + 1 
+				AND CASE WHEN @RoleId = 4 THEN srecommend 
+						WHEN @RoleId = 3 THEN mrecommend 
+						WHEN @RoleId = 2 THEN recommend END = @CustId
 		END
 
-		IF @SearchRoleId = 2
+		IF @UplineId IS NULL
 		BEGIN
-			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
-			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
-			FROM  dbo.ProblemAccount p WITH (NOLOCK)
-				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
-				LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
-				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
-			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
-				AND c.roleid = @SearchRoleId
-				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
-				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-				AND p.ReasonId IS NOT NULL
-				AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
+			SELECT @TotalRows = 0
+		END
+		ELSE
+		BEGIN
+			IF @SearchRoleId = 2
+			BEGIN
+				INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
+				SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
+				FROM  dbo.ProblemAccount p WITH (NOLOCK)
+					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
+					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
+					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
+				WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.mrecommend = @UplineId)
+					AND c.roleid = @SearchRoleId
+					AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
+					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
+					AND p.ReasonId IS NOT NULL
+					AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 
-			SELECT @TotalRows = @@ROWCOUNT
+				SELECT @TotalRows = @@ROWCOUNT
 
-			UPDATE t 
-			SET t.numberOfDownline = pa.numberOfDownline
-			FROM #tempProblemAccount t 			
-				CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
-							FROM dbo.custInfo ci WITH (NOLOCK) 
-								INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
-							WHERE ci.recommend = t.custid 
-								AND ci.roleid = 1
-								AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
-							GROUP BY ci.recommend) AS pa
+				UPDATE t 
+				SET t.numberOfDownline = pa.numberOfDownline
+				FROM #tempProblemAccount t 			
+					CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
+								FROM dbo.custInfo ci WITH (NOLOCK) 
+									INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
+								WHERE ci.recommend = t.custid 
+									AND ci.roleid = 1
+									AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+								GROUP BY ci.recommend) AS pa
 
 			
-		END
-		ELSE IF @SearchRoleId = 1
-		BEGIN
-			INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
-			SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
-			FROM  dbo.ProblemAccount p WITH (NOLOCK)
-				INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
-				LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
-				CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
-			WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
-				AND c.roleid = @SearchRoleId
-				AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
-				AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-				AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
-				AND  c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
+			END
+			ELSE IF @SearchRoleId = 1
+			BEGIN
+				INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
+				SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
+				FROM  dbo.ProblemAccount p WITH (NOLOCK)
+					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
+					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
+					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
+				WHERE ((ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) OR c.recommend = @UplineId)
+					AND c.roleid = @SearchRoleId
+					AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
+					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
+					AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
+					AND  c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 
-			SELECT @TotalRows = @@ROWCOUNT
+				SELECT @TotalRows = @@ROWCOUNT
+			END
 		END
 	END
 
