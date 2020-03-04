@@ -1,7 +1,0 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
