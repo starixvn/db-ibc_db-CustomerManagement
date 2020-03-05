@@ -1,3 +1,0 @@
-ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
-ALPHA\Customer\Agw_CustomerSelInfo.sql

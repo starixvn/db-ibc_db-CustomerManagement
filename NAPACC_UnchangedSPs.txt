@@ -2,3 +2,7 @@ NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
 ALPHA\Customer\Age_CustomerSelAllInfo.sql
 ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
 ALPHA\Customer\Agw_CustomerSelInfo.sql
+Ext NAP\Customer\dbo.EAS_CustomerSelByAg.sql
+Ext NAP\Customer\dbo.EAS_CustomerSelByCom.sql
+Ext NAP\Customer\dbo.EAS_CustomerSelByMAg.sql
+Ext NAP\Customer\dbo.EAS_CustomerSelBySAg.sql
