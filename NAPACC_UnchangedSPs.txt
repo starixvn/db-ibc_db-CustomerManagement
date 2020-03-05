@@ -1,1 +1,3 @@
-NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
+ALPHA\ViewLog\Acc_WriteLog_UserLog_RunSP_Wrapper.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql

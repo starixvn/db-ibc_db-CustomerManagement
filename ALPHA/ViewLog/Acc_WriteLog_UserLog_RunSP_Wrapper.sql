@@ -1,14 +1,13 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_WriteLog_UserLog_RunSP_Wrapper]
-		@UserID INT,
-		@CustID INT = 0,
-		@ActionID INT = NULL,	
-		@TrackingValue nvarchar(MAX)= NULL,
-		@TrackingValue2 nvarchar(MAX) = NULL,
-		@Duration INT = NULL
+	@UserID INT,
+	@CustID INT = 0,
+	@ActionID INT = NULL,	
+	@TrackingValue nvarchar(MAX)= NULL,
+	@TrackingValue2 nvarchar(MAX) = NULL,
+	@Duration INT = NULL,
+	@AffectedDownlines VARCHAR(MAX) = NULL
 		
 /* 
 	Created: 20180924@Elodie
@@ -17,6 +16,7 @@ ALTER PROCEDURE [dbo].[Acc_WriteLog_UserLog_RunSP_Wrapper]
 
 	Revisions:
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action
@@ -37,7 +37,8 @@ BEGIN
 			@ActionID = @ActionID,
 			@TrackingValue = @TrackingValue,
 			@TrackingValue2 = @TrackingValue2,
-			@Duration = @Duration
+			@Duration = @Duration,
+			@AffectedDownlines = @AffectedDownlines
 	END TRY
 	BEGIN CATCH
 		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
@@ -46,7 +47,8 @@ BEGIN
 			@ActionID = @ActionID,
 			@TrackingValue = @TrackingValue,
 			@TrackingValue2 = @TrackingValue2,
-			@Duration = @Duration
+			@Duration = @Duration,
+			@AffectedDownlines = @AffectedDownlines
 	END CATCH			
 END
 GO

@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@ActionID INT = NULL,	
 		@TrackingValue nvarchar(MAX)= NULL,
 		@TrackingValue2 nvarchar(MAX) = NULL,
-		@Duration INT = NULL		
+		@Duration INT = NULL,
+		@AffectedDownlines VARCHAR(MAX) = NULL		
 /* 
 	Created:
     Task: ViewLog function 331
@@ -20,6 +21,7 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		- 20101019@Henry: add one more parameter: @Duration   
 		- 20110519@Johnson: add new column TrackingValue2
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action
@@ -33,8 +35,19 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON   
 	DECLARE @Site VARCHAR(10)
+	DECLARE @LogID BIGINT,
+			@MultiTarget_LogID BIGINT,
+			@LogDate DATETIME = GETDATE()
+	CREATE TABLE #AffectedDownlines(CustID INT)
 
-	SELECT @Site = Site FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
+	BEGIN
+		SELECT @Site = Site FROM CustDB.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	END
+	ELSE
+	BEGIN
+		SELECT @Site = Site FROM bodb02.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
+	END
 
 	IF @Site = 'CN88'
 	BEGIN
@@ -74,6 +87,41 @@ BEGIN
 										@TrackingValue,
 										@TrackingValue2,
 										@Duration
-										)		
+										)
+		
+		SET @LogID = SCOPE_IDENTITY()
+
+		IF ISNULL(@AffectedDownlines,'') <> ''
+		BEGIN	
+			INSERT INTO dbo.UserLog_RunSP_MultiTarget (
+				UserID,
+				LogDate,
+				ActionID,
+				TrackingValue,
+				Duration,
+				TrackingValue2,
+				MainLogID
+			)
+			VALUES (
+				@UserID, 
+				@LogDate,    
+				@ActionID,   
+				@TrackingValue,
+				@Duration,
+				@TrackingValue2,
+				@LogID
+			)
+
+			SET @MultiTarget_LogID = SCOPE_IDENTITY()
+
+			INSERT INTO #AffectedDownlines(CustID)
+			SELECT CONVERT(INT, Val)
+			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
+			OPTION(MAXRECURSION 0)
+
+			INSERT INTO dbo.UserLog_RunSP_LogTarget (LogID, CustID, LogDate)
+			SELECT @MultiTarget_LogID, CustID, @LogDate
+			FROM #AffectedDownlines
+		END												
 	END
 END
