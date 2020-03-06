@@ -18,9 +18,10 @@ AS
 
 	Revisions:
 		- 20200210@Elodie: Initial SP [Redmine:#127446]
-		
+		- 20200306@Elodie: Allow view problem account for master and agent [Redmine:#129881]
+
 	Param's Explanation:
-		@CustId: Super login
+		@UserId: Customer login
 		@SubAccId: SubAccount Id
 		@RoleId:
 			3: Master Agent
@@ -36,7 +37,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #Downlines(CustId INT)
-	DECLARE @CustId INT, @ActionId INT, @SuccessDownlineList VARCHAR(MAX) = ''
+	DECLARE @CustId INT, @ActionId INT, @SuccessDownlineList VARCHAR(MAX) = '', @UserRoleId TINYINT
 	DECLARE @StartRun DATETIME, @Duration INT, @LogDataNew VARCHAR(500), @LogDataOld VARCHAR(500)
 
 	SET @startRun = GETDATE()
@@ -46,10 +47,15 @@ BEGIN
 	FROM dbo.f_StringSplit(@CustomerList, ',')
 	OPTION(MAXRECURSION 0)
 
+	SELECT @UserRoleId = roleId FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @UserId
+
 	IF EXISTS (SELECT 1
 				FROM #Downlines d
 					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid
-				WHERE ci.roleid <> @RoleId OR ci.srecommend <> @UserId)
+				WHERE ci.roleid <> @RoleId 
+					OR (@UserRoleId = 4 AND ci.srecommend <> @UserId) 
+					OR (@UserRoleId = 3 AND ci.mrecommend <> @UserId) 
+					OR (@UserRoleId = 2 AND ci.recommend <> @UserId))
 	BEGIN
 		--Action failed. Please try again.
 		SELECT @ErrMsg = [dbo].[f_Get_MsgNamebyMsgID](40049, @Language), @ErrCode = 106
@@ -86,7 +92,7 @@ BEGIN
 	BEGIN
 		UPDATE TOP (1) #tempCust
 		SET IsFinished = 1,
-		@CustId = CustId
+			@CustId = CustId
 		WHERE IsFinished = 0
 
 		IF @@ROWCOUNT = 0 BREAK
