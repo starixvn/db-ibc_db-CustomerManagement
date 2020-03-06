@@ -101,6 +101,8 @@ Revisions:
 	- 20190412@Johnson: add suspendInfo [redmine:#105587]
 	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 	- 20190527@Paul: Apply new status [RedmineID: #113198]
+	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
+
 Param's Explanation:
 	@username: username want to get all info related
 */		
