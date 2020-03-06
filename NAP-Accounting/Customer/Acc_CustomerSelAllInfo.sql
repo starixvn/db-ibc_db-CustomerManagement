@@ -574,7 +574,7 @@ BEGIN
 	    SET @isBA=0
 
 	DECLARE @credit MONEY	
-	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
+	DECLARE @CustGroupHeadlineID INT, @mrecommend INT, @recommend INT
 		
 	SELECT @credit = credit, @srecommend = srecommend
 	FROM DBCUST.CustDB.dbo.CustInfo WITH(NOLOCK)
