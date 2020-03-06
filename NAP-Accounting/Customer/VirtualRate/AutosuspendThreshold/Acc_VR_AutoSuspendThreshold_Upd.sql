@@ -18,8 +18,8 @@ AS
 	Param's Explanation:
 	•	@XML = 
 			'<Root>
-						<Row LevelID = "15" VRAutoSuspendThreshold="0"/>
-						<Row LevelID = "17" VRAutoSuspendThreshold="0"/>
+						<Row LevelID = "15" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
+						<Row LevelID = "17" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
 			</Root>'
 	
 	• Example :
@@ -29,9 +29,8 @@ AS
 			@IP = '10.1.1.0',
 			@XML = 
 			'<Root>
-						<Row LevelID = "1" VRAutoSuspendThreshold="3.00"/>
-						<Row LevelID = "2" VRAutoSuspendThreshold="3.00"/>
-						<Row LevelID = "5" VRAutoSuspendThreshold="3.00"/>
+						<Row LevelID = "5" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
+						<Row LevelID = "7" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
 			</Root>'
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
@@ -51,7 +50,8 @@ BEGIN
 	
 	CREATE TABLE #NewAutoSuspendThresholdTbl (
 		  LevelID					SMALLINT
-		, VRAutoSuspendThreshold	SMALLMONEY
+		, VRAutoSuspendThresholdLive	SMALLMONEY
+		, VRAutoSuspendThresholdNonLive	SMALLMONEY
 		)
 
 	SELECT @StartRun = GETDATE()   
@@ -66,7 +66,8 @@ BEGIN
 		SELECT *
 		FROM OPENXML(@iDoc, '/Root/Row', 1) WITH (
 				  LevelID					SMALLINT
-				, VRAutoSuspendThreshold	SMALLMONEY
+				, VRAutoSuspendThresholdLive	SMALLMONEY
+				, VRAutoSuspendThresholdNonLive	SMALLMONEY
 				)
 	
 		EXEC sp_xml_removedocument @iDoc
@@ -80,7 +81,8 @@ BEGIN
 	DELETE tmp
 	FROM #NewAutoSuspendThresholdTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
-	WHERE h.VRAutoSuspendThreshold = tmp.VRAutoSuspendThreshold
+	WHERE h.VRAutoSuspendThresholdLive = tmp.VRAutoSuspendThresholdLive
+		AND h.VRAutoSuspendThresholdNonLive = tmp.VRAutoSuspendThresholdNonLive
 
 	IF NOT EXISTS( SELECT TOP 1 1 FROM #NewAutoSuspendThresholdTbl)
 	BEGIN
@@ -94,7 +96,8 @@ BEGIN
 			   lg.GroupName LeagueGroup,
 			   bg.GroupName BettypeGroup,
 			   h.BetType,
-			   h.VRAutoSuspendThreshold,
+			   h.VRAutoSuspendThresholdLive,
+			   h.VRAutoSuspendThresholdNonLive,
 			   h.SortOrder
 		FROM #NewAutoSuspendThresholdTbl tmp
 			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
@@ -107,7 +110,8 @@ BEGIN
 	SELECT @TrackingValue2 = '<Root>' + ISNULL(@TrackingValue2,'') + '</Root>'
 	
 	UPDATE h
-	SET h.VRAutoSuspendThreshold = tmp.VRAutoSuspendThreshold
+	SET h.VRAutoSuspendThresholdLive = tmp.VRAutoSuspendThresholdLive,
+		h.VRAutoSuspendThresholdNonLive = tmp.VRAutoSuspendThresholdNonLive
 	FROM #NewAutoSuspendThresholdTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(ROWLOCK) ON tmp.LevelID = h.LevelID
 	
@@ -118,7 +122,8 @@ BEGIN
 			   lg.GroupName LeagueGroup,
 			   bg.GroupName BettypeGroup,
 			   h.BetType,
-			   h.VRAutoSuspendThreshold,
+			   h.VRAutoSuspendThresholdLive,
+			   h.VRAutoSuspendThresholdNonLive,
 			   h.SortOrder
 		FROM #NewAutoSuspendThresholdTbl tmp
 			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)

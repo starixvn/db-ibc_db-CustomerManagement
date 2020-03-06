@@ -21,7 +21,8 @@ BEGIN
 		,bg.GroupName BettypeGroup
 		,h.BetType BetTypeID
 		,h.LevelID 
-		,h.VRAutoSuspendThreshold
+		,h.VRAutoSuspendThresholdLive
+		,h.VRAutoSuspendThresholdNonLive
 	FROM VRSettingHierarchy h WITH(NOLOCK)
 		LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID

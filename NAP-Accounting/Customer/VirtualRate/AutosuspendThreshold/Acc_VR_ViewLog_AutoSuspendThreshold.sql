@@ -42,7 +42,8 @@ BEGIN
 			, BettypeGroup NVARCHAR(200)
 			, BetType SMALLINT --BetType
 			, LevelID INT --LevelID
-			, VRAutoSuspendThreshold	SMALLMONEY
+			, VRAutoSuspendThresholdLive SMALLMONEY
+			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 	)
@@ -54,7 +55,8 @@ BEGIN
 			, BettypeGroup NVARCHAR(200)
 			, BetType SMALLINT --BetType
 			, LevelID INT --LevelID
-			, VRAutoSuspendThreshold	SMALLMONEY
+			, VRAutoSuspendThresholdLive SMALLMONEY
+			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 	)
@@ -93,7 +95,8 @@ BEGIN
 						, BettypeGroup
 						, BetType
 						, LevelID
-						, VRAutoSuspendThreshold
+						, VRAutoSuspendThresholdLive 
+						, VRAutoSuspendThresholdNonLive 
 						, SortOrder
 						, SportType
 						, UserID
@@ -104,7 +107,8 @@ BEGIN
 				, tmp.BettypeGroup
 				, tmp.BetType
 				, tmp.LevelID
-				, tmp.VRAutoSuspendThreshold
+				, tmp.VRAutoSuspendThresholdLive
+				, tmp.VRAutoSuspendThresholdNonLive
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
@@ -114,7 +118,8 @@ BEGIN
 			, BettypeGroup NVARCHAR(200)
 			, BetType SMALLINT --BetType
 			, LevelID INT --LevelID
-			, VRAutoSuspendThreshold SMALLMONEY
+			, VRAutoSuspendThresholdLive SMALLMONEY
+			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 		) AS tmp
@@ -123,7 +128,8 @@ BEGIN
 				, tmp.BettypeGroup
 				, tmp.BetType
 				, tmp.LevelID
-				, tmp.VRAutoSuspendThreshold
+				, tmp.VRAutoSuspendThresholdLive
+				, tmp.VRAutoSuspendThresholdNonLive
 
 		INSERT INTO #DataOld(LogID 
 						, Logtime
@@ -131,7 +137,8 @@ BEGIN
 						, BettypeGroup
 						, BetType
 						, LevelID
-						, VRAutoSuspendThreshold
+						, VRAutoSuspendThresholdLive 
+						, VRAutoSuspendThresholdNonLive 
 						, SortOrder
 						, SportType
 						, UserID
@@ -142,7 +149,8 @@ BEGIN
 				, tmp.BettypeGroup
 				, tmp.BetType
 				, tmp.LevelID
-				, tmp.VRAutoSuspendThreshold
+				, tmp.VRAutoSuspendThresholdLive
+				, tmp.VRAutoSuspendThresholdNonLive
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
@@ -152,7 +160,8 @@ BEGIN
 			, BettypeGroup NVARCHAR(200)
 			, BetType SMALLINT --BetType
 			, LevelID INT --LevelID
-			, VRAutoSuspendThreshold SMALLMONEY 
+			, VRAutoSuspendThresholdLive SMALLMONEY
+			, VRAutoSuspendThresholdNonLive SMALLMONEY 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 		) AS tmp
@@ -161,7 +170,8 @@ BEGIN
 				, tmp.BettypeGroup
 				, tmp.BetType
 				, tmp.LevelID
-				, tmp.VRAutoSuspendThreshold
+				, tmp.VRAutoSuspendThresholdLive
+				, tmp.VRAutoSuspendThresholdNonLive
 		
 		EXEC sp_xml_removedocument @LogDocHandler1
 		EXEC sp_xml_removedocument @LogDocHandler2
@@ -175,8 +185,10 @@ BEGIN
 		   d1.LeagueGroup, 
 		   d1.BettypeGroup, 
 		   d1.BetType, 
-		   d1.VRAutoSuspendThreshold AS VRAutoSuspendThreshold_New, 
-		   d2.VRAutoSuspendThreshold AS VRAutoSuspendThreshold_Old
+		   d1.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_New, 
+		   d1.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_New,
+		   d2.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_Old,
+		   d2.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_Old
 	FROM #DataNew d1
 		 INNER JOIN #DataOld d2
 		   ON d1.LevelID = d2.LevelID
