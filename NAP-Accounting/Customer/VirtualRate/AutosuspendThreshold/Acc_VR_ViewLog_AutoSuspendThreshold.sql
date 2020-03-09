@@ -46,6 +46,7 @@ BEGIN
 			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsNew BIT
 	)
 	CREATE TABLE #DataNew (
 			  LogID BIGINT
@@ -59,6 +60,7 @@ BEGIN
 			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsNew BIT
 	)
 
 	CREATE CLUSTERED INDEX IX_LogID2 ON #DataOld(LogID)
@@ -100,6 +102,7 @@ BEGIN
 						, SortOrder
 						, SportType
 						, UserID
+						, IsNew
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -112,6 +115,7 @@ BEGIN
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
+				, tmp.IsNew
 		FROM OPENXML (@LogDocHandler1, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -122,6 +126,7 @@ BEGIN
 			, VRAutoSuspendThresholdNonLive SMALLMONEY
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsNew BIT
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -130,6 +135,7 @@ BEGIN
 				, tmp.LevelID
 				, tmp.VRAutoSuspendThresholdLive
 				, tmp.VRAutoSuspendThresholdNonLive
+				, tmp.IsNew 
 
 		INSERT INTO #DataOld(LogID 
 						, Logtime
@@ -142,6 +148,7 @@ BEGIN
 						, SortOrder
 						, SportType
 						, UserID
+						, IsNew
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -154,6 +161,7 @@ BEGIN
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
+				, tmp.IsNew
 		FROM OPENXML (@LogDocHandler2, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -164,6 +172,7 @@ BEGIN
 			, VRAutoSuspendThresholdNonLive SMALLMONEY 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsNew BIT
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -172,12 +181,12 @@ BEGIN
 				, tmp.LevelID
 				, tmp.VRAutoSuspendThresholdLive
 				, tmp.VRAutoSuspendThresholdNonLive
+				, tmp.IsNew
 		
 		EXEC sp_xml_removedocument @LogDocHandler1
 		EXEC sp_xml_removedocument @LogDocHandler2
 	END
-	
-	
+
 	SELECT d1.LogID, 
 		   d1.Logtime,
 		   d1.LevelID,
@@ -188,11 +197,15 @@ BEGIN
 		   d1.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_New, 
 		   d1.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_New,
 		   d2.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_Old,
-		   d2.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_Old
+		   d2.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_Old,
+		   d1.IsNew,
+		   c.username AS UpdatedBy
 	FROM #DataNew d1
 		 INNER JOIN #DataOld d2
 		   ON d1.LevelID = d2.LevelID
 		   AND d1.LogID = d2.LogID
+		INNER JOIN bodb02.dbo.Customer c WITH(NOLOCK)
+			ON d1.UserID = c.custid
 	ORDER BY D1.LogID DESC, d1.SortOrder
 
 	DROP TABLE #VRCustLogAutoSuspendThreshold

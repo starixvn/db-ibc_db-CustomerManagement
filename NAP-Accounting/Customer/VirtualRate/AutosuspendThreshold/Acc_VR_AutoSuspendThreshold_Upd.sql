@@ -29,8 +29,8 @@ AS
 			@IP = '10.1.1.0',
 			@XML = 
 			'<Root>
-						<Row LevelID = "5" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
-						<Row LevelID = "7" VRAutoSuspendThresholdLive="1.00" VRAutoSuspendThresholdNonLive="2.00"/>
+						<Row LevelID = "5" VRAutoSuspendThresholdLive="3.00" VRAutoSuspendThresholdNonLive="2.00"/>
+						<Row LevelID = "7" VRAutoSuspendThresholdLive="3.00" VRAutoSuspendThresholdNonLive="2.00"/>
 			</Root>'
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
@@ -91,19 +91,21 @@ BEGIN
 
 	--Old values
 	SELECT @TrackingValue2 = (
-		SELECT tmp.LevelID, 
+		SELECT h.LevelID, 
 			   h.SportType, 
 			   lg.GroupName LeagueGroup,
 			   bg.GroupName BettypeGroup,
 			   h.BetType,
 			   h.VRAutoSuspendThresholdLive,
 			   h.VRAutoSuspendThresholdNonLive,
-			   h.SortOrder
-		FROM #NewAutoSuspendThresholdTbl tmp
-			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
+			   h.SortOrder,
+			   IsNew = CAST(CASE WHEN tmp.LevelID IS NOT NULL THEN 1 ELSE 0 END AS BIT)
+		FROM VRSettingHierarchy h  WITH(NOLOCK)
+			 LEFT JOIN #NewAutoSuspendThresholdTbl tmp
 			   ON tmp.LevelID = h.LevelID
 			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
+		WHERE h.SportType = @SportType
 	FOR XML  RAW('r')
 	)
 
@@ -117,19 +119,21 @@ BEGIN
 	
 	--New values
 	SELECT @TrackingValue1 = (
-		SELECT tmp.LevelID, 
+		SELECT h.LevelID, 
 			   h.SportType, 
 			   lg.GroupName LeagueGroup,
 			   bg.GroupName BettypeGroup,
 			   h.BetType,
 			   h.VRAutoSuspendThresholdLive,
 			   h.VRAutoSuspendThresholdNonLive,
-			   h.SortOrder
-		FROM #NewAutoSuspendThresholdTbl tmp
-			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
+			   h.SortOrder,
+			   IsNew = CAST(CASE WHEN tmp.LevelID IS NOT NULL THEN 1 ELSE 0 END AS BIT)
+		FROM VRSettingHierarchy h WITH(NOLOCK)
+			 LEFT JOIN #NewAutoSuspendThresholdTbl tmp 
 			   ON tmp.LevelID = h.LevelID
 			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
+		WHERE h.SportType = @SportType
 	FOR XML  RAW('r')
 	)
 
