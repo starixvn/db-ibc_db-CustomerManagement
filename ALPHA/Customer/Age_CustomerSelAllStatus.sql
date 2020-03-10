@@ -1,5 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-GO
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllStatus]
 	@custid INT
 AS
@@ -12,6 +11,8 @@ AS
 		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
 		- 20190412@Johnson: add suspendInfo [redmine:#105587]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20200310@Percy: Return IsShowAllDayTransfer [RedmineID: #130091]
+
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -20,6 +21,8 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
+
+	DECLARE @IsShowAllDayBalTransfer BIT
     
 	--Downline/Upline status 
     DECLARE @upLineDisableCS				BIT       
@@ -97,6 +100,8 @@ BEGIN
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
+
+		SELECT @IsShowAllDayBalTransfer = IsAllDayBalTransfer FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @srecommend
     END
     
 	--check suspend status is direct or not
@@ -120,7 +125,8 @@ BEGIN
 			@upLineSuspend AS upLineSuspend,
 			@uplineDoubleCommLosing AS uplineDoubleCommLosing,
 			ci.DisableOutright,
-			@upLineDisableOutright AS upLineDisableOutright
+			@upLineDisableOutright AS upLineDisableOutright,
+			ISNULL(@IsShowAllDayBalTransfer, 0) AS IsShowAllDayBalTransfer
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid

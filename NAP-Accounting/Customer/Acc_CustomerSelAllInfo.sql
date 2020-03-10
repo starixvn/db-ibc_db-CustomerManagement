@@ -1,5 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0,
@@ -102,6 +101,7 @@ Revisions:
 	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 	- 20190527@Paul: Apply new status [RedmineID: #113198]
 	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
+	- 20200310@Percy: Return IsShowAllDayTransfer [RedmineID: #130091]
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
 
 Param's Explanation:
@@ -154,6 +154,7 @@ BEGIN
 		    @TotalMemberViewOnly INT,
 			@TotalMemberInactive INT,
 			@IsAllDayBalTransfer BIT,
+			@IsShowAllDayBalTransfer BIT,
 			@TotalSAgentActive INT,
 		    @TotalSAgentViewOnly INT,
 		    @TotalSAgentSuspended INT,
@@ -310,7 +311,7 @@ BEGIN
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
 			 , @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
-	      FROM custSuper WITH(NOLOCK)
+			FROM custSuper WITH(NOLOCK)
 	     WHERE custid = @custid
 
 	    SELECT TOP 1 @DownlinesSelectedBetting = ISNULL(SelectedBetting, 0)
@@ -419,6 +420,7 @@ BEGIN
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
+			 , @IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
 	      FROM custMaster WITH(NOLOCK)
 	     WHERE custid = @custid
     	
@@ -459,10 +461,9 @@ BEGIN
 			WHERE MRecommend = @custid
 		END
 
-            --------------
-		SELECT 
-			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
-	    FROM custSuper WITH(NOLOCK)
+        --------------
+		SELECT @IsShowAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
+	    FROM dbo.CustSuper WITH(NOLOCK)
 		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
 
     END
@@ -502,8 +503,8 @@ BEGIN
 				   --------------
 		SELECT 
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
-	    FROM custSuper WITH(NOLOCK)
-		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+	    FROM dbo.CustMaster WITH(NOLOCK)
+		WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     ELSE IF @roleid = 1 --member
     BEGIN		
@@ -513,8 +514,8 @@ BEGIN
 		  --------------
 		  SELECT 
 			 @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
-	      FROM custSuper WITH(NOLOCK)
-		  WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+	      FROM dbo.CustMaster WITH(NOLOCK)
+		  WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     
     --Direct Customer Status
@@ -674,6 +675,7 @@ BEGIN
 		@HasDownline AS HasDownline, 
 		@OTPCreateDate AS OTPCreateDate
 		,ISNULL(@IsAllDayBalTransfer,0) IsAllDayBalTransfer
+		,ISNULL(@IsShowAllDayBalTransfer,0) IsShowAllDayBalTransfer
 		, ISNULL(Headline.username,'') AS Headline
 		, ISNULL(GroupHeadline.GroupID,0) AS GroupHeadlineID
 		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
