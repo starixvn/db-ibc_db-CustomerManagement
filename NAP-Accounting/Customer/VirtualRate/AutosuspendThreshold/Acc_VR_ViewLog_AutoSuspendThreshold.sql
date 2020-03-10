@@ -47,6 +47,8 @@ BEGIN
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 			, IsNew BIT
+			, VRLeagueGroupID	smallint
+			, VRBetTypeGroupID	smallint
 	)
 	CREATE TABLE #DataNew (
 			  LogID BIGINT
@@ -61,6 +63,8 @@ BEGIN
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 			, IsNew BIT
+			, VRLeagueGroupID	smallint
+			, VRBetTypeGroupID	smallint
 	)
 
 	CREATE CLUSTERED INDEX IX_LogID2 ON #DataOld(LogID)
@@ -103,6 +107,8 @@ BEGIN
 						, SportType
 						, UserID
 						, IsNew
+						, VRLeagueGroupID	
+						, VRBetTypeGroupID
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -116,6 +122,8 @@ BEGIN
 				, tmp.SportType
 				, @UserID AS UserID
 				, tmp.IsNew
+				, tmp.VRLeagueGroupID	
+				, tmp.VRBetTypeGroupID
 		FROM OPENXML (@LogDocHandler1, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -127,6 +135,8 @@ BEGIN
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 			, IsNew BIT
+			, VRLeagueGroupID	smallint
+			, VRBetTypeGroupID	smallint
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -136,6 +146,8 @@ BEGIN
 				, tmp.VRAutoSuspendThresholdLive
 				, tmp.VRAutoSuspendThresholdNonLive
 				, tmp.IsNew 
+				, tmp.VRLeagueGroupID	
+				, tmp.VRBetTypeGroupID
 
 		INSERT INTO #DataOld(LogID 
 						, Logtime
@@ -149,6 +161,8 @@ BEGIN
 						, SportType
 						, UserID
 						, IsNew
+						, VRLeagueGroupID	
+						, VRBetTypeGroupID
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -162,6 +176,8 @@ BEGIN
 				, tmp.SportType
 				, @UserID AS UserID
 				, tmp.IsNew
+				, tmp.VRLeagueGroupID	
+				, tmp.VRBetTypeGroupID	
 		FROM OPENXML (@LogDocHandler2, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -173,6 +189,8 @@ BEGIN
 			, SortOrder SMALLINT
 			, SportType SMALLINT
 			, IsNew BIT
+			, VRLeagueGroupID	smallint
+			, VRBetTypeGroupID	smallint
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -182,6 +200,8 @@ BEGIN
 				, tmp.VRAutoSuspendThresholdLive
 				, tmp.VRAutoSuspendThresholdNonLive
 				, tmp.IsNew
+				, tmp.VRLeagueGroupID	
+				, tmp.VRBetTypeGroupID
 		
 		EXEC sp_xml_removedocument @LogDocHandler1
 		EXEC sp_xml_removedocument @LogDocHandler2
@@ -194,6 +214,8 @@ BEGIN
 		   d1.LeagueGroup, 
 		   d1.BettypeGroup, 
 		   d1.BetType, 
+		   d1.VRLeagueGroupID,	
+		   d1.VRBetTypeGroupID,	
 		   d1.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_New, 
 		   d1.VRAutoSuspendThresholdNonLive AS VRAutoSuspendThresholdNonLive_New,
 		   d2.VRAutoSuspendThresholdLive AS VRAutoSuspendThresholdLive_Old,
