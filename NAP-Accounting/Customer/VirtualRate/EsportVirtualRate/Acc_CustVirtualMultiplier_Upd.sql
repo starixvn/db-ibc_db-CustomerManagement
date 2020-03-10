@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_Upd]
 	, @IP VARCHAR(15) = ''
 	, @ErrCode INT OUT
 	, @ErrMsg NVARCHAR(200) OUT
+	, @IsManualUpdate BIT = 0
 AS
 /*    
 	Created: 20190626@Dominic    
@@ -23,6 +24,7 @@ AS
 		- 20191105@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200113@Tiara: New Virtual Rate Setting structure for Soccer [Redmine: #126243]
 		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
+		- 20200310@Eden : E-sport VR Phase 3 - Manually Updated Virtual Rate Accounts [Redmind: #128749]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -243,6 +245,9 @@ BEGIN
 				, @virtualmultiplier = @virtualmultiplier
 				, @SportType = @SportType
 
+	IF @IsManualUpdate = 1
+		INSERT INTO dbo.[VRSettingManualUpdAcc](SportType, CustID) 
+		SELECT @SportType, @CustID
 
 	SELECT @EndRun = GETDATE()    
 	SELECT @Duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
