@@ -233,7 +233,27 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_SAGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 42, @IsHide = @IsHidden_SabaClub OUTPUT
+	--Handle dummy product 41: LiveCasino (Allbet + SAGaming)
+	DECLARE	@DisableAllbet		INT,
+			@HideAllbet           INT,
+			@SyncedAllbet             INT,
+			@DisableSAGaming		INT,
+			@HideSAGaming          INT,
+			@SyncedSAGaming            INT
 
+	SELECT 			
+	-- For AllBet
+		@DisableAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1),
+		@HideAllbet  = CAST(CASE WHEN @IsHidden_AllBet = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_AllBet), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@SyncedAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0),		
+
+	-- For SA Gaming
+		@DisableSAGaming = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SAGaming), 1),	
+		@HideSAGaming  = CAST(CASE WHEN @IsHidden_SAGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SAGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@SyncedSAGaming = ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_SAGaming), 0) 
+	FROM custinfo AS ci WITH (nolock)
+		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+	WHERE ci.CustID = @CustID
 
 	IF(@roleid=1)
 	BEGIN
@@ -288,17 +308,12 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Esports),1) AS DisableEsports,
 			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Esports),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
-			-- For AllBet
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1) AS DisableAllBet,
+			-- For LiveCasino (AllBet+ SA Gaming)
+			CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 THEN 0 ELSE 1 END AS DisableLiveCasino,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,		
-			CAST(CASE WHEN @IsHidden_AllBet = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_AllBet), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideAllBet,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0) AS SyncedAllBet,			
+			CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 THEN 0 ELSE 1 END AS HideLiveCasino,
+			CASE WHEN @SyncedAllbet = 0 OR @SyncedSAGaming= 0 THEN 0 ELSE 1 END AS SyncedLiveCasino,			
 
-			-- For SA Gaming
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SAGaming), 1) AS DisableSAGaming,	
-			CAST(CASE WHEN @IsHidden_SAGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SAGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSAGaming,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_SAGaming), 0) AS SyncedSAGaming,
-			
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
 			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
