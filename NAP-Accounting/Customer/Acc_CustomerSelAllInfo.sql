@@ -1,10 +1,9 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0,
+	@UserId INT = 0,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(500) = '' OUTPUT
 AS
@@ -102,6 +101,8 @@ Revisions:
 	- 20190412@Johnson: add suspendInfo [redmine:#105587]
 	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 	- 20190527@Paul: Apply new status [RedmineID: #113198]
+	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
+
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -133,6 +134,7 @@ BEGIN
 		  , @HeadlineID INT
 		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
+		  , @srecommend INT
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -191,6 +193,19 @@ BEGIN
 	     WHERE custid = @custid
     END
 	
+	SELECT @srecommend = srecommend FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = @custid
+
+	IF (@UserId IN (2049420,	--CMTDXU
+					772240,		--CNSDBENG
+					41916921,	--N88.calvinckm
+					15185422,	--WENG
+					15513549    --starix23
+					)
+			AND @custid NOT IN (41534504,41534596,41534543,41534488,41534580,41534539,41534479,41534574,41534535,41048221)
+			AND @srecommend NOT IN (39744331,39744349,39744361,39744373,39744386,39744399,39744411,39744423,39744435,39744447,39744460,41799106,41799118,41799200,41799212)					
+		)
+		RETURN
+
 	--check for headline cn88
 	IF @roleid =0
 	BEGIN
@@ -561,7 +576,7 @@ BEGIN
 	    SET @isBA=0
 
 	DECLARE @credit MONEY	
-	DECLARE @CustGroupHeadlineID INT, @srecommend INT, @mrecommend INT, @recommend INT
+	DECLARE @CustGroupHeadlineID INT, @mrecommend INT, @recommend INT
 		
 	SELECT @credit = credit, @srecommend = srecommend
 	FROM DBCUST.CustDB.dbo.CustInfo WITH(NOLOCK)
