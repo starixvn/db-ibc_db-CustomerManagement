@@ -234,12 +234,12 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_SAGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 42, @IsHide = @IsHidden_SabaClub OUTPUT
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming)
-	DECLARE	@DisableAllbet		INT,
-			@HideAllbet           INT,
-			@SyncedAllbet             INT,
-			@DisableSAGaming		INT,
-			@HideSAGaming          INT,
-			@SyncedSAGaming            INT
+	DECLARE	@DisableAllbet		BIT,
+			@HideAllbet           BIT,
+			@SyncedAllbet             BIT,
+			@DisableSAGaming		BIT,
+			@HideSAGaming          BIT,
+			@SyncedSAGaming            BIT
 
 	SELECT 			
 	-- For AllBet
