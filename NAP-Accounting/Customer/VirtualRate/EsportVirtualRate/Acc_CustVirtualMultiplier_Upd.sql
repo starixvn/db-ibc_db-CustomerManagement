@@ -330,6 +330,24 @@ BEGIN
 						,@IP=@IP
 	END CATCH
 
+	--log manually update account
+	DECLARE @LogDataManualUpdate VARCHAR(500)
+	
+	IF @IsManualUpdate = 1
+	BEGIN
+		SELECT  @LogDataManualUpdate = '<R '
+							+ 'SportType="'+ coalesce(cast(@SportType as varchar(50)),space(1)) + '" ' 
+							+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
+							+ ' />'
+
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			@UserId				= @UserId,
+			@CustId				= @CustId,
+			@ActionId			= 812,
+			@TrackingValue		= @LogDataManualUpdate,
+			@Duration			= @Duration     
+	END
+
 	DROP TABLE #New_VRCustSetting
 	DROP TABLE #Old_VRCustSetting
 	DROP TABLE #VRLineCustID
