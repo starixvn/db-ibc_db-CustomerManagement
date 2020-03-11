@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_ManualUpdAcc_Sel]
-	@SportType INT = NULL
+	@SportType INT = NULL,
+	@UserName NVARCHAR(50) = NULL
 AS
 /*    
 	Created: 20200310@Eden    
@@ -25,6 +26,6 @@ BEGIN
 		INNER JOIN custinfo c WITH(NOLOCK)
 			ON vr.CustID = c.CustID
 	WHERE SportType = @SportType
+		AND c.UserName = ISNULL(@UserName,c.UserName)
 	ORDER BY c.Username
-
 END
