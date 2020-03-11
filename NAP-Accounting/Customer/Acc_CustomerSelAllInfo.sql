@@ -101,7 +101,7 @@ Revisions:
 	- 20190425@Johnson: account info for headline cn88 [Redmine: #105338]
 	- 20190527@Paul: Apply new status [RedmineID: #113198]
 	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
-	- 20200310@Percy: Return IsShowAllDayTransfer [RedmineID: #130091]
+	- 20200310@Percy: Return IsShowAllDayBalTransfer [RedmineID: #130091]
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
 
 Param's Explanation:

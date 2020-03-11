@@ -65,7 +65,7 @@ Revisions:
 	- 20180919@Winnie: Add new bettype of Esports - [Redmine: #101526]
 	- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 	- 20190909@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-	- 20200310@Percy: Return IsShowAllDayTransfer [RedmineID: #130091]
+	- 20200310@Percy: Get IsAllDayBalTransfer on CustMaster for master/agent/member level [RedmineID: #130091]
 	
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -92,7 +92,7 @@ Param's Explanation:
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
-	DECLARE @IsAllDayBalTransfer BIT, @IsShowAllDayBalTransfer BIT
+	DECLARE @IsAllDayBalTransfer BIT
 	
 	IF ISNULL(@username,'') <> ''
 		SELECT @roleid = roleid, @agentid = recommend, @custid = custid,@srecommend = srecommend
@@ -129,12 +129,6 @@ Param's Explanation:
 			@IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
 		FROM dbo.CustMaster WITH (NOLOCK)
 		WHERE custid = @custid
-
-		SELECT 
-			@IsShowAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
-	    FROM custSuper WITH(NOLOCK)
-		WHERE custid = (SELECT srecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
-
 	END
 	ELSE IF @roleid = 2 --agent
 	BEGIN
@@ -306,7 +300,6 @@ Param's Explanation:
 
 			CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason,
 			ISNULL(@IsAllDayBalTransfer, 0) IsAllDayBalTransfer,
-			ISNULL(@IsShowAllDayBalTransfer, 0) IsShowAllDayBalTransfer,	
 
 			-- For VS
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VS), 1) AS DisableVirtualSports,		

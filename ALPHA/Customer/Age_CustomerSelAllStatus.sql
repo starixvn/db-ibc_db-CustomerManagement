@@ -11,7 +11,7 @@ AS
 		- 20180608@Elodie: Left menu of ALPHA - Search customer [Redmine: #58776]
 		- 20190412@Johnson: add suspendInfo [redmine:#105587]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-		- 20200310@Percy: Return IsShowAllDayTransfer [RedmineID: #130091]
+		- 20200310@Percy: Return IsAllDayBalTransfer [RedmineID: #130091]
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -22,7 +22,7 @@ BEGIN
 
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
 
-	DECLARE @IsShowAllDayBalTransfer BIT
+	DECLARE @IsAllDayBalTransfer BIT
     
 	--Downline/Upline status 
     DECLARE @upLineDisableCS				BIT       
@@ -99,9 +99,7 @@ BEGIN
 	     WHERE custID = @srecommend		
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
-	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
-
-		SELECT @IsShowAllDayBalTransfer = IsAllDayBalTransfer FROM dbo.CustSuper WITH (NOLOCK) WHERE custid = @srecommend
+	    SELECT @DisableAutoMPT = DisableAutoMPT, @IsAllDayBalTransfer = IsAllDayBalTransfer FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
 	--check suspend status is direct or not
@@ -126,7 +124,7 @@ BEGIN
 			@uplineDoubleCommLosing AS uplineDoubleCommLosing,
 			ci.DisableOutright,
 			@upLineDisableOutright AS upLineDisableOutright,
-			ISNULL(@IsShowAllDayBalTransfer, 0) AS IsShowAllDayBalTransfer
+			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
