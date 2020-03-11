@@ -45,7 +45,7 @@ BEGIN
 		AND vr.CustID IN ( SELECT CustID FROM #CustIDs)
 
 	DELETE vr
-	FROM [dbo].[VRSettingManualUpdAcc] vr WITH(NOLOCK)
+	FROM [dbo].[VRSettingManualUpdAcc] vr WITH(ROWLOCK)
 	WHERE vr.SportType = @SportType
 		AND vr.CustID IN ( SELECT CustID FROM #RealUpdateList)
 
