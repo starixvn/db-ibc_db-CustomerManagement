@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerInsMember_Ag_CreditSel]
-	@RefCustID INT
+	@RefCust NVARCHAR(50)
 /*
 Created: 20200309@Eden
 Task :  Get Credit available of new member
@@ -21,7 +21,7 @@ BEGIN
 	SELECT @RefCredit = Credit, 
 		   @AgentID = recommend
 	FROM custinfo WITH(NOLOCK)
-	WHERE custID = @RefCustID
+	WHERE username = @RefCust
 
 	SELECT @AgentCredit = Credit
 	FROM custinfo WITH(NOLOCK)
