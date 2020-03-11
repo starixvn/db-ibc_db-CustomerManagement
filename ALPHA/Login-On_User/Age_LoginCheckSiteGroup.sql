@@ -18,6 +18,7 @@ AS
 		- 20170918@Elodie: Add new Alpha site [Redmine: #83219]
 		- 20180515@Elodie: Add new EU88 Alpha site [Redmine: #94865]
 		- 20181219@Andy: Add new CN88 Alpha site [Redmine: #105660]
+		- 20200311@Andy: Add new IBCIndo Alpha site [Redmine: #129673]
 
 	Param's Explanation: 
 	• @SiteGroup: Check the site and corresponding domain
@@ -26,7 +27,8 @@ AS
 		+ Y987: Allow customers of Y987 ONLY
 		+ EU88: Allow customers of EU88 ONLY
 		+ CN88:	Allow customers of CN88 ONLY
-		+ IBCBET | Others: Allow all customers except 789y, Y987, EU88, CN88
+		+ IBCIndo: Allow customers of IBCIndo ONLY
+		+ IBCBET | Others: Allow all customers except 789y, Y987, EU88, CN88, IBCIndo
 
 
 */
@@ -37,13 +39,14 @@ BEGIN
 	BEGIN
 		SELECT	@isAllowed  = 1 
 	END
-	ELSE IF @SiteGroup IN ('789y','Y987','IBCBET','Others','EU88','CN88')
+	ELSE IF @SiteGroup IN ('789y','Y987','IBCBET','Others','EU88','CN88','IBCIndo')
 	BEGIN
 		IF 	@SiteGroup = '789y' AND @Site = '789y'		SELECT	@isAllowed = 1
 		ELSE IF @SiteGroup = 'Y987' AND @Site = 'Y987'		SELECT	@isAllowed = 1		 
 		ELSE IF @SiteGroup = 'EU88' AND @Site = 'EU88'		SELECT	@isAllowed = 1	
 		ELSE IF @SiteGroup = 'CN88' AND @Site = 'CN88'		SELECT	@isAllowed = 1
-		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @Site <> '789y' AND @Site <> 'Y987' AND @Site <> 'EU88' AND @Site <> 'CN88' SELECT @isAllowed = 1
+		ELSE IF @SiteGroup = 'IBCIndo' AND @Site = 'IBCIndo' SELECT @isAllowed = 1
+		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @Site <> '789y' AND @Site <> 'Y987' AND @Site <> 'EU88' AND @Site <> 'CN88' AND @Site <> 'IBCIndo' SELECT @isAllowed = 1
 		ELSE SELECT @isAllowed = 0 			
 	END 
 	ELSE SELECT	@isAllowed = 0 	
