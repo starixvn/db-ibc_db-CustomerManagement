@@ -17,15 +17,24 @@ BEGIN
 			,@AgentCredit MONEY
 			,@Credit_AllOtherMember MONEY = 0
 			,@MaxCredit_Mem MONEY
+			,@UplineUsername nvarchar(50)
 
 	SELECT @RefCredit = Credit, 
 		   @AgentID = recommend
 	FROM custinfo WITH(NOLOCK)
 	WHERE username = @RefCust
 
-	SELECT @AgentCredit = Credit
+	SELECT @AgentCredit = Credit, 
+		   @UplineUsername = username
 	FROM custinfo WITH(NOLOCK)
 	WHERE custID = @AgentID
+
+	DECLARE @seqname VARCHAR(10)
+	EXEC dbo.Age_CustomerSelSuggestUsername 
+		@prefix = @UplineUsername ,
+		@custid = @AgentID,
+		@roleid = 2, 
+		@seqname = @seqname output
 
 	SELECT @Credit_AllOtherMember = ISNULL(SUM(Credit), 0) FROM custinfo WITH(NOLOCK) WHERE Recommend = @AgentID AND RoleID = 1
 
@@ -33,6 +42,7 @@ BEGIN
 
 	SELECT @RefCredit AS RefCredit,
 		   @MaxCredit_Mem AS MaxCredit_Mem,
-		   0 AS MinCredit_Mem
+		   0 AS MinCredit_Mem,
+		   @seqname AS SuggestSeqName
 END
 GO
