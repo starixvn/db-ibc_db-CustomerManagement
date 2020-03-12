@@ -37,6 +37,7 @@ AS
 		- 20150612@Elodie: Separate CustDB to DBCUST server (use Acc_CustomerTotalAmountSel to get total amount)
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20200311@Elodie: Suspicious account [Redmine:#129119]
 */
 
 BEGIN
@@ -331,7 +332,8 @@ BEGIN
 		END
 	END
 
-	IF @NewCreditRM > 300000
+	IF @NewCreditRM > 300000 
+		AND NOT EXISTS (SELECT 1 FROM SuspiciousCust WITH (NOLOCK) WHERE CustID = @CustId)
 	BEGIN
 		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2)
 		SELECT @CustId, 1, 0
