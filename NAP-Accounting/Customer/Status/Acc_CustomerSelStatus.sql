@@ -309,10 +309,19 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Esports),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
 			-- For LiveCasino (AllBet+ SA Gaming)
-			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,		
+			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
 			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,
 			CAST(CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming= 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,				
+			-- For Allbet
+			@DisableAllbet AS DisableAllbet,
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,
+			@HideAllbet AS HideAllbet,
+			@SyncedAllbet AS SyncedAllbet,
+
+			--For SA Gaming
+			@DisableSAGaming AS DisableSAGaming,
+			@HideSAGaming AS HideSAGaming,
+			@SyncedSAGaming AS SyncedSAGaming,
 
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
