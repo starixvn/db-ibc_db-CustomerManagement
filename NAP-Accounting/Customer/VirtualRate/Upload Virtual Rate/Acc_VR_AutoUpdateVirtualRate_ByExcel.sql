@@ -26,6 +26,7 @@ BEGIN
 						ON vv.VirtualMultiplier = vrv.Value
 				WHERE vrv.ValueID IS NULL
 					AND vv.SessionID = @SessionID
+					AND vv.VirtualMultiplier IS NOT NULL
 		)
 	BEGIN
 		SET @ErrMsg =  'VirtualMultiplier of VRSetting_AutoUpdate_ByExcel is not valid' 
@@ -35,17 +36,18 @@ BEGIN
 	;WITH VRlive AS(
 		SELECT vv.CustID, 
 			   h.LevelID, 
-			   vrv.ValueID
+			   ISNULL(vrv.ValueID,0) AS ValueID
 		FROM VRSettingHierarchy h WITH(NOLOCK)
 			 INNER JOIN VRSetting_AutoUpdate_ByExcel vv WITH(NOLOCK)
 			   ON h.LevelID = vv.LevelID
 			 LEFT JOIN VRCustSetting vr WITH(NOLOCK)
 			   ON vr.CustID = vv.CustID
 				  AND vr.LevelID = h.LevelID
-			 INNER JOIN VRValueMapping vrv WITH(NOLOCK)
+			 LEFT JOIN VRValueMapping vrv WITH(NOLOCK)
 			   ON vv.VirtualMultiplier = vrv.Value
 		WHERE vv.Islive = 1
-			AND (vrv.ValueID <> ISNULL(vr.ValueIDLIVE,0) 
+			AND (vrv.ValueID <> ISNULL(vr.ValueIDLIVE,0)
+				 OR (vv.VirtualMultiplier IS NULL AND ISNULL(vr.ValueIDLIVE,0) <> 0)
 				 OR (vv.CustId = 0 AND h.LevelID IN (154,1))
 			)
 			AND vv.SportType = @SportType
@@ -55,17 +57,18 @@ BEGIN
 	(
 		SELECT vv.CustID, 
 			   h.LevelID, 
-			   vrv.ValueID
+			   ISNULL(vrv.ValueID,0) AS ValueID
 		FROM VRSettingHierarchy h WITH(NOLOCK)
 			 INNER JOIN VRSetting_AutoUpdate_ByExcel vv WITH(NOLOCK)
 			   ON h.LevelID = vv.LevelID
 			 LEFT JOIN VRCustSetting vr WITH(NOLOCK)
 			   ON vr.CustID = vv.CustID
 				  AND vr.LevelID = h.LevelID
-			 INNER JOIN VRValueMapping vrv WITH(NOLOCK)
+			 LEFT JOIN VRValueMapping vrv WITH(NOLOCK)
 			   ON vv.VirtualMultiplier = vrv.Value
 		WHERE vv.Islive = 0
 			AND (vrv.ValueID <> ISNULL(vr.ValueIDNonLIVE,0)
+				 OR (vv.VirtualMultiplier IS NULL AND ISNULL(vr.ValueIDNonLIVE,0) <> 0)
 				 OR (vv.CustId = 0 AND h.LevelID IN (154,1))
 			)
 			AND vv.SportType = @SportType

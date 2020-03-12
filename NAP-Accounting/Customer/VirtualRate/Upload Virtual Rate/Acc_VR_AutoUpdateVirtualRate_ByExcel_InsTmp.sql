@@ -48,7 +48,7 @@ BEGIN
 			INSERT INTO #VRSetting_AutoUpdate_ByExcel (Username, CellID, VirtualMultiplier, VRLeagueGroupId, VRBettypeGroupId, Bettype, IsLive) 
 			SELECT	 UN		
 					,Cell	
-					,Mul	
+					,NULLIF(Mul,0)
 					,LId	
 					,BTGId	
 					,BTId	
