@@ -156,7 +156,7 @@ BEGIN
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 				WHERE c.roleid = 1
 					AND ((@UplineId IS NULL AND CASE WHEN @RoleId = 4 THEN c.srecommend WHEN @RoleId = 3 THEN c.mrecommend END = @CustId) 
-						OR (@UplineId IS NOT NULL AND c.mrecommend = @UplineId))
+						OR (@UplineId IS NOT NULL AND c.recommend = @UplineId))
 					AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
