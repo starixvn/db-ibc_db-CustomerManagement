@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Acc_VR_AutoUpdateVirtualRate_ByExcel_InsTmp]
 	,@XML VARCHAR(MAX) = NULL
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+	,@ValidUser_Count INT = NULL OUTPUT
 AS
 /*   
 	Create: 20200310@Eden
@@ -145,6 +146,10 @@ BEGIN
 			AND t.Bettype = h.BetType
 			AND h.SportType = @SportType
 
+	
+	SELECT @ValidUser_Count = COUNT(DISTINCT CustID)
+	FROM #VRSetting_AutoUpdate_ByExcel
+	
 	DROP TABLE #VRSetting_AutoUpdate_ByExcel
 	DROP TABLE #Error
 
