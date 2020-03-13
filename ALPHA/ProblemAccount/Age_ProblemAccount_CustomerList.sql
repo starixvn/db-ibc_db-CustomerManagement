@@ -109,9 +109,8 @@ BEGIN
 					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
-				WHERE c.roleid = 2
-					AND (ISNULL(@UplineUsername, '') = '' AND c.srecommend = @CustId) 
-					AND c.mrecommend = ISNULL(@UplineId, c.mrecommend)
+				WHERE c.roleid = 2					
+					AND ((@UplineId IS NULL AND c.srecommend = @CustId) OR (@UplineId IS NOT NULL AND c.mrecommend = @UplineId))
 					AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					AND p.ReasonId IS NOT NULL
@@ -156,9 +155,8 @@ BEGIN
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 				WHERE c.roleid = 1
-					AND (ISNULL(@UplineUsername, '') = '' AND CASE	WHEN @RoleId = 4 THEN c.srecommend 
-																	WHEN @RoleId = 3 THEN c.mrecommend END = @CustId) 
-					AND c.recommend = ISNULL(@UplineId, c.recommend)
+					AND ((@UplineId IS NULL AND CASE WHEN @RoleId = 4 THEN c.srecommend WHEN @RoleId = 3 THEN c.mrecommend END = @CustId) 
+						OR (@UplineId IS NOT NULL AND c.mrecommend = @UplineId))
 					AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
