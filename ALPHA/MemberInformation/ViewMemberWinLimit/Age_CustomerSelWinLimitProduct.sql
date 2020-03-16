@@ -14,6 +14,7 @@ AS
 		- 20160413@Billy:	Remove Site Currency check - [Redmine: #54672]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20180814@Elodie: Return ProductID [RedmineID: #97675]
+		- 20200316@Tiara: Return result for SA Gaming and Allbet [RedmineID: #128058]
 
 	Param's Explanation: 
 */  
@@ -35,6 +36,13 @@ BEGIN
 		SELECT 2101, 208, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
 	END
+	--LiveCasino including SA Gaming and Allbet 
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT 2401, 211, ProductName, ProductID
+	FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 21
+	UNION ALL
+	SELECT 3001, 244, ProductName, ProductID
+	FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 39
 
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
@@ -53,6 +61,7 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
+		AND psp.Sporttype NOT IN (211,244) --Prevent duplicate of SAGaming and Allbet
 
 	--DELETE	p
 	--FROM		@Products AS p
