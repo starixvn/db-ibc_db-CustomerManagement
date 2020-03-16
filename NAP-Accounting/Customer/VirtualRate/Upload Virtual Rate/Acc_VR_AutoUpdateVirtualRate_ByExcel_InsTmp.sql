@@ -78,8 +78,12 @@ BEGIN
 		Username VARCHAR(30),
 		CellID	VARCHAR(10),
 		[Rule] VARCHAR(50),
-		[Reason] VARCHAR(50)
+		[Reason] VARCHAR(50),
+		[CustID] INT
 	)
+
+	CREATE NONCLUSTERED INDEX IDX_tempError_CustID ON #Error([CustID])
+	CREATE NONCLUSTERED INDEX IDX_tempVR_CustID ON #VRSetting_AutoUpdate_ByExcel([CustID])
 
 	-- Validate Data
 	UPDATE tmp
@@ -112,15 +116,15 @@ BEGIN
 		AND a.CellID = b.CellID
 	WHERE b.RowNum <> 1
 
-
-	--DECLARE @MinValue SMALLMONEY,@MaxValue SMALLMONEY
-	--SELECT @MinValue = MIN(Value),@MaxValue = MAX(Value) FROM VRValueMapping vrv WITH(NOLOCK)
-
 	DELETE a
-	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value' INTO #Error(Username,CellID,[Rule],[Reason])
+	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId INTO #Error(Username,CellID,[Rule],[Reason],CustID)
 	FROM #VRSetting_AutoUpdate_ByExcel a
 		LEFT JOIN VRValueMapping vrv WITH(NOLOCK) ON a.VirtualMultiplier = vrv.Value
 	WHERE a.VirtualMultiplier IS NOT NULL AND vrv.ValueID IS NULL
+
+	DELETE a
+	FROM #VRSetting_AutoUpdate_ByExcel a
+	WHERE a.CustId IN ( SELECT custID FROM #Error)
 
 	SELECT * FROM #Error
 
