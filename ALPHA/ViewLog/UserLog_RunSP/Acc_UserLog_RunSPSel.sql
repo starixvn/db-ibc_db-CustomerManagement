@@ -312,7 +312,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-								AND (la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
+								AND (la.ActionID BETWEEN 705 AND 706 OR la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -347,7 +347,7 @@ BEGIN
 								INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
 								LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
 						WHERE	la.ActionTypeID = @ActionTypeId
-								AND (la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
+								AND (la.ActionID BETWEEN 705 AND 706 OR la.ActionID BETWEEN 1100 AND 1199 OR la.ActionID BETWEEN 165000 AND 169999)
 								AND IsInternal <= @IsInternal
 								AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 						OPTION (OPTIMIZE FOR (@i = 1))
@@ -753,6 +753,7 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 705 AND 706
 							AND la.ActionID NOT BETWEEN 1100 AND 1199
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
 							AND la.ActionID NOT BETWEEN 60000 AND 79999
@@ -820,6 +821,7 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 705 AND 706
 							AND la.ActionID NOT BETWEEN 1100 AND 1199
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
 							AND la.ActionID NOT BETWEEN 60000 AND 79999
@@ -887,6 +889,7 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 705 AND 706
 							AND la.ActionID NOT BETWEEN 1100 AND 1199
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
 							AND la.ActionID NOT BETWEEN 60000 AND 79999
@@ -924,6 +927,7 @@ BEGIN
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							--exclude log action of status
+							AND la.ActionID NOT BETWEEN 705 AND 706
 							AND la.ActionID NOT BETWEEN 1100 AND 1199
 							AND la.ActionID NOT BETWEEN 165000 AND 169999
 							AND la.ActionID NOT BETWEEN 60000 AND 79999
