@@ -113,13 +113,14 @@ BEGIN
 	WHERE b.RowNum <> 1
 
 
-	DECLARE @MinValue SMALLMONEY,@MaxValue SMALLMONEY
-	SELECT @MinValue = MIN(Value),@MaxValue = MAX(Value) FROM VRValueMapping vrv WITH(NOLOCK)
+	--DECLARE @MinValue SMALLMONEY,@MaxValue SMALLMONEY
+	--SELECT @MinValue = MIN(Value),@MaxValue = MAX(Value) FROM VRValueMapping vrv WITH(NOLOCK)
 
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value' INTO #Error(Username,CellID,[Rule],[Reason])
 	FROM #VRSetting_AutoUpdate_ByExcel a
-	WHERE VirtualMultiplier < @MinValue OR VirtualMultiplier > @MaxValue
+		LEFT JOIN VRValueMapping vrv WITH(NOLOCK) ON a.VirtualMultiplier = vrv.Value
+	WHERE a.VirtualMultiplier IS NOT NULL AND vrv.ValueID IS NULL
 
 	SELECT * FROM #Error
 
