@@ -104,17 +104,17 @@ BEGIN
 			ON vr.[CustID] = a.CustId
 			AND vr.SportType = @SportType
 
-	;WITH TMP AS (
-		SELECT Username,
-			CellID,
-			ROW_NUMBER() OVER(PARTITION BY Username ORDER BY CellID) AS RowNum
-		FROM #Error
-	)
-	DELETE a 
-	FROM #Error a
-		INNER JOIN TMP b ON a.Username = b.Username
-		AND a.CellID = b.CellID
-	WHERE b.RowNum <> 1
+	--;WITH TMP AS (
+	--	SELECT Username,
+	--		CellID,
+	--		ROW_NUMBER() OVER(PARTITION BY Username ORDER BY CellID) AS RowNum
+	--	FROM #Error
+	--)
+	--DELETE a 
+	--FROM #Error a
+	--	INNER JOIN TMP b ON a.Username = b.Username
+	--	AND a.CellID = b.CellID
+	--WHERE b.RowNum <> 1
 
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId INTO #Error(Username,CellID,[Rule],[Reason],CustID)
