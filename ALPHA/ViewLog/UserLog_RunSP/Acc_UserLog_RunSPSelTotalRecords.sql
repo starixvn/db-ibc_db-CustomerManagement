@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UserLog_RunSPSelTotalRecords]     
 	@CustId INT, 
 	@LoginUserId INT = 0,
