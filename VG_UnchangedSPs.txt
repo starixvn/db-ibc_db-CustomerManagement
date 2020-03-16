@@ -1,2 +1,14 @@
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+ALPHA\Customer\Age_CustomerSelAllInfo.sql
+ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
+ALPHA\Customer\Age_CustomerSelAllStatus.sql
+Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
+NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
+ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_MAg.sql
+ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
+NAP-Accounting\ViewLog\UserLog_RunSP.sql
+NAP-Accounting\ViewLog\NAP_UserLog_RunSPSelTotalRecords.sql
 NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
 NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
