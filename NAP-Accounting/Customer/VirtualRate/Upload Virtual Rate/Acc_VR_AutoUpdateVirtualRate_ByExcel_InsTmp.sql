@@ -35,7 +35,8 @@ BEGIN
 		VRLeagueGroupId   INT, 
 		VRBettypeGroupId  INT, 
 		Bettype           INT, 
-		IsLive            BIT
+		IsLive            BIT,
+		RowID			  INT
 	)
 
 	DECLARE @DocHandler INT	
@@ -79,11 +80,16 @@ BEGIN
 		CellID	VARCHAR(10),
 		[Rule] VARCHAR(50),
 		[Reason] VARCHAR(50),
-		[CustID] INT
+		[CustID] INT,
+		[RowID]	INT
 	)
 
 	CREATE NONCLUSTERED INDEX IDX_tempError_CustID ON #Error([CustID])
 	CREATE NONCLUSTERED INDEX IDX_tempVR_CustID ON #VRSetting_AutoUpdate_ByExcel([CustID])
+
+	UPDATE a
+	SET a.RowID = CONVERT(INT,SUBSTRING(CellID,charindex(':',CellID) + 1 , 10))
+	FROM #VRSetting_AutoUpdate_ByExcel a
 
 	-- Validate Data
 	UPDATE tmp
@@ -93,28 +99,31 @@ BEGIN
 			ON c.username = tmp.Username
 
 	DELETE a
-	OUTPUT deleted.Username,deleted.CellID,'Invalid','Invalid username' INTO #Error(Username,CellID,[Rule],[Reason])
+	OUTPUT deleted.Username,deleted.CellID,'Invalid','Invalid username',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
 	WHERE CustId IS NULL
 
 	DELETE a
-	OUTPUT deleted.Username,deleted.CellID,'Exist in manually updated list','Manually updated account' INTO #Error(Username,CellID,[Rule],[Reason])
+	OUTPUT deleted.Username,deleted.CellID,'Exist in manually updated list','Manually updated account',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
 		INNER JOIN VRSettingManualUpdAcc vr WITH(NOLOCK)
 			ON vr.[CustID] = a.CustId
 			AND vr.SportType = @SportType
 
-	--;WITH TMP AS (
-	--	SELECT Username,
-	--		CellID,
-	--		ROW_NUMBER() OVER(PARTITION BY Username ORDER BY CellID) AS RowNum
-	--	FROM #Error
-	--)
-	--DELETE a 
-	--FROM #Error a
-	--	INNER JOIN TMP b ON a.Username = b.Username
-	--	AND a.CellID = b.CellID
-	--WHERE b.RowNum <> 1
+	;WITH TMP AS (
+		SELECT RowID,
+			CellID,
+			ROW_NUMBER() OVER(PARTITION BY RowID ORDER BY CellID) AS RowNum
+		FROM #Error
+	)
+	DELETE a 
+	FROM #Error a
+		INNER JOIN TMP b ON a.RowID = b.RowID
+		AND a.CellID = b.CellID
+	WHERE b.RowNum <> 1
+
+	--> Set point of invalid user to first column
+	UPDATE #Error SET CellID = 'A:' + convert(varchar(10),RowID)
 
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId INTO #Error(Username,CellID,[Rule],[Reason],CustID)
