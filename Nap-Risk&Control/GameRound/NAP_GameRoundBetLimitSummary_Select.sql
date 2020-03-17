@@ -79,7 +79,7 @@ AS
 								    END
 			);
 
-	   CREATE INDEX IDX_Result_GameRound_SportType_BetType ON #Result(GameRound, SportType, BetType);
+	   CREATE INDEX IDX_Result_GameRound_SportType_BetType ON #Result(BetType, SportType);
 
 	   INSERT INTO #GameRound_BetCount(GameRound
 							   , SportType
@@ -114,7 +114,7 @@ AS
 							  FROM Intg_GameRoundBetStake AS gt WITH(NOLOCK)
 							  WHERE gt.GameType = R.BetType
 						   ) AS g
-						  INNER JOIN SportBettypeMatrix AS sb WITH(NOLOCK) ON sb.BetType = g.GameType
+						  INNER JOIN SportBettypeMatrix AS sb WITH(NOLOCK) ON sb.BetType = r.BetType
 																    AND sb.SportType > 0
 																    AND sb.IsLive = sb.IsLive
 						  INNER JOIN CustDB.dbo.custInfo AS ci ON ci.custid = g.CustId
@@ -150,7 +150,7 @@ AS
 					   FROM Intg_GameRoundBetStake AS gt WITH(NOLOCK)
 					   WHERE gt.GameType = R.BetType
 				    ) AS g
-				   INNER JOIN SportBettypeMatrix AS sb WITH(NOLOCK) ON sb.BetType = g.GameType
+				   INNER JOIN SportBettypeMatrix AS sb WITH(NOLOCK) ON sb.BetType = r.BetType
 															AND sb.SportType > 0
 															AND sb.IsLive = sb.IsLive
 				   INNER JOIN CustDB.dbo.custInfo AS ci ON ci.custid = g.CustId
