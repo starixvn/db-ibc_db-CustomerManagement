@@ -99,6 +99,11 @@ BEGIN
 			ON c.username = tmp.Username
 
 	DELETE a
+	OUTPUT deleted.Username,deleted.CellID,'Null','Username is required',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
+	FROM #VRSetting_AutoUpdate_ByExcel a
+	WHERE CustId IS NULL AND Username = ''
+	
+	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Invalid','Invalid username',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
 	WHERE CustId IS NULL
