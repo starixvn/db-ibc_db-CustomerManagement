@@ -131,7 +131,7 @@ BEGIN
 	UPDATE #Error SET CellID = 'A:' + convert(varchar(10),RowID)
 
 	DELETE a
-	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId INTO #Error(Username,CellID,[Rule],[Reason],CustID)
+	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId,deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],CustID,[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
 		LEFT JOIN VRValueMapping vrv WITH(NOLOCK) ON a.VirtualMultiplier = vrv.Value
 	WHERE a.VirtualMultiplier IS NOT NULL AND vrv.ValueID IS NULL
@@ -140,7 +140,7 @@ BEGIN
 	FROM #VRSetting_AutoUpdate_ByExcel a
 	WHERE a.CustId IN ( SELECT custID FROM #Error)
 
-	SELECT * FROM #Error
+	SELECT Username,CellID,[Rule],[Reason] FROM #Error ORDER BY RowID
 
 	INSERT INTO VRSetting_AutoUpdate_ByExcel(
 			SessionID, 
