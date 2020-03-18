@@ -26,6 +26,6 @@ BEGIN
 		INNER JOIN custinfo c WITH(NOLOCK)
 			ON vr.CustID = c.CustID
 	WHERE SportType = @SportType
-		AND c.UserName = ISNULL(@UserName,c.UserName)
+		AND c.UserName = ISNULL(NULLIF(@UserName,''),c.UserName)
 	ORDER BY c.Username
 END
