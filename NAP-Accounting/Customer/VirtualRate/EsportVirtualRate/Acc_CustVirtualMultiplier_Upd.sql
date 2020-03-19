@@ -245,7 +245,7 @@ BEGIN
 				, @virtualmultiplier = @virtualmultiplier
 				, @SportType = @SportType
 
-	IF @IsManualUpdate = 1
+	IF @IsManualUpdate = 1 AND NOT EXISTS ( SELECT TOP 1 1 FROM dbo.[VRSettingManualUpdAcc] WITH(NOLOCK) WHERE SportType = @SportType AND CustID = @CustID)
 		INSERT INTO dbo.[VRSettingManualUpdAcc](SportType, CustID) 
 		SELECT @SportType, @CustID
 
