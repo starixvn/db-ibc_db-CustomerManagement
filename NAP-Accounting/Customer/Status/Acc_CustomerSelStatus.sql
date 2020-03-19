@@ -67,7 +67,8 @@ Revisions:
 	- 20190909@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
 	- 20200310@Percy: Get IsAllDayBalTransfer on CustMaster for master/agent/member level [RedmineID: #130091]
-	
+	- 20200318@Elodie: Add Saba.club [Redmine: #130636]
+
 Param's Explanation:
 � @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -191,6 +192,7 @@ Param's Explanation:
 		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_VG				INT
+		,	@bitmapOrder_Saba			INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -202,6 +204,7 @@ Param's Explanation:
     SET	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     SET	@bitmapOrder_AllBetVIP = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 211 AND	psp.Bettype = 2402)
 	SET @bitmapOrder_VG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 245 AND Bettype = 4601)
+	SET @bitmapOrder_Saba = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 200 AND Bettype = 1611)
 
     DECLARE	@IsHidden_MuayThai			INT = 1
 		,	@IsHidden_Esports			INT = 1
@@ -212,6 +215,7 @@ Param's Explanation:
 		,	@IsHidden_FishingWorld		INT = 1
 		,	@IsHidden_VS				INT = 1
 		,	@IsHidden_VG				INT = 1
+		,	@IsHidden_Saba				INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT	
 	EXEC Acc_CheckShowProduct @ProductID = 21, @IsHide = @IsHidden_AllBet OUTPUT
@@ -222,7 +226,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
-
+	EXEC Acc_CheckShowProduct @ProductID = 42, @IsHide = @IsHidden_Saba OUTPUT
 
 	IF(@roleid=1)
 	BEGIN
@@ -231,7 +235,7 @@ Param's Explanation:
 					    WHERE custid = @agentid
 						      AND isLicensee =1)
 
-			SET @IsDeposit =1
+			SET @IsDeposit = 1 
 			IF @IsDeposit<>1
 				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo_Member WITH(NOLOCK) WHERE Custid=@custid
 	END
