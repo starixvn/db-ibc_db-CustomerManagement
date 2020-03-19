@@ -37,12 +37,13 @@ AS
 		- 20150612@Elodie: Separate CustDB to DBCUST server (use Acc_CustomerTotalAmountSel to get total amount)
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20200311@Elodie: Suspicious account [Redmine:#129119]
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @username VARCHAR(50), @uplineId INT, @IsDepositMember BIT
+	DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @username VARCHAR(50), @uplineId INT, @IsDepositMember BIT, @currency INT, @NewCreditRM MONEY
 
 	DECLARE @Credit_AllMaster MONEY, @Credit_AllMember MONEY, @Credit_SAg MONEY, @Credit_AllAgent MONEY,
 			@Credit_AllOtherMaster MONEY, 
@@ -60,13 +61,18 @@ BEGIN
 			@mrecommend = mrecommend,
 			@recommend = recommend,
 			@MatchLimit = ISNULL(matchlimit, 1),
-			@OldCredit = Credit
+			@OldCredit = Credit,
+			@currency = currency
 	FROM	dbo.custInfo WITH (NOLOCK)
 	WHERE	custid = @custid
 
 	SELECT	@OldMaxCredit = maxcredit
 	FROM	dbo.CustAgent WITH (NOLOCK)
 	WHERE	custid = @custid AND @roleid = 2 -- agent only
+
+	SELECT @NewCreditRM = @NewCredit * actualrate
+	FROM dbo.exchange WITH (NOLOCK)
+	WHERE exchangeid = @currency
 
 	IF ISNULL(@NewCredit, 0) = ISNULL(@OldCredit, 0) AND (@MaxCredit IS NULL OR ISNULL(@MaxCredit, 0) = ISNULL(@OldMaxCredit, 0))
 		RETURN
@@ -324,6 +330,13 @@ BEGIN
 												+' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
 			RETURN
 		END
+	END
+
+	IF @NewCreditRM > 300000 
+		AND NOT EXISTS (SELECT 1 FROM SuspiciousCust WITH (NOLOCK) WHERE CustID = @CustId)
+	BEGIN
+		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2)
+		SELECT @CustId, 1, 0
 	END
 
 	UPDATE	dbo.custInfo WITH (ROWLOCK, UPDLOCK) 
