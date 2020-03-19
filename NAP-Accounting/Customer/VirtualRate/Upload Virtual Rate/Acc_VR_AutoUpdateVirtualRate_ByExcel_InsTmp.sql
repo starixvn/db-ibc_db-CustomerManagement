@@ -84,7 +84,7 @@ BEGIN
 		[RowID]	INT
 	)
 
-	CREATE NONCLUSTERED INDEX IDX_tempError_CustID ON #Error([CustID])
+	--CREATE NONCLUSTERED INDEX IDX_tempError_CustID ON #Error([CustID])
 	CREATE NONCLUSTERED INDEX IDX_tempVR_CustID ON #VRSetting_AutoUpdate_ByExcel([CustID])
 
 	UPDATE a
@@ -98,10 +98,12 @@ BEGIN
 		INNER JOIN customer c WITH(NOLOCK)
 			ON c.username = tmp.Username
 
+	/* Validate empty username - Webcheck
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Null','Username is required',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
 	WHERE CustId IS NULL AND Username = ''
+	*/
 	
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Invalid','Invalid username',deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],[RowID])
@@ -130,6 +132,7 @@ BEGIN
 	--> Set point of invalid user to first column
 	UPDATE #Error SET CellID = 'A:' + convert(varchar(10),RowID)
 
+	/* validate VR value - Web check 
 	DELETE a
 	OUTPUT deleted.Username,deleted.CellID,'Not in allowed VR value list','Invalid value',deleted.CustId,deleted.RowID INTO #Error(Username,CellID,[Rule],[Reason],CustID,[RowID])
 	FROM #VRSetting_AutoUpdate_ByExcel a
@@ -139,6 +142,7 @@ BEGIN
 	DELETE a
 	FROM #VRSetting_AutoUpdate_ByExcel a
 	WHERE a.CustId IN ( SELECT custID FROM #Error)
+	*/
 
 	SELECT Username,CellID,[Rule],[Reason] FROM #Error ORDER BY RowID
 
