@@ -16,6 +16,7 @@ AS
 	
 	Revisions:
 		- 20191216@Eden: Initial SP [Redmine: #121876]
+		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
 
 	Explanation's Param:
 		
@@ -46,7 +47,8 @@ RETURN
 		,live.value  AS IsLiveAutoSuspend
 		,nonlive.value  AS IsNonLiveAutoSuspend
 		,h.ParentLevelID
-		,h.VRAutoSuspendThreshold
+		,h.VRAutoSuspendThresholdNonLive
+		,h.VRAutoSuspendThresholdLive
 	FROM Tmp_VRSettingHierarchy1 tmp
 	INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
 	LEFT JOIN VRCustSetting vr WITH(NOLOCK) 
@@ -61,8 +63,8 @@ RETURN
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
 	)
-	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= pr3.VRAutoSuspendThreshold AND ISNULL(h.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
-								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= pr3.VRAutoSuspendThreshold AND ISNULL(h.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
+	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= pr3.VRAutoSuspendThresholdLive AND ISNULL(h.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
+								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= pr3.VRAutoSuspendThresholdNonLive AND ISNULL(h.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
 				END IsVRAutoSuspend
 	FROM tempVR pr3
 		LEFT JOIN tempVR pr2

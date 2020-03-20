@@ -14,6 +14,7 @@ AS
 	Revisions:    
 		- 20190626@Dominic : First commit
 		- 20190626@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
+		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
   
 */ 
 BEGIN
@@ -90,7 +91,8 @@ BEGIN
 		,dbo.f_GetProductStatus(@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) as IsNonLiveAutoSuspend
 		,h.ParentLevelID
 		,h.SortOrder
-		,h.VRAutoSuspendThreshold
+		,h.VRAutoSuspendThresholdNonLive
+		,h.VRAutoSuspendThresholdLive
 	INTO #tempVR
 	FROM VRSettingHierarchy h WITH(NOLOCK)
 		LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
@@ -118,12 +120,13 @@ BEGIN
 		IsLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL ELSE h.IsLiveAutoSuspend END, 
 		IsNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL ELSE h.IsNonLiveAutoSuspend END,
 		IsDisableLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL
-										 WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= h.VRAutoSuspendThreshold THEN 0 
+										 WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= h.VRAutoSuspendThresholdLive THEN 0 
 									ELSE 1 END,
 		IsDisableNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL
-											WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= h.VRAutoSuspendThreshold THEN 0 
+											WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= h.VRAutoSuspendThresholdNonLive THEN 0 
 									ELSE 1 END,
-		h.VRAutoSuspendThreshold
+		h.VRAutoSuspendThresholdLive,
+		h.VRAutoSuspendThresholdNonLive
 	FROM #tempVR h
 		LEFT JOIN #tempVR pr1 WITH(NOLOCK)
 			ON h.ParentLevelID = pr1.LevelID
