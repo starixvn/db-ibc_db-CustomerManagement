@@ -614,7 +614,7 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
 			SELECT @UplineHasSecurityCode=1
 
-	IF @Site = '789y'
+	IF @Site = '789y' OR (@membersite = '789y' AND @roleid = 1)
 	BEGIN
 		SELECT @SabaClubPlayerID3rd =  PlayerID3rd FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
 	END
