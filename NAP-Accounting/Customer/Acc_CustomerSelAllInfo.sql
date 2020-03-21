@@ -616,7 +616,7 @@ BEGIN
 
 	IF @Site = '789y'
 	BEGIN
-		SELECT @SabaClubPlayerID3rd =  PlayerID3rd FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 44 AND Custid = @custid
+		SELECT @SabaClubPlayerID3rd =  PlayerID3rd FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
 	END
 
     SELECT c.custid, c.username, c.firstname, c.lastname, 
