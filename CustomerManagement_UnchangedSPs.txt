@@ -3,6 +3,7 @@ ALPHA\Customer\Age_CustomerSelAllInfo.sql
 ALPHA\Customer\Age_CustomerSelAllStatus.sql
 Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
 ALPHA\Customer\Age_GetOfferedProductByCust.sql
+ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
 
 
 
