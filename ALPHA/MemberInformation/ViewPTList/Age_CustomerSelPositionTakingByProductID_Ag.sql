@@ -16,18 +16,39 @@ AS
 	Revisions:
 		- 20160322@Billy: Fix bug return multiple PT value - [Redmine: #54529]
 		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
+		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
 BEGIN
 
 	SET NOCOUNT ON
+	DECLARE @SportType INT, @BetType INT
+	CREATE TABLE #SportBettype
+	(	SportType INT, 
+		BetType INT, 
+		IsLive BIT
+	)		
+	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	BEGIN
+		SELECT DISTINCT @SportType = S.SportType
+		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
+		WHERE ProductID = @ProductID
 
-	SELECT	SportType, BetType, IsLive
-	INTO	#SportBettype
-	FROM	ProductSettingDetail WITH(NOLOCK)
-	WHERE	ProductID = @ProductID
-	AND		SettingType = 1	-- PT
+		INSERT INTO #SportBettype (SportType, BetType, IsLive)
+		SELECT	SportType, BetType, IsLive
+		FROM	ProductSettingDetail WITH(NOLOCK)
+		WHERE	ProductID = 41 AND SportType = @SportType
+		AND		SettingType = 1	-- PT
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #SportBettype (SportType, BetType, IsLive)
+		SELECT	SportType, BetType, IsLive
+		FROM	ProductSettingDetail WITH(NOLOCK)
+		WHERE	ProductID = @ProductID
+		AND		SettingType = 1	-- PT
+	END
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 

@@ -13,13 +13,38 @@ AS
 	DB: DBCUST/CustDB
 	Revisions: 
 		- 20180703@Elodie: Add info of SP
+		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 */
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @SportType INT
+	CREATE TABLE #SportBettypeFilter
+	(ProductID TINYINT, 
+	SportType SMALLINT, 
+	Bettype SMALLINT, 
+	IsLive BIT, 
+	SettingType SMALLINT)
 	
-	SELECT * INTO #SportBettypeFilter
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@ProductID,3)
-		
+	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	BEGIN
+		SELECT DISTINCT @SportType = S.SportType
+		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
+		WHERE ProductID = @ProductID
+
+		INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
+		SELECT	ProductID, SportType, Bettype, IsLive, SettingType
+		FROM	ProductSettingDetail WITH(NOLOCK)
+		WHERE	ProductID = 41 AND SportType = @SportType
+		AND		SettingType = 3	-- comm
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
+		SELECT * 
+		FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@ProductID,3)
+	END
+	
 	SELECT 
 		ci.closed,
 		ci.enabled, 
