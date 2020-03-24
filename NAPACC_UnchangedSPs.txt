@@ -6,8 +6,6 @@ Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
 Ext NAP\Customer\EAS_CustomerSelAllInfo.sql
 NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
 ALPHA\Customer\Age_GetOfferedProductByCust.sql
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_MAg.sql
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
 NAP-Accounting\Customer\Status\U3_CustomerSelStatus.sql
 ALPHA\Customer\Age_CustomerSelUserInfo.sql
 NAP-Accounting\Customer\Status\Acc_CustomerSelStatus.sql
