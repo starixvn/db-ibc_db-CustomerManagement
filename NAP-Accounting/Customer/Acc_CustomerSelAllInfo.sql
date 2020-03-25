@@ -136,6 +136,7 @@ BEGIN
 		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
 		  , @srecommend INT
+		  , @SabaClubPlayerID3rd VARCHAR(20) ='-'
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -613,6 +614,11 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
 			SELECT @UplineHasSecurityCode=1
 
+	IF @Site = '789y' OR (@membersite = '789y' AND @roleid = 1)
+	BEGIN
+		SELECT @SabaClubPlayerID3rd =  PlayerID3rd FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
+	END
+
     SELECT c.custid, c.username, c.firstname, c.lastname, 
 	    c.username2, 		
 	    ci.roleid, 
@@ -681,6 +687,7 @@ BEGIN
 		,CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason
 		,@UplineHasSecurityCode AS UplineHasSecurityCode
 		,cs.CustStatus AS CN88CustStatus
+		,@SabaClubPlayerID3rd AS SabaClubPlayerID3rd
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
