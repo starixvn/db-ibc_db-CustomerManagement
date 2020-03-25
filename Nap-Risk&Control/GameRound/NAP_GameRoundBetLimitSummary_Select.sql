@@ -11,6 +11,8 @@ AS
 	Revisions: 
 		 - 20190313@Robert: #109866 - Risk & Control - Implement Global Game Round Bet Limit Setting and Report/Notification
 		 - 20200316@Robert: #124754 - Game Round Bet Limit - Integrate Virtual Games
+		 - 20200325@Robert:	#130682 - Global Game Round Bet Limit - Integrate Sexy Gaming
+		 - 20200325@Robert:	#130686 - Global Game Round Bet Limit - Integrate GT Casino
      Param:
 */
 
@@ -118,7 +120,7 @@ AS
 																    AND sb.SportType > 0
 																    AND sb.IsLive = sb.IsLive
 						  INNER JOIN CustDB.dbo.custInfo AS ci ON ci.custid = g.CustId
-					   WHERE sb.ProductID IN(21, 38, 39) -- Products need to be grouped by BetChoice
+					   WHERE sb.ProductID IN(21, 38, 39, 45, 46) -- Products need to be grouped by BetChoice
 					   GROUP BY g.GameRound
 							, r.SportType
 							, r.BetType
