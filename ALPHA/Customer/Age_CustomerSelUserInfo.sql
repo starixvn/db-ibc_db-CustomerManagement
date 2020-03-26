@@ -244,16 +244,6 @@ Param's Explanation:
 								THEN 0
 							ELSE 1 
 					END AS BIT) AS HideSAGaming,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_SAGaming), 0) AS SyncedSAGaming,
-			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_SAGaming), 0) AS SyncedSAGamingUpline,
-			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT 1
-									FROM #ciDownline AS ciDownline
-										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_SAGaming) s
-									WHERE s.value = 0)
-						THEN 0
-					ELSE 1
-			END AS SyncedSAGamingDownline,
 
 			-- For Sexy Gaming
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SexyGaming), 1) AS DisableSexyGaming,
@@ -262,16 +252,6 @@ Param's Explanation:
 								THEN 0
 							ELSE 1 
 					END AS BIT) AS HideSexyGaming,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_SexyGaming), 0) AS SyncedSexyGaming,
-			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_SexyGaming), 0) AS SyncedSexyGamingUpline,
-			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT 1
-									FROM #ciDownline AS ciDownline
-										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_SexyGaming) s
-									WHERE s.value = 0)
-						THEN 0
-					ELSE 1
-			END AS SyncedSexyGamingDownline,
 
 			-- VoidBridge
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge),1) AS DisableVoidBridge,
