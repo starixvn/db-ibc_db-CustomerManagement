@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE	dbo.Acc_CustomerSelByPlayerId
 					@PlayerId		VARCHAR(20)	
 				,	@ProductId		TINYINT	
