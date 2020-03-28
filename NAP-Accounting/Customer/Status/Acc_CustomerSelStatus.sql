@@ -244,8 +244,10 @@ Param's Explanation:
 			@SyncedAllbet             BIT,
 			@DisableSAGaming		BIT,
 			@HideSAGaming          BIT,
+			@SyncedSAGaming            BIT = 1, --always sync
 			@DisableSexyGaming		BIT,
-			@HideSexyGaming          BIT
+			@HideSexyGaming          BIT,
+			@SyncedSexyGaming             BIT = 1 --always sync
 
 	SELECT 			
 	-- For AllBet
@@ -317,7 +319,8 @@ Param's Explanation:
 		
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming)
 			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
-			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,			
+			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
+			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
 			-- For Allbet
 			@DisableAllbet AS DisableAllbet,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,
@@ -327,10 +330,12 @@ Param's Explanation:
 			--For SA Gaming
 			@DisableSAGaming AS DisableSAGaming,
 			@HideSAGaming AS HideSAGaming,
+			@SyncedSAGaming AS SyncedSAGaming,
 
 			--For Sexy Gaming
 			@DisableSexyGaming AS DisableSexyGaming,
 			@HideSexyGaming AS HideSexyGaming,
+			@SyncedSexyGaming AS SyncedSexyGaming,
 
 			-- For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
