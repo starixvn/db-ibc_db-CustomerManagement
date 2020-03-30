@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
+		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -25,12 +26,32 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	SELECT	SportType, BetType, IsLive
-	INTO	#SportBettype
-	FROM	ProductSettingDetail WITH(NOLOCK)
-	WHERE	ProductID = @ProductID
-	AND		SettingType = 1	-- PT
+	DECLARE @SportType INT
+	CREATE TABLE #SportBettype
+	(	SportType INT, 
+		BetType INT, 
+		IsLive BIT
+	)		
+	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	BEGIN
+		SELECT DISTINCT @SportType = S.SportType
+		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
+		WHERE ProductID = @ProductID
 
+		INSERT INTO #SportBettype (SportType, BetType, IsLive)
+		SELECT	SportType, BetType, IsLive
+		FROM	ProductSettingDetail WITH(NOLOCK)
+		WHERE	ProductID = 41 AND SportType = @SportType
+		AND		SettingType = 1	-- PT
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #SportBettype (SportType, BetType, IsLive)
+		SELECT	SportType, BetType, IsLive
+		FROM	ProductSettingDetail WITH(NOLOCK)
+		WHERE	ProductID = @ProductID
+		AND		SettingType = 1	-- PT
+	END
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
                         + CASE WHEN @TotalPages % @PageSize > 0 THEN 1 ELSE 0 END

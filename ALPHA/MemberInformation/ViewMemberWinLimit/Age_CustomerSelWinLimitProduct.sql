@@ -14,6 +14,8 @@ AS
 		- 20160413@Billy:	Remove Site Currency check - [Redmine: #54672]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20180814@Elodie: Return ProductID [RedmineID: #97675]
+		- 20200316@Tiara: Return result for SA Gaming and Allbet [RedmineID: #128058]
+		- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
 
 	Param's Explanation: 
 */  
@@ -35,6 +37,45 @@ BEGIN
 		SELECT 2101, 208, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
 	END
+	--LiveCasino including SA Gaming, Sexy Gaming and Allbet --dummy products
+
+	CREATE TABLE #TmpProductSettingDetail
+	(
+		SettingType SMALLINT,
+		SportType SMALLINT,
+		BetType SMALLINT,
+		IsLive BIT,
+		ProductID TINYINT,
+		MaxPT TINYINT,
+		MaxDiscount DECIMAL (9, 8),
+		IsSync BIT,
+		IsHidden BIT,
+		IsDisabled BIT,
+		SettingLevel TINYINT,
+		DisplayOrder TINYINT,
+		SettingStatus TINYINT,
+		IntervalValue DECIMAL (19, 8),
+		bitmapOrder INT
+	)
+
+	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,211,2401,0,21,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,6)
+	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,243,3101,0,45,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,22)
+	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,244,3001,0,39,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,20)
+
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT DISTINCT T.BetType, T.SportType, p.ProductName, p.ProductID
+	FROM	dbo.CustProductStatus		AS cps	WITH (NOLOCK)
+	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
+	INNER JOIN #TmpProductSettingDetail	AS t	WITH (NOLOCK) ON t.SportType = psp.Sporttype AND T.BetType = psp.Bettype
+	INNER JOIN	dbo.Products AS p	WITH (NOLOCK)
+			ON	p.ProductID =t.ProductID
+	CROSS APPLY	(
+		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
+			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
+	) ps(isSynced, isHidden)
+	WHERE	cps.CustID = @CustId
+		AND	ps.isSynced = 1
+		AND	ps.isHidden = 0
 
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
@@ -53,6 +94,7 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
+		AND psp.Sporttype NOT IN (211,244,243) --Prevent duplicate of SAGaming,Allbet, SexyGaming
 
 	--DELETE	p
 	--FROM		@Products AS p
@@ -63,6 +105,8 @@ BEGIN
 
 	SELECT BetType, SportType, ProductName, ProductID
 	FROM @Products
+
+	DROP TABLE #TmpProductSettingDetail
 END
 GO
 
