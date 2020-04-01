@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_Upd]
 	, @IP VARCHAR(15) = ''
 	, @ErrCode INT OUT
 	, @ErrMsg NVARCHAR(200) OUT
+	, @IsManualUpdate BIT = 0
 AS
 /*    
 	Created: 20190626@Dominic    
@@ -23,6 +24,7 @@ AS
 		- 20191105@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200113@Tiara: New Virtual Rate Setting structure for Soccer [Redmine: #126243]
 		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
+		- 20200310@Eden : E-sport VR Phase 3 - Manually Updated Virtual Rate Accounts [Redmind: #128749]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -243,6 +245,9 @@ BEGIN
 				, @virtualmultiplier = @virtualmultiplier
 				, @SportType = @SportType
 
+	IF @IsManualUpdate = 1 AND NOT EXISTS ( SELECT TOP 1 1 FROM dbo.[VRSettingManualUpdAcc] WITH(NOLOCK) WHERE SportType = @SportType AND CustID = @CustID)
+		INSERT INTO dbo.[VRSettingManualUpdAcc](SportType, CustID) 
+		SELECT @SportType, @CustID
 
 	SELECT @EndRun = GETDATE()    
 	SELECT @Duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
@@ -324,6 +329,24 @@ BEGIN
 						,@Duration=@Duration
 						,@IP=@IP
 	END CATCH
+
+	--log manually update account
+	DECLARE @LogDataManualUpdate VARCHAR(500)
+	
+	IF @IsManualUpdate = 1
+	BEGIN
+		SELECT  @LogDataManualUpdate = '<R '
+							+ 'SportType="'+ coalesce(cast(@SportType as varchar(50)),space(1)) + '" ' 
+							+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
+							+ ' />'
+
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			@UserId				= @UserId,
+			@CustId				= @CustId,
+			@ActionId			= 812,
+			@TrackingValue		= @LogDataManualUpdate,
+			@Duration			= @Duration     
+	END
 
 	DROP TABLE #New_VRCustSetting
 	DROP TABLE #Old_VRCustSetting
