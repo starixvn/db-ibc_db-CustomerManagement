@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerUplineUserNameSel]
-	@UserName NVARCHAR(50)
+	@UserName NVARCHAR(50),
+	@GroupName VARCHAR(50)
 AS
 /*
 	Created: 20200406@Johnson
@@ -13,22 +14,29 @@ AS
 		
 	Param's Explanation:
 		@Username: @Username want to get upline's username
+		@GroupName: external group need to check customer belongs to or not
 */		
 BEGIN
     SET NOCOUNT ON
     
     DECLARE @RoleID INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT,
 			@MemberUserName NVARCHAR(50), @AgentUserName NVARCHAR(50), @SuperUserName NVARCHAR(50), 
-			@MasterUserName NVARCHAR(50), @currency INT, @currencyName VARCHAR(10)
+			@MasterUserName NVARCHAR(50), @isExistGroup BIT = 0
        
-    SELECT @RoleID = roleID, @SuperID = srecommend, @currency = currency
+    SELECT @RoleID = roleID, @SuperID = srecommend
 	FROM customer WITH(NOLOCK)
 	WHERE username = @UserName
 		AND site <> 'CN88'
 	
-	SELECT @currencyName = currency 
-	FROM Exchange WITH(NOLOCK)
-	WHERE ExchangeID = @currency
+	IF EXISTS(
+	SELECT TOP 1 1
+	FROM Acc_CustGroup WITH(NOLOCK)
+	WHERE custid = @superID
+		AND GroupName = @GroupName
+	)
+	BEGIN
+		SELECT @isExistGroup = 1
+	END
 	
 	IF @RoleID = 1 AND NOT EXISTS(SELECT TOP 1 custid FROM customer WITH(NOLOCK) WHERE custid = @SuperID AND site <> 'CN88')
 	BEGIN
@@ -118,12 +126,12 @@ BEGIN
 
 	END
 	
-	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @currencyName currencyName
+	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup
 	UNION ALL
-	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @currencyName currencyName
+	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup
 	UNION ALL
-	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @currencyName currencyName
+	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup
 	UNION ALL
-	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @currencyName currencyName
+	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup
 	   
 END
