@@ -45,13 +45,13 @@ BEGIN
 	
 	IF @RoleID IS NULL OR @RoleID > 4
 	BEGIN
-		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId
+		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId
+		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId
+		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId
+		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup
 		RETURN
 	END
     ELSE IF @RoleID = 1
