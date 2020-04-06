@@ -16,6 +16,7 @@ AS
 		- 20180814@Elodie: Return ProductID [RedmineID: #97675]
 		- 20200316@Tiara: Return result for SA Gaming and Allbet [RedmineID: #128058]
 		- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
+		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 
 	Param's Explanation: 
 */  
@@ -61,6 +62,7 @@ BEGIN
 	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,211,2401,0,21,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,6)
 	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,243,3101,0,45,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,22)
 	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,244,3001,0,39,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,20)
+	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,241,3300,0,47,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,24)
 
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
 	SELECT DISTINCT T.BetType, T.SportType, p.ProductName, p.ProductID
@@ -94,7 +96,7 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
-		AND psp.Sporttype NOT IN (211,244,243) --Prevent duplicate of SAGaming,Allbet, SexyGaming
+		AND psp.Sporttype NOT IN (211,244,243,241) --Prevent duplicate of SAGaming,Allbet, SexyGaming
 
 	--DELETE	p
 	--FROM		@Products AS p

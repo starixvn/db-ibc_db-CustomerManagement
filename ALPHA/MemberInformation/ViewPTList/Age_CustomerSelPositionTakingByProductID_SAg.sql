@@ -1,7 +1,5 @@
 /*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 
-/****** Object:  Stored Procedure dbo.Age_CustomerSelPositionTakingByProductID_SAg    Script Date: 10/29/2015 9:34:05 AM ******/
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_SAg]
 (
 	@ProductID	TINYINT,
@@ -19,6 +17,8 @@ AS
 	Revisions:
 		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
+		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -32,7 +32,7 @@ BEGIN
 		BetType INT, 
 		IsLive BIT
 	)		
-	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	IF @ProductID IN (39,45,21,47) --Handle dummy product 41
 	BEGIN
 		SELECT DISTINCT @SportType = S.SportType
 		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
