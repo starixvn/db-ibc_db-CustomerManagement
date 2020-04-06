@@ -4,11 +4,11 @@ ALTER PROCEDURE [dbo].[EAS_CustomerInsMember_CloneSetting_Com]
 	@Custid INT OUTPUT
 	,@UserName VARCHAR(30)
 	,@Userpwd VARCHAR(40)
-	,@FirstName NVARCHAR(50)
-	,@LastName NVARCHAR(50)
-	,@Phone NVARCHAR(50)
-	,@MobilePhone NVARCHAR(50)	
-	,@Fax NVARCHAR(50)
+	,@FirstName NVARCHAR(50)= ''
+	,@LastName NVARCHAR(50)= ''
+	,@Phone NVARCHAR(50)=''
+	,@MobilePhone NVARCHAR(50)=''
+	,@Fax NVARCHAR(50)=''
 	,@Credit MONEY		
 	,@ExistingCustid INT
 	,@Creator INT	
