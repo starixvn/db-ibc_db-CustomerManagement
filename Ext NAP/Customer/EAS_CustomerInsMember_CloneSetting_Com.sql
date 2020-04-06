@@ -61,8 +61,7 @@ BEGIN
 			,@roleid tinyint
 			,@Enabled BIT
 			,@currency INT
-			,@site VARCHAR(10)
-			,@ExternalGroup VARCHAR(50)
+			,@site VARCHAR(10)			
 	
 	SELECT @existingUsername =  ISNULL(username,''), 
 		@roleid = ISNULL(roleid,0), 
@@ -625,11 +624,7 @@ BEGIN
 	
 	--END credit term
 	
-	--add external group	
-	SELECT @ExternalGroup = GroupName
-	FROM Acc_CustGroup WITH(NOLOCK)
-	WHERE custid = @ExistingCustid
-		
+	--add external group		
 	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
 	SELECT @CustID, @RoleID, GroupName
 	FROM Acc_CustGroup WITH(NOLOCK)
