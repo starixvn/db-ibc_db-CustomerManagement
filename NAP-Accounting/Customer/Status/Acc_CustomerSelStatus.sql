@@ -267,7 +267,7 @@ Param's Explanation:
 			@SyncedLottery      BIT = 1, --always sync
 			@DisableTableGames	BIT,
 			@HideTableGames     BIT,
-			@SyncedTableGames   BIT = 1, --always sync
+			@SyncedTableGames   BIT = 1 --always sync
 		
 	SELECT 			
 	-- For AllBet
