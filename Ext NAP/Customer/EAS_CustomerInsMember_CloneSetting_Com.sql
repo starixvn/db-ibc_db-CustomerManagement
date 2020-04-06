@@ -580,48 +580,50 @@ BEGIN
 	FROM CustAccount WITH(NOLOCK)
 	WHERE custid = @ExistingCustid
 	
-	Declare @creditgrade nvarchar(1),
-		@preagreeamount money,
-		@installmentamount money,
-		@installmentdate nvarchar(50),
-		@accountremark nvarchar(200)
+	IF @GroupID IS NOT NULL
+	BEGIN
+		Declare @creditgrade nvarchar(1),
+			@preagreeamount money,
+			@installmentamount money,
+			@installmentdate nvarchar(50),
+			@accountremark nvarchar(200)
 
-	select @creditgrade = creditgrade, 
-		@installmentdate = installmentdate,
-		@installmentamount = installmentamount,
-		@preagreeamount = preagreeamount,
-		@accountremark = ' '
-	from custaccount with (nolock)
-	where isgroupheadline = 1 and groupid = @groupID
+		select @creditgrade = creditgrade, 
+			@installmentdate = installmentdate,
+			@installmentamount = installmentamount,
+			@preagreeamount = preagreeamount,
+			@accountremark = ' '
+		from custaccount with (nolock)
+		where isgroupheadline = 1 and groupid = @groupID
 
-	EXEC dbo.Acc_CreditTermUpdCollStatus 
-		@CustId = @custid, 
-		@UserID = @creator, 
-		@IP = @IP, 
-		@Language = @Language, 
-		@Mode = 3,
-		@OldGroupId = 0, 
-		@NewGroupId = @groupID, 
-		@Old_IsGroupHeadline = 0, 
-		@New_IsGroupHeadline = 0	
-	
-	EXEC dbo.Acc_CreditTermUpdCustAccount 
-		@custid = @custid,
-		@creditgrade = @creditgrade,
-		@preagreeamount = @preagreeamount,
-		@installmentamount = @installmentamount,
-		@installmentdate = @installmentdate,
-		@accountremark = @accountremark,
-		@groupID = @groupID,
-		@isgroupheadline = 0
-	
-	SELECT @NotificationInfo = '<GroupHeadline custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" ' +
-								'GroupID="'+ COALESCE(CAST(@groupid AS VARCHAR(50)),SPACE(1)) + '" />'
-	-- Send email notification for create new
-	DECLARE @currentTime DATETIME = GETDATE()
-	
-	EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1000,@NotificationInfo = @NotificationInfo, @CreateDate = @currentTime	
-	
+		EXEC dbo.Acc_CreditTermUpdCollStatus 
+			@CustId = @custid, 
+			@UserID = @creator, 
+			@IP = @IP, 
+			@Language = @Language, 
+			@Mode = 3,
+			@OldGroupId = 0, 
+			@NewGroupId = @groupID, 
+			@Old_IsGroupHeadline = 0, 
+			@New_IsGroupHeadline = 0	
+		
+		EXEC dbo.Acc_CreditTermUpdCustAccount 
+			@custid = @custid,
+			@creditgrade = @creditgrade,
+			@preagreeamount = @preagreeamount,
+			@installmentamount = @installmentamount,
+			@installmentdate = @installmentdate,
+			@accountremark = @accountremark,
+			@groupID = @groupID,
+			@isgroupheadline = 0
+		
+		SELECT @NotificationInfo = '<GroupHeadline custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" ' +
+									'GroupID="'+ COALESCE(CAST(@groupid AS VARCHAR(50)),SPACE(1)) + '" />'
+		-- Send email notification for create new
+		DECLARE @currentTime DATETIME = GETDATE()
+		
+		EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1000,@NotificationInfo = @NotificationInfo, @CreateDate = @currentTime	
+	END	
 	--END credit term
 	
 	--add external group		
