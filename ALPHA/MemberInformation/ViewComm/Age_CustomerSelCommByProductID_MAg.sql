@@ -14,6 +14,8 @@ AS
 	Revisions: 
 		- 20180703@Elodie: Add info of SP
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
+		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+
 */
 BEGIN
 	SET NOCOUNT ON
@@ -26,7 +28,7 @@ BEGIN
 	IsLive BIT, 
 	SettingType SMALLINT)
 	
-	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	IF @ProductID IN (39,45,21,47) --Handle dummy product 41
 	BEGIN
 		SELECT DISTINCT @SportType = S.SportType
 		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
