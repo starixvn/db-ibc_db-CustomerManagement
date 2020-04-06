@@ -213,8 +213,8 @@ BEGIN
 		SELECT @MaxMember = CASE WHEN @Site = '789y' THEN 20000 ELSE -1 END
 		SELECT @MaxMemberLog = CASE WHEN @Site = '789y' THEN '20000' ELSE 'Unlimited' END
 
-		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember)  
-		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember			
+		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer)  
+		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer
 		FROM CustSuper WITH(NOLOCK)
 		WHERE custid=@ExistingCustid		
 	END TRY
@@ -631,11 +631,11 @@ BEGIN
 	WHERE custid = @ExistingCustid
 		
 	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
-	VALUES (@CustID, @RoleID, @ExternalGroup)
-	
-	--add ACCUSD 
-	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
-	VALUES (@CustID, @RoleID, 'ACCUSD')
+	SELECT @CustID, @RoleID, GroupName
+	FROM Acc_CustGroup WITH(NOLOCK)
+	WHERE custid = @ExistingCustid
+	UNION 
+	SELECT @CustID, @RoleID, 'ACCUSD'
 	
 	INSERT INTO [dbo].[CustSuperProfile] (custid)
 	VALUES (@custid)
