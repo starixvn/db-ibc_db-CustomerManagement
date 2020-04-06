@@ -56,7 +56,7 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
-		AND psp.Sporttype NOT IN (211,244,243,241) --Prevent duplicate of SAGaming,Allbet, SexyGaming
+		
 
 	--DELETE	p
 	--FROM		@Products AS p
