@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_Ag]
 (
 	@ProductID	TINYINT,
@@ -18,12 +18,12 @@ AS
 		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
 BEGIN
-
 	SET NOCOUNT ON
 	DECLARE @SportType INT, @BetType INT
 	CREATE TABLE #SportBettype
@@ -31,31 +31,13 @@ BEGIN
 		BetType INT, 
 		IsLive BIT
 	)		
-	IF @ProductID IN (39,45,21,47) --Handle dummy product 41
-	BEGIN
-		IF @ProductID = 21
-			SELECT @SportType = 211
-		ELSE IF @ProductID = 39
-			SELECT @SportType = 244
-		ELSE IF @ProductID = 45
-			SELECT @SportType = 243
-		ELSE IF @ProductID = 47
-			SELECT @SportType = 241
 
-		INSERT INTO #SportBettype (SportType, BetType, IsLive)
-		SELECT	SportType, BetType, IsLive
-		FROM	ProductSettingDetail WITH(NOLOCK)
-		WHERE	ProductID = 41 AND SportType = @SportType
-		AND		SettingType = 1	-- PT
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #SportBettype (SportType, BetType, IsLive)
-		SELECT	SportType, BetType, IsLive
-		FROM	ProductSettingDetail WITH(NOLOCK)
-		WHERE	ProductID = @ProductID
-		AND		SettingType = 1	-- PT
-	END
+
+	INSERT INTO #SportBettype (SportType, BetType, IsLive)
+	SELECT	SportType, BetType, IsLive
+	FROM	ProductSettingDetail WITH(NOLOCK)
+	WHERE	RealProductId = @ProductID
+		AND	SettingType = 1	-- PT
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 

@@ -261,7 +261,14 @@ Param's Explanation:
 			@DisableBBIN		BIT,
 			@HideBBIN		BIT,
 			@SyncedBBIN		BIT = 1 --always sync
-
+	--Handle dummy product 44: RNG Lottery (Lottery + TableGame)
+	DECLARE	@DisableLottery		BIT,
+			@HideLottery        BIT,
+			@SyncedLottery      BIT = 1, --always sync
+			@DisableTableGames	BIT,
+			@HideTableGames     BIT,
+			@SyncedTableGames   BIT = 1, --always sync
+		
 	SELECT 			
 	-- For AllBet
 		@DisableAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1),
@@ -276,6 +283,12 @@ Param's Explanation:
 	-- For BBIN
 		@DisableBBIN = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BBIN), 1),	
 		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BBIN), 1) = 0 THEN 0 ELSE 1 END AS BIT)
+	-- For Lottery
+		@DisableLottery = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1),	
+		@HideLottery  = CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For TableGames
+		@DisableTableGames = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_TableGames), 1),	
+		@HideTableGames  = CAST(CASE WHEN @IsHidden_TableGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_TableGames), 1) = 0 THEN 0 ELSE 1 END AS BIT)
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 	WHERE ci.CustID = @CustID
@@ -366,9 +379,19 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 
-			-- For Lottery
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1) AS DisableLottery,		
-			CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
+			-- For RNGLottery (Lottery+ TableGames)
+			CAST(CASE WHEN @DisableLottery = 0 OR @DisableTableGames= 0 THEN 0 ELSE 1 END AS BIT)AS DisableRNGLottery,		
+			CAST(CASE WHEN @HideLottery = 0 OR @HideTableGames = 0 THEN 0 ELSE 1 END AS BIT) AS HideRNGLottery,	
+			CAST( CASE WHEN @SyncedLottery = 1 OR @SyncedTableGames = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedRNGLottery,
+			--For Lottery
+			@DisableLottery AS DisableLottery,
+			@HideLottery AS HideLottery,
+			@SyncedLottery AS SyncedLottery,
+
+			--For TableGames
+			@DisableTableGames AS DisableTableGames,
+			@HideTableGames AS HideTableGames,
+			@SyncedTableGames AS SyncedTableGames,
 
 			-- For NG2
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,

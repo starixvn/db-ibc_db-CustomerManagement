@@ -15,42 +15,23 @@ AS
 		- 20180703@Elodie: Add info of SP
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 
 */
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @SportType INT
-	CREATE TABLE #SportBettypeFilter
-	(ProductID TINYINT, 
-	SportType SMALLINT, 
-	Bettype SMALLINT, 
-	IsLive BIT, 
-	SettingType SMALLINT)
+	DECLARE @DummyProductID INT, @SportType INT
+	CREATE TABLE #SportBettypeFilter ( ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, IsLive BIT, SettingType SMALLINT)
 	
-	IF @ProductID IN (39,45,21,47) --Handle dummy product 41
-	BEGIN
-		IF @ProductID = 21
-			SELECT @SportType = 211
-		ELSE IF @ProductID = 39
-			SELECT @SportType = 244
-		ELSE IF @ProductID = 45
-			SELECT @SportType = 243
-		ELSE IF @ProductID = 47
-			SELECT @SportType = 241
+	SELECT DISTINCT @DummyProductID = s.ProductID
+	FROM ProductSettingDetail S WITH(NOLOCK)
+	WHERE ProductID = @ProductID
 
-		INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
-		SELECT	ProductID, SportType, Bettype, IsLive, SettingType
-		FROM	ProductSettingDetail WITH(NOLOCK)
-		WHERE	ProductID = 41 AND SportType = @SportType
-		AND		SettingType = 3	-- comm
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
-		SELECT * 
-		FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@ProductID,3)
-	END
+	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
+	SELECT ProductID, SportType, Bettype, IsLive, SettingType
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3)
+	WHERE RealProductId = @ProductID
 	
 	SELECT 
 		ci.closed,

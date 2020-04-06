@@ -1,6 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO 
 
 ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct @CustId INT
 AS
@@ -17,6 +15,7 @@ AS
 		- 20200316@Tiara: Return result for SA Gaming and Allbet [RedmineID: #128058]
 		- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 
 	Param's Explanation: 
 */  
