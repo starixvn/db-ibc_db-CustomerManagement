@@ -17,6 +17,8 @@ AS
 		- 20160322@Billy: Fix bug return multiple PT value - [Redmine: #54529]
 		- 20170627@Winnie: Apply color for closed account [RedmineID: #74494]
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
+		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+
 	Param's Explanation:
 	• @Recommend: Agent ID
 */
@@ -29,11 +31,16 @@ BEGIN
 		BetType INT, 
 		IsLive BIT
 	)		
-	IF @ProductID IN (39,45,21) --Handle dummy product 41
+	IF @ProductID IN (39,45,21,47) --Handle dummy product 41
 	BEGIN
-		SELECT DISTINCT @SportType = S.SportType
-		FROM DBAGE.bodb02.dbo.SportBettypeMatrix S WITH(NOLOCK)
-		WHERE ProductID = @ProductID
+		IF @ProductID = 21
+			SELECT @SportType = 211
+		ELSE IF @ProductID = 39
+			SELECT @SportType = 244
+		ELSE IF @ProductID = 45
+			SELECT @SportType = 243
+		ELSE IF @ProductID = 47
+			SELECT @SportType = 241
 
 		INSERT INTO #SportBettype (SportType, BetType, IsLive)
 		SELECT	SportType, BetType, IsLive
@@ -127,21 +134,3 @@ BEGIN
 	ORDER BY RowNumber, SportType, islive, BetType, roleid
 END	
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_Ag] TO [vnteam]
-GO 
- GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelPositionTakingByProductID_Ag] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_Ag] TO [Dot_Admin]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_Ag] TO [bodbAdminNet]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_Ag] TO [bodbDownlineNet]
-GO 
