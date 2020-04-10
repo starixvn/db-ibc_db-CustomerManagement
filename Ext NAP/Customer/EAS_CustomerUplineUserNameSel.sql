@@ -19,11 +19,11 @@ AS
 BEGIN
     SET NOCOUNT ON
     
-    DECLARE @RoleID INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT,
+    DECLARE @RoleID INT, @currency INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT,
 			@MemberUserName NVARCHAR(50), @AgentUserName NVARCHAR(50), @SuperUserName NVARCHAR(50), 
 			@MasterUserName NVARCHAR(50), @isExistGroup BIT = 0
        
-    SELECT @RoleID = roleID, @SuperID = srecommend
+    SELECT @RoleID = roleID, @SuperID = srecommend, @currency = currency
 	FROM customer WITH(NOLOCK)
 	WHERE username = @UserName
 		AND site <> 'CN88'
@@ -45,13 +45,13 @@ BEGIN
 	
 	IF @RoleID IS NULL OR @RoleID > 4
 	BEGIN
-		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup
+		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup
+		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup
+		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup
+		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency
 		RETURN
 	END
     ELSE IF @RoleID = 1
@@ -126,12 +126,12 @@ BEGIN
 
 	END
 	
-	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup
+	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency
 	UNION ALL
-	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup
+	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency
 	UNION ALL
-	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup
+	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency
 	UNION ALL
-	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup
+	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency
 	   
 END
