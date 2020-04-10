@@ -1,6 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct @CustId INT
+ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
+	@CustId INT
 AS
 /*  
 	Created: 20150714@Patrick
@@ -37,7 +38,6 @@ BEGIN
 		SELECT 2101, 208, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
 	END
-	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,241,3300,0,47,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,24)
 	
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
