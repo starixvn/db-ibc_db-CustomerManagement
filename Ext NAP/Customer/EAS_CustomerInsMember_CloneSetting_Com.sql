@@ -636,7 +636,17 @@ BEGIN
 	
 	INSERT INTO [dbo].[CustSuperProfile] (custid)
 	VALUES (@custid)
-			
+	
+	--auto transfer 
+	INSERT INTO [dbo].[Acc_ClearBalanceList]
+           ([custid] 
+           ,[status]
+           ,[LastTransfer]           
+           ,[transferType])       
+	SELECT @custid,'', GETDATE()-1, TransferType
+	FROM Acc_ClearBalanceList WITH(NOLOCK)
+	WHERE custid = @ExistingCustid
+	
 	SET @endRun=GETDATE()
 	SET @duration=datediff(millisecond,@startRun,@endRun)
 	
