@@ -57,6 +57,23 @@ BEGIN
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
 		
+	-- For DCS Product
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
+	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
+	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
+	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12) AS sbss
+			ON	sbss.SportType = psp.Sporttype
+			AND	sbss.BetType = psp.Bettype
+	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+			ON	p.ProductID = sbss.RealProductId
+	CROSS APPLY	(
+		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
+			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
+	) ps(isSynced, isHidden)
+	WHERE	cps.CustID = @CustId
+		AND	ps.isSynced = 1
+		AND	ps.isHidden = 0
 
 	--DELETE	p
 	--FROM		@Products AS p
