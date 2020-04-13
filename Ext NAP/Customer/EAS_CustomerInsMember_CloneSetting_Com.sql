@@ -379,6 +379,23 @@ BEGIN
 			@Language = @Language,
 			@ErrCode = @ErrCode OUTPUT,
 			@ErrMsg = @ErrMsg OUTPUT
+			
+			IF @ErrCode > 0 
+			BEGIN
+				SELECT @ErrMsg = CASE @Language 
+								WHEN 'E' THEN 'Create customer failed. Please try again.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](40004,@Language)
+							end
+				,@ErrCode = 106
+				-- ROLLBACK MANUALLY	
+				DELETE FROM dbo.Customer WITH(ROWLOCK) WHERE CustID = @CustID
+				EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del  @Custid
+				DELETE FROM dbo.CustInfo WITH(ROWLOCK) WHERE CustID = @CustID
+				DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  
+				DELETE FROM dbo.CustWinlimit WITH(ROWLOCK) WHERE custId = @CustID  
+				
+				RETURN
+			END
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrMsg = CASE @Language 
