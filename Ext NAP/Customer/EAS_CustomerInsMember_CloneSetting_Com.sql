@@ -649,7 +649,8 @@ BEGIN
 	FROM Acc_CustGroup WITH(NOLOCK)
 	WHERE custid = @ExistingCustid
 	UNION 
-	SELECT @CustID, @RoleID, 'ACCUSD'
+	SELECT @CustID, @RoleID,
+		CASE WHEN @currency = 20 THEN 'ACCUUS2' ELSE 'ACCUSD' END
 	
 	INSERT INTO [dbo].[CustSuperProfile] (custid)
 	VALUES (@custid)
