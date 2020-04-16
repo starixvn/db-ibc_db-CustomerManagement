@@ -129,16 +129,16 @@ BEGIN
 			,important
 			)
 		SELECT
-			@firstname
-			,@lastname
+			NULL firstname
+			,NULL lastname
 			,'-' AS address
 			,'-' AS postal
 			,'-' AS city
 			,'-' AS state
 			,'-' AS country
-			,@phone
-			,@mobilephone
-			,@fax
+			,NULL phone
+			,NULL mobilephone
+			,NULL fax
 			,'-' AS email
 			,NULL AS birthday
 			,NULL AS refcode1
