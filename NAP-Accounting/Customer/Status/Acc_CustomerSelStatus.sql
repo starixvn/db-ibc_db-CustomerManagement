@@ -71,6 +71,7 @@ Revisions:
 	- 20200303@Tiara: Add SA Gaming Product [Redmine: #128058]
 	- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
 	- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+	- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -185,20 +186,21 @@ Param's Explanation:
 	END
 
 	 -- For DCS Product
-    DECLARE	@bitmapOrder_MuayThai		INT
+    DECLARE	@bitmapOrder_MuayThai			INT
 		,	@bitmapOrder_Esports		INT
-		,	@bitmapOrder_AllBet			INT
+		,	@bitmapOrder_AllBet		INT
 		,	@bitmapOrder_AllBetVIP		INT
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
-		,	@bitmapOrder_NG2			INT
+		,	@bitmapOrder_NG2		INT
 		,	@bitmapOrder_FishingWorld	INT
-		,	@bitmapOrder_VS				INT
-		,	@bitmapOrder_VG				INT
+		,	@bitmapOrder_VS			INT
+		,	@bitmapOrder_VG			INT
 		,	@bitmapOrder_SabaClub		INT
 		,	@bitmapOrder_SAGaming		INT 
 		,	@bitmapOrder_SexyGaming		INT 
-		,	@bitmapOrder_BBIN			INT 
+		,	@bitmapOrder_BBIN		INT 
+		,	@bitmapOrder_TableGames		INT 
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -214,49 +216,59 @@ Param's Explanation:
 	SET @bitmapOrder_SAGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 244 AND Bettype = 3001)
 	SET @bitmapOrder_SexyGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 243 AND Bettype = 3101)
 	SET @bitmapOrder_BBIN = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 241 AND Bettype = 3300)
+	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 
     DECLARE	@IsHidden_MuayThai			INT = 1
-		,	@IsHidden_Esports			INT = 1
-		,	@IsHidden_AllBet			INT = 1
+		,	@IsHidden_Esports		INT = 1
+		,	@IsHidden_AllBet		INT = 1
 		,	@IsHidden_VoidBridge		INT = 1
-		,	@IsHidden_Lottery			INT = 1
-		,	@IsHidden_NG2				INT = 1  
+		,	@IsHidden_Lottery		INT = 1
+		,	@IsHidden_NG2			INT = 1  
 		,	@IsHidden_FishingWorld		INT = 1
-		,	@IsHidden_VS				INT = 1
-		,	@IsHidden_VG				INT = 1
-		,	@IsHidden_SabaClub			INT = 1
-		,	@IsHidden_SAGaming			INT = 1
+		,	@IsHidden_VS			INT = 1
+		,	@IsHidden_VG			INT = 1
+		,	@IsHidden_SabaClub		INT = 1
+		,	@IsHidden_SAGaming		INT = 1
 		,	@IsHidden_SexyGaming		INT = 1
-		,	@IsHidden_BBIN				INT = 1
+		,	@IsHidden_BBIN			INT = 1
+		,	@IsHidden_TableGames		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT	
-	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_AllBet OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 220, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_Esports OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_SAGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 42, @IsHide = @IsHidden_SabaClub OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_SexyGaming OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 41, @IsHide = @IsHidden_BBIN OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 244, @IsHide = @IsHidden_SAGaming OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 243, @IsHide = @IsHidden_SexyGaming OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 222, @IsHide = @IsHidden_TableGames OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 241, @IsHide = @IsHidden_BBIN OUTPUT
 
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN)
-	DECLARE	@DisableAllbet		BIT,
-			@HideAllbet         BIT,
-			@SyncedAllbet       BIT,
+	DECLARE	@DisableAllbet			BIT,
+			@HideAllbet         	BIT,
+			@SyncedAllbet       	BIT,
 			@DisableSAGaming	BIT,
-			@HideSAGaming       BIT,
-			@SyncedSAGaming     BIT = 1, --always sync
+			@HideSAGaming       	BIT,
+			@SyncedSAGaming     	BIT = 1, --always sync
 			@DisableSexyGaming	BIT,
-			@HideSexyGaming     BIT,
-			@SyncedSexyGaming   BIT = 1, --always sync
+			@HideSexyGaming     	BIT,
+			@SyncedSexyGaming  	BIT = 1, --always sync
 			@DisableBBIN		BIT,
-			@HideBBIN		    BIT,
-			@SyncedBBIN			BIT = 1 --always sync
-
+			@HideBBIN		BIT,
+			@SyncedBBIN		BIT = 1 --always sync
+	--Handle dummy product 44: RNG Lottery (Lottery + TableGame)
+	DECLARE	@DisableLottery		BIT,
+			@HideLottery        BIT,
+			@SyncedLottery      BIT = 1, --always sync
+			@DisableTableGames	BIT,
+			@HideTableGames     BIT,
+			@SyncedTableGames   BIT = 1 --always sync
+		
 	SELECT 			
 	-- For AllBet
 		@DisableAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1),
@@ -270,7 +282,13 @@ Param's Explanation:
 		@HideSexyGaming  = CAST(CASE WHEN @IsHidden_SexyGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SexyGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BBIN
 		@DisableBBIN = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BBIN), 1),	
-		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BBIN), 1) = 0 THEN 0 ELSE 1 END AS BIT)
+		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BBIN), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For Lottery
+		@DisableLottery = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1),	
+		@HideLottery  = CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For TableGames
+		@DisableTableGames = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_TableGames), 1),	
+		@HideTableGames  = CAST(CASE WHEN @IsHidden_TableGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_TableGames), 1) = 0 THEN 0 ELSE 1 END AS BIT)
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 	WHERE ci.CustID = @CustID
@@ -361,9 +379,19 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
 
-			-- For Lottery
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1) AS DisableLottery,		
-			CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideLottery,
+			-- For RNGLottery (Lottery+ TableGames)
+			CAST(CASE WHEN @DisableLottery = 0 OR @DisableTableGames= 0 THEN 0 ELSE 1 END AS BIT)AS DisableRNGLottery,		
+			CAST(CASE WHEN @HideLottery = 0 OR @HideTableGames = 0 THEN 0 ELSE 1 END AS BIT) AS HideRNGLottery,	
+			CAST( CASE WHEN @SyncedLottery = 1 OR @SyncedTableGames = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedRNGLottery,
+			--For Lottery
+			@DisableLottery AS DisableLottery,
+			@HideLottery AS HideLottery,
+			@SyncedLottery AS SyncedLottery,
+
+			--For TableGames
+			@DisableTableGames AS DisableTableGames,
+			@HideTableGames AS HideTableGames,
+			@SyncedTableGames AS SyncedTableGames,
 
 			-- For NG2
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,

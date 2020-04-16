@@ -1,8 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO 
 
-ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct @CustId INT
+ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
+	@CustId INT
 AS
 /*  
 	Created: 20150714@Patrick
@@ -17,6 +16,7 @@ AS
 		- 20200316@Tiara: Return result for SA Gaming and Allbet [RedmineID: #128058]
 		- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 
 	Param's Explanation: 
 */  
@@ -38,47 +38,7 @@ BEGIN
 		SELECT 2101, 208, ProductName, ProductID
 		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
 	END
-	--LiveCasino including SA Gaming, Sexy Gaming and Allbet --dummy products
-
-	CREATE TABLE #TmpProductSettingDetail
-	(
-		SettingType SMALLINT,
-		SportType SMALLINT,
-		BetType SMALLINT,
-		IsLive BIT,
-		ProductID TINYINT,
-		MaxPT TINYINT,
-		MaxDiscount DECIMAL (9, 8),
-		IsSync BIT,
-		IsHidden BIT,
-		IsDisabled BIT,
-		SettingLevel TINYINT,
-		DisplayOrder TINYINT,
-		SettingStatus TINYINT,
-		IntervalValue DECIMAL (19, 8),
-		bitmapOrder INT
-	)
-
-	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,211,2401,0,21,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,6)
-	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,243,3101,0,45,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,22)
-	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,244,3001,0,39,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,20)
-	INSERT INTO #TmpProductSettingDetail ([SettingType] ,[SportType],[BetType],[IsLive],[ProductID],[MaxPT],[MaxDiscount],[IsSync],[IsHidden],[IsDisabled],[SettingLevel],[DisplayOrder],[SettingStatus],[IntervalValue],[bitmapOrder]) VALUES(6,241,3300,0,47,NULL,NULL,NULL,NULL,NULL,2,4,0,NULL,24)
-
-	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
-	SELECT DISTINCT T.BetType, T.SportType, p.ProductName, p.ProductID
-	FROM	dbo.CustProductStatus		AS cps	WITH (NOLOCK)
-	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
-	INNER JOIN #TmpProductSettingDetail	AS t	WITH (NOLOCK) ON t.SportType = psp.Sporttype AND T.BetType = psp.Bettype
-	INNER JOIN	dbo.Products AS p	WITH (NOLOCK)
-			ON	p.ProductID =t.ProductID
-	CROSS APPLY	(
-		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
-			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
-	) ps(isSynced, isHidden)
-	WHERE	cps.CustID = @CustId
-		AND	ps.isSynced = 1
-		AND	ps.isHidden = 0
-
+	
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
@@ -88,7 +48,7 @@ BEGIN
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
-			ON	p.ProductID = sbss.ProductID
+			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
 			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
@@ -96,7 +56,24 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
-		AND psp.Sporttype NOT IN (211,244,243,241) --Prevent duplicate of SAGaming,Allbet, SexyGaming
+		
+	-- For DCS Product
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
+	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
+	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
+	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12) AS sbss
+			ON	sbss.SportType = psp.Sporttype
+			AND	sbss.BetType = psp.Bettype
+	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+			ON	p.ProductID = sbss.RealProductId
+	CROSS APPLY	(
+		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
+			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
+	) ps(isSynced, isHidden)
+	WHERE	cps.CustID = @CustId
+		AND	ps.isSynced = 1
+		AND	ps.isHidden = 0
 
 	--DELETE	p
 	--FROM		@Products AS p
@@ -107,8 +84,6 @@ BEGIN
 
 	SELECT BetType, SportType, ProductName, ProductID
 	FROM @Products
-
-	DROP TABLE #TmpProductSettingDetail
 END
 GO
 
