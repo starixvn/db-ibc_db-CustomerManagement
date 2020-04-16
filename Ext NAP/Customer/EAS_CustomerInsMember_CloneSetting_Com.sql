@@ -652,8 +652,15 @@ BEGIN
 	SELECT @CustID, @RoleID,
 		CASE WHEN @currency = 20 THEN 'ACCUUS2' ELSE 'ACCUSD' END
 	
-	INSERT INTO [dbo].[CustSuperProfile] (custid)
-	VALUES (@custid)
+	INSERT INTO [CustDB].[dbo].[CustSuperProfile]
+           ([custid]
+           ,[firstname]
+           ,[lastname]
+           ,[phone]
+           ,[mobilephone]
+           ,[fax]
+           )
+	VALUES (@custid,@firstname,@lastname,@phone,@mobilephone,@fax)
 	
 	--auto transfer 
 	INSERT INTO [dbo].[Acc_ClearBalanceList]
