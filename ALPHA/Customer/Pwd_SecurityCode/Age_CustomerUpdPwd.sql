@@ -30,6 +30,7 @@ Revisions:
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 	- 20160104@Helen: Disallow SMA changes password or updates account status of members - [Redmine:#49967]
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
+	- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -55,12 +56,6 @@ BEGIN
 			,@PwdExpiry DATETIME
 			,@OldPwd	VARCHAR(40)
 			,@roleid TINYINT
-	
-	--force change pwd if upline reset pwd
-	IF @custid <> @userid
-		SELECT  @pwdexpiry = DATEADD(dd, -1, GETDATE())
-	ELSE 
-		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
 
     IF ( @DisCasino = 1
          AND EXISTS ( SELECT    1
@@ -98,6 +93,15 @@ BEGIN
 	FROM	Customer WITH (NOLOCK) 
 	WHERE	custid = @CustID
 	
+	--force change pwd if upline reset pwd
+	IF @custid <> @userid
+	BEGIN
+		
+		SELECT  @pwdexpiry = CASE WHEN @roleid = 1 THEN DATEADD(dd, -1, GETDATE()) ELSE '01/01/1900' END
+	END
+	ELSE 
+		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
+
     UPDATE  customer WITH (ROWLOCK, UPDLOCK)
     SET     userpwd = @UserPwd ,
             pwdexpiry = @PwdExpiry
