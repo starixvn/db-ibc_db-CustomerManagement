@@ -15,7 +15,7 @@ Task : Reset password for his downlines
 DB: DBCust/Custdb
 Original: CustomerPwdUpd2
 
-Revisions:
+Revisions: 
     - 20090311@HanhVu: Log information into UserLog_RunSP table					   
 	- 20090729@Phuc: Write log subaccname instead of subaccid.
 	- 20090818@Phuc: check page access and check upline closed first(call Age_CustSubCheckPageAccess)
