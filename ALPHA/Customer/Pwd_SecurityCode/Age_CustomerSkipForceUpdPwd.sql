@@ -45,20 +45,12 @@ BEGIN
         @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
     IF @ErrCode <> 0 
         RETURN
---end
 	
     DECLARE  @PwdExpiry DATETIME
-
-	--IF EXISTS (SELECT 1 FROM custSub WITH(NOLOCK) WHERE custid = @custid AND subaccID = @SubAccID)
-	--BEGIN
-	--	SELECT  @ErrMsg ='You dont have permission to do this action.',
-	--			@ErrCode = 101
-	--	RETURN
-	--END	
 	
 	IF EXISTS(	SELECT  TOP 1 1
 				FROM	Customer WITH (NOLOCK) 
-				WHERE	custid = @CustID AND pwdexpiry <> '01/01/1900' AND roleID <> 1 AND lastlogged IS NOT NULL
+				WHERE	custid = @CustID AND pwdexpiry <> CONVERT(DATETIME,'01/01/1900')  AND roleID <> 1 AND lastlogged IS NOT NULL
 			)
 	BEGIN
 		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
