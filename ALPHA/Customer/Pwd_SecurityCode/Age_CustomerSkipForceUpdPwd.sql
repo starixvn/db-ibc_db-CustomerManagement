@@ -65,6 +65,11 @@ BEGIN
 	UPDATE  customer WITH (ROWLOCK, UPDLOCK)
     SET     pwdexpiry = @PwdExpiry
     WHERE   custid = @CustID
+
+	IF @SubAccID > 0
+		UPDATE  CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)
+		SET		PwdExpiry			= @PwdExpiry
+		WHERE	subaccid = @subaccid and custid = @custid
 	
 	SET @endRun = getdate()
 	SET @duration  = datediff (millisecond,@startRun,@endRun)
