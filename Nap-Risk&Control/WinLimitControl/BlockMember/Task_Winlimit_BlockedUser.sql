@@ -46,7 +46,7 @@ BEGIN
 							, TotalWinAmount MONEY
 							, WinlostDate SMALLDATETIME
 							, IsPrivateSetting BIT
-							, BettypeIDList VARCHAR(1024))
+							, BettypeIDList VARCHAR(MAX))
 	
 	
 	CREATE TABLE #CustReachCWLList(ID INT IDENTITY PRIMARY KEY
@@ -63,7 +63,7 @@ BEGIN
 								, IsPrivateSetting BIT
 								, MaxWinLimitSetting XML
 								, TotalWinAmt_RM MONEY
-								, BettypeIDList VARCHAR(1024)
+								, BettypeIDList VARCHAR(MAX)
 							)
 		
 	CREATE TABLE #HistoryData (ID INT IDENTITY PRIMARY KEY
@@ -82,7 +82,7 @@ BEGIN
 							, WinlostDate DATETIME
 							, MaxWinLimitSetting XML
 							, TotalWinAmt_RM MONEY
-							, BettypeIDList VARCHAR(1024)
+							, BettypeIDList VARCHAR(MAX)
 						 )
 						 
 	CREATE TABLE #WinLimit_ProductSettingDetail (ProductId TINYINT
