@@ -12,6 +12,7 @@ AS
 		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
 		- 20171005@Johnson: Change request-Only notify once time for each level [Redmine:#84141]
 		- 20180530@Johnson: enhance performance [Redmine: #95678]
+		- 20200421@Elodie: Increase length of BettypeIDList
 		
 	Param's Explanation:
 	
@@ -45,7 +46,7 @@ BEGIN
 							, TotalWinAmount MONEY
 							, WinlostDate SMALLDATETIME
 							, IsPrivateSetting BIT
-							, BettypeIDList VARCHAR(500))
+							, BettypeIDList VARCHAR(1024))
 	
 	
 	CREATE TABLE #CustReachCWLList(ID INT IDENTITY PRIMARY KEY
@@ -62,7 +63,7 @@ BEGIN
 								, IsPrivateSetting BIT
 								, MaxWinLimitSetting XML
 								, TotalWinAmt_RM MONEY
-								, BettypeIDList VARCHAR(500)
+								, BettypeIDList VARCHAR(1024)
 							)
 		
 	CREATE TABLE #HistoryData (ID INT IDENTITY PRIMARY KEY
@@ -81,7 +82,7 @@ BEGIN
 							, WinlostDate DATETIME
 							, MaxWinLimitSetting XML
 							, TotalWinAmt_RM MONEY
-							, BettypeIDList VARCHAR(500)
+							, BettypeIDList VARCHAR(1024)
 						 )
 						 
 	CREATE TABLE #WinLimit_ProductSettingDetail (ProductId TINYINT
