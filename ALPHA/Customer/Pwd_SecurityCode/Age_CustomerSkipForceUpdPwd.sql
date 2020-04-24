@@ -14,7 +14,8 @@ DB: DBCust/Custdb
 Original:
 
 Revisions:
-    - 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]					   
+    - 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
+	- 20200424@Eden: HotFix - Sub acc click skip then kicked out [#133141]					   
 • @ErrCode:
     = 0: Transaction recorded successfully.
     > 0: Specific Error.
@@ -48,28 +49,48 @@ BEGIN
 	
     DECLARE  @PwdExpiry DATETIME
 	
-	IF EXISTS(	SELECT  TOP 1 1
-				FROM	Customer WITH (NOLOCK) 
-				WHERE	custid = @CustID AND pwdexpiry <> CONVERT(DATETIME,'01/01/1900')  AND roleID <> 1 AND lastlogged IS NOT NULL
-			)
+	IF ISNULL(@SubAccID,0) = 0
 	BEGIN
-		SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
-	END
-	ELSE
-	BEGIN
-		 SELECT  @ErrMsg = 'Skip Failed',
-                 @ErrCode = 10001
-         RETURN
-	END
+		IF EXISTS(	SELECT  TOP 1 1
+					FROM	Customer WITH (NOLOCK) 
+					WHERE	custid = @CustID AND pwdexpiry <> CONVERT(DATETIME,'01/01/1900')  AND roleID <> 1 AND lastlogged IS NOT NULL
+				) 
+		BEGIN
+			SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
+		END
+		ELSE
+		BEGIN
+			 SELECT  @ErrMsg = 'Skip Failed',
+					 @ErrCode = 10001
+			 RETURN
+		END
 	
-	UPDATE  customer WITH (ROWLOCK, UPDLOCK)
-    SET     pwdexpiry = @PwdExpiry
-    WHERE   custid = @CustID
+		UPDATE  customer WITH (ROWLOCK, UPDLOCK)
+		SET     pwdexpiry = @PwdExpiry
+		WHERE   custid = @CustID
+	END
 
 	IF @SubAccID > 0
+	BEGIN
+		IF EXISTS ( SELECT  TOP 1 1
+					FROM CustLoginInfoSub s WITH (NOLOCK) 
+						INNER JOIN custinfo c WITH (NOLOCK) ON c.custid = s.CustID
+					WHERE s.custid = @CustID  AND s.SubAccID = @SubAccID AND s.pwdexpiry <> CONVERT(DATETIME,'01/01/1900')  AND c.roleID <> 1
+				)
+		BEGIN
+			SELECT  @pwdexpiry = DATEADD(dd, 30, GETDATE())
+		END
+		ELSE
+		BEGIN
+			 SELECT  @ErrMsg = 'Skip Failed',
+					 @ErrCode = 10001
+			 RETURN
+		END
+
 		UPDATE  CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)
 		SET		PwdExpiry			= @PwdExpiry
 		WHERE	subaccid = @subaccid and custid = @custid
+	END
 	
 	SET @endRun = getdate()
 	SET @duration  = datediff (millisecond,@startRun,@endRun)
