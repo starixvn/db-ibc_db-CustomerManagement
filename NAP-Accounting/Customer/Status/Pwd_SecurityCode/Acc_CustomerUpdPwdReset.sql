@@ -14,7 +14,7 @@ AS
 /*	Creator:[Creator]
 	Date: 2008
 	Task: Update user's password 
-	DB: DBTXN/bodb02
+	DB: DBCUST/CUSTDB
 	
 	Revisions:
 		- 20080213@PhucPham: Check permission for Account site
@@ -33,6 +33,7 @@ AS
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190611@Johnson: force change pwd for customer [Redmine:#114566]	
+		- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -65,17 +66,17 @@ BEGIN
 			@OldUserPwd VARCHAR(40),
 			@OldPwdExpiry DATETIME
 	
+	Declare @RoleID int, @LogSPData nvarchar(max)
+	select @RoleID = roleid from Customer with (NOLOCK) where custid=@CustID
+
 	IF @isForcedChangePwd = 1
-		select @pwdexpiry = dateadd(dd, -1, getdate())
+		SELECT  @pwdexpiry = CASE WHEN @roleid = 1 THEN DATEADD(dd, -1, GETDATE()) ELSE '01/01/1900' END
 	ELSE	
 		select @pwdexpiry = dateadd(dd, 30, getdate())
 
 	SELECT	@OldUserPwd = userpwd, @OldPwdExpiry = pwdexpiry
 	FROM	customer WITH (NOLOCK)
 	WHERE	custid = @CustID 
-
-	 Declare @RoleID int, @LogSPData nvarchar(max)
-	 select @RoleID = roleid from Customer with (NOLOCK) where custid=@CustID
 	 
 	UPDATE customer  with (ROWLOCK, UPDLOCK)
 				SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 

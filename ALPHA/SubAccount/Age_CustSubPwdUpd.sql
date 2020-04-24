@@ -25,6 +25,7 @@ Revisions:
 	- 20101021@Henry: Record execution time
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
+	- 20200421@Eden: Alpha - Removing force change password [Redmine:#132012]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -61,6 +62,9 @@ if @SubAllow = 0
 	END
 */
 ---------------------------
+Declare @RoleID int
+select @RoleID = roleid from Customer with (NOLOCK) where custid=@CustID
+
 SELECT	@OldUserPwd = UserPwd
 FROM	custSub WITH (NOLOCK)
 WHERE	subaccid = @subaccid and custid = @custid
@@ -71,7 +75,7 @@ where	subaccid = @subaccid and custid = @custid
 
 UPDATE CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)
 SET		OldUserPwd			= @OldUserPwd
-		,PwdExpiry			= DATEADD(dd,-1,GETDATE())--force change pwd
+		,PwdExpiry			= CASE WHEN @RoleID <> 1 THEN '01/01/1900' ELSE DATEADD(dd,-1,GETDATE()) END --force change pwd
 		,LastChangedPwdDate	= GETDATE()
 WHERE	subaccid = @subaccid and custid = @custid
 
