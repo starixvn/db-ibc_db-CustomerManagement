@@ -72,6 +72,7 @@ Revisions:
 	- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
 	- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 	- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
+	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]
 
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -407,7 +408,7 @@ Param's Explanation:
 
 			-- For VG
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VG), 1) AS DisableVirtualGames,		
-			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VG), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames,
+			CAST(CASE WHEN @IsHidden_VG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VG), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames,
 			-- For SabaClub
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SabaClub), 1) AS DisableSabaClub,		
 			CAST(CASE WHEN @IsHidden_SabaClub = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SabaClub), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaClub
