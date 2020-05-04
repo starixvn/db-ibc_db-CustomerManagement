@@ -75,7 +75,7 @@ BEGIN
 	BEGIN
 		SELECT	@CreditProblem = 1,
 				@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
-							ELSE [dbo].[f_Get_MsgNamebyMsgID](70030, @Language) END
+							ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
 		RETURN	
 	END
 	
