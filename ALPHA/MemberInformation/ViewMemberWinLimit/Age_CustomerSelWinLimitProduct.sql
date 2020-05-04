@@ -83,10 +83,10 @@ BEGIN
 	--		AND	sbhsc.BetType = p.BetType
 	--WHERE	sbhsc.IsHidden = 1
 
-	SELECT BetType, 
-		   SportType, 
-		   ProductName, 
-		   ProductID,
+	SELECT p.BetType, 
+		   p.SportType, 
+		   p.ProductName, 
+		   p.ProductID,
 		   ISNULL(d.OrderNo,0) AS OrderNo,
 		   CASE WHEN d.CasinoType = 1 THEN 53
 		        WHEN d.CasinoType = 2 THEN 41
