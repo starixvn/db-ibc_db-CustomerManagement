@@ -35,6 +35,7 @@ AS
 		- 20150612@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines to DBCUST.CustDB, use Acc_CustomerTotalAmountSel to get total amount)  
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 	Param's Explanation:  
 		• @custid: custid that need to be updated   
 		• @CreditAmt: new credit   
@@ -47,12 +48,14 @@ BEGIN
 		@Credit_AllOtherMember MONEY,
 		@Credit_Ag MONEY,
 		@MaxCredit_Ag MONEY,
-		@TotalAmt MONEY
+		@TotalAmt MONEY,
+		@isAllowNegativeCredit BIT = 0
 
 	DECLARE @ErrCode INT = 0
   
-	DECLARE @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
-	SELECT  @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid
+	DECLARE @SAgID INT, @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
+	
+	SELECT @SAgID = srecommend, @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @CustID
 
@@ -64,7 +67,18 @@ BEGIN
   
 	IF ISNULL(@OldCredit, 0) = ISNULL(@CreditAmt, 0)
 		RETURN
-
+	
+	IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @SAgID)
+	SELECT @isAllowNegativeCredit = 1
+	
+	IF @isAllowNegativeCredit = 0 AND @CreditAmt < 0
+	BEGIN
+		SELECT	@CreditProblem = 1,
+				@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+							ELSE [dbo].[f_Get_MsgNamebyMsgID](70030, @Language) END
+		RETURN	
+	END
+	
 	SELECT @Credit_AllOtherMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
 	FROM dbo.custInfo WITH (NOLOCK)  
 	WHERE recommend = @AgID AND roleid = 1 AND custid <> @CustID
