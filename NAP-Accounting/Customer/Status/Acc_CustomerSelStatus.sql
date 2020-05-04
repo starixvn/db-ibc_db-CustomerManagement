@@ -75,6 +75,7 @@ Revisions:
 	- 20200421@Elodie: Add GTCasino Product [Redmine: #130689]
 	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
+	- 20200504@Eden: ION Live casino [Redmine: #132323]
 
 
 Param's Explanation:
@@ -202,6 +203,7 @@ Param's Explanation:
 		,	@bitmapOrder_VG				INT
 		,	@bitmapOrder_SabaClub		INT
 		,	@bitmapOrder_SAGaming		INT 
+		,	@bitmapOrder_ION		INT 
 		,	@bitmapOrder_SexyGaming		INT 
 		,	@bitmapOrder_BBIN			INT 
 		,	@bitmapOrder_TableGames		INT 
@@ -222,6 +224,7 @@ Param's Explanation:
 	SET @bitmapOrder_SAGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 244 AND Bettype = 3001)
 	SET @bitmapOrder_SexyGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 243 AND Bettype = 3101)
 	SET @bitmapOrder_GTCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 242 AND Bettype = 3201)
+	SET @bitmapOrder_ION = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 225 AND Bettype = 5601)
 	SET @bitmapOrder_BBIN = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 241 AND Bettype = 3300)
 	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
@@ -237,6 +240,7 @@ Param's Explanation:
 		,	@IsHidden_VG			INT = 1
 		,	@IsHidden_SabaClub		INT = 1
 		,	@IsHidden_SAGaming		INT = 1
+		,	@IsHidden_ION		INT = 1
 		,	@IsHidden_SexyGaming	INT = 1
 		,	@IsHidden_BBIN			INT = 1
 		,	@IsHidden_TableGames	INT = 1
@@ -258,12 +262,13 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 244, @IsHide = @IsHidden_SAGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 243, @IsHide = @IsHidden_SexyGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 242, @IsHide = @IsHidden_GTCasino OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 225, @IsHide = @IsHidden_ION OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 222, @IsHide = @IsHidden_TableGames OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 224, @IsHide = @IsHidden_RNGWar OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 241, @IsHide = @IsHidden_BBIN OUTPUT
 	
+	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN + ION)
 
-	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN)
 	DECLARE	@DisableAllbet			BIT,
 			@HideAllbet         	BIT,
 			@SyncedAllbet       	BIT,
@@ -276,6 +281,9 @@ Param's Explanation:
 			@DisableGTCasino		BIT,
 			@HideGTCasino     		BIT,
 			@SyncedGTCasino			BIT = 1, --always sync
+			@DisableION	BIT,
+			@HideION    	BIT,
+			@SyncedION 	BIT = 1, --always sync
 			@DisableBBIN			BIT,
 			@HideBBIN				BIT,
 			@SyncedBBIN				BIT = 1 --always sync
@@ -304,6 +312,9 @@ Param's Explanation:
 	-- For GTCasino
 		@DisableGTCasino = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_GTCasino), 1),	
 		@HideGTCasino  = CAST(CASE WHEN @IsHidden_GTCasino = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_GTCasino), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For ION
+		@DisableION = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_ION), 1),	
+		@HideION  = CAST(CASE WHEN @IsHidden_ION = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_ION), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BBIN
 		@DisableBBIN = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BBIN), 1),	
 		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BBIN), 1) = 0 THEN 0 ELSE 1 END AS BIT),
@@ -373,10 +384,11 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Esports),1) AS DisableEsports,
 			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Esports),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
-			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming)
-			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
-			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
-			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
+			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
+			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
+			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
+			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 OR @HideION = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
+			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
 			-- For Allbet
 			@DisableAllbet AS DisableAllbet,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,
@@ -390,10 +402,14 @@ Param's Explanation:
 			@DisableSexyGaming AS DisableSexyGaming,
 			@HideSexyGaming AS HideSexyGaming,
 			@SyncedSexyGaming AS SyncedSexyGaming,
-			--For Sexy Gaming
+			--For GT Casino
 			@DisableGTCasino AS DisableGTCasino,
 			@HideGTCasino AS HideGTCasino,
 			@SyncedGTCasino AS SyncedGTCasino,
+			--For ION
+			@DisableION AS DisableION,
+			@HideION AS HideION,
+			@SyncedION AS SyncedION,
 			--For BBIN
 			@DisableBBIN AS DisableBBIN,
 			@HideBBIN AS HideBBIN,
