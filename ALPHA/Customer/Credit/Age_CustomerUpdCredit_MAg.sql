@@ -29,7 +29,7 @@ AS
 		- 20150228@Kiwi: Fix for Member's given credit is greater than that of upline [Redmine:31476]
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
-		
+		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -41,13 +41,14 @@ BEGIN
 	DECLARE
 		@Credit_AllMember MONEY, 
 		@Credit_AllOtherAgent MONEY, 
-		@Credit_MAg MONEY
+		@Credit_MAg MONEY,
+		@isAllowNegativeCredit BIT = 0
 	
 	DECLARE @ErrCode INT = 0
 	
-	DECLARE @MAgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
+	DECLARE @SAgID INT, @MAgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
 	
-	SELECT  @MAgID = mrecommend, @username = username, @OldCredit = Credit, @RoleID = roleid
+	SELECT @SAgID = srecommend, @MAgID = mrecommend, @username = username, @OldCredit = Credit, @RoleID = roleid
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @CustID
 
@@ -59,7 +60,18 @@ BEGIN
 
 	IF ISNULL(@OldCredit, 0) = ISNULL(@CreditAmt, 0)
 		RETURN
-
+	
+	IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @SAgID)
+	SELECT @isAllowNegativeCredit = 1
+	
+	IF @isAllowNegativeCredit = 0 AND @CreditAmt < 0
+	BEGIN
+		SELECT	@CreditProblem = 1,
+				@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+							ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
+		RETURN	
+	END
+	
 	-- Prevent user from decreasing given credit due to processing data
 	IF ISNULL(@OldCredit, 0) > ISNULL(@CreditAmt, 0)
 	BEGIN

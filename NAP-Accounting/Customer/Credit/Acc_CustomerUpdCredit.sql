@@ -38,6 +38,7 @@ AS
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20200311@Elodie: Suspicious account [Redmine:#129119]
+		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 */
 
 BEGIN
@@ -53,7 +54,8 @@ BEGIN
 			@AgentCredit MONEY,
 			@TotalAmt MONEY,
 			@Credit_AllOtherMember MONEY,
-			@matchlimit SMALLMONEY
+			@matchlimit SMALLMONEY,
+			@isAllowNegativeCredit BIT = 0
 
 	SELECT	@username = username,
 			@roleid = roleid,
@@ -135,7 +137,18 @@ BEGIN
 		END
 
 		EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT
-
+		
+		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
+		SELECT @isAllowNegativeCredit = 1
+		
+		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+		BEGIN
+			SELECT	@ErrCode = 100,
+					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
+			RETURN	
+		END
+		
 		-- Prevent user from decreasing given credit due to processing data
 		IF ISNULL(@OldCredit, 0) > ISNULL(@NewCredit, 0)
 		BEGIN
@@ -213,7 +226,18 @@ BEGIN
 				RETURN
 			END 	
 		END
-
+		
+		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
+		SELECT @isAllowNegativeCredit = 1
+		
+		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+		BEGIN
+			SELECT	@ErrCode = 121,
+					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
+			RETURN	
+		END
+		
 		SELECT @Credit_AllOtherAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE mrecommend = @mrecommend AND roleid = 2 and CustID <> @CustID
@@ -242,7 +266,18 @@ BEGIN
 	ELSE IF @roleid = 3
 	BEGIN
 		SELECT @uplineId = @srecommend
-
+		
+		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
+		SELECT @isAllowNegativeCredit = 1
+		
+		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+		BEGIN
+			SELECT	@ErrCode = 121,
+					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
+			RETURN	
+		END
+		
 		SELECT @Credit_AllOtherMaster = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @srecommend AND RoleID = 3 AND CustID <> @CustID
@@ -291,7 +326,18 @@ BEGIN
 	ELSE IF @roleid = 4
 	BEGIN
 		SELECT @uplineId = @srecommend -- this super
-
+		
+		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
+		SELECT @isAllowNegativeCredit = 1
+		
+		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+		BEGIN
+			SELECT	@ErrCode = 400,
+					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
+			RETURN	
+		END
+		
 		SELECT @Credit_AllMaster = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 3
