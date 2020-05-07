@@ -75,6 +75,7 @@ Revisions:
 	- 20200421@Elodie: Add GTCasino Product [Redmine: #130689]
 	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]
 
+
 Param's Explanation:
 � @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
