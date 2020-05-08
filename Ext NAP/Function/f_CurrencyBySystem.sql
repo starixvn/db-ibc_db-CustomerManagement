@@ -40,6 +40,7 @@ Revisions:
 	- 20180901@Elodie: Add ACCTEST - [Redmine: #100925]
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
 	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
+	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -111,7 +112,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 70 --MKK
 	END
-	ELSE IF (@System IN('INDO56','INDOWIN','INDO56B'))
+	ELSE IF (@System IN('INDO56','INDOWIN','INDO56B','IBCIndo'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 22 --IND
