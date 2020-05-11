@@ -57,11 +57,10 @@ BEGIN
 	BEGIN
 		SELECT DISTINCT LTRIM(RTRIM(val)) AS val INTO #PlayerIDs FROM dbo.f_StringSplit(@PlayerIDs,',') OPTION(MAXRECURSION 0)
 		
-		SELECT VendorID, PlayerID3rd, Custid
+		SELECT DISTINCT c.VendorID, c.PlayerID3rd, c.Custid
 		INTO #Player3rd
-		FROM dbo.CustUserMapping3rd WITH (NOLOCK)
-		WHERE PlayerID3rd IN (SELECT val FROM #PlayerIDs)
-			AND VendorID = @ProductID
+		FROM dbo.CustUserMapping3rd c WITH (NOLOCK)
+		JOIN (SELECT val FROM #PlayerIDs) p ON c.PlayerID3rd LIKE '%' + p.val+'%' AND c.VendorID = @ProductID
 		
 		SELECT	c.custid AS MemberId, 
 				c.username AS MemberName, 
