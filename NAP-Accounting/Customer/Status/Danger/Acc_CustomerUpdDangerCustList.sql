@@ -18,6 +18,7 @@ Original:
 Revisions:	
 	- 20171124@Winnie: Update Danger, Danger2, Danger3 fields , and write log content [RedmineID:#86627]
 	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
+	- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 Param's Explanation:
 	@CustList: List usernames of members will be updated,
 	@DangerType:  type of danger,
@@ -99,7 +100,18 @@ BEGIN
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
 		SELECT @ErrCode=100
-		SELECT @ErrMsg='Invalid Usernames'
+		SELECT @ErrMsg='This Username does not exist.'
+	END
+		--Do not allow deposit accounts to update Super and Master danger level
+	IF EXISTS (SELECT 1
+				FROM Customer C WITH (NOLOCK)
+				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
+				INNER JOIN @tmpCust T ON T.CustID = C.custid 
+				WHERE S.isLicensee = 1 AND T.RoleID IN (3,4))
+	BEGIN
+		SELECT	@ErrMsg = 'You can not update dangerous level for Super/ Master accounts.',
+				@ErrCode = 103
+		RETURN
 	END
 
 	/* region2: update for member level and Call execrept sp to update SMA folow business*/
@@ -199,12 +211,12 @@ BEGIN
 		-- select out put table for error cases 
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
-		SELECT 	STUFF((
+		SELECT 'Username '+	STUFF((
 				SELECT ',' + UserName  
 				FROM @tmpCust 
 				WHERE CustID IS NULL
 				FOR XML PATH('')
-			), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
+			), 1,1,'') AS ListUsername,' do(es) not exist.' AS ErrorMsg
 	END
 	
 END

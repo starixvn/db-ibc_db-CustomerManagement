@@ -40,6 +40,8 @@ AS
 		- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
 		- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
 		- 20200218@Elodie: Prevent update level 41 -> 50 on NAP site [Redmine:#128250]
+		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
+
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -79,7 +81,7 @@ BEGIN
 	
 	IF @roleid NOT IN (1,2,3,4)
 	BEGIN	
-		Select @ErrMsg = 'Invalid user!!',
+		Select @ErrMsg = 'This Username does not exist.',
 			@ErrCode = 101	
 		return	
 	END
@@ -90,7 +92,18 @@ BEGIN
 				@ErrCode = 102
 		RETURN	
 	END
-
+	--Do not allow deposit accounts to update Super and Master danger level
+	IF EXISTS (SELECT 1
+				FROM Customer C WITH (NOLOCK)
+				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
+				WHERE S.isLicensee = 1 AND C.custid = @CustID) 
+		AND @roleid IN (3,4)
+	BEGIN
+		SELECT	@ErrMsg = 'You can not update dangerous level for Super/ Master accounts.',
+				@ErrCode = 103
+		RETURN
+	END
+	
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
