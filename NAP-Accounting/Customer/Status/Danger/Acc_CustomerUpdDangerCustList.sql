@@ -100,7 +100,12 @@ BEGIN
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
 		SELECT @ErrCode=100
-		SELECT @ErrMsg='This Username does not exist.'
+		SELECT @ErrMsg= 'Username '+	STUFF((
+				SELECT ',' + UserName  
+				FROM @tmpCust 
+				WHERE CustID IS NULL
+				FOR XML PATH('')
+			), 1,1,'')+' do(es) not exist.' 
 	END
 		--Do not allow deposit accounts to update Super and Master danger level
 	IF EXISTS (SELECT 1
@@ -109,10 +114,25 @@ BEGIN
 				INNER JOIN @tmpCust T ON T.CustID = C.custid 
 				WHERE S.isLicensee = 1 AND T.RoleID IN (3,4))
 	BEGIN
-		SELECT	@ErrMsg = 'You can not update dangerous level for Super/ Master accounts.',
-				@ErrCode = 103
+		SELECT @ErrCode=101
+		SELECT  @ErrMsg= 'You can not update dangerous level for Super accounts '+	STUFF((
+				SELECT ',' + T.UserName  
+				FROM @tmpCust T
+				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
+				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
+				WHERE .isLicensee = 1 AND T.RoleID = 4
+				FOR XML PATH('')
+			), 1,1,'') + 'Master accounts ' +	STUFF((
+				SELECT ',' + T.UserName  
+				FROM @tmpCust T
+				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
+				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
+				WHERE .isLicensee = 1 AND T.RoleID = 3
+				FOR XML PATH('')
+			), 1,1,'')  
 		RETURN
 	END
+
 
 	/* region2: update for member level and Call execrept sp to update SMA folow business*/
 	-- update for member level
@@ -207,16 +227,6 @@ BEGIN
 				END CATCH
 		
 		END	
-	END
-		-- select out put table for error cases 
-	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
-	BEGIN
-		SELECT 'Username '+	STUFF((
-				SELECT ',' + UserName  
-				FROM @tmpCust 
-				WHERE CustID IS NULL
-				FOR XML PATH('')
-			), 1,1,'') AS ListUsername,' do(es) not exist.' AS ErrorMsg
 	END
 	
 END
