@@ -1,7 +1,7 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
-	@CustID int,
+	@Username VARCHAR(30), --Username provided by user
 	@UpdateDownline bit = 0,
 	@DangerType tinyint,
 	@DangerLevel int=0,
@@ -52,9 +52,21 @@ BEGIN
 	SET NOCOUNT ON
 	declare @startRun datetime
 	declare @endRun datetime
-	declare @duration int, @roleid int
+	declare @duration int, @roleid int, @custid INT
 	set @startRun = getdate()
+	
+	--Get CustID FROM DB06, WHERE got index on Username AND Username2 
+    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
 
+	SELECT @ErrCode = 0, @ErrMsg = ''
+	
+	IF @custid is NULL
+    BEGIN
+		SELECT @ErrMsg = 'This Username does not exist.'
+		SELECT @ErrCode = 100
+
+		RETURN
+	END
 	--Check permission for account site: @phuc20080213
 	IF @system = 'NAP'
 	BEGIN
@@ -71,7 +83,6 @@ BEGIN
 			RETURN		
 	END
 	--end
-
 	--Check disable user
 	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	if @ErrCode <>0 return

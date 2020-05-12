@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangerCustList]
-	@CustList			VARCHAR(MAX) = '',	
+	@UsernameList			VARCHAR(MAX) = '',	--List of provided usernames
 	@DangerType			TINYINT,
 	@DangerLevel		INT,
 	@UserName			NVARCHAR(50),
@@ -20,7 +20,7 @@ Revisions:
 	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
 	- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 Param's Explanation:
-	@CustList: List usernames of members will be updated,
+	@UsernameList: List usernames of members will be updated,
 	@DangerType:  type of danger,
 		1: Soccer Live
 		2: Soccer Non-Live
@@ -60,7 +60,7 @@ BEGIN
 	--Get list Username
 	INSERT INTO @tmpCust(UserName)
 	SELECT ss.val	
-	FROM dbo.strSplit(@CustList, ',') AS ss	
+	FROM dbo.strSplit(@UsernameList, ',') AS ss	
 	
 	-- get custid, roleid and danger
 
@@ -94,10 +94,8 @@ BEGIN
 			
 		SET @DangerTypeText='OtherSports'
 	END
-
-	-- select @ErrorCode=100: Invalid usernames
-
-	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
+		-- select @ErrorCode=100: Invalid usernames: do not exists on system
+	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID is NULL)
 	BEGIN
 		SELECT @ErrCode=100
 		SELECT @ErrMsg= 'Username '+	STUFF((
@@ -106,8 +104,9 @@ BEGIN
 				WHERE CustID IS NULL
 				FOR XML PATH('')
 			), 1,1,'')+' do(es) not exist.' 
+		RETURN
 	END
-		--Do not allow deposit accounts to update Super and Master danger level
+	--Do not allow deposit accounts to update Super and Master danger level
 	IF EXISTS (SELECT 1
 				FROM Customer C WITH (NOLOCK)
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
@@ -120,20 +119,18 @@ BEGIN
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE .isLicensee = 1 AND T.RoleID = 4
+				WHERE S.isLicensee = 1 AND T.RoleID = 4
 				FOR XML PATH('')
-			), 1,1,'') + 'Master accounts ' +	STUFF((
+			), 1,1,'') + ', Master accounts ' +	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE .isLicensee = 1 AND T.RoleID = 3
+				WHERE S.isLicensee = 1 AND T.RoleID = 3
 				FOR XML PATH('')
 			), 1,1,'')  
 		RETURN
 	END
-
-
 	/* region2: update for member level and Call execrept sp to update SMA folow business*/
 	-- update for member level
 	IF @DangerType = 1 

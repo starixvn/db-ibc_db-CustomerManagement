@@ -1,7 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelDangerCust]
 	@username VARCHAR(30),
-	@CheckCustId TINYINT = 0,
 	@UserId INT = 0,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(500) = '' OUTPUT
@@ -23,11 +22,9 @@ Param's Explanation:
 BEGIN
     SET NOCOUNT ON
 	DECLARE @custid INT
-          , @uplineid INT		  
-          , @roleid TINYINT
 
-	--Get CustID FROM DB06, WHERE got index on Username AND Username2 or CustID
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
+	--Get CustID FROM DB06, WHERE got index on Username AND Username2 
+    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
 
 	SELECT @ErrCode = 0, @ErrMsg = ''
 	
