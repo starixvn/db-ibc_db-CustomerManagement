@@ -103,8 +103,8 @@ Revisions:
 	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
 	- 20200310@Percy: Return IsShowAllDayBalTransfer [RedmineID: #130091]
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
+	- 20200513@Tiara: Remove Danger result from left panel [Redmine: #129306]
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
-
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -634,9 +634,6 @@ BEGIN
 	    --virtual rate status
 	    ci.virtualmultiplier as EnableVirtualrate,
 	    important,
-	    ci.danger,
-	    ci.danger2,
-	    ci.danger3,
 	    ci.Abnormal,
 	    ci.closed, 
 		ci.reject as suspended,
