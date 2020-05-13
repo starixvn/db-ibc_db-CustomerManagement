@@ -26,7 +26,7 @@ AS
 
 	Revisions:
 		- 20200330@Johnson: initial sp [redmine:#130647]
-		
+		- 20200513@Johnson: check super's prefix for 789's group [redmine:#]
 	Parameter's Explaination:
 	
 */
@@ -40,8 +40,10 @@ BEGIN
 			,@CreditRM MONEY
 			,@NotificationInfo VARCHAR(MAX)
 			,@CreateDate DATETIME	
-			,@IsExists BIT
-			
+			,@IsExists BIT					
+			,@GroupName VARCHAR(50)
+	
+	SELECT @startRun = GETDATE()		
 	SET @CreateDate = GETDATE()		
 		 
 	EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
@@ -93,9 +95,34 @@ BEGIN
 						@ErrCode = 203
 		RETURN		
 	END		 
-		
-	SELECT @startRun = getdate()
 	
+	SELECT @GroupName = GroupName
+	FROM Acc_CustGroup WITH(NOLOCK)
+	WHERE custid = @ExistingCustid 
+		AND GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
+	
+	--check perfix for new super
+	IF ISNULL(@GroupName ,'') <> ''
+	BEGIN
+		IF NOT EXISTS(SELECT 1 FROM Acc_SuperPefix WITH(NOLOCK)
+			WHERE GroupName = @GroupName
+				AND Prefix = LEFT(@Existingusername,2)
+				AND AllowNewSuper = 1
+			)
+		BEGIN
+			SELECT @ErrMsg =  'This account does not follow the prefix of the market, please choose another.',
+				@ErrCode = 204
+			RETURN		
+		END	
+		
+		IF LEFT(@username,2) <> LEFT(@Existingusername,2)
+		BEGIN
+			SELECT @ErrMsg =  'The new account''s username prefix must follow the original account''s.',
+				@ErrCode = 205
+			RETURN	
+		END
+	END
+		
 	BEGIN TRY
 		--INSERT GENERAL INFORMATION OF CUSTOMER
 		INSERT INTO dbo.customer
