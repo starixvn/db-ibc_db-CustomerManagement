@@ -617,7 +617,7 @@ BEGIN
 
 	IF @roleid = 1
 	BEGIN
-		SELECT @SabaClubPlayerID3rd =  REPLACE(PlayerID3rd,@membersite+'$','')  FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
+		SELECT @SabaClubPlayerID3rd =  PlayerID3rd  FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
 	END
 
     SELECT c.custid, c.username, c.firstname, c.lastname, 
