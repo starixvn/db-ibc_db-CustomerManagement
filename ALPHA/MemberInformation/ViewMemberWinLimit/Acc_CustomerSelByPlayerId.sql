@@ -24,6 +24,6 @@ BEGIN
 	SELECT @CustId = cm.Custid
 	FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
 		INNER JOIN DBACC.bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
-	WHERE p.ProductID = @ProductID AND cm.PlayerID3rd = @PrefixPlayerID3rd + @PlayerId
+	WHERE p.ProductID = @ProductID AND cm.PlayerID3rd LIKE @PrefixPlayerID3rd + '%' + @PlayerId + '%'
 END
 GO
