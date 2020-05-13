@@ -46,7 +46,7 @@ BEGIN
 	END	
 	
 	INSERT INTO Acc_SuperPefix(GroupName,Prefix,AllowNewSuper)
-	SELECT @GroupName,@Prefix,@AllowNewSuper
+	SELECT @GroupName,@Prefix,1
 	
 	-- Write log data
 	DECLARE @LogData NVARCHAR(1000)
