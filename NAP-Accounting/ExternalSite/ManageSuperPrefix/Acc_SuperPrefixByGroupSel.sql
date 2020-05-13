@@ -21,5 +21,5 @@ BEGIN
 	WHERE GroupName = ISNULL(@GroupName,GroupName)
 		AND Prefix = ISNULL(@Prefix,Prefix)
 		AND AllowNewSuper = ISNULL(@AllowNewSuper,AllowNewSuper)
-	
+	ORDER BY GroupName, Prefix ASC
 END	
