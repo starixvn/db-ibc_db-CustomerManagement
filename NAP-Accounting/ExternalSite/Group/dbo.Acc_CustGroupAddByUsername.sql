@@ -94,7 +94,7 @@ BEGIN
 	IF @GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
 		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
 						WHERE GroupName = @GroupName
-							AND LEFT(@username,2) = @Prefix
+							AND Prefix = LEFT(@username,2)
 							AND AllowNewSuper = 1
 				)
 	BEGIN
