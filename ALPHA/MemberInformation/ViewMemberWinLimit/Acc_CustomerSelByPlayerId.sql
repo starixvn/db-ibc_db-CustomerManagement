@@ -2,7 +2,6 @@
 ALTER PROCEDURE	dbo.Acc_CustomerSelByPlayerId
 					@PlayerId		VARCHAR(20)	
 				,	@ProductId		TINYINT	
-				,	@CustId			INT OUTPUT
 AS
 /*
 	Create:	20180815@Elodie
@@ -18,7 +17,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT @CustId = cm.Custid
+	SELECT cm.Custid
 	FROM dbo.CustUserMapping3rd cm WITH (NOLOCK)
 		INNER JOIN DBACC.bodb02.dbo.Products p WITH (NOLOCK) ON p.VendorID = cm.VendorID
 	WHERE p.ProductID = @ProductID AND cm.PlayerID3rd LIKE '%' + @PlayerId + '%'
