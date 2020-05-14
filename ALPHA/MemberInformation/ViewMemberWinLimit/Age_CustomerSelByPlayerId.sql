@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-ALTER PROCEDURE	dbo.Acc_CustomerSelByPlayerId
+ALTER PROCEDURE	dbo.Age_CustomerSelByPlayerId
 					@PlayerId		VARCHAR(20)	
 				,	@ProductId		TINYINT	
 				,	@CustId			INT
@@ -15,7 +15,7 @@ AS
 		- 20180815@Elodie: Get CustID by PlayerId [Redmine: 97675]
 		- 20200511@Elodie: Change format of PlayerID [Redmine: #133755]
 	Param's Explanation:
-	Example: EXEC Acc_CustomerSelByPlayerId @PlayerId = '12356', @ProductId = 42
+	Example: EXEC Age_CustomerSelByPlayerId @PlayerId = '12356', @ProductId = 42
 */
 BEGIN
 	SET NOCOUNT ON
