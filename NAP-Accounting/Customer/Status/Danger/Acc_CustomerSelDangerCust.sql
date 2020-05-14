@@ -35,8 +35,17 @@ BEGIN
 
 		RETURN
 	END
+	    --General info
+    DECLARE @isBA BIT
+    IF EXISTS (
+			     SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
+			     WHERE custid=@custid AND status='running'
+			    )
+	    SET @isBA=1
+    ELSE
+	    SET @isBA=0
 
-	SELECT CI.danger, CI.danger2, CI.danger3, CI.dangercust, CI.DangerLevel
+	SELECT CI.danger, CI.danger2, CI.danger3, CI.dangercust, CI.DangerLevel, @isBA AS IsBA
 	FROM CUSTINFO CI WITH (NOLOCK)
 	WHERE CI.custid = @custid
 END
