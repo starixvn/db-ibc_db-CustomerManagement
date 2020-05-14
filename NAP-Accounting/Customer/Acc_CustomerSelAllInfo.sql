@@ -103,7 +103,7 @@ Revisions:
 	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
 	- 20200310@Percy: Return IsShowAllDayBalTransfer [RedmineID: #130091]
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
-	- 20200513@Tiara: Remove Danger result from left panel [Redmine: #129306]
+	- 20200513@Tiara: Remove Danger, isBA result from left panel [Redmine: #129306]
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
 Param's Explanation:
 	@username: username want to get all info related
@@ -564,15 +564,6 @@ BEGIN
          WHERE custid = @custid
     END
 
-    --General info
-    DECLARE @isBA BIT
-    IF EXISTS (
-			     SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
-			     WHERE custid=@custid AND status='running'
-			    )
-	    SET @isBA=1
-    ELSE
-	    SET @isBA=0
 
 	DECLARE @credit MONEY	
 	DECLARE @CustGroupHeadlineID INT, @mrecommend INT, @recommend INT
@@ -663,7 +654,6 @@ BEGIN
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
-	    @isBA IsBA,
 	    @IsDeposit IsDeposit, 
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
 	    c.site,
