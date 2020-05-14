@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Age_CustomerInsMember_Ag_CreditSel]
+ALTER PROCEDURE [dbo].[Age_CustomerInsMember_Ag_CreditStatusSel]
 	@RefCust NVARCHAR(50)
 /*
 Created: 20200309@Eden
@@ -17,10 +17,15 @@ BEGIN
 			,@AgentCredit MONEY
 			,@Credit_AllOtherMember MONEY = 0
 			,@MaxCredit_Mem MONEY
+			,@Status VARCHAR(10)
 
 	SELECT @RefCredit = Credit, 
-		   @AgentID = recommend
-	FROM custinfo WITH(NOLOCK)
+		   @AgentID = recommend,
+		   @Status = CASE	WHEN ci.Closed = 1 OR Enabled = 0 THEN 'Closed'
+							WHEN ISNULL(ci.reject, 0) = 1 THEN 'Suspended'
+							ELSE 'Open'
+						END
+	FROM custinfo ci WITH(NOLOCK)
 	WHERE username = @RefCust
 
 	SELECT @AgentCredit = Credit
@@ -33,6 +38,7 @@ BEGIN
 
 	SELECT @RefCredit AS RefCredit,
 		   @MaxCredit_Mem AS MaxCredit_Mem,
-		   0 AS MinCredit_Mem
+		   0 AS MinCredit_Mem,
+		   @Status AS [Status]
 END
 GO
