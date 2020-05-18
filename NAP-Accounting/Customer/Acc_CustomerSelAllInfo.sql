@@ -137,7 +137,7 @@ BEGIN
 		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
 		  , @srecommend INT
-		  , @SabaClubPlayerID3rd VARCHAR(20) ='-'
+		  , @SabaClubPlayerID3rd VARCHAR(50) ='-'
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,

@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE	dbo.Age_CustomerSelByPlayerId
-					@PlayerId		VARCHAR(20)	
+					@PlayerId		VARCHAR(50)	
 				,	@ProductId		TINYINT	
 				,	@CustId			INT
 				,	@mrecommend		INT				= 0
