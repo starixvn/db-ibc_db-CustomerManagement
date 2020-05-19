@@ -45,7 +45,7 @@ BEGIN
 		RETURN
 	END	
 	
-	INSERT INTO Acc_SuperPefix(GroupName,Prefix,AllowNewSuper)
+	INSERT INTO Acc_SuperPrefix(GroupName,Prefix,AllowNewSuper)
 	SELECT @GroupName,@Prefix,1
 	
 	-- Write log data

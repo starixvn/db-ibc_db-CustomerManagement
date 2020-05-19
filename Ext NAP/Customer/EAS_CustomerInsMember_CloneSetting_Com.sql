@@ -104,7 +104,7 @@ BEGIN
 	--check perfix for new super
 	IF ISNULL(@GroupName ,'') <> ''
 	BEGIN
-		IF NOT EXISTS(SELECT 1 FROM Acc_SuperPefix WITH(NOLOCK)
+		IF NOT EXISTS(SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
 			WHERE GroupName = @GroupName
 				AND Prefix = LEFT(@Existingusername,2)
 				AND AllowNewSuper = 1

@@ -44,7 +44,7 @@ BEGIN
 	END
 	
 	IF @roleid = 4 AND @GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
-		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPefix WITH(NOLOCK)
+		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
 						WHERE GroupName = @GroupName
 							AND Prefix = LEFT(@username,2)
 							AND AllowNewSuper = 1
