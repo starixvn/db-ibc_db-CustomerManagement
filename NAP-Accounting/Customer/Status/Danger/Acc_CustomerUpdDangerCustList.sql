@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangerCustList]
-	@UsernameList			VARCHAR(MAX) = '',	--List of provided usernames
+	@CustList			VARCHAR(MAX) = '',	
 	@DangerType			TINYINT,
 	@DangerLevel		INT,
 	@UserName			NVARCHAR(50),
@@ -18,9 +18,8 @@ Original:
 Revisions:	
 	- 20171124@Winnie: Update Danger, Danger2, Danger3 fields , and write log content [RedmineID:#86627]
 	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
-	- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 Param's Explanation:
-	@UsernameList: List usernames of members will be updated,
+	@CustList: List usernames of members will be updated,
 	@DangerType:  type of danger,
 		1: Soccer Live
 		2: Soccer Non-Live
@@ -60,7 +59,7 @@ BEGIN
 	--Get list Username
 	INSERT INTO @tmpCust(UserName)
 	SELECT ss.val	
-	FROM dbo.strSplit(@UsernameList, ',') AS ss	
+	FROM dbo.strSplit(@CustList, ',') AS ss	
 	
 	-- get custid, roleid and danger
 
@@ -94,43 +93,15 @@ BEGIN
 			
 		SET @DangerTypeText='OtherSports'
 	END
-		-- select @ErrorCode=100: Invalid usernames: do not exists on system
-	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID is NULL)
+
+	-- select @ErrorCode=100: Invalid usernames
+
+	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
 	BEGIN
 		SELECT @ErrCode=100
-		SELECT @ErrMsg= 'Username '+	STUFF((
-				SELECT ',' + UserName  
-				FROM @tmpCust 
-				WHERE CustID IS NULL
-				FOR XML PATH('')
-			), 1,1,'')+' do(es) not exist.' 
-		RETURN
+		SELECT @ErrMsg='Invalid Usernames'
 	END
-	--Do not allow deposit accounts to update Super and Master danger level
-	IF EXISTS (SELECT 1
-				FROM Customer C WITH (NOLOCK)
-				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				INNER JOIN @tmpCust T ON T.CustID = C.custid 
-				WHERE S.isLicensee = 1 AND T.RoleID IN (3,4))
-	BEGIN
-		SELECT @ErrCode=101
-		SELECT  @ErrMsg= 'You can not update dangerous level for Super accounts '+	STUFF((
-				SELECT ',' + T.UserName  
-				FROM @tmpCust T
-				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
-				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE S.isLicensee = 1 AND T.RoleID = 4
-				FOR XML PATH('')
-			), 1,1,'') + ', Master accounts ' +	STUFF((
-				SELECT ',' + T.UserName  
-				FROM @tmpCust T
-				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
-				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE S.isLicensee = 1 AND T.RoleID = 3
-				FOR XML PATH('')
-			), 1,1,'')  
-		RETURN
-	END
+
 	/* region2: update for member level and Call execrept sp to update SMA folow business*/
 	-- update for member level
 	IF @DangerType = 1 
@@ -224,6 +195,16 @@ BEGIN
 				END CATCH
 		
 		END	
+	END
+		-- select out put table for error cases 
+	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID IS NULL)
+	BEGIN
+		SELECT 	STUFF((
+				SELECT ',' + UserName  
+				FROM @tmpCust 
+				WHERE CustID IS NULL
+				FOR XML PATH('')
+			), 1,1,'') AS ListUsername,'Invalid Usernames' AS ErrorMsg
 	END
 	
 END
