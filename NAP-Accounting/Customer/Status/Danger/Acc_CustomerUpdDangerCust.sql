@@ -55,65 +55,18 @@ BEGIN
 	declare @duration int, @roleid int, @custid INT
 	set @startRun = getdate()
 	
-	--Get CustID FROM DB06, WHERE got index on Username AND Username2 
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+	EXECUTE dbo.Acc_CustomerCheckDangerCustList
+	@UsernameList	,		
+	@UserName	,		
+	@DangerType		,	
+	@DangerLevel	,	
+	@IP				,	
+	@system = ,
+	@ErrCode					OUTPUT,
+	@ErrMsg			OUTPUT	
 
-	SELECT @ErrCode = 0, @ErrMsg = ''
-	
-	IF @custid is NULL
-    BEGIN
-		SELECT @ErrMsg = 'This Username does not exist.'
-		SELECT @ErrCode = 100
-
-		RETURN
-	END
-	--Check permission for account site: @phuc20080213
-	IF @system = 'NAP'
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		
-		IF @ErrCode <> 0
-			RETURN
-	END
-	ELSE IF @system = 'NAP-CM'		
-	BEGIN
-		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-		
-		IF @ErrCode <> 0
-			RETURN		
-	END
-	--end
-	--Check disable user
-	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	if @ErrCode <>0 return
-	--end
-	
-	select @roleid = roleid from custinfo (nolock) where custid = @custid
-	
-	IF @roleid NOT IN (1,2,3,4)
-	BEGIN	
-		Select @ErrMsg = 'This Username does not exist.',
-			@ErrCode = 101	
-		return	
-	END
-	
-	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
-	BEGIN	
-		SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',
-				@ErrCode = 102
-		RETURN	
-	END
-	--Do not allow deposit accounts to update Super and Master danger level
-	IF EXISTS (SELECT 1
-				FROM Customer C WITH (NOLOCK)
-				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE S.isLicensee = 1 AND C.custid = @CustID) 
-		AND @roleid IN (3,4)
-	BEGIN
-		SELECT	@ErrMsg = 'You can not update dangerous level for Super/ Master accounts.',
-				@ErrCode = 103
-		RETURN
-	END
+	IF @ErrCode <> 0
+		RETURN;
 	
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
