@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerCheckDangerCustList]
 	@UsernameList			VARCHAR(MAX) = '',	--List of provided usernames
-	@User			NVARCHAR(50), --Username of viewer 
+	@UserID			INT, --Custid of viewer 
 	@DangerType			TINYINT = 0,
 	@DangerLevel		INT = 0,
 	@IP					VARCHAR(15) = '',
@@ -27,12 +27,7 @@ Param's Explanation:
 BEGIN
 
 	DECLARE @CustId		INT
-	DECLARE @UserId		INT
-	
 	SET @ErrCode=0
-
-	SELECT @UserID=CustID FROM dbo.Custinfo WITH(NOLOCK) WHERE username=@User
-
 	DECLARE @tmpCust TABLE (		
 						UserName			NVARCHAR(50)					
 					, CustID				INT
@@ -70,16 +65,6 @@ BEGIN
 			), 1,1,'')+' do(es) not exist.' 
 		RETURN
 	END
-
-	--Check permission for account site
-	IF @system = 'NAP'
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		
-		IF @ErrCode <> 0
-			RETURN
-	END
-	--end
 	--Check disable user
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE IsEnable = 0)
 	BEGIN
@@ -157,14 +142,6 @@ BEGIN
 	END
 
 	--Check Is Allow access 
-
-	DECLARE @CheckIsAllowAccess VARCHAR(MAX) = ''
-		SELECT @CheckIsAllowAccess = @CheckIsAllowAccess + 'EXEC DBCUST.CustDB.dbo.Acc_CustomerIsAllowedAccess @Custid = @UserId, @Username=' + ltrim(UserName) + ',@CheckCustId=1,@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT;'
-		FROM @tmpCust
-		EXEC(@CheckIsAllowAccess );
-		IF @ErrCode <> 0
-			RETURN
-
 	DECLARE @IsAllowAccess BIT
 	WHILE (@i < = @Count)
 	BEGIN
@@ -242,14 +219,14 @@ BEGIN
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE .isLicensee = 1 AND T.RoleID = 4
+				WHERE S.isLicensee = 1 AND T.RoleID = 4
 				FOR XML PATH('')
 			), 1,1,'') + 'Master accounts ' +	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE .isLicensee = 1 AND T.RoleID = 3
+				WHERE S.isLicensee = 1 AND T.RoleID = 3
 				FOR XML PATH('')
 			), 1,1,'')  
 		RETURN

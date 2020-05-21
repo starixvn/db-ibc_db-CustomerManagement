@@ -28,13 +28,16 @@ BEGIN
 
 	SELECT @ErrCode = 0, @ErrMsg = ''
 	
-	IF @custid is NULL
-    BEGIN
-		SELECT @ErrMsg = 'This Username does not exist.'
-		SELECT @ErrCode = 1
+	EXECUTE dbo.Acc_CustomerCheckDangerCustList
+	@UsernameList= @Username ,		
+	@UserID = @UserID	,		
+	@DangerType	= 0	,	
+	@DangerLevel =0	,
+	@ErrCode = @ErrCode	OUTPUT,
+	@ErrMsg = @ErrMsg	OUTPUT	
 
-		RETURN
-	END
+	IF @ErrCode <> 0
+		RETURN;
 	    --General info
     DECLARE @isBA BIT
     IF EXISTS (

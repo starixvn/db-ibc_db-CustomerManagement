@@ -56,14 +56,14 @@ BEGIN
 	set @startRun = getdate()
 	
 	EXECUTE dbo.Acc_CustomerCheckDangerCustList
-	@UsernameList	,		
-	@UserName	,		
-	@DangerType		,	
-	@DangerLevel	,	
-	@IP				,	
-	@system = ,
-	@ErrCode					OUTPUT,
-	@ErrMsg			OUTPUT	
+	@UsernameList= @Username ,		
+	@UserID = @UserID	,		
+	@DangerType	= @DangerType	,	
+	@DangerLevel =@DangerLevel	,	
+	@IP	=@IP			,	
+	@system = @system,
+	@ErrCode = @ErrCode	OUTPUT,
+	@ErrMsg = @ErrMsg	OUTPUT	
 
 	IF @ErrCode <> 0
 		RETURN;
