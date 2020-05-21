@@ -4,7 +4,7 @@ ALPHA\Customer\Age_CustomerSelAllStatus.sql
 ALPHA\Customer\Age_GetOfferedProductByCust.sql
 Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
 Ext NAP\Customer\EAS_CustomerSelAllInfo.sql
-
+ALPHA\MemberInformation\ViewPTList\Age_CustomerSelPositionTakingByProductID_SAg.sql
 
 
 

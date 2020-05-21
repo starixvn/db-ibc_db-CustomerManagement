@@ -103,6 +103,7 @@ Revisions:
 	- 20200305@Elodie: Hardcode list finance permission [Redmine: #129890]
 	- 20200310@Percy: Return IsShowAllDayBalTransfer [RedmineID: #130091]
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
+	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -136,7 +137,7 @@ BEGIN
 		  , @HeadlineEnabled BIT
 		  , @Site varchar(10)
 		  , @srecommend INT
-		  , @SabaClubPlayerID3rd VARCHAR(20) ='-'
+		  , @SabaClubPlayerID3rd VARCHAR(50) ='-'
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -614,9 +615,9 @@ BEGIN
 	IF EXISTS (SELECT TOP 1 1 FROM DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) WHERE cl.Custid=@uplineid AND cl.SecurityCode IS NOT NULL)
 			SELECT @UplineHasSecurityCode=1
 
-	IF @Site = '789y' OR (@membersite = '789y' AND @roleid = 1)
+	IF @roleid = 1
 	BEGIN
-		SELECT @SabaClubPlayerID3rd =  PlayerID3rd FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
+		SELECT @SabaClubPlayerID3rd =  PlayerID3rd  FROM DBCUST.CustDB.dbo.CustUserMapping3rd WITH (NOLOCK) WHERE VendorID = 42 AND Custid = @custid
 	END
 
     SELECT c.custid, c.username, c.firstname, c.lastname, 
