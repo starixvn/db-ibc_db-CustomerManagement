@@ -1,3 +1,4 @@
+/*<info serverAlias="DBTXN-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE	dbo.Age_CustomerSelWinlimitInfo
 					@CustId			INT
 				,	@BetType		SMALLINT
@@ -19,7 +20,7 @@ AS
 		- 20160219@Billy:	Add filter by username - apply for AllBet - [Redmine: #52268]
 		- 20160318@Billy:	Include tickets from [bettransLC] table - [Redmine: #54306]
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
-
+		- 20200414@Sophia: BBIN - add Transfer In/Out Amount [Redmine: #131358]
 	
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -39,6 +40,8 @@ BEGIN
 		SELECT	@username = NULL
 
 	CREATE TABLE #MemberBalance (CustId INT, Balance MONEY)
+	
+	CREATE TABLE #Transfer (CustId INT, Transfer3rd MONEY)
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
 	FROM dbo.CustInfo c WITH(NOLOCK)
@@ -49,6 +52,7 @@ BEGIN
 	CREATE TABLE #Cust_tmp (CustID INT PRIMARY KEY,rownumber INT)
 	
 	CREATE TABLE #Cust_Downline (CustID INT PRIMARY KEY,enabled BIT, closed BIT,reject BIT, username NVARCHAR(50))
+
 	
 	IF @RoleId = 4
 	BEGIN
@@ -140,32 +144,43 @@ BEGIN
 	
 	OPTION (MAXDOP 8)
 	
+	-------- Transfer 3rd In/ Out
+	INSERT INTO #Transfer (CustId, Transfer3rd)
+	SELECT  b.CustId, SUM(winlost - actual_stake) AS Transfer3rd
+	FROM #Cust_tmp c  
+	INNER LOOP JOIN bodb02.dbo.bettrans b WITH(NOLOCK) ON c.CustId = b.CustId
+	WHERE b.Bettype IN (21008, 21009)
+		  AND b.MatchID  = 0
+	GROUP BY b.CustId 
+
 	--Calc total rows
 	SELECT @TotalRows = COUNT(1)
 	FROM #Cust_Downline
 
-	CREATE TABLE #TempData(RowNumber INT, CustId INT, Balance MONEY)
-	INSERT INTO #TempData(RowNumber, CustId, Balance)
-	SELECT 	a.rownumber,a.CustId
+	CREATE TABLE #TempData(RowNumber INT, CustId INT, Balance MONEY, Transfer3rd MONEY)
+	INSERT INTO #TempData(RowNumber, CustId, Balance, Transfer3rd )
+	SELECT 	a.rownumber, a.CustId
 			, ISNULL(SUM(b.Balance),0) AS Balance
+			, ISNULL(SUM(t.Transfer3rd),0) AS Transfer3rd
 		FROM #Cust_tmp a
 			LEFT JOIN #MemberBalance b ON b.CustId = a.CustId
+			LEFT JOIN #Transfer t ON t.CustID = a.CustID
 	GROUP BY a.CustId,a.rownumber
 	
-	SELECT bc.RowNumber, bc.Balance, bc.CustId, CreditBalance, DebitBalance
+	SELECT bc.RowNumber, bc.Balance, bc.Transfer3rd, bc.CustId, CreditBalance, DebitBalance
 	FROM (
-		SELECT d.RowNumber, d.CustId, d.Balance
-			, ISNULL(SUM(bc.Balance),0)  AS CreditBalance
+		SELECT d.RowNumber, d.CustId, d.Balance, d.Transfer3rd
+			, ISNULL(SUM(bc.Balance),0) AS CreditBalance 
 		FROM #TempData d
 			LEFT JOIN bodb02.dbo.BalanceCreditGame bc WITH(NOLOCK) ON d.CustId = bc.custid AND bc.bettype = @BetType 
-		GROUP BY d.RowNumber, d.CustId, d.Balance
+		GROUP BY d.RowNumber, d.CustId, d.Balance, d.Transfer3rd
 	)bc
 	INNER JOIN (
-		SELECT d.RowNumber, d.CustId, d.Balance
+		SELECT d.RowNumber, d.CustId, d.Balance, d.Transfer3rd  
 			, ISNULL(SUM(bd.Balance),0)  AS DebitBalance
 		FROM #TempData d
 			LEFT JOIN bodb02.dbo.BalanceDebitGame bd WITH(NOLOCK) ON d.CustId = bd.custid AND bd.bettype = @BetType
-		GROUP BY d.RowNumber, d.CustId, d.Balance
+		GROUP BY d.RowNumber, d.CustId, d.Balance, d.Transfer3rd
 	)bd ON bc.CustId = bd.CustId
 	ORDER BY RowNumber
 
@@ -177,9 +192,4 @@ BEGIN
 	
 END
 
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinlimitInfo] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelWinlimitInfo] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelWinlimitInfo] TO vnteam
+GO 
