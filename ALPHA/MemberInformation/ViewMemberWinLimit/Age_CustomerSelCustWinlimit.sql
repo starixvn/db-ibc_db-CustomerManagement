@@ -34,7 +34,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT, @PrefixPlayerID3rd VARCHAR(11)
+	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT
 	SELECT @PageIndex = @PageIndex - 1
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
@@ -44,8 +44,6 @@ BEGIN
 	SELECT @RoleId = RoleId, @srecommend = srecommend
 	FROM dbo.CustInfo c WITH(NOLOCK)
 	WHERE CustId = @CustId
-
-	SELECT @PrefixPlayerID3rd = site + '$' FROM Customer WITH (NOLOCK) WHERE custid = @CustId
 
 	SELECT @VendorID = VendorID FROM DBACC.bodb02.dbo.Products WITH (NOLOCK) WHERE ProductID = @ProductID
 
@@ -110,7 +108,7 @@ BEGIN
 			,	tmp.lastname
 			,	tmp.credit
 			,	tmp.CustId
-			,	REPLACE(cm.PlayerID3rd,@PrefixPlayerID3rd,'') AS PlayerId
+			,	SUBSTRING(PlayerID3rd, PATINDEX('%$%', PlayerID3rd) + 1, (LEN(PlayerId3rd) - PATINDEX('%$%', PlayerID3rd))) AS PlayerId
 			,	tmp.IsAutoReset
 			,	tmp.MaxWinLimit
 			,	tmp.MaxLossLimit
