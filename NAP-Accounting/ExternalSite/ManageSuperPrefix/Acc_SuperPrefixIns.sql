@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE  [dbo].[Acc_SuperPefixIns]
+ALTER PROCEDURE  [dbo].[Acc_SuperPrefixIns]
 	@GroupName	VARCHAR(50),
 	@Prefix		VARCHAR(10),
 	@UserID 	INT,
@@ -41,7 +41,7 @@ BEGIN
 			)
 	BEGIN
 		SELECT @ErrCode = 101,
-			@ErrMsg= 'The prefixe is not available because it belongs to a super of another group.'
+			@ErrMsg= 'The prefix is not available because it belongs to a super of another group.'
 		RETURN
 	END	
 	

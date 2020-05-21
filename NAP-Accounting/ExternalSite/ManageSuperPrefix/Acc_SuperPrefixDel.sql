@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE  [dbo].[Acc_SuperPefixDel]
+ALTER PROCEDURE  [dbo].[Acc_SuperPrefixDel]
 	@GroupName	VARCHAR(50),
 	@Prefix		VARCHAR(10),
 	@UserID 	INT,
