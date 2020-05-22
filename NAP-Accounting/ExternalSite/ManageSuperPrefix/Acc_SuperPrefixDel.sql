@@ -48,7 +48,7 @@ BEGIN
 		
 	-- Write log data
 	DECLARE @LogData NVARCHAR(1000)
-	SET @LogData = '<Acc_SuperPefixIns GroupName="' + COALESCE(@GroupName,SPACE(1)) +'"'+
+	SET @LogData = '<Acc_SuperPrefixDel GroupName="' + COALESCE(@GroupName,SPACE(1)) +'"'+
 					' Prefix="' + COALESCE(@Prefix,SPACE(1)) + '"' +	 
 					' IP="'+ COALESCE(CAST(@IP AS VARCHAR(15)),SPACE(1))+'" />'
 	

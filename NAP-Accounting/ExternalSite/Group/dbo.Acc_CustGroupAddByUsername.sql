@@ -92,11 +92,13 @@ BEGIN
 	
 	--check super's prefix for789y's group
 	IF @GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
+		AND EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
+					WHERE GroupName = @GroupName)
 		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
 						WHERE GroupName = @GroupName
 							AND Prefix = LEFT(@username,2)
 							AND AllowNewSuper = 1
-				)
+				)				
 	BEGIN
 		SELECT @ErrMsg = 	N'This group requires the supers to follow its prefixes. Please select another super or rename the current one.'
 			, @ErrCode = 110
