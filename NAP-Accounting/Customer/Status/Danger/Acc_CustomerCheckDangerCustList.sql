@@ -39,6 +39,7 @@ BEGIN
 					, IsView				BIT
 					, IsSmartPunter			BIT
 					, IsAllowAccess			BIT
+					, RowNum				INT IDENTITY (1,1)
 					,	PRIMARY KEY CLUSTERED (UserName)
 					);
 	
@@ -46,6 +47,8 @@ BEGIN
 	INSERT INTO @tmpCust(UserName)
 	SELECT ss.val	
 	FROM dbo.strSplit(@UsernameList, ',') AS ss	
+
+
 	
 	-- get custid, roleid
 	UPDATE t
@@ -85,8 +88,9 @@ BEGIN
 	SELECT @Count =  COUNT(*) FROM @tmpCust
 	WHILE (@i < = @Count)
 	BEGIN
-		SELECT TOP (@i) @Username = UserName
+		SELECT TOP 1 @Username = UserName
 		FROM @tmpCust
+		WHERE RowNum = @i
 		
 		INSERT INTO @CheckFIPermission (IsView)
 		EXEC Acc_SelFIPermission @UserID = @UserID, @username= @Username, @CheckCustId=1
@@ -116,8 +120,9 @@ BEGIN
 	DECLARE @IsSpecialSite BIT, @IsSpecialHeadline BIT, @Site NVARCHAR(50)
 	WHILE (@i < = @Count)
 	BEGIN
-		SELECT TOP (@i) @Username = UserName
+		SELECT TOP 1 @Username = UserName
 		FROM @tmpCust
+		WHERE RowNum = @i
 		
 		EXEC Acc_CustomerIsSpecialSite  @username= @Username, @CheckCustId=1, @IsSpecialSite = @IsSpecialSite OUTPUT, @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @Site = @Site OUTPUT
 			
@@ -145,8 +150,9 @@ BEGIN
 	DECLARE @IsAllowAccess BIT
 	WHILE (@i < = @Count)
 	BEGIN
-		SELECT TOP (@i) @Username = UserName, @CustID = CustID
+		SELECT TOP 1 @Username = UserName, @CustID = CustID
 		FROM @tmpCust
+		WHERE RowNum = @i
 		
 		EXEC Acc_CustomerIsAllowedAccess @Userid = @UserId, @CustName = @username, @CustID= @CustID, @CheckCustId=1, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 			
@@ -174,8 +180,9 @@ BEGIN
 	DECLARE @IsSmartPunter BIT
 	WHILE (@i < = @Count)
 	BEGIN
-		SELECT TOP (@i) @Username = UserName, @CustId = @CustId
+		SELECT TOP 1 @Username = UserName, @CustId = @CustId
 		FROM @tmpCust
+		WHERE RowNum = @i
 		
 		EXEC Acc_CustomerSelCheckSmartPunter  @Custid = @CustId,@Username = @Username, @IsSmartPunter = @IsSmartPunter OUTPUT, @UserId = @UserId,@IsRestricted=0, @ActionID=0,@IP = @IP
 			
