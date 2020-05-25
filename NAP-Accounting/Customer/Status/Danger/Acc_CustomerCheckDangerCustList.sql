@@ -158,7 +158,7 @@ BEGIN
 		EXEC Acc_CustomerIsAllowedAccess @Userid = @UserId, @CustName = @username, @CustID= @CustID, @CheckCustId=1, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 			
 		UPDATE t
-		SET t.IsAllowAccess= CASE WHEN (@ErrCode <> 0 OR @ErrCode IS NULL) THEN 1 ELSE 0 END 
+		SET t.IsAllowAccess= CASE WHEN (@ErrCode = 0 OR @ErrCode IS NULL) THEN 1 ELSE 0 END 
 		FROM @tmpCust t 
 		WHERE T.UserName = @Username
 
