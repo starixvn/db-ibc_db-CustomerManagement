@@ -208,6 +208,23 @@ BEGIN
 		RETURN
 	END
 
+	--Check permission for account site: @phuc20080213
+	IF @system = 'NAP'
+	BEGIN
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		
+		IF @ErrCode <> 0
+			RETURN
+	END
+	ELSE IF @system = 'NAP-CM'		
+	BEGIN
+		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		
+		IF @ErrCode <> 0
+			RETURN		
+	END
+	--end
+	--Do not allow to update danger level 41->50 for danger type 1
 	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
 	BEGIN	
 		SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',

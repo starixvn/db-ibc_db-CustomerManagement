@@ -70,23 +70,7 @@ BEGIN
 	
 	--Get CustID FROM DB06, WHERE got index on Username AND Username2 
     EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
-
-		--Check permission for account site: @phuc20080213
-	IF @system = 'NAP'
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		
-		IF @ErrCode <> 0
-			RETURN
-	END
-	ELSE IF @system = 'NAP-CM'		
-	BEGIN
-		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-		
-		IF @ErrCode <> 0
-			RETURN		
-	END
-	--end
+	
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
