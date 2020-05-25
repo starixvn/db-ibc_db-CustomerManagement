@@ -116,7 +116,7 @@ BEGIN
 		RETURN
 	END
 	--Check Is special site 
-
+	Set @i = 1
 	DECLARE @IsSpecialSite BIT, @IsSpecialHeadline BIT, @Site NVARCHAR(50)
 	WHILE (@i < = @Count)
 	BEGIN
@@ -147,6 +147,7 @@ BEGIN
 	END
 
 	--Check Is Allow access 
+	Set @i = 1
 	DECLARE @IsAllowAccess BIT
 	WHILE (@i < = @Count)
 	BEGIN
@@ -177,6 +178,7 @@ BEGIN
 	END
 
 	--Check Is Smart Punter
+	Set @i = 1
 	DECLARE @IsSmartPunter BIT
 	WHILE (@i < = @Count)
 	BEGIN
