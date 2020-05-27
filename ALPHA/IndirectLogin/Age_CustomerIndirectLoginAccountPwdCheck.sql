@@ -6,7 +6,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerIndirectLoginAccountPwdCheck]
 	@SubAccIDIndirect INT = 0,
 	@UserPWD 		VARCHAR(40),
 	@UplineUsername VARCHAR(30),
-	@DownlineUsername VARCHAR(30),	
+	@DownlineUsername VARCHAR(30),
+	@RoleidIndirect TINYINT,	
 	@LoginDomain 	NVARCHAR(253) = NULL,
 	@BrowserName 	NVARCHAR(255) = NULL,
 	@Platform 		NVARCHAR(255) = NULL,  
@@ -74,14 +75,14 @@ BEGIN
 	IF @SubAccIDIndirect = 0
 	BEGIN
 		SELECT @db_userpwd = userpwd,
-			@failedcount = ISNULL(failedcount,0)
+			@failedcount = ISNULL(logincount,0)
 		FROM customer WITH(NOLOCK)
 		WHERE custid = @custidIndirect
 	END
 	ELSE 
 	BEGIN
 		SELECT @db_userpwd = userpwd,
-			@failedcount = ISNULL(failedcount,0)
+			@failedcount = ISNULL(logincount,0)			
 		FROM custSub WITH(NOLOCK)
 		WHERE SubAccID = @SubAccIDIndirect
 	END
@@ -146,7 +147,7 @@ BEGIN
 		END	
 		
 		SELECT @ServerID = CASE WHEN @RoleidIndirect= 2 THEN 90 WHEN @RoleidIndirect=3 THEN 91 ELSE 0 END -- login from web
-		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @username + ' Login Result: Failed (Password Problem)' 
+		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Failed (Password Problem)' 
 				
 		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustIDIndirect, 
@@ -179,7 +180,7 @@ BEGIN
 	-- Write log
 	SELECT @LogSPData = '<R '
 							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-							+'Account="'  + @UserName +'" ' 
+							+'Account="'  + @DownlineUsername +'" ' 
 							+'IP="'+ @IP + '" />'					
 
 	SELECT @Duration = DATEDIFF (MILLISECOND, @Begin, GETDATE())
