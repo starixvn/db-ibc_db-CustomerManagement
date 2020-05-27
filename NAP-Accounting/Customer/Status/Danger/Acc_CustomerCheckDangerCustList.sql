@@ -240,7 +240,7 @@ BEGIN
 		
 	BEGIN
 		SELECT @ErrCode=105
-		SELECT  @ErrMsg= 'You can not update dangerous level for Super accounts '+	STUFF((
+		SELECT  @ErrMsg= 'You cannot update dangerous level for Super accounts '+	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
