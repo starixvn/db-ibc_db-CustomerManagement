@@ -54,7 +54,7 @@ BEGIN
 	-- Write log
 	SELECT @LogSPData = '<R '
 						+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-						+'Account="'  + @UserName +'" ' 
+						+'Account="'  + @DownlineUsername +'" ' 
 						+'IP="'+ @IP + '" />'						
 
 	SELECT @Duration = DATEDIFF (MILLISECOND, @Begin, GETDATE())
