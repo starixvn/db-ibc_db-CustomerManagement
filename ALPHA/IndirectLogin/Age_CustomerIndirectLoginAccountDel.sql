@@ -29,7 +29,7 @@ BEGIN
 	
 	SET @Begin = GETDATE() 
 
-	IF NOT EXISTS (SELECT 1 FROM CustDirectLogin WITH(NOLOCK)
+	IF NOT EXISTS (SELECT 1 FROM CustInDirectLogin WITH(NOLOCK)
 					WHERE custid = @custid
 						AND SubAccID = @subAccID
 						AND CustIDIndirect = @CustIDIndirect
@@ -43,7 +43,7 @@ BEGIN
 		RETURN	
 	END
 
-	DELETE CustDirectLogin WITH(UPDLOCK,ROWLOCK)
+	DELETE CustInDirectLogin WITH(UPDLOCK,ROWLOCK)
 	WHERE custid = @custid
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect

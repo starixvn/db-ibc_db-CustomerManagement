@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerIndirectLoginAccountPwdCheck]
 	@SubAccID 	INT = 0,	
 	@CustIDIndirect INT,
 	@SubAccIDIndirect INT = 0,
-	@UserPWD 		VARCHAR(40),
+	@UserPWD 		VARCHAR(40)='',
+	@isSkipPWD		BIT = 1,
 	@UplineUsername VARCHAR(30),
 	@DownlineUsername VARCHAR(30),
 	@RoleidIndirect TINYINT,	
@@ -25,7 +26,8 @@ AS
 	Revisions:
 		- 20200526@Johnson: initial sp [redmine:#133846]
 	
-	Parameter's explaination:		
+	Parameter's explaination:
+		- @isSkipPWD = 1: not check pwd, just write log login
 */		
 BEGIN
 	SET NOCOUNT ON
@@ -34,11 +36,37 @@ BEGIN
 			@Duration INT,
 			@db_userpwd VARCHAR(40),
 			@failedcount INT,
-			@LogSPData VARCHAR(4000)
+			@LogSPData VARCHAR(4000),
+			@ServerID INT,
+			@LogData VARCHAR(4000)	
 	
 	SET @Begin = GETDATE() 
-
-	IF NOT EXISTS (SELECT 1 FROM CustDirectLogin WITH(NOLOCK)
+	 
+	SELECT @ServerID = CASE WHEN @RoleidIndirect= 2 THEN 90 WHEN @RoleidIndirect=3 THEN 91 ELSE 0 END -- login from web
+		
+	--just write log login
+	IF @isSkipPWD = 1
+	BEGIN
+		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Success' 
+		SET @Duration = DATEDIFF(millisecond,@Begin,GETDATE())
+	
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustIDIndirect, 
+			@RoleID = @RoleidIndirect, 
+			@SubAccID = @SubAccIDIndirect,
+			@ServerID = @ServerID,
+			@LoginIP = @IP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1336,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+		RETURN
+	END
+	
+	IF NOT EXISTS (SELECT 1 FROM CustInDirectLogin WITH(NOLOCK)
 					WHERE custid = @custid
 						AND SubAccID = @subAccID
 						AND CustIDIndirect = @CustIDIndirect
@@ -87,12 +115,9 @@ BEGIN
 		WHERE SubAccID = @SubAccIDIndirect
 	END
 	
-	--check pwd
+	--check pwd	
 	IF @userpwd <> @db_userpwd
 	BEGIN
-		DECLARE @ServerID INT,				
-				@LogData VARCHAR(4000)				
-		
 		SELECT @failedcount = @failedcount + 1
 		
 		SET @Duration = DATEDIFF(millisecond,@Begin,GETDATE())
@@ -145,8 +170,7 @@ BEGIN
 				WHERE subaccid = @SubAccIDIndirect
 			END
 		END	
-		
-		SELECT @ServerID = CASE WHEN @RoleidIndirect= 2 THEN 90 WHEN @RoleidIndirect=3 THEN 91 ELSE 0 END -- login from web
+				
 		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Failed (Password Problem)' 
 				
 		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
@@ -170,12 +194,30 @@ BEGIN
 		RETURN	
 	END
 	
-	UPDATE CustDirectLogin WITH(UPDLOCK,ROWLOCK)
+	UPDATE CustInDirectLogin WITH(UPDLOCK,ROWLOCK)
 	SET LastVerifyPwd = GETDATE()
 	WHERE custid = @custid
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect
 		AND SubAccIDIndirect = @SubAccIDIndirect
+		
+	--log login
+	SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Success' 
+	SET @Duration = DATEDIFF(millisecond,@Begin,GETDATE())
+	
+	EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+		@UserID = @CustIDIndirect, 
+		@RoleID = @RoleidIndirect, 
+		@SubAccID = @SubAccIDIndirect,
+		@ServerID = @ServerID,
+		@LoginIP = @IP,
+		@DomainName = @LoginDomain,	
+		@ActionID = 1336,
+		@Doing = @LogData,
+		@BrowserName = @BrowserName,
+		@Platform = @Platform,
+		@CountryCode = @CountryCode,
+		@Duration = @Duration
 		
 	-- Write log
 	SELECT @LogSPData = '<R '
