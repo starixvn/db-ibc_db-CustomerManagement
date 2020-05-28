@@ -112,7 +112,7 @@ BEGIN
 				FROM @tmpCust 
 				WHERE IsView = 0
 				FOR XML PATH('')
-			), 1,1,'')+' is (are) special finance account.' 
+			), 1,1,'')+' is (are) special finance account(s).' 
 		RETURN
 	END
 	--Check Is special site 
@@ -168,7 +168,7 @@ BEGIN
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE IsAllowAccess = 0)
 	BEGIN
 		SELECT @ErrCode=103
-		SELECT @ErrMsg= 'You are not allowed to update user(s) '+	STUFF((
+		SELECT @ErrMsg= 'You are not authorized to view account '+	STUFF((
 				SELECT ',' + UserName  
 				FROM @tmpCust 
 				WHERE IsAllowAccess = 0
@@ -189,7 +189,7 @@ BEGIN
 		EXEC Acc_CustomerSelCheckSmartPunter  @Custid = @CustId,@Username = @Username, @IsSmartPunter = @IsSmartPunter OUTPUT, @UserId = @UserId,@IsRestricted=0, @ActionID=0,@IP = @IP
 			
 		UPDATE t
-		SET t.IsSpecialSite= ISNULL(@IsSmartPunter,0)
+		SET t.IsSmartPunter= ISNULL(@IsSmartPunter,0)
 		FROM @tmpCust t 
 		WHERE T.UserName = @Username
 
@@ -199,12 +199,12 @@ BEGIN
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE IsSmartPunter = 1)
 	BEGIN
 		SELECT @ErrCode=103
-		SELECT @ErrMsg= 'Username '+	STUFF((
+		SELECT @ErrMsg= 'You are not authorized to view account '+	STUFF((
 				SELECT ',' + UserName  
 				FROM @tmpCust 
 				WHERE IsSmartPunter = 1
 				FOR XML PATH('')
-			), 1,1,'')+' is (are) smart punter(s).' 
+			), 1,1,'')
 		RETURN
 	END
 
