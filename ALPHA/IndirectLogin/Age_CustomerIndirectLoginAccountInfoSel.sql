@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[Age_CustomerIndirectLoginAccountInfoSel]
 	@custid 	INT,
 	@SubAccID INT = 0
+AS	
 /*
 	Created: 20200527@Johnson
 	Task : get status login info of indirect login account
@@ -25,8 +26,8 @@ BEGIN
 			@SubPageAccess VARCHAR(50) = '',   
 			@SubUserName VARCHAR(30) = '',   
 			@site VARCHAR(20) = '',  
-			@isCasinoDisabled BIT = FALSE,
-			@IsCasinoSync BIT = FALSE,			
+			@isCasinoDisabled BIT = 0,
+			@IsCasinoSync BIT = 0,			
 			@isFirstLogin	BIT = 0,
 			@PwdExpiry		DATETIME = NULL,					
 			@NicknameLoginOnly BIT = 0,			
