@@ -26,7 +26,7 @@ AS
 		  + ACCTHAI: 20,000,000 TB (THB)
 		- 20180706@Kan: Rollback new global setting to old value after World Cup event [Redmine: 97774]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration - move to DBCUST [Redmine: 104770]
-		
+		- 20200512@Johnson: check super's prefix before adding into 789y's group [redmine:#133846]
 */
 
 BEGIN
@@ -89,6 +89,22 @@ BEGIN
 			, @ErrCode = 105
 		RETURN
 	END
+	
+	--check super's prefix for789y's group
+	IF @GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
+		AND EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
+					WHERE GroupName = @GroupName)
+		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
+						WHERE GroupName = @GroupName
+							AND Prefix = LEFT(@username,2)
+							AND AllowNewSuper = 1
+				)				
+	BEGIN
+		SELECT @ErrMsg = 	N'This group requires the supers to follow its prefixes. Please select another super or rename the current one.'
+			, @ErrCode = 110
+		RETURN 
+	END		
+	
 	
 	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
 	VALUES (@CustID, @RoleID, @GroupName)

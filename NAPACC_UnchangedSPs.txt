@@ -1,10 +1,4 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-Ext NAP\Customer\EAS_CustomerSelAllInfo.sql
-ALPHA\MemberInformation\ViewPTList\Age_CustomerSelPositionTakingByProductID_SAg.sql
+NAP-Accounting\ExternalSite\Group\dbo.Acc_CustGroupAddByUsername_Multiple.sql
 
 
 

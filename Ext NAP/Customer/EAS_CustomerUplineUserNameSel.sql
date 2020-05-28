@@ -11,7 +11,7 @@ AS
 
 	Revisions:
 		- 20200406@Johnson: initial sp [redmine:#130647]
-		
+		- 20200512@Johnson: check super's prefix for 789y's group [redmine:#133846]
 	Param's Explanation:
 		@Username: @Username want to get upline's username
 		@GroupName: external group need to check customer belongs to or not
@@ -21,7 +21,7 @@ BEGIN
     
     DECLARE @RoleID INT, @currency INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT,
 			@MemberUserName NVARCHAR(50), @AgentUserName NVARCHAR(50), @SuperUserName NVARCHAR(50), 
-			@MasterUserName NVARCHAR(50), @isExistGroup BIT = 0
+			@MasterUserName NVARCHAR(50), @isExistGroup BIT = 0, @isValidSuperPrefix BIT = 1
        
     SELECT @RoleID = roleID, @SuperID = srecommend, @currency = currency
 	FROM customer WITH(NOLOCK)
@@ -43,15 +43,25 @@ BEGIN
 		SELECT @RoleID = NULL
 	END
 	
+	IF @roleid = 4 AND @GroupName IN ('ACCUT','ACCYEN789','ACCYEN889','ACCTEST')	--789y
+		AND NOT EXISTS (SELECT 1 FROM Acc_SuperPrefix WITH(NOLOCK)
+						WHERE GroupName = @GroupName
+							AND Prefix = LEFT(@username,2)
+							AND AllowNewSuper = 1
+						)
+	BEGIN
+		SELECT @isValidSuperPrefix  = 0
+	END	
+	
 	IF @RoleID IS NULL OR @RoleID > 4
 	BEGIN
-		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency
+		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency
+		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency
+		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency
+		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 		RETURN
 	END
     ELSE IF @RoleID = 1
@@ -126,12 +136,12 @@ BEGIN
 
 	END
 	
-	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency
+	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 	UNION ALL
-	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency
+	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 	UNION ALL
-	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency
+	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 	UNION ALL
-	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency
+	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
 	   
 END
