@@ -26,11 +26,12 @@ Param's Explanation:
 
 BEGIN
 
-	DECLARE @CustId		INT
+	DECLARE @CustId		INT, @IsViewSmartPunter BIT = 1, @IsViewSpeciaSite BIT = 1, @IsViewCN88 BIT = 1, @IsViewCreditSite BIT = 1, @IsViewDepositSite BIT = 1--Checking permission of userid
 	SET @ErrCode=0
 	DECLARE @tmpCust TABLE (		
 						UserName			NVARCHAR(50)					
 					, CustID				INT
+					, recommend				INT
 					, RoleID				TINYINT
 					, IsSpecialSite			BIT
 					, IsSpecialHeadline     BIT
@@ -49,12 +50,16 @@ BEGIN
 	FROM dbo.strSplit(@UsernameList, ',') AS ss	
 
 
-	
-	-- get custid, roleid
+	-- get custid, roleid, enable, recommend
 	UPDATE t
-	SET t.CustID=c.custid,RoleID =c.roleid, IsEnable = isnull(enabled,0)
+	SET t.CustID=c.custid,RoleID =c.roleid, IsEnable = isnull(enabled,0), recommend = c.recommend
 	FROM @tmpCust t 
 		INNER JOIN dbo.custInfo c WITH(NOLOCK) ON t.UserName=c.username
+	--Get site
+	UPDATE t
+	SET t.Site = c.site
+	FROM @tmpCust t 
+		INNER JOIN dbo.Customer c WITH(NOLOCK) ON t.recommend= c.custid
 
 	-- select @ErrorCode=100: Invalid usernames: do not exists on system
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID is NULL)
@@ -80,8 +85,82 @@ BEGIN
 			), 1,1,'')+' was (were) disabled.' 
 		RETURN
 	END
-
 	--end
+	--Check permission for account site
+	IF @system = 'NAP'
+	BEGIN
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[SmartPunter]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		IF @ErrCode <> 0
+			SET @IsViewSmartPunter = 0
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[AccessSpecialSites]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		IF @ErrCode <> 0
+			SET @IsViewSpeciaSite = 0
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[CN88Site]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		IF @ErrCode <> 0
+			SET @IsViewCN88 = 0
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[CreditSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		IF @ErrCode <> 0
+			SET @IsViewCreditSite= 0
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[DepositSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		IF @ErrCode <> 0
+			SET @IsViewDepositSite= 0
+	END
+	--Reset error message if error code = 0
+	IF @ErrCode = 0
+		SET @ErrMsg = NULL
+	--Check CN88 site
+	IF @IsViewCN88 = 0
+		BEGIN
+			IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE Site = 'CN88')
+			BEGIN
+				SELECT @ErrCode=102
+				SELECT @ErrMsg= 'You are not authorized to view account '+	STUFF((
+						SELECT ',' + UserName  
+						FROM @tmpCust 
+						WHERE Site = 'CN88'
+						FOR XML PATH('')
+					), 1,1,'')
+				RETURN
+			END
+		END
+	--Check Credit site
+	IF @IsViewCreditSite = 0
+		BEGIN
+			IF EXISTS(SELECT 1
+				FROM @tmpCust T
+				INNER JOIN Site S WITH (NOLOCK) ON T.Site = S.site
+				WHERE S.isLicensee = 0)
+			BEGIN
+				SELECT @ErrCode=102
+				SELECT @ErrMsg= 'You are not authorized to view account '+	STUFF((
+						SELECT ',' + UserName  
+						FROM @tmpCust T INNER JOIN Site S WITH (NOLOCK) ON T.Site = S.site
+						WHERE S.isLicensee = 0
+						FOR XML PATH('')
+					), 1,1,'')
+				RETURN
+			END
+		END
+
+	--Check Deposit site
+		IF @IsViewDepositSite = 0
+		BEGIN
+			IF EXISTS(SELECT 1
+				FROM @tmpCust T
+				INNER JOIN Site S WITH (NOLOCK) ON T.Site = S.site
+				WHERE S.isLicensee = 1)
+			BEGIN
+				SELECT @ErrCode=102
+				SELECT @ErrMsg= 'You are not authorized to view account '+	STUFF((
+						SELECT ',' + UserName  
+						FROM @tmpCust T INNER JOIN Site S WITH (NOLOCK) ON T.Site = S.site
+						WHERE S.isLicensee = 1
+						FOR XML PATH('')
+					), 1,1,'')
+				RETURN
+			END
+		END
+	
 	--Check special FI permission
 	DECLARE @CheckFIPermission TABLE (IsView BIT)
 	DECLARE @Username NVARCHAR (50), @i INT = 1, @Count INT
@@ -116,22 +195,25 @@ BEGIN
 		RETURN
 	END
 	--Check Is special site 
-	Set @i = 1
-	DECLARE @IsSpecialSite BIT, @IsSpecialHeadline BIT, @Site NVARCHAR(50)
-	WHILE (@i < = @Count)
+	IF @IsViewSpeciaSite = 0  --Skip this check if user can view accounts under special sites (@IsViewSpeciaSite = 1)
 	BEGIN
-		SELECT TOP 1 @Username = UserName
-		FROM @tmpCust
-		WHERE RowNum = @i
+		Set @i = 1
+		DECLARE @IsSpecialSite BIT, @IsSpecialHeadline BIT, @Site NVARCHAR(50)
+		WHILE (@i < = @Count)
+		BEGIN
+			SELECT TOP 1 @Username = UserName
+			FROM @tmpCust
+			WHERE RowNum = @i
 		
-		EXEC Acc_CustomerIsSpecialSite  @username= @Username, @CheckCustId=1, @IsSpecialSite = @IsSpecialSite OUTPUT, @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @Site = @Site OUTPUT
+			EXEC Acc_CustomerIsSpecialSite  @username= @Username, @CheckCustId=1, @IsSpecialSite = @IsSpecialSite OUTPUT, @IsSpecialHeadline = @IsSpecialHeadline OUTPUT, @Site = @Site OUTPUT
 			
-		UPDATE t
-		SET t.IsSpecialSite= ISNULL(@IsSpecialSite,0), t.IsSpecialHeadline = ISNULL (@IsSpecialSite,0), t.Site = ISNULL (@Site,0)
-		FROM @tmpCust t 
-		WHERE T.UserName = @Username
+			UPDATE t
+			SET t.IsSpecialSite= ISNULL(@IsSpecialSite,0), t.IsSpecialHeadline = ISNULL (@IsSpecialSite,0), t.Site = ISNULL (@Site,0)
+			FROM @tmpCust t 
+			WHERE T.UserName = @Username
 
-		SELECT @i = @i + 1
+			SELECT @i = @i + 1
+		END
 	END
 	
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE IsSpecialSite = 1 OR IsSpecialHeadline = 1)
@@ -177,23 +259,26 @@ BEGIN
 		RETURN
 	END
 
-	--Check Is Smart Punter
-	Set @i = 1
-	DECLARE @IsSmartPunter BIT
-	WHILE (@i < = @Count)
+	IF @IsViewSmartPunter = 0  --Skip this check if user can view smart punter accounts (@IsViewSmartPunter = 1)
 	BEGIN
-		SELECT TOP 1 @Username = UserName, @CustId = @CustId
-		FROM @tmpCust
-		WHERE RowNum = @i
+		--Check Is Smart Punter
+		Set @i = 1
+		DECLARE @IsSmartPunter BIT
+		WHILE (@i < = @Count)
+		BEGIN
+			SELECT TOP 1 @Username = UserName, @CustId = @CustId
+			FROM @tmpCust
+			WHERE RowNum = @i
 		
-		EXEC Acc_CustomerSelCheckSmartPunter  @Custid = @CustId,@Username = @Username, @IsSmartPunter = @IsSmartPunter OUTPUT, @UserId = @UserId,@IsRestricted=0, @ActionID=0,@IP = @IP
+			EXEC Acc_CustomerSelCheckSmartPunter  @Custid = @CustId,@Username = @Username, @IsSmartPunter = @IsSmartPunter OUTPUT, @UserId = @UserId,@IsRestricted=0, @ActionID=0,@IP = @IP
 			
-		UPDATE t
-		SET t.IsSmartPunter= ISNULL(@IsSmartPunter,0)
-		FROM @tmpCust t 
-		WHERE T.UserName = @Username
+			UPDATE t
+			SET t.IsSmartPunter= ISNULL(@IsSmartPunter,0)
+			FROM @tmpCust t 
+			WHERE T.UserName = @Username
 
-		SELECT @i = @i + 1
+			SELECT @i = @i + 1
+		END
 	END
 	
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE IsSmartPunter = 1)
@@ -208,21 +293,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check permission for account site: @phuc20080213
-	IF @system = 'NAP'
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		
-		IF @ErrCode <> 0
-			RETURN
-	END
-	ELSE IF @system = 'NAP-CM'		
-	BEGIN
-		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-		
-		IF @ErrCode <> 0
-			RETURN		
-	END
 	--end
 	--Do not allow to update danger level 41->50 for danger type 1
 	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
@@ -236,7 +306,7 @@ BEGIN
 				FROM Customer C WITH (NOLOCK)
 				INNER JOIN @tmpCust T ON T.CustID = C.custid 
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
-				WHERE S.isLicensee = 1 AND C.custid = @CustID AND T.roleid IN (3,4))
+				WHERE S.isLicensee = 1 AND C.custid = t.CustID AND T.roleid IN (3,4))
 		
 	BEGIN
 		SELECT @ErrCode=105
