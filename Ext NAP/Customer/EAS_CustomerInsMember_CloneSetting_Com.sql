@@ -124,7 +124,7 @@ BEGIN
 		END
 		
 		--check limit super per month
-		DECLARE @tmpCustGroup (custid INT)
+		DECLARE @tmpCustGroup TABLE(custid INT)
 		DECLARE @fromdate DATETIME,
 				@countSuper INT
 		
