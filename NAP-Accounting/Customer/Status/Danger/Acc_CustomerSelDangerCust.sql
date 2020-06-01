@@ -48,7 +48,7 @@ BEGIN
     ELSE
 	    SET @isBA=0
 
-	SELECT CI.danger, CI.danger2, CI.danger3, CI.dangercust, CI.DangerLevel, @isBA AS IsBA
+	SELECT ci.roleid, CI.danger, CI.danger2, CI.danger3, CI.dangercust, CI.DangerLevel, @isBA AS IsBA
 	FROM CUSTINFO CI WITH (NOLOCK)
 	WHERE CI.custid = @custid
 END
