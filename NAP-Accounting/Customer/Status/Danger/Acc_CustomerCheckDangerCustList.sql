@@ -317,7 +317,11 @@ BEGIN
 				INNER JOIN Site S WITH (NOLOCK) ON  C.site = S.site
 				WHERE S.isLicensee = 1 AND T.RoleID = 4
 				FOR XML PATH('')
-			), 1,1,'') + 'Master accounts ' +	STUFF((
+			), 1,1,'') 
+		
+		SELECT @ErrMsg = ISNULL(@ErrMsg,'')
+
+		SELECT @ErrMsg= @ErrMsg + 'Master accounts ' +	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
