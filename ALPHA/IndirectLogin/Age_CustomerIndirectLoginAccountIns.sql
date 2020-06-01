@@ -35,6 +35,7 @@ BEGIN
 			@SubAccIDIndirect INT = 0,
 			@RoleidIndirect TINYINT,
 			@db_userpwd VARCHAR(40),
+			@DownlineUsername VARCHAR(30),
 			@failedcount INT
 			
 	SET @Begin = GETDATE() 
@@ -44,6 +45,7 @@ BEGIN
 		SELECT @CustIDIndirect = custid,
 			@RoleidIndirect = roleid,
 			@db_userpwd = userpwd,
+			@DownlineUsername = UserName,
 			@failedcount = ISNULL(logincount,0)
 		FROM customer WITH(NOLOCK) 
 		WHERE (username = @username OR username2 = @username)
@@ -55,6 +57,7 @@ BEGIN
 				@SubAccIDIndirect = s.SubAccID,
 				@RoleidIndirect = c.roleid,
 				@db_userpwd = s.userpwd,
+				@DownlineUsername = s.UserName,
 				@failedcount = ISNULL(s.logincount,0)
 			FROM custSub s WITH(NOLOCK) 
 				INNER JOIN customer c WITH(NOLOCK) ON s.custid = c.custid
@@ -67,6 +70,7 @@ BEGIN
 		SELECT @CustIDIndirect = custid,
 			@RoleidIndirect = roleid,
 			@db_userpwd = userpwd,
+			@DownlineUsername = UserName,
 			@failedcount = ISNULL(logincount,0)
 		FROM customer WITH(NOLOCK) 
 		WHERE (username = @username OR username2 = @username)
@@ -78,6 +82,7 @@ BEGIN
 				@SubAccIDIndirect = s.SubAccID,
 				@RoleidIndirect = c.roleid,
 				@db_userpwd = s.userpwd,
+				@DownlineUsername = s.UserName,
 				@failedcount = ISNULL(s.logincount,0)
 			FROM custSub s WITH(NOLOCK) 
 				INNER JOIN customer c WITH(NOLOCK) ON s.custid = c.custid
@@ -152,7 +157,9 @@ BEGIN
 				
 				UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @custidIndirect 
 				
-				SELECT @LogSPData = '<R IP="'+ @IP + '" />'		    
+				SELECT @LogSPData = '<R '
+									+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
+									+'IP="'+ COALESCE(@IP,SPACE(1)) + '" />'		    
 				
 				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 					@UserID = @custid,
@@ -166,9 +173,9 @@ BEGIN
 				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @SubAccIDIndirect
 					    
 				SELECT @LogSPData = '<R ' 
-										+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-										+'DownlineSubAccount="'  + @UplineUserName +'" ' 
-										+'IP="'+ @IP + '" />'										
+									+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
+									+'DownlineSubAccount="'  + COALESCE(@DownlineUsername,SPACE(1)) +'" ' 
+									+'IP="'+ COALESCE(@IP,SPACE(1)) + '" />'											
 				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 					@UserID = @CustID,
 					@CustID = @CustIDIndirect,
@@ -194,7 +201,7 @@ BEGIN
 		END	
 		
 		SELECT @ServerID = CASE WHEN @RoleidIndirect= 2 THEN 90 WHEN @RoleidIndirect=3 THEN 91 ELSE 0 END -- login from web
-		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @username + ' Login Result: Failed (Password Problem)' 
+		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Failed (Password Problem)' 
 				
 		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
 			@UserID = @CustIDIndirect, 
@@ -230,9 +237,9 @@ BEGIN
 	
 	-- Write log
 	SELECT @LogSPData = '<R '
-							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-							+'Account="'  + @UserName +'" ' 
-							+'IP="'+ @IP + '" />'					
+							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + COALESCE(@UplineUserName,SPACE(1)) +'" ' ELSE '' END 
+							+'Account="'  + COALESCE(@DownlineUsername,SPACE(1)) +'" ' 
+							+'IP="'+ COALESCE(@IP,SPACE(1)) + '" />'					
 
 	SELECT @Duration = DATEDIFF (MILLISECOND, @Begin, GETDATE())
 			
@@ -243,5 +250,4 @@ BEGIN
 		@TrackingValue		= @LogSPData,		
 		@Duration			= @Duration
 END	
-
 GO

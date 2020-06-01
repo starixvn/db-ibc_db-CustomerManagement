@@ -4,8 +4,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerIndirectLoginAccountPwdCheck]
 	@SubAccID 	INT = 0,	
 	@CustIDIndirect INT,
 	@SubAccIDIndirect INT = 0,
-	@UserPWD 		VARCHAR(40)='',
-	@isSkipPWD		BIT = 1,
+	@UserPWD 		VARCHAR(40)='',	
 	@UplineUsername VARCHAR(30),
 	@DownlineUsername VARCHAR(30),
 	@RoleidIndirect TINYINT,	
@@ -44,28 +43,6 @@ BEGIN
 	 
 	SELECT @ServerID = CASE WHEN @RoleidIndirect= 2 THEN 90 WHEN @RoleidIndirect=3 THEN 91 ELSE 0 END -- login from web
 		
-	--just write log login
-	IF @isSkipPWD = 1
-	BEGIN
-		SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Success' 
-		SET @Duration = DATEDIFF(millisecond,@Begin,GETDATE())
-	
-		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
-			@UserID = @CustIDIndirect, 
-			@RoleID = @RoleidIndirect, 
-			@SubAccID = @SubAccIDIndirect,
-			@ServerID = @ServerID,
-			@LoginIP = @IP,
-			@DomainName = @LoginDomain,	
-			@ActionID = 1336,
-			@Doing = @LogData,
-			@BrowserName = @BrowserName,
-			@Platform = @Platform,
-			@CountryCode = @CountryCode,
-			@Duration = @Duration
-		RETURN
-	END
-	
 	IF NOT EXISTS (SELECT 1 FROM CustInDirectLogin WITH(NOLOCK)
 					WHERE custid = @custid
 						AND SubAccID = @subAccID
@@ -130,7 +107,9 @@ BEGIN
 				
 				UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @custidIndirect 
 				
-				SELECT @LogSPData = '<Age_CustomerIndirectLoginAccountIns IP="'+ @IP + '" />'		    
+				SELECT @LogSPData = '<R '
+									+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
+									+'IP="' + @IP + '" />'		    
 				
 				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 					@UserID = @custid,
@@ -145,8 +124,8 @@ BEGIN
 					    
 				SELECT @LogSPData = '<R ' 
 										+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-										+'DownlineSubAccount="'  + @UplineUserName +'" ' 
-										+'IP="'+ @IP + '" />'										
+										+'DownlineSubAccount="'  + COALESCE(@DownlineUsername,SPACE(1)) +'" ' 
+										+'IP="'+ COALESCE(@IP,SPACE(1)) + '" />'										
 				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 					@UserID = @CustID,
 					@CustID = @CustIDIndirect,
@@ -200,30 +179,12 @@ BEGIN
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect
 		AND SubAccIDIndirect = @SubAccIDIndirect
-		
-	--log login
-	SELECT @LogData = 'From account: '+ @UplineUsername + ' - To account: '+ @DownlineUsername + ' Login Result: Success' 
-	SET @Duration = DATEDIFF(millisecond,@Begin,GETDATE())
-	
-	EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
-		@UserID = @CustIDIndirect, 
-		@RoleID = @RoleidIndirect, 
-		@SubAccID = @SubAccIDIndirect,
-		@ServerID = @ServerID,
-		@LoginIP = @IP,
-		@DomainName = @LoginDomain,	
-		@ActionID = 1336,
-		@Doing = @LogData,
-		@BrowserName = @BrowserName,
-		@Platform = @Platform,
-		@CountryCode = @CountryCode,
-		@Duration = @Duration
-		
+			
 	-- Write log
 	SELECT @LogSPData = '<R '
 							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
-							+'Account="'  + @DownlineUsername +'" ' 
-							+'IP="'+ @IP + '" />'					
+							+'Account="'  + COALESCE(@DownlineUsername,SPACE(1)) +'" ' 
+							+'IP="'+ COALESCE(@IP,SPACE(1)) + '" />'					
 
 	SELECT @Duration = DATEDIFF (MILLISECOND, @Begin, GETDATE())
 			

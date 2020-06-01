@@ -1,0 +1,334 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+
+ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]  
+    @CustID INT = 0,
+	@UplineUsername VARCHAR(30)='',	
+	@UplineCustid INT, 
+	@UplineSubAccID INT=0,
+	@LoginIP VARCHAR(20)='' OUTPUT,  --- if output=NULL then account is the first login
+	@ServerID INT = 0 OUTPUT,
+	@LoginDomain NVARCHAR(253) = NULL,
+	@BrowserName NVARCHAR(255) = NULL,
+	@Platform NVARCHAR(255) = NULL,  
+	@CountryCode VARCHAR(64) = NULL,
+	@RoleID INT OUTPUT,  
+	@Currency VARCHAR(10) = '' OUTPUT,  
+	@CurrencyId INT = 0 OUTPUT,
+	@MasterUsername VARCHAR(30) = '' OUTPUT,  
+	@UserName VARCHAR(30) = '' OUTPUT,    
+	@SubAccID INT = 0, --Sub-AccountID,  
+	@SubPageAccess VARCHAR(50) = '' OUTPUT,   
+	@SubUserName VARCHAR(30) = '' OUTPUT,   
+	@site VARCHAR(20) = '' OUTPUT,  
+	@isCasinoDisabled BIT = FALSE OUTPUT,
+	@IsCasinoSync BIT = FALSE OUTPUT,
+	@LoginTime DATETIME = null, --VARCHAR(50) = NULL,
+	@Language VARCHAR(2) = 'E',  
+	@isFirstLogin	BIT = 0 OUTPUT,
+	@PwdExpiry		DATETIME = NULL OUTPUT,
+	@ErrCode INT = 0 OUTPUT,  
+	@ErrMsg NVARCHAR(4000) = '' OUTPUT,
+	@SecurityCode VARCHAR(50) = '' OUTPUT,
+	@isForcedChangeSecurityCode BIT = 0 OUTPUT
+AS
+	/*
+	Created: 20200529@Johnson
+	Task : verify login for indirect login account
+	DB: DBCUST/CustDB
+
+	Revisions:
+		- 20200529@Johnson: initial sp [redmine: #132782]
+	Param's Explanation:		
+	*/
+BEGIN
+
+	SET NOCOUNT ON
+
+	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
+	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency TINYINT, @db_loginip NVARCHAR(20), @rowcount INT
+			,@DownlineUsername VARCHAR(30) = @username
+			
+	SET @Begin = GETDATE() 
+	SELECT @inputLoginIP = @LoginIP 	
+	SET @ServerID = 0 
+
+	SELECT @RoleID = RoleID 
+	FROM customer c WITH (NOLOCK) 
+	WHERE CustID = @CustID
+	
+	IF (@SubAccID = 0
+		AND EXISTS (SELECT 1 FROM custinfo WITH(NOLOCK) 
+					WHERE custid = @custid
+						AND (closed = 1 OR enabled = 0))
+		) 
+		OR (@SubAccID > 0
+			AND EXISTS (SELECT 1 FROM custsub WITH(NOLOCK) 
+						WHERE SubAccID = @SubAccID 
+							AND closed = 1
+						)
+			)
+	BEGIN
+		SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Account_Closed)'
+				
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
+
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+			
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Account closed. Please contact your administrator!'  
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](80002,@Language) 
+							END ,@ErrCode=108    				
+		RETURN	
+	END	
+	
+	IF NOT EXISTS (SELECT 1 FROM CustInDirectLogin WITH(NOLOCK)
+					WHERE custid = @UplineCustid
+						AND SubAccID = @UplineSubAccID
+						AND CustIDIndirect = @custid
+						AND SubAccIDIndirect = @subAccID
+				)
+	BEGIN
+		SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Invalid_Indirect_Login_Account)'
+				
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
+
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+			
+		SELECT @ErrMsg = CASE @Language 
+				WHEN 'E' THEN 'Invalid account or it is not your downline.'
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](40052,@Language)
+			END	,@ErrCode=101		
+		RETURN	
+	END
+	
+	IF ISDATE(@LoginTime) = 0 OR DATEDIFF(SECOND, @LoginTime, CURRENT_TIMESTAMP) > 10
+	BEGIN
+		SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Session_Expired)'
+		-- ***Check Sub-Account***  
+		
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
+
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language) END , @ErrCode=105    
+
+		RETURN    
+	END
+		
+	IF @SubAccID > 0
+	BEGIN
+		SELECT 
+			@SubUserName = username, 
+			@CustID = custid,			 
+			@SubPageAccess = PageAccess
+		FROM custSub WITH (NOLOCK)
+		WHERE subaccid = @SubAccID
+
+		IF @@ROWCOUNT = 0  
+		BEGIN
+			SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername +' Login Result: Failed(User_Not_Found)'      
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = 0, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,
+				@ActionID = 1337,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode
+								
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)   
+						END ,@ErrCode=106   
+			RETURN    
+		END
+	END
+		
+	SELECT 
+		@RoleID = roleid, 
+		@db_currency = currency, 
+		@site = site , 
+		@db_loginip= ISNULL(iplogin, ''), 
+		@UserName = username
+	FROM 
+		customer WITH (NOLOCK)
+	WHERE 
+		custid = @CustID
+
+	SET @rowcount = @@ROWCOUNT
+
+	SELECT @ServerID = CASE WHEN @roleid=2 THEN 90 WHEN @roleid=3 THEN 91 WHEN @roleid = 4 THEN 92 ELSE 93 END -- login from web
+
+	-- user not found  
+	IF @rowcount = 0  
+	BEGIN  
+		SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(User_Not_Found)' 
+		
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode		
+				
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
+					END ,@ErrCode=106  
+		RETURN  
+	END 
+
+	SELECT 
+		@IsCasinoSync = SyncCasino, 
+		@isCasinoDisabled = DisableCasino
+	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
+	  
+	-- Successful  
+	SELECT 
+		@Currency = Currency, 
+		@CurrencyId = @db_currency 
+	FROM 
+		exchange WITH (NOLOCK) 
+	WHERE exchangeid = @db_currency  
+
+	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
+	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
+
+	IF @RoleID = 2  
+		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
+	ELSE IF @RoleID = 3  
+		SELECT @MasterUsername = LOWER(@UserName)  
+	ELSE IF @RoleID = 4  
+		SELECT @MasterUsername = NULL  
+
+/*
+	GET ON_USER_AGENT INFO - CHECK (SECOND LOGIN) - (FIRST LOGIN) < 5 RETURN 
+*/
+	DECLARE	@1stLoginTime DATETIME
+
+	IF EXISTS (	SELECT	TOP 1 1 
+				FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
+				WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0)
+	BEGIN
+		SELECT	@1stLoginTime = LoginTime 
+		FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
+		WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0
+		
+		IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
+		BEGIN 		
+			SELECT @LogData =  'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Unknown_Login)'	
+			
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @CustID, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1337,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration
+			
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
+				END , @ErrCode=107    
+			RETURN
+		END 
+	END
+		
+	  
+	SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Success'  
+
+	----------------------------------
+	--**Output LoginIP to check the first login**
+	SELECT @LoginIP=ISNULL(@db_loginip, '')
+
+	IF @SubAccID > 0 
+	BEGIN
+		SELECT	 @isFirstLogin	= ISNULL(isFirstLogin,0)
+				,@PwdExpiry		= PwdExpiry
+				,@securitycode	= ISNULL(SecurityCode,'')
+				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+		FROM	CustLoginInfoSub WITH (NOLOCK)
+		WHERE	SubAccID = @SubAccID AND CustID = @CustID
+	END
+	ELSE 
+	BEGIN
+		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
+				@securityCode	= ISNULL(SecurityCode,''),
+				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+		FROM	CustLoginInfo WITH (NOLOCK)
+		WHERE	CustID = @CustID
+		
+		SELECT	@PwdExpiry	= PwdExpiry
+		FROM	Customer WITH (NOLOCK)
+		WHERE	CustID = @CustID
+	END
+
+	SET @End = GETDATE()
+	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+	--------------------------- 
+	EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration		
+END	
