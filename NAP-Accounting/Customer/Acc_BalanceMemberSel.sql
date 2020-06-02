@@ -1,11 +1,9 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[Acc_BalanceMemberSel]
-	@CustId			INT
-	,@Balance		MONEY = 0 OUTPUT
-	,@NetPosition	MONEY = 0 OUTPUT
+	@CustId					INT
+	,@Balance				MONEY = 0 OUTPUT
+	,@NetPosition			MONEY = 0 OUTPUT
+	,@3rdPendingTransfer	MONEY = 0 OUTPUT
 AS
 
 /*
@@ -15,6 +13,7 @@ AS
 		
 	Revisions:
 		- 20190723@Percy: Initialize SP [RedmineID: #117334]
+		- 20200602@Percy: Add output param: @3rdPendingTransfer [RedmineID: #135200]
 */
 
 BEGIN
@@ -34,8 +33,14 @@ BEGIN
 	
 	-- netPosition
 	SELECT @NetPosition = SUM(Credit - Debit) FROM dbo.BalNetPosition WHERE CustID = @CustId
+
+	-- 3rd Pending Transfer
+	SELECT @3rdPendingTransfer = -SUM(winlost-actual_stake)
+	FROM dbo.bettrans WITH (NOLOCK)
+	WHERE custid = @CustId
+		AND bettype IN (21008, 21009) -- BBIN Transfer
 	
 	-- Return data
-	SELECT @Balance = ISNULL(@Balance, 0), @NetPosition = ISNULL(@NetPosition, 0)
+	SELECT @Balance = ISNULL(@Balance, 0), @NetPosition = ISNULL(@NetPosition, 0), @3rdPendingTransfer = ISNULL(@3rdPendingTransfer, 0)
 END
 GO

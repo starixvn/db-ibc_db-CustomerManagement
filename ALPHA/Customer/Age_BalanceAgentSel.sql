@@ -11,6 +11,8 @@ AS
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
 		- 20190918@Percy: Remove inactive products [RedmineID: #118699]
 		- 20191007@Johnson: remove credit info [redmine:#121538]
+		- 20200602@Percy: Separate 3rdPendingTransfer from Cash and Balance [RedmineID: #135200]
+
 	Example: EXEC Age_BalanceAgentSel @CustID=1382167
 */
 
@@ -32,7 +34,8 @@ BEGIN
 		superCash	MONEY DEFAULT ((0)), yesterdaySuperCash	 MONEY DEFAULT ((0)), superOutstanding  MONEY DEFAULT ((0)),
 		masterCash	MONEY DEFAULT ((0)), yesterdayMasterCash MONEY DEFAULT ((0)), masterOutstanding MONEY DEFAULT ((0)),
 		agentCash	MONEY DEFAULT ((0)), yesterdayAgentCash	 MONEY DEFAULT ((0)), agentOutstanding  MONEY DEFAULT ((0)),
-		memberCash	MONEY DEFAULT ((0)), yesterdayMemberCash MONEY DEFAULT ((0)), memberOutstanding MONEY DEFAULT ((0))
+		memberCash	MONEY DEFAULT ((0)), yesterdayMemberCash MONEY DEFAULT ((0)), memberOutstanding MONEY DEFAULT ((0)),
+		[3rdPendingTransfer] MONEY DEFAULT ((0))
 	)
 
 	INSERT INTO #BalanceInfo
@@ -40,7 +43,8 @@ BEGIN
 		superCash,  yesterdaySuperCash,
 		masterCash, yesterdayMasterCash,
 		agentCash,  yesterdayAgentCash,
-		memberCash, yesterdayMemberCash
+		memberCash, yesterdayMemberCash,
+		[3rdPendingTransfer]
 	)
 	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId
 
@@ -60,7 +64,8 @@ BEGIN
 		SUM(agentOutstanding)			AS agentPositionTaking,
 		SUM(memberCash)					AS customerCash,
 		SUM(yesterdayMemberCash)		AS yesterday_customerCash,
-		SUM(memberOutstanding)			AS customerOutstanding
+		SUM(memberOutstanding)			AS customerOutstanding,
+		SUM([3rdPendingTransfer])		AS [3rdPendingTransfer]
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo
