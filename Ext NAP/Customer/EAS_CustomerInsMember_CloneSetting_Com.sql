@@ -140,7 +140,7 @@ BEGIN
 		WHERE custId IN (SELECT custid FROM @tmpCustGroup)
 			AND creatdate >= @fromdate 
 			
-		IF @countSuper >= 50
+		IF @countSuper >= 5
 		BEGIN
 			SELECT @ErrMsg =  'You can only create up to 50 supers per month.',
 				@ErrCode = 201
