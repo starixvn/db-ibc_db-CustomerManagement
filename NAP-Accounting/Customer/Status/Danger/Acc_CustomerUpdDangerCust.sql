@@ -79,9 +79,11 @@ BEGIN
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
 	
+	SELECT @roleid = roleid FROM custinfo (NOLOCK) WHERE custid = @CustID
+
 	IF (@DangerType=1)
 	BEGIN 
-		SET @oldvalue=(Select Danger from custInfo (NOLOCK) where custid=@CustID)
+		SET @oldvalue=(Select Danger FROM custInfo (NOLOCK) WHERE custid=@CustID)
 		SET @dangerfield='Danger'
 		
 		IF @updateDownline = 1 
