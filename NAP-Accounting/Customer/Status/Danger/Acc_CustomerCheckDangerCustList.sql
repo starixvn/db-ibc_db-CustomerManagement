@@ -315,8 +315,10 @@ BEGIN
 				WHERE S.isLicensee = 1 AND C.custid = t.CustID AND T.roleid IN (3,4))
 		
 	BEGIN
+		DECLARE @ErrMsg1 NVARCHAR(200), @ErrMsg2 NVARCHAR(200)
 		SELECT @ErrCode=105
-		SELECT  @ErrMsg= 'You cannot update dangerous level for Super accounts '+	STUFF((
+
+		SELECT  @ErrMsg1 = 'You cannot update dangerous level for Super accounts '+	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
@@ -325,9 +327,7 @@ BEGIN
 				FOR XML PATH('')
 			), 1,1,'') 
 		
-		SELECT @ErrMsg = ISNULL(@ErrMsg,'You cannot update dangerous level for ')
-
-		SELECT @ErrMsg= @ErrMsg + 'Master accounts ' +	STUFF((
+		SELECT @ErrMsg2 = 'Master accounts ' +	STUFF((
 				SELECT ',' + T.UserName  
 				FROM @tmpCust T
 				INNER JOIN Customer C WITH (NOLOCK) ON C.custid = T.CustID
@@ -335,6 +335,8 @@ BEGIN
 				WHERE S.isLicensee = 1 AND T.RoleID = 3
 				FOR XML PATH('')
 			), 1,1,'')  
+
+		SELECT @ErrMsg = ISNULL(@ErrMsg1,'You cannot update dangerous level for  ') + ISNULL(@ErrMsg2,'')
 		RETURN
 	END
 	
