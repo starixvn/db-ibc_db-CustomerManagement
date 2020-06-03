@@ -11,7 +11,7 @@ AS
 		- 20180627@Elodie: Left menu - Search customer - Balance Info [Redmine: #58776]
 		- 20190723@Percy: Member level - Don't calculate Cash & Outstanding amount [RedmineID: #117334]
 		- 20191008@Johnson: remove credit info [redmine:#121538]
-		- 20200602@Percy: Separate 3rdPendingTransfer from Cash and Balance [RedmineID: #135200]
+		- 20200602@Percy: Separate PendingTransfer3rd from Cash and Balance [RedmineID: #135200]
 
 	Example: EXEC Age_BalanceMemberSel @CustID=1382337
 */
@@ -37,7 +37,7 @@ BEGIN
 		masterCash	MONEY DEFAULT ((0)), yesterdayMasterCash MONEY DEFAULT ((0)),
 		agentCash	MONEY DEFAULT ((0)), yesterdayAgentCash	 MONEY DEFAULT ((0)),
 		memberCash	MONEY DEFAULT ((0)), yesterdayMemberCash MONEY DEFAULT ((0)),
-		[3rdPendingTransfer] MONEY DEFAULT ((0))
+		PendingTransfer3rd MONEY DEFAULT ((0))
 	)
 
 	INSERT INTO #BalanceInfo
@@ -46,14 +46,14 @@ BEGIN
 		masterCash, yesterdayMasterCash,
 		agentCash,  yesterdayAgentCash,
 		memberCash, yesterdayMemberCash,
-		[3rdPendingTransfer]
+		PendingTransfer3rd
 	)
 	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId
 
 	SELECT
 		@custid AS CustID,		
 		SUM(yesterdayMemberCash) AS yesterday_Cash
-		-- Cash & Outstanding & 3rdPendingTransfer: get from other SP
+		-- Cash & Outstanding & PendingTransfer3rd: get from other SP
 	FROM #BalanceInfo
 
 	DROP TABLE #BalanceInfo

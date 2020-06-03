@@ -15,7 +15,7 @@ AS
 		- 20181003@Helen: Modify code to adapt indexes changed on DB053 [Redmine:101405]
 		- 20190910@Bobby: Implement headline - balance info [Redmine:119961]
 		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
-		- 20200602@Percy: Separate 3rdPendingTransfer from Cash and Balance [RedmineID: #135200]
+		- 20200602@Percy: Separate PendingTransfer3rd from Cash and Balance [RedmineID: #135200]
 	
 	Param's Explaination:
 		- @CustId: custid
@@ -60,7 +60,7 @@ BEGIN
 		masterCash MONEY, yesterday_masterCash MONEY, masterOutstanding MONEY,
 		agentCash MONEY, yesterday_agentCash MONEY, agentOutstanding MONEY,
 		memberCash MONEY, yesterday_memberCash MONEY, memberOutstanding MONEY,
-		[3rdPendingTransfer] MONEY DEFAULT (0)
+		PendingTransfer3rd MONEY DEFAULT (0)
 	)
 
     IF @roleid = 1
@@ -108,7 +108,7 @@ BEGIN
 			AND b.ruben = 0
 			AND NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable <> 0)
 
-		INSERT INTO #BalanceInfo (memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE winlost-actual_stake+playercomm END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate <= @yesterday OR b.bettype > 20000) THEN winlost-actual_stake+playercomm ELSE 0 END END),
@@ -198,7 +198,7 @@ BEGIN
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable <> 0)
 								
 								
-		INSERT INTO #BalanceInfo (agentCash, yesterday_agentCash, agentOutstanding, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (agentCash, yesterday_agentCash, agentOutstanding, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid = recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid = recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END END),
@@ -219,14 +219,14 @@ BEGIN
 				SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate = @yesterday OR b.bettype > 20000) THEN CASE WHEN custid = recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END ELSE 0 END END) AS yesterday_agentCash,
 				SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid <> recommend THEN winlost-actual_stake+playercomm ELSE 0 END END) AS memberCash,
 				SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid <> recommend AND (winlostdate = @yesterday OR b.bettype > 20000) THEN winlost-actual_stake+playercomm ELSE 0 END END) AS yesterday_memberCash,
-				SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS [3rdPendingTransfer]
+				SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS PendingTransfer3rd
 			FROM dbo.bettrans b WITH(NOLOCK)
 			WHERE b.recommend = @custid
 				AND b.ruben = 1
 				AND b.winlostdate >= @yesterday	
 			GROUP BY Winlostdate, bettype				
 			)			
-		INSERT INTO #BalanceInfo (agentCash, yesterday_agentCash, agentOutstanding, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (agentCash, yesterday_agentCash, agentOutstanding, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(agentCash),
 			SUM(yesterday_agentCash),
@@ -234,7 +234,7 @@ BEGIN
 			SUM(memberCash),
 			SUM(yesterday_memberCash),
 			0,
-			SUM([3rdPendingTransfer])
+			SUM(PendingTransfer3rd)
 		FROM Bettrans_CTE b
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable IN (1, 2))
 			
@@ -246,7 +246,7 @@ BEGIN
 			SUM(memberCash) AS customerCash,
 			SUM(yesterday_memberCash) AS yesterday_customerCash,
 			SUM(memberOutstanding) AS customerOutstanding,
-			SUM([3rdPendingTransfer]) AS [3rdPendingTransfer],
+			SUM(PendingTransfer3rd) AS PendingTransfer3rd,
 			@transdate AS lastTxn,
 			@UsedCredit AS agentUsedCredit
 		FROM #BalanceInfo
@@ -331,7 +331,7 @@ BEGIN
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable <> 0)		
 						
 
-		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE mwinlost+acomm-comm END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE mwinlost+acomm-comm END),
@@ -357,7 +357,7 @@ BEGIN
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate = @yesterday OR b.bettype > 20000) THEN CASE WHEN custid = recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END ELSE 0 END END) AS yesterday_agentCash,
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid <> recommend THEN winlost-actual_stake+playercomm ELSE 0 END END) AS memberCash,
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate = @yesterday OR b.bettype > 20000) AND custid <> recommend THEN winlost-actual_stake+playercomm ELSE 0 END END) AS yesterday_memberCash,
-					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS [3rdPendingTransfer]
+					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS PendingTransfer3rd
 				FROM dbo.bettrans b WITH(NOLOCK)
 				WHERE   
 					b.mrecommend = @CustId 
@@ -366,7 +366,7 @@ BEGIN
 					AND b.winlostdate >= @yesterday		
 				GROUP BY Winlostdate, bettype
 			)
-		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(masterCash),
 			SUM(yesterday_masterCash),
@@ -376,13 +376,13 @@ BEGIN
 			SUM(memberCash),
 			SUM(yesterday_memberCash),
 			0,
-			SUM([3rdPendingTransfer])
+			SUM(PendingTransfer3rd)
 		FROM Bettrans_CTE b
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable IN (1, 2))
 			
 			
 		-- sum, balance, transfer tickets of this master
-		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE winlost-actual_stake END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate <= @yesterday OR b.bettype > 20000) THEN winlost-actual_stake ELSE 0 END END),
@@ -407,7 +407,7 @@ BEGIN
 			SUM(memberCash) AS customerCash,
 			SUM(yesterday_memberCash) AS yesterday_customerCash,
 			SUM(memberOutstanding) AS customerOutstanding,
-			SUM([3rdPendingTransfer]) AS [3rdPendingTransfer],
+			SUM(PendingTransfer3rd) AS PendingTransfer3rd,
 			@transdate AS lastTxn,
 			@UsedCredit AS masterUsedCredit,
 			ISNULL(@DisableAutoMPT,0) as DisableAutoMPT
@@ -494,7 +494,7 @@ BEGIN
 		WHERE  NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable <> 0)
 		
 
-		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE swinlost+scomm-acomm END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE swinlost+scomm-acomm END),
@@ -524,7 +524,7 @@ BEGIN
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate = @yesterday OR b.bettype > 20000) THEN CASE WHEN custid = recommend THEN winlost-actual_stake ELSE awinlost+comm-playercomm END ELSE 0 END END) as yesterday_agentCash,
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid <> recommend THEN winlost-actual_stake+playercomm ELSE 0 END END) as memberCash,
 					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate = @yesterday OR b.bettype > 20000) AND custid <> recommend THEN winlost-actual_stake+playercomm ELSE 0 END END) as yesterday_memberCash,
-					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS [3rdPendingTransfer]
+					SUM(CASE WHEN b.bettype IN (21008, 21009) THEN -(winlost-actual_stake) ELSE 0 END) AS PendingTransfer3rd
 			FROM dbo.bettrans b WITH(NOLOCK)
 			WHERE 
 				b.srecommend = @CustId
@@ -533,7 +533,7 @@ BEGIN
 				AND b.winlostdate >= @yesterday
 			GROUP BY winlostdate, Bettype 
 		 )
-		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(superCash),
 			SUM(yesterday_superCash),
@@ -545,13 +545,13 @@ BEGIN
 			SUM(memberCash),
 			SUM(yesterday_memberCash),
 			0,
-			SUM([3rdPendingTransfer])
+			SUM(PendingTransfer3rd)
 		FROM Bettrans_CTE b
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable IN (1, 2))
 
 
 			-- sum, balance, transfer tickets of this super and all masters
-		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, [3rdPendingTransfer])
+		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
 		SELECT
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN custid = srecommend THEN winlost-actual_stake ELSE swinlost+scomm-acomm END END),
 			SUM(CASE WHEN b.bettype IN (21008, 21009) THEN 0 ELSE CASE WHEN (winlostdate <= @yesterday OR b.bettype > 20000) THEN CASE WHEN custid = srecommend THEN winlost-actual_stake ELSE swinlost+scomm-acomm END ELSE 0 END END),
@@ -582,7 +582,7 @@ BEGIN
 			SUM(memberCash) AS customerCash,
 			SUM(yesterday_memberCash) AS yesterday_customerCash,
 			SUM(memberOutstanding) AS customerOutstanding,
-			SUM([3rdPendingTransfer]) AS [3rdPendingTransfer],
+			SUM(PendingTransfer3rd) AS PendingTransfer3rd,
 			@transdate AS lastTxn,
 			@UsedCredit AS superUsedCredit
 		FROM #BalanceInfo
