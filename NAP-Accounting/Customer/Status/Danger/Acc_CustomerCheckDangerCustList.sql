@@ -89,19 +89,19 @@ BEGIN
 	--Check permission for account site
 	IF @system = 'NAP'
 	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[SmartPunter]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@userid,@funcname='[SmartPunter]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		IF @ErrCode <> 0
 			SET @IsViewSmartPunter = 0
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[AccessSpecialSites]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@userid,@funcname='[AccessSpecialSites]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		IF @ErrCode <> 0
 			SET @IsViewSpeciaSite = 0
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[CN88Site]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@userid,@funcname='[CN88Site]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		IF @ErrCode <> 0
 			SET @IsViewCN88 = 0
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[CreditSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@userid,@funcname='[CreditSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		IF @ErrCode <> 0
 			SET @IsViewCreditSite= 0
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[DepositSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
+		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@userid,@funcname='[DepositSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		IF @ErrCode <> 0
 			SET @IsViewDepositSite= 0
 	END
@@ -319,7 +319,7 @@ BEGIN
 				FOR XML PATH('')
 			), 1,1,'') 
 		
-		SELECT @ErrMsg = ISNULL(@ErrMsg,'')
+		SELECT @ErrMsg = ISNULL(@ErrMsg,'You cannot update dangerous level for ')
 
 		SELECT @ErrMsg= @ErrMsg + 'Master accounts ' +	STUFF((
 				SELECT ',' + T.UserName  
