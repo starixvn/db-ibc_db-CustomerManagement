@@ -59,7 +59,13 @@ BEGIN
 	UPDATE t
 	SET t.Site = c.site
 	FROM @tmpCust t 
+		INNER JOIN dbo.Customer c WITH(NOLOCK) ON t.custid= c.custid
+	
+	UPDATE t
+	SET t.Site = c.site
+	FROM @tmpCust t 
 		INNER JOIN dbo.Customer c WITH(NOLOCK) ON t.recommend= c.custid
+	WHERE t.RoleID = 1
 
 	-- select @ErrorCode=100: Invalid usernames: do not exists on system
 	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE CustID is NULL)
