@@ -53,7 +53,7 @@ BEGIN
 	SET NOCOUNT ON
 	declare @startRun datetime
 	declare @endRun datetime
-	declare @duration int, @roleid int, @custid INT
+	declare @duration int, @roleid int
 	set @startRun = getdate()
 
 	EXECUTE dbo.Acc_CustomerCheckDangerCustList
