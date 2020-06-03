@@ -26,7 +26,8 @@ AS
 
 	Revisions:
 		- 20200330@Johnson: initial sp [redmine:#130647]
-		- 20200513@Johnson: check super's prefix for 789's group [redmine:#]
+		- 20200513@Johnson: check super's prefix for 789's group [redmine:#133846]
+		- 20200601@Johnson: limit new supers per month for 789's group [redmine:#135057]
 	Parameter's Explaination:
 	
 */
@@ -121,6 +122,30 @@ BEGIN
 				@ErrCode = 205
 			RETURN	
 		END
+		
+		--check limit super per month
+		DECLARE @tmpCustGroup TABLE(custid INT)
+		DECLARE @fromdate DATETIME,
+				@countSuper INT
+		
+		SELECT @fromdate = CAST(DATEADD(DAY,-DATEPART(DAY,GETDATE())+1,GETDATE()) as DATE)
+		
+		INSERT INTO @tmpCustGroup(custid)
+		SELECT custid
+		FROM Acc_CustGroup WITH(NOLOCK)
+		WHERE GroupName = @GroupName
+		
+		SELECT @countSuper = COUNT(1)
+		FROM customer WITH(NOLOCK)
+		WHERE custId IN (SELECT custid FROM @tmpCustGroup)
+			AND creatdate >= @fromdate 
+			
+		IF @countSuper >= 50
+		BEGIN
+			SELECT @ErrMsg =  'You can only create up to 50 supers per month.',
+				@ErrCode = 201
+			RETURN		
+		END	
 	END
 		
 	BEGIN TRY
