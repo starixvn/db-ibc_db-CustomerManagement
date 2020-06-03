@@ -105,6 +105,9 @@ Revisions:
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
 	- 20200513@Tiara: Remove Danger, isBA result from left panel [Redmine: #129306]
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
+
+	- 20200602@Sol: Show IsAutoEnableADBMaster [Redmine: #134242]
+
 Param's Explanation:
 	@username: username want to get all info related
 */		
@@ -160,7 +163,8 @@ BEGIN
 			@TotalSAgentActive INT,
 		    @TotalSAgentViewOnly INT,
 		    @TotalSAgentSuspended INT,
-			@TotalSAgentInactive INT
+			@TotalSAgentInactive INT,
+			@IsAutoEnableADBMaster BIT
 
 
 
@@ -313,6 +317,7 @@ BEGIN
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
 			 , @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+			 , @IsAutoEnableADBMaster=ISNULL(IsAutoEnableADBMaster, 0)
 			FROM custSuper WITH(NOLOCK)
 	     WHERE custid = @custid
 
@@ -676,6 +681,7 @@ BEGIN
 		,@UplineHasSecurityCode AS UplineHasSecurityCode
 		,cs.CustStatus AS CN88CustStatus
 		,@SabaClubPlayerID3rd AS SabaClubPlayerID3rd
+		,ISNULL(@IsAutoEnableADBMaster,0) IsAutoEnableADBMaster
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
