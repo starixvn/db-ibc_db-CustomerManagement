@@ -1,7 +1,8 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
-	@Username VARCHAR(30), --Username provided by user
+	@CustID int = NULL,
+	@Username VARCHAR(30) = '', --Username provided by user
 	@UpdateDownline bit = 0,
 	@DangerType tinyint,
 	@DangerLevel int=0,
