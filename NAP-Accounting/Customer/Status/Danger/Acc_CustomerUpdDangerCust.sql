@@ -69,9 +69,12 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN;
 	
-	--Get CustID FROM DB06, WHERE got index on Username AND Username2 
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
-	
+	IF @Username <> ''
+	BEGIN
+		--Get CustID FROM DB06, WHERE got index on Username AND Username2 
+		EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
+	END
+
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
