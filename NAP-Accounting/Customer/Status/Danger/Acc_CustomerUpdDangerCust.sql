@@ -56,19 +56,22 @@ BEGIN
 	declare @duration int, @roleid int
 	set @startRun = getdate()
 
-	EXECUTE dbo.Acc_CustomerCheckDangerCustList
-	@UsernameList= @Username ,		
-	@UserID = @UserID	,		
-	@DangerType	= @DangerType	,	
-	@DangerLevel =@DangerLevel	,	
-	@IP	=@IP			,	
-	@system = @system,
-	@ErrCode = @ErrCode	OUTPUT,
-	@ErrMsg = @ErrMsg	OUTPUT	
+	IF @system = 'NAP'
+	BEGIN
+		EXECUTE dbo.Acc_CustomerCheckDangerCustList
+			@UsernameList= @Username ,		
+			@UserID = @UserID	,		
+			@DangerType	= @DangerType	,	
+			@DangerLevel =@DangerLevel	,	
+			@IP	=@IP			,	
+			@system = @system,
+			@ErrCode = @ErrCode	OUTPUT,
+			@ErrMsg = @ErrMsg	OUTPUT	
 
-	IF @ErrCode <> 0
-		RETURN;
-	
+		IF @ErrCode <> 0
+			RETURN
+	END
+
 	IF @Username <> ''
 	BEGIN
 		--Get CustID FROM DB06, WHERE got index on Username AND Username2 
