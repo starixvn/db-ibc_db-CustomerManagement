@@ -91,6 +91,18 @@ BEGIN
 			), 1,1,'')+' was (were) disabled.' 
 		RETURN
 	END
+	-- select @ErrorCode=106: Invalid usernames: do not exists on system
+	IF EXISTS(SELECT TOP 1 1 FROM @tmpCust WHERE RoleID = 0)
+	BEGIN
+		SELECT @ErrCode=106
+		SELECT @ErrMsg= 'You cannot update dangerous level for Headline account(s) '+	STUFF((
+				SELECT ',' + UserName  
+				FROM @tmpCust 
+				WHERE RoleID = 0
+				FOR XML PATH('')
+			), 1,1,'')
+		RETURN
+	END
 	--end
 	--Check permission for account site
 	IF @system = 'NAP'
