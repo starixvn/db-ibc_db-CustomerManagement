@@ -50,7 +50,6 @@ Revisions:
 	- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 	- 20200421@Elodie: Add GTCasino Product [Redmine: #130689]
 	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]	
-
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
 
 Param's Explanation:
