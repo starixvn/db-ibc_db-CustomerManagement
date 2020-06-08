@@ -206,6 +206,7 @@ Param's Explanation:
 		,	@bitmapOrder_BBIN			INT 
 		,	@bitmapOrder_TableGames		INT 
 		,	@bitmapOrder_RNGWar			INT 
+		,	@bitmapOrder_GTCasino		INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -240,6 +241,8 @@ Param's Explanation:
 		,	@IsHidden_BBIN			INT = 1
 		,	@IsHidden_TableGames	INT = 1
 		,	@IsHidden_RNGWar		INT = 1
+		,	@IsHidden_GTCasino		INT = 1
+
 
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT	
@@ -421,6 +424,11 @@ Param's Explanation:
 			@DisableTableGames AS DisableTableGames,
 			@HideTableGames AS HideTableGames,
 			@SyncedTableGames AS SyncedTableGames,
+			
+			--For RNGWar
+			@DisableRNGWar AS DisableRNGWar,
+			@HideRNGWar AS HideRNGWar,
+			@SyncedRNGWar AS SyncedRNGWar,
 
 			-- For NG2
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,
