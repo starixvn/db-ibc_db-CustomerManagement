@@ -37,6 +37,7 @@ Revisions:
 	- 20180621@Razor: Add Message Customer Read Status [Redmind: #94705]
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
+	- 20200602@Johnson: set max sub-acc = 30 for IBCIndo site [redmine:#135198]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -100,7 +101,9 @@ END
 --check no of subacc (must <= @MaxOfSubAcc)
 select @NoOfSubAcc = count(*) from custsub with (nolock) where custid = @custid
 
-select @MaxOfSubAcc = case roleid when 4 then 15 else 10 end
+select @MaxOfSubAcc = CASE WHEN site = 'IBCIndo' THEN 30 
+							ELSE CASE roleid when 4 then 15 else 10 end
+							END
 from customer with (nolock)
 where custid = @custid
 
@@ -258,17 +261,3 @@ END CATCH
 	
 
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
- GRANT VIEW DEFINITION ON [dbo].[Age_CustSubIns] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustSubIns] TO [bodbDownlineNetView]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustSubIns] TO [bodbDownlineNet]
-GO 
