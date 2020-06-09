@@ -18,6 +18,7 @@ AS
 			- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 			- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 			- 20190702@Dominic: Not show E-Sports [RedmineID:#114830]
+			- 20200608@Cherry: Not show Basketball (#134978)
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -55,7 +56,7 @@ BEGIN
             ON  cvs.seqNo = pvs.seqNo
     WHERE       cvs.custid = @CustID
 			AND ((@IsTest=0 AND pvs.isActive = 1) OR (@IsTest=1))
-			AND pvs.sporttype <> 43
+			AND pvs.sporttype NOT IN (43, 2)
 	ORDER BY sporttype, isLive DESC, bettype
 
     SELECT custid, sporttype, bettype, islive, virtualMultiplier
