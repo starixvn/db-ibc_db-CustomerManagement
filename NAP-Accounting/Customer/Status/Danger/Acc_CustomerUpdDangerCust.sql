@@ -1,7 +1,8 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
-	@CustID int,
+	@CustID int = NULL,
+	@Username VARCHAR(30) = '', --Username provided by user
 	@UpdateDownline bit = 0,
 	@DangerType tinyint,
 	@DangerLevel int=0,
@@ -40,6 +41,8 @@ AS
 		- 20190925@Johnson: Allow danger status for Super and Master levels [redmine:#120056]
 		- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
 		- 20200218@Elodie: Prevent update level 41 -> 50 on NAP site [Redmine:#128250]
+		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
+
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -53,51 +56,37 @@ BEGIN
 	declare @duration int, @roleid int
 	set @startRun = getdate()
 
-	--Check permission for account site: @phuc20080213
 	IF @system = 'NAP'
 	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		
+		EXECUTE dbo.Acc_CustomerCheckDangerCustList
+			@UsernameList= @Username ,		
+			@UserID = @UserID	,		
+			@DangerType	= @DangerType	,	
+			@DangerLevel =@DangerLevel	,	
+			@IP	=@IP			,	
+			@system = @system,
+			@ErrCode = @ErrCode	OUTPUT,
+			@ErrMsg = @ErrMsg	OUTPUT	
+
 		IF @ErrCode <> 0
 			RETURN
 	END
-	ELSE IF @system = 'NAP-CM'		
-	BEGIN
-		EXEC NAP_UserControl.dbo.NAP_User_CheckPermission @UserId=@userid,@SiteKey='CustomerManagement',@FunctionKey='PossessStatistics_CN88_DangerLevel',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-		
-		IF @ErrCode <> 0
-			RETURN		
-	END
-	--end
 
-	--Check disable user
-	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	if @ErrCode <>0 return
-	--end
-	
-	select @roleid = roleid from custinfo (nolock) where custid = @custid
-	
-	IF @roleid NOT IN (1,2,3,4)
-	BEGIN	
-		Select @ErrMsg = 'Invalid user!!',
-			@ErrCode = 101	
-		return	
-	END
-	
-	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
-	BEGIN	
-		SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',
-				@ErrCode = 102
-		RETURN	
+	IF @Username <> ''
+	BEGIN
+		--Get CustID FROM DB06, WHERE got index on Username AND Username2 
+		EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsername @username
 	END
 
 	DECLARE @dangerfield AS VARCHAR(10)
 	DECLARE @oldvalue AS VARCHAR(10)
 	DECLARE @BAMemberAg VARCHAR(MAX) = ''
 	
+	SELECT @roleid = roleid FROM custinfo (NOLOCK) WHERE custid = @CustID
+
 	IF (@DangerType=1)
 	BEGIN 
-		SET @oldvalue=(Select Danger from custInfo (NOLOCK) where custid=@CustID)
+		SET @oldvalue=(Select Danger FROM custInfo (NOLOCK) WHERE custid=@CustID)
 		SET @dangerfield='Danger'
 		
 		IF @updateDownline = 1 
