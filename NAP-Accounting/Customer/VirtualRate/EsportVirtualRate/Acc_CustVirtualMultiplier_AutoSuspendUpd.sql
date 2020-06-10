@@ -15,6 +15,7 @@ AS
 	    
 	Revisions:    
 		- 20191025@Eden : First commit [Redmind: #121876]
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 
 	Param's Explanation:
 	• @AutoSuspendXML
@@ -95,7 +96,7 @@ BEGIN
 	INTO #temp
 	FROM #NewDisableStatTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
-			OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID ) at
+			OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
 
 	CREATE CLUSTERED INDEX PK_temp_LevelID ON #temp(LevelID)
 
@@ -118,7 +119,7 @@ BEGIN
 
 	DECLARE @xmlStrAutoSuspendLive XML
 	DECLARE @xmlStrAutoSuspendNonLive XML
-	DECLARE @InitialBitMap VARBINARY(20) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 	
 	SET @xmlStrAutoSuspendLive =(
 			SELECT (
@@ -160,25 +161,26 @@ BEGIN
 			   ON tmp.LevelID = h.LevelID
 			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
-			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID ) at
+			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
 	FOR XML  RAW('r')
 	)
 
 	SELECT @TrackingValue2 = '<Root>' + ISNULL(@TrackingValue2,'') + '</Root>'
 
-	IF EXISTS ( SELECT TOP 1 1 FROM CustSettingAutoSuspend WITH(NOLOCK) WHERE CustID = @CustID)
+	IF EXISTS ( SELECT TOP 1 1 FROM CustSettingAutoSuspend WITH(NOLOCK) WHERE CustID = @CustID AND SportType = @SportType)
 	BEGIN
 		UPDATE CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
 		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (AutoSuspendLive, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
 			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (AutoSuspendNonLive, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)))	
-		WHERE CustID = @CustID
+		WHERE CustID = @CustID AND SportType = @SportType
 	END
 	ELSE
 	BEGIN
-		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive)
+		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive,Sporttype)
 		SELECT @CustID
 			,a1.bitmap
 			,a2.bitmap
+			,@SportType
 		FROM dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive)) a1
 			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)) a2
 	END
@@ -187,6 +189,7 @@ BEGIN
 	WHERE CustID = @CustID
 		AND AutoSuspendLive = @InitialBitMap
 		AND AutoSuspendNonLive = @InitialBitMap
+		AND SportType = @SportType
 
 	SELECT @TrackingValue1 = (
 		SELECT tmp.LevelID, 
@@ -202,7 +205,7 @@ BEGIN
 			   ON tmp.LevelID = h.LevelID
 			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
-			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID ) at
+			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
 	FOR XML  RAW('r')
 	)
 

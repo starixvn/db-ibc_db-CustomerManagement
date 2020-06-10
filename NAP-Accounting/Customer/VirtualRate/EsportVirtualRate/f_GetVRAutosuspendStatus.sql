@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20191216@Eden: Initial SP [Redmine: #121876]
 		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 
 	Explanation's Param:
 		
@@ -58,10 +59,10 @@ RETURN
 	LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
 	OUTER APPLY (	SELECT AutoSuspendLive, AutoSuspendNonLive
 					FROM dbo.CustSettingAutoSuspend WITH(NOLOCK)
-					WHERE custid = @CustID
+					WHERE custid = @CustID AND SportType = @SportType
 				)t
-	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
-	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
 	)
 	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= pr3.VRAutoSuspendThresholdLive AND ISNULL(h.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
 								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= pr3.VRAutoSuspendThresholdNonLive AND ISNULL(h.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
