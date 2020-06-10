@@ -28,6 +28,7 @@ AS
 		- 20200330@Johnson: initial sp [redmine:#130647]
 		- 20200513@Johnson: check super's prefix for 789's group [redmine:#133846]
 		- 20200601@Johnson: limit new supers per month for 789's group [redmine:#135057]
+		- 20200610@Johnson: set new super limit = 200 for 789's group [redmine:#135057]
 	Parameter's Explaination:
 	
 */
@@ -140,7 +141,7 @@ BEGIN
 		WHERE custId IN (SELECT custid FROM @tmpCustGroup)
 			AND creatdate >= @fromdate 
 			
-		IF @countSuper >= 50
+		IF @countSuper >= 200
 		BEGIN
 			SELECT @ErrMsg =  'You can only create up to 50 supers per month.',
 				@ErrCode = 201
