@@ -31,6 +31,14 @@ RETURN
 		INNER JOIN VRLeagueGroupMapping lm WITH(NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID 
 	WHERE h.SportType = @SportType AND h.BetType = @BetType AND lm.LeagueGroupID = @LeagueGroupID
 	UNION ALL
+	SELECT h.LevelID
+		,h.ParentLevelID
+	FROM VRSettingReference ref WITH(NOLOCK)
+		INNER JOIN  VRSettingHierarchy h WITH(NOLOCK) ON ref.RefLevelID = h.LevelID
+		INNER JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID 
+		INNER JOIN VRLeagueGroupMapping lm WITH(NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID 
+	WHERE ref.SportType = @SportType AND ref.BetType = @BetType AND ref.LeagueGroupID = @LeagueGroupID
+	UNION ALL
 	SELECT c.LevelID, c.ParentLevelID
 	FROM VRSettingHierarchy c WITH (NOLOCK)
 		INNER JOIN Tmp_VRSettingHierarchy p on p.ParentLevelID = c.LevelID 
@@ -38,7 +46,10 @@ RETURN
 	, Tmp_VRSettingHierarchy1 AS (
 		SELECT LevelID,ParentLevelID
 		FROM Tmp_VRSettingHierarchy
-		UNION SELECT 1,0
+		UNION 
+		SELECT LevelID,ParentLevelID
+		FROM VRSettingHierarchy c WITH (NOLOCK)
+		WHERE c.SportType = @SportType AND VRLeagueGroupID = -1 AND VRBetTypeGroupID = -1 AND BetType = -1 --Sporttype Level
 	)
 	,tempVR AS(
 	SELECT h.BetType
