@@ -37,7 +37,8 @@ RETURN
 		INNER JOIN  VRSettingHierarchy h WITH(NOLOCK) ON ref.RefLevelID = h.LevelID
 		INNER JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID 
 		INNER JOIN VRLeagueGroupMapping lm WITH(NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID 
-	WHERE ref.SportType = @SportType AND ref.BetType = @BetType AND ref.LeagueGroupID = @LeagueGroupID
+	WHERE ref.SportType = @SportType AND ref.BetType = @BetType AND ref.LeagueGroupID = @LeagueGroupID 
+		AND ref.SportType <> 43 -- Esport follow SportLevel
 	UNION ALL
 	SELECT c.LevelID, c.ParentLevelID
 	FROM VRSettingHierarchy c WITH (NOLOCK)
