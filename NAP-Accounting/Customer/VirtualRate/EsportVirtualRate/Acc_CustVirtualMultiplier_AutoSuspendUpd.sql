@@ -109,6 +109,7 @@ BEGIN
 		INNER JOIN #temp tmp  ON a.LevelID = tmp.LevelID
 	WHERE (tmp.BetType = -1 AND tmp.SportType = 43) 
 		OR (ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend) = tmp.IsLiveAutoSuspend AND ISNULL(a.IsNonLiveAutoSuspend, tmp.IsNonLiveAutoSuspend)  = tmp.IsNonLiveAutoSuspend)
+		OR (tmp.SportType <> @SportType)
 
 	UPDATE a
 	SET  a.IsLiveAutoSuspend = ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend)
