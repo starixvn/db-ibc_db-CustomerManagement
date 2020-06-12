@@ -332,7 +332,14 @@ BEGIN
 		ELSE IF @RoleID = 4  
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
 	END
-
+	
+	IF @SubAccID = 0
+	BEGIN
+		UPDATE customer WITH (ROWLOCK, UPDLOCK)  
+		SET lastlogged = CURRENT_TIMESTAMP 
+		WHERE custid = @CustID
+	END 
+	
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 	--------------------------- 

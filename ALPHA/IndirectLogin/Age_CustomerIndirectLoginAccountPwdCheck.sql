@@ -179,7 +179,20 @@ BEGIN
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect
 		AND SubAccIDIndirect = @SubAccIDIndirect
-			
+	
+	IF @SubAccIDIndirect > 0
+	BEGIN
+		UPDATE custSub with (rowlock, updlock) 
+		SET logincount = 0 
+		WHERE subaccid = @SubAccIDIndirect 
+	END
+	ELSE 
+	BEGIN
+		UPDATE customer with (rowlock, updlock)  
+		SET logincount = 0
+		WHERE custid = @CustIDIndirect
+	END
+	
 	-- Write log
 	SELECT @LogSPData = '<R '
 							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
