@@ -124,7 +124,8 @@ BEGIN
 			@IP = @IP,
 			@AutoSuspendXML = @virtualmultiplier,
 			@ErrCode = @ErrCode OUTPUT,
-			@ErrMsg = @ErrMsg OUTPUT
+			@ErrMsg = @ErrMsg OUTPUT,
+			@SportType = @SportType
 
 	IF @ErrCode > 0
 		RETURN
