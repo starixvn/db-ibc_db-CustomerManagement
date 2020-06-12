@@ -40,6 +40,7 @@ AS
 			</Root>'
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
+			,@SportType = 43
 
 		SELECT @ErrCode,@ErrMsg
   
@@ -93,6 +94,7 @@ BEGIN
 		,h.BetType
 		,dbo.f_GetProductStatus(at.AutoSuspendLive,h.BitmapOrderAutoSuspend) as IsLiveAutoSuspend
 		,dbo.f_GetProductStatus(at.AutoSuspendNonLive,h.BitmapOrderAutoSuspend) as IsNonLiveAutoSuspend
+		,h.SportType
 	INTO #temp
 	FROM #NewDisableStatTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
@@ -103,7 +105,7 @@ BEGIN
 	DELETE a
 	FROM #NewDisableStatTbl a
 		INNER JOIN #temp tmp  ON a.LevelID = tmp.LevelID
-	WHERE tmp.BetType = -1 
+	WHERE (tmp.BetType = -1 AND tmp.SportType = 43) 
 		OR (ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend) = tmp.IsLiveAutoSuspend AND ISNULL(a.IsNonLiveAutoSuspend, tmp.IsNonLiveAutoSuspend)  = tmp.IsNonLiveAutoSuspend)
 
 	UPDATE a
