@@ -95,10 +95,20 @@ BEGIN
 	
 	IF @RoleidIndirect NOT IN (2,3) OR @CustIDIndirect IS NULL
 	BEGIN
-		SELECT @ErrMsg = CASE @Language 
-				WHEN 'E' THEN 'Invalid account or it is not your downline.'
-				ELSE [dbo].[f_Get_MsgNamebyMsgID](40052,@Language)
-			END	,@ErrCode=101		
+		IF @RoleidIndirect = 1
+		BEGIN
+			SELECT @ErrMsg = CASE @Language 
+					WHEN 'E' THEN 'You cannot indirectly log in to member account.'
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](40053,@Language)
+				END	,@ErrCode=100	
+		END
+		ELSE 
+		BEGIN
+			SELECT @ErrMsg = CASE @Language 
+					WHEN 'E' THEN 'Invalid account or it is not your downline.'
+					ELSE [dbo].[f_Get_MsgNamebyMsgID](40052,@Language)
+				END	,@ErrCode=101		
+		END		
 		RETURN	
 	END
 	
@@ -122,28 +132,28 @@ BEGIN
 		RETURN	
 	END		
 	
+	DECLARE @ServerID INT,
+			@UplineUsername VARCHAR(30),
+			@LogData VARCHAR(4000),
+			@LogSPData VARCHAR(4000)
+				
+	IF @SubAccID = 0
+	BEGIN
+		SELECT @UplineUsername = username
+		FROM customer WITH(NOLOCK)
+		WHERE custid = @custid
+	END
+	ELSE 
+	BEGIN
+		SELECT @UplineUsername = username
+		FROM custSub WITH(NOLOCK)
+		WHERE custid = @custid
+			AND SubAccID = @SubAccID
+	END
+	
 	--check pwd
 	IF @userpwd <> @db_userpwd
-	BEGIN
-		DECLARE @ServerID INT,
-				@UplineUsername VARCHAR(30),
-				@LogData VARCHAR(4000),
-				@LogSPData VARCHAR(4000)
-				
-		IF @SubAccID = 0
-		BEGIN
-			SELECT @UplineUsername = username
-			FROM customer WITH(NOLOCK)
-			WHERE custid = @custid
-		END
-		ELSE 
-		BEGIN
-			SELECT @UplineUsername = username
-			FROM custSub WITH(NOLOCK)
-			WHERE custid = @custid
-				AND SubAccID = @SubAccID
-		END
-		
+	BEGIN		
 		SELECT @failedcount = @failedcount + 1
 		
 		SET @End = GETDATE()
@@ -230,7 +240,13 @@ BEGIN
 				AND custidIndirect = @custidIndirect
 				AND SubAccIDIndirect = @SubAccIDIndirect
 			)
-	RETURN
+	BEGIN
+		SELECT @ErrMsg = CASE @Language 
+				WHEN 'E' THEN 'The account has already been connected.'
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](40054,@Language)
+			END	,@ErrCode=103	
+		RETURN
+	END
 	
 	INSERT INTO CustInDirectLogin(CustID, SubAccID,CustIDIndirect, SubAccIDIndirect,LastVerifyPwd)
 	SELECT @custid, @SubAccID, @CustIDIndirect, @SubAccIDIndirect,GETDATE()

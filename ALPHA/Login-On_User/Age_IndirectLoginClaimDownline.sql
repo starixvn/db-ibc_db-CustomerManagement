@@ -28,6 +28,9 @@ ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT,
+	@IsNickname BIT = 0 OUTPUT,
+	@NicknameLoginOnly BIT = 0 OUTPUT,
+	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT
 AS
@@ -301,6 +304,12 @@ BEGIN
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
+		
+		SELECT @NicknameLoginOnly = NicknameLoginOnly,
+			@Nickname = username2,
+			@IsNickname = CASE WHEN ISNULL(username2,'') = '' THEN 0 ELSE 1 END
+		FROM dbo.custSub WITH (NOLOCK) 
+		WHERE subaccid = @SubAccID  		
 	END
 	ELSE 
 	BEGIN
@@ -310,9 +319,18 @@ BEGIN
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
-		SELECT	@PwdExpiry	= PwdExpiry
+		SELECT	@PwdExpiry	= PwdExpiry,
+				@Nickname = username2,
+				@IsNickname = CASE WHEN ISNULL(username2,'') = '' THEN 0 ELSE 1 END
 		FROM	Customer WITH (NOLOCK)
 		WHERE	CustID = @CustID
+		
+		IF @RoleID = 2  
+			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustAgent WITH (NOLOCK) WHERE CustID = @CustID   
+		ELSE IF @RoleID = 3  
+			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @CustID  
+		ELSE IF @RoleID = 4  
+			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
 	END
 
 	SET @End = GETDATE()
