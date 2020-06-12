@@ -88,8 +88,8 @@ BEGIN
 		,h.LevelID
 		,ISNULL(ValueIDLIVE,0) ValueIDLIVE, vlive.Value ValueLIVE
 		,ISNULL(ValueIDNonLIVE,0) ValueIDNonLIVE, vnonlive.Value ValueNonLIVE
-		,dbo.f_GetProductStatus(@AutoSuspendLive,h.BitmapOrderAutoSuspend) as IsLiveAutoSuspend
-		,dbo.f_GetProductStatus(@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) as IsNonLiveAutoSuspend
+		,Live.value as IsLiveAutoSuspend
+		,NonLive.value IsNonLiveAutoSuspend
 		,h.ParentLevelID
 		,h.SortOrder
 		,h.VRAutoSuspendThresholdNonLive
@@ -103,6 +103,8 @@ BEGIN
 				AND vr.LevelID = h.LevelID
 		LEFT JOIN VRValueMapping vlive WITH(NOLOCK) ON vr.ValueIDLIVE = vlive.ValueID
 		LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
 	WHERE h.SportType = @SportType
 
 	CREATE CLUSTERED INDEX PK_tempVR_LevelID ON #tempVR(LevelID)
