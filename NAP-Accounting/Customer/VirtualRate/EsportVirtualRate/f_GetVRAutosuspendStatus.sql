@@ -86,5 +86,5 @@ RETURN
 			ON pr1.ParentLevelID = pr2.LevelID 
 		LEFT JOIN tempVR h 
 			ON h.ParentLevelID = pr1.LevelID 
-	WHERE pr3.LevelID = 1
+	WHERE pr3.ParentLevelID = 0
 GO
