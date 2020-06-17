@@ -71,7 +71,7 @@ BEGIN
 	--	INSERT INTO @tbSite(siteid)
 	--	SELECT 11 --INDO
 	--END
-	ELSE IF (@System IN ('ACCINDO','ACCIN','INDOBS','INDO2','INDO56','INDOWIN','INDO56B','ACCINDO2') )
+	ELSE IF (@System IN ('ACCINDO','ACCIN','INDOBS','INDO2','INDO56','INDO56B','ACCINDO2') )
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT 11 --INDO
@@ -126,10 +126,17 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 294 --EU88
 	END
-	ELSE IF (@System IN ('IBCIndo', 'INDOWIN'))
+	ELSE IF (@System IN ('IBCIndo'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 487 --IBCIndo
+	END
+	ELSE IF (@System IN ('INDOWIN'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)		
+		SELECT 487 --IBCIndo
+		UNION ALL 
+		SELECT 11 --INDO
 	END
 	RETURN
 END
