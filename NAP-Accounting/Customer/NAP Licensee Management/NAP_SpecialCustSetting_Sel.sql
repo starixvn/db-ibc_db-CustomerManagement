@@ -17,6 +17,7 @@ AS
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 			- 20191225@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
+			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 			
 */
 SET NOCOUNT ON
@@ -48,6 +49,7 @@ BEGIN
 	DECLARE @SportTable TABLE([site] VARCHAR(100), CurrencyID INT, sporttype INT, bettype INT, maxbet MONEY,maxpermatch MONEY,maxperball MONEY,[group] VARCHAR(5))
 	INSERT INTO @SportTable
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=2, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=43, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=3, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,[group]='SB' UNION ALL
@@ -81,7 +83,8 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' 
+					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
 			,sp.MaxBet
 			,sp.MaxPerMatch
 			,sp.MaxPerBall
@@ -117,7 +120,8 @@ BEGIN
 			,sp.SportType
 			,sp.[Group]
 			,sp.Bettype
-			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportName
+			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' 
+					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
 			,tmp.MaxBet
 			,tmp.MaxPerMatch
 			,tmp.MaxPerBall

@@ -17,6 +17,7 @@ Created: Dom
 			- 20150609@Alex: Separate CustDB to DBCUST server (Use temp table for sports, bettype, GameType table)
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 			- 20191218@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
+			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 */
 
 BEGIN
@@ -93,7 +94,8 @@ BEGIN
 		,cbs.Bettype
 		,ci.UserName AgentName
 		,s.SportName SportName
-		,CASE WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay' ELSE s.SportName END SportGameType
+		,CASE WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay'
+				WHEN cbs.SportType=1 AND cbs.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportGameType
 		,cbs.MaxBet
 		,cbs.MaxPerMatch
 		,cbs.MaxPerBall
