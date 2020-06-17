@@ -42,6 +42,7 @@ Revisions:
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
 	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
+	- 20200617@Elodie: Allow IBCIndo for INDOWIN group - [Redmine: #133858]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -125,7 +126,7 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 294 --EU88
 	END
-	ELSE IF (@System IN ('IBCIndo'))
+	ELSE IF (@System IN ('IBCIndo', 'INDOWIN'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 487 --IBCIndo
