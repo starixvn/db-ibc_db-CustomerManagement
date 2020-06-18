@@ -251,6 +251,19 @@ BEGIN
 	INSERT INTO CustInDirectLogin(CustID, SubAccID,CustIDIndirect, SubAccIDIndirect,LastVerifyPwd)
 	SELECT @custid, @SubAccID, @CustIDIndirect, @SubAccIDIndirect,GETDATE()
 	
+	IF @SubAccIDIndirect > 0
+	BEGIN
+		UPDATE custSub with (rowlock, updlock) 
+		SET logincount = 0 
+		WHERE subaccid = @SubAccIDIndirect 
+	END
+	ELSE 
+	BEGIN
+		UPDATE customer with (rowlock, updlock)  
+		SET logincount = 0
+		WHERE custid = @CustIDIndirect
+	END
+	
 	-- Write log
 	SELECT @LogSPData = '<R '
 							+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + COALESCE(@UplineUserName,SPACE(1)) +'" ' ELSE '' END 
