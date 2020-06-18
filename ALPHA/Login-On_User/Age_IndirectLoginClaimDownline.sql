@@ -296,7 +296,7 @@ BEGIN
 	--**Output LoginIP to check the first login**
 	SELECT @LoginIP=ISNULL(@db_loginip, '')
 
-	IF @SubAccID > 0 
+	IF @SubAccD I> 0 
 	BEGIN
 		SELECT	 @isFirstLogin	= ISNULL(isFirstLogin,0)
 				,@PwdExpiry		= PwdExpiry
@@ -333,10 +333,23 @@ BEGIN
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
 	END
 	
-	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
-	SET lastlogged = CURRENT_TIMESTAMP 
-	WHERE custid = @CustID
+	IF @SubAccID = 0
+	BEGIN
+		UPDATE customer WITH (ROWLOCK, UPDLOCK)  
+		SET logincount = 0, lastlogged = CURRENT_TIMESTAMP 
+		WHERE custid = @CustID
+	END
+	ELSE 
+	BEGIN 
+		UPDATE custsub WITH(UPDLOCK,ROWLOCK)
+		SET logincount = 0
+		WHERE subAccID = @SubAccID
 		
+		UPDATE customer WITH (ROWLOCK, UPDLOCK)  
+		SET lastlogged = CURRENT_TIMESTAMP 
+		WHERE custid = @CustID
+	END
+	
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 	--------------------------- 
