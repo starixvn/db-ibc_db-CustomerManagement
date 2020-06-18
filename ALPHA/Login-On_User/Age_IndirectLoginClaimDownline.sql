@@ -296,7 +296,7 @@ BEGIN
 	--**Output LoginIP to check the first login**
 	SELECT @LoginIP=ISNULL(@db_loginip, '')
 
-	IF @SubAccD I> 0 
+	IF @SubAccID > 0 
 	BEGIN
 		SELECT	 @isFirstLogin	= ISNULL(isFirstLogin,0)
 				,@PwdExpiry		= PwdExpiry
