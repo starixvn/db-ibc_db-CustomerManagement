@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Acc_VR_BettypeVirtualRateMapping_Sel]
 AS
 /*    
 	Created: 20200616@Eden    
-	Task :  Select Bettype VirrtualRate AutoSuspendThreshold
+	Task :  Select Bettype VirrtualRate mapping
 	DB: CustDB/DBCUST
 	    
 	Revisions:    
