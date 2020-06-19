@@ -113,7 +113,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 70 --MKK
 	END
-	ELSE IF (@System IN('INDO56','INDOWIN','INDO56B','IBCIndo'))
+	ELSE IF (@System IN('INDO56','INDO56B'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 22 --IND
@@ -121,7 +121,7 @@ BEGIN
 		UNION SELECT 34 --IDR
 		UNION SELECT 15 --IN
 	END	
-	ELSE IF (@System IN('IBCIndo'))
+	ELSE IF (@System IN('IBCIndo','INDOWIN'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 22 --IND
