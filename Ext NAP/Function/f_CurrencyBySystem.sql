@@ -41,7 +41,7 @@ Revisions:
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
 	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
-	- 20200619@Elodie: add USD into IBCIndo group - [Redmine: #136096]
+	- 20200619@Elodie: add USD into IBCIndo, INDOWIN group - [Redmine: #136096]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
