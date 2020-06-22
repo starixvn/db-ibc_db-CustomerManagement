@@ -41,6 +41,7 @@ Revisions:
 	- 20190221@Elodie: Add TH001,TH002,TH003 group
 	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
+	- 20200619@Elodie: add USD into IBCIndo, INDOWIN group - [Redmine: #136096]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -112,13 +113,22 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 70 --MKK
 	END
-	ELSE IF (@System IN('INDO56','INDOWIN','INDO56B','IBCIndo'))
+	ELSE IF (@System IN('INDO56','INDO56B'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 22 --IND
 		UNION SELECT 33 --IDD
 		UNION SELECT 34 --IDR
 		UNION SELECT 15 --IN
+	END	
+	ELSE IF (@System IN('IBCIndo','INDOWIN'))
+	BEGIN
+		Insert Into @tbCurrency(exchangeID)
+		SELECT 22 --IND
+		UNION SELECT 33 --IDD
+		UNION SELECT 34 --IDR
+		UNION SELECT 15 --IN
+		UNION SELECT 95 --USD
 	END	
 	ELSE IF (@system = 'ACCUSDOTH')
 	BEGIN
