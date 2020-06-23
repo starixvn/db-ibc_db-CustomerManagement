@@ -22,7 +22,6 @@ BEGIN
 		, @Duration		INT
 		, @iDoc			INT
 		, @logSpData		 NVARCHAR(MAX)
-		, @logSpData_Old   NVARCHAR(MAX)
 		, @xml			 XML
 		, @RowTotal INT = 0
 		, @CurrentRow INT = 0;	
@@ -30,10 +29,7 @@ BEGIN
 		SportType SMALLINT,
 		Currency INT,
 		BetType SMALLINT,
-		SiteID INT,
-		IsLaunched BIT,
-		IsTest TINYINT,
-		LaunchedLevel SMALLINT
+		SiteID INT
 	)
 	--Check if XML is null or empty
 	IF @FileSetting IS NULL OR @FileSetting = ''
@@ -45,25 +41,13 @@ BEGIN
 		INSERT #File_Temp(SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel)
 		SELECT SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel
 		FROM OPENXML(@iDoc,'/ROOT/File',1) WITH (
-				SportType INT,
+				SportType SMALLINT,
 				Currency INT,
-				BetType INT,
-				SiteID INT,
-				IsLaunched BIT,
-				IsTest INT,
-				LaunchedLevel INT
+				BetType SMALLINT,
+				SiteID INT
 			)
 		EXEC sp_xml_removedocument @iDoc
-	
-		SELECT @logSpData_Old = (
-			SELECT plsc.SportType,plsc.Currency,plsc.BetType,plsc.SiteID,plsc.IsLaunched,plsc.IsTest,plsc.LaunchedLevel 
-			FROM ProductLaunchedSiteCurrency plsc WITH(NOLOCK)
-			INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
-							AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
-							--AND a.LaunchedLevel = plsc.LaunchedLevel
-			FOR XML RAW('File'))
-		SELECT 	@logSpData_Old = '<ROOT>' + @logSpData_Old + '</ROOT>' , @logSpData = @FileSetting
-		
+		SELECT 	 @logSpData = @FileSetting
 		-- Delete row IsTest = 1
 		DELETE plsc
 		FROM dbo.ProductLaunchedSiteCurrency plsc
@@ -83,7 +67,6 @@ BEGIN
 			@UserID = @UserID
 			,@ActionID = 6062
 			,@TrackingValue = @LogSPData
-			,@TrackingValue2	= @logSpData_Old
 			,@duration = @Duration
 	
 	-- Check Delete IsTest = 0

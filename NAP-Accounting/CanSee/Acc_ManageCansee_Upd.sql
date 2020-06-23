@@ -110,25 +110,6 @@ BEGIN
 		RETURN
 	END CATCH
 		
-	SELECT TOP(1) @MatrixError 	= CONVERT(VARCHAR(5),I.ID), 
-	              @ValueError 	= CASE  WHEN i.BetType >= 19999 THEN i.BetType							   
-								  ELSE p.ID END ,
-				  @ErrCode      = CASE	WHEN i.BetType >= 19999 THEN 1009								   
-								  ELSE 1011 END
-	FROM #Data_Input i
-		INNER JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
-						AND i.SportType = p.SportType   AND i.BetType = p.BetType
-	WHERE i.BetType >= 19999 OR I.ID <> p.ID
-	
-	IF @ErrCode <> 0
-	   BEGIN
-	     IF @ErrCode = 1009
-		 SELECT @ErrMsg = 'BetType must be less than 19999 on row "' + @MatrixError + '".'	                              
-		 IF @ErrCode = 1011 
-		 SELECT @ErrMsg = 'Row "' + @MatrixError +'"  does not Double ( ' + @ValueError +').'	
-	     RETURN
-	   END
-		
 	SELECT  @RowTotal = COUNT(*) FROM #Data_Input	
 	WHILE @CurrentRow <> @RowTotal
 	BEGIN
@@ -151,7 +132,6 @@ BEGIN
 			UPDATE p
 			SET 
 				P.IsTest = i.IsTest,
-				P.IsLaunched = i.IsLaunched,
 				p.LaunchedLevel = i.LaunchedLevel
 			FROM ProductLaunchedSiteCurrency p
 			INNER JOIN #Data_Input i on i.SiteID = p.SiteID  AND i.Currency = p.Currency 
