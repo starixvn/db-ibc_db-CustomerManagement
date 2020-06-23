@@ -1,6 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
--- exec Acc_ManageProductLaunchSiteCurrency_Cansee_Sel @SportType = 0, @BetType = 0,@BettypeName = 'min',@pMutilCurrency =N'47,48,51,52',@pMutilSite = '1,11,12,13'
-CREATE PROCEDURE [dbo].[Acc_ManageProductLaunchSiteCurrency_Cansee_Sel] 
+CREATE PROCEDURE [dbo].[Acc_ManageCansee_Sel] 
 	-- Add the parameters for the stored procedure here
 	@SportType      TINYINT = NULL,
 	@BetType        INT = 0,
@@ -9,12 +8,13 @@ CREATE PROCEDURE [dbo].[Acc_ManageProductLaunchSiteCurrency_Cansee_Sel]
 	@pMutilSite  NVARCHAR(Max) = ''
 AS
 BEGIN
+	-- exec Acc_ManageProductLaunchSiteCurrency_Cansee_Sel @SportType = 0, @BetType = 0,@BettypeName = 'min',@pMutilCurrency =N'47,48,51,52',@pMutilSite = '1,11,12,13'
 	/*
 		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
 		DB: DBCUST/CustDB
 		Original: 
 		Revisions:
-			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [[Redmine: #131241]]
+			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 	*/
 	SET NOCOUNT ON;
 	CREATE TABLE #Bettype (typeid INT , typenamee NVARCHAR(128))

@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_ManageProductLaunchSiteCurrency_Cansee_Ins] 
+CREATE PROCEDURE [dbo].[Acc_ManageCansee_Ins] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)
 	, @UserID		INT
@@ -13,7 +13,7 @@ BEGIN
 		DB: DBCUST/CustDB
 		Original: 
 		Revisions:
-			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [[Redmine: #131241]]
+			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 	*/
 	SET NOCOUNT ON;
 	
