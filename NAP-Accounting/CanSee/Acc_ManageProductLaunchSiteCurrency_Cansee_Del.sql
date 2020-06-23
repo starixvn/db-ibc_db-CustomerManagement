@@ -88,19 +88,7 @@ BEGIN
 			,@duration = @Duration
 	
 	-- Check Delete IsTest = 0
-	IF EXISTS(	SELECT TOP 1 1 
-				FROM dbo.ProductLaunchedSiteCurrency plsc
-					INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
-								AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
-				WHERE 	plsc.IsTest = 0 			
-			)
-	BEGIN
-		SELECT @ErrMsg = 'The IsTest of row(s) is Prod. Please update IsTest before deleting.!'
-		,@ErrCode  = 101 
-		DROP TABLE #File_Temp	
-		RETURN	
-	END		
-			
+				
 	DROP TABLE #File_Temp	
 END
 GO
