@@ -65,6 +65,8 @@ BEGIN
 	INSERT INTO #Sports  (SportType)	
 	SELECT SportType 
 	FROM DBACC.bodb02.dbo.Sports WITH(NOLOCK)
+	-- insert all Sports
+	INSERT INTO #Sports  (SportType) VALUES (0)
 	
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @FileSetting
@@ -177,7 +179,7 @@ BEGIN
 	WHERE s.SportType		IS NULL 
 		OR b.typeid			IS NULL 
 		OR p.SiteID		IS NULL
-		OR bg.exchangeid		IS NULL
+		OR (bg.exchangeid IS NULL AND i.Currency <> 0)
 
 	IF @ErrCode <> 0
 	BEGIN
