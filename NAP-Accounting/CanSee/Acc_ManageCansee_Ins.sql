@@ -36,13 +36,13 @@ BEGIN
 			
 	CREATE TABLE #Data_Input(
 		ID	INT IDENTITY (1,1),
-		SportType INT,
+		SportType SMALLINT,
 		Currency INT,
-		BetType INT,
+		BetType SMALLINT,
 		SiteID INT,
 		IsLaunched BIT,
-		IsTest INT,
-		LaunchedLevel INT
+		IsTest TINYINT,
+		LaunchedLevel SMALLINT
 	)	
 		
 	CREATE TABLE #File_Temp(

@@ -27,13 +27,13 @@ BEGIN
 		, @RowTotal INT = 0
 		, @CurrentRow INT = 0;	
 	CREATE TABLE #File_Temp(
-		SportType INT,
+		SportType SMALLINT,
 		Currency INT,
-		BetType INT,
+		BetType SMALLINT,
 		SiteID INT,
 		IsLaunched BIT,
-		IsTest INT,
-		LaunchedLevel INT
+		IsTest TINYINT,
+		LaunchedLevel SMALLINT
 	)
 	--Check if XML is null or empty
 	IF @FileSetting IS NULL OR @FileSetting = ''
