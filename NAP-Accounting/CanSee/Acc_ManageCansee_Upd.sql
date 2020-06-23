@@ -141,7 +141,7 @@ BEGIN
 							'IsLaunched="' + COALESCE(CAST(p.IsLaunched  AS VARCHAR(2)), SPACE(1)) + '" ' +
 							'IsTest="' + COALESCE(CAST(p.IsTest  AS VARCHAR(2)), SPACE(1)) + '" ' +							
 							'LaunchedLevel="' + COALESCE(CAST(p.LaunchedLevel  AS VARCHAR(2)), SPACE(1)) + '" ' +	
-							'LoginIP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
+							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
 		FROM ProductLaunchedSiteCurrency p WITH(NOLOCK)
 			INNER JOIN #Data_Input i on i.SiteID = p.SiteID  AND i.Currency = p.Currency 
 						AND i.SportType = p.SportType   AND i.BetType = p.BetType
@@ -170,15 +170,15 @@ BEGIN
 							'IsLaunched="' + COALESCE(CAST(IsLaunched  AS VARCHAR(2)), SPACE(1)) + '" ' +
 							'IsTest="' + COALESCE(CAST(IsTest  AS VARCHAR(2)), SPACE(1)) + '" ' +							
 							'LaunchedLevel="' + COALESCE(CAST(LaunchedLevel  AS VARCHAR(2)), SPACE(1)) + '" ' +	
-							'LoginIP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
+							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
 		FROM #Data_Input
 		WHERE ID = @CurrentRow
 
 		SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
 
-		EXEC  DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 				@UserID = @UserID,
-				@ActionID = 95023,
+				@ActionID = 6061,
 				@TrackingValue = @LogSPData,
 				@TrackingValue2 = @logSpData_Old,
 				@duration = @Duration

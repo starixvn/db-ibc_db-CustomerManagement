@@ -64,7 +64,6 @@ BEGIN
 			FOR XML RAW('File'))
 		SELECT 	@logSpData_Old = '<ROOT>' + @logSpData_Old + '</ROOT>' , @logSpData = @FileSetting
 		
-		
 		-- Delete row IsTest = 1
 		DELETE plsc
 		FROM dbo.ProductLaunchedSiteCurrency plsc
@@ -80,14 +79,24 @@ BEGIN
 	END CATCH
 	
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
-	EXEC  DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@UserID = @UserID
-			,@ActionID = 95015
+			,@ActionID = 6062
 			,@TrackingValue = @LogSPData
 			,@TrackingValue2	= @logSpData_Old
 			,@duration = @Duration
 	
 	-- Check Delete IsTest = 0
+	IF EXISTS(	SELECT TOP 1 1 
+				FROM dbo.ProductLaunchedSiteCurrency plsc
+					INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
+								AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
+				WHERE 	plsc.IsTest = 0 			
+			)
+	BEGIN
+		SELECT @ErrMsg = 'The IsTest of row(s) is Prod. Please update IsTest before deleting.!'
+		,@ErrCode  = 101 
+	END		
 				
 	DROP TABLE #File_Temp	
 END
