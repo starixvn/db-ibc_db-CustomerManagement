@@ -7,6 +7,7 @@ Task : Get Currency Name by exchangeID
 DB: DB05.BODB02 , DB06.BODB02
 Original:Accounting site
 Revisions:
+	- 20200624@Winfred: Input format metadata [Redmine: #131241]
 */		
 
 -- test 2
