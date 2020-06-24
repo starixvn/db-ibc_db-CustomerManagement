@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
+﻿/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
 AS
 /*
 Created: HuyNguyen
@@ -13,12 +14,3 @@ Revisions:
 
 	SELECT exchangeid, currency from exchange with (nolock) where exchangeid <> 20
 
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeCurrencySel] TO [vnteam] AS [dbo]
