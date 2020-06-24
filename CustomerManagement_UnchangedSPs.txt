@@ -1,2 +1,1 @@
-NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeCurrencySel.sql
 NAP-Accounting\Site\dbo.Acc_SiteSel_Credit.sql
