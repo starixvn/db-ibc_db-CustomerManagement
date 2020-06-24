@@ -1,15 +1,2 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
-ALPHA\Customer\Age_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-Ext NAP\Customer\EAS_CustomerSelAllInfo.sql
-ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
-ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_MAg.sql
-ALPHA\MemberInformation\ViewPTList\Age_CustomerSelPositionTakingByProductID_Ag.sql
-ALPHA\MemberInformation\ViewPTList\Age_CustomerSelPositionTakingByProductID_MAg.sql
-ALPHA\MemberInformation\ViewPTList\Age_CustomerSelPositionTakingByProductID_SAg.sql
-Ext NAP\Customer\EAS_CustomerInsMember_CloneSetting_Com.sql
+NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeCurrencySel.sql
+NAP-Accounting\Site\dbo.Acc_SiteSel_Credit.sql
