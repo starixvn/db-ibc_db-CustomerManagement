@@ -16,7 +16,7 @@ BEGIN
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 	*/
 	SET NOCOUNT ON;
-	--SportType,BetType,Currency,SiteID,IsLaunched,IsTest,LaunchedLevel
+	--SportType,BetType,Currency,SiteID
 	DECLARE @StartRun	DATETIME
 		, @EndRun		DATETIME
 		, @Duration		INT
@@ -38,8 +38,8 @@ BEGIN
 	BEGIN TRY
 		-- Create table temp data delete
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @FileSetting
-		INSERT #File_Temp(SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel)
-		SELECT SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel
+		INSERT #File_Temp(SportType,Currency,BetType,SiteID)
+		SELECT SportType,Currency,BetType,SiteID
 		FROM OPENXML(@iDoc,'/ROOT/File',1) WITH (
 				SportType SMALLINT,
 				Currency INT,
