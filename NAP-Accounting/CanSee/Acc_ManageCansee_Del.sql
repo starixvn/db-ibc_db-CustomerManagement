@@ -47,7 +47,16 @@ BEGIN
 				SiteID INT
 			)
 		EXEC sp_xml_removedocument @iDoc
-		SELECT 	 @logSpData = @FileSetting
+		-- Log row IsTest = 1
+		SELECT @logSpData = (
+			SELECT plsc.SportType,plsc.Currency,plsc.BetType,plsc.SiteID 
+			FROM ProductLaunchedSiteCurrency plsc WITH(NOLOCK)
+			INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
+							AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
+				WHERE 	plsc.IsTest = 1	
+			FOR XML RAW('File'))
+		
+		SET  @logSpData = '<ROOT>' + @logSpData + '</ROOT>'
 		-- Delete row IsTest = 1
 		DELETE plsc
 		FROM dbo.ProductLaunchedSiteCurrency plsc

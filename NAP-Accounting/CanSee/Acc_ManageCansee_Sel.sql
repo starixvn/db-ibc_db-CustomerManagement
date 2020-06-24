@@ -1,14 +1,14 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ManageCansee_Sel] 
 	-- Add the parameters for the stored procedure here
-	@SportType      TINYINT = NULL,
-	@BetType        INT = 0,
+	@SportType      TINYINT,
+	@BetType        INT = NULL,
 	@BettypeName    NVARCHAR(128) = '',
 	@pMutilCurrency  NVARCHAR(Max) = '',
 	@pMutilSite  NVARCHAR(Max) = ''
 AS
 BEGIN
-	-- exec Acc_ManageProductLaunchSiteCurrency_Cansee_Sel @SportType = 0, @BetType = 0,@BettypeName = 'min',@pMutilCurrency =N'47,48,51,52',@pMutilSite = '1,11,12,13'
+	-- exec Acc_ManageProductLaunchSiteCurrency_Cansee_Sel @SportType = 0, @BetType = 0,@BettypeName = 'min',@pMutilCurrency =N'47,48,51,52',@pMutilSite = '0,1,11,12,13'
 	/*
 		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
 		DB: DBCUST/CustDB
@@ -40,8 +40,8 @@ BEGIN
 		INNER JOIN exchange cc WITH(NOLOCK) ON cc.exchangeid = plsc.Currency
 		INNER JOIN #Bettype bt ON bt.typeid = plsc.BetType
 	WHERE bt.typenamee LIKE N'%' + @BettypeName + '%'
-	AND (@BetType = 0 OR plsc.BetType = @BetType )
-	AND (@SportType = 0 OR plsc.SportType = @SportType)
+	AND (@BetType IS NULL OR plsc.BetType = @BetType )
+	AND (plsc.SportType = @SportType)
 	order by Plsc.SiteID,plsc.SportType,plsc.BetType
    
    DROP TABLE #Bettype
