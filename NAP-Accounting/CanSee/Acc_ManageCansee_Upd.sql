@@ -65,8 +65,8 @@ BEGIN
 		RETURN
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @FileSetting
-		INSERT #File_Temp(SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel)
-		SELECT SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel
+		INSERT #File_Temp(SportType,Currency,BetType,SiteID,IsTest,LaunchedLevel)
+		SELECT SportType,Currency,BetType,SiteID,IsTest,LaunchedLevel
 		FROM OPENXML(@iDoc,'/ROOT/File',1) WITH (
 				SportType NVARCHAR(MAX),
 				Currency  NVARCHAR(MAX),
