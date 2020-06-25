@@ -36,7 +36,6 @@ BEGIN
 		Currency INT,
 		BetType SMALLINT,
 		SiteID INT,
-		IsLaunched BIT,
 		IsTest TINYINT,
 		LaunchedLevel SMALLINT
 	)	
@@ -47,7 +46,6 @@ BEGIN
 		Currency		NVARCHAR(MAX),
 		BetType			NVARCHAR(MAX),
 		SiteID			NVARCHAR(MAX),
-		IsLaunched		NVARCHAR(MAX),
 		IsTest			NVARCHAR(MAX),
 		LaunchedLevel	NVARCHAR(MAX)
 	)
@@ -74,7 +72,6 @@ BEGIN
 				Currency  NVARCHAR(MAX),
 				BetType   NVARCHAR(MAX)	,
 				SiteID    NVARCHAR(MAX),
-				IsLaunched NVARCHAR(MAX),
 				IsTest NVARCHAR(MAX),
 				LaunchedLevel NVARCHAR(MAX)
 			)
@@ -91,7 +88,6 @@ BEGIN
 			Currency	,
 			BetType		,
 			SiteID		,
-			IsLaunched	,
 			IsTest		,
 			LaunchedLevel
 		)
@@ -100,7 +96,6 @@ BEGIN
 			Currency	,
 			BetType		,
 			SiteID		,
-			IsLaunched	,
 			IsTest		,
 			LaunchedLevel
 		FROM #File_Temp
@@ -119,7 +114,6 @@ BEGIN
 		                    'Currency="' + COALESCE(CAST(p.Currency  AS VARCHAR(10)), SPACE(1)) + '" ' +
 		                    'SportType="' + COALESCE(CAST(p.SportType   AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'BetType="' + COALESCE(CAST(p.BetType  AS VARCHAR(10)), SPACE(1)) + '" ' +
-							'IsLaunched="' + COALESCE(CAST(p.IsLaunched  AS VARCHAR(2)), SPACE(1)) + '" ' +
 							'IsTest="' + COALESCE(CAST(p.IsTest  AS VARCHAR(2)), SPACE(1)) + '" ' +							
 							'LaunchedLevel="' + COALESCE(CAST(p.LaunchedLevel  AS VARCHAR(2)), SPACE(1)) + '" ' +	
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
@@ -147,7 +141,6 @@ BEGIN
 		                    'Currency="' + COALESCE(CAST(Currency  AS VARCHAR(10)), SPACE(1)) + '" ' +
 		                    'SportType="' + COALESCE(CAST(SportType   AS VARCHAR(10)), SPACE(1)) + '" ' +
 							'BetType="' + COALESCE(CAST(BetType  AS VARCHAR(10)), SPACE(1)) + '" ' +
-							'IsLaunched="' + COALESCE(CAST(IsLaunched  AS VARCHAR(2)), SPACE(1)) + '" ' +
 							'IsTest="' + COALESCE(CAST(IsTest  AS VARCHAR(2)), SPACE(1)) + '" ' +							
 							'LaunchedLevel="' + COALESCE(CAST(LaunchedLevel  AS VARCHAR(2)), SPACE(1)) + '" ' +	
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" />'
