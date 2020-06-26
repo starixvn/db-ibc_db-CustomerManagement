@@ -1,1 +1,3 @@
-NAP-Accounting\Site\dbo.Acc_SiteSel_Credit.sql
+ALPHA\Customer\Age_CustomerSelAllStatus.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+Ext NAP\UserControl\GroupConfiguration\EAS_GetProductList.sql
