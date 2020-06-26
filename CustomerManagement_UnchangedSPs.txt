@@ -1,3 +1,2 @@
 ALPHA\Customer\Age_CustomerSelAllStatus.sql
 NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-Ext NAP\UserControl\GroupConfiguration\EAS_GetProductList.sql
