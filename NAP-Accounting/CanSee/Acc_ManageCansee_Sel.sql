@@ -22,6 +22,20 @@ BEGIN
 	SELECT typeid,typenamee 
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
+	CREATE TABLE #Site (siteid INT , site NVARCHAR(50))
+	INSERT INTO #Site  (siteid,site)	
+	SELECT siteid,site 
+	FROM Site WITH(NOLOCK)
+	UNION ALL
+	SELECT 0 as siteid, N'All Sites' as site
+		
+	CREATE TABLE #Exchange (exchangeid INT , currency NVARCHAR(50))
+	INSERT INTO #Exchange  (exchangeid,currency)	
+	SELECT exchangeid,currency 
+	FROM exchange WITH(NOLOCK)
+	UNION ALL
+	SELECT 0 as exchangeid, N'All Currencies ' as currency
+	
 	SELECT 
 		 plsc.SportType
 		,plsc.BetType
@@ -36,14 +50,14 @@ BEGIN
 	FROM ProductLaunchedSiteCurrency plsc WITH(NOLOCK)
 		INNER JOIN dbo.strSplit(@pMutilSite, ',') AS ms ON plsc.SiteID = ms.val
 		INNER JOIN dbo.strSplit(@pMutilCurrency, ',') AS Mcc ON plsc.Currency = Mcc.val
-		INNER JOIN Site s WITH(NOLOCK) ON plsc.SiteID = s.siteid
-		INNER JOIN exchange cc WITH(NOLOCK) ON cc.exchangeid = plsc.Currency
+		INNER JOIN #Site s WITH(NOLOCK) ON plsc.SiteID = s.siteid
+		INNER JOIN #Exchange cc WITH(NOLOCK) ON cc.exchangeid = plsc.Currency
 		INNER JOIN #Bettype bt ON bt.typeid = plsc.BetType
 	WHERE bt.typenamee LIKE N'%' + @BettypeName + '%'
 	AND (@BetType IS NULL OR plsc.BetType = @BetType )
 	AND (plsc.SportType = @SportType)
 	order by Plsc.SiteID,plsc.SportType,plsc.BetType
    
-   DROP TABLE #Bettype
+   DROP TABLE #Bettype,#Exchange,#Site
 END
 GO
