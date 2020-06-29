@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROC [Acc_SiteSel_Credit]
-	@pMode INT = 0 --0 : NO CN88, 1 : All
+	@Mode INT = 0 --0 : NO CN88, 1 : All
 AS
 
 /*
@@ -19,5 +19,5 @@ SET NOCOUNT ON
 select [siteid], [site] 
 from [site]  with(nolock)
 where islicensee = 0  AND (
-(@pMode = 1) OR (isactive=1 AND [siteid]<>329))
+(@Mode = 1) OR (isactive=1 AND [siteid]<>329))
 GO
