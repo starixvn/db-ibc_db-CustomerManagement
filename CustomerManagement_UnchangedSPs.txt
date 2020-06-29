@@ -1,2 +1,3 @@
 ALPHA\Customer\Age_CustomerSelAllStatus.sql
 NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
