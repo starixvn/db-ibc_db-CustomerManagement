@@ -2,6 +2,7 @@
 CREATE PROCEDURE [dbo].[Acc_ManageCansee_Upd] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)
+	, @ColumnMode	INT  = 1  -- 1 : IsTest, 2 : LaunchedLevel
 	, @UserID		INT
 	, @IP			VARCHAR(50)		= ''
 	, @ErrCode		INT				= 0		OUTPUT
@@ -17,6 +18,7 @@ BEGIN
 	*/
 	SET NOCOUNT ON;
 	--SportType,BetType,Currency,SiteID,IsLaunched,IsTest,LaunchedLevel
+	--@ColumnMode  1 : IsTest, 2 : LaunchedLevel
 	DECLARE @StartRun	DATETIME
 		, @EndRun		DATETIME
 		, @Duration		INT
@@ -125,8 +127,8 @@ BEGIN
 		BEGIN TRY
 			UPDATE p
 			SET 
-				P.IsTest = i.IsTest,
-				p.LaunchedLevel = i.LaunchedLevel
+				P.IsTest = CASE WHEN @ColumnMode = 1 THEN  i.IsTest ELSE p.IsTest  END,
+				p.LaunchedLevel = CASE WHEN @ColumnMode = 2 THEN  i.LaunchedLevel ELSE p.LaunchedLevel  END
 			FROM ProductLaunchedSiteCurrency p
 			INNER JOIN #Data_Input i on i.SiteID = p.SiteID  AND i.Currency = p.Currency 
 						AND i.SportType = p.SportType   AND i.BetType = p.BetType
