@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_ManageCansee_Ins] 
+ALTER PROCEDURE [dbo].[Acc_ManageCansee_Ins] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)
 	, @UserID		INT
@@ -206,22 +206,24 @@ BEGIN
 	     RETURN
 	   END
 	
-	 SELECT TOP(1) @MatrixError = CONVERT(VARCHAR(5),I.ID), 
-				   @ErrCode     = 1011,
-				   @SiteIDErr	= I.SiteID,				  
-				   @CurrencyErr	= I.Currency,
-				   @SportTypeErr = I.SportType,
-				   @BetTypeErr	= I.BetType
-	FROM #Data_Input i
+	
+	SELECT @MatrixError = STUFF((
+         SELECT ',' + CAST(I.ID AS NVARCHAR(5)) + ''
+            FROM #Data_Input i
 		LEFT JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
 						AND i.SportType = p.SportType   AND i.BetType = p.BetType
 		LEFT JOIN ProductLaunchedSiteCurrency q ON i.SiteID = q.SiteID  AND i.Currency = q.Currency 
 						AND i.SportType = q.SportType   AND i.BetType = q.BetType				
 	WHERE (q.SiteID IS NOT NULL) OR (I.ID <> p.ID)
+            FOR XML PATH('')
+         ), 1, 1, '')
+	IF ISNULL(@MatrixError,'') <> ''
+		SET  @ErrCode     = 1011
 	
+	 SET @MatrixError =  REPLACE(@MatrixError, ',', '>,<');
 	IF @ErrCode <> 0
 	   BEGIN 
-		 SELECT @ErrMsg = 'Row "' + @MatrixError +'" Already exists the row SiteID <' + @SiteIDErr +'> - Currency <' + @CurrencyErr +'> - SportType <' + @SportTypeErr +'> - BetType <' + @BetTypeErr +'>  in the system.'	
+		 SELECT @ErrMsg = 'Row <' + @MatrixError +'> : SiteID - Currency  - SportType  - BetType of rows cannot be same.'	
 	     RETURN
 	   END  
 	   
