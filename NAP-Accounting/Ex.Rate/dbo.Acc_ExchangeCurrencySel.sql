@@ -3,10 +3,10 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
 	@Mode int = 1
 AS
 /*
-Created: HuyNguyen
-Task : Get Currency Name by exchangeID
+Created: Winfred.pham
+Task : Alpha - Enable/disable status for Saba Virtual Sport
 DB: DB05.BODB02 , DB06.BODB02
-Original:Accounting site
+Original:All site
 Revisions:
 	Parameter's explaination: @Mode  = 0: No currency UUS
 									 = 1: All Site
