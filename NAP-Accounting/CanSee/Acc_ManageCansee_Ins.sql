@@ -33,6 +33,10 @@ BEGIN
 		, @ColumnName NVARCHAR(200)
 		, @RowTotal INT = 0
 		, @CurrentRow INT = 0
+		, @SportTypeErr NVARCHAR(10)
+		, @CurrencyErr NVARCHAR(10)
+		, @BetTypeErr NVARCHAR(10)
+		, @SiteIDErr NVARCHAR(10)
 			
 	CREATE TABLE #Data_Input(
 		ID	INT IDENTITY (1,1),
@@ -187,27 +191,40 @@ BEGIN
 	
 	SELECT TOP(1) @MatrixError 	= CONVERT(VARCHAR(5),I.ID), 
 	              @ValueError 	= CASE  WHEN i.BetType >= 19999 THEN i.BetType
-										WHEN i.IsLaunched = 0 THEN i.IsLaunched								   
-								  ELSE p.ID END ,
+										ELSE i.IsLaunched END ,
 				  @ErrCode      = CASE	WHEN i.BetType >= 19999 THEN 1009
-										WHEN i.IsLaunched = 0 THEN 1010									   
-								  ELSE 1011 END
+										ELSE 1010	END				  
 	FROM #Data_Input i
-		INNER JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
-						AND i.SportType = p.SportType   AND i.BetType = p.BetType
-	WHERE i.BetType >= 19999 OR i.IsLaunched = 0 OR I.ID <> p.ID
+	WHERE i.BetType >= 19999 OR i.IsLaunched = 0
 	
 	IF @ErrCode <> 0
 	   BEGIN
 	     IF @ErrCode = 1009
 		 SELECT @ErrMsg = 'BetType must be less than 19999 on row "' + @MatrixError + '".'
 		 IF @ErrCode = 1010 
-		 SELECT @ErrMsg = 'Row  "' + @MatrixError +'" - The value of IsLaunched must be different from 0.'	                              
-		 IF @ErrCode = 1011 
-		 SELECT @ErrMsg = 'Row "' + @MatrixError +'"  does not Double ( ' + @ValueError +').'	
+		 SELECT @ErrMsg = 'Row "' + @MatrixError +'" - The value of IsLaunched must be different from 0.'	                              
 	     RETURN
 	   END
-		
+	
+	 SELECT TOP(1) @MatrixError = CONVERT(VARCHAR(5),I.ID), 
+				   @ErrCode     = 1011,
+				   @SiteIDErr	= I.SiteID,				  
+				   @CurrencyErr	= I.Currency,
+				   @SportTypeErr = I.SportType,
+				   @BetTypeErr	= I.BetType
+	FROM #Data_Input i
+		LEFT JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
+						AND i.SportType = p.SportType   AND i.BetType = p.BetType
+		LEFT JOIN ProductLaunchedSiteCurrency q ON i.SiteID = q.SiteID  AND i.Currency = q.Currency 
+						AND i.SportType = q.SportType   AND i.BetType = q.BetType				
+	WHERE (q.SiteID IS NOT NULL) OR (I.ID <> p.ID)
+	
+	IF @ErrCode <> 0
+	   BEGIN 
+		 SELECT @ErrMsg = 'Row "' + @MatrixError +'" Already exists the row SiteID <' + @SiteIDErr +'> - Currency <' + @CurrencyErr +'> - SportType <' + @SportTypeErr +'> - BetType <' + @BetTypeErr +'>  in the system.'	
+	     RETURN
+	   END  
+	   
 	SELECT  @RowTotal = COUNT(*) FROM #Data_Input	
 	WHILE @CurrentRow <> @RowTotal
 	BEGIN
