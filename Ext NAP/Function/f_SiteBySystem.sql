@@ -43,6 +43,7 @@ Revisions:
 	- 20191021@Gary: add ACCINDO2 group - [Redmine: #122340]
 	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
 	- 20200617@Elodie: Allow IBCIndo for INDOWIN group - [Redmine: #136032]
+	- 20200629@Johnson: Allow IBCIndo for INDOBS group [redmine: #136467]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -71,7 +72,7 @@ BEGIN
 	--	INSERT INTO @tbSite(siteid)
 	--	SELECT 11 --INDO
 	--END
-	ELSE IF (@System IN ('ACCINDO','ACCIN','INDOBS','INDO2','INDO56','INDO56B','ACCINDO2') )
+	ELSE IF (@System IN ('ACCINDO','ACCIN','INDO2','INDO56','INDO56B','ACCINDO2') )
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT 11 --INDO
@@ -131,13 +132,13 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 487 --IBCIndo
 	END
-	ELSE IF (@System IN ('INDOWIN'))
+	ELSE IF (@System IN ('INDOWIN','INDOBS'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 487 --IBCIndo
 		UNION ALL 
 		SELECT 11 --INDO
-	END
+	END	
 	RETURN
 END
 
