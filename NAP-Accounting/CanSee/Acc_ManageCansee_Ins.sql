@@ -208,7 +208,7 @@ BEGIN
 	
 	
 	SELECT @MatrixError = STUFF((
-         SELECT ',' + CAST(I.ID AS NVARCHAR(5)) + ''
+         SELECT DISTINCT ',' + CAST(I.ID AS NVARCHAR(5)) + ''
             FROM #Data_Input i
 		LEFT JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
 						AND i.SportType = p.SportType   AND i.BetType = p.BetType
