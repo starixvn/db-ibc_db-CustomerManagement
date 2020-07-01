@@ -206,17 +206,21 @@ BEGIN
 	     RETURN
 	   END
 	
-	
 	SELECT @MatrixError = STUFF((
-         SELECT DISTINCT ',' + CAST(I.ID AS NVARCHAR(5)) + ''
-            FROM #Data_Input i
-		LEFT JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
-						AND i.SportType = p.SportType   AND i.BetType = p.BetType
-		LEFT JOIN ProductLaunchedSiteCurrency q ON i.SiteID = q.SiteID  AND i.Currency = q.Currency 
-						AND i.SportType = q.SportType   AND i.BetType = q.BetType				
-	WHERE (q.SiteID IS NOT NULL) OR (I.ID <> p.ID)
+		SELECT ',' + CAST(KQ.ID AS NVARCHAR(5)) + ''
+		FROM (
+			SELECT DISTINCT I.ID
+			FROM #Data_Input i
+			LEFT JOIN #Data_Input p ON i.SiteID = p.SiteID  AND i.Currency = p.Currency 
+							AND i.SportType = p.SportType   AND i.BetType = p.BetType
+			LEFT JOIN ProductLaunchedSiteCurrency q ON i.SiteID = q.SiteID  AND i.Currency = q.Currency 
+							AND i.SportType = q.SportType   AND i.BetType = q.BetType				
+			WHERE (q.SiteID IS NOT NULL) OR (I.ID <> p.ID)
+			 ) KQ
+			 ORDER BY KQ.ID
             FOR XML PATH('')
          ), 1, 1, '')
+         
 	IF ISNULL(@MatrixError,'') <> ''
 		SET  @ErrCode     = 1011
 	
