@@ -98,6 +98,7 @@ BEGIN
 	FROM #VRSetting_AutoUpdate_ByExcel tmp
 		INNER JOIN customer c WITH(NOLOCK)
 			ON c.username = tmp.Username
+	WHERE c.roleid IN (1,2,3,4)
 
 	/* Validate empty username - Webcheck
 	DELETE a
