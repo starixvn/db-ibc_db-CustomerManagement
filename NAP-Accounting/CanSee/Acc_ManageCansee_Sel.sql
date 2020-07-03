@@ -28,6 +28,7 @@ BEGIN
 	FROM Site WITH(NOLOCK)
 	UNION ALL
 	SELECT 0 as siteid, N'All Sites' as site
+	WHERE @pMutilSite <> ''
 		
 	CREATE TABLE #Exchange (exchangeid INT , currency NVARCHAR(50))
 	INSERT INTO #Exchange  (exchangeid,currency)	
@@ -35,7 +36,8 @@ BEGIN
 	FROM exchange WITH(NOLOCK)
 	UNION ALL
 	SELECT 0 as exchangeid, N'All Currencies ' as currency
-	
+	WHERE @pMutilCurrency <> ''
+		
 	SELECT 
 		 plsc.SportType
 		,plsc.BetType
