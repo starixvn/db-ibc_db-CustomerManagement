@@ -166,12 +166,12 @@ BEGIN
 			@ErrCode = 1007,
 			@ValueError = CASE WHEN s.SportType		IS NULL THEN i.SportType
 							   WHEN b.typeid		IS NULL THEN i.BetType
-							   WHEN p.SiteID		IS NULL THEN i.SiteID
+							   WHEN p.SiteID		IS NULL AND i.SiteID <> 0 THEN i.SiteID
 						  ELSE i.Currency END,
 
 			@ColumnName = CASE WHEN s.SportType		IS NULL THEN 'Sporttype'
 			                   WHEN b.typeid		IS NULL THEN 'Bettype'
-							   WHEN p.SiteID		IS NULL THEN 'SiteID'
+							   WHEN p.SiteID		IS NULL AND i.SiteID <> 0 THEN 'SiteID'
 						  ELSE 'Currency' END
 	FROM #Data_Input i
 	     LEFT JOIN #Sports s		WITH(NOLOCK) ON s.SportType = i.SportType
