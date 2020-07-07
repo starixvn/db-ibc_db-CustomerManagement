@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerCheckDangerCustList]
 	@IP					VARCHAR(15) = '',
 	@system VARCHAR(50) = 'NAP',
 	@ErrCode			INT = 0				OUTPUT,
-	@ErrMsg				NVARCHAR(200) = ''	OUTPUT
+	@ErrMsg				NVARCHAR(MAX) = ''	OUTPUT
 
 AS
 SET NOCOUNT ON
@@ -46,7 +46,7 @@ BEGIN
 	
 	--Get list Username
 	INSERT INTO @tmpCust(UserName)
-	SELECT ss.val	
+	SELECT DISTINCT ss.val	
 	FROM dbo.strSplit(@UsernameList, ',') AS ss	
 
 
