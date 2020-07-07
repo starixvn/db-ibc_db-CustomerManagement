@@ -59,7 +59,7 @@ BEGIN
 		SET  @logSpData = '<ROOT>' + @logSpData + '</ROOT>'
 		-- Delete row IsTest = 1
 		DELETE plsc
-		FROM dbo.ProductLaunchedSiteCurrency plsc
+		FROM dbo.ProductLaunchedSiteCurrency plsc WITH(ROWLOCK)
 			INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
 						AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
 						--AND a.LaunchedLevel = plsc.LaunchedLevel
@@ -80,7 +80,7 @@ BEGIN
 	
 	-- Check Delete IsTest = 0
 	IF EXISTS(	SELECT TOP 1 1 
-				FROM dbo.ProductLaunchedSiteCurrency plsc
+				FROM dbo.ProductLaunchedSiteCurrency plsc WITH(NOLOCK)
 					INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
 								AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
 				WHERE 	plsc.IsTest = 0 			
