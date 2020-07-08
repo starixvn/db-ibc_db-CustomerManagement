@@ -1,24 +1,22 @@
-﻿ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
+﻿/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
+	@Mode int = 1
 AS
 /*
-Created: HuyNguyen
-Task : Get Currency Name by exchangeID
+Created: Winfred.pham
+Task : Alpha - Enable/disable status for Saba Virtual Sport
 DB: DB05.BODB02 , DB06.BODB02
-Original:Accounting site
+Original:All site
 Revisions:
+	Parameter's explaination: @Mode  = 0: No currency UUS
+									 = 1: All Site
+	- 20200624@Winfred: Input format metadata [Redmine: #131241]
 */		
 
 -- test 2
 	SET NOCOUNT ON
 
-	SELECT exchangeid, currency from exchange with (nolock) where exchangeid <> 20
+	SELECT exchangeid, currency 
+	FROM exchange WITH (NOLOCK) 
+	WHERE @Mode = 1 OR ( @Mode = 0 AND exchangeid <> 20)
 
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeCurrencySel] TO [bodbExtAccNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeCurrencySel] TO [vnteam] AS [dbo]
