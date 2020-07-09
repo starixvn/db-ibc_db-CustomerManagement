@@ -30,10 +30,7 @@ BEGIN
 	FROM custinfo ci WITH(NOLOCK)
 	WHERE username = @RefCust
 
-	SELECT @AgentCredit = Credit
-	FROM custinfo WITH(NOLOCK)
-	WHERE custID = @AgentID
-
+	SELECT @AgentCredit = ISNULL(Credit,0) FROM custinfo WITH(NOLOCK) WHERE custID = @AgentID
 	SELECT @Credit_AllOtherMember = ISNULL(SUM(Credit), 0) FROM custinfo WITH(NOLOCK) WHERE Recommend = @AgentID AND RoleID = 1
 	SELECT @Credit_Ag_Bal = @AgentCredit - ISNULL(@Credit_AllOtherMember,0)
 	SELECT @MaxCredit_Mem = isnull(maxcredit,0) from CustAgent WITH (NOLOCK) where CustID = @AgentID
