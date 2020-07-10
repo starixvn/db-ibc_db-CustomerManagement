@@ -76,8 +76,8 @@ RETURN
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
 	)
-	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= pr3.VRAutoSuspendThresholdLive AND COALESCE(h.IsLiveAutoSuspend,pr1.IsLiveAutoSuspend,pr2.IsLiveAutoSuspend,pr3.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
-								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= pr3.VRAutoSuspendThresholdNonLive AND COALESCE(h.IsNonLiveAutoSuspend,pr1.IsNonLiveAutoSuspend,pr2.IsNonLiveAutoSuspend,pr3.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
+	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) AND COALESCE(h.IsLiveAutoSuspend,pr1.IsLiveAutoSuspend,pr2.IsLiveAutoSuspend,pr3.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
+								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) AND COALESCE(h.IsNonLiveAutoSuspend,pr1.IsNonLiveAutoSuspend,pr2.IsNonLiveAutoSuspend,pr3.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
 				END IsVRAutoSuspend
 	FROM tempVR pr3
 		LEFT JOIN tempVR pr2
