@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
 (
 	@Username varchar(30),
@@ -15,6 +15,7 @@ Original:Accounting site
 		- 20120423@Lukas: add filer by roleid 
 		- 20171107@Vicky: Support to search customer id on Left panel (#86134)
 		- 20191119@Tiara: Replacing ISNUMERIC function by PATINDEX to check numeric (#123972)
+		- 20200525@Malcolm: Add metadata [Redmine : #128128]
 */
 BEGIN
 	DECLARE @custID INT
