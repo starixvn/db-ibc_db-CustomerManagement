@@ -39,6 +39,7 @@ AS
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20200311@Elodie: Suspicious account [Redmine:#129119]
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
+		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 */
 
 BEGIN
@@ -54,8 +55,7 @@ BEGIN
 			@AgentCredit MONEY,
 			@TotalAmt MONEY,
 			@Credit_AllOtherMember MONEY,
-			@matchlimit SMALLMONEY,
-			@isAllowNegativeCredit BIT = 0
+			@matchlimit SMALLMONEY
 
 	SELECT	@username = username,
 			@roleid = roleid,
@@ -137,11 +137,8 @@ BEGIN
 		END
 
 		EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT
-		
-		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
-		SELECT @isAllowNegativeCredit = 1
-		
-		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+				
+		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 100,
 					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
@@ -226,11 +223,8 @@ BEGIN
 				RETURN
 			END 	
 		END
-		
-		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
-		SELECT @isAllowNegativeCredit = 1
-		
-		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+				
+		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 121,
 					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
@@ -266,11 +260,8 @@ BEGIN
 	ELSE IF @roleid = 3
 	BEGIN
 		SELECT @uplineId = @srecommend
-		
-		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
-		SELECT @isAllowNegativeCredit = 1
-		
-		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+				
+		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 121,
 					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
@@ -327,10 +318,7 @@ BEGIN
 	BEGIN
 		SELECT @uplineId = @srecommend -- this super
 		
-		IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @srecommend)
-		SELECT @isAllowNegativeCredit = 1
-		
-		IF @isAllowNegativeCredit = 0 AND @NewCredit < 0
+		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 400,
 					@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'

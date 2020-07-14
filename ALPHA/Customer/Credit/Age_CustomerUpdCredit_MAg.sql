@@ -30,6 +30,7 @@ AS
 		- 20171107@Percy: Prevent user from decreasing given credit due to data processing [RedmineID: #82834]
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
+		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -41,8 +42,7 @@ BEGIN
 	DECLARE
 		@Credit_AllMember MONEY, 
 		@Credit_AllOtherAgent MONEY, 
-		@Credit_MAg MONEY,
-		@isAllowNegativeCredit BIT = 0
+		@Credit_MAg MONEY
 	
 	DECLARE @ErrCode INT = 0
 	
@@ -60,11 +60,8 @@ BEGIN
 
 	IF ISNULL(@OldCredit, 0) = ISNULL(@CreditAmt, 0)
 		RETURN
-	
-	IF EXISTS (SELECT 1 FROM dbo.f_SupersAllowNegativeGivenCreditSel() WHERE custid = @SAgID)
-	SELECT @isAllowNegativeCredit = 1
-	
-	IF @isAllowNegativeCredit = 0 AND @CreditAmt < 0
+		
+	IF @CreditAmt < 0
 	BEGIN
 		SELECT	@CreditProblem = 1,
 				@ErrMsg = CASE @Language WHEN 'E' THEN 'Credit must be positive.'
