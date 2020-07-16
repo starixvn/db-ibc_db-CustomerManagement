@@ -17,6 +17,10 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT, 
 	@IsNickname BIT = 0 OUTPUT,
 	@NickName VARCHAR(50) = '' OUTPUT,
+	@SuperID INT = 0 OUTPUT,
+	@Site 	VARCHAR(10) = '' OUTPUT,
+	@RoleID TINYINT = 0 OUTPUT,
+	@SubUserName VARCHAR(50) ='' OUTPUT,
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
 AS
@@ -57,7 +61,7 @@ AS
 		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 		- 20170724@Elodie: Don't reset login count of main account when sub account login successfull - [Redmine: #80409] 
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
-
+		- 20200624@Johnson: add superid, siteid for BF login to prevent robot [redmine:#135142] 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -79,10 +83,10 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
-	DECLARE @IsSubAccount BIT, @RoleID TINYINT, @SubUserName VARCHAR(50), @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
+	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
 		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
 		-- For checking login domain
-		@Site VARCHAR(10), @IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT	
+		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT	
 
 	SET @Begin = GETDATE()
 	SELECT @inputLoginIP = @LoginIP		
@@ -834,7 +838,7 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0)
+	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0), @superid = srecommend
 	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
 
 	IF @db_enabled <> 1
