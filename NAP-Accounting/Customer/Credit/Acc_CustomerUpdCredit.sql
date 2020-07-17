@@ -40,6 +40,7 @@ AS
 		- 20200311@Elodie: Suspicious account [Redmine:#129119]
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
+		- 20200717@Johnson: revise message check credit [redmine:#132994]
 */
 
 BEGIN
@@ -167,7 +168,7 @@ BEGIN
 		IF @TotalAmt + @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 101,
-					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Cannot reduce credit. Member outstanding exceeded.'
+					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'The new bet credit is out of the available range.'
 													ELSE [dbo].[f_Get_MsgNamebyMsgID](70006, @Language) END
 			RETURN 
 		END
