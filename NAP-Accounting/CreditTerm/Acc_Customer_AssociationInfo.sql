@@ -39,7 +39,7 @@ BEGIN
 			closed BIT,
 			[Enabled] BIT,
 			[Date] SMALLDATETIME )
-	CREATE TABLE #Input (CustId INT,[Date] SMALLDATETIME)--, PRIMARY KEY(CustId))
+	CREATE TABLE #Input (CustId INT,[Date] SMALLDATETIME, PRIMARY KEY(CustId))
 	
 	DECLARE @rowstart INT,@rowend INT, @iDoc			INT
 	SELECT @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
