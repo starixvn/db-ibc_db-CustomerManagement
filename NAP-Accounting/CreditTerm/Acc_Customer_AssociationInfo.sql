@@ -1,6 +1,4 @@
 /*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO
 ALTER PROCEDURE [dbo].[Acc_Customer_AssociationInfo] 
 	-- Add the parameters for the stored procedure here
 	 @HeadlineID SMALLINT
