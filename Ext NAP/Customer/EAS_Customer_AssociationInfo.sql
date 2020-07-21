@@ -1,6 +1,5 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_Customer_AssociationInfo] 
-	-- Add the parameters for the stored procedure here
+/*<info serverAlias="DBAGE-BODB02" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+CREATE PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
 	 @HeadlineID SMALLINT
 	,@AssociationList VARCHAR(MAX) = '' 
 	,@PageSize INT = 50
@@ -12,7 +11,7 @@ AS
 /*
 	Created by:Winfred.Pham	
 	Date:2020-07-21
-	Task: get list customers with association
+	Task: get list customers with association  
 	DB: DBAGE/BODB02
 	
 	Revisions:
@@ -32,7 +31,6 @@ BEGIN
 			ID INT IDENTITY (1,1),
 			CustId INT,
 			username NVARCHAR(50),
-			[Level] nvarchar(30),
 			reject BIT,
 			closed BIT,
 			[Enabled] BIT,
@@ -61,11 +59,10 @@ BEGIN
 		RETURN
 	END CATCH
 	-- Check Data
-	INSERT INTO #Result (CustId,username,[Level],reject,closed,[Enabled],[Date])
+	INSERT INTO #Result (CustId,username,reject,closed,[Enabled],[Date])
 	SELECT  
 	i.CustID
 	,c.username
-	,CASE c.RoleID WHEN 1 THEN 'Member' WHEN 2 THEN 'Agent' WHEN 3 THEN 'Master' WHEN 4 THEN 'Super' END [Level]
 	,c.closed
 	,c.reject
 	,c.Enabled
@@ -79,7 +76,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #Result
 	
-	SELECT CustId,username,[Level],reject,closed,[Enabled],[Date]
+	SELECT CustId,username,reject,closed,[Enabled],[Date]
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
 	
