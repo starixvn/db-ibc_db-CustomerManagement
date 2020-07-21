@@ -13,6 +13,7 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20200310@Eden: Initial version [Redmine:#128749]
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 		
 	Param's Explanation:
 	
@@ -48,7 +49,7 @@ BEGIN
 		WHERE vv.Islive = 1
 			AND (vrv.ValueID <> ISNULL(vr.ValueIDLIVE,0)
 				 OR (vv.VirtualMultiplier IS NULL AND ISNULL(vr.ValueIDLIVE,0) <> 0)
-				 OR (vv.CustId = 0 AND h.LevelID IN (154,1))
+				 OR (vv.CustId = 0 AND h.LevelID IN (SELECT b.LevelID FROM VRSettingHierarchy b WITH(NOLOCK) WHERE b.VRLeagueGroupID = -1 AND SportType = @SportType ))
 			)
 			AND vv.SportType = @SportType
 			AND vv.SessionID = @SessionID
@@ -69,7 +70,7 @@ BEGIN
 		WHERE vv.Islive = 0
 			AND (vrv.ValueID <> ISNULL(vr.ValueIDNonLIVE,0)
 				 OR (vv.VirtualMultiplier IS NULL AND ISNULL(vr.ValueIDNonLIVE,0) <> 0)
-				 OR (vv.CustId = 0 AND h.LevelID IN (154,1))
+				 OR (vv.CustId = 0 AND h.LevelID IN (SELECT b.LevelID FROM VRSettingHierarchy b WITH(NOLOCK) WHERE b.VRLeagueGroupID = -1 AND SportType = @SportType))
 			)
 			AND vv.SportType = @SportType
 			AND vv.SessionID = @SessionID

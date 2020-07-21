@@ -15,6 +15,7 @@ AS
 		- 20190626@Dominic : First commit
 		- 20190626@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
   
 */ 
 BEGIN
@@ -70,14 +71,14 @@ BEGIN
 	--1st Dataset: Cust/currency info
 	SELECT @CustID CustID,@Username Username, @Currency Currency,@ActualRate ActualRate, @UplineCustID UplineCustID, @UplineUsername UplineUsername , @RoleID AS RoleID
 
-	DECLARE @InitialBitMap VARBINARY(20) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	DECLARE @AutoSuspendLive    VARBINARY(20) = @InitialBitMap, 
-			@AutoSuspendNonLive VARBINARY(20) = @InitialBitMap
+	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @AutoSuspendLive    VARBINARY(30) = @InitialBitMap, 
+			@AutoSuspendNonLive VARBINARY(30) = @InitialBitMap
 			
 	SELECT @AutoSuspendLive = AutoSuspendLive, 
 		   @AutoSuspendNonLive = AutoSuspendNonLive
 	FROM dbo.CustSettingAutoSuspend WITH(NOLOCK)
-	WHERE custid = @CustID
+	WHERE custid = @CustID AND SportType = @SportType
 
 	--2nd Dataset: Virtual Rate
 	SELECT h.SportType
@@ -87,8 +88,8 @@ BEGIN
 		,h.LevelID
 		,ISNULL(ValueIDLIVE,0) ValueIDLIVE, vlive.Value ValueLIVE
 		,ISNULL(ValueIDNonLIVE,0) ValueIDNonLIVE, vnonlive.Value ValueNonLIVE
-		,dbo.f_GetProductStatus(@AutoSuspendLive,h.BitmapOrderAutoSuspend) as IsLiveAutoSuspend
-		,dbo.f_GetProductStatus(@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) as IsNonLiveAutoSuspend
+		,Live.value as IsLiveAutoSuspend
+		,NonLive.value IsNonLiveAutoSuspend
 		,h.ParentLevelID
 		,h.SortOrder
 		,h.VRAutoSuspendThresholdNonLive
@@ -102,6 +103,8 @@ BEGIN
 				AND vr.LevelID = h.LevelID
 		LEFT JOIN VRValueMapping vlive WITH(NOLOCK) ON vr.ValueIDLIVE = vlive.ValueID
 		LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
 	WHERE h.SportType = @SportType
 
 	CREATE CLUSTERED INDEX PK_tempVR_LevelID ON #tempVR(LevelID)
@@ -117,12 +120,12 @@ BEGIN
 		h.ValueLIVE, 
 		h.ValueIDNonLIVE, 
 		h.ValueNonLIVE, 
-		IsLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL ELSE h.IsLiveAutoSuspend END, 
-		IsNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL ELSE h.IsNonLiveAutoSuspend END,
-		IsDisableLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL
+		IsLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsLiveAutoSuspend END, 
+		IsNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsNonLiveAutoSuspend END,
+		IsDisableLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL
 										 WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= h.VRAutoSuspendThresholdLive THEN 0 
 									ELSE 1 END,
-		IsDisableNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 THEN NULL
+		IsDisableNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL
 											WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= h.VRAutoSuspendThresholdNonLive THEN 0 
 									ELSE 1 END,
 		h.VRAutoSuspendThresholdLive,

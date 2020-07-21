@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20191216@Eden: Initial SP [Redmine: #121876]
 		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 
 	Explanation's Param:
 		
@@ -30,6 +31,15 @@ RETURN
 		INNER JOIN VRLeagueGroupMapping lm WITH(NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID 
 	WHERE h.SportType = @SportType AND h.BetType = @BetType AND lm.LeagueGroupID = @LeagueGroupID
 	UNION ALL
+	SELECT h.LevelID
+		,h.ParentLevelID
+	FROM VRSettingReference ref WITH(NOLOCK)
+		INNER JOIN  VRSettingHierarchy h WITH(NOLOCK) ON ref.RefLevelID = h.LevelID
+		INNER JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID 
+		INNER JOIN VRLeagueGroupMapping lm WITH(NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID 
+	WHERE ref.SportType = @SportType AND ref.BetType = @BetType AND ref.LeagueGroupID = @LeagueGroupID 
+		AND ref.SportType <> 43 -- Esport follow SportLevel
+	UNION ALL
 	SELECT c.LevelID, c.ParentLevelID
 	FROM VRSettingHierarchy c WITH (NOLOCK)
 		INNER JOIN Tmp_VRSettingHierarchy p on p.ParentLevelID = c.LevelID 
@@ -37,7 +47,10 @@ RETURN
 	, Tmp_VRSettingHierarchy1 AS (
 		SELECT LevelID,ParentLevelID
 		FROM Tmp_VRSettingHierarchy
-		UNION SELECT 1,0
+		UNION 
+		SELECT LevelID,ParentLevelID
+		FROM VRSettingHierarchy c WITH (NOLOCK)
+		WHERE c.SportType = @SportType AND VRLeagueGroupID = -1 AND VRBetTypeGroupID = -1 AND BetType = -1 --Sporttype Level
 	)
 	,tempVR AS(
 	SELECT h.BetType
@@ -58,13 +71,13 @@ RETURN
 	LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
 	OUTER APPLY (	SELECT AutoSuspendLive, AutoSuspendNonLive
 					FROM dbo.CustSettingAutoSuspend WITH(NOLOCK)
-					WHERE custid = @CustID
+					WHERE custid = @CustID AND SportType = @SportType
 				)t
-	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
-	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
 	)
-	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= pr3.VRAutoSuspendThresholdLive AND ISNULL(h.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
-								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= pr3.VRAutoSuspendThresholdNonLive AND ISNULL(h.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
+	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) AND COALESCE(h.IsLiveAutoSuspend,pr1.IsLiveAutoSuspend,pr2.IsLiveAutoSuspend,pr3.IsLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END)
+								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) AND COALESCE(h.IsNonLiveAutoSuspend,pr1.IsNonLiveAutoSuspend,pr2.IsNonLiveAutoSuspend,pr3.IsNonLiveAutoSuspend,1) = 1 THEN 1 ELSE 0 END) 
 				END IsVRAutoSuspend
 	FROM tempVR pr3
 		LEFT JOIN tempVR pr2
@@ -73,5 +86,5 @@ RETURN
 			ON pr1.ParentLevelID = pr2.LevelID 
 		LEFT JOIN tempVR h 
 			ON h.ParentLevelID = pr1.LevelID 
-	WHERE pr3.LevelID = 1
+	WHERE pr3.ParentLevelID = 0
 GO

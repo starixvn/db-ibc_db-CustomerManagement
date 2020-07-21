@@ -1,1 +1,2 @@
-NAP-Accounting\Customer\Status\Danger\Acc_CustomerUpdDangerCust.sql
+NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplier_Upd.sql
+NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplierByUsername_Sel.sql

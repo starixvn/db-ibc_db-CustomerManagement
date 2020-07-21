@@ -25,6 +25,7 @@ AS
 		- 20200113@Tiara: New Virtual Rate Setting structure for Soccer [Redmine: #126243]
 		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
 		- 20200310@Eden : E-sport VR Phase 3 - Manually Updated Virtual Rate Accounts [Redmind: #128749]
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -124,7 +125,8 @@ BEGIN
 			@IP = @IP,
 			@AutoSuspendXML = @virtualmultiplier,
 			@ErrCode = @ErrCode OUTPUT,
-			@ErrMsg = @ErrMsg OUTPUT
+			@ErrMsg = @ErrMsg OUTPUT,
+			@SportType = @SportType
 
 	IF @ErrCode > 0
 		RETURN

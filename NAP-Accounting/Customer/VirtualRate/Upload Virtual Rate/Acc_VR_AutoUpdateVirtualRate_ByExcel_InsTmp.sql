@@ -14,6 +14,7 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20200310@Eden: Initial version [Redmine:#128749]
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 		
 	Param's Explanation:
 		@XML = '<Rt>
@@ -24,7 +25,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	-- Delete trash data
-	DELETE FROM VRSetting_AutoUpdate_ByExcel WITH(ROWLOCK) WHERE SessionID <> @SessionID AND ImportedBy = @UserID
+	DELETE FROM VRSetting_AutoUpdate_ByExcel WITH(ROWLOCK) WHERE SessionID <> @SessionID AND ImportedBy = @UserID AND SportType = @SportType
 
 	-- Insert from XML
 	CREATE TABLE #VRSetting_AutoUpdate_ByExcel(
@@ -97,6 +98,7 @@ BEGIN
 	FROM #VRSetting_AutoUpdate_ByExcel tmp
 		INNER JOIN customer c WITH(NOLOCK)
 			ON c.username = tmp.Username
+	WHERE c.roleid IN (1,2,3,4)
 
 	/* Validate empty username - Webcheck
 	DELETE a
