@@ -37,6 +37,7 @@ AS
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
+		- 20200717@Johnson: revise message check credit [redmine:#132994]
 	Param's Explanation:  
 		• @custid: custid that need to be updated   
 		• @CreditAmt: new credit   
@@ -140,7 +141,7 @@ BEGIN
 	IF @CreditAmt + @TotalAmt < 0
 	BEGIN
 		SELECT	@CreditProblem = 1,
-				@ErrMsg = CASE @Language WHEN 'E' THEN 'Cannot reduce credit. Member outstanding exceeded.'  
+				@ErrMsg = CASE @Language WHEN 'E' THEN 'The new bet credit is out of the available range.'  
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](70006, @Language) END
 		RETURN
 	END
