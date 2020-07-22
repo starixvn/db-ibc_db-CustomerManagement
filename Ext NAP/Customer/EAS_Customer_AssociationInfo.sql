@@ -1,6 +1,6 @@
 /*<info serverAlias="DBAGE-BODB02" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
-	 @HeadlineID SMALLINT
+ALTER PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
+	 @GroupName VARCHAR(25)
 	,@AssociationList VARCHAR(MAX) = '' 
 	,@PageSize INT = 50
 	,@PageIndex INT = 0
@@ -30,6 +30,7 @@ BEGIN
 	CREATE TABLE #Result (
 			ID INT IDENTITY (1,1),
 			CustId INT,
+			Roleid TINYINT,
 			username NVARCHAR(50),
 			reject BIT,
 			closed BIT,
@@ -59,24 +60,25 @@ BEGIN
 		RETURN
 	END CATCH
 	-- Check Data
-	INSERT INTO #Result (CustId,username,reject,closed,[Enabled],[Date])
+	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
 	SELECT  
 	i.CustID
 	,c.username
-	,c.closed
+	,c.roleid
 	,c.reject
+	,c.closed
 	,c.Enabled
 	,i.[Date]
 	FROM #Input i WITH(NOLOCK)
-	INNER JOIN custaccount ca WITH (NOLOCK) on i.custid = ca.custid
 	INNER JOIN Custinfo c WITH(NOLOCK) on i.custid = c.custid
-	WHERE ca.groupID = @HeadlineID
+	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
+	WHERE ca.GroupName = @GroupName
 	
 	-- Show Pages
 	SELECT @TotalRows = COUNT(1)
 	FROM #Result
 	
-	SELECT CustId,username,reject,closed,[Enabled],[Date]
+	SELECT CustId,username,Roleid,reject,closed,[Enabled],[Date]
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
 	
