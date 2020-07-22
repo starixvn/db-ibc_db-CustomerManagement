@@ -1,10 +1,11 @@
 /*<info serverAlias="DBAGE-BODB02" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
+CREATE PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
 	 @GroupName VARCHAR(25)
 	,@AssociationList VARCHAR(MAX) = '' 
 	,@PageSize INT = 50
 	,@PageIndex INT = 0
 	,@TotalRows INT = 0 OUTPUT
+	,@TotalAccount INT = 0 OUTPUT
 	,@ErrCode		INT				= 0		OUTPUT
 	,@ErrMsg		NVARCHAR(200)	= ''	OUTPUT
 AS
@@ -36,7 +37,7 @@ BEGIN
 			closed BIT,
 			[Enabled] BIT,
 			[Date] SMALLDATETIME )
-	CREATE TABLE #Input (CustId INT,[Date] SMALLDATETIME, PRIMARY KEY(CustId))
+	CREATE TABLE #Input (CustId INT,[Date] SMALLDATETIME)--, PRIMARY KEY(CustId))
 	
 	DECLARE @rowstart INT,@rowend INT, @iDoc			INT
 	SELECT @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
@@ -59,6 +60,9 @@ BEGIN
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
 		RETURN
 	END CATCH
+	-- Total row input
+	SELECT @TotalAccount = COUNT(1)
+	FROM #Input
 	-- Check Data
 	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
 	SELECT  
