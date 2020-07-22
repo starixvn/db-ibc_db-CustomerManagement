@@ -85,6 +85,7 @@ BEGIN
 	SELECT CustId,username,Roleid,reject,closed,[Enabled],[Date]
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
+	ORDER BY reject,closed,[Enabled],username
 	
 END
 GO
