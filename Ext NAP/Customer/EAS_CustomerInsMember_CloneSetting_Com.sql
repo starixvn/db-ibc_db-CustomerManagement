@@ -29,6 +29,7 @@ AS
 		- 20200513@Johnson: check super's prefix for 789's group [redmine:#133846]
 		- 20200601@Johnson: limit new supers per month for 789's group [redmine:#135057]
 		- 20200610@Johnson: set new super limit = 200 for 789's group [redmine:#135057]
+		- 20200723@Johnson: update errmsg limit supers [redmine:#135057]
 	Parameter's Explaination:
 	
 */
@@ -143,7 +144,7 @@ BEGIN
 			
 		IF @countSuper >= 200
 		BEGIN
-			SELECT @ErrMsg =  'You can only create up to 50 supers per month.',
+			SELECT @ErrMsg =  'You can only create up to 200 supers per month.',
 				@ErrCode = 201
 			RETURN		
 		END	
