@@ -143,7 +143,7 @@ BEGIN
 			
 		IF @countSuper >= 200
 		BEGIN
-			SELECT @ErrMsg =  'You can only create up to 50 supers per month.',
+			SELECT @ErrMsg =  'You can only create up to 200 supers per month.',
 				@ErrCode = 201
 			RETURN		
 		END	
