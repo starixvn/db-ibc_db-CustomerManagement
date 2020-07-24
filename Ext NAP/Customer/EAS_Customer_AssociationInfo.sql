@@ -82,7 +82,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #Result
 	
-	SELECT CustId,username,Roleid,reject,closed,[Enabled],[Date]
+	SELECT custid,username,roleid,reject  AS suspended,closed,enabled,[date]
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
 	ORDER BY reject,closed,[Enabled],username
