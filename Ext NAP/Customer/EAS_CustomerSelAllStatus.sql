@@ -13,6 +13,7 @@ AS
 		- 20190513@Johnson: add suspendinfo [redmine: #105587]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
+		- 20200713@Eden: Integrate 3 new bet types for Keno [Redmine: #137475]
 
 	Param's Explanation:
 	
@@ -170,7 +171,7 @@ BEGIN
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
 			ci.HideKeno,
-			MIN(CASE WHEN cg.GameTypeID IN (1,3,4,5,8,11,13,14,15,16,17,19,20,21,22,24,25,26) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
+			MIN(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
 		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
