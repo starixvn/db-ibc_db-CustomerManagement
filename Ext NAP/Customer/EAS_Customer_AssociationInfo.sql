@@ -37,7 +37,7 @@ BEGIN
 			closed BIT,
 			[Enabled] BIT,
 			[Date] SMALLDATETIME )
-	CREATE TABLE #Input (CustId INT,[Date] SMALLDATETIME, PRIMARY KEY(CustId))
+	CREATE TABLE #Input (CustId INT,CustSubId INT,[Date] SMALLDATETIME)
 	
 	DECLARE @rowstart INT,@rowend INT, @iDoc			INT
 	SELECT @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
@@ -48,10 +48,11 @@ BEGIN
 	-- Input Data
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @AssociationList
-		INSERT #Input(CustId,[Date])
-		SELECT CustId,[Date]
+		INSERT #Input(CustId,CustSubId,[Date])
+		SELECT CustId,CustSubId,[Date]
 		FROM OPENXML(@iDoc,'/Root/Association',1) WITH (
 				CustId	INT,
+				CustSubId INT,
 				[Date]	SMALLDATETIME
 			)
 		EXEC sp_xml_removedocument @iDoc
@@ -63,9 +64,9 @@ BEGIN
 	-- Total row input
 	SELECT @TotalAccount = COUNT(1)
 	FROM #Input
-	-- Check Data
+	-- Check Data not Sub 
 	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
-	SELECT  
+	SELECT DISTINCT
 	i.CustID
 	,c.username
 	,c.roleid
@@ -76,8 +77,21 @@ BEGIN
 	FROM #Input i WITH(NOLOCK)
 	INNER JOIN Custinfo c WITH(NOLOCK) on i.custid = c.custid
 	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
-	WHERE ca.GroupName = @GroupName
-	
+	WHERE ca.GroupName = @GroupName AND  i.CustSubId = 0
+	-- Check Data Sub 
+	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
+	SELECT  DISTINCT
+	i.CustID
+	,c.username
+	,c.roleid
+	,c.reject
+	,c.closed
+	,c.Enabled
+	,i.[Date]
+	FROM #Input i WITH(NOLOCK)
+	INNER JOIN Custinfo c WITH(NOLOCK) on i.CustSubId = c.custid
+	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
+	WHERE ca.GroupName = @GroupName AND  i.CustSubId <> 0
 	-- Show Pages
 	SELECT @TotalRows = COUNT(1)
 	FROM #Result
