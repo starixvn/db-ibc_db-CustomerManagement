@@ -682,10 +682,12 @@ BEGIN
 		,cs.CustStatus AS CN88CustStatus
 		,@SabaClubPlayerID3rd AS SabaClubPlayerID3rd
 		,ISNULL(@IsAutoEnableADBMaster,0) IsAutoEnableADBMaster
+		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
 	    LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 AND @IsDeposit = 0
+		LEFT JOIN CustSuspendLockUpd AS ls WITH (NOLOCK) ON ci.custid = ls.custid
 		OUTER APPLY (SELECT C.username
 					 FROM dbo.custaccount ca WITH (NOLOCK)
 						INNER JOIN Customer C ON CA.custid = C.custid 
