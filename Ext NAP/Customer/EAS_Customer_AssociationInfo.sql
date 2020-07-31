@@ -99,7 +99,7 @@ BEGIN
 	SELECT custid,username,roleid,reject  AS suspended,closed,enabled,[date]
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
-	ORDER BY reject,closed,[Enabled],username
+	ORDER BY [Enabled] desc,closed,reject,username
 	
 END
 GO
