@@ -80,9 +80,19 @@ BEGIN
 	FROM exchange WITH (NOLOCK) 
 	WHERE exchangeid=@exchangeid
 
+	IF @old_OfferSite = 1 AND @OfferSite = 2
+	BEGIN
+		SELECT @ErrMsg = 'You cannot update Offer Site from Credit to Deposit', @ErrCode = 101
+		RETURN
+	END
+	IF @old_OfferSite = 0 AND @OfferSite <> @old_OfferSite
+	BEGIN
+		SELECT @ErrMsg = 'You cannot update Offer Site from All to Credit/Deposit', @ErrCode = 102
+		RETURN
+	END
 	IF @old_OfferSite = 2 AND @OfferSite <> @old_OfferSite
 	BEGIN
-		SELECT @ErrMsg = 'Cannot add new currency. The ExchangeID between 1 and 99 have been used!', @ErrCode = 101
+		SELECT @ErrMsg = 'You cannot update Offer Site from Deposit to All/Credit', @ErrCode = 103
 		RETURN
 	END
 
