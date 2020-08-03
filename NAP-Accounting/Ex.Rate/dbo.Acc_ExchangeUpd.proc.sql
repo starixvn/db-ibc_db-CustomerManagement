@@ -14,7 +14,9 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@UserID INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT,
-	@IP VARCHAR(15) = ''
+	@IP VARCHAR(15) = '',
+	@OfferSite	TINYINT,
+	@IsActive BIT
 AS
 /*
 	Created: ?
@@ -34,6 +36,7 @@ AS
 		- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190627@Elodie: Apply currency min bet constrain for Bet Setting [Redmine:#115126]
+		- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -48,8 +51,7 @@ BEGIN
 		RETURN
 	--end
 
-
-	declare 
+	DECLARE 
 		@LogData nvarchar(400),
 		@old_minbet FLOAT ,
 		@old_minbetlive FLOAT ,
@@ -59,7 +61,9 @@ BEGIN
 		@old_US$Rate FLOAT ,	
 		@old_currency NVARCHAR(50),
 		@old_Description nvarchar(100),
-		@old_MultipliedBy int
+		@old_MultipliedBy INT,
+		@old_OfferSite	TINYINT,
+		@old_IsActive BIT
 
 	SELECT 
 		@old_minbet = minbet,
@@ -70,9 +74,17 @@ BEGIN
 		@old_US$Rate = US$Rate,	
 		@old_currency = currency,
 		@old_Description = Description,
-		@old_MultipliedBy = MultipliedBy	
+		@old_MultipliedBy = MultipliedBy,
+		@old_OfferSite = OfferSite,
+		@old_IsActive = IsActive
 	FROM exchange WITH (NOLOCK) 
 	WHERE exchangeid=@exchangeid
+
+	IF @old_OfferSite = 2 AND @OfferSite <> @old_OfferSite
+	BEGIN
+		SELECT @ErrMsg = 'Cannot add new currency. The ExchangeID between 1 and 99 have been used!', @ErrCode = 101
+		RETURN
+	END
 
 	UPDATE exchange 
 	SET 
@@ -83,7 +95,9 @@ BEGIN
 		EURORate = CASE WHEN ISNULL(@EURORate,-1) > -1 THEN @EURORate ELSE EURORate END,
 		US$Rate = CASE WHEN ISNULL(@US$Rate,-1) > -1 THEN @US$Rate ELSE US$Rate END,
 		Description = @Description,
-		MultipliedBy = @MultipliedBy
+		MultipliedBy = @MultipliedBy,
+		OfferSite = @OfferSite,
+		IsActive = @IsActive
 	WHERE exchangeid=@exchangeid
 
 	IF @old_minbet <> @minbet OR @old_minbetlive <> @minbetlive 
@@ -112,6 +126,10 @@ BEGIN
 		+  ' ,newDescription='+ ISNULL(@Description,'')
 		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(10),@old_MultipliedBy),'')
 		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')	
+		+  ' ,oldOfferSite='+ ISNULL(convert(varchar(10),@old_OfferSite),'')
+		+  ' ,newOfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')	
+		+  ' ,oldIsActive='+ ISNULL(convert(varchar(10),@old_IsActive),'')
+		+  ' ,newIsActive='+ ISNULL(convert(varchar(10),@IsActive),'')	
 		
 	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 		@UserID = @UserID, 

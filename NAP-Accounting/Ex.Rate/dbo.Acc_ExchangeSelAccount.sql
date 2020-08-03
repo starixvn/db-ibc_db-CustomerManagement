@@ -12,13 +12,15 @@ AS
 		- 20120711@Elodie: hardcode to not show CurrencyCode of INH
 						   change DB053 server instead of DB052 server.
 		- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
+		- 20200802@Elodie: Get IsActive, OfferSite column [RedmineID: #136023]
 	Param's Explanation:
 */
 SET NOCOUNT ON
 select 
 	exchangeid, currency, stakerate, actualrate, commaxpayout, creator, minbet, minbetlive, 
 	GBPRate, EURORate,  US$Rate, Description, MultipliedBy,
-	case when exchangeid = 51 then currency else Code end as CurrencyCode --20120711@Elodie: hardcode to not show CurrencyCode of INH
+	case when exchangeid = 51 then currency else Code end as CurrencyCode, --20120711@Elodie: hardcode to not show CurrencyCode of INH
+	OfferSite, IsActive
 from 
 	exchange with (NOLOCK)
 ORDER BY 
