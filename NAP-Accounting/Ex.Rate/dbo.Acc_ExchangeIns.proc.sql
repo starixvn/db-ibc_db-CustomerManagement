@@ -84,10 +84,8 @@ BEGIN
 			SELECT @exchangeid = 121
 	END
 
-	SET IDENTITY_INSERT exchange ON
 	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, IsActive)
 	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, 1)
-	SET IDENTITY_INSERT exchange OFF
 
 	DECLARE @LogData NVARCHAR(200)
 	SELECT @LogData = 'Add exchange rate:'
@@ -101,7 +99,7 @@ BEGIN
 		+  ' ,Description='+ ISNULL(@Description,'')
 		+  ' ,MultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')
 		+  ' ,Code='+ ISNULL(@code,'') 
-		+  ' ,OfferSite='+ ISNULL(@OfferSite,'') 
+		+  ' ,OfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')
 
 	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 		@UserID = @UserID, 
