@@ -105,8 +105,8 @@ Revisions:
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
 	- 20200513@Tiara: Remove Danger, isBA result from left panel [Redmine: #129306]
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
-
 	- 20200602@Sol: Show IsAutoEnableADBMaster [Redmine: #134242]
+	- 202008066@Elodie: Get CustSuspendLockUpd info [Redmine: #138255]
 
 Param's Explanation:
 	@username: username want to get all info related
