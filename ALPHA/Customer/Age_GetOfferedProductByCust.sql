@@ -11,7 +11,7 @@ AS
 	Revisions:
 		- 20180906@Elodie: Get all product which offered for customer [Redmine: #95940]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-
+		- 20200806@Elodie: Get real productid [Redmine: #139017]
 	Param's Explanation:
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
