@@ -41,15 +41,15 @@ BEGIN
 	CREATE TABLE #SportBettypeFilter (ProductID TINYINT, SportType SMALLINT,Bettype SMALLINT,IsLive BIT, SettingType TINYINT)
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,4)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,11)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13)
 
 	SELECT p.ProductID, r.isHidden, p.EndOfSupportDate
