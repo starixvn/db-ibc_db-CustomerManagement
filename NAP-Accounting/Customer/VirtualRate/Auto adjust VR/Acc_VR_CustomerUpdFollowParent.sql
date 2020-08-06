@@ -79,7 +79,7 @@ BEGIN
 			BREAK;
 
 		SELECT @LogData = '<R '
-						+ 'Sport="'+ coalesce(cast(@Sporttype as varchar(50)),space(1)) + '" ' 
+						+ 'Sporttype="'+ coalesce(cast(@Sporttype as varchar(50)),space(1)) + '" ' 
 						+ ' />'
 		
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
