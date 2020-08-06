@@ -64,6 +64,8 @@ BEGIN
 		UNION ALL
 		SELECT 8, @HideKeno
 		UNION ALL
+		SELECT 12, @HideGoldDeluxe
+		UNION ALL
 		SELECT 6, CASE WHEN @SyncCasino = 1 THEN 0 ELSE 1 END
 		UNION ALL
 		SELECT 1, 0 --Sportbook always offer for all customer
