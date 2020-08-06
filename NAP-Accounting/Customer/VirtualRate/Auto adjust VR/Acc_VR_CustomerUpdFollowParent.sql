@@ -31,11 +31,8 @@ BEGIN
 	SELECT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
-	  
-	DECLARE @NewVirtualMultiplier VARCHAR(MAX) =  '<Root></Root>' --Update to Follow Parents
+	 
 	DECLARE @CustID INT
-		, @ErrCode INT = 0
-		, @ErrMsg NVARCHAR(200) = ''
 		, @LevelID INT
 		, @ValueID_0 INT
 		, @Update_CustIDList VARCHAR(MAX) = ''
