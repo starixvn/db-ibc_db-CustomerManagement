@@ -25,7 +25,7 @@ BEGIN
 	SET @startRun = getdate()
 
 	DECLARE @Input_CustTbl TABLE ( CustID INT)
-	DECLARE @Update_CustTbl TABLE ( CustID INT, IsFinish BIT DEFAULT 0)
+	DECLARE @Update_CustTbl TABLE ( CustID INT, IsLog BIT DEFAULT 0)
 
 	INSERT INTO @Input_CustTbl(CustID)
 	SELECT p.val
@@ -62,37 +62,38 @@ BEGIN
 			  AND vr.ValueIDNonLIVE = @ValueID_0
 	WHERE v.SportType = @Sporttype
 		AND v.[Status] = 2
-		--AND NOT EXISTS
-		--				(
-		--					SELECT TOP 1 1
-		--					FROM VRCustSetting vr1 WITH(NOLOCK)
-		--					WHERE vr1.CustID = v.custid
-		--							AND vr1.LevelID > @LevelID
-		--							AND (vr1.ValueIDLIVE <> @ValueID_0
-		--								OR vr1.ValueIDNonLIVE <> @ValueID_0)
-		--				)
-		--AND NOT EXISTS( SELECT TOP 1 1 FROM VRSettingManualUpdAcc m WITH(NOLOCK) WHERE SportType = @Sporttype AND m.CustID = v.custid)
-			
+
+	DELETE vr
+	FROM VRCustSetting vr WITH(ROWLOCK)
+		INNER JOIN @Update_CustTbl t ON vr.CustID = t.CustID 
+	WHERE vr.LevelID = @LevelID
+
+	--Log for each Customer
+	DECLARE @LogData VARCHAR(MAX)
+
 	WHILE 1 = 1
 	BEGIN
 		UPDATE TOP (1) @Update_CustTbl
-		SET IsFinish = 1,
+		SET IsLog = 1,
 			@CustID = CustID
-		WHERE IsFinish = 0
+		WHERE IsLog = 0
 
 		IF @@ROWCOUNT = 0
 			BREAK;
 
-		EXEC [Acc_CustVirtualMultiplier_Upd]
-			  @CustID = @CustID
-			, @SportType = @Sporttype
-			, @VirtualMultiplier = @NewVirtualMultiplier
-			, @UserID  = 0
-			, @IP  = ''
-			, @ErrCode = @ErrCode OUT
-			, @ErrMsg = @ErrMsg OUT
+		SELECT @LogData = '<R '
+						+ 'Sporttype="'+ coalesce(cast(@Sporttype as varchar(50)),space(1)) + '" ' 
+						+ ' />'
+		
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+			@UserId				= 0,
+			@CustID             = @CustID,
+			@ActionId			= 816,
+			@TrackingValue		= @LogData,
+			@Duration			= @Duration
 
 		SELECT @Update_CustIDList = @Update_CustIDList + ',' + CONVERT(varchar,@CustID)
+
 	END
 	
 	SELECT @Update_CustIDList = STUFF(@Update_CustIDList,1,1,'')
