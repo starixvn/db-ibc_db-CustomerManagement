@@ -32,6 +32,7 @@ BEGIN
 	FROM VRValueMapping WITH(NOLOCK)
 	WHERE Value = 1.00
 
+	--> Scan all members with Status = 2 and basketball VR = 0 (at basketball level)
 	SELECT v.custid
 	FROM VRCustAutoAdjustment v WITH(NOLOCK)
 		 INNER JOIN VRCustSetting vr WITH(NOLOCK)
@@ -40,18 +41,18 @@ BEGIN
 			  AND vr.ValueIDLIVE = @ValueID_0
 			  AND vr.ValueIDNonLIVE = @ValueID_0
 	WHERE v.SportType = @Sporttype
-		AND (v.FirstBetDate = DATEADD( dd,-8,@CurrentDTS) OR v.FirstBetDate IS NULL)
+		AND (v.FirstBetDate = DATEADD( dd,-7,@CurrentDTS) OR v.FirstBetDate IS NULL)
 		AND v.[Status] = 2
-		AND NOT EXISTS
-						(
-							SELECT TOP 1 1
-							FROM VRCustSetting vr1 WITH(NOLOCK)
-							WHERE vr1.CustID = v.custid
-									AND vr1.LevelID > @LevelID
-									AND (vr1.ValueIDLIVE <> @ValueID_0
-										OR vr1.ValueIDNonLIVE <> @ValueID_0)
-						)
-		AND NOT EXISTS( SELECT TOP 1 1 FROM VRSettingManualUpdAcc m WITH(NOLOCK) WHERE SportType = @Sporttype AND m.CustID = v.custid)
+		--AND NOT EXISTS
+		--				(
+		--					SELECT TOP 1 1
+		--					FROM VRCustSetting vr1 WITH(NOLOCK)
+		--					WHERE vr1.CustID = v.custid
+		--							AND vr1.LevelID > @LevelID
+		--							AND (vr1.ValueIDLIVE <> @ValueID_0
+		--								OR vr1.ValueIDNonLIVE <> @ValueID_0)
+		--				)
+		--AND NOT EXISTS( SELECT TOP 1 1 FROM VRSettingManualUpdAcc m WITH(NOLOCK) WHERE SportType = @Sporttype AND m.CustID = v.custid)
 
 END
 GO
