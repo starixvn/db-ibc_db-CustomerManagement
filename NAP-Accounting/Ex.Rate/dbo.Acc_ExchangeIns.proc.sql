@@ -65,6 +65,7 @@ BEGIN
 		END
 
 		DELETE @IDTemp WHERE ID = 8 -- not used exchangeid = 8, custid = 8 is sa account
+		DELETE @IDTemp WHERE ID IN (25,26,29) -- these dummy account aren't created yet
 
 		SELECT @exchangeid = MIN(t.ID)
 		FROM Exchange e WITH (NOLOCK)
