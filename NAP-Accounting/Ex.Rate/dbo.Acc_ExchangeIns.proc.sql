@@ -80,12 +80,14 @@ BEGIN
 		SELECT @exchangeid = MAX(ExchangeID) + 1
 		FROM Exchange e WITH (NOLOCK)
 
-		IF @exchangeid < 121
-			SELECT @exchangeid = 121
+		IF @exchangeid < 1001
+			SELECT @exchangeid = 1001
 	END
 
+	SET IDENTITY_INSERT exchange ON
 	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, IsActive)
 	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, 1)
+	SET IDENTITY_INSERT exchange OFF
 
 	DECLARE @LogData NVARCHAR(200)
 	SELECT @LogData = 'Add exchange rate:'
