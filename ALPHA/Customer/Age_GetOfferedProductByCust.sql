@@ -11,7 +11,7 @@ AS
 	Revisions:
 		- 20180906@Elodie: Get all product which offered for customer [Redmine: #95940]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-
+		- 20200806@Elodie: Get real productid [Redmine: #139017]
 	Param's Explanation:
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
@@ -41,15 +41,15 @@ BEGIN
 	CREATE TABLE #SportBettypeFilter (ProductID TINYINT, SportType SMALLINT,Bettype SMALLINT,IsLive BIT, SettingType TINYINT)
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,4)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,11)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT ProductID,SportType,Bettype,IsLive, SettingType   
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13)
 
 	SELECT p.ProductID, r.isHidden, p.EndOfSupportDate
@@ -63,6 +63,8 @@ BEGIN
 		WHERE stt.CustID = @CustID
 		UNION ALL
 		SELECT 8, @HideKeno
+		UNION ALL
+		SELECT 12, @HideGoldDeluxe
 		UNION ALL
 		SELECT 6, CASE WHEN @SyncCasino = 1 THEN 0 ELSE 1 END
 		UNION ALL
