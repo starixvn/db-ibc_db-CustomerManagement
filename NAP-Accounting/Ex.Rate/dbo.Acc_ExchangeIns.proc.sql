@@ -72,7 +72,7 @@ BEGIN
 			RIGHT JOIN @IDTemp t ON e.ExchangeID = t.ID
 		WHERE e.ExchangeID IS NULL
 
-		IF @exchangeid >=100
+		IF @exchangeid IS NULL
 		BEGIN
 			SELECT @ErrMsg = 'Cannot add new currency. The range of ExchangeID from 1 to 99 has been used!', @ErrCode = 102
 			RETURN
