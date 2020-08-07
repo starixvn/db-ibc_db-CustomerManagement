@@ -105,8 +105,8 @@ Revisions:
 	- 20200316@Elodie: Remove from Hardcode list finance permission for Nova [Redmine: #130499]
 	- 20200513@Tiara: Remove Danger, isBA result from left panel [Redmine: #129306]
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
-
 	- 20200602@Sol: Show IsAutoEnableADBMaster [Redmine: #134242]
+	- 202008066@Elodie: Get CustSuspendLockUpd info [Redmine: #138255]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -682,10 +682,12 @@ BEGIN
 		,cs.CustStatus AS CN88CustStatus
 		,@SabaClubPlayerID3rd AS SabaClubPlayerID3rd
 		,ISNULL(@IsAutoEnableADBMaster,0) IsAutoEnableADBMaster
+		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
 	    LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 AND @IsDeposit = 0
+		LEFT JOIN CustSuspendLockUpd AS ls WITH (NOLOCK) ON ci.custid = ls.custid
 		OUTER APPLY (SELECT C.username
 					 FROM dbo.custaccount ca WITH (NOLOCK)
 						INNER JOIN Customer C ON CA.custid = C.custid 
