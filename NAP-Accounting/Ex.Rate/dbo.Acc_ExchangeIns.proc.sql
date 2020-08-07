@@ -64,6 +64,8 @@ BEGIN
 			SELECT @id = @id + 1
 		END
 
+		DELETE @IDTemp WHERE ID = 8 -- not used exchangeid = 8, custid = 8 is sa account
+
 		SELECT @exchangeid = MIN(t.ID)
 		FROM Exchange e WITH (NOLOCK)
 			RIGHT JOIN @IDTemp t ON e.ExchangeID = t.ID
