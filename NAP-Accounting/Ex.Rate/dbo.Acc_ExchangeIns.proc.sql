@@ -67,12 +67,12 @@ BEGIN
 		DELETE @IDTemp WHERE ID = 8 -- not used exchangeid = 8, custid = 8 is sa account
 		DELETE @IDTemp WHERE ID IN (25,26,29) -- these dummy account aren't created yet
 
-		SELECT @exchangeid = MIN(t.ID)
+		SELECT @exchangeid = ISNULL(MIN(t.ID),0)
 		FROM Exchange e WITH (NOLOCK)
 			RIGHT JOIN @IDTemp t ON e.ExchangeID = t.ID
 		WHERE e.ExchangeID IS NULL
 
-		IF @exchangeid IS NULL
+		IF @exchangeid = 0
 		BEGIN
 			SELECT @ErrMsg = 'Cannot add new currency. The range of ExchangeID from 1 to 99 has been used!', @ErrCode = 102
 			RETURN
