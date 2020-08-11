@@ -74,7 +74,7 @@ BEGIN
 
 		IF @exchangeid = 0
 		BEGIN
-			SELECT @ErrMsg = 'Cannot add new currency. The range of ExchangeID from 1 to 99 has been used!', @ErrCode = 102
+			SELECT @ErrMsg = 'Cannot add new currency. Please contact IT to support!', @ErrCode = 102
 			RETURN
 		END
 	END
