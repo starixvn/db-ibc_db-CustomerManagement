@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeIns]	
 	@exchangeid INT OUTPUT,
 	@actualrate FLOAT,
@@ -14,13 +14,13 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeIns]
 	@UserID INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT,
-	@IP VARCHAR(15) = ''
+	@IP VARCHAR(15) = '',
+	@OfferSite	TINYINT
 AS
-
 /*
 Created: 
 Task : Insert new currency
-DB: DBCUST.CustDB
+DB: DBCUST/CustDB
 Original:
 
 Revisions:
@@ -31,6 +31,7 @@ Revisions:
 	- 20130822@Lukas: change alias for DB03
 	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 	
 Param's Explanation:
 	• @actualrate: specIFy exchange-rate of the currency
@@ -39,23 +40,63 @@ Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON
+	DECLARE @IDTemp TABLE (ID TINYINT)
+	DECLARE @id TINYINT
+
 	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	IF @ErrCode <> 0
 		RETURN
 	--END
 
-	--check leaguename
+	--check currency name
 	IF EXISTS (SELECT 1 FROM Exchange WITH (NOLOCK) WHERE Currency = @Currency)
 	BEGIN
 		SELECT @ErrMsg = 'This currency name is already used.', @ErrCode = 101	
 		RETURN
 	END
 
-	INSERT INTO exchange(actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code)
-	VALUES (@actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code)
+	IF @OfferSite <> 2
+	BEGIN
+		SET @id = 1
+		WHILE (@id < 100)
+		BEGIN
+			INSERT INTO @IDTemp (ID) values (@id)
+			SELECT @id = @id + 1
+		END
 
+		DELETE @IDTemp WHERE ID = 8 -- not used exchangeid = 8, custid = 8 is sa account
+		DELETE @IDTemp WHERE ID IN (25,26,29) -- these dummy account aren't created yet
 
-	SELECT @exchangeid=@@IDENTITY
+		SELECT @exchangeid = ISNULL(MIN(t.ID),0)
+		FROM Exchange e WITH (NOLOCK)
+			RIGHT JOIN @IDTemp t ON e.ExchangeID = t.ID
+		WHERE e.ExchangeID IS NULL
+
+		IF @exchangeid = 0
+		BEGIN
+			SELECT @ErrMsg = 'Cannot add new currency. Please contact IT to support!', @ErrCode = 102
+			RETURN
+		END
+	END
+	ELSE 
+	BEGIN
+		SELECT @exchangeid = MAX(ExchangeID) + 1
+		FROM Exchange e WITH (NOLOCK)
+
+		IF @exchangeid < 121
+			SELECT @exchangeid = 121
+
+		IF @exchangeid > 255
+		BEGIN
+			SELECT @ErrMsg = 'Cannot add new currency. Please contact IT to support!', @ErrCode = 102
+			RETURN
+		END
+	END
+
+	SET IDENTITY_INSERT exchange ON
+	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, IsActive)
+	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, 1)
+	SET IDENTITY_INSERT exchange OFF
 
 	DECLARE @LogData NVARCHAR(200)
 	SELECT @LogData = 'Add exchange rate:'
@@ -69,6 +110,7 @@ BEGIN
 		+  ' ,Description='+ ISNULL(@Description,'')
 		+  ' ,MultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')
 		+  ' ,Code='+ ISNULL(@code,'') 
+		+  ' ,OfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')
 
 	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 		@UserID = @UserID, 
@@ -79,8 +121,3 @@ BEGIN
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeIns] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeIns] TO [ITVivi] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeIns] TO [vnteam] AS [dbo]
