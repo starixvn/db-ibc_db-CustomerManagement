@@ -12,6 +12,7 @@ AS
 		- 20181120@Razor:	Function to control group display [Redmine: #89929]
 		- 20190426@Kan:		DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		- 20191106@Percy:	Just get enabled products [RedmineID: #118699]
+		- 20200812@Sophia:  Format at openquery code [Redmine: #137767]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -19,11 +20,7 @@ BEGIN
 	-- Get all enabled products
 	SELECT ProductId, ProductName
 	INTO #tmpProducts
-	FROM OPENQUERY (DBAGE, '
-							SELECT
-								CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID
-							   ,p.ProductName
-							FROM bodb02.dbo.Products p WITH (NOLOCK)
+	FROM OPENQUERY (DBAGE, 'SELECT CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID ,p.ProductName FROM bodb02.dbo.Products p WITH (NOLOCK)
 								LEFT JOIN bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
 							WHERE p.GroupType = 0 AND gp.ProductId IS NULL
 								AND p.Enabled = 1')

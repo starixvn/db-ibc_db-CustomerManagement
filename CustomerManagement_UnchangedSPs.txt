@@ -1,2 +1,1 @@
 Ext NAP\UserControl\GroupConfiguration\EAS_GetProductList.sql
-Ext NAP\UserControl\GroupConfiguration\EAS_GroupConfigurationSel.sql
