@@ -83,8 +83,14 @@ BEGIN
 		SELECT @exchangeid = MAX(ExchangeID) + 1
 		FROM Exchange e WITH (NOLOCK)
 
-		IF @exchangeid < 1001
-			SELECT @exchangeid = 1001
+		IF @exchangeid < 121
+			SELECT @exchangeid = 121
+
+		IF @exchangeid > 255
+		BEGIN
+			SELECT @ErrMsg = 'Cannot add new currency. Please contact IT to support!', @ErrCode = 102
+			RETURN
+		END
 	END
 
 	SET IDENTITY_INSERT exchange ON
