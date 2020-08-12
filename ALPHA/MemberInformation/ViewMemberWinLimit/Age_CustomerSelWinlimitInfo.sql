@@ -21,7 +21,6 @@ AS
 		- 20160318@Billy:	Include tickets from [bettransLC] table - [Redmine: #54306]
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
 		- 20200414@Sophia: BBIN - add Transfer In/Out Amount [Redmine: #131358]
-		- 20200719@Sophia: PP Jackpot exclude Win Prize [Redmine: #138483]
 	
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -107,7 +106,6 @@ BEGIN
 			CasinoType
 	FROM bodb02.dbo.f_SportBettypeMatrix_Sel (0, 0, 0, 2, '', '', @isTest)
 	WHERE RefTable IN (1,2) -- IN bettransRNG & BettransLC
-		AND bettype NOT IN (4298) --- exclude PP Jackpot win prize
     
 	INSERT INTO #Cust_tmp (CustId,rownumber)
 	SELECT CustID, rownumber
