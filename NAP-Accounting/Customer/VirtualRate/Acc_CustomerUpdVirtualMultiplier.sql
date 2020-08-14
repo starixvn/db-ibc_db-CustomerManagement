@@ -37,6 +37,7 @@ AS
 		- 20170328@Elodie: Expand the range of VR setting [RedmineID:#73808]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
+		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
 
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
@@ -67,7 +68,8 @@ BEGIN
 	DECLARE @DocHandler INT		
 	
 	DECLARE	@lockedVRmembers	VARCHAR(MAX)												
-	 
+	DECLARE	@AutoAdjustVRmembers VARCHAR(MAX)	 
+
 	set @startRun = getdate()  
 	  
 	IF @IsLicenseeUser = 0 --accounting admin (licensee user will be ignored from this check)  
@@ -156,9 +158,17 @@ BEGIN
 	-- SELECT locked VR member
 	
 	SELECT	@lockedVRmembers =	(
-		SELECT	DISTINCT ulvrs.CustID '@CustID'
-		FROM	DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
+				SELECT	DISTINCT ulvrs.CustID '@CustID'
+				FROM	DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
 		FOR XML PATH ('LockedVR')
+	,	ROOT ('ROOT')
+	);
+
+	SELECT	@AutoAdjustVRmembers =	(
+				SELECT CustID '@CustID'
+				FROM VRCustAutoAdjustment WITH(NOLOCK) 
+				WHERE SportType = 99 AND [Status] = 2
+		FOR XML PATH ('AutoAdjustVR')
 	,	ROOT ('ROOT')
 	);
 		
@@ -169,6 +179,7 @@ BEGIN
 			,	@EnableVirtualrate = @EnableVirtualrate
 			,	@virtualmultiplier = @virtualmultiplier
 			,	@lockedVRmembers = @lockedVRmembers
+			,   @AutoAdjustVRmembers = @AutoAdjustVRmembers
 				
 	 
 	Declare @LogSPData varchar(MAX) = '',
@@ -305,8 +316,4 @@ BEGIN
 END
 
 
-GO
-GRANT EXECUTE ON dbo.Acc_CustomerUpdVirtualMultiplier TO bodbAdminNet AS dbo
-GO
-GRANT EXECUTE ON dbo.Acc_CustomerUpdVirtualMultiplier TO bodbLicenseeNet AS dbo
 GO
