@@ -19,6 +19,7 @@ AS
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
+		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
@@ -37,7 +38,7 @@ BEGIN
 	SELECT	SportType, BetType, IsLive
 	FROM	ProductSettingDetail WITH(NOLOCK)
 	WHERE	RealProductId = @ProductID
-		AND	SettingType = 1	-- PT
+		AND	SettingType IN (1,18)	-- PT
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 

@@ -31,9 +31,14 @@ BEGIN
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3)
 	WHERE RealProductId = @ProductID
 	
+	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
+	SELECT ProductID, SportType, Bettype, IsLive, SettingType
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19)
+	WHERE RealProductId = @ProductID
+
 	SELECT 
 		ci.closed,
 		ci.enabled, 
