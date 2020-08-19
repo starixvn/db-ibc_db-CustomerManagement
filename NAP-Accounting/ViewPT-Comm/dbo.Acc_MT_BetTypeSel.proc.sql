@@ -17,6 +17,8 @@ Revisions:
 	- 20160801@Elodie: Modify code to get only bettype for PT
 	- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
 	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
+	- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
+
 Parameters Explanation:  
 	
 */
@@ -53,15 +55,8 @@ FROM
 		SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
         UNION
         SELECT 73104, psd.BetType, psd.SportType FROM ProductSettingDetail psd WITH(NOLOCK)
-        WHERE psd.SettingType = 1
+        WHERE psd.SettingType IN (1,18)
 	 ) t
 	INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
 WHERE t.custid IN( 73104) AND t.sporttype = ISNULL(@sporttype, t.sporttype)
 ORDER BY t.bettype
-
-
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_MT_BetTypeSel] TO [bodbAdminNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_MT_BetTypeSel] TO [vnteam]
