@@ -25,7 +25,7 @@ Parameters Explanation:
 
 SET NOCOUNT ON
 
-IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM ProductSettingDetail(NOLOCK) where SportType=@Sporttype AND SettingType=1) =1)
+IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM ProductSettingDetail(NOLOCK) where SportType=@Sporttype AND SettingType IN (1,18)) =1)
 BEGIN
 SELECT NULL AS bettype, NULL AS typenamee 
 WHERE 1=0
