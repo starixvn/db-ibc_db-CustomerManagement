@@ -18,6 +18,7 @@ AS
 		- 20181214@Johnson: Exclude Happy 5 [Redmine: #104006]
 		- 20190726@Eden: Exclude Poker Games, Bullfighting,Colosus Bet, Lucky 3 [Redmine: #117439]
 		- 20191101@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 */
 
 SET NOCOUNT ON
@@ -44,7 +45,7 @@ FROM
 		SELECT cs3rd.custid, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
         UNION
         SELECT 73104, psd.SportType FROM ProductSettingDetail psd WITH(NOLOCK)
-        WHERE psd.SettingType = 1
+        WHERE psd.SettingType IN (1,18)
 	 ) t
 	INNER JOIN @tmp_Sports s ON t.sporttype = s.sporttype
 WHERE t.custid = 73104 
