@@ -16,6 +16,7 @@ AS
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
+		- 20200615@Elodie: Implement new setting type 19 [Redmine: #135363]
 
 */
 BEGIN
@@ -30,6 +31,11 @@ BEGIN
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3)
+	WHERE RealProductId = @ProductID
+
+	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
+	SELECT ProductID, SportType, Bettype, IsLive, SettingType
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19)
 	WHERE RealProductId = @ProductID
 		
 	SELECT 

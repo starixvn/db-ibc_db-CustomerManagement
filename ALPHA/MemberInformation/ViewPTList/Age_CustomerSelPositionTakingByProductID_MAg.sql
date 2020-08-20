@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCust-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-/****** Object:  Stored Procedure dbo.Age_CustomerSelPositionTakingByProductID_MAg    Script Date: 10/29/2015 9:34:05 AM ******/
 
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_MAg]
 (
@@ -20,6 +19,7 @@ AS
 		- 20200321@Tiara: Handle dummy product for Sexy Gaming/Allbet/SA Gaming [Redmine: #130678]
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
+		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
@@ -38,7 +38,7 @@ BEGIN
 	SELECT	SportType, BetType, IsLive
 	FROM	ProductSettingDetail WITH(NOLOCK)
 	WHERE	RealProductId = @ProductID
-		AND	SettingType = 1	-- PT
+		AND	SettingType IN (1,18)	-- PT
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
@@ -90,23 +90,4 @@ BEGIN
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 	ORDER BY RowNumber, SportType, isLive, BetType, roleid
 END
-
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_MAg] TO [vnteam]
-GO 
- GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelPositionTakingByProductID_MAg] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_MAg] TO [Dot_Admin]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_MAg] TO [bodbAdminNet]
-GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelPositionTakingByProductID_MAg] TO [bodbDownlineNet]
-GO 
