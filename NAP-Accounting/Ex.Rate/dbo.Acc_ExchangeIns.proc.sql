@@ -93,10 +93,8 @@ BEGIN
 		END
 	END
 
-	SET IDENTITY_INSERT exchange ON
 	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, IsActive)
 	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, 1)
-	SET IDENTITY_INSERT exchange OFF
 
 	DECLARE @LogData NVARCHAR(200)
 	SELECT @LogData = 'Add exchange rate:'
