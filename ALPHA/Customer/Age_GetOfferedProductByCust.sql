@@ -36,7 +36,7 @@ BEGIN
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
-				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency))
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 232 AND BetType = 6001)
 	BEGIN
 		SET @PGEnable = 0 
 		print @PGEnable	
