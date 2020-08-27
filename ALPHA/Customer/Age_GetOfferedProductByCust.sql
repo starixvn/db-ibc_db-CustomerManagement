@@ -39,7 +39,6 @@ BEGIN
 				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 232 AND BetType = 6001)
 	BEGIN
 		SET @PGEnable = 0 
-		print @PGEnable	
 	END
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
