@@ -32,13 +32,13 @@ BEGIN
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
 	
-	DECLARE @PGEnable BIT  = 1   ,@SiteID int 
+	DECLARE @PGDisable BIT  = 1   ,@SiteID int 
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
 				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 232 AND BetType = 6001)
 	BEGIN
-		SET @PGEnable = 0 
+		SET @PGDisable = 0 
 	END
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
@@ -92,7 +92,7 @@ BEGIN
 		UNION ALL
 		SELECT 32, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
 		UNION ALL
-		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGEnable ELSE isHidden END 
+		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
 		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
