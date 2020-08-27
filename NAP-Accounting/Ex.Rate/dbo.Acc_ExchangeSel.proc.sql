@@ -1,8 +1,8 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet, bodbExtAccNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_ExchangeSel]
 	 @System varchar(50) = 'ACCOUNTING',
-	 @IsTest BIT = 0
+	 @IsTest BIT = 0 ,
+	 @OfferSite	tinyint = 0
 AS
 /*
 	DB: DBCUST/CUSTDB
@@ -13,6 +13,7 @@ AS
 		- 20100720@Shifu: get system name
 		- 20111020@Johnson: remove currency C and H from result
 		- 20160620@Elodie: Add parameter @IsTest for testing purpose
+		- 20200826@Winfred: Hide Inactive , OfferSite Currency [Redmine: #140084]
 */
 SET NOCOUNT ON
 
@@ -24,6 +25,7 @@ BEGIN
 	from 
 		exchange with (NOLOCK)
 	WHERE ((@IsTest = 0 AND exchangeID NOT IN (27,28)) OR @IsTest = 1)
+		AND (@OfferSite = 0 OR (IsActive = 1 AND OfferSite = @OfferSite) 	)
 	ORDER BY 
 		currency
 END
@@ -36,7 +38,10 @@ BEGIN
 		case when currency IN(select currency from dbo.[f_GetHRAllowedCurr]()) then 1 else 0 end HRAllowed
 	FROM 
 		exchange with (NOLOCK)
-	WHERE ExchangeID IN (SELECT exchangeID FROM dbo.f_CurrencyBySystem(@System)) AND ExchangeID NOT IN (27,28)
+	WHERE ExchangeID IN (SELECT exchangeID 
+						FROM dbo.f_CurrencyBySystem(@System)) 
+			AND ExchangeID NOT IN (27,28)
+			AND (@OfferSite = 0 OR (IsActive = 1 AND OfferSite = @OfferSite) 	)
 	ORDER BY 
 		currency
 END
