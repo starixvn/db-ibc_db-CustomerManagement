@@ -16,6 +16,9 @@ ALTER PROCEDURE [dbo].[EAS_CustomerInsMember_CloneSetting_Com]
 	,@IP VARCHAR(15)=''		
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(4000) = '' OUTPUT	
+	,@Case INT = 0 OUTPUT
+	,@Old_Headline INT = 0 OUTPUT
+	,@New_Headline INT = 0 OUTPUT
 )
 AS
 /*  
@@ -30,7 +33,13 @@ AS
 		- 20200601@Johnson: limit new supers per month for 789's group [redmine:#135057]
 		- 20200610@Johnson: set new super limit = 200 for 789's group [redmine:#135057]
 		- 20200723@Johnson: update errmsg limit supers [redmine:#135057]
+		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 	Parameter's Explaination:
+		@Case = 0 : No change 
+		      = 1 : IsGroupHeadline 0-> 0, the User change group
+			  = 2 : IsGroupHeadline 1-> 0
+			  = 3 : IsGroupHeadline 0-> 1, the User don't change group
+			  = 4 : IsGroupHeadline 0-> 1, the User change group
 	
 */
 BEGIN
@@ -645,11 +654,14 @@ BEGIN
 	END CATCH	
 	
 	--add credit term	
-	DECLARE @GroupID INT 
+	DECLARE @GroupID INT, @HeadlineName VARCHAR(30), @HeadlineID INT
 	
 	SELECT @GroupID = GroupID
 	FROM CustAccount WITH(NOLOCK)
 	WHERE custid = @ExistingCustid
+	-- get information of headline
+	SELECT @HeadlineID = CustId FROM dbo.CustGroupHeadline WITH(NOLOCK) WHERE GroupID = @GroupID
+	SELECT @HeadlineName = Username FROM dbo.Customer WITH(NOLOCK) WHERE custid = @HeadlineID
 	
 	IF @GroupID IS NOT NULL
 	BEGIN
@@ -659,7 +671,8 @@ BEGIN
 			@installmentdate nvarchar(50),
 			@accountremark nvarchar(200)
 
-		select @creditgrade = creditgrade, 
+		select @New_Headline = custid,
+			@creditgrade = creditgrade, 
 			@installmentdate = installmentdate,
 			@installmentamount = installmentamount,
 			@preagreeamount = preagreeamount,
@@ -687,6 +700,8 @@ BEGIN
 			@accountremark = @accountremark,
 			@groupID = @groupID,
 			@isgroupheadline = 0
+		
+	    SELECT @Case = 1, @Old_Headline = 0
 		
 		SELECT @NotificationInfo = '<GroupHeadline custid="'+ COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" ' +
 									'GroupID="'+ COALESCE(CAST(@groupid AS VARCHAR(50)),SPACE(1)) + '" />'
@@ -787,6 +802,20 @@ BEGIN
 			@ActionID = 95009,
 			@TrackingValue = @LogSPData,
 			@duration = @duration		
+	END CATCH
+
+	BEGIN TRY
+		SELECT @LogSPData = '<EAS_CustomerInsMember_CloneSetting_Com HeadlineID="' + CAST(ISNULL(@HeadlineID,'') AS VARCHAR(20)) +'" HeadlineName="'+ ISNULL(@HeadlineName, 'Not assigned group') +'"/>'
+		EXEC DBCRM.bodb_CRM.dbo.WriteLog_UserLog_crmUserLog_RunSP
+			@UserID = @Creator,
+			@CustID = @CustID,
+			@ActionID = 913,
+			@IP = @IP,
+			@NewValues = @LogSPData				
+	END TRY
+	BEGIN CATCH
+		SELECT @ErrCode = 107, @ErrMsg = 'Internal error! Please try again or contact the administrator!'
+		RETURN
 	END CATCH
 		
 	SET NOCOUNT OFF
