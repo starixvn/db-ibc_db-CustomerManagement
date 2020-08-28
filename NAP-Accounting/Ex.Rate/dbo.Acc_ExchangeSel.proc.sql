@@ -25,7 +25,7 @@ BEGIN
 	from 
 		exchange with (NOLOCK)
 	WHERE ((@IsTest = 0 AND exchangeID NOT IN (27,28)) OR @IsTest = 1)
-		AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite = 1) 	)
+		AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite in (0,1)) 	)
 	ORDER BY 
 		currency
 END
@@ -41,7 +41,7 @@ BEGIN
 	WHERE ExchangeID IN (SELECT exchangeID 
 						FROM dbo.f_CurrencyBySystem(@System)) 
 			AND ExchangeID NOT IN (27,28)
-			AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite = 1) 	)
+			AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite in (0,1)) 	)
 	ORDER BY 
 		currency
 END
