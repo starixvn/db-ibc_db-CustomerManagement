@@ -2,7 +2,7 @@
 ALTER PROCEDURE [dbo].[Acc_ExchangeSel]
 	 @System varchar(50) = 'ACCOUNTING',
 	 @IsTest BIT = 0 ,
-	 @OfferSite	tinyint = 0
+	 @Mode	tinyint = 0	 -- 0: All, 1 : Credit, 2 :Deposit
 AS
 /*
 	DB: DBCUST/CUSTDB
@@ -25,7 +25,7 @@ BEGIN
 	from 
 		exchange with (NOLOCK)
 	WHERE ((@IsTest = 0 AND exchangeID NOT IN (27,28)) OR @IsTest = 1)
-		AND (@OfferSite = 0 OR (IsActive = 1 AND OfferSite = @OfferSite) 	)
+		AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite = 1) 	)
 	ORDER BY 
 		currency
 END
@@ -41,7 +41,7 @@ BEGIN
 	WHERE ExchangeID IN (SELECT exchangeID 
 						FROM dbo.f_CurrencyBySystem(@System)) 
 			AND ExchangeID NOT IN (27,28)
-			AND (@OfferSite = 0 OR (IsActive = 1 AND OfferSite = @OfferSite) 	)
+			AND (@Mode = 0 OR (@Mode  = 1 AND  IsActive = 1 AND OfferSite = 1) 	)
 	ORDER BY 
 		currency
 END
