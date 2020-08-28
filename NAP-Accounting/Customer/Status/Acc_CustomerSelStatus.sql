@@ -77,6 +77,7 @@ Revisions:
 	- 20200504@Eden: ION Live casino [Redmine: #132323]
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
 	- 20200624@Winfred: Alpha - Enable/disable status for Saba Virtual Sport [Redmine: #136210]
+	- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
 
 
 Param's Explanation:
@@ -375,7 +376,7 @@ Param's Explanation:
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
-			min(case when g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) then cg.IsDisabled else 1 end) as DisableKeno,
+			min(case when g.IBCBetTypeID IS NOT NULL then cg.IsDisabled else 1 end) as DisableKeno,
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			ISNULL(DisableColossusBet,1) as DisableColossusBet,
@@ -473,7 +474,7 @@ Param's Explanation:
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
-		LEFT JOIN dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID IN (1501,1503,1504,1505,1507,1508,1509,1511,1513)		
+		LEFT JOIN dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 		
 	WHERE ci.CustID = @CustID
