@@ -38,6 +38,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
+		- 20200827@Eden: VR Adjustment by Agent profile [#140421]
 
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
@@ -67,7 +68,8 @@ BEGIN
 								)
 	DECLARE @DocHandler INT		
 	
-	DECLARE	@lockedVRmembers	VARCHAR(MAX)												
+	DECLARE	@lockedVRmembers	VARCHAR(MAX)
+	DECLARE	@AutoAdjustVRAgents  VARCHAR(MAX)	 												
 	DECLARE	@AutoAdjustVRmembers VARCHAR(MAX)	 
 
 	set @startRun = getdate()  
@@ -156,11 +158,19 @@ BEGIN
 	*/  
 	
 	-- SELECT locked VR member
-	
 	SELECT	@lockedVRmembers =	(
 				SELECT	DISTINCT ulvrs.CustID '@CustID'
 				FROM	DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
 		FOR XML PATH ('LockedVR')
+	,	ROOT ('ROOT')
+	);
+
+	--Lock Agent and member when adjust super, master
+	SELECT	@AutoAdjustVRAgents =	(
+				SELECT AgentID AS '@CustID'
+				FROM VRAgentAutoAdjustment WITH(NOLOCK) 
+				WHERE Type = 1 AND [Status] = 2
+		FOR XML PATH ('AutoAdjustVR')
 	,	ROOT ('ROOT')
 	);
 
@@ -179,6 +189,7 @@ BEGIN
 			,	@EnableVirtualrate = @EnableVirtualrate
 			,	@virtualmultiplier = @virtualmultiplier
 			,	@lockedVRmembers = @lockedVRmembers
+			,	@AutoAdjustVRAgents = @AutoAdjustVRAgents
 			,   @AutoAdjustVRmembers = @AutoAdjustVRmembers
 				
 	 
