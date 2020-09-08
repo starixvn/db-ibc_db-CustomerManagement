@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelKenoPositionTakingBySAg]
 (
 	@SRecommend INT,
@@ -19,6 +19,7 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20161116@Winnie: Show MaxKeno 2, Hide Massac,Malta [RedmineID: #66058]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
+		- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -30,11 +31,11 @@ BEGIN
 
 	BEGIN TRY
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE IsDisabled = 0 AND GameTypeID BETWEEN 1 AND 99
 	END TRY
 	BEGIN CATCH
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE IsDisabled = 0 AND GameTypeID BETWEEN 1 AND 99
 	END CATCH
 	-----20150610@Kos -------------------
 
@@ -59,17 +60,6 @@ BEGIN
 	               ci.username,
 		           ci.custid,
 		           MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1501,
-		           --MAX(CASE WHEN cg.bettype = 1502 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1502,
-		           MAX(CASE WHEN cg.bettype = 1503 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1503,
-		           MAX(CASE WHEN cg.bettype = 1504 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1504,
-		           MAX(CASE WHEN cg.bettype = 1505 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1505,
-		           --MAX(CASE WHEN cg.bettype = 1506 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1506,
-		           --MAX(CASE WHEN cg.bettype = 1507 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1507,
-		           MAX(CASE WHEN cg.bettype = 1508 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1508,
-		           --MAX(CASE WHEN cg.bettype = 1509 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1509,
-		           MAX(CASE WHEN cg.bettype = 1511 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1511,
-		           MAX(CASE WHEN cg.bettype = 1513 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1513,
-		           MAX(CASE WHEN cg.bettype = 1514 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1514,
 				   ISNULL(cl.ClosedReason,0) AS ClosedReason
 	          FROM custinfo ci with(nolock)
         inner join CustSettingGame cg with(nolock) on ci.custid = cg.custid
@@ -86,14 +76,4 @@ BEGIN
 	   AND RowNumber <= @PageIndex * @PageSize
 
 END
-
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelKenoPositionTakingBySAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelKenoPositionTakingBySAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelKenoPositionTakingBySAg] TO [VNTeam]
-GO  

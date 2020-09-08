@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelKenoPositionTakingByMAg]
 (
 	@MRecommend INT,
@@ -20,6 +20,7 @@ AS
 		- 20160919@Helen: Page list navigation disappears when select small page size number of Keno product in Position Talking (%) - [Redmine:59432]
 		- 20161116@Winnie: Show MaxKeno 2, Hide Massac,Malta [RedmineID: #66058]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
+		- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
 */
@@ -31,11 +32,11 @@ BEGIN
 
 	BEGIN TRY
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE IsDisabled = 0 AND GameTypeID BETWEEN 1 AND 99
 	END TRY
 	BEGIN CATCH
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE IsDisabled = 0 AND GameTypeID BETWEEN 1 AND 99
 	END CATCH
 	-----20150610@Kos -------------------
 
@@ -60,30 +61,7 @@ BEGIN
 	               ci.username,
 		           ci.custid,
 		           MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1501,
-		           --MAX(CASE WHEN cg.bettype = 1502 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1502,
-		           MAX(CASE WHEN cg.bettype = 1503 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1503,
-		           MAX(CASE WHEN cg.bettype = 1504 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1504,
-		           MAX(CASE WHEN cg.bettype = 1505 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1505,
-		           --MAX(CASE WHEN cg.bettype = 1506 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1506,
-		           --MAX(CASE WHEN cg.bettype = 1507 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1507,
-		           MAX(CASE WHEN cg.bettype = 1508 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1508,
-		           --MAX(CASE WHEN cg.bettype = 1509 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1509,
-		           MAX(CASE WHEN cg.bettype = 1511 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1511,
-		           MAX(CASE WHEN cg.bettype = 1513 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1513,
-		           MAX(CASE WHEN cg.bettype = 1514 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1514,
-		           
 		           MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1501,
-		           --MAX(CASE WHEN cg.bettype = 1502 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1502,
-		           MAX(CASE WHEN cg.bettype = 1503 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1503,
-		           MAX(CASE WHEN cg.bettype = 1504 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1504,
-		           MAX(CASE WHEN cg.bettype = 1505 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1505,
-		           --MAX(CASE WHEN cg.bettype = 1506 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1506,
-		           --MAX(CASE WHEN cg.bettype = 1507 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1507,
-		           MAX(CASE WHEN cg.bettype = 1508 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1508,
-		           --MAX(CASE WHEN cg.bettype = 1509 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1509,
-		           MAX(CASE WHEN cg.bettype = 1511 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1511,
-		           MAX(CASE WHEN cg.bettype = 1513 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1513,
-		           MAX(CASE WHEN cg.bettype = 1514 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1514,
 				   ISNULL(cl.ClosedReason,0) AS ClosedReason
 	          FROM custinfo ci with(nolock)
 					INNER JOIN CustSettingGame cg with(nolock) on ci.custid = cg.custid
@@ -100,13 +78,4 @@ BEGIN
 
 END
 
-
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelKenoPositionTakingByMAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelKenoPositionTakingByMAg] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelKenoPositionTakingByMAg] TO [VNTeam]
-GO  
