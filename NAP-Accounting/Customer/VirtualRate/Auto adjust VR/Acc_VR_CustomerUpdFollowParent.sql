@@ -12,6 +12,7 @@ AS
 	Revisions:  
 	    - 20200805@Eden: First commit [#138168]
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
+		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 
 	Param's Explanation:  
 	Examples:
@@ -43,7 +44,7 @@ BEGIN
 		AND VRLeagueGroupID = -1
 		AND BetType = -1
 
-	--> Scan all members with Status = 2 and basketball VR = 0 (at basketball level)
+	--> Scan all members with Status = 2
 	INSERT INTO @Update_CustTbl(CustID,AgentID)
 	SELECT v.custid,c.recommend
 	FROM VRCustAutoAdjustment v WITH(NOLOCK)
@@ -54,15 +55,15 @@ BEGIN
 
 	DELETE FROM @Update_CustTbl WHERE AgentID IS NULL
 
-	IF @Sporttype = 99
+	IF @Sporttype IN (99,100)
 	BEGIN
-		--SET basketball VR = follow upline (at basketball level) 
+		--SET basketball VR = follow upline (at basketball level) - VR2
 		DELETE vr
 		FROM VRCustSetting vr WITH(ROWLOCK)
 			INNER JOIN @Update_CustTbl t ON vr.CustID = t.CustID 
 		WHERE vr.LevelID = @BasketBallLevelID
 
-		--SET Other sport VR = follow upline ( their agent VR )
+		--SET Other sport VR = follow upline ( their agent VR ) - VR1
 		DECLARE	@tblVirtualrate		TABLE (
 									CustID				INT
 								,	SportType			INT
@@ -82,7 +83,23 @@ BEGIN
 				ON cvs.custid = t.AgentID
 			 INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 			   ON cvs.seqNo = pvs.seqNo
-		WHERE pvs.sporttype NOT IN(1, 2, 43);
+		WHERE pvs.sporttype NOT IN (1, 2, 43);
+
+		IF @Sporttype = 100 -- SET Soccer VR = follow upline ( their agent VR ) - VR1
+		BEGIN
+			INSERT INTO	@tblVirtualrate (CustID,SportType,BetType,IsLive,VirtualMultiplier)
+			SELECT t.custid, 
+				   pvs.sporttype, 
+				   pvs.bettype, 
+				   pvs.islive, 
+				   dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) AS virtualMultiplier
+			FROM @Update_CustTbl t 
+				 INNER JOIN CustVirtualSetting AS cvs WITH(NOLOCK)
+					ON cvs.custid = t.AgentID
+				 INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
+				   ON cvs.seqNo = pvs.seqNo
+			WHERE pvs.sporttype = 1
+		END
 
 		DECLARE	@virtualXML	TABLE (
 								seqNo		TINYINT
@@ -154,7 +171,9 @@ BEGIN
 			BREAK;
 
 		SELECT @LogData = '<R '
-						+ 'Sporttype="'+ coalesce(cast(@Sporttype as varchar(50)),space(1)) + '" ' 
+						+ 'Sporttype="'
+									+ CASE WHEN @Sporttype = 100 THEN 'Sportsbook except Esports' ELSE coalesce(cast(@Sporttype as varchar(50)),space(1)) END
+									+ '" ' 
 						+ ' />'
 		
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper

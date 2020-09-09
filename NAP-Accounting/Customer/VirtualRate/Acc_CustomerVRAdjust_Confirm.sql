@@ -4,12 +4,13 @@ ALTER PROCEDURE  [dbo].[Acc_CustomerVRAdjust_Confirm]
 	@Message NVARCHAR(500) = '' OUTPUT
 AS
 /*
-	Created: 20200826@Eden
+	Created: 20200827@Eden
 	DB: DBCUST/CUSTDB
 	Task: checking to show confirmation when update SMA VR1 (NAP)
 		
 	Revisions:
-		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
+		- 20200827@Eden: VR Adjustment by Agent profile [#140421]
+		- 20200903@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 
 	Parameter's Explanation:
 
@@ -54,6 +55,10 @@ BEGIN
 
 	IF @SportType = 99
 		SET @except = @except + '? For the members who are waiting for the performance checking, only new virtual rate for soccer will be applied, the other sports will be kept unchanged.'
+	ELSE IF @SportType = 100
+		SELECT @except = CASE WHEN @except <> '' THEN  @except + ' and ones waiting for performance checking?'
+								ELSE ' except members waiting for performance checking?'
+							END
 	ELSE IF @Type = 1
 		SELECT @except = CASE WHEN @except <> '' THEN  @except + ' and Agents waiting for performance checking?'
 								ELSE ' except Agents waiting for performance checking?'

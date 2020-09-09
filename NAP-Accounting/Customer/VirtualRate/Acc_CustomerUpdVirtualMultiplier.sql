@@ -39,6 +39,7 @@ AS
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
 		- 20200827@Eden: VR Adjustment by Agent profile [#140421]
+		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
@@ -70,7 +71,8 @@ BEGIN
 	
 	DECLARE	@lockedVRmembers	VARCHAR(MAX)
 	DECLARE	@AutoAdjustVRAgents  VARCHAR(MAX)	 												
-	DECLARE	@AutoAdjustVRmembers VARCHAR(MAX)	 
+	DECLARE	@AutoAdjustVRmembers VARCHAR(MAX)	
+	DECLARE	@AutoAdjustVRmembers_All VARCHAR(MAX) 
 
 	set @startRun = getdate()  
 	  
@@ -181,6 +183,14 @@ BEGIN
 		FOR XML PATH ('AutoAdjustVR')
 	,	ROOT ('ROOT')
 	);
+
+	SELECT	@AutoAdjustVRmembers_All =	(
+				SELECT CustID '@CustID'
+				FROM VRCustAutoAdjustment WITH(NOLOCK) 
+				WHERE SportType = 100 AND [Status] = 2
+		FOR XML PATH ('AutoAdjustVR')
+	,	ROOT ('ROOT')
+	);
 		
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
 				@custid = @custid
@@ -191,6 +201,7 @@ BEGIN
 			,	@lockedVRmembers = @lockedVRmembers
 			,	@AutoAdjustVRAgents = @AutoAdjustVRAgents
 			,   @AutoAdjustVRmembers = @AutoAdjustVRmembers
+			,   @AutoAdjustVRmembers_All = @AutoAdjustVRmembers_All
 				
 	 
 	Declare @LogSPData varchar(MAX) = '',
