@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView"  viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_CustSetting_CheckStakeMacau]
+ALTER PROCEDURE [dbo].[Acc_CustSetting_CheckMacauEnable]
 	-- Add the parameters for the stored procedure here
 	@site   varchar(10),
 	@currency tinyint  ,
