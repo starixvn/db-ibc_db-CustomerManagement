@@ -23,7 +23,7 @@ AS
 		- 20160707@Winnie: Feature #48948 Hide_special_sites_from_unautorized_users
 		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
 		- 20190814@Johnson: dont move cn88 site [redmine:#116691]
-		
+		- 20200915@Johnson: check dont move deposit site [redmine:#141257]
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers except members
 		
@@ -68,6 +68,15 @@ BEGIN
 	IF NOT EXISTS(SELECT 1 FROM Site (NOLOCK) WHERE SITE = @Site)
 	BEGIN
 		SELECT @ErrCode = 101, @ErrMsg = 'Do not exist any site name as ' + @Site + ' in the system.'
+		RETURN
+	END
+	
+	IF EXISTS(SELECT 1 FROM customer (NOLOCK) 
+			WHERE custid = @custid
+				AND srecommend IN (SELECT custid FROM Dep_CustSuper WITH(NOLOCK))
+			)
+	BEGIN
+		SELECT @ErrCode = 102, @ErrMsg = 'Cannot move site for deposit customer.'
 		RETURN
 	END
 	
