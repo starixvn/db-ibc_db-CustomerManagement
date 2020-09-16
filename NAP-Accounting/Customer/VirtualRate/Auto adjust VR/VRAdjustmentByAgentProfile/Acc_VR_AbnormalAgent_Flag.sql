@@ -11,6 +11,7 @@ AS
   
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
+		- 20200911@Eden: Enhance to include new Agents with tickets the Abnormal checking [#141467]
 
 	Param's Explanation:  
 		@Type = 
@@ -45,7 +46,7 @@ BEGIN
 	FROM VRAgentAutoAdjustment v WITH(NOLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type
-		AND v.Status <> 0
+		AND v.Status NOT IN (0, 1)
 
 	/* -- Start : Delete Agents who have VR = 0 or VR is disable
 	DECLARE @temp TABLE (CustID INT PRIMARY KEY)
@@ -204,7 +205,7 @@ BEGIN
 	FROM VRAgentAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type
-		AND v.Status = 0
+		AND v.Status IN(0, 1)
 		AND t.IsAbnormal = 1
 
 	DECLARE @NewLogData VARCHAR(MAX)
