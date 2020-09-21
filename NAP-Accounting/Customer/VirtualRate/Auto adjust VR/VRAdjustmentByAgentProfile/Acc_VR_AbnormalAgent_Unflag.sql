@@ -11,6 +11,7 @@ AS
   
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
+		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 
 	Param's Explanation:  
 		@Type = 
@@ -38,7 +39,22 @@ BEGIN
 	FROM VRAgentAutoAdjustment v WITH(NOLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type
-		AND (v.Status IN (0,3) OR v.FirstBetDate IS NULL)
+		AND v.Status <> 2
+
+	--/* Start : Delete Agents list who have VR <> 0 
+	DECLARE @temp TABLE (CustID INT PRIMARY KEY)
+	INSERT INTO @TEMP(CustID)
+	SELECT DISTINCT t.custid
+	FROM @AgentTbl t 
+		INNER JOIN CustVirtualSetting AS cvs WITH(NOLOCK)
+			ON cvs.custid = t.CustID
+		INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
+			ON cvs.seqNo = pvs.seqNo
+	WHERE pvs.sporttype NOT IN( 2, 43)
+		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) <> 1
+
+	DELETE FROM @AgentTbl WHERE CustID  IN (SELECT custID FROM @temp)
+	 --*/ END: Delete Agents list who have VR <> 0 
 
 	--get Agents and their dowlines need to update VR = super's
 	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, srecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
