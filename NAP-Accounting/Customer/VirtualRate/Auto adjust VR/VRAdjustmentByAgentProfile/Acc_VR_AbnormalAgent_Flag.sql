@@ -1,7 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Flag   
-	 @CustIDList VARCHAR(max)
-	,@Type TINYINT
+	@Type TINYINT
 AS  
 /*  
 	Created:	20200827@Eden
@@ -12,13 +11,13 @@ AS
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
 		- 20200911@Eden: Enhance to include new Agents with tickets the Abnormal checking [#141467]
+		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
 	Examples:
-		EXEC Acc_VR_AbnormalAgent_Flag @CustIDList = '1,2'
-		,@Type = 1
+		EXEC Acc_VR_AbnormalAgent_Flag @Type = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -38,15 +37,13 @@ BEGIN
 	)
 
 	INSERT INTO @AgentTbl(CustID)
-	SELECT DISTINCT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
-	  
-	DELETE t
+	SELECT v.AgentID
 	FROM VRAgentAutoAdjustment v WITH(NOLOCK)
-		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
+		INNER JOIN Customer c WITH(NOLOCK)
+			ON v.AgentID = c.custid
 	WHERE v.Type = @Type
-		AND v.Status NOT IN (0, 1)
+		AND c.creatdate >= CONVERT(DATE,GETDATE() - 3)
+		AND v.Status = 0
 
 	/* -- Start : Delete Agents who have VR = 0 or VR is disable
 	DECLARE @temp TABLE (CustID INT PRIMARY KEY)
@@ -201,11 +198,12 @@ BEGIN
 	END
 
 	UPDATE v
-	SET v.Status = 2
+	SET v.Status = 2,
+		v.VR0_Date = GETDATE()
 	FROM VRAgentAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type
-		AND v.Status IN(0, 1)
+		AND v.Status = 0
 		AND t.IsAbnormal = 1
 
 	DECLARE @NewLogData VARCHAR(MAX)
