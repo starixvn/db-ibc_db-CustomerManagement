@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]	
 	@CustId int,	
 	@UpdateMinMaxBet BIT = 1,	
@@ -105,6 +105,8 @@ Revisions:
     - 20161109@Helen: Separate Bet Setting for Soccer - Parlay - [Redmine:66265]
     - 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
+	- 20200724@Eden: Minimize UM Time - Lock updating customer settings [#136464]
+
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @UpdateMinMaxBet: is update min max bet?
@@ -127,6 +129,15 @@ declare @startRun datetime
 declare @endRun datetime
 declare @duration int
 set @startRun = getdate()
+
+--> Check UM config
+EXEC [Acc_CheckUM] @CustID = @CustID, @ProductID = 1
+	, @Language = @Language, @FunctionType = 1
+	, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT 
+	, @ReturnUMData = 0
+		
+IF @ErrCode <>0 
+	RETURN
 
 --Check disable user
 EXEC dbo.Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output

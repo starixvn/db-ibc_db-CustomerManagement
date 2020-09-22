@@ -1,6 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdAgentComm    Script Date: 12/5/2013 4:35:18 PM ******/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdAgentComm]	
 	@custid int, --customer to be updated
 	@groupa decimal(9,8),
@@ -37,6 +35,8 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20200724@Eden: Minimize UM Time - Lock updating customer settings [#136464]
+
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @groupa: groupa's discount value
@@ -54,6 +54,15 @@ Param's Explanation:
 */
 
 	SET NOCOUNT ON
+
+	--> Check UM config
+	EXEC [Acc_CheckUM] @CustID = @CustID, @ProductID = 1
+		, @Language = @Language, @FunctionType = 1
+		, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT 
+		, @ReturnUMData = 0
+		
+	IF @ErrCode <>0 
+		RETURN
 
 	--Check disable user
 	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
