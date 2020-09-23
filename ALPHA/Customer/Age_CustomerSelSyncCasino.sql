@@ -1,6 +1,6 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Age_CustomerSelListCustInfo]
-	  @ListCust VARCHAR(MAX)
+ALTER PROCEDURE [dbo].[Age_CustomerSelSyncCasino]
+	  @Custs VARCHAR(MAX)
 AS
 /*
 	Created: 20200911@Winfred
@@ -12,21 +12,21 @@ AS
 		
 	Param's Explanation:
 		• @ListCust: list username of customer that need to be viewed.
-	Example: exec Age_CustomerSelListCustInfo @ListCust='41075587 ,888999111 ,41075557 ,41075791,43666258'	
+	Example: exec Age_CustomerSelSyncCasino @Custs='41075587 ,888999111 ,41075557 ,41075791,43666258'	
 */
 
 BEGIN
     SET NOCOUNT ON
 
 	--Check if XML is null or empty
-	IF @ListCust IS NULL OR @ListCust = ''
+	IF @Custs IS NULL OR @Custs = ''
 		RETURN
 	
 	CREATE TABLE #ListCust_Temp( CustID	INT )
 
 	INSERT INTO #ListCust_Temp(CustID)
 	SELECT CAST(ss.val AS INT) as CustID	
-	FROM dbo.strSplit(ISNULL(@ListCust, ''), ',') AS ss
+	FROM dbo.strSplit(ISNULL(@Custs, ''), ',') AS ss
 
 	-------------------------------------------------------------------------
     SELECT	a.CustID,b.SyncCasino			
