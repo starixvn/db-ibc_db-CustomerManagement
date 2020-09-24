@@ -27,7 +27,7 @@ BEGIN
 	LEFT JOIN dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
 	WHERE p.GroupType = 0 AND gp.ProductId IS NULL
 		AND p.Enabled = 1
-	ORDER BY OrderNo
+	ORDER BY [Type],OrderNo
 
 
 	IF @GroupID IS NULL
