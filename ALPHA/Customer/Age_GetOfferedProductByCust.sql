@@ -13,6 +13,7 @@ AS
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200806@Elodie: Get real productid [Redmine: #139017]
 		- 20200821@Winfred: Get all productid in MaCau Game [Redmine: #167768]
+		- 20200911@Winfred: add product joker [Redmine: #131603]
 	Param's Explanation:
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
@@ -94,6 +95,8 @@ BEGIN
 		UNION ALL
 		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
 		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
+		UNION ALL
+		SELECT 56, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
