@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\ExternalSite\ManageSuperPrefix\Acc_SuperPrefixByGroupSel.sql
