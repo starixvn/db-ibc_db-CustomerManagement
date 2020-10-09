@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
 	@CustId INT
+	, @SettingStatus TINYINT = 0
 AS
 /*  
 	Created: 20150714@Patrick
@@ -18,6 +19,7 @@ AS
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200428@Malcolm : re-order products [Redmine : #132760]
+		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 	Param's Explanation: 
 */  
@@ -45,7 +47,7 @@ BEGIN
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
-	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6) AS sbss
+	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
@@ -63,7 +65,7 @@ BEGIN
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
-	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12) AS sbss
+	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
