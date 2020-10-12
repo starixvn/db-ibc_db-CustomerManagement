@@ -1,7 +1,8 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[U3_CustomerSelAllInfo]
 	@username VARCHAR(30),
-	@CheckCustId TINYINT = 0
+	@CheckCustId TINYINT = 0,
+	@SettingStatus TINYINT = 0
 AS
 
 /*
@@ -91,6 +92,7 @@ Revisions:
 		2. Change yesterday balance formula + Integrate Bullfighting [RedmineID: #84692]
 	- 20181031@Percy: Remove linked-server DBLIC [RedmineID: #103660]
 	- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -623,7 +625,7 @@ BEGIN
 	-- For sportbook2
 	IF @IsDeposit = 0 -- credit
 	BEGIN
-		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
+		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus      
 	END
 	ELSE  -- deposit
 	BEGIN
