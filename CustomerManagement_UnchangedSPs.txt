@@ -1,1 +1,8 @@
-NAP-Accounting\ExternalSite\ManageSuperPrefix\Acc_SuperPrefixByGroupSel.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+NAP-Accounting\Customer\Status\Acc_CustomerSelStatus.sql
+ALPHA\Customer\Age_CustomerSelUserInfo.sql
+ALPHA\MemberInformation\ViewMemberWinLimit\Age_CustomerSelWinLimitProduct.sql
+ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Ag.sql
+ALPHA\MemberInformation\ViewComm\Age_CustomerSelCommByProductID_Mag.sql
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
+Ext NAP\Customer\EAS_CustomerInsMember_CloneSetting_Com.sql
