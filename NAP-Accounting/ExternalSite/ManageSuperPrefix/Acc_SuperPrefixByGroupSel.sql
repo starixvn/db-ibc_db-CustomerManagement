@@ -12,6 +12,7 @@ AS
 	
 	Revisions:
 		- 20200511@Johnson: initial sp [redmine:#133846]
+		- 20201008@Winfred : New Super - Prefix Warning [Redmine: #142239]
 */
 BEGIN
 	SET NOCOUNT ON
