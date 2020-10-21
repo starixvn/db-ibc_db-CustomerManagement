@@ -60,7 +60,8 @@ Revisions:
 	- 20190731@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
-
+	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+		
 	Example: EXEC EAS_CustomerSelBySAg @srecommend=9367272, @UserID = 8   
 */  
 BEGIN    
@@ -70,18 +71,25 @@ BEGIN
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0, @AgentSite VARCHAR(10)
 	DECLARE @RowStart INT, @RowEnd INT
+	 DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0,@srecommend		INT	
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
-
+	 
+	
 	-- get data for filtered customers		
 	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
 	SELECT siteid , site, SpecialGroup 
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
 
-	SELECT @AgentSite = site FROM Customer WITH (NOLOCK) WHERE custid = @recommend
+	SELECT @AgentSite = site,@srecommend = srecommend  FROM Customer WITH (NOLOCK) WHERE custid = @recommend
 	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
 
+	 -- MyanmarOdds
+	SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
+	IF @IsMyanmarOdds = 1
+	SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 1)
+	
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @DenySite )
 	BEGIN
@@ -160,6 +168,11 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.discount ELSE 0 END) AS discount,			
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discountcs,
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discount1x2,
+	
+			-- Myanmar odds
+			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
+			ISNULL(AC.playerdiscount,0) AS playerdiscountMyanmarOdds,
+			ISNULL(@discountMyanmarOdds,0) AS discountMyanmarOdds,
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END) AS playerdiscount,			
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscountcs,
@@ -170,11 +183,12 @@ BEGIN
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 AND @IsMyanmarOdds = 1
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			cl.SecurityCode, ml.RowNumber
+			cl.SecurityCode, ml.RowNumber  ,AC.playerdiscount
 	
 	ORDER BY RowNumber
 

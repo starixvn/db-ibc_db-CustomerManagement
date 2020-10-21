@@ -78,7 +78,7 @@ Revisions:
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
 	- 20200624@Winfred: Alpha - Enable/disable status for Saba Virtual Sport [Redmine: #136210]
 	- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
-
+		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -102,6 +102,7 @@ Param's Explanation:
 	----- 20150610@Kos -------------------
 
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
+			,@IsMyanmarOdds BIT = 0
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
@@ -128,7 +129,8 @@ Param's Explanation:
 			@SelectedBetting =  isnull(SelectedBetting, 0),
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
-		
+		-- Myanmar Odds
+		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)		
 	END
 	ELSE IF @roleid = 3 --master
 	BEGIN
@@ -142,6 +144,8 @@ Param's Explanation:
 			@IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
 		FROM dbo.CustMaster WITH (NOLOCK)
 		WHERE custid = @custid
+		-- Myanmar Odds
+		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
 	END
 	ELSE IF @roleid = 2 --agent
 	BEGIN
@@ -155,7 +159,8 @@ Param's Explanation:
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 	    FROM dbo.CustMaster WITH(NOLOCK)
 		WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
-			
+		-- Myanmar Odds
+		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)	
 			
 	END
 	ELSE IF @roleid = 1 --member
@@ -163,7 +168,8 @@ Param's Explanation:
 		SELECT 
 			@IsInternal = isnull(IsInternal, 0) 
 		FROM custAgent WITH (NOLOCK) WHERE custid = @agentid
-		
+		-- Myanmar Odds
+		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)		
 			
 	END
 	
@@ -423,7 +429,7 @@ Param's Explanation:
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
 			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
-
+			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
 			-- For VoidBridge
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge), 1) AS DisableVoidBridge,

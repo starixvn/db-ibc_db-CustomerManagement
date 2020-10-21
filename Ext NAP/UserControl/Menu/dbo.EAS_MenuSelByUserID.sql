@@ -10,7 +10,8 @@ AS
 		
 		Revisions:
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-		
+			- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+			
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -41,9 +42,11 @@ SET NOCOUNT ON
 		m.URL,
 		m.DisplayOrder,
 		m.FuncID,
-		m.active
+		m.active,
+		f.FuncKey
 	FROM eaMenu m WITH(NOLOCK) 	
 		INNER JOIN @tmpFunction p ON p.funcid = m.funcid
+		LEFT JOIN eaFunction f ON p.funcid = f.funcid
 	WHERE m.active = 1 AND p.policy > 0
 	ORDER BY m.parentID, m.displayOrder
 	

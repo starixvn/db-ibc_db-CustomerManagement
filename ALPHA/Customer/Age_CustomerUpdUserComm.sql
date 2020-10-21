@@ -3,7 +3,9 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdUserComm]
 	@custid INT, --customer to be updated
 	@playerdiscount DECIMAL(9,8),
 	@playerdiscountcs DECIMAL(9,8),
-	@playerdiscount1x2 DECIMAL(9,8),	
+	@playerdiscount1x2 DECIMAL(9,8),
+	-- For Myanmar Odds
+	@playerdiscountMyanmarOdds DECIMAL(9,8) = 0,	
 	@userid INT, --updater Id	
 	@subaccid INT = 0, --Sub-AccountID
 	@language VARCHAR(2) = 'E',
@@ -46,6 +48,7 @@ Revisions:
 	- 20190723@Eden: set default value for @discountnumber = 0 [redmine: #105955]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20200724@Eden: Minimize UM Time - Lock updating customer settings [#136464]
+	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
 
 Param's Explanation:
 • @custid: custid that need to be viewed.   
@@ -105,11 +108,22 @@ Param's Explanation:
 
 	DECLARE	@playerdiscount_old DECIMAL(9,8),
 			@playerdiscountcs_old DECIMAL(9,8),		
-			@playerdiscount1x2_old DECIMAL(9,8)			
+			@playerdiscount1x2_old DECIMAL(9,8),
+			@playerdiscountMyanmarOdds_old decimal(9,8)			
 	 
 	 SELECT @recommend = recommend
 	 FROM custInfo WITH (NOLOCK)
 	 WHERE custid = @custid  
+	
+	 -- For Myanmar Odds  
+	 DECLARE @IsMyanmarOdds BIT = 0 
+	 SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@recommend)  
+	    
+	 IF @IsMyanmarOdds = 1  
+	 BEGIN  
+		-- Get old value  
+		SET @playerdiscountMyanmarOdds_old = (SELECT playerdiscount FROM CustCommRate WITH (NOLOCK) WHERE CustId = @custid AND Sporttype = 1 AND Bettype = 1)  
+	 END   
 	 		
 	DECLARE @updatecomm_old BIT
 
@@ -123,6 +137,7 @@ Param's Explanation:
 	FROM custsetting (NOLOCK) WHERE custid = @custid AND sporttype = 1 AND bettype = 5
 
 	IF @playerdiscount_old <> @playerdiscount OR @playerdiscountcs_old <> @playerdiscountcs OR @playerdiscount1x2 <> @playerdiscount1x2_old 
+		OR (@IsMyanmarOdds = 1 AND @playerdiscountMyanmarOdds <> @playerdiscountMyanmarOdds_old)
 		SET @updatecomm_old = 1
 	ELSE 
 		SET @updatecomm_old = 0
@@ -133,7 +148,8 @@ Param's Explanation:
 	--Check Param
 	IF	@playerdiscount<0 OR @playerdiscount>0.2
 		OR @playerdiscountcs<0 OR @playerdiscountcs>0.2
-		OR @playerdiscount1x2<0 OR @playerdiscount1x2>0.2
+		OR @playerdiscount1x2<0 OR @playerdiscount1x2>0.2  
+		OR @playerdiscountMyanmarOdds < 0  OR @playerdiscountMyanmarOdds > 0.01
 	BEGIN	
 		SELECT @ErrMsg = CASE @Language 
 							WHEN 'E' THEN 'Invalid commission rate.'
@@ -179,6 +195,11 @@ Param's Explanation:
 			@playerdiscountcs = @playerdiscountcs , 
 			@playerdiscount1x2 = @playerdiscount1x2,
 			@updatecomm_old = @updatecomm_old,
+			-- For Myanmar Odds 
+			@IsMyanmarOdds = @IsMyanmarOdds,
+			@discountMyanmarOdds = @playerdiscountMyanmarOdds,
+			@discountMyanmarOdds_old = @playerdiscountMyanmarOdds_old,
+			
 			@SubAccID = @SubAccID,
 			@UserID = @UserID,
 			@Language = @Language,

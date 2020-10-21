@@ -1,1 +1,1 @@
-Ext NAP\UserControl\GroupConfiguration\EAS_GetProductList.sql
+NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
