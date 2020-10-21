@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,BODBDownlineNet,BODBDownlineNetView, Dot_Member" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,BODBDownlineNet,BODBDownlineNetView, Dot_Member" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission_All]
 	@CustID int, 
 	@FuncID int=null,
