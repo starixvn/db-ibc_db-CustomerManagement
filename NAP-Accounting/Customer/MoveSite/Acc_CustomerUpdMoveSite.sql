@@ -24,6 +24,8 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
 		- 20190814@Johnson: dont move cn88 site [redmine:#116691]
 		- 20200915@Johnson: check dont move deposit site [redmine:#141257]
+		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers except members
 		
@@ -81,16 +83,19 @@ BEGIN
 	END
 	
 	DECLARE @OldSite varchar(50), @LogSPData varchar(8000)
-	DECLARE @userName VARCHAR(50)
+	DECLARE @userName VARCHAR(50),@currency TINYINT
 	SELECT @OldSite =  site from customer (nolock) where custid = @CustId	
 
-	SET @userName = (SELECT username FROM custInfo WITH (NOLOCK) WHERE custid = @CustId)
+	SELECT @userName = username,@currency = currency FROM custInfo WITH (NOLOCK) WHERE custid = @CustId
 	--IF @OldSite = '766666' OR @Site = '766666'
 	-- 20151026@Don - Support moving site from 766666 to other sites
-	IF @Site = '766666' 
+	IF @currency <> 20 -- UUS For Myanma Odds
 	BEGIN
-		SELECT @ErrCode = 102, @ErrMsg = 'Cannot move site for ' + @userName + ' since amongs its new and old sites, one has % Odds.'
-		RETURN
+		IF  dbo.fn_IsMyanmarOddsBySite(@OldSite) =  1 OR dbo.fn_IsMyanmarOddsBySite(@Site) = 1
+		BEGIN
+			SELECT @ErrCode = 102, @ErrMsg = 'Cannot move site for ' + @userName + ' since amongs its new and old sites, one has Myanmar Odds.'
+			RETURN
+		END
 	END
 	
 	IF @site = 'CN88' OR @OldSite = 'CN88'

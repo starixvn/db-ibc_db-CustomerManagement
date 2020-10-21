@@ -62,7 +62,8 @@ AS
 		- 20190806@Eden: add bettype 1525,1526 for Keno gametype - [Redmine: #116466]
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
-
+		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+		
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
@@ -72,7 +73,7 @@ BEGIN
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT
-
+	
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
 
@@ -160,7 +161,10 @@ BEGIN
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
-
+			-- For Myanmar Odds
+		   (SELECT IsMyanmarOdds FROM dbo.fn_IsMyanmarOddsByCust (c.custid)) AS  IsMyanmarOdds,
+		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
+			
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
            			
@@ -170,11 +174,13 @@ BEGIN
 		INNER JOIN dbo.CustSuperProfile cp WITH(NOLOCK) ON cp.CustId = c.CustId
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1
+
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			sl.LimitDays, sl.MinDate, cl.SecurityCode, sl.RowNumber
+			sl.LimitDays, sl.MinDate, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate
 	
 	ORDER BY RowNumber
 			   

@@ -41,6 +41,8 @@ Revisions:
 	- 20180326@Winnie: Customer Setting - urgent fix to support for long bettype name. [RedmineID: #91216]
 	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
+
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -518,6 +520,36 @@ Begin
 		
 		SELECT @ugroup = ugroup from customer with(nolock) where custid=@custid
 		
+			-- For Myanmar Odds
+		DECLARE @MyanmarOddsComm_1 DECIMAL (9,8) = 0
+				, @MyanmarOddsComm_2 DECIMAL (9,8) = 0
+				, @MyanmarOddsComm_3 DECIMAL (9,8) = 0
+				, @MyanmarOddsComm_4 DECIMAL (9,8) = 0
+				, @IsMyanmarOdds BIT = 0
+		
+		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds(@srecommend)
+		IF @RoleID = 4
+			SELECT @MyanmarOddsComm_4 = CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @SRecommend AND Sporttype = 1 AND Bettype = 1		
+		IF @RoleID =3
+		BEGIN
+			SELECT @MyanmarOddsComm_3 = CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @MRecommend AND Sporttype = 1 AND Bettype = 1		
+			SELECT @MyanmarOddsComm_4 = CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @SRecommend AND Sporttype = 1 AND Bettype = 1		
+		END	
+			
+		IF @RoleID =2
+		BEGIN
+			SELECT @MyanmarOddsComm_2 = CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @Recommend AND Sporttype = 1 AND Bettype = 1
+			SET @MyanmarOddsComm_3 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @MRecommend AND Sporttype = 1 AND Bettype = 1)		
+			SET @MyanmarOddsComm_4 = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @SRecommend AND Sporttype = 1 AND Bettype = 1)		
+		END		
+		
+		IF @RoleID = 1
+		BEGIN
+			SELECT @MyanmarOddsComm_1= playerdiscount, @MyanmarOddsComm_2 = discount,@MyanmarOddsComm_3= adiscount, @MyanmarOddsComm_4 = sdiscount
+			FROM CustCommRate WITH (NOLOCK) WHERE CustId = @CustID AND Sporttype = 1 AND Bettype = 1		
+			
+		END
+		
 		SELECT	@ga4 ga4,
 				@gb4 gb4,
 				@gc4 gc4,
@@ -561,7 +593,12 @@ Begin
 			
 				@v161_comm_81 v161_comm_81  , 
 				
-				@ugroup ugroup
+				@ugroup ugroup,
+				ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
+				ISNULL(@MyanmarOddsComm_1,0) AS MyanmarOddsComm_1,
+				ISNULL(@MyanmarOddsComm_2,0) AS MyanmarOddsComm_2,
+				ISNULL(@MyanmarOddsComm_3,0) AS MyanmarOddsComm_3,
+				ISNULL(@MyanmarOddsComm_4,0) AS MyanmarOddsComm_4
 	end
 
 End
