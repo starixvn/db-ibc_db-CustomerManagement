@@ -48,11 +48,9 @@ BEGIN
 	or (B.ProductID IN (44) and SportType = 224 and BetType = 5500) -- RNG War
 	or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
 	or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2
-	
+	--Get PT DCS
 	UPDATE a
-	SET a.SuperPT = CASE WHEN a.ProductID in (16,22,5,23,24,28,40,44,38,42,50) 
-					THEN cast(b.SuperPT AS SMALLMONEY) / 100  
-					ELSE  b.SuperPT END 
+	SET a.SuperPT = cast(b.SuperPT AS SMALLMONEY) / 100   
 	FROM #tblCustomer a
 	INNER JOIN CustPTSetting3rd_Agent b WITH(NOLOCK) ON a.custID = b.CustID 
 						AND a.BetType = b.BetType AND a.SportType = b.SportType
