@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_SuperPrefixByGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
 	@Prefix		VARCHAR(10)	= NULL,
@@ -12,6 +12,7 @@ AS
 	
 	Revisions:
 		- 20200511@Johnson: initial sp [redmine:#133846]
+		- 20201008@Winfred : New Super - Prefix Warning [Redmine: #142239]
 */
 BEGIN
 	SET NOCOUNT ON

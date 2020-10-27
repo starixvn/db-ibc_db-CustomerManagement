@@ -1,1 +1,0 @@
-NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
