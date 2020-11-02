@@ -45,6 +45,8 @@ Revisions:
 	- 20200617@Elodie: Allow IBCIndo for INDOWIN group - [Redmine: #136032]
 	- 20200629@Johnson: Allow IBCIndo for INDOBS group [redmine: #136467]
 	- 20200923@Elodie: Allow 76666B for ACCMMKMyanmar, ACCUUSMyanmar group - [Redmine: #141926]
+	- 20201102@Winfred: rename group ACCMMKMyanmar to IBCMMR - [Redmine: #141926]
+	
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -140,7 +142,7 @@ BEGIN
 		UNION ALL 
 		SELECT 11 --INDO
 	END	
-	ELSE IF (@System IN ('ACCMMKMyanmar', 'ACCUUSMyanmar'))
+	ELSE IF (@System IN ('IBCMMR', 'ACCUUSMyanmar'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 547 --76666B		
