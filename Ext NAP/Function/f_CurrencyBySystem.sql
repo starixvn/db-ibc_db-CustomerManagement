@@ -43,7 +43,8 @@ Revisions:
 	- 20200508@Elodie: add IBCIndo group - [Redmine: #133858]
 	- 20200619@Elodie: add USD into IBCIndo, INDOWIN group - [Redmine: #136096]
 	- 20200923@Elodie: Add MMK into ACCMMKMyanmar group, Add UUS into ACCUUSMyanmar group - [Redmine: #141926]
-
+	- 20201102@Winfred: rename group ACCMMKMyanmar to IBCMMR - [Redmine: #141926]
+	
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -170,7 +171,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 3 --US$
 	END
-	ELSE IF (@System in ( 'ACCMMKMyanmar'))
+	ELSE IF (@System in ( 'IBCMMR'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 69 --MMK
