@@ -12,7 +12,7 @@ DB: DBPOL/NAP_UserControl
 Revisions:  
 	- 20181120@Razor: Function to control group display [Redmine: #89929]
 	- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-
+	- 2001020@Winfred: Fix miss product when add new group and add new product apply all group [Redmine: #140026]
 Param's Explanation:
 	- @data:		
 		<ROOT>
@@ -52,7 +52,19 @@ BEGIN
 		)
 
 	SELECT @startRun = GETDATE()
-
+	
+	-- Get all enabled products
+	SELECT ProductId, ProductName
+	INTO #tmpProducts
+	FROM OPENQUERY (DBAGE, '
+							SELECT
+								CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID
+							   ,p.ProductName
+							FROM bodb02.dbo.Products p WITH (NOLOCK)
+								LEFT JOIN bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
+							WHERE p.GroupType = 0 AND gp.ProductId IS NULL
+								AND p.Enabled = 1')
+	
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @data
 		
@@ -81,11 +93,19 @@ BEGIN
 		FROM @tempTbl t
 		WHERE NOT EXISTS ( SELECT 1 FROM dbo.eaGroupConfiguration WITH(NOLOCK) WHERE ProductId = t.ProductId AND GroupId = t.GroupId)
 	
+	INSERT INTO dbo.eaGroupConfiguration
+	OUTPUT INSERTED.ProductId, INSERTED.GroupId, INSERTED.IsShow, 1
+	INTO @tempUpdatedTbl(ProductId, GroupId, IsShow, IsNew)
+	SELECT  a.ProductId, b.GroupID,0 as IsShow
+	FROM #tmpProducts a
+	LEFT JOIN dbo.eaGroup b WITH(NOLOCK) ON EXISTS ( SELECT 1 FROM dbo.eaGroupConfiguration WITH(NOLOCK) WHERE GroupId = b.GroupId)
+	WHERE NOT EXISTS ( SELECT 1 FROM dbo.eaGroupConfiguration WITH(NOLOCK) WHERE ProductId = a.ProductId AND GroupId = b.GroupId)
+	
 	UPDATE t
 	SET t.ProductName = p.ProductName
 	FROM @tempUpdatedTbl t
 	INNER JOIN DBPRO.bodb02.dbo.Products p WITH (NOLOCK) ON p.ProductID = t.ProductId
-		
+	
 	UPDATE t
 	SET t.GroupName = g.GroupName
 	FROM @tempUpdatedTbl t
