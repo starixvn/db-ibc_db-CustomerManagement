@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[EAS_GroupInfoIns]
 	@UserID		INT,
 	@GroupName		VARCHAR(100),
 	@Description	VARCHAR(200) = NULL,
+	@ParentID 		INT = 0,
 	@IP				VARCHAR(50),
 	@GroupID		INT = 0 OUTPUT,
 	@ErrCode		INT = 0 OUTPUT,
@@ -16,14 +17,15 @@ AS
 		
 		Revisions:
 			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-			
+			- 20200804@Johnson: add sub group [redmine:#136501]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
 
 	DECLARE @startRun datetime,
 			@endRun datetime,
-			@duration int
+			@duration int,
+			@ParentGroup VARCHAR(100)
 	
 	SET @startRun=GETDATE()
 	
@@ -39,8 +41,8 @@ SET NOCOUNT ON
 		RETURN
 	END
 	
-	INSERT INTO eaGroup (GroupName, Description, CreatedDate, Creator)
-	VALUES (@GroupName, @Description, GETDATE(), @UserID)
+	INSERT INTO eaGroup (GroupName, Description, CreatedDate, Creator, ParentID)
+	VALUES (@GroupName, @Description, GETDATE(), @UserID, @ParentID)
 	
 	SELECT @GroupID = SCOPE_IDENTITY()
 	
@@ -49,9 +51,14 @@ SET NOCOUNT ON
 	SELECT @GroupID, funcid, 0
 	FROM eaFunction WITH(NOLOCK)	
 	
+	SELECT @ParentGroup = GroupName 
+	FROM eaGroup WITH(NOLOCK)
+	WHERE GroupID = @ParentID
+			
 	DECLARE @LogData nvarchar(500)	
 	SELECT @LogData = '<EAS_GroupInfoIns><GroupName>' + ISNULL([dbo].[f_EncodeXMLValue](@GroupName),'') + '</GroupName>' +
 										'<Description>' + ISNULL([dbo].[f_EncodeXMLValue](@Description),'') + '</Description>'  +
+										'<ParentGroup>' + ISNULL(@ParentGroup,'None') + '</ParentGroup>' +
 										'<IP>' + ISNULL(@IP,'') + '</IP>' 
 					+ '</EAS_GroupInfoIns>'
 

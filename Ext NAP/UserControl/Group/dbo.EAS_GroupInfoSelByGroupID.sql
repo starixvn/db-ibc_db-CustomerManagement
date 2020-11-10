@@ -1,6 +1,7 @@
 /*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoSelByGroupID]
-	@GroupID	INT
+	@GroupID	INT,
+	@Mode 		TINYINT =0
 AS
 	/*
 		Created: Dan
@@ -10,13 +11,29 @@ AS
 		
 		Revisions:
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-		
+			- 20200804@Jonnson: add sub group [redmine:#136501]
 		Parameter's Explanation:
+			- @Mode = 1: only 1 group incase edit group
+					2: all group & sub group to show dropdown on left pannel
 	*/ 
-SET NOCOUNT ON
-
-SELECT groupID, GroupName, Description
-FROM eaGroup WITH(NOLOCK)
-WHERE groupID = @GroupID
-
+BEGIN
+	SET NOCOUNT ON
+	
+	IF @Mode = 1
+	BEGIN
+		SELECT e.groupID, e.GroupName, e.Description, e.ParentID, ISNULL(p.GroupName,'None') as ParentGroup
+		FROM eaGroup e WITH(NOLOCK)
+			LEFT JOIN eaGroup p WITH(NOLOCK) ON e.ParentID = p.GroupID
+		WHERE e.groupID = @GroupID 
+	END
+	ELSE IF @mode = 2
+	BEGIN
+		SELECT e.groupID, e.GroupName, e.Description, e.ParentID, ISNULL(p.GroupName,'None') as ParentGroup
+		FROM eaGroup e WITH(NOLOCK)
+			LEFT JOIN eaGroup p WITH(NOLOCK) ON e.ParentID = p.GroupID
+		WHERE e.groupID = @GroupID OR e.ParentID = @GroupID
+		ORDER BY GroupName
+	END	
+	
+END
 GO

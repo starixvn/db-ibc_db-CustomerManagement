@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerInsMember_CloneSetting_Com]
 	,@Credit MONEY		
 	,@ExistingCustid INT
 	,@Creator INT	
+	,@GroupAdmin VARCHAR(100) = ''
 	,@Language VARCHAR(2)= 'E'
 	,@IP VARCHAR(15)=''		
 	,@ErrCode INT = 0 OUTPUT
@@ -34,12 +35,15 @@ AS
 		- 20200610@Johnson: set new super limit = 200 for 789's group [redmine:#135057]
 		- 20200723@Johnson: update errmsg limit supers [redmine:#135057]
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
+		- 20201019@Johnson: check group of admin to assign super to EXT group [Redmine:#136501]
+		- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
 			  = 2 : IsGroupHeadline 1-> 0
 			  = 3 : IsGroupHeadline 0-> 1, the User don't change group
 			  = 4 : IsGroupHeadline 0-> 1, the User change group
+		@GroupAdmin: Ext group assign to admin 	  
 	
 */
 BEGIN
@@ -57,6 +61,15 @@ BEGIN
 	
 	SELECT @startRun = GETDATE()		
 	SET @CreateDate = GETDATE()		
+
+	EXEC [Acc_CheckUM] @CustID = @ExistingCustid
+		,@FunctionType = 2
+		,@ErrCode = @ErrCode OUTPUT
+		,@ErrMsg = @ErrMsg OUTPUT
+		,@ReturnUMData = 0
+		,@Language = @Language
+
+	IF @ErrCode <> 0 RETURN
 		 
 	EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
 	
@@ -712,11 +725,22 @@ BEGIN
 	END	
 	--END credit term
 	
-	--add external group		
+	--add external group			
+	DECLARE @isSubGroupAdmin BIT 
+	
+	SELECT @isSubGroupAdmin = CASE WHEN ParentID > 0 THEN 1 ELSE 0 END
+	FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK)
+	WHERE GroupName = @GroupAdmin
+	
 	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
 	SELECT @CustID, @RoleID, GroupName
 	FROM Acc_CustGroup WITH(NOLOCK)
 	WHERE custid = @ExistingCustid
+		AND GroupName IN (SELECT GroupName 
+						FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK)
+						WHERE ParentID = 0
+							OR 1 = CASE WHEN @isSubGroupAdmin = 1 AND GroupName = @GroupAdmin THEN 1 ELSE 0 END
+						)
 	UNION 
 	SELECT @CustID, @RoleID,
 		CASE WHEN @currency = 20 THEN 'ACCUUS2' ELSE 'ACCUSD' END
@@ -757,6 +781,7 @@ BEGIN
 	'site="'+ coalesce(cast(@site as VARCHAR(50)),space(1)) + '" ' +	
 	'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
 	'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +		
+	'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
 	'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 	'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
 	'CopiedFrom="'+cast(@ExistingCustid as VARCHAR(10))+'" '+
@@ -786,7 +811,8 @@ BEGIN
 		'mphone="'+ dbo.f_EncodeXMLValue(coalesce(cast(@mobilephone as VARCHAR(100)),space(1))) + '" ' +
 		'site="'+ coalesce(cast(@site as VARCHAR(50)),space(1)) + '" ' +	
 		'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
-		'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +			
+		'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +
+		'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
 		'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 		'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
 		'CopiedFrom="'+cast(@ExistingCustid as VARCHAR(10))+'" '+
