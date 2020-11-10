@@ -16,6 +16,7 @@ Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
 20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
+20201111@Franklin: Remove un-used currencies [#140386]
 Parameters Explanation:  
      @SiteId: Site Or Licensee ID.  
      @IsCreditSite: Is Credit Site.  
@@ -26,8 +27,12 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
 */
 
      SET NOCOUNT ON;
+
+	 CREATE TABLE #tempAllCurrencies(Id INT,
+									Name VARCHAR(50));
      IF @SiteId = 0 -- All Currencies
          BEGIN
+		 INSERT INTO #tempAllCurrencies
              SELECT Id,
                     Name
              FROM [dbo].[f_Nap_WinLimit_CreditCurrencySel]()
@@ -41,12 +46,14 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
                   INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
                   INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName
                                                          AND S.isActive = 1
-             WHERE s.siteid = @SiteId
+             WHERE ex.OfferSite IN (0, 2)
+				AND ex.IsActive = 1
                    AND (@ExcludeTestCurrency = 0
                         OR ex.currency NOT IN('UUS'))
                   AND ex.currency NOT IN('H', 'C')
              ORDER BY Name;
-         END;
+		  SELECT DISTINCT Id, Name From #tempAllCurrencies ORDER BY Name;
+		 END;
      ELSE
      IF @IsCreditSite = 1 -- Currencies for credit site
          BEGIN
@@ -71,6 +78,9 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
                    AND (@ExcludeTestCurrency = 0
                         OR ex.currency NOT IN('UUS'))
                   AND ex.currency NOT IN('H', 'C')
+				  AND ex.IsActive = 1
              ORDER BY Name;
-         END;;
+         END;
+
+		 DROP TABLE #tempAllCurrencies;
 GO

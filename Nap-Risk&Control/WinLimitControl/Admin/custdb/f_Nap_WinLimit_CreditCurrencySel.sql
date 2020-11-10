@@ -28,5 +28,5 @@ SELECT CASE
 	  END+' ('+currency+')' AS Name
 	, exchangeid AS Id
 FROM exchange WITH (NOLOCk)
-WHERE exchangeid NOT IN(27, 28) AND OfferSite IN (0,1)
+WHERE exchangeid NOT IN(27, 28) AND OfferSite IN (0,1) AND IsActive = 1
 GO
