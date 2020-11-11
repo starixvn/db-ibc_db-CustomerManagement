@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_ProblemAccount_CustomerList]
+ALTER PROCEDURE [dbo].[EAS_ProblemAccount_CustomerList]
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,	
 	@GroupName			VARCHAR(50) = '',
@@ -142,4 +142,3 @@ BEGIN
 
 	DROP TABLE #tempProblemAccount
 END
-		
