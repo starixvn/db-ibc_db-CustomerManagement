@@ -40,7 +40,11 @@ EXEC [NAP_WinLimit_CurrencySel] @SiteId=32, @IsCreditSite = 1, @ExcludeTestCurre
                    OR Name NOT IN('(UUS)'))
              UNION
              SELECT ex.exchangeid,
-                    ex.Code+' ('+ex.currency+')'
+					 CASE
+						WHEN ex.exchangeid = 20
+							THEN 'UUS'
+							ELSE ex.Code
+							END +' ('+ex.currency+')' 
              FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
                   INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
                   INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
