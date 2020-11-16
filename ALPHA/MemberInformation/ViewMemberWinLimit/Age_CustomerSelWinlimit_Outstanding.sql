@@ -1,4 +1,7 @@
-/*<info serverAlias="DBBOF-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+/*<info serverAlias="DB042-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+USE bodb02
+GO
+
 ALTER PROCEDURE	dbo.Age_CustomerSelWinlimit_Outstanding
 					@CustId			INT
 				,	@MinCustId		INT
@@ -14,14 +17,14 @@ AS
 /*
 	Create:	20180717@Elodie
 	Task:	Outstanding of Customer
-	DB:		DBBOF/bodb02
+	DB:		DB042/bodb02
 
 	Revisions:
 		- 20180717@Elodie: Get outstanding of customer
-		- 20201005@Danny: Change to use alias DBBOF alternative to DB042 [RedmineID: #139516]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
+
 BEGIN
 
 	SET NOCOUNT ON
