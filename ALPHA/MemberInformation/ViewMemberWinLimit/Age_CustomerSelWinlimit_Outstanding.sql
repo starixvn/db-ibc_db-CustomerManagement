@@ -24,7 +24,6 @@ AS
 	Param's Explanation:
 		- @CustID: SAgentID
 */
-
 BEGIN
 
 	SET NOCOUNT ON
