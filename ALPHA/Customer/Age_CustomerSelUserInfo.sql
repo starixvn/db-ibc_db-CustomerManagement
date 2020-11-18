@@ -52,6 +52,7 @@ Revisions:
 	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]	
 	- 20200504@Eden: ION Live casino [Redmine: #132323]
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
+	- 20201026@Eden: Adjust new pt for 789y [Redmine: #143764]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -214,13 +215,13 @@ Param's Explanation:
 	SELECT Customer.custid,
 		   Customer.userpwd,
 		   ci.username,
-		   firstname, 
-		   lastname, 
-		   isnull(phone,'') as phone, 
-		   isnull(mobilephone,'') as mobilephone, 
-		   isnull(fax,'') as fax, 
-		   email,
-		   username2,
+		   customer.firstname, 
+		   customer.lastname, 
+		   isnull(customer.phone,'') as phone, 
+		   isnull(customer.mobilephone,'') as mobilephone, 
+		   isnull(customer.fax,'') as fax, 
+		   customer.email,
+		   customer.username2,
 		   ci.currency,  
 		   ci.closed, 
 		   ci.reject as suspend,
@@ -352,7 +353,8 @@ Param's Explanation:
 						
 		   ci.credit,
 		   e.currency as currencyname,
-		   @remark as remark
+		   @remark as remark,
+		   ISNULL(NULLIF(Customer.site,''), ag.site) AS Site
 	  FROM Customer WITH(nolock) 
 		 INNER JOIN CustInfo as ci with(NOLOCK)
 				 on Customer.CustID = ci.CustID --Shifu
@@ -365,6 +367,7 @@ Param's Explanation:
 												WHEN Customer.roleid = 2 THEN Customer.mrecommend
 												ELSE Customer.srecommend
 										END
+		LEFT JOIN dbo.Customer ag WITH (NOLOCK) ON Customer.recommend = ag.custid
 		    
 		 
 	 WHERE Customer.custid = @custid
