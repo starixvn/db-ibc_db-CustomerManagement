@@ -15,6 +15,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
+			- 20201118@Tina: Add 1 more value is 0 which use to get all sports [Redmine: #131241]
 	*/
 	SET NOCOUNT ON;
 	CREATE TABLE #Bettype (typeid INT , typenamee NVARCHAR(128))
@@ -57,7 +58,7 @@ BEGIN
 		INNER JOIN #Bettype bt ON bt.typeid = plsc.BetType
 	WHERE bt.typenamee LIKE N'%' + @BettypeName + '%'
 	AND (@BetType IS NULL OR plsc.BetType = @BetType )
-	AND (plsc.SportType = @SportType)
+	AND (@SportType = 0 OR plsc.SportType = @SportType)
 	order by Plsc.SiteID,plsc.SportType,plsc.BetType
    
    DROP TABLE #Bettype,#Exchange,#Site
