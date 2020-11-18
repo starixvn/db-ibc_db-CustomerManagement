@@ -1,7 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,vnteam" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
+/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveMember]
 	@agentname     VARCHAR(40)
   , @membername    VARCHAR(40)
