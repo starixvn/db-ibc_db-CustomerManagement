@@ -25,9 +25,10 @@ AS
 		- 20190814@Johnson: dont move cn88 site [redmine:#116691]
 		- 20200915@Johnson: check dont move deposit site [redmine:#141257]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+		- 20201103@Tina: move site for members level [Redmine: #144323]
 		
 	Param's Explanation:
-		@CustID: Custid of customer want to move site. We allow to move all customers except members
+		@CustID: Custid of customer want to move site. We allow to move all customers
 		
 
 */
@@ -104,30 +105,17 @@ BEGIN
 		RETURN
 	END
 	
-	IF @RoleId = 4 -- For Super
-	BEGIN
-		UPDATE customer WITH(ROWLOCK,UPDLOCK) SET site = @site WHERE srecommend = @CustId and RoleId IN (4,3,2)
-		UPDATE custagent WITH(ROWLOCK,UPDLOCK) 
-		SET site = @site 
-		FROM custagent JOIN customer C ON c.custid = custagent.custid
-		WHERE srecommend = @CustId and RoleId IN (4,3,2)
-	END
-	ELSE IF @RoleId = 3 -- For Master
-	BEGIN
-		UPDATE customer WITH(ROWLOCK,UPDLOCK) SET site = @site WHERE mrecommend = @CustId and RoleId IN (3, 2)
-		UPDATE custagent WITH(ROWLOCK,UPDLOCK) 
-		SET site = @site 
-		FROM custagent JOIN customer C ON c.custid = custagent.custid
-		WHERE mrecommend = @CustId and RoleId IN (3, 2)
-	END
-	ELSE IF @RoleId = 2 -- For Agent
-	BEGIN
-		UPDATE customer WITH(ROWLOCK,UPDLOCK) SET site = @site WHERE recommend = @CustId and RoleId IN (2)
-		UPDATE custagent WITH(ROWLOCK,UPDLOCK) 
-		SET site = @site 
-		FROM custagent JOIN customer C ON c.custid = custagent.custid
-		WHERE recommend = @CustId and RoleId IN (2)
-	END 
+	EXEC dbo.Acc_CustomerInfo_Execrep_06
+	    @custid = @custid,
+	    @roleid = @roleid,
+		@site = @site,
+	    @ErrCode = @ErrCode OUTPUT
+
+    IF @ErrCode > 0
+    BEGIN
+	    SELECT @ErrMsg = 'Update customer fail. Please try again'
+	    RETURN
+    END	 
 
 	--print('write log')-- Write Log Here
 	SELECT @LogSPData = '<Acc_CustomerUpdMoveSite OldSite="'+ @OldSite + '" ' +
