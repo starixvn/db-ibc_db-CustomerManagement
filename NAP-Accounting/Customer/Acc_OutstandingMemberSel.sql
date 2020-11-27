@@ -1,6 +1,4 @@
-/*<info serverAlias="DB042-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-USE bodb02
-GO
+/*<info serverAlias="DBBOF-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_OutstandingMemberSel]
 	@CustId			INT
@@ -9,11 +7,13 @@ AS
 
 /*
 	Created: 20190723@Percy
-	DB: DB042.bodb02
+	DB: DBBOF.bodb02
 	Task: Get a specific member's outstanding
 		
 	Revisions:
 		- 20190723@Percy: Initialize SP [RedmineID: #117334]
+		- 20201005@Danny: Change to use alias DBBOF alternative to DB042 [RedmineID: #139516]
+		
 */
 
 BEGIN
