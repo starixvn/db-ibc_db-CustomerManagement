@@ -53,6 +53,7 @@ Revisions:
 	- 20200504@Eden: ION Live casino [Redmine: #132323]
 	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
 	- 20201026@Eden: Adjust new pt for 789y [Redmine: #143764]
+	- 20201130@Tina: Add GDG (Gold Diamond Gaming) Live casino [Redmine: #144105]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -150,12 +151,14 @@ Param's Explanation:
 		,	@bitmapOrder_VG				INT
 		,	@bitmapOrder_SabaClub		INT
 		,	@bitmapOrder_SAGaming		INT 
-		,	@bitmapOrder_ION		INT 
+		,	@bitmapOrder_ION			INT 
 		,	@bitmapOrder_SexyGaming		INT 
 		,	@bitmapOrder_BBIN			INT 
 		,	@bitmapOrder_TableGames		INT 
 		,	@bitmapOrder_GTCasino		INT
-		,	@bitmapOrder_RNGWar		INT 
+		,	@bitmapOrder_RNGWar			INT 
+		--GDG
+		,	@bitmapOrder_GDG			INT 
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
@@ -173,6 +176,8 @@ Param's Explanation:
 	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 	SET @bitmapOrder_GTCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 242 AND Bettype = 3201)
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
+	--GDG
+	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -187,12 +192,14 @@ Param's Explanation:
 		,	@IsHidden_VG			INT = 1
 		,	@IsHidden_SabaClub		INT = 1
 		,	@IsHidden_SAGaming		INT = 1
-		,	@IsHidden_ION		INT = 1
+		,	@IsHidden_ION			INT = 1
 		,	@IsHidden_SexyGaming	INT = 1
 		,	@IsHidden_BBIN			INT = 1
 		,	@IsHidden_TableGames	INT = 1
 		,	@IsHidden_GTCasino		INT = 1
-		,	@IsHidden_RNGWar	INT = 1
+		,	@IsHidden_RNGWar		INT = 1
+		--GDG
+		,	@IsHidden_GDG			INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -211,6 +218,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 241, @IsHide = @IsHidden_BBIN OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 222, @IsHide = @IsHidden_TableGames OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @Sporttype = 224, @IsHide = @IsHidden_RNGWar OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -350,7 +358,14 @@ Param's Explanation:
 						THEN 0
 					ELSE 1
 			END AS SyncedFishingWorldDownline,
-						
+			-- For GDG (Gold Diamond Gaming)
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_GDG), 1) AS DisableGDGGaming,
+			CAST(	CASE	WHEN	@IsHidden_GDG = 0 
+								AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_GDG), 1) = 0 
+								THEN 0
+							ELSE 1 
+					END AS BIT) AS HideGDG,		
+			--end GDG	
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,
