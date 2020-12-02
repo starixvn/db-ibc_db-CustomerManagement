@@ -39,7 +39,12 @@ BEGIN
 			RETURN
 		END
 		ELSE
-			RETURN 
+		BEGIN
+			SELECT @ErrMsg = 'The username is not available.'
+			SELECT @ErrCode = 1 
+			RETURN
+				
+		END 	
     END
     ELSE
     BEGIN
