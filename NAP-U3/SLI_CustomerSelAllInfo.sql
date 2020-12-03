@@ -40,7 +40,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			SELECT @ErrMsg = 'The username is not available.'
+			SELECT @ErrMsg = 'The ' + @username +' is not found.'
 			SELECT @ErrCode = 1 
 			RETURN
 				
