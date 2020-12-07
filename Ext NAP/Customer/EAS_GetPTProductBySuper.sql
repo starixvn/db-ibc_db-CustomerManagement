@@ -10,6 +10,7 @@ AS
 
 	Revisions:
 		- 20201020@Winfred: Get value PT setting product for customer [Redmine: #139937]
+		- 20201207@Winfred: Get value PT GDG for customer [Redmine: #144105]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -36,6 +37,7 @@ BEGIN
 		 WHEN b.SportType = 220 THEN  28
 		 WHEN b.SportType = 222 THEN  40
 		 WHEN b.SportType = 224 THEN  50
+		 WHEN b.SportType = 236 THEN  59
 		ELSE b.ProductID END ProductID
 	FROM dbo.strSplit(@Supers, ',') AS ss
 	INNER JOIN ProductSettingDetail b WITH(NOLOCK)ON b.SettingType in (1,18) 
@@ -102,7 +104,7 @@ BEGIN
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 
-	INNER JOIN DBPRO.bodb02.dbo.Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
+	INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
 	ORDER BY a.CustID,a.ProductID
 	
 	DROP TABLE #tblCustomer							
