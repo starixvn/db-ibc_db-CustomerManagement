@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Acc_ManageCansee_Sel]
 	@pMutilSite			NVARCHAR(Max) = ''
 AS
 BEGIN
-	-- exec Acc_ManageCansee_Sel @SportType = 0, @BetType = 0,@BettypeName = '',@pMutilCurrency =N'0',@SiteID = 0
+	-- EXEC Acc_ManageCansee_Sel_UAT2 @pMutilSportType = '44,180', @BetType = 0,@BettypeName = '',@pMutilCurrency =N'0',@pMutilSite = '0,1,2,3'
 	/*
 		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
 		DB: DBCUST/CustDB
@@ -34,7 +34,7 @@ BEGIN
 		LEFT JOIN [Site] Si WITH (NOLOCK) ON Si.siteid = S.val
 	
 	INSERT INTO #Exchange  (exchangeid,currency)	
-	SELECT E.exchangeid, CASE WHEN C.val = 0 THEN 'All Currencies' ELSE E.currency END currency
+	SELECT C.val exchangeid, CASE WHEN C.val = 0 THEN 'All Currencies' ELSE E.currency END currency
 	FROM dbo.strSplit(@pMutilCurrency, ',') C
 		LEFT JOIN exchange E WITH(NOLOCK) ON C.val = E.ExchangeId
 		
