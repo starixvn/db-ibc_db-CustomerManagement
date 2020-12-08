@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Acc_ManageCansee_Sel]
 	@pMutilSite			NVARCHAR(Max) = ''
 AS
 BEGIN
-	-- EXEC Acc_ManageCansee_Sel_UAT2 @pMutilSportType = '44,180', @BetType = 0,@BettypeName = '',@pMutilCurrency =N'0',@pMutilSite = '0,1,2,3'
+	-- EXEC Acc_ManageCansee_Sel_UAT2 @pMutilSportType = '44,180', @BetType = NULL,@BettypeName = '',@pMutilCurrency =N'0',@pMutilSite = '0,1,2,3'
 	/*
 		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
 		DB: DBCUST/CustDB
@@ -20,9 +20,9 @@ BEGIN
 			- 20201207@Tina: multiple selection for @SportType, @SiteID
 	*/
 	SET NOCOUNT ON;
-	CREATE TABLE #Bettype (typeid INT , typenamee NVARCHAR(128))
-	CREATE TABLE #Site (siteid INT , [SiteName] NVARCHAR(50))
-	CREATE TABLE #Exchange (exchangeid INT , currency NVARCHAR(50))
+	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128))
+	CREATE TABLE #Site (siteid INT PRIMARY KEY, [SiteName] NVARCHAR(50))
+	CREATE TABLE #Exchange (exchangeid INT PRIMARY KEY, currency NVARCHAR(50))
 
 	INSERT INTO #Bettype  (typeid,typenamee)	
 	SELECT typeid,typenamee 
