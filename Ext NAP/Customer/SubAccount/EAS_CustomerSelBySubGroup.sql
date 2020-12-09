@@ -13,7 +13,7 @@ AS
 	
 	Revisions:  
 		- 20200804@Johnson: initial sp [redmine:#136501]
-	
+		- 20201116@Johnson: get sub group for supers list [redmine:#145199]
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -27,7 +27,7 @@ BEGIN
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
 	
 	DECLARE @tmpGroup TABLE (GroupName VARCHAR(50))
-	CREATE TABLE #SuperList (custid INT, username VARCHAR(50), closed BIT, suspended BIT, Enabled BIT, rn INT)
+	CREATE TABLE #SuperList (custid INT, username VARCHAR(50), closed BIT, suspended BIT, Enabled BIT, SubGroup VARCHAR(1000), rn INT)
 	
 	INSERT INTO @tmpGroup (GroupName)
 	SELECT val
@@ -48,11 +48,30 @@ BEGIN
 	
 	SELECT @TotalRows = @@ROWCOUNT
 	
+	;WITH tmp AS(
+		SELECT custid,
+			STUFF((
+			SELECT ',' + GroupName 
+			FROM Acc_CustGroup
+			WHERE CustID = t.custid
+				AND GroupName IN (SELECT GroupName 
+								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
+								WHERE ParentID > 0
+								)
+				FOR XML PATH('')),1,1,'') as SubGroup	
+		FROM #SuperList t			
+	)
+	UPDATE t2
+	SET t2.SubGroup = tmp.SubGroup
+	FROM #SuperList t2 
+		INNER JOIN tmp ON tmp.custid = t2.custid
+		
 	SELECT custid,
 		username,
 		closed,
 		suspended,
-		enabled
+		enabled,
+		SubGroup
 	FROM #SuperList
 	WHERE rn BETWEEN @RowStart AND @RowEnd
 		

@@ -18,6 +18,7 @@ AS
 		Revisions:
 			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20200804@Johnson: add sub group [redmine:#136501]
+			- 20201113@Johnson: copy product configuration for sub group from main group [redmine:#145199]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -50,6 +51,15 @@ SET NOCOUNT ON
 	INSERT INTO eaGroupPolicy (GroupID, FuncID, Policy)
 	SELECT @GroupID, funcid, 0
 	FROM eaFunction WITH(NOLOCK)	
+	
+	--clone product configuration for sub group
+	IF @ParentID > 0
+	BEGIN
+		INSERT INTO eaGroupConfiguration (ProductID,GroupID,IsShow)
+		SELECT ProductID,@GroupID,IsShow
+		FROM eaGroupConfiguration WITH(NOLOCK)
+		WHERE GroupId = @ParentID
+	END
 	
 	SELECT @ParentGroup = GroupName 
 	FROM eaGroup WITH(NOLOCK)

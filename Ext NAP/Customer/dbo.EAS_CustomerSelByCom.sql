@@ -63,13 +63,14 @@ AS
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+		- 20201113@Johnson: get sub group for supers list [redmine:#145199]
 		
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, RowNumber INT)
+    DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, SubGroup VARCHAR(1000), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT
@@ -139,7 +140,25 @@ BEGIN
 		SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 		SELECT @RowEnd = @RowStart + @PageSize - 1 
 	END
-
+	
+	;WITH tmp AS(
+		SELECT custid,
+			STUFF((
+			SELECT ',' + GroupName 
+			FROM Acc_CustGroup
+			WHERE CustID = t.custid
+				AND GroupName IN (SELECT GroupName 
+								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
+								WHERE ParentID > 0
+								)
+				FOR XML PATH('')),1,1,'') as SubGroup	
+		FROM @tmpSuperList t			
+	)
+	UPDATE t2
+	SET t2.SubGroup = tmp.SubGroup
+	FROM @tmpSuperList t2 
+		INNER JOIN tmp ON tmp.custid = t2.custid
+	
 	SELECT	c.custid,
 			c.username,
 			ci.enabled,
@@ -156,6 +175,7 @@ BEGIN
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 			sl.LimitDays,
 			sl.MinDate,	
+			sl.SubGroup,
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
@@ -180,7 +200,7 @@ BEGIN
 	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			sl.LimitDays, sl.MinDate, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate
+			sl.LimitDays, sl.MinDate, sl.SubGroup, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate
 	
 	ORDER BY RowNumber
 			   
