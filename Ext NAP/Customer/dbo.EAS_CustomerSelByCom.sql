@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]  
-    @GroupName		VARCHAR(50) = 'ACCTHAI',
+    @GroupName		VARCHAR(50) = '',
     @UserName		VARCHAR(30) = NULL,
     @Status			TINYINT = 0,
 	@UserID			INT,
@@ -64,7 +64,7 @@ AS
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20201113@Johnson: get sub group for supers list [redmine:#145199]
-		
+		- 20201209@Johnson: remove default value for @GroupName [redmine:#145199]
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
