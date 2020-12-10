@@ -158,6 +158,7 @@ BEGIN
 			ci.HideGoldDeluxe,
 			ci.DisableEsports, 
 			@uplineDisableEsports AS uplineDisableEsports,
+			@DisableKeno AS DisableKeno,
 			ci.HideKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
