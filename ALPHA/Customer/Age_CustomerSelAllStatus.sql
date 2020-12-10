@@ -14,7 +14,8 @@ AS
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200310@Percy: Return IsAllDayBalTransfer [RedmineID: #130091]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
-
+		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+		
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -22,7 +23,7 @@ AS
 */
 BEGIN
     SET NOCOUNT ON
-
+	DECLARE @GameType TABLE (GameTypeID INT, IBCBetTypeID INT)
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
 
 	DECLARE @IsAllDayBalTransfer BIT
@@ -131,6 +132,9 @@ BEGIN
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
+	
+	INSERT INTO @GameType (GameTypeID, IBCBetTypeID)
+	SELECT GameTypeID, IBCBetTypeID FROM GameType WITH (NOLOCK) WHERE IBCBetTypeID BETWEEN 1501 AND 1599 AND IsDisabled = 0
 
 	--Product Status
 	SELECT	ci.SyncCasino,
