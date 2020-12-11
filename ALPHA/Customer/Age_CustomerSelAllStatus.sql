@@ -114,7 +114,7 @@ BEGIN
 	------------------------Keno-----------------------
 	SELECT  @query = N''		
 	SELECT	@query = @query + N'
-	SET @DisableKeno = ISNULL((SELECT MIN(CASE WHEN g.IBCBetTypeID IS NOT NULL THEN cg.IsDisabled ELSE 1 END) AS DisableKeno
+	SET @DisableKeno = ISNULL((SELECT TOP 1 cg.IsDisabled AS DisableKeno
 	FROM dbo.CustGameType cg WITH (NOLOCK)  
 		INNER JOIN dbo.GameType g WITH (NOLOCK) ON g.GameTypeID = cg.GameTypeID
 	WHERE cg.custid = @custid AND g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0),1)
