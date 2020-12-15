@@ -1,5 +1,5 @@
 /*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[EAS_GroupConfigurationSel]
+CREATE PROCEDURE [dbo].[EAS_GroupConfigurationSel]
 	@ProductId	INT = NULL
 	,@GroupId	INT = NULL
 AS
@@ -13,17 +13,24 @@ AS
 		- 20190426@Kan:		DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 		- 20191106@Percy:	Just get enabled products [RedmineID: #118699]
 		- 20200812@Sophia:  Format at openquery code [Redmine: #137767]
+		- 20200922@Danny:	Add OrderNo, Type column into result set [Redmine: #141832]
 */
 BEGIN
 	SET NOCOUNT ON
 
 	-- Get all enabled products
-	SELECT ProductId, ProductName
+	SELECT ProductId, ProductName, OrderNo, [Type]
 	INTO #tmpProducts
-	FROM OPENQUERY (DBAGE, 'SELECT CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID ,p.ProductName FROM bodb02.dbo.Products p WITH (NOLOCK)
-								LEFT JOIN bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
-							WHERE p.GroupType = 0 AND gp.ProductId IS NULL
-								AND p.Enabled = 1')
+	FROM OPENQUERY (DBAGE, 'SELECT		CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID 
+										,p.ProductName
+										,ISNULL(p.OrderNo,0) AS OrderNo
+										,CASE	WHEN p.CasinoType = 1 THEN 53
+												WHEN p.CasinoType = 2 THEN 41
+												ELSE 0 END AS [Type]
+							FROM		bodb02.dbo.Products p WITH (NOLOCK)
+							LEFT JOIN	bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
+							WHERE p.GroupType = 0 AND gp.ProductId IS NULL AND p.Enabled = 1'
+					)
 
 	DECLARE @products TABLE (
 		ProductId INT
@@ -34,6 +41,8 @@ BEGIN
 		,CurrencyCode VARCHAR(300)
 		,Site VARCHAR(300)
 		,IsShow BIT
+		,OrderNo INT
+		,[Type] TINYINT
 		)
 
 	INSERT INTO @products
@@ -45,6 +54,8 @@ BEGIN
 		,g.CurrencyCode
 		,g.[Site]
 		,c.IsShow
+		,p.OrderNo
+		,p.[Type]
 	FROM #tmpProducts p
 		INNER JOIN dbo.eaGroupConfiguration c WITH (NOLOCK) ON p.ProductId = c.ProductId
 		INNER JOIN dbo.eaGroup g WITH (NOLOCK) ON g.GroupID = c.GroupId
@@ -66,8 +77,13 @@ BEGIN
 				)
 			)
 	BEGIN
-		DECLARE @ProductName VARCHAR(50)
-		SELECT @ProductName = ProductName 
+		DECLARE @ProductName	VARCHAR(50)
+		DECLARE @OrderNo		INT
+		DECLARE @Type			TINYINT
+
+		SELECT	@ProductName	= ProductName,  
+				@OrderNo		= OrderNo,
+				@Type			= [Type]
 		FROM #tmpProducts
 		WHERE ProductId = @productId
 	
@@ -80,6 +96,8 @@ BEGIN
 			,g.CurrencyCode
 			,g.[Site]
 			,0
+			,@OrderNo
+			,@Type
 		FROM dbo.eaGroup g WITH (NOLOCK)
 		WHERE GroupId = @groupId
 			OR @groupId IS NULL
@@ -115,6 +133,8 @@ BEGIN
 			,@CurrencyCode
 			,@Site
 			,0
+			,OrderNo
+			,[Type]
 		FROM #tmpProducts
 		WHERE (ProductId = @productId OR @productId IS NULL)
 	END
@@ -122,5 +142,7 @@ BEGIN
 	SELECT *
 	FROM @products
 	ORDER BY GroupName
+
+	DROP TABLE #tmpProducts
 END
 GO
