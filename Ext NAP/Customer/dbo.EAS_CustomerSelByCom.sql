@@ -141,23 +141,31 @@ BEGIN
 		SELECT @RowEnd = @RowStart + @PageSize - 1 
 	END
 	
-	;WITH tmp AS(
-		SELECT custid,
-			STUFF((
-			SELECT ',' + GroupName 
-			FROM Acc_CustGroup
-			WHERE CustID = t.custid
-				AND GroupName IN (SELECT GroupName 
-								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
-								WHERE ParentID > 0
-								)
-				FOR XML PATH('')),1,1,'') as SubGroup	
-		FROM @tmpSuperList t			
-	)
-	UPDATE t2
-	SET t2.SubGroup = tmp.SubGroup
-	FROM @tmpSuperList t2 
-		INNER JOIN tmp ON tmp.custid = t2.custid
+	--check not subgroup 
+	IF NOT EXISTS (SELECT 1 
+				FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK)
+				WHERE GroupName = @GroupName
+					AND ParentID > 0
+				)
+	BEGIN			
+		;WITH tmp AS(
+			SELECT custid,
+				STUFF((
+				SELECT ',' + GroupName 
+				FROM Acc_CustGroup
+				WHERE CustID = t.custid
+					AND GroupName IN (SELECT GroupName 
+									FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
+									WHERE ParentID > 0
+									)
+					FOR XML PATH('')),1,1,'') as SubGroup	
+			FROM @tmpSuperList t			
+		)
+		UPDATE t2
+		SET t2.SubGroup = tmp.SubGroup
+		FROM @tmpSuperList t2 
+			INNER JOIN tmp ON tmp.custid = t2.custid
+	END
 	
 	SELECT	c.custid,
 			c.username,
