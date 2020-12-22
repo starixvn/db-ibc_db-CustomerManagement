@@ -15,6 +15,7 @@ AS
 		- 20200804@Johnson: initial sp [redmine:#136501]
 		- 20201116@Johnson: get sub group for supers list [redmine:#145199]
 		- 20201211@Johnson: enhance sort super list [redmine:#146741]
+		- 20201222@Johnson: Exclude disabled accounts [redmine:#147578]
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -44,6 +45,7 @@ BEGIN
 		INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
 	WHERE c.GroupName = @GroupName
 		AND ci.roleid = 4
+		AND ci.enabled = 1
 		AND ci.username LIKE '%'+@username+'%'
 	
 	SELECT @TotalRows = @@ROWCOUNT
@@ -52,7 +54,7 @@ BEGIN
 		SELECT custid,
 			STUFF((
 			SELECT ',' + GroupName 
-			FROM Acc_CustGroup
+			FROM Acc_CustGroup WITH(NOLOCK)
 			WHERE CustID = t.custid
 				AND GroupName IN (SELECT GroupName 
 								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 

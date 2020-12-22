@@ -65,6 +65,7 @@ AS
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20201113@Johnson: get sub group for supers list [redmine:#145199]
 		- 20201209@Johnson: remove default value for @GroupName [redmine:#145199]
+		- 20201222@Johnson: put WITH NOLOCK for Acc_CustGroup [redmine:#147578]
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
@@ -152,7 +153,7 @@ BEGIN
 			SELECT custid,
 				STUFF((
 				SELECT ',' + GroupName 
-				FROM Acc_CustGroup
+				FROM Acc_CustGroup WITH(NOLOCK)
 				WHERE CustID = t.custid
 					AND GroupName IN (SELECT GroupName 
 									FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
