@@ -14,6 +14,7 @@ AS
 	Revisions:  
 		- 20200804@Johnson: initial sp [redmine:#136501]
 		- 20201116@Johnson: get sub group for supers list [redmine:#145199]
+		- 20201211@Johnson: enhance sort super list [redmine:#146741]
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -33,13 +34,12 @@ BEGIN
 	SELECT val
 	FROM strSplit (@SubGroup,',')
 	
-	INSERT INTO #SuperList(custid,username,closed,suspended,enabled,rn)
+	INSERT INTO #SuperList(custid,username,closed,suspended,enabled)
 	SELECT ci.custid, 
 		ci.username, 
 		ci.closed, 
 		ISNULL(ci.reject, 0) AS suspended,
-		ci.enabled,		
-		ROW_NUMBER() OVER (ORDER BY ci.enabled DESC, ci.closed ASC, ci.reject ASC, ci.username) rn
+		ci.enabled			
 	FROM Acc_CustGroup c WITH(NOLOCK)
 		INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
 	WHERE c.GroupName = @GroupName
@@ -65,7 +65,17 @@ BEGIN
 	SET t2.SubGroup = tmp.SubGroup
 	FROM #SuperList t2 
 		INNER JOIN tmp ON tmp.custid = t2.custid
-		
+	
+	;WITH tmp AS (
+		SELECT t.custid, 
+		ROW_NUMBER() OVER (ORDER BY CASE WHEN ISNULL(subGroup,'') <> '' THEN 1 ELSE 0 END ASC,t.enabled DESC, t.closed ASC, t.suspended ASC, t.username) rn
+		FROM #SuperList t
+	)
+	UPDATE t2
+	SET t2.rn = tmp.rn
+	FROM #SuperList t2 
+		INNER JOIN tmp ON tmp.custid = t2.custid
+	
 	SELECT custid,
 		username,
 		closed,
@@ -74,6 +84,7 @@ BEGIN
 		SubGroup
 	FROM #SuperList
 	WHERE rn BETWEEN @RowStart AND @RowEnd
+	ORDER BY rn ASC
 		
 	SELECT s.custid, GroupName
 	FROM #SuperList s
@@ -81,4 +92,3 @@ BEGIN
 	WHERE c.GroupName IN (SELECT GroupName FROM @tmpGroup)
 		AND rn BETWEEN @RowStart AND @RowEnd
 END	
-	

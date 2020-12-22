@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]  
-    @GroupName		VARCHAR(50) = 'ACCTHAI',
+    @GroupName		VARCHAR(50) = '',
     @UserName		VARCHAR(30) = NULL,
     @Status			TINYINT = 0,
 	@UserID			INT,
@@ -64,7 +64,7 @@ AS
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20201113@Johnson: get sub group for supers list [redmine:#145199]
-		
+		- 20201209@Johnson: remove default value for @GroupName [redmine:#145199]
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
@@ -141,23 +141,31 @@ BEGIN
 		SELECT @RowEnd = @RowStart + @PageSize - 1 
 	END
 	
-	;WITH tmp AS(
-		SELECT custid,
-			STUFF((
-			SELECT ',' + GroupName 
-			FROM Acc_CustGroup
-			WHERE CustID = t.custid
-				AND GroupName IN (SELECT GroupName 
-								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
-								WHERE ParentID > 0
-								)
-				FOR XML PATH('')),1,1,'') as SubGroup	
-		FROM @tmpSuperList t			
-	)
-	UPDATE t2
-	SET t2.SubGroup = tmp.SubGroup
-	FROM @tmpSuperList t2 
-		INNER JOIN tmp ON tmp.custid = t2.custid
+	--check not subgroup 
+	IF NOT EXISTS (SELECT 1 
+				FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK)
+				WHERE GroupName = @GroupName
+					AND ParentID > 0
+				)
+	BEGIN			
+		;WITH tmp AS(
+			SELECT custid,
+				STUFF((
+				SELECT ',' + GroupName 
+				FROM Acc_CustGroup
+				WHERE CustID = t.custid
+					AND GroupName IN (SELECT GroupName 
+									FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
+									WHERE ParentID > 0
+									)
+					FOR XML PATH('')),1,1,'') as SubGroup	
+			FROM @tmpSuperList t			
+		)
+		UPDATE t2
+		SET t2.SubGroup = tmp.SubGroup
+		FROM @tmpSuperList t2 
+			INNER JOIN tmp ON tmp.custid = t2.custid
+	END
 	
 	SELECT	c.custid,
 			c.username,
