@@ -11,6 +11,7 @@ AS
 	Revisions:
 		- 20201020@Winfred: Get value PT setting product for customer [Redmine: #139937]
 		- 20201207@Winfred: Get value PT GDG for customer [Redmine: #144105]
+		- 20201208@Winfred: Get value PT Leap Gaming VS3 for customer [Redmine: #131370]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
