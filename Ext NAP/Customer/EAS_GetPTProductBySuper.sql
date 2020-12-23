@@ -12,6 +12,7 @@ AS
 		- 20201020@Winfred: Get value PT setting product for customer [Redmine: #139937]
 		- 20201207@Winfred: Get value PT GDG for customer [Redmine: #144105]
 		- 20201208@Winfred: Get value PT Leap Gaming VS3 for customer [Redmine: #131370]
+		- 20201210@Tina: add BG (Big Gaming)
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -39,6 +40,7 @@ BEGIN
 		 WHEN b.SportType = 222 THEN  40
 		 WHEN b.SportType = 224 THEN  50
 		 WHEN b.SportType = 236 THEN  59
+		 WHEN b.SportType = 239 THEN  57 --BG
 		ELSE b.ProductID END ProductID
 	FROM dbo.strSplit(@Supers, ',') AS ss
 	INNER JOIN ProductSettingDetail b WITH(NOLOCK)ON b.SettingType in (1,18) 
