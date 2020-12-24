@@ -16,8 +16,9 @@ AS
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 	Param's Explanation:
-		• @username: username of customer that need to be viewed.   
-		• @uplineId: the ID of the upline.
+		- @username: username of customer that need to be viewed.   
+		- @uplineId: the ID of the upline.
+		- @SettingStatus: 0: Pro, 1: UAT
 */
 BEGIN
     SET NOCOUNT ON

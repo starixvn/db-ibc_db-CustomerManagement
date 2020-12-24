@@ -45,7 +45,8 @@ AS
 			  = 2 : IsGroupHeadline 1-> 0
 			  = 3 : IsGroupHeadline 0-> 1, the User don't change group
 			  = 4 : IsGroupHeadline 0-> 1, the User change group
-		@GroupAdmin: Ext group assign to admin 	  
+		@GroupAdmin: Ext group assign to admin 	
+		@SettingStatus: 0: Pro, 1: UAT  
 	
 */
 BEGIN

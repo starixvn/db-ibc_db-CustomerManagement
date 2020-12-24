@@ -86,9 +86,10 @@ Revisions:
 
 
 Param's Explanation:
-ï¿½ @system: = NAP : internal login from NAP
-			NAPEXT:internal login from NAP EXT
-ï¿½ @CustID: customer id.   
+	- @system: = NAP : internal login from NAP
+				NAPEXT:internal login from NAP EXT
+	- @CustID: customer id.  
+	- @SettingStatus: 0: Pro, 1: UAT
 */
 
 	SET NOCOUNT ON

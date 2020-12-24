@@ -95,7 +95,8 @@ Revisions:
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 Param's Explanation:
-	@username: username want to get all info related
+	- @username: username want to get all info related
+	- @SettingStatus: 0: Pro, 1: UAT
 */		
 
 BEGIN

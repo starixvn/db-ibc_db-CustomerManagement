@@ -22,6 +22,7 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 	Param's Explanation: 
+		- @SettingStatus: 0: Pro, 1: UAT
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)

@@ -59,6 +59,7 @@ Revisions:
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
+	- @SettingStatus: 0: Pro, 1: UAT
 */
 
 	SET NOCOUNT ON

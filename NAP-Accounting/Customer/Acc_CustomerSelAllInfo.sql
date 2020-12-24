@@ -112,6 +112,7 @@ Revisions:
 
 Param's Explanation:
 	@username: username want to get all info related
+	@SettingStatus: 0: Pro, 1: UAT
 */		
 
 BEGIN

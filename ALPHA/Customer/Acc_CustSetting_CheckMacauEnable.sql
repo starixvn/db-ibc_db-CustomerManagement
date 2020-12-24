@@ -15,6 +15,10 @@ BEGIN
 			- 20200806@Winfred: Check PG Soft on site [Redmine: #137763]
 			- 20200914@Winfred: Check Joker on site [Redmine: #131603]
 			- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+
+		Param's Explanation: 
+			- @SettingStatus: 0: Pro, 1: UAT 
+
 	*/
 	SET NOCOUNT ON;
 	DECLARE @SiteID int  ,@productID int = 22,@bitmapIsHidden	tinyint	= 1

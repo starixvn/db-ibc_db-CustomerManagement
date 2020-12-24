@@ -16,7 +16,10 @@ AS
 		- 20200821@Winfred: Get all productid in MaCau Game [Redmine: #167768]
 		- 20200911@Winfred: add product joker [Redmine: #131603]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+
 	Param's Explanation:
+		- @SettingStatus: 0: Pro, 1: UAT
+
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
 */
