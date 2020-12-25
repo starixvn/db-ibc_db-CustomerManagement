@@ -12,6 +12,7 @@ AS
 		Revisions:
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20200804@Jonnson: add sub group [redmine:#136501]
+			- 20201223@Johnson: sort by maingroup first for @mode = 2 [redmine:#147642]
 		Parameter's Explanation:
 			- @Mode = 1: only 1 group incase edit group
 					2: all group & sub group to show dropdown on left pannel
@@ -32,7 +33,7 @@ BEGIN
 		FROM eaGroup e WITH(NOLOCK)
 			LEFT JOIN eaGroup p WITH(NOLOCK) ON e.ParentID = p.GroupID
 		WHERE e.groupID = @GroupID OR e.ParentID = @GroupID
-		ORDER BY GroupName
+		ORDER BY CASE WHEN e.ParentID = 0 THEN 1 ELSE 0 END DESC,GroupName
 	END	
 	
 END
