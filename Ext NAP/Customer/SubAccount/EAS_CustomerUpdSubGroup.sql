@@ -14,7 +14,7 @@ AS
 	
 	Revisions:  
 		- 20200804@Johnson: initial sp [redmine:#136501]
-	
+		- 20201229@Johnson: Exclude disabled accounts [redmine:#147578]
 	Parameter's explanation:
 		- @GroupName: sub group need to assign supers
 		- @CustList : list custid need to update sub group
@@ -42,7 +42,7 @@ BEGIN
 		INNER JOIN custinfo ci WITH(NOLOCK) ON t.custid = ci.custid
 		LEFT JOIN Acc_CustGroup c WITH(NOLOCK) ON t.custid = c.custid
 												AND GroupName = @GroupName
-	
+	WHERE ci.enabled = 1
 	--delete un-change list
 	DELETE @tmpCust 
 	WHERE isCheck = @isCheck 
