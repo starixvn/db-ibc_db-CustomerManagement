@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[EAS_CustomerSelAllStatus]
 	@custid INT
+	, @SettingStatus TINYINT = 0
 AS
 /*
 	Created: 20180628@Elodie
@@ -14,8 +15,10 @@ AS
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200713@Eden: Integrate 3 new bet types for Keno [Redmine: #137475]
+		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 	Param's Explanation:
+		- @SettingStatus: 0: Pro, 1: UAT
 	
 */
 BEGIN
@@ -180,6 +183,6 @@ BEGIN
 	GROUP BY ci.SyncCasino, ci.DisableCasino, ci.DisableNumber, ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.HideKeno
 
 	-- For Product DCS
-	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid
+	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
 END
 GO

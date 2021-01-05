@@ -4,7 +4,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@CheckCustId TINYINT = 0,
 	@UserId INT = 0,
 	@ErrCode INT = 0 OUTPUT,
-	@ErrMsg VARCHAR(500) = '' OUTPUT
+	@ErrMsg VARCHAR(500) = '' OUTPUT,
+	@SettingStatus TINYINT = 0
 AS
 
 /*
@@ -107,9 +108,11 @@ Revisions:
 	- 202005126@Elodie: Show Player3rdId for all site [Redmine: #133755]
 	- 20200602@Sol: Show IsAutoEnableADBMaster [Redmine: #134242]
 	- 202008066@Elodie: Get CustSuspendLockUpd info [Redmine: #138255]
+	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 Param's Explanation:
 	@username: username want to get all info related
+	@SettingStatus: 0: Pro, 1: UAT
 */		
 
 BEGIN
@@ -755,7 +758,7 @@ BEGIN
 	-- For sportbook2
 	IF @IsDeposit = 0 -- credit
 	BEGIN
-		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
+		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
 	END
 	ELSE  -- deposit
 	BEGIN

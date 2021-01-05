@@ -4,7 +4,8 @@ GO
 
 ALTER PROCEDURE [dbo].[Age_CustomerSelCommByProductID_MAg]
 	@ProductID INT,
-	@MRecommend INT
+	@MRecommend INT,
+	@SettingStatus TINYINT = 0
 AS
 
 /*
@@ -17,6 +18,10 @@ AS
 		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200615@Elodie: Implement new setting type 19 [Redmine: #135363]
+		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+
+	Param's Explanation: 
+		- @SettingStatus: 0: Pro, 1: UAT
 
 */
 BEGIN
@@ -31,12 +36,12 @@ BEGIN
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3,@SettingStatus)
 	WHERE RealProductId = @ProductID
 	
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19,@SettingStatus)
 	WHERE RealProductId = @ProductID
 
 	SELECT 

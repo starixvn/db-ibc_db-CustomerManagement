@@ -20,6 +20,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerInsMember_CloneSetting_Com]
 	,@Case INT = 0 OUTPUT
 	,@Old_Headline INT = 0 OUTPUT
 	,@New_Headline INT = 0 OUTPUT
+	,@SettingStatus TINYINT = 0
 )
 AS
 /*  
@@ -36,6 +37,7 @@ AS
 		- 20200723@Johnson: update errmsg limit supers [redmine:#135057]
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20201019@Johnson: check group of admin to assign super to EXT group [Redmine:#136501]
+		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -43,7 +45,8 @@ AS
 			  = 2 : IsGroupHeadline 1-> 0
 			  = 3 : IsGroupHeadline 0-> 1, the User don't change group
 			  = 4 : IsGroupHeadline 0-> 1, the User change group
-		@GroupAdmin: Ext group assign to admin 	  
+		@GroupAdmin: Ext group assign to admin 	
+		@SettingStatus: 0: Pro, 1: UAT  
 	
 */
 BEGIN
@@ -453,6 +456,7 @@ BEGIN
 			@custid = @custid,
 			@ExistingCustid = @ExistingCustid,
 			@Language = @Language,
+			@SettingStatus = @SettingStatus,
 			@ErrCode = @ErrCode OUTPUT,
 			@ErrMsg = @ErrMsg OUTPUT
 			

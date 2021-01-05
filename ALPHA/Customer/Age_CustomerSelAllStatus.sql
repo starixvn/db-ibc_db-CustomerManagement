@@ -1,6 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllStatus]
 	@custid INT
+	, @SettingStatus TINYINT = 0
 AS
 /*
 	Created: 20180608@Elodie
@@ -12,10 +13,12 @@ AS
 		- 20190412@Johnson: add suspendInfo [redmine:#105587]
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200310@Percy: Return IsAllDayBalTransfer [RedmineID: #130091]
+		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 
 	Param's Explanation:
-		• @username: username of customer that need to be viewed.   
-		• @uplineId: the ID of the upline.
+		- @username: username of customer that need to be viewed.   
+		- @uplineId: the ID of the upline.
+		- @SettingStatus: 0: Pro, 1: UAT
 */
 BEGIN
     SET NOCOUNT ON
@@ -147,6 +150,6 @@ BEGIN
     WHERE c.custid = @custid
 
 	-- For Product DCS
-	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid
+	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
 END
 GO

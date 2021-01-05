@@ -3,7 +3,8 @@ ALTER PROCEDURE [dbo].[Acc_CustSetting_CheckMacauEnable]
 	-- Add the parameters for the stored procedure here
 	@site   varchar(10),
 	@currency tinyint  ,
-	@custid int
+	@custid int,
+	@SettingStatus TINYINT = 0
 AS
 BEGIN
 	/*
@@ -13,6 +14,11 @@ BEGIN
 		Revisions:
 			- 20200806@Winfred: Check PG Soft on site [Redmine: #137763]
 			- 20200914@Winfred: Check Joker on site [Redmine: #131603]
+			- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+
+		Param's Explanation: 
+			- @SettingStatus: 0: Pro, 1: UAT 
+
 	*/
 	SET NOCOUNT ON;
 	DECLARE @SiteID int  ,@productID int = 22,@bitmapIsHidden	tinyint	= 1
@@ -20,7 +26,7 @@ BEGIN
 	
 	-- check Product macau game	status
 	SELECT @bitmapIsHidden =  (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder))
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,13) ft
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,13,@SettingStatus) ft
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
 		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = @CustID
 	-- all sport bettype on macau 	
@@ -28,7 +34,7 @@ BEGIN
 			ft.SportType,
 			ft.BetType
 	INTO #SportBettypeFilter					   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,8) ft 
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,8,@SettingStatus) ft 
 	WHERE @bitmapIsHidden = 0
 	-- delete non offer site
 	DELETE  a

@@ -2,6 +2,7 @@
 GO
 CREATE PROCEDURE [dbo].[Age_GetOfferedProductByCust]
 	@custid INT
+	, @SettingStatus TINYINT = 0
 AS
 /*
 	Created: 20180906@Elodie
@@ -14,7 +15,11 @@ AS
 		- 20200806@Elodie: Get real productid [Redmine: #139017]
 		- 20200821@Winfred: Get all productid in MaCau Game [Redmine: #167768]
 		- 20200911@Winfred: add product joker [Redmine: #131603]
+		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+
 	Param's Explanation:
+		- @SettingStatus: 0: Pro, 1: UAT
+
 	Example: EXEC Age_GetOfferedProductByCust @CustID = 1176086
 		
 */
@@ -54,15 +59,15 @@ BEGIN
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,4)	
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,4,@SettingStatus)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,11)	
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,11,@SettingStatus)	
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13,@SettingStatus)
 	
 	SELECT DISTINCT ft.ProductID, 
 			CAST(CASE WHEN @IsIMBC = 0 AND ft.ProductID = 20 THEN 1 
