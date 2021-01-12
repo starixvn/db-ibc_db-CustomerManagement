@@ -17,8 +17,24 @@ AS
 		- 20190725@Dominic: First commit
 		- 20191106@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200207@Tiara: New VR structure for Soccer [Redmind: #126243]
-	Parameter:
+		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
 
+	Parameter:
+	Mapping log columns:
+		, IsNew							AS C1
+		, VRLeagueGroupID               AS C2
+		, VRBetTypeGroupID              AS C3
+		, BetType                       AS C4
+		, LevelID                       AS C5
+		, ValueLive						AS C6
+		, FollowingValueLive            AS C7
+		, FollowingCustIDLive           AS C8
+		, FollowingLevelIDLive          AS C9
+		, ValueNonLive					AS C10
+		, FollowingValueNonLive         AS C11
+		, FollowingCustIDNonLive        AS C12
+		, FollowingLevelIDNonLive       AS C13
+		, SortOrder                     AS C14
 	
 */
 BEGIN
@@ -26,6 +42,8 @@ BEGIN
 	DECLARE @LogTrackingValue2 VARCHAR(MAX)
 	DECLARE @LogDocHandler INT	
 	DECLARE @LogID BIGINT
+	DECLARE @Newlog_DTS DATETIME = '2021/01/11 00:00:00' -- New format log effective date ( Released Date)
+	DECLARE @LogTime DATETIME
 
 	CREATE TABLE #VRLineCustID (CustID INT)
 	CREATE TABLE #VRCustLog(LogID BIGINT
@@ -112,6 +130,7 @@ BEGIN
 		SET IsExec = 1
 			, @LogID = LogID
 			, @LogTrackingValue2 = TrackingValue2
+			, @LogTime = LogTime
 		WHERE IsExec = 0 
 
 		IF @@ROWCOUNT = 0
@@ -119,61 +138,122 @@ BEGIN
 
 		EXEC sp_xml_preparedocument @LogDocHandler OUTPUT, @LogTrackingValue2
 
-		--Insert data into temporary table after parsing
-		INSERT INTO #Data(LogID 
-						, IsNew
-						, VRLeagueGroupID
-						, VRBetTypeGroupID
-						, BetType
-						, LevelID
-						, FollowingValueLive
-						, FollowingCustIDLive
-						, FollowingLevelIDLive
-						, FollowingValueNonLive
-						, FollowingCustIDNonLive
-						, FollowingLevelIDNonLive
-						, SortOrder
-			)
-		SELECT	@LogID LogID
-				, MIN(tmp.IsNew) IsNew
-				, tmp.VRLeagueGroupID
-				, tmp.VRBetTypeGroupID
-				, tmp.BetType
-				, tmp.LevelID
-				, tmp.FollowingValueLive
-				, tmp.FollowingCustIDLive
-				, tmp.FollowingLevelIDLive
-				, tmp.FollowingValueNonLive
-				, tmp.FollowingCustIDNonLive
-				, tmp.FollowingLevelIDNonLive
-				, MIN(tmp.SortOrder)
-		FROM OPENXML (@LogDocHandler, '/Root/r',1) 
-		WITH (
-			IsNew TINYINT --IsNew
-			, VRLeagueGroupID SMALLINT --VRLeagueGroupID
-			, VRBetTypeGroupID SMALLINT --VRBetTypeGroupID
-			, BetType SMALLINT --BetType
-			, LevelID INT --LevelID
-			, ValueLive SMALLMONEY --ValueLive
-			, FollowingValueLive SMALLMONEY --FollowingValueLive
-			, FollowingCustIDLive INT --FollowingCustID
-			, FollowingLevelIDLive INT --FollowingLevelID
-			, ValueNonLive SMALLMONEY --ValueNonLive
-			, FollowingValueNonLive SMALLMONEY --FollowingValueNonLive
-			, FollowingCustIDNonLive INT --FollowingCustID
-			, FollowingLevelIDNonLive INT --FollowingLevelID
-			, SortOrder SMALLINT
-		) AS tmp
-		GROUP BY tmp.VRLeagueGroupID
-				, tmp.VRBetTypeGroupID
-				, tmp.BetType
-				, tmp.LevelID
-				, tmp.FollowingValueLive
-				, tmp.FollowingCustIDLive
-				, tmp.FollowingLevelIDLive
-				, tmp.FollowingValueNonLive
-				, tmp.FollowingCustIDNonLive
-				, tmp.FollowingLevelIDNonLive
+		IF @LogTime >= @Newlog_DTS 
+		BEGIN -- Log with new format
+			--Insert data into temporary table after parsing
+			INSERT INTO #Data(LogID 
+							, IsNew
+							, VRLeagueGroupID
+							, VRBetTypeGroupID
+							, BetType
+							, LevelID
+							, FollowingValueLive
+							, FollowingCustIDLive
+							, FollowingLevelIDLive
+							, FollowingValueNonLive
+							, FollowingCustIDNonLive
+							, FollowingLevelIDNonLive
+							, SortOrder
+				)
+			SELECT	@LogID LogID
+					, MIN(tmp.C1)
+					, tmp.C2
+					, tmp.C3
+					, tmp.C4
+					, tmp.C5
+					, tmp.C7
+					, tmp.C8
+					, tmp.C9
+					, tmp.C11
+					, tmp.C12
+					, tmp.C13
+					, MIN(tmp.C14)
+			FROM OPENXML (@LogDocHandler, '/Root/r',1) 
+			WITH (
+				  C1 TINYINT --IsNew
+				, C2 SMALLINT --VRLeagueGroupID
+				, C3 SMALLINT --VRBetTypeGroupID
+				, C4 SMALLINT --BetType
+				, C5 INT --LevelID
+				, C6 SMALLMONEY --ValueLive
+				, C7 SMALLMONEY --FollowingValueLive
+				, C8 INT --FollowingCustIDLive
+				, C9 INT --FollowingLevelIDLive
+				, C10 SMALLMONEY --ValueNonLive
+				, C11 SMALLMONEY --FollowingValueNonLive
+				, C12 INT --FollowingCustIDNonLive
+				, C13 INT --FollowingLevelIDNonLive
+				, C14 SMALLINT --SortOrder
+			) AS tmp
+			GROUP BY tmp.C2
+					, tmp.C3
+					, tmp.C4
+					, tmp.C5
+					, tmp.C7
+					, tmp.C8
+					, tmp.C9
+					, tmp.C11
+					, tmp.C12
+					, tmp.C13
+		END
+		ELSE
+		BEGIN -- Log with old format
+			--Insert data into temporary table after parsing
+			INSERT INTO #Data(LogID 
+							, IsNew
+							, VRLeagueGroupID
+							, VRBetTypeGroupID
+							, BetType
+							, LevelID
+							, FollowingValueLive
+							, FollowingCustIDLive
+							, FollowingLevelIDLive
+							, FollowingValueNonLive
+							, FollowingCustIDNonLive
+							, FollowingLevelIDNonLive
+							, SortOrder
+				)
+			SELECT	@LogID LogID
+					, MIN(tmp.IsNew) IsNew
+					, tmp.VRLeagueGroupID
+					, tmp.VRBetTypeGroupID
+					, tmp.BetType
+					, tmp.LevelID
+					, tmp.FollowingValueLive
+					, tmp.FollowingCustIDLive
+					, tmp.FollowingLevelIDLive
+					, tmp.FollowingValueNonLive
+					, tmp.FollowingCustIDNonLive
+					, tmp.FollowingLevelIDNonLive
+					, MIN(tmp.SortOrder)
+			FROM OPENXML (@LogDocHandler, '/Root/r',1) 
+			WITH (
+				IsNew TINYINT --IsNew
+				, VRLeagueGroupID SMALLINT --VRLeagueGroupID
+				, VRBetTypeGroupID SMALLINT --VRBetTypeGroupID
+				, BetType SMALLINT --BetType
+				, LevelID INT --LevelID
+				, ValueLive SMALLMONEY --ValueLive
+				, FollowingValueLive SMALLMONEY --FollowingValueLive
+				, FollowingCustIDLive INT --FollowingCustID
+				, FollowingLevelIDLive INT --FollowingLevelID
+				, ValueNonLive SMALLMONEY --ValueNonLive
+				, FollowingValueNonLive SMALLMONEY --FollowingValueNonLive
+				, FollowingCustIDNonLive INT --FollowingCustID
+				, FollowingLevelIDNonLive INT --FollowingLevelID
+				, SortOrder SMALLINT
+			) AS tmp
+			GROUP BY tmp.VRLeagueGroupID
+					, tmp.VRBetTypeGroupID
+					, tmp.BetType
+					, tmp.LevelID
+					, tmp.FollowingValueLive
+					, tmp.FollowingCustIDLive
+					, tmp.FollowingLevelIDLive
+					, tmp.FollowingValueNonLive
+					, tmp.FollowingCustIDNonLive
+					, tmp.FollowingLevelIDNonLive
+		END
 
 		EXEC sp_xml_removedocument @LogDocHandler
 	END
