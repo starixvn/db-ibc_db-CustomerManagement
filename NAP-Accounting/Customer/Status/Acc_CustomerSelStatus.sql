@@ -84,7 +84,7 @@ Revisions:
 	- 20201130@Tina: add GDG (Gold Giamond Gaming) [RedmineID: #144105]
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
-
+	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -420,7 +420,7 @@ Param's Explanation:
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
-			min(case when g.IBCBetTypeID IS NOT NULL then cg.IsDisabled else 1 end) as DisableKeno,
+			MAX(CASE WHEN g.IBCBetTypeID IS NOT NULL THEN cg.IsDisabled ELSE 1 END) AS DisableKeno,
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			ISNULL(DisableColossusBet,1) as DisableColossusBet,

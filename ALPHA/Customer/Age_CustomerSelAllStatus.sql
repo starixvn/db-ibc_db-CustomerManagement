@@ -117,7 +117,7 @@ BEGIN
 	SET @DisableKeno = ISNULL((SELECT TOP 1 cg.IsDisabled AS DisableKeno
 	FROM dbo.CustGameType cg WITH (NOLOCK)  
 		INNER JOIN dbo.GameType g WITH (NOLOCK) ON g.GameTypeID = cg.GameTypeID
-	WHERE cg.custid = @custid AND g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0 AND cg.IsDisabled = 0),1)
+	WHERE cg.custid = @custid AND g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0 AND cg.IsDisabled = 1),0)
 	'
 	SELECT	@ExecuteSQL = N'
 	EXECUTE DBACC.bodb02.dbo.sp_executesql @query, N''@custid INT, @DisableKeno BIT OUTPUT'',@custid,@DisableKeno OUTPUT'
