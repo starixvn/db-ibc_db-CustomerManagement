@@ -26,6 +26,23 @@ AS
 		- 20200218@Eden : Web_pass_redundant_bettypes_when_updating_bettype_group_value_and_auto_suspend [Redmind: #128635]
 		- 20200310@Eden : E-sport VR Phase 3 - Manually Updated Virtual Rate Accounts [Redmind: #128749]
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
+		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
+
+	Mapping log columns:
+		, IsNew							AS C1
+		, VRLeagueGroupID               AS C2
+		, VRBetTypeGroupID              AS C3
+		, BetType                       AS C4
+		, LevelID                       AS C5
+		, ValueLive						AS C6
+		, FollowingValueLive            AS C7
+		, FollowingCustIDLive           AS C8
+		, FollowingLevelIDLive          AS C9
+		, ValueNonLive					AS C10
+		, FollowingValueNonLive         AS C11
+		, FollowingCustIDNonLive        AS C12
+		, FollowingLevelIDNonLive       AS C13
+		, SortOrder                     AS C14
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -254,34 +271,33 @@ BEGIN
 	SELECT @EndRun = GETDATE()    
 	SELECT @Duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 
-	SELECT @TrackingValue1 = (
-		SELECT LevelID
-			, ValueIDLive
-			, ValueIDNonLive 
-		FROM #New_VRCustSetting
-		WHERE CustID = @CustID
-		FOR XML  RAW('r')
-	)
+	--SELECT @TrackingValue1 = (
+	--	SELECT LevelID
+	--		, ValueIDLive
+	--		, ValueIDNonLive 
+	--	FROM #New_VRCustSetting
+	--	WHERE CustID = @CustID
+	--	FOR XML  RAW('r')
+	--)
 
-	SELECT @TrackingValue1 = '<Root>' + ISNULL(@TrackingValue1,'') + '</Root>'
+	--SELECT @TrackingValue1 = '<Root>' + ISNULL(@TrackingValue1,'') + '</Root>'
 
 	--Prepare XML log
 	SELECT @TrackingValue2 = (
-		SELECT vrl.IsNew
-		, h.VRLeagueGroupID
-		, h.VRBetTypeGroupID
-		, h.BetType
-		, h.LevelID
-		, CAST(CAST(ISNULL(v1.Value,-1) AS FLOAT) AS VARCHAR(10)) ValueLive
-		, CAST(CAST(ISNULL(v2.Value,-1) AS FLOAT) AS VARCHAR(10)) FollowingValueLive
-		--, vrl.ValueIDLive, vrl.FollowingValueIDLive
-		, vrl.FollowingCustID FollowingCustIDLive, vrl.FollowingLevelID FollowingLevelIDLive
-		, CAST(CAST(ISNULL(v3.Value,-1) AS FLOAT) AS VARCHAR(10)) ValueNonLive
-		, CAST(CAST(ISNULL(v4.Value,-1) AS FLOAT) AS VARCHAR(10)) FollowingValueNonLive
-		--, vrnl.ValueIDNonLive, vrnl.FollowingValueIDNonLive
-		, vrnl.FollowingCustID FollowingCustIDNonLive
-		, vrnl.FollowingLevelID FollowingLevelIDNonLive
-		, h.SortOrder
+		SELECT vrl.IsNew AS C1
+		, h.VRLeagueGroupID AS C2
+		, h.VRBetTypeGroupID AS C3
+		, h.BetType AS C4
+		, h.LevelID AS C5
+		, CAST(CAST(ISNULL(v1.Value,-1) AS FLOAT) AS VARCHAR(10)) AS C6 --ValueLive
+		, CAST(CAST(ISNULL(v2.Value,-1) AS FLOAT) AS VARCHAR(10)) AS C7 --FollowingValueLive
+		, vrl.FollowingCustID AS C8 --FollowingCustIDLive
+		, vrl.FollowingLevelID AS C9 --FollowingLevelIDLive
+		, CAST(CAST(ISNULL(v3.Value,-1) AS FLOAT) AS VARCHAR(10)) AS C10 --ValueNonLive
+		, CAST(CAST(ISNULL(v4.Value,-1) AS FLOAT) AS VARCHAR(10)) AS C11 --FollowingValueNonLive
+		, vrnl.FollowingCustID AS C12 --FollowingCustIDNonLive
+		, vrnl.FollowingLevelID AS C13 --FollowingLevelIDNonLive
+		, h.SortOrder AS C14
 		FROM VRSettingHierarchy h 
 			INNER JOIN #Log vrl (NOLOCK) 
 				ON vrl.LevelID = h.LevelID
