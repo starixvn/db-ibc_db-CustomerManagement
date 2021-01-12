@@ -1,2 +1,0 @@
-NAP-Accounting\Customer\VirtualRate\Upload Virtual Rate\Acc_VR_AutoUpdateVirtualRate_ByExcel.sql
-NAP-Accounting\Customer\VirtualRate\VirtualRateAutoUpdate\Task_VRSettingAutoUpdate_UpdateVRSetting.sql
