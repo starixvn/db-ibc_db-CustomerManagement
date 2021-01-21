@@ -16,6 +16,7 @@ AS
 		- 20200821@Winfred: Get all productid in MaCau Game [Redmine: #167768]
 		- 20200911@Winfred: add product joker [Redmine: #131603]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+		- 20210104@Eden: add product Max Game [Redmine: #147232]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -102,6 +103,8 @@ BEGIN
 		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
 		UNION ALL
 		SELECT 56, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
+		UNION ALL
+		SELECT 60, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Max Game
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
