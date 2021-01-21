@@ -15,6 +15,7 @@ BEGIN
 			- 20200806@Winfred: Check PG Soft on site [Redmine: #137763]
 			- 20200914@Winfred: Check Joker on site [Redmine: #131603]
 			- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+			- 20201229@Eden: MaxGame [Redmine: #147232]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -39,13 +40,13 @@ BEGIN
 	-- delete non offer site
 	DELETE  a
 	FROM #SportBettypeFilter a
-	INNER JOIN	SportNonOfferedSiteCurrency b on a.SportType = b.SportType AND a.Bettype = b.BetType
+	INNER JOIN SportNonOfferedSiteCurrency b WITH (NOLOCK) on a.SportType = b.SportType AND a.Bettype = b.BetType
 	WHERE b.SiteID = @SiteID  AND (b.Currency = 0 OR b.Currency = @currency)
 	
 	-- delete non offer currrency
 	DELETE  a
 	FROM #SportBettypeFilter a
-	INNER JOIN	SportNonOfferedSiteCurrency b on a.SportType = b.SportType AND a.Bettype = b.BetType
+	INNER JOIN	SportNonOfferedSiteCurrency b WITH (NOLOCK) on a.SportType = b.SportType AND a.Bettype = b.BetType
 	WHERE b.Currency = @currency  AND (b.SiteID = 0 OR b.SiteID = @SiteID)
 	
 	SELECT   CASE ft.SportType WHEN  212  THEN 22 -- Macau Game
@@ -53,6 +54,7 @@ BEGIN
 					   WHEN  247  THEN 36 -- SG
 					   WHEN  248  THEN 32 -- PP
 					   WHEN  234  THEN 56 -- Joker
+					   WHEN  237  THEN 60 -- MaxGame
 					   ELSE 55 END as ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	

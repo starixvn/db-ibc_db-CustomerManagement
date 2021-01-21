@@ -1,7 +1,8 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySuper] 
 	-- Add the parameters for the stored procedure here
-	@Supers VARCHAR(MAX)
+	@Supers VARCHAR(MAX),
+	@SettingStatus TINYINT = 0 
 AS
 /*
 	Created: 20201020@Winfred
@@ -13,6 +14,7 @@ AS
 		- 20201207@Winfred: Get value PT GDG for customer [Redmine: #144105]
 		- 20201208@Winfred: Get value PT Leap Gaming VS3 for customer [Redmine: #131370]
 		- 20201210@Tina: add BG (Big Gaming)
+		- 20201230@Eden: Enhance Sp and include MaxGame [Redmine: #147232]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -26,33 +28,54 @@ BEGIN
 								BetType SMALLINT DEFAULT(0),
 								ProductID TINYINT DEFAULT(0),
 								SuperPT SMALLMONEY DEFAULT(0))
+
+	CREATE TABLE #ProductSettingDetail(	SportType SMALLINT,
+								BetType SMALLINT ,
+								ProductID TINYINT,
+								RealProductID TINYINT)
+
+	CREATE TABLE #Supers (CustID INT) 
+
+	INSERT INTO #Supers(CustID)
+	SELECT val
+	FROM dbo.f_SplitString(@Supers, ',') AS ss
+	WHERE ISNULL(val,'') <> ''
+	OPTION (maxrecursion 0)    
+
+	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
+	SELECT ProductID,SportType,BetType,RealProductID
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+	UNION ALL
+	SELECT ProductID,SportType,BetType,RealProductID
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+
+	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
+	;WITH tmp AS(
+		SELECT  ProductID,SportType,BetType,RealProductID
+			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype)
+		FROM #ProductSettingDetail 
+		WHERE ProductID IN (41,44)
+	)
+	DELETE t
+	FROM #ProductSettingDetail t 
+		INNER JOIN tmp ON t.ProductID = tmp.ProductID
+			AND t.SportType = tmp.SportType
+			AND t.BetType = tmp.BetType
+	WHERE tmp.RowNum > 1
+
 	-- DCS Setting
 	INSERT INTO #tblCustomer (CustID,SportType,BetType,ProductID)
-	SELECT ss.val,b.SportType,b.BetType,
-	CASE WHEN b.SportType = 211 THEN  21
-		 WHEN b.SportType = 241 THEN  47
-		 WHEN b.SportType = 225 THEN  52
-		 WHEN b.SportType = 233 THEN  51
-		 WHEN b.SportType = 242 THEN  46
-		 WHEN b.SportType = 243 THEN  45
-		 WHEN b.SportType = 244 THEN  39
-		 WHEN b.SportType = 220 THEN  28
-		 WHEN b.SportType = 222 THEN  40
-		 WHEN b.SportType = 224 THEN  50
-		 WHEN b.SportType = 236 THEN  59
-		 WHEN b.SportType = 239 THEN  57 --BG
-		ELSE b.ProductID END ProductID
-	FROM dbo.strSplit(@Supers, ',') AS ss
-	INNER JOIN ProductSettingDetail b WITH(NOLOCK)ON b.SettingType in (1,18) 
-	WHERE B.ProductID IN (41,22,42) -- Live Casino, Macau Games ,Saba.club
-	or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
-	or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
-	or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
-	or (B.ProductID IN (44) and SportType = 220 and BetType = 1021) -- Lottery
-	or (B.ProductID IN (44) and SportType = 222 and BetType = 4901) -- Table Game
-	or (B.ProductID IN (44) and SportType = 224 and BetType = 5500) -- RNG War
-	or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
-	or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2
+	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
+	FROM #ProductSettingDetail b
+		CROSS APPLY #Supers s
+	WHERE (B.ProductID IN (41,22,42,44) -- Live Casino, Macau Games , Saba.club, RNG Lottery
+			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
+			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
+			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
+			or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
+			or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2			
+			)
+
 	--Get PT DCS
 	UPDATE a
 	SET a.SuperPT = cast(b.SuperPT AS SMALLMONEY) / 100   
@@ -60,54 +83,58 @@ BEGIN
 	INNER JOIN CustPTSetting3rd_Agent b WITH(NOLOCK) ON a.custID = b.CustID 
 						AND a.BetType = b.BetType AND a.SportType = b.SportType
 	
-	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker)
+	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame)
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.val,c.SportType,c.BetType,
+	SELECT ss.CustID,c.SportType,c.BetType,
 		CASE 
 		 WHEN c.SportType = 232 THEN  55
 		 WHEN c.SportType = 234 THEN  56
 		 WHEN c.SportType = 247 THEN  36
 		 WHEN c.SportType = 165 THEN  34
 		 WHEN c.SportType = 248 THEN  32
+		 WHEN c.SportType = 237 THEN  60
 		ELSE c.ProductID END ProductID, b.SuperPT
-	FROM dbo.strSplit(@Supers, ',') AS ss 
-	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.val = b.CustID
-	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	ON  c.SettingType = 8 
-					and c.ProductID = b.ProductID and c.SportType <> 212
-		
+	FROM #Supers ss 
+	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.CustID = b.CustID
+	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	
+		ON  c.SettingType = 8
+		AND c.ProductID = b.ProductID 
+		AND c.SportType <> 212
+	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
+
 	-- Non DCS Setting
 	
 	-- Sportsbook - Soccer
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.val, b.BetType, b.SportType, 1 AS ProductID, b.spositiontaking
-	FROM dbo.strSplit(@Supers, ',') AS ss
-	INNER JOIN CustSetting b WITH(NOLOCK) ON ss.val = b.CustID 
+	SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, b.spositiontaking
+	FROM #Supers ss
+		INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
 	WHERE b.BetType = 1 AND b.SportType = 1
 	
 	-- Number Game
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.val, b.BetType, b.SportType, 3 AS ProductID, b.spositiontaking
-	FROM dbo.strSplit(@Supers, ',') AS ss
-	INNER JOIN CustSetting3rd b WITH(NOLOCK) ON ss.val = b.CustID 
+	SELECT ss.CustID, b.BetType, b.SportType, 3 AS ProductID, b.spositiontaking
+	FROM #Supers ss
+	INNER JOIN CustSetting3rd b WITH(NOLOCK) ON ss.CustID = b.CustID 
 	WHERE b.BetType = 81 AND b.SportType = 161
 	
 	-- RNG Keno
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT	cs.CustID ,	cs.Sporttype, cs.Bettype, 8 AS ProductID, cs.spositiontaking AS SuperPT
-	FROM dbo.strSplit(@Supers, ',') ss 
-		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.val = cs.CustID 
+	SELECT ss.CustID ,cs.Sporttype, cs.Bettype, 8 AS ProductID, cs.spositiontaking AS SuperPT
+	FROM #Supers ss
+		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.CustID = cs.CustID 
 	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
 	
 	-- Gold Deluxe
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT  cs.CustID,	cs.Sporttype, cs.Bettype, 12 AS ProductID, cs.spositiontaking AS SuperPT
-     FROM  dbo.strSplit(@Supers, ',') ss
-		INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.val = cs.CustID 
-     WHERE  cs.sporttype = 255 AND cs.bettype = 1701
+	SELECT ss.CustID, cs.Sporttype, cs.Bettype, 12 AS ProductID, cs.spositiontaking AS SuperPT
+	FROM #Supers ss
+	INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.CustID = cs.CustID 
+	WHERE  cs.sporttype = 255 AND cs.bettype = 1701
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 
-	INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
+		INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
 	ORDER BY a.CustID,a.ProductID
 	
 	DROP TABLE #tblCustomer							
