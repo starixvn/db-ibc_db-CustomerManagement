@@ -26,6 +26,7 @@ AS
 		- 20200915@Johnson: check dont move deposit site [redmine:#141257]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20201103@Tina: move site for members level [Redmine: #144323]
+		- 20210202@Winfred : Virtual Rate for Basketball - New 611111 site super must have VR setting = 0%   [Redmine: #149369]	
 		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -116,6 +117,37 @@ BEGIN
 	    SELECT @ErrMsg = 'Update customer fail. Please try again'
 	    RETURN
     END	 
+
+	--New 611111 super must have VR setting = 0% (Basketball level)
+	 IF @site = '611111' AND (@RoleId = 4 OR EXISTS(SELECT 1 FROM dbo.CustDirectAccount (NOLOCK) WHERE custid = @CustId))
+	 BEGIN
+		DECLARE @VirtualMultiplier VARCHAR(MAX) = ''
+
+		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),(  SELECT b.LevelID,vr.ValueID AS ValueIDLive,vr.ValueID AS ValueIDNonLive 
+															FROM VRSettingHierarchy b WITH(NOLOCK) 
+																CROSS APPLY VRValueMapping vr (NOLOCK)
+															WHERE b.SportType = 2 
+																AND b.VRLeagueGroupID = -1 
+																AND b.BetType = -1 
+																AND vr.Value = 1
+															FOR XML RAW('Row'), ROOT ('Root'))
+											)
+
+		EXEC [Acc_CustVirtualMultiplier_Upd]
+			  @CustID = @CustID
+			, @SportType = 2
+			, @VirtualMultiplier = @VirtualMultiplier
+			, @UserID  = @UserId
+			, @IP  = @IP
+			, @ErrCode = @ErrCode OUTPUT 
+			, @ErrMsg = @ErrMsg OUTPUT
+		
+		IF @ErrCode > 0
+		BEGIN
+			SELECT @ErrMsg = 'Update VRCustSetting fail. Please try again'
+			RETURN
+		END		
+	 END
 
 	--print('write log')-- Write Log Here
 	SELECT @LogSPData = '<Acc_CustomerUpdMoveSite OldSite="'+ @OldSite + '" ' +
