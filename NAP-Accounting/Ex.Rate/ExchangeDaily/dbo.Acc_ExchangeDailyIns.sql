@@ -69,12 +69,12 @@ IF @Code = 'UUS'
 BEGIN
 	IF NOT EXISTS (
 			SELECT 1
-			FROM dbo.ExchangeDailyOanda_xtest(NOLOCK)
+			FROM CustDB.dbo.ExchangeDailyOanda_xtest e WITH(NOLOCK)
 			WHERE ExchangeDate = @date
 				AND ExchangeId = 20
 			)
 	BEGIN
-		INSERT INTO dbo.ExchangeDailyOanda_xtest (
+		INSERT INTO CustDB.dbo.ExchangeDailyOanda_xtest (
 			ExchangeId
 			, ExchangeDate
 			, Code
@@ -123,7 +123,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		UPDATE dbo.ExchangeDailyOanda_xtest
+		UPDATE CustDB.dbo.ExchangeDailyOanda_xtest
 		WITH (
 				ROWLOCK
 				, UPDLOCK
@@ -181,13 +181,13 @@ BEGIN
 		--Check exist, if false then insert 
 		IF NOT EXISTS (
 				SELECT 1
-				FROM dbo.ExchangeDailyOanda_xtest(NOLOCK)
+				FROM CustDB.dbo.ExchangeDailyOanda_xtest e WITH(NOLOCK)
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
 				)
 		BEGIN
-			INSERT INTO dbo.ExchangeDailyOanda_xtest (
+			INSERT INTO CustDB.dbo.ExchangeDailyOanda_xtest (
 				ExchangeId
 				, ExchangeDate
 				, Code
@@ -236,7 +236,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			UPDATE dbo.ExchangeDailyOanda_xtest
+			UPDATE CustDB.dbo.ExchangeDailyOanda_xtest
 			WITH (
 					ROWLOCK
 					, UPDLOCK
@@ -281,7 +281,7 @@ IF @Code = 'YNG'
 BEGIN
 	IF NOT EXISTS (
 			SELECT 1
-			FROM dbo.ExchangeDailyOanda_xtest(NOLOCK)
+			FROM CustDB.dbo.ExchangeDailyOanda_xtest e WITH(NOLOCK)
 			WHERE  ExchangeDate = @date
 				AND Code = 'VND'
 			)
@@ -317,20 +317,20 @@ BEGIN
 			, @PHP = PHP
 			, @BDT = BDT
 			, @INR = INR
-		FROM dbo.ExchangeDailyOanda_xtest WITH (NOLOCK)
+		FROM CustDB.dbo.ExchangeDailyOanda_xtest e WITH(NOLOCK)
 		WHERE Code = 'VND'
 			AND ExchangeDate = @Date
 
 		--Check exist, if false then insert 
 		IF NOT EXISTS (
 				SELECT 1
-				FROM dbo.ExchangeDailyOanda_xtest(NOLOCK)
+				FROM CustDB.dbo.ExchangeDailyOanda_xtest e WITH(NOLOCK)
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
 				)
 		BEGIN
-			INSERT INTO dbo.ExchangeDailyOanda_xtest (
+			INSERT INTO CustDB.dbo.ExchangeDailyOanda_xtest (
 				ExchangeId
 				, ExchangeDate
 				, Code
@@ -379,7 +379,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			UPDATE dbo.ExchangeDailyOanda_xtest
+			UPDATE CustDB.dbo.ExchangeDailyOanda_xtest
 			WITH (
 					ROWLOCK
 					, UPDLOCK
