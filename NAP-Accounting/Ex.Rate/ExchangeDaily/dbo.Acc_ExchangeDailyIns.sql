@@ -69,12 +69,12 @@ IF @Code = 'UUS'
 BEGIN
 	IF NOT EXISTS (
 			SELECT 1
-			FROM ExchangeDailyOanda(NOLOCK)
+			FROM ExchangeDailyOanda_xtest(NOLOCK)
 			WHERE ExchangeDate = @date
 				AND ExchangeId = 20
 			)
 	BEGIN
-		INSERT INTO ExchangeDailyOanda (
+		INSERT INTO ExchangeDailyOanda_xtest (
 			ExchangeId
 			, ExchangeDate
 			, Code
@@ -123,7 +123,7 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		UPDATE ExchangeDailyOanda
+		UPDATE ExchangeDailyOanda_xtest
 		WITH (
 				ROWLOCK
 				, UPDLOCK
@@ -181,13 +181,13 @@ BEGIN
 		--Check exist, if false then insert 
 		IF NOT EXISTS (
 				SELECT 1
-				FROM ExchangeDailyOanda(NOLOCK)
+				FROM ExchangeDailyOanda_xtest(NOLOCK)
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
 				)
 		BEGIN
-			INSERT INTO ExchangeDailyOanda (
+			INSERT INTO ExchangeDailyOanda_xtest (
 				ExchangeId
 				, ExchangeDate
 				, Code
@@ -236,7 +236,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			UPDATE ExchangeDailyOanda
+			UPDATE ExchangeDailyOanda_xtest
 			WITH (
 					ROWLOCK
 					, UPDLOCK
@@ -281,7 +281,7 @@ IF @Code = 'YNG'
 BEGIN
 	IF NOT EXISTS (
 			SELECT 1
-			FROM dbo.ExchangeDailyOanda(NOLOCK)
+			FROM dbo.ExchangeDailyOanda_xtest(NOLOCK)
 			WHERE  ExchangeDate = @date
 				AND Code = 'VND'
 			)
@@ -317,20 +317,20 @@ BEGIN
 			, @PHP = PHP
 			, @BDT = BDT
 			, @INR = INR
-		FROM dbo.ExchangeDailyOanda WITH (NOLOCK)
+		FROM dbo.ExchangeDailyOanda_xtest WITH (NOLOCK)
 		WHERE Code = 'VND'
 			AND ExchangeDate = @Date
 
 		--Check exist, if false then insert 
 		IF NOT EXISTS (
 				SELECT 1
-				FROM ExchangeDailyOanda(NOLOCK)
+				FROM ExchangeDailyOanda_xtest(NOLOCK)
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
 				)
 		BEGIN
-			INSERT INTO ExchangeDailyOanda (
+			INSERT INTO ExchangeDailyOanda_xtest (
 				ExchangeId
 				, ExchangeDate
 				, Code
@@ -379,7 +379,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			UPDATE ExchangeDailyOanda
+			UPDATE ExchangeDailyOanda_xtest
 			WITH (
 					ROWLOCK
 					, UPDLOCK

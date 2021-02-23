@@ -71,7 +71,7 @@ BEGIN
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC
 			) AS RowNum
-		FROM dbo.ExchangeDailyOanda edo WITH (NOLOCK)
+		FROM dbo.ExchangeDailyOanda_xtest edo WITH (NOLOCK)
 		WHERE 
 			edo.ExchangeDate >= @fromdate AND edo.ExchangeDate <= @todate 
 			AND edo.exchangeid <> 20

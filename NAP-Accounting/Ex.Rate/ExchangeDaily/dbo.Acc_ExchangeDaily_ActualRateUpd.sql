@@ -31,14 +31,14 @@ set @date = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 UPDATE e
 SET e.actualrate = ex.actualrate
 FROM
-    ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
+    ExchangeDailyOanda_xtest e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)
 
 --2 update ExchangeDaily actualrate from table exchange for today
 UPDATE e
 SET e.actualrate = ex.actualrate
 FROM
-    ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
+    ExchangeDailyOanda_xtest e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate = @date
 
 /* --20140625@jim: no need update old-data, we'll correct it by manually
@@ -91,6 +91,3 @@ SET e.actualrate = b.actualrate
 	ON e.ExchangeId = b.currency AND e.ExchangeDate = DATEADD(dd,-2,@date)
 */
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeDaily_ActualRateUpd] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeDaily_ActualRateUpd] TO [vnteam] AS [dbo]
