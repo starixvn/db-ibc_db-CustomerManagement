@@ -1,5 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] @Code VARCHAR(5)
+ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] 
+	@Code VARCHAR(5)
 	, @MYR FLOAT
 	, @USD FLOAT
 	, @EUR FLOAT
