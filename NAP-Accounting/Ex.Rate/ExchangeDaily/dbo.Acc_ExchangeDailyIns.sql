@@ -1,6 +1,6 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
-ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] @Code VARCHAR(5)
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] 
+	@Code VARCHAR(5)
 	, @MYR FLOAT
 	, @USD FLOAT
 	, @EUR FLOAT
@@ -17,6 +17,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] @Code VARCHAR(5)
 	, @HKD FLOAT
 	, @TWD FLOAT
 	, @PHP FLOAT
+	, @BDT FLOAT
+	, @INR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -26,13 +28,14 @@ Created: Henry
 Task : Insert the rate daily
 DB: DBCUST.CustDB
 Revisions:
-	-  20110215@Henry: add to insert currency UUS to exchangedaily
-	-  20110322@Henry: add one more base currency: CNY
-	-  20120427@Henry: add to new table ExchangeDailyOanda instead of ExchangeDaily	
-	-  20120427@Dan: add new currency KRW and JPY
-	-  20160914@Jim:  Add HKD base currency into OANDA Exchange rate [RedmineID : #63975]
-	-  20160920@Jim:  Add YNG currency [RedmineID : #64385]
-	-  20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
+	- 20110215@Henry: add to insert currency UUS to exchangedaily
+	- 20110322@Henry: add one more base currency: CNY
+	- 20120427@Henry: add to new table ExchangeDailyOanda instead of ExchangeDaily	
+	- 20120427@Dan: add new currency KRW and JPY
+	- 20160914@Jim:  Add HKD base currency into OANDA Exchange rate [RedmineID : #63975]
+	- 20160920@Jim:  Add YNG currency [RedmineID : #64385]
+	- 20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
+	- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 		
 */
 /*
@@ -92,11 +95,15 @@ BEGIN
 			, HKD
 			, TWD
 			, PHP
+			, BDT
+			, INR
 			)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -139,6 +146,8 @@ BEGIN
 			, HKD = 2e-101
 			, TWD = 2e-101
 			, PHP = 2e-101
+			, BDT = 2e-101
+			, INR = 2e-101
 		WHERE ExchangeId = 20
 			AND ExchangeDate = @date
 	END
@@ -199,6 +208,8 @@ BEGIN
 				, HKD
 				, TWD
 				, PHP
+				, BDT
+				, INR
 				)
 			VALUES (
 				@ExchangeId
@@ -220,6 +231,8 @@ BEGIN
 				, @HKD * @MultipliedBy
 				, @TWD * @MultipliedBy
 				, @PHP * @MultipliedBy
+				, @BDT * @MultipliedBy
+				, @INR * @MultipliedBy
 				)
 		END
 		ELSE
@@ -246,6 +259,8 @@ BEGIN
 				, HKD = @HKD * @MultipliedBy
 				, TWD = @TWD * @MultipliedBy
 				, PHP = @PHP * @MultipliedBy
+				, BDT = @BDT * @MultipliedBy
+				, INR = @INR * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code
@@ -301,6 +316,8 @@ BEGIN
 			, @HKD = HKD
 			, @TWD = TWD
 			, @PHP = PHP
+			, @BDT = BDT
+			, @INR = INR
 		FROM dbo.ExchangeDailyOanda WITH (NOLOCK)
 		WHERE Code = 'VND'
 			AND ExchangeDate = @Date
@@ -334,27 +351,31 @@ BEGIN
 				, HKD
 				, TWD
 				, PHP
+				, BDT
+				, INR
 				)
 			VALUES (
 				@ExchangeId
 				, @date
 				, @Code
-				,  @MYR * @MultipliedBy 
-				,  @USD * @MultipliedBy 
-				,  @EUR * @MultipliedBy 
-				,  @CNY * @MultipliedBy 
-				,  @IDR * @MultipliedBy 
-				,  @AUD * @MultipliedBy 
-				,  @CHF * @MultipliedBy 
-				,  @GBP * @MultipliedBy 
-				,  @SGD * @MultipliedBy 
-				,  @THB * @MultipliedBy 
-				,  @VND * @MultipliedBy 
-				,  @KRW * @MultipliedBy 
-				,  @JPY * @MultipliedBy 
-				,  @HKD * @MultipliedBy
-				,  @TWD * @MultipliedBy 
-				,  @PHP * @MultipliedBy
+				, @MYR * @MultipliedBy 
+				, @USD * @MultipliedBy 
+				, @EUR * @MultipliedBy 
+				, @CNY * @MultipliedBy 
+				, @IDR * @MultipliedBy 
+				, @AUD * @MultipliedBy 
+				, @CHF * @MultipliedBy 
+				, @GBP * @MultipliedBy 
+				, @SGD * @MultipliedBy 
+				, @THB * @MultipliedBy 
+				, @VND * @MultipliedBy 
+				, @KRW * @MultipliedBy 
+				, @JPY * @MultipliedBy 
+				, @HKD * @MultipliedBy
+				, @TWD * @MultipliedBy 
+				, @PHP * @MultipliedBy
+				, @BDT * @MultipliedBy
+				, @INR * @MultipliedBy
 				)	
 		END
 		ELSE
@@ -365,21 +386,23 @@ BEGIN
 					, UPDLOCK
 					)
 			SET MYR =  @MYR * @MultipliedBy 
-				, USD =  @USD * @MultipliedBy 
-				, EUR =  @EUR * @MultipliedBy 
-				, CNY =  @CNY * @MultipliedBy 
-				, IDR =  @IDR * @MultipliedBy 
-				, AUD =  @AUD * @MultipliedBy 
-				, CHF =  @CHF * @MultipliedBy 
-				, GBP =  @GBP * @MultipliedBy 
-				, SGD =  @SGD * @MultipliedBy 
-				, THB =  @THB * @MultipliedBy 
-				, VND =  @VND * @MultipliedBy 
-				, KRW =  @KRW * @MultipliedBy 
-				, JPY =  @JPY * @MultipliedBy 
-				, HKD =  @HKD * @MultipliedBy 
-				, TWD =  @TWD * @MultipliedBy
-				, PHP =  @PHP * @MultipliedBy
+				, USD = @USD * @MultipliedBy 
+				, EUR = @EUR * @MultipliedBy 
+				, CNY = @CNY * @MultipliedBy 
+				, IDR = @IDR * @MultipliedBy 
+				, AUD = @AUD * @MultipliedBy 
+				, CHF = @CHF * @MultipliedBy 
+				, GBP = @GBP * @MultipliedBy 
+				, SGD = @SGD * @MultipliedBy 
+				, THB = @THB * @MultipliedBy 
+				, VND = @VND * @MultipliedBy 
+				, KRW = @KRW * @MultipliedBy 
+				, JPY = @JPY * @MultipliedBy 
+				, HKD = @HKD * @MultipliedBy 
+				, TWD = @TWD * @MultipliedBy
+				, PHP = @PHP * @MultipliedBy
+				, BDT = @BDT * @MultipliedBy
+				, INR = @INR * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code		
