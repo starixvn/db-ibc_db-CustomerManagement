@@ -85,6 +85,8 @@ Revisions:
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
 	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
+
 
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -227,7 +229,8 @@ Param's Explanation:
 		,	@bitmapOrder_SabaVirtualSport INT
 		,	@bitmapOrder_WM				INT
 		,	@bitmapOrder_GDG			INT
-		,	@bitmapOrder_BG				INT
+		,	@bitmapOrder_BG				INT 
+		,	@bitmapOrder_SportsLottery	INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -250,6 +253,7 @@ Param's Explanation:
 	SET @bitmapOrder_WM = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 233 AND Bettype = 3401)
 	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
+	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3611)		
 	SET @bitmapOrder_SabaVirtualSport = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 98 AND Bettype = 1)
 
     DECLARE	@IsHidden_MuayThai		INT = 1
@@ -273,6 +277,7 @@ Param's Explanation:
 		,	@IsHidden_WM			INT = 1
 		,	@IsHidden_GDG			INT = 1
 		,	@IsHidden_BG			INT = 1
+		,	@IsHidden_SportsLottery		INT = 1
 
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT	
@@ -296,6 +301,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 233, @IsHide = @IsHidden_WM OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 	
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN + ION)
 	DECLARE	@DisableAllbet			BIT,
@@ -326,6 +332,7 @@ Param's Explanation:
 			@DisableBG	BIT,
 			@HideBG    	BIT,
 			@SyncedBG 	BIT = 1 --always sync
+			
 	--Handle dummy product 44: RNG Lottery (Lottery + TableGame + RNGWar)
 	DECLARE	@DisableLottery		BIT,
 			@HideLottery        BIT,
@@ -335,7 +342,11 @@ Param's Explanation:
 			@SyncedTableGames   BIT = 1, --always sync
 			@DisableRNGWar	BIT,
 			@HideRNGWar    BIT,
-			@SyncedRNGWar   BIT = 1 --always sync
+			@SyncedRNGWar   BIT = 1, --always sync
+			--Sports Lottery
+			@DisableSportsLottery	BIT,
+			@HideSportsLottery    	BIT,
+			@SyncedSportsLottery 	BIT = 1 --always sync
 		
 	SELECT 			
 	-- For AllBet
@@ -374,7 +385,10 @@ Param's Explanation:
 		@HideGDG  = CAST(CASE WHEN @IsHidden_GDG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_GDG), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BG
 		@DisableBG = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BG), 1),	
-		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BG), 1) = 0 THEN 0 ELSE 1 END AS BIT)
+		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BG), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For Sports Lottery
+	@DisableSportsLottery  = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery ), 1),	
+	@HideSportsLottery   = CAST(CASE WHEN @IsHidden_SportsLottery  = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery ), 1) = 0 THEN 0 ELSE 1 END AS BIT)	
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 	WHERE ci.CustID = @CustID
@@ -526,7 +540,12 @@ Param's Explanation:
 			--For BG
 			@DisableBG AS DisableBG,
 			@HideBG AS HideBG,
-			@SyncedBG AS SyncedBG
+			@SyncedBG AS SyncedBG,
+			--For RNGWar
+			@DisableSportsLottery AS DisableSportsLottery,
+			@HideSportsLottery AS HideSportsLottery,
+			@SyncedSportsLottery AS SyncedSportsLottery
+			
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
