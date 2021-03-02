@@ -17,6 +17,7 @@ AS
 		- 20200911@Winfred: add product joker [Redmine: #131603]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210104@Eden: add product Max Game [Redmine: #147232]
+		- 20210302@Winfred: add Habanero  [RedmineID: #145459]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -105,6 +106,8 @@ BEGIN
 		SELECT 56, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
 		UNION ALL
 		SELECT 60, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Max Game
+		UNION ALL
+		SELECT 61, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Habanero
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
