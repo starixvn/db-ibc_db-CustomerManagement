@@ -9,6 +9,7 @@ AS
   
 	Revisions:  
 	    - 20210219@Eden: First commit [#150298]
+		- 20210301@Eden: If member soccer hdp vr < site value, then insert the members into the VRMemberBigStake [#150298]
 
 	Param's Explanation:  
 	Examples:
@@ -22,7 +23,7 @@ BEGIN
 	DECLARE @NewLogData VARCHAR(MAX)
 	SET @startRun = getdate()
 
-	DECLARE @Inserted_Cust TABLE (CustID INT, Type TINYINT,Islog BIT DEFAULT 0)
+	DECLARE @Inserted_Cust TABLE (CustID INT, Type TINYINT, Islog BIT DEFAULT 0)
 
 	CREATE TABLE #TblCust (CustID INT, Type TINYINT)
 
@@ -33,10 +34,17 @@ BEGIN
 		INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
 		INNER JOIN exchange e WITH(NOLOCK) On ci.currency = e.ExchangeId
 		LEFT JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = c.custid AND v.Type = p.Type
+		INNER JOIN CustVirtualSetting cvs WITH(NOLOCK)
+			ON cvs.custid = ci.custid
+		INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK)
+			ON  cvs.seqNo = pvs.seqNo
 	WHERE c.roleid = 1
 		AND v.CustID IS NULL
 		AND c.creatdate > = p.ReleasedDate
 		AND c.creatdate BETWEEN DATEADD(hh,-25,GETDATE()) AND GETDATE()
+		AND pvs.isActive = 1
+		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
+		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) < p.VRValue
 
 	WHILE 0 = 0
 	BEGIN
