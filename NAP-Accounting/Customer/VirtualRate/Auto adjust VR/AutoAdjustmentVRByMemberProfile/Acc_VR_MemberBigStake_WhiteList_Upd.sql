@@ -12,6 +12,7 @@ AS
   
 	Revisions:  
 	    - 20210219@Eden: First commit [#150298]
+		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#150298]
 
 	Param's Explanation:  
 		@Type = 
@@ -31,15 +32,39 @@ BEGIN
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
+	DECLARE @DeletedCount INT
+	DECLARE @UpdatedCount INT
 	SET @startRun = getdate()
 
 	DECLARE @CustTbl TABLE ( CustID INT PRIMARY KEY)
 	DECLARE @UpdatedTbl TABLE (CustID INT PRIMARY KEY, IsLog BIT Default 0)
+	DECLARE @DeletedCustTbl TABLE (CustID INT)
 
 	INSERT INTO @CustTbl(CustID)
 	SELECT DISTINCT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
+
+	--- Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table
+	DELETE t 
+	OUTPUT deleted.CustID INTO @DeletedCustTbl(CustID)
+	FROM @CustTbl t
+		INNER JOIN customer c WITH(NOLOCK) ON c.custid = t.custid
+		INNER JOIN VRMemberBigStake v (NOLOCK) ON c.custid = v.CustID
+		INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
+		INNER JOIN CustVirtualSetting cvs WITH(NOLOCK) ON cvs.custid = t.custid
+		INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK) ON  cvs.seqNo = pvs.seqNo
+	WHERE pvs.isActive = 1
+		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
+		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) >= p.VRValue
+		AND v.Status <> 1
+
+	DELETE v
+	FROM VRMemberBigStake v WITH(ROWLOCK)
+		INNER JOIN @DeletedCustTbl t ON v.CustID = t.CustID
+	WHERE v.Type = @Type
+
+	SET @DeletedCount = @@ROWCOUNT
 
 	--> Update Status = 1
 	UPDATE v
@@ -51,51 +76,64 @@ BEGIN
 		AND v.Status <> 1
 		AND v.FirstBetDate IS NOT NULL
 
-	IF NOT EXISTS ( SELECT 1 FROM @UpdatedTbl)
-		RETURN
+	SET @UpdatedCount = @@ROWCOUNT
+
+	IF @DeletedCount + @UpdatedCount  = 0
+		RETURN -- nothing to log
 
 	DECLARE @NewLogData VARCHAR(MAX)
 	DECLARE @custID INT
 
 	--Log Update VR for each customer
-	WHILE 1 = 1
+	IF @UpdatedCount > 0
 	BEGIN
-		UPDATE TOP(1)  c
-		SET c.islog = 1,
-			@custID = c.CustID
-		FROM @UpdatedTbl c
-		WHERE Islog = 0
+		WHILE 1 = 1
+		BEGIN
+			UPDATE TOP(1)  c
+			SET c.islog = 1,
+				@custID = c.CustID
+			FROM @UpdatedTbl c
+			WHERE Islog = 0
 
-		IF @@ROWCOUNT = 0 BREAK;
+			IF @@ROWCOUNT = 0 BREAK;
 
-		SELECT @NewLogData = '<R '
-							+ 'Type="'
-									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
-											ELSE space(1) 
-										END+ '" '
-							+ 'Reason="'
-									+ CASE	WHEN @IsUpdateByCredit = 1 THEN 'Credit' 
-											ELSE 'Winloss'
-										END+ '" '
-							+ ' />'
+			SELECT @NewLogData = '<R '
+								+ 'Type="'
+										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+												ELSE space(1) 
+											END+ '" '
+								+ 'Reason="'
+										+ CASE	WHEN @IsUpdateByCredit = 1 THEN 'Credit' 
+												ELSE 'Winloss'
+											END+ '" '
+								+ ' />'
 	
-		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-			@UserId				= 0,
-			@custID				= @custID,
-			@ActionId			= 828,
-			@TrackingValue		= @NewLogData
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserId				= 0,
+				@custID				= @custID,
+				@ActionId			= 828,
+				@TrackingValue		= @NewLogData
+		END
 	END
 
 	set @endRun = getdate()  
 	set @duration  = datediff (millisecond,@startRun,@endRun) 
 
 	SELECT @NewLogData = CONVERT( VARCHAR(MAX), 
-			(	SELECT  CustID AS '@CustID',
-						@Type AS '@Type', 
-						@IsUpdateByCredit AS '@IsUpdateByCredit'
-				FROM @UpdatedTbl
+			(	SELECT *
+				FROM
+					(SELECT  CustID AS '@CustID',
+							@Type AS '@Type', 
+							CASE WHEN @IsUpdateByCredit  = 1 THEN 'WhiteListByCredit' ELSE 'WhiteListByWinLoss' END AS '@Action'
+					FROM @UpdatedTbl
+					UNION ALL
+					SELECT  CustID AS '@CustID',
+							@Type AS '@Type', 
+							'Removed' AS '@Action'
+					FROM @DeletedCustTbl
+				) t
 				FOR XML PATH('Row'), ROOT ('R'), TYPE)
-		)
+			)
 
 	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 		@UserId				= 0,
