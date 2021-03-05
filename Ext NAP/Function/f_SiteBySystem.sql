@@ -148,10 +148,15 @@ BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 547 --76666B		
 	END	
+	ELSE IF (@System IN ('IBCMMR', 'ACCUUSMyanmar'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)		
+		SELECT 547 --76666B		
+	END	
 	ELSE IF (@System IN ('ACCSABA789'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 51 --INH		
+		SELECT 557 --Saba789		
 	END	
 	RETURN
 END
