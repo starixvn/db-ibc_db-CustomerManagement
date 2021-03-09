@@ -33,16 +33,21 @@ BEGIN
 	declare @topm table (messageid int, targetId int)
 
 	insert into @topm (messageid, targetId)
-	SELECT DISTINCT top (@record) m.MessageId, mt.TargetId
+	SELECT top (@record) m.MessageId, mt.TargetId
 	FROM dbo.Msg m with (nolock)
-	    INNER JOIN dbo.MsgTarget mt with (nolock) ON m.MessageId = mt.MessageId
+	   CROSS APPLY (
+			SELECT TOP 1 TargetId, isDeleted
+			FROM dbo.MsgTarget with (nolock) 
+			WHERE MessageId = m.MessageId
+				AND isDeleted = 0
+				AND TargetId = @targetid
+		)mt
 	WHERE 
 			m.PostTime between @sdate and @edate
 			AND m.MsgType = 1
-			AND m.isDeleted=0 AND mt.isDeleted=0
+			AND m.isDeleted=0 
 			--AND m.IsTest = @IsTest
 			AND (@IsTest=1 OR m.IsTest = @IsTest)
-			AND mt.TargetID = @targetid
 	ORDER BY m.PostTime DESC
 
 	select m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
