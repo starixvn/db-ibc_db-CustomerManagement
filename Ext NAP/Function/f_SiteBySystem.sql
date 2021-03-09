@@ -162,7 +162,9 @@ BEGIN
 	ELSE IF (@System IN ('ACCAthena000'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 66 --Athena000		
+		SELECT 66 --Athena000
+		UNION ALL
+		SELECT 1 --BEST-ODDS		
 	END
 	
 	RETURN
