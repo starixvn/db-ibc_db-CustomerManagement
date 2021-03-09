@@ -47,6 +47,7 @@ Revisions:
 	- 20200923@Elodie: Allow 76666B for ACCMMKMyanmar, ACCUUSMyanmar group - [Redmine: #141926]
 	- 20201102@Winfred: rename group ACCMMKMyanmar to IBCMMR - [Redmine: #141926]
 	- 20210305@Tina: add more group ACCSABA789 - [Redmine: #151213]
+	- 20210309@Tina: add more group ACCAthena000
 	
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
@@ -157,7 +158,15 @@ BEGIN
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 557 --Saba789		
-	END	
+	END
+	ELSE IF (@System IN ('ACCAthena000'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)		
+		SELECT 66 --Athena000
+		UNION ALL
+		SELECT 1 --BEST-ODDS		
+	END
+	
 	RETURN
 END
 
