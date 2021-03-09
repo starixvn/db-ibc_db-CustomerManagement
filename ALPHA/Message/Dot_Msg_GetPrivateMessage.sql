@@ -1,4 +1,5 @@
-﻿USE [bodb_Message]
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+USE [bodb_Message]
 GO
 SET ANSI_NULLS ON
 GO
@@ -25,6 +26,7 @@ BEGIN
         Don@20090923: adapt for new design (Drop table BatchMsg)
 		Scott@20120109: add condition for new flag column [isDeleted] to filter deleted data.
 		Vivi@20131217: remark --and @IsTest=0, let isTest=1 into if loop, because else performance too bad.
+		- 20210309@Max: [Alpha] Duplicated message shown in Personal message [Redmine: #149622]
     Param's Explanation:
     */
     SET NOCOUNT ON;
@@ -34,7 +36,7 @@ BEGIN
 		declare @topm table (messageid int, targetId int)
 
 		insert into @topm (messageid, targetId)
-		SELECT top (@record) m.MessageId, mt.TargetId
+		SELECT DISTINCT top (@record) m.MessageId, mt.TargetId
 		FROM dbo.Msg m with (nolock)
 			INNER JOIN dbo.MsgTarget mt with (nolock) ON m.MessageId = mt.MessageId
 		WHERE 
@@ -46,7 +48,7 @@ BEGIN
 				AND mt.TargetID = @targetid
 		ORDER BY m.PostTime DESC
 
-		select m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
+		select  m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
 							m.Content_jp, m.Content_th, m.Content_it, m.Content_ko,
 							m.Content_es, m.Content_vn, m.Content_id, m.Content_el,
 							m.Content_mx,
@@ -113,8 +115,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetPrivateMessage] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetPrivateMessage] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Dot_Msg_GetPrivateMessage] TO vnteam
