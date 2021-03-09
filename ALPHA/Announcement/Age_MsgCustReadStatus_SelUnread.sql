@@ -60,11 +60,11 @@ BEGIN
 		CROSS APPLY (
 				SELECT TOP 1 TargetId, isDeleted
 				FROM dbo.MsgTarget WITH (NOLOCK, INDEX=IX_TargetId) 
-				WHERE MessageId = m.MessageId 
+				WHERE MessageId = m.MessageId
+					AND isDeleted = 0
 			)mt
 		INNER JOIN @mInfo AS s ON m.MsgType = s.MsgType AND mt.TargetId = s.TargetId		
-	WHERE m.isDeleted = 0
-		AND mt.isDeleted = 0		
+	WHERE m.isDeleted = 0		
 		AND m.IsTest = @IsTest
 		AND m.PostTime > @minLastSeen
 END

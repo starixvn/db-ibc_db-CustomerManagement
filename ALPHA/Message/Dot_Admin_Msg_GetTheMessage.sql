@@ -1,6 +1,7 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="Dot_Admin" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 USE [bodb_Message]
 GO
+	
 CREATE PROCEDURE [dbo].[Dot_Admin_Msg_GetTheMessage]
 @MessageID int = 0
 AS
