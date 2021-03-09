@@ -7,12 +7,17 @@ CREATE PROCEDURE [dbo].[Dot_Admin_Msg_GetTheMessage]
 AS
 
 /*
-	2017/04/17@Mike(DB07):initial version copy from Dot_Msg_GetTheMessage
-	2017/04/24@Mike(DB07):Add TopLevel
-	2018/08/10@Mike(DB07):add select content_zhcn
-	2019/12/20@JackChang(DB05):add select MsgContentsType
-	2020/04/15@Jack Chang(DB05):Add select Remark
-	- 20210309@Max: [Alpha] Duplicated message shown in Personal message [Redmine: #149622]
+	Created: 
+	Task : 
+	DB: DBMSG.bodb_Message
+	Revisions:
+		2017/04/17@Mike(DB07):initial version copy from Dot_Msg_GetTheMessage
+		2017/04/24@Mike(DB07):Add TopLevel
+		2018/08/10@Mike(DB07):add select content_zhcn
+		2019/12/20@JackChang(DB05):add select MsgContentsType
+		2020/04/15@Jack Chang(DB05):Add select Remark
+		- 20210309@Max: [Alpha] Duplicated message shown in Personal message [Redmine: #149622]
+	Param's Explanation:
 */
 
 BEGIN
