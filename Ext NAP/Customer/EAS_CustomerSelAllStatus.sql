@@ -16,7 +16,8 @@ AS
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200713@Eden: Integrate 3 new bet types for Keno [Redmine: #137475]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
-
+		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+		
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
@@ -174,7 +175,7 @@ BEGIN
 			ci.DisableGoldDeluxe,
 			ci.HideGoldDeluxe,
 			ci.HideKeno,
-			MIN(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
+			MAX(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
 		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	

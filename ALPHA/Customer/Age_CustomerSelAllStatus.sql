@@ -14,7 +14,8 @@ AS
 		- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200310@Percy: Return IsAllDayBalTransfer [RedmineID: #130091]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
-
+		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+		
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -22,10 +23,9 @@ AS
 */
 BEGIN
     SET NOCOUNT ON
-
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
 
-	DECLARE @IsAllDayBalTransfer BIT
+	DECLARE @IsAllDayBalTransfer BIT,@ExecuteSQL NVARCHAR(MAX) = '',@query NVARCHAR(MAX) = '',@Param NVARCHAR(MAX) 	
     
 	--Downline/Upline status 
     DECLARE @upLineDisableCS				BIT       
@@ -40,6 +40,7 @@ BEGIN
           , @uplineDoubleCommLosing BIT        
           , @DisableAutoMPT			BIT  
 		  , @isDirectSuspend 		BIT = 0
+		  , @DisableKeno			BIT
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -110,6 +111,19 @@ BEGIN
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
+	------------------------Keno-----------------------
+	SELECT  @query = N''		
+	SELECT	@query = @query + N'
+	SET @DisableKeno = ISNULL((SELECT TOP 1 cg.IsDisabled AS DisableKeno
+	FROM dbo.CustGameType cg WITH (NOLOCK)  
+		INNER JOIN dbo.GameType g WITH (NOLOCK) ON g.GameTypeID = cg.GameTypeID
+	WHERE cg.custid = @custid AND g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0 AND cg.IsDisabled = 1),0)
+	'
+	SELECT	@ExecuteSQL = N'
+	EXECUTE DBACC.bodb02.dbo.sp_executesql @query, N''@custid INT, @DisableKeno BIT OUTPUT'',@custid,@DisableKeno OUTPUT'
+
+	-- Result
+	EXECUTE	sys.sp_executesql @ExecuteSQL, N'@query NVARCHAR(MAX), @custid INT,@DisableKeno BIT OUTPUT', @query, @custid,@DisableKeno OUTPUT
 	-------------------------------------------------------------------------
 	DECLARE @TransferOption VARCHAR(8)
     EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
@@ -131,7 +145,7 @@ BEGIN
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
-
+	
 	--Product Status
 	SELECT	ci.SyncCasino,
 			ci.DisableCasino,
@@ -144,6 +158,7 @@ BEGIN
 			ci.HideGoldDeluxe,
 			ci.DisableEsports, 
 			@uplineDisableEsports AS uplineDisableEsports,
+			@DisableKeno AS DisableKeno,
 			ci.HideKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	

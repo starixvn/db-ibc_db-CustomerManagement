@@ -62,7 +62,8 @@ Revisions:
 	- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 	- 20190917@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
-	
+	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+		
 Param's Explanation:
 � @system: = NAP : internal login from NAP
 			NAPEXT:internal login from NAP EXT
@@ -275,7 +276,7 @@ Param's Explanation:
 			ISNULL(ci.DisableEsports, 0) AS DisableEsports,
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
-			min(case when g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) then cg.IsDisabled else 1 end) as DisableKeno,
+			MAX(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno,
 			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
 			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			
