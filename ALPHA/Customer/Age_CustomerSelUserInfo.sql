@@ -58,6 +58,7 @@ Revisions:
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
 	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
+	- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -167,6 +168,8 @@ Param's Explanation:
 		--BG
 		,	@bitmapOrder_BG			INT 
 		,	@bitmapOrder_SportsLottery	INT 
+		--PPLive
+		,	@bitmapOrder_PPLive			INT 
 		 
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
@@ -188,6 +191,8 @@ Param's Explanation:
 	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)	
+	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
+
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -208,10 +213,10 @@ Param's Explanation:
 		,	@IsHidden_TableGames	INT = 1
 		,	@IsHidden_GTCasino		INT = 1
 		,	@IsHidden_RNGWar		INT = 1
-		--GDG
-		,	@IsHidden_GDG			INT = 1
-		,	@IsHidden_BG		INT = 1
+		,	@IsHidden_GDG			INT = 1--GDG
+		,	@IsHidden_BG			INT = 1
 		,	@IsHidden_SportsLottery		INT = 1
+		,	@IsHidden_PPLive		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -233,6 +238,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -365,7 +371,7 @@ Param's Explanation:
 			--For BG
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BG),1) AS DisableBG,
 			CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BG),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBG,
-
+			--For FishingWorld
 			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
 			ISNULL(dbo.f_GetProductStatus(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorldUpline,
 			CASE	WHEN Customer.roleid = 1 THEN 1
@@ -386,7 +392,16 @@ Param's Explanation:
 			--end GDG
 			-- For Sports Lottery
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery)) AS DisableSportsLottery,			
-			CAST(CASE WHEN @IsHidden_SportsLottery = 0 AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSportsLottery,				
+			CAST(CASE WHEN @IsHidden_SportsLottery = 0 AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSportsLottery,
+			-- For PPLive
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_PPLive), 1) AS DisablePPLive,
+			CAST(	CASE	WHEN	@IsHidden_PPLive = 0 
+								AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PPLive), 1) = 0 
+								THEN 0
+							ELSE 1 
+					END AS BIT) AS HidePPLive,		
+			--end PPLive
+				
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,

@@ -86,6 +86,7 @@ Revisions:
 	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
 	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
+	- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
 
 
 Param's Explanation:
@@ -231,6 +232,7 @@ Param's Explanation:
 		,	@bitmapOrder_GDG			INT
 		,	@bitmapOrder_BG				INT 
 		,	@bitmapOrder_SportsLottery	INT
+		,	@bitmapOrder_PPLive			INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -254,6 +256,7 @@ Param's Explanation:
 	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)		
+	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
 	SET @bitmapOrder_SabaVirtualSport = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 98 AND Bettype = 1)
 
     DECLARE	@IsHidden_MuayThai		INT = 1
@@ -278,6 +281,7 @@ Param's Explanation:
 		,	@IsHidden_GDG			INT = 1
 		,	@IsHidden_BG			INT = 1
 		,	@IsHidden_SportsLottery		INT = 1
+		,	@IsHidden_PPLive		INT = 1
 
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT	
@@ -302,6 +306,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
 	
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN + ION)
 	DECLARE	@DisableAllbet			BIT,
@@ -331,7 +336,12 @@ Param's Explanation:
 			--BG
 			@DisableBG	BIT,
 			@HideBG    	BIT,
-			@SyncedBG 	BIT = 1 --always sync
+			@SyncedBG 	BIT = 1, --always sync
+			
+			--PPLive
+			@DisablePPLive	BIT,
+			@HidePPLive    	BIT,
+			@SyncedPPLive 	BIT = 1 --always sync
 			
 	--Handle dummy product 44: RNG Lottery (Lottery + TableGame + RNGWar)
 	DECLARE	@DisableLottery		BIT,
@@ -388,7 +398,10 @@ Param's Explanation:
 		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BG), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For Sports Lottery
 	@DisableSportsLottery  = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery ), 1),	
-	@HideSportsLottery   = CAST(CASE WHEN @IsHidden_SportsLottery  = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery ), 1) = 0 THEN 0 ELSE 1 END AS BIT)	
+	@HideSportsLottery   = CAST(CASE WHEN @IsHidden_SportsLottery  = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery ), 1) = 0 THEN 0 ELSE 1 END AS BIT),	
+	-- For PPLive
+		@DisablePPLive = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_PPLive), 1),	
+		@HidePPLive  = CAST(CASE WHEN @IsHidden_PPLive = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PPLive), 1) = 0 THEN 0 ELSE 1 END AS BIT)
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 	WHERE ci.CustID = @CustID
@@ -545,6 +558,10 @@ Param's Explanation:
 			@DisableSportsLottery AS DisableSportsLottery,
 			@HideSportsLottery AS HideSportsLottery,
 			@SyncedSportsLottery AS SyncedSportsLottery
+			--For PpLive
+			@DisablePPLive AS DisablePPLive,
+			@HidePPLive AS HidePPLive,
+			@SyncedPPLive AS SyncedPPLive
 			
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
