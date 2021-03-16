@@ -1,7 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
+/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
@@ -25,6 +22,7 @@ AS
 		- 20171004@Winnie: NAP CM - Missing log data when update VR setting by Auto-adjustment [RedmineID:#84112]
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
+		- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 
 	Param's Explanation:  
 		- @SportType = 0 : All
@@ -255,14 +253,70 @@ BEGIN
 			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
 	END
 
-	
 	-- Update via Execrep
-		EXECUTE	dbo.Acc_CustSetting_10 
-					@VirtualMultiplier = @VirtualMultiplier
-					,@SportType=@SportType;
+	EXECUTE	dbo.Acc_CustSetting_10 
+				@VirtualMultiplier = @VirtualMultiplier
+				,@SportType=@SportType;
 	
 	-- Update enable virtual rate via Execrep
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04 @custid = 0, @roleid = 0, @action = 'EnableVirtualMultiplier', @EnableVirtualMultiplier = @VirtualMultiplier;
+
+	--Process to lock VR status When setting VR >= 0 
+	DECLARE @tbl_PositiveVR TABLE(CustID INT, Isfinished BIT default 0)
+
+	IF	@VirtualMultiplier <> ''
+	BEGIN
+		-- For read xml					
+		EXECUTE	sp_xml_preparedocument
+					@DocHandler			OUTPUT
+				,	@virtualmultiplier;
+
+		INSERT INTO	@tbl_PositiveVR (CustID)
+		SELECT	CAST(ss.val AS INT)
+		FROM OPENXML (@DocHandler, '/ROOT/Rate', 1) 
+		WITH (
+			CustIds				VARCHAR(MAX)
+		,	VirtualMultiplier	SMALLMONEY	
+		) AS Data
+		CROSS APPLY	dbo.f_StringSplit(Data.CustIds, ',') AS ss
+		WHERE Data.VirtualMultiplier >= 1.00
+		OPTION (MAXRECURSION 0)
+
+		EXECUTE	sp_xml_removedocument
+					@DocHandler;
+		-- end read xml	
+	END;	
+	
+	--Delete invalid accounts
+	DELETE t
+	FROM @tbl_PositiveVR t
+		LEFT JOIN custInfo c WITH(NOLOCK) ON t.CustID = c.custid
+	WHERE c.custid IS NULL	
+	
+	DECLARE @VRLockedStatus_Soccer BIT,  @VRLockedStatus_OS	BIT, @tmpCustID INT
+
+	SELECT @VRLockedStatus_Soccer = CASE WHEN @SportType IN (0,1) THEN 1 END,
+		   @VRLockedStatus_OS = CASE WHEN @SportType IN (0,2) THEN 1 END
+
+	WHILE 1 = 1
+	BEGIN
+		UPDATE TOP(1)  c
+		SET c.Isfinished = 1,
+			@tmpCustID = c.CustID
+		FROM @tbl_PositiveVR c
+		WHERE Isfinished = 0
+
+		IF @@ROWCOUNT = 0 BREAK;
+
+		--Update VR lock status to locked
+		EXEC Acc_VRCustLockStatusUpd 
+			 @custid = @tmpCustID
+			,@UserID = @UserID
+			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
+			,@VRLockedStatus_OS = @VRLockedStatus_OS
+			,@IP = @IP
+			,@UpdateBy = '3m perf check'
+	END
 
 	SET	@endRun = GETDATE();
 	SET	@duration = DATEDIFF(MILLISECOND, @startRun, @endRun);
@@ -373,4 +427,3 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON Acc_CustomerUpdVirtualMultiplier_Multiple TO bodbAdminNet 

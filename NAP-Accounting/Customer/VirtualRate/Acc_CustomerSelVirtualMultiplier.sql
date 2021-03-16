@@ -1,5 +1,4 @@
 ﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE  [dbo].[Acc_CustomerSelVirtualMultiplier] 
 	@CustID int,
 	@IsTest BIT=0
@@ -19,6 +18,7 @@ AS
 			- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 			- 20190702@Dominic: Not show E-Sports [RedmineID:#114830]
 			- 20200608@Cherry: Not show Basketball (#134978)
+			- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -39,11 +39,15 @@ BEGIN
     WHERE       c.custid = @CustID
 
     SELECT  @ActualRate         AS ActualRate,
-            VirtualMultiplier   AS EnableVirtualRate,
-            -0.95                AS Min_VirtualMultiplier,
-            2.0                 AS Max_VirtualMultiplier
-    FROM    custInfo WITH(NOLOCK)
-    WHERE   custid = @CustID
+            ci.VirtualMultiplier   AS EnableVirtualRate,
+            -0.95               AS Min_VirtualMultiplier,
+            2.0                 AS Max_VirtualMultiplier,
+			CASE WHEN sc.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Soccer,
+			CASE WHEN os.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_OS
+    FROM    custInfo ci WITH(NOLOCK)
+			LEFT JOIN VRCustLockStatus sc WITH(NOLOCK) ON ci.custid = sc.CustID AND sc.Type = 1 --soccer 
+			LEFT JOIN VRCustLockStatus os WITH(NOLOCK) ON ci.custid = os.CustID AND os.Type = 2 --soccer 
+    WHERE   ci.custid = @CustID
 
     INSERT INTO @CustVirtualRate
     SELECT      cvs.custid,

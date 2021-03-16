@@ -13,6 +13,7 @@ AS
 	    - 20200805@Eden: First commit [#138168]
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
 		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
+		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 
 	Param's Explanation:  
 	Examples:
@@ -157,8 +158,11 @@ BEGIN
 		INNER JOIN @Input_CustTbl t ON v.CustID = t.CustID
 	WHERE v.SportType = @Sporttype
 
-	--Log for each Customer
-	DECLARE @LogData VARCHAR(MAX)
+	--Log for each Customer + Unlock VR lock status
+	DECLARE @LogData VARCHAR(MAX), @VRLockedStatus_Soccer BIT 
+
+	IF @Sporttype = 100 
+		SET @VRLockedStatus_Soccer = 0 --unlock VR lock status for soccer 
 
 	WHILE 1 = 1
 	BEGIN
@@ -169,6 +173,15 @@ BEGIN
 
 		IF @@ROWCOUNT = 0
 			BREAK;
+
+		--Update VR lock status to unlock
+		EXEC Acc_VRCustLockStatusUpd 
+			 @custid = @custid
+			,@UserID = 0
+			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
+			,@VRLockedStatus_OS = 0
+			,@IP = ''
+			,@UpdateBy = 'China/Desktop check'
 
 		SELECT @LogData = '<R '
 						+ 'Sporttype="'
