@@ -12,6 +12,7 @@ AS
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
 		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
+		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 
 	Param's Explanation:  
 		@Type = 
@@ -65,14 +66,14 @@ BEGIN
 		INNER JOIN custInfo c WITH(NOLOCK) ON c.recommend = t.CustID 
 	WHERE c.Enabled = 1
 
-	--Exclude list of Auto Update VR Job 
-	DELETE t
-	FROM @Update_CustTbl t
-	WHERE EXISTS (
-					SELECT 1
-					FROM DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
-					WHERE ulvrs.CustID = t.CustID
-					)
+	----Exclude list of Auto Update VR Job 
+	--DELETE t
+	--FROM @Update_CustTbl t
+	--WHERE EXISTS (
+	--				SELECT 1
+	--				FROM DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
+	--				WHERE ulvrs.CustID = t.CustID
+	--				)
 
 	IF NOT EXISTS( SELECT 1 FROM @Update_CustTbl)
 		RETURN
@@ -172,7 +173,7 @@ BEGIN
 
 	DECLARE @NewLogData VARCHAR(MAX)
 	DECLARE @custID INT
-	--Log Update VR for each customer
+	--Log Update VR for each customer + Unlock VR status
 	WHILE 1 = 1
 	BEGIN
 		UPDATE TOP(1)  c
@@ -182,6 +183,15 @@ BEGIN
 		WHERE Islog = 0
 
 		IF @@ROWCOUNT = 0 BREAK;
+
+		--Update VR lock status to unlocked
+		EXEC Acc_VRCustLockStatusUpd 
+			 @custid = @custid
+			,@UserID = 0
+			,@VRLockedStatus_Soccer = 0
+			,@VRLockedStatus_OS = 0
+			,@IP = ''
+			,@UpdateBy = 'Agent profile check'
 
 		SELECT @NewLogData = '<R '
 							+ 'Type="'

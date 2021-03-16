@@ -8,6 +8,8 @@ ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier
 				,	@IsLicenseeUser		BIT				= 0
 				,	@ErrCode			INT				= 0		OUTPUT
 				,	@ErrMsg				NVARCHAR(4000)	= ''	OUTPUT  
+				,   @VRLockedStatus_Soccer		BIT = NULL
+				,   @VRLockedStatus_OS			BIT = NULL
 AS  
 /*  
 	Created:	
@@ -40,6 +42,7 @@ AS
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
 		- 20200827@Eden: VR Adjustment by Agent profile [#140421]
 		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
+		- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
 
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
@@ -68,11 +71,6 @@ BEGIN
 									,VirtualMultiplier SMALLMONEY	
 								)
 	DECLARE @DocHandler INT		
-	
-	DECLARE	@lockedVRmembers	VARCHAR(MAX)
-	DECLARE	@AutoAdjustVRAgents  VARCHAR(MAX)	 												
-	DECLARE	@AutoAdjustVRmembers VARCHAR(MAX)	
-	DECLARE	@AutoAdjustVRmembers_All VARCHAR(MAX) 
 
 	set @startRun = getdate()  
 	  
@@ -143,54 +141,49 @@ BEGIN
 	BEGIN  
 		select @ErrMsg    = N'Invalid virtual rate.', @ErrCode = 101  
 		return  
-	END  
-	/*  
-	IF @currency <> 20 AND @UserID not IN (  
-			1274,    --steven  
-			2433,    --WAN  
-			44919,    --WONG  
-			55421,    --MELVIN  
-			25520,    --joe  
-			360418    --dbaThien  
-	)  
-	BEGIN  
-		select @ErrMsg    = N'You are not authorized to edit this value.', @ErrCode = 102  
-		return  
-	END  
-	*/  
+	END 
 	
-	-- SELECT locked VR member
-	SELECT	@lockedVRmembers =	(
-				SELECT	DISTINCT ulvrs.CustID '@CustID'
-				FROM	DBLOG.bodb_CustomerLog.dbo.UserLog_VirtualRateSettings AS ulvrs WITH (NOLOCK)
-		FOR XML PATH ('LockedVR')
-	,	ROOT ('ROOT')
-	);
+	DECLARE   @Old_VRLockedStatus_Soccer BIT = 0
+			, @IsUpdate_VRLockedStatus_Soccer BIT = 0
+			, @Old_VRLockedStatus_OS BIT = 0
+			, @IsUpdate_VRLockedStatus_OS BIT = 0
 
-	--Lock Agent and member when adjust super, master
-	SELECT	@AutoAdjustVRAgents =	(
-				SELECT AgentID AS '@CustID'
-				FROM VRAgentAutoAdjustment WITH(NOLOCK) 
-				WHERE Type = 1 AND [Status] = 2
-		FOR XML PATH ('AutoAdjustVR')
-	,	ROOT ('ROOT')
-	);
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 1)
+		SET @Old_VRLockedStatus_Soccer = 1
 
-	SELECT	@AutoAdjustVRmembers =	(
-				SELECT CustID '@CustID'
-				FROM VRCustAutoAdjustment WITH(NOLOCK) 
-				WHERE SportType = 99 AND [Status] = 2
-		FOR XML PATH ('AutoAdjustVR')
-	,	ROOT ('ROOT')
-	);
+	SET @VRLockedStatus_Soccer = ISNULL(@VRLockedStatus_Soccer,@Old_VRLockedStatus_Soccer)
 
-	SELECT	@AutoAdjustVRmembers_All =	(
-				SELECT CustID '@CustID'
-				FROM VRCustAutoAdjustment WITH(NOLOCK) 
-				WHERE SportType = 100 AND [Status] = 2
-		FOR XML PATH ('AutoAdjustVR')
-	,	ROOT ('ROOT')
-	);
+	IF @VRLockedStatus_Soccer <> @Old_VRLockedStatus_Soccer
+	BEGIN
+		SET @IsUpdate_VRLockedStatus_Soccer = 1
+	END 
+
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 2)
+		SET @Old_VRLockedStatus_OS = 1
+	
+	SET @VRLockedStatus_OS = ISNULL(@VRLockedStatus_OS,@Old_VRLockedStatus_OS)
+
+	IF @VRLockedStatus_OS <> @Old_VRLockedStatus_OS
+	BEGIN
+		SET @IsUpdate_VRLockedStatus_OS = 1
+	END
+
+	IF @IsUpdate_VRLockedStatus_OS = 1 OR @IsUpdate_VRLockedStatus_Soccer = 1
+	BEGIN
+		--Update VR lock status
+		EXEC Acc_VRCustLockStatusUpd 
+			@custid = @custid
+			,@UserID = @UserID
+			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
+			,@VRLockedStatus_OS = @VRLockedStatus_OS
+			,@IP = @IP
+			,@UpdateBy = 'Manual'
+			,@ErrCode = @ErrCode OUTPUT
+			,@ErrMsg = @ErrMsg OUTPUT
+
+		IF @ErrCode <> 0
+			RETURN
+	END
 		
 	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
 				@custid = @custid
@@ -198,12 +191,11 @@ BEGIN
 			,	@action = 'VirtualMultiplier'
 			,	@EnableVirtualrate = @EnableVirtualrate
 			,	@virtualmultiplier = @virtualmultiplier
-			,	@lockedVRmembers = @lockedVRmembers
-			,	@AutoAdjustVRAgents = @AutoAdjustVRAgents
-			,   @AutoAdjustVRmembers = @AutoAdjustVRmembers
-			,   @AutoAdjustVRmembers_All = @AutoAdjustVRmembers_All
+			,	@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
+			,   @IsUpdate_VRLockedStatus_Soccer = @IsUpdate_VRLockedStatus_Soccer
+			,	@VRLockedStatus_OS = @VRLockedStatus_OS
+			,   @IsUpdate_VRLockedStatus_OS = @IsUpdate_VRLockedStatus_OS
 				
-	 
 	Declare @LogSPData varchar(MAX) = '',
 			@LogSPData2 varchar(MAX)= ''  
 	
