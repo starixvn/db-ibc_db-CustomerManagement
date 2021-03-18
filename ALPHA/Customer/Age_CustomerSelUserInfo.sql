@@ -57,6 +57,7 @@ Revisions:
 	- 20201130@Tina: Add GDG (Gold Diamond Gaming) Live casino [Redmine: #144105]
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
+	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -165,6 +166,7 @@ Param's Explanation:
 		,	@bitmapOrder_GDG			INT
 		--BG
 		,	@bitmapOrder_BG			INT 
+		,	@bitmapOrder_SportsLottery	INT 
 		 
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
@@ -185,7 +187,7 @@ Param's Explanation:
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
 	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
-
+	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)	
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -209,6 +211,7 @@ Param's Explanation:
 		--GDG
 		,	@IsHidden_GDG			INT = 1
 		,	@IsHidden_BG		INT = 1
+		,	@IsHidden_SportsLottery		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -229,6 +232,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 224, @IsHide = @IsHidden_RNGWar OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -379,7 +383,10 @@ Param's Explanation:
 								THEN 0
 							ELSE 1 
 					END AS BIT) AS HideGDG,		
-			--end GDG	
+			--end GDG
+			-- For Sports Lottery
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery)) AS DisableSportsLottery,			
+			CAST(CASE WHEN @IsHidden_SportsLottery = 0 AND	ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSportsLottery,				
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,
