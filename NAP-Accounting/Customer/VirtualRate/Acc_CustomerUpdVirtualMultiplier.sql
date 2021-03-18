@@ -10,6 +10,7 @@ ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier
 				,	@ErrMsg				NVARCHAR(4000)	= ''	OUTPUT  
 				,   @VRLockedStatus_Soccer		BIT = NULL
 				,   @VRLockedStatus_OS			BIT = NULL
+				,   @CopyFrom					INT = NULL --Source CustID of Copy VR function
 AS  
 /*  
 	Created:	
@@ -43,6 +44,7 @@ AS
 		- 20200827@Eden: VR Adjustment by Agent profile [#140421]
 		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 		- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
 
 	Param's Explanation:  
 	• @virtualmultiplier = '<ROOT>
@@ -210,7 +212,7 @@ BEGIN
 	  
 	END
 	
-	IF @EnableVirtualrate = 1
+	--IF @EnableVirtualrate = 1
 	BEGIN		
 		SELECT @LogSPData2 =
 		(
@@ -224,6 +226,7 @@ BEGIN
 		)
 		
 		Select @LogSPData2 = '<Acc_CustomerUpdVirtualMultiplier CustID="'+ cast(@custid as varchar(50))+ '" ' +  							
+							'CopyFrom="'+ coalesce(cast(@CopyFrom as varchar(50)),space(1))+ '" ' + 
 							'UserID="'+ cast(@UserID as varchar(50))+ '" ' +  
 							'ErrCode="'+ cast(@ErrCode as varchar(50)) + '" '+  
 							'ErrMsg="'+ cast(@ErrMsg as varchar(50)) + '" '+  
