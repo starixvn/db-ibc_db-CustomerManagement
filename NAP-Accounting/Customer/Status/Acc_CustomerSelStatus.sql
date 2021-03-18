@@ -557,7 +557,7 @@ Param's Explanation:
 			--For RNGWar
 			@DisableSportsLottery AS DisableSportsLottery,
 			@HideSportsLottery AS HideSportsLottery,
-			@SyncedSportsLottery AS SyncedSportsLottery
+			@SyncedSportsLottery AS SyncedSportsLottery,
 			--For PpLive
 			@DisablePPLive AS DisablePPLive,
 			@HidePPLive AS HidePPLive,
