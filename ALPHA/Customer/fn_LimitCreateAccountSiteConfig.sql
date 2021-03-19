@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
-CREATE FUNCTION fn_IsSiteLimitCreateAccount (@Site VARCHAR(50) = '' )
-RETURNS INT
+CREATE FUNCTION fn_LimitCreateAccountSiteConfig (@Site VARCHAR(50) = '' )
+RETURNS TABLE
 AS
 /*
 	Created By: Winfred
@@ -11,9 +11,12 @@ AS
 	Revisions:
 		- 20210319@Winfred: Check Site to limit create accounts [Redmine: #151526]
 */
-BEGIN
-	RETURN CASE WHEN @Site in ('IBCIndo') THEN 300 ELSE 0 END	
-END
+RETURN
+	WITH Temp AS (
+		SELECT CAST('IBCIndo' AS VARCHAR(50)) AS Site, CAST(300 AS INT) AS Limit	
+	)
+	SELECT Site,Limit FROM Temp WHERE Site = @Site 
+
 
 
 
