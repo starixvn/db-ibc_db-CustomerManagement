@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
-CREATE FUNCTION fn_LimitCreateAccountSiteConfig (@Site VARCHAR(50) = '' )
+ALTER FUNCTION fn_LimitCreateAccountSiteConfig (@Site VARCHAR(50) = '' )
 RETURNS TABLE
 AS
 /*
@@ -13,7 +13,7 @@ AS
 */
 RETURN
 	WITH Temp AS (
-		SELECT CAST('IBCIndo' AS VARCHAR(50)) AS Site, CAST(300 AS INT) AS Limit	
+		SELECT CAST('IBCIndo' AS VARCHAR(50)) AS Site, CAST(300 AS INT) AS Limit
 	)
 	SELECT Site,Limit FROM Temp WHERE Site = @Site 
 
