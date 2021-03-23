@@ -59,7 +59,7 @@ BEGIN
 	FROM dbo.Msg m WITH (NOLOCK, INDEX=IX_PostTime)
 		CROSS APPLY (
 				SELECT TOP 1 TargetId, isDeleted
-				FROM dbo.MsgTarget WITH (NOLOCK, INDEX=IX_TargetId) 
+				FROM dbo.MsgTarget WITH (NOLOCK, INDEX=IX_MessageId) 
 				WHERE MessageId = m.MessageId
 					AND isDeleted = 0
 			)mt
