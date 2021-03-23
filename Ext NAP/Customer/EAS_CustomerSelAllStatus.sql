@@ -17,7 +17,7 @@ AS
 		- 20200713@Eden: Integrate 3 new bet types for Keno [Redmine: #137475]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
-		
+		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
@@ -170,10 +170,10 @@ BEGIN
 			@uplineSyncCasino AS uplineSyncCasino,
 			ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			@uplineHideGoldDeluxe AS uplineHideGoldDeluxe,
+			1 AS uplineHideGoldDeluxe,
 			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
 			ci.DisableGoldDeluxe,
-			ci.HideGoldDeluxe,
+			1 as HideGoldDeluxe,
 			ci.HideKeno,
 			MAX(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
 	FROM customer c WITH (NOLOCK)
