@@ -2,7 +2,8 @@
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd   
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
-	,@IsUpdateByCredit BIT = 0
+	,@UpdateType TINYINT = 0 
+	,@UserID INT = 0
 AS  
 /*  
 	Created:	20210219@Eden:	
@@ -13,14 +14,16 @@ AS
 	Revisions:  
 	    - 20210219@Eden: First commit [#150298]
 		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#150298]
+		- 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
 
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exclude BasketBall and Esport
 
-		@IsUpdateByCredit =
+		@UpdateType =
 			0: Update status = 1 when check performance
 			1: Update when check Credit <= config credit
+			2: Manual
 
 	Examples:
 		EXEC Acc_VR_MemberBigStake_WhiteList_Upd @CustIDList = '1,4935,5029,5052'
@@ -103,13 +106,14 @@ BEGIN
 												ELSE space(1) 
 											END+ '" '
 								+ 'Reason="'
-										+ CASE	WHEN @IsUpdateByCredit = 1 THEN 'Credit' 
+										+ CASE	WHEN @UpdateType = 1 THEN 'Credit' 
+												WHEN @UpdateType = 2 THEN 'Manual'
 												ELSE 'Winloss'
 											END+ '" '
 								+ ' />'
 	
 			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-				@UserId				= 0,
+				@UserId				= @UserId,
 				@custID				= @custID,
 				@ActionId			= 828,
 				@TrackingValue		= @NewLogData
@@ -124,7 +128,10 @@ BEGIN
 				FROM
 					(SELECT  CustID AS '@CustID',
 							@Type AS '@Type', 
-							CASE WHEN @IsUpdateByCredit  = 1 THEN 'WhiteListByCredit' ELSE 'WhiteListByWinLoss' END AS '@Action'
+							CASE WHEN @UpdateType  = 1 THEN 'WhiteListByCredit' 
+								WHEN @UpdateType  = 2 THEN 'WhiteListByManual'
+								ELSE 'WhiteListByWinLoss' 
+							END AS '@Action'
 					FROM @UpdatedTbl
 					UNION ALL
 					SELECT  CustID AS '@CustID',
@@ -136,7 +143,7 @@ BEGIN
 			)
 
 	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-		@UserId				= 0,
+		@UserId				= @UserId,
 		@ActionId			= 827,
 		@TrackingValue		= @NewLogData,
 		@Duration			= @Duration

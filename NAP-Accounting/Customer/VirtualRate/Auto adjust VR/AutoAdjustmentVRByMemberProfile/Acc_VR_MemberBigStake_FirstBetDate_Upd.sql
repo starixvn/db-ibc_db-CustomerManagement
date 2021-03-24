@@ -12,7 +12,8 @@ AS
   
 	Revisions:  
 	    - 20210219@Eden: First commit [#150298]
-		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#150298]
+		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#152095]
+		- 20210323@Eden: Enhancement for VR Member Big Stake [#150298]
 
 	Param's Explanation:  
 		@Type = 
@@ -92,11 +93,50 @@ BEGIN
 			EXEC Acc_VR_MemberBigStake_WhiteList_Upd 
 				@CustIDList = @UpdateWL_CustIDList,
 				@Type = @Type,
-				@IsUpdateByCredit = 1
+				@UpdateType = 1
 	END
 
 	IF @UpdatedCount + @DeletedCount = 0
 		RETURN -- nothing to log
+
+	DECLARE @UpdatedCustTbl_NotWL TABLE (CustID INT, Islog BIT DEFAULT 0)
+
+	DECLARE @LogData VARCHAR(MAX)
+	DECLARE @custID INT
+	--Log Update VR for each customer
+
+	INSERT INTO @UpdatedCustTbl_NotWL(CustID)
+	SELECT t.CustID
+	FROM @UpdatedCustTbl t
+	WHERE t.CustID NOT IN (SELECT p.val FROM dbo.f_StringSplit(@UpdateWL_CustIDList,',') p )
+	OPTION (MAXRECURSION 0)
+	
+	BEGIN
+		WHILE 1 = 1
+		BEGIN
+			UPDATE TOP(1)  c
+			SET c.islog = 1,
+				@custID = c.CustID
+			FROM @UpdatedCustTbl_NotWL c
+			WHERE Islog = 0
+
+			IF @@ROWCOUNT = 0 BREAK;
+
+			SELECT @LogData = '<R '
+								+ 'Type="'
+										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+												ELSE space(1) 
+											END+ '" '
+								--+ 'BetDate="' + ISNULL(CONVERT(VARCHAR(10),@BetDate),'') +  '" '
+								+ ' />'
+	
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserId				= 0,
+				@custID				= @custID,
+				@ActionId			= 831,
+				@TrackingValue		= @LogData
+		END
+	END
 
 	set @endRun = getdate()  
 	set @duration  = datediff (millisecond,@startRun,@endRun) 
