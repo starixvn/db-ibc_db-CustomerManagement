@@ -18,6 +18,7 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210104@Eden: add product Max Game [Redmine: #147232]
 		- 20210302@Winfred: add Habanero  [RedmineID: #145459]
+		- 20210324@Winfred: Get product Creative Gaming in MaCau Game [Redmine: #146016]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -126,6 +127,7 @@ BEGIN
 		SELECT 60, CASE WHEN  isHidden = 0 THEN  @MaxGameDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Max Game
 		UNION ALL
 		SELECT 61, CASE WHEN  isHidden = 0 THEN  @HabaneroDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Habanero
+		SELECT 62, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Creative Gaming
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
