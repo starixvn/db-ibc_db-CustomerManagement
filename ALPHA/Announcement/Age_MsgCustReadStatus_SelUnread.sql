@@ -56,17 +56,18 @@ BEGIN
 	SELECT SUM(CASE WHEN m.MsgType = 3 AND m.IsSticky = 0 AND m.PostTime > @lastSeenNormalMsg THEN 1 ELSE 0 END) as Normal
 		,SUM(CASE WHEN m.IsSticky = 1 AND m.PostTime > @lastSeenSpecialMsg THEN 1 ELSE 0 END) as Special		
 		,SUM(CASE WHEN m.MsgType = 1 AND m.PostTime > @lastSeenPersonalMsg THEN 1 ELSE 0 END) as Personal
-	FROM dbo.Msg m WITH (NOLOCK, INDEX=IX_PostTime)
+	FROM @mInfo s 
+		INNER HASH JOIN Msg m WITH (NOLOCK, INDEX=IX_PostTime) on m.MsgType = s.MsgType 
 		CROSS APPLY (
-				SELECT TOP 1 TargetId, isDeleted
-				FROM dbo.MsgTarget WITH (NOLOCK, INDEX=IX_MessageId) 
-				WHERE MessageId = m.MessageId
-					AND isDeleted = 0
-			)mt
-		INNER JOIN @mInfo AS s ON m.MsgType = s.MsgType AND mt.TargetId = s.TargetId		
-	WHERE m.isDeleted = 0		
-		AND m.IsTest = @IsTest
-		AND m.PostTime > @minLastSeen
+					SELECT TOP 1 TargetId, isDeleted
+					FROM dbo.MsgTarget WITH (NOLOCK) 
+					WHERE MessageId = m.MessageId
+						AND isDeleted = 0
+						AND targetID = s.targetID
+				)mt
+	WHERE  m.PostTime > @minLastSeen 
+		AND m.isDeleted = 0 
+		AND  m.IsTest = @IsTest
 END
 
 GO
