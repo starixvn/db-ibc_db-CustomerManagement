@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_WinLimit_Notification_ServiceRetry_Update]
+ALTER PROCEDURE [dbo].[NAP_WinLimit_Notification_ServiceRetry_Update]
 (
 	@logIDs VARCHAR(MAX)
 )
@@ -55,4 +55,5 @@ BEGIN
 		
 	END
 	DROP TABLE #logIDs
+	DROP TABLE #logIDs_batch
 END	
