@@ -20,20 +20,12 @@ AS
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200428@Malcolm : re-order products [Redmine : #132760]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
-
+		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)
-	--gold deluxe
-	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND HideGoldDeluxe = 0)
-	BEGIN
-		INSERT INTO @Products(BetType, SportType, ProductName, ProductID)
-		SELECT 1701, 255, ProductName, ProductID
-		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 12
-		--VALUES(1701, 255, 'Gold Deluxe')
-	END
 
 	--RnG Casino
 	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND SyncCasino = 1)
