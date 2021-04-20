@@ -17,6 +17,7 @@ AS
 		- 20200911@Winfred: add product joker [Redmine: #131603]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210104@Eden: add product Max Game [Redmine: #147232]
+		- 20210302@Winfred: add Habanero  [RedmineID: #145459]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -39,7 +40,7 @@ BEGIN
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
 	
-	DECLARE @PGDisable BIT  = 1   ,@SiteID int 
+	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
@@ -47,6 +48,24 @@ BEGIN
 	BEGIN
 		SET @PGDisable = 0 
 	END
+	
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 234 AND BetType = 6401 )
+	BEGIN
+		SET @JokerDisable = 0 
+	END
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 237 AND BetType = 5401 )
+	BEGIN
+		SET @MaxGameDisable = 0 
+	END
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 238 AND BetType = 7001 )
+	BEGIN
+		SET @HabaneroDisable = 0 
+	END
+	
+	
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
 	SELECT @SuperID = ci.srecommend
@@ -102,9 +121,11 @@ BEGIN
 		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
 		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
 		UNION ALL
-		SELECT 56, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
+		SELECT 56, CASE WHEN  isHidden = 0 THEN  @JokerDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Joker
 		UNION ALL
-		SELECT 60, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Max Game
+		SELECT 60, CASE WHEN  isHidden = 0 THEN  @MaxGameDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Max Game
+		UNION ALL
+		SELECT 61, CASE WHEN  isHidden = 0 THEN  @HabaneroDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Habanero
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
