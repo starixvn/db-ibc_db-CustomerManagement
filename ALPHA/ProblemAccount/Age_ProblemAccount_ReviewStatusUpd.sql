@@ -19,7 +19,7 @@ AS
 	Revisions:
 		- 20200210@Elodie: Initial SP [Redmine:#127446]
 		- 20200306@Elodie: Allow view problem account for master and agent [Redmine:#129881]
-
+		- 20210422@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 	Param's Explanation:
 		@UserId: Customer login
 		@SubAccId: SubAccount Id
@@ -80,12 +80,15 @@ BEGIN
 	INSERT INTO #tempCust(CustId)
 	SELECT d.custid
 	FROM #Downlines d
-		INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON d.CustId = pa.CustId
-	WHERE pa.IsReviewed = 0 AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+		INNER JOIN custInfo ci WITH(NOLOCK) ON d.custid = ci.custid
+		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
+	WHERE pa.IsReviewed = 0 
+		AND ci.CustomerClass BETWEEN 8 AND 13
+		--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
-	FROM dbo.ProblemAccount pa WITH (NOLOCK)
+	FROM dbo.ProblemAccountClassification pa WITH (NOLOCK)
 		INNER JOIN #tempCust t ON pa.CustId = t.CustId
 	
 	WHILE (1=1)
