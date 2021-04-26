@@ -27,6 +27,7 @@ AS
 		- 20180706@Kan: Rollback new global setting to old value after World Cup event [Redmine: 97774]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration - move to DBCUST [Redmine: 104770]
 		- 20200512@Johnson: check super's prefix before adding into 789y's group [redmine:#133846]
+		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
 */
 
 BEGIN
@@ -110,7 +111,7 @@ BEGIN
 	VALUES (@CustID, @RoleID, @GroupName)
 
 	-- Check Extra PT Group
-	IF EXISTS (SELECT 1 FROM DBACC.bodb_Acc.dbo.Acc_DWLList_ExtraPT WITH(NOLOCK) WHERE GroupName = @GroupName)
+	IF EXISTS (SELECT 1 FROM dbo.Acc_DWLList_ExtraPT WITH(NOLOCK) WHERE GroupName = @GroupName)
 	BEGIN
 		UPDATE dbo.Acc_CustGroup WITH(ROWLOCK, UPDLOCK)
 		SET IsPayout = 1
