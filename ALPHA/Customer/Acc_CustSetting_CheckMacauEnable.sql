@@ -17,6 +17,7 @@ BEGIN
 			- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 			- 20201229@Eden: MaxGame [Redmine: #147232]
 			- 20210302@Winfred: add Habanero  [RedmineID: #145459]
+			- 20210324@Winfred: Check Creative Gaming on site [Redmine: #146016]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -57,6 +58,7 @@ BEGIN
 					   WHEN  234  THEN 56 -- Joker
 					   WHEN  237  THEN 60 -- MaxGame
 					   WHEN  238  THEN 61 -- Habanero 
+					   WHEN  167  THEN 62 -- Creative Gaming
 					   ELSE 55 END as ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	
