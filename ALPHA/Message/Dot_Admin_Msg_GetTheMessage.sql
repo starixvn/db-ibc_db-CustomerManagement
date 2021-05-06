@@ -48,6 +48,9 @@ BEGIN
 		@Remark [varchar](300) ,
 		@IsTest BIT,@MatchId INT, @IsBatch BIT
 
+	CREATE TABLE #MsgTarget_total (TargetId INT, TargetName NVARCHAR(60), BetTransId VARCHAR(MAX))
+	CREATE TABLE #MsgTarget_dup (TargetId INT, TargetName NVARCHAR(60))
+	
 	SELECT @MessageId = MessageId, @Content_en = Content_en , @Content_cs = Content_cs, @Content_ch = Content_ch,
 		   @Content_jp = Content_jp, @Content_th = Content_th, @Content_it = Content_it, @Content_ko = Content_ko,
 		   @Content_es = Content_es, @Content_vn = Content_vn, @Content_id = Content_id, @Content_el = Content_el,
@@ -60,13 +63,13 @@ BEGIN
 	FROM dbo.Msg  WITH (NOLOCK)
 	WHERE MessageId = @MessageID AND isDeleted = 0
 	
+	INSERT INTO #MsgTarget_total (TargetId, TargetName, BetTransId)
 	SELECT TargetId,TargetName,BetTransId
-	INTO #MsgTarget_total
 	FROM dbo.MsgTarget WITH (NOLOCK)
 	WHERE MessageId = @MessageID AND isDeleted = 0
 
+	INSERT INTO #MsgTarget_dup (TargetId, TargetName)
 	SELECT TargetId, TargetName
-	INTO #MsgTarget_dup
 	FROM #MsgTarget_total
 	GROUP BY TargetId,TargetName
 	HAVING COUNT(1) > 1

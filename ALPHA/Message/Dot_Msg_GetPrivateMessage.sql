@@ -281,7 +281,15 @@ BEGIN
 							, m.TargetId, 
 							0 as rownum
 		FROM #MsgTarget_dup  mt
-				CROSS APPLY (SELECT TOP 1 *
+				CROSS APPLY (SELECT TOP 1  m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
+									m.Content_jp, m.Content_th, m.Content_it, m.Content_ko,
+									m.Content_es, m.Content_vn, m.Content_id, m.Content_el,
+									m.Content_mx, m.Content_zhcn,
+									m.PostTime, m.CreateTime, m.LastUpdateTime,
+									m.MsgType, m.IsSticky, m.IsTest, m.MatchId, m.IsBatch,
+									m.Creator, m.LastUpdator, 
+									m.CreatorName, m.LastUpdateName,
+									m.TargetName, m.TargetId
 							FROM #MsgTmp m 
 							WHERE MessageId = mt.MessageId AND TargetId = mt.TargetId
 						)m
