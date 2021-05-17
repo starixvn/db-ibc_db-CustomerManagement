@@ -20,6 +20,7 @@ AS
 		- 20210302@Winfred: add Habanero  [RedmineID: #145459]
 		- 20210324@Winfred: Get product Creative Gaming in MaCau Game [Redmine: #146016]
 		- 20210506@Winfred: Get product AdvantPlay in MaCau Game [Redmine: #154258]
+		- 20210514@Winfred: Get product AdvantPlay Mini in MaCau Game [Redmine: #155133]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -42,7 +43,7 @@ BEGIN
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
     WHERE c.custid = @custid
 	
-	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 
+	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 ,@AdvantPlayMiniDisable BIT  = 1
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
@@ -77,7 +78,11 @@ BEGIN
 	BEGIN
 		SET @AdvantPlayDisable = 0 
 	END
-	
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 174 AND BetType = 7801 )
+	BEGIN
+		SET @AdvantPlayMiniDisable = 0 
+	END
 	
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
@@ -143,6 +148,8 @@ BEGIN
 		SELECT 62, CASE WHEN  isHidden = 0 THEN  @CGDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- Creative Gaming
 		UNION ALL
 		SELECT 67, CASE WHEN  isHidden = 0 THEN  @AdvantPlayDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- AdvantPlay	
+		UNION ALL
+		SELECT 68, CASE WHEN  isHidden = 0 THEN  @AdvantPlayMiniDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- AdvantPlay Mini	
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0

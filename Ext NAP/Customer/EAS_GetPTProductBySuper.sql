@@ -19,6 +19,7 @@ AS
 		- 20210324@Winfred: Get value PT Creative Gaming for customer [Redmine: #146016]
 		- 20210426@Tina: Add VGaming [Redmine: #153938]
 		- 20210506@Winfred: Get value PT  AdvantPlay for customer [Redmine: #154258]
+		- 20210514@Winfred: Get value PT  AdvantPlay Mini for customer [Redmine: #155133]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -100,6 +101,7 @@ BEGIN
 		 WHEN c.SportType = 238 THEN  61
 		 WHEN c.SportType = 167 THEN  62
 		 WHEN c.SportType = 172 THEN  67
+		 WHEN c.SportType = 174 THEN  68
 		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.CustID = b.CustID
