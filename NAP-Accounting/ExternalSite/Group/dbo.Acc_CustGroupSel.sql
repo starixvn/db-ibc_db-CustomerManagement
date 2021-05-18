@@ -18,6 +18,7 @@ AS
 		- 20170926@Percy: Move the table: Acc_GroupExtraPTSetting from DBACC.bodb_ACC to DBAGE.bodb02 [RedmineID: #83600]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
+		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
 */
 
 BEGIN
@@ -35,7 +36,7 @@ BEGIN
 	DECLARE @GroupExtraPTSetting TABLE (SuperId INT, GroupId INT, GroupName VARCHAR(50), EffectiveDate DATETIME, IsPrimary BIT)
 
 	INSERT INTO @GroupExtraPT (GroupName)
-	SELECT GroupName FROM OPENQUERY(DBACC, 'SELECT GroupName FROM bodb_Acc.dbo.Acc_DWLList_ExtraPT WITH(NOLOCK)')
+	SELECT GroupName FROM dbo.Acc_DWLList_ExtraPT WITH(NOLOCK)
 
 	INSERT INTO @GroupExtraPTSetting (SuperId, GroupId, GroupName, EffectiveDate, IsPrimary)
 	SELECT SuperId, GroupId, GroupName, EffectiveDate, CONVERT(BIT, 1) AS IsPrimary
