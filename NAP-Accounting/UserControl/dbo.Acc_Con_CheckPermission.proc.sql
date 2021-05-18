@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-c" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission]
 	@CustID int, 
 	@FuncID int=null,
@@ -17,6 +17,7 @@ AS
 		- 20101123@Jamie: Change to use acc_functioninfo instead of acc_functioninfo_1 
 		- 20110526@Tom: Remove condition @System
 		- 20180808@Helen: Get Code from Production +  DB05.DBPOLICY migration - [Redmine:99462]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -31,11 +32,12 @@ BEGIN
 	IF @RoleID Between 5 and 10
 		BEGIN 
 			SELECT @IsAllow=(isnull(mp.policy,0)|isnull(gp.policy,0)) & isnull(fi.FuncRender,0)
-			FROM AccCustomer ac with(nolock) inner join CUSTDB.dbo.custinfo ci with(nolock) on ac.custid=ci.custid
+			FROM AccCustomer ac with(nolock) 
+				inner join CUSTDB.dbo.CustProductStatus cps with(nolock) on ac.custid=cps.custid
 				Left JOIN acc_functioninfo fi with(nolock) on fi.funcid=@funcid
 				LEFT JOIN Acc_MemberPolicy mp with(nolock) on mp.custid=ac.custid and mp.funcid=@funcid
 				LEFT JOIN Acc_GroupPolicy gp with(nolock) on gp.groupid=ac.groupid and gp.funcid=@funcid
-			WHERE ac.Custid=@Custid and ci.closed=0
+			WHERE ac.Custid=@Custid and cps.CloseInfo=0
 			SELECT @IsAllow = isnull(@IsAllow,0)		
 		END
 	ELSE IF @Roleid > 1
@@ -60,11 +62,3 @@ BEGIN
 		SET @ErrCode=0
 END	
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_CheckPermission] TO [vnteam]	
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbExtAccNet]
-Go
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbDownlineNet]
-	

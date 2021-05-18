@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminSelByGroupID]
 	@Groupid INT = NULL, 
 	@UserID int = 0,
@@ -18,6 +18,7 @@ AS
 		- 20121129@Johnson: hard code to hide some ABS's users
 		- 20140109@Lukas: exclude user admin in external group
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		
 	Explain @Param
 		--Search username: '%username%'
@@ -67,13 +68,13 @@ BEGIN
 					 c.username,
 					 c.firstname,
 					 c.lastname,
-					 ci.closed,
+					 CASE WHEN cps.CloseInfo > 0 THEN 1 ELSE 0 END AS closed,
 					 ac.createdate,
 					 ct.username AS creator
 			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
-					 CUSTDB.dbo.custinfo AS ci WITH (NOLOCK)
-					 ON c.custid = ci.custid
+					 CUSTDB.dbo.CustProductStatus AS cps WITH (NOLOCK)
+					 ON c.custid = cps.custid
 					 INNER JOIN
 					 acccustomer AS ac WITH (NOLOCK)
 					 ON c.custid = ac.custid
@@ -101,7 +102,7 @@ BEGIN
 												155	, --ACCUT
 												156	  --AccYen668
 											)
-			ORDER BY isnull(ci.closed, 0), c.username, ac.groupid
+			ORDER BY isnull(cps.CloseInfo, 0), c.username, ac.groupid
 		END
 	ELSE
 		BEGIN
@@ -111,13 +112,13 @@ BEGIN
 					 c.username,
 					 c.firstname,
 					 c.lastname,
-					 ci.closed,
+					 CASE WHEN cps.CloseInfo > 0 THEN 1 ELSE 0 END AS closed,
 					 ac.createdate,
 					 ct.username AS creator
 			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
-					 CUSTDB.dbo.custinfo AS ci WITH (NOLOCK)
-					 ON c.custid = ci.custid
+					 CUSTDB.dbo.CustProductStatus AS cps WITH (NOLOCK)
+					 ON c.custid = cps.custid
 					 INNER JOIN
 					 (SELECT custid,
 							groupid,
@@ -151,10 +152,7 @@ BEGIN
 												155	, --ACCUT
 												156	  --AccYen668
 											)			 
-			ORDER BY isnull(ci.closed, 0), c.username, ac.groupid
+			ORDER BY isnull(cps.CloseInfo, 0), c.username, ac.groupid
 		END
 END		
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminSelByGroupID] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminSelByGroupID] TO [vnteam] AS [dbo]
