@@ -17,6 +17,7 @@ AS
 		- 20201230@Eden: Enhance Sp and include MaxGame [Redmine: #147232]
 		- 20210302@Winfred: add Habanero  [RedmineID: #145459]
 		- 20210324@Winfred: Get value PT Creative Gaming for customer [Redmine: #146016]
+		- 20210426@Tina: Add VGaming [Redmine: #153938]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -70,7 +71,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #ProductSettingDetail b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,22,42,44) -- Live Casino, Macau Games , Saba.club, RNG Lottery
+	WHERE (B.ProductID IN (41,22,42,44,66) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
