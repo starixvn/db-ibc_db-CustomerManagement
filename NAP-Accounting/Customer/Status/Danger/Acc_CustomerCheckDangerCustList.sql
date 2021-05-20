@@ -19,6 +19,7 @@ Original:
 
 Revisions:	
 	- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
+	- 20210519@Winfred: Remove constraints update range 41-50 of Dangerous Setting [Redmine: #155280]
 Param's Explanation:
 	@UsernameList: List usernames of members will be submited
 
@@ -313,12 +314,12 @@ BEGIN
 
 	--end
 	--Do not allow to update danger level 41->50 for danger type 1
-	IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
-	BEGIN	
-		SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',
-				@ErrCode = 102
-		RETURN	
-	END
+	--IF @DangerType = 1 AND @DangerLevel BETWEEN 41 AND 50
+	--BEGIN	
+	--	SELECT	@ErrMsg = 'You are not authorized to update danger level with range [41->50]',
+	--			@ErrCode = 102
+	--	RETURN	
+	--END
 	--Do not allow deposit accounts to update Super and Master danger level
 	IF EXISTS (SELECT 1
 				FROM Customer C WITH (NOLOCK)
