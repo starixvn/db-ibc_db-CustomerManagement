@@ -19,7 +19,7 @@ AS
 
 	Revisions:
 		- 20201009@Johnson: Initial SP [Redmine:#142957]
-	
+		- 20210426@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 	Parameter's Explanation:
 		@GroupName: ext group
 		@UplineUsername: search downlines under @UplineUsername, not required
@@ -55,18 +55,20 @@ BEGIN
 	IF @SearchRoleId = 3
 	BEGIN
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
-		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
-		FROM  dbo.ProblemAccount p WITH (NOLOCK)
+		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
+		FROM  dbo.custinfo ci WITH (NOLOCK)
+			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid																				
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 		WHERE c.srecommend IN (SELECT custId 
 								FROM @tmpSuper
 								WHERE 1 = CASE WHEN (@UplineID IS NOT NULL AND custId= @UplineID) OR @UplineID IS NULL THEN 1 ELSE 0 END
-								)			
+								)
+			AND ci.CustomerClass BETWEEN 8 AND 13					
 			AND c.roleid = 3
-			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
+			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-			AND p.ReasonId IS NOT NULL
+			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 			
 		SELECT @TotalRows = @@ROWCOUNT
@@ -75,26 +77,28 @@ BEGIN
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
 			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
-						FROM dbo.custInfo ci WITH (NOLOCK) 
-							INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
+						FROM dbo.custInfo ci WITH (NOLOCK) 							
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
-							AND pa.ReasonId IS NOT NULL
+							AND ci.CustomerClass BETWEEN 8 AND 13	
+							--AND pa.ReasonId IS NOT NULL
 						GROUP BY ci.mrecommend) AS pa		
 	END
 	ELSE IF @SearchRoleId = 2 	
 	BEGIN
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
-		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
-		FROM  dbo.ProblemAccount p WITH (NOLOCK)
+		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
+		FROM  dbo.custinfo ci WITH (NOLOCK)
+			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.mrecommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 2
-			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
+			AND ci.CustomerClass BETWEEN 8 AND 13	
+			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-			AND p.ReasonId IS NOT NULL
+			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 			
 		SELECT @TotalRows = @@ROWCOUNT
@@ -103,26 +107,28 @@ BEGIN
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
 			CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
-						FROM dbo.custInfo ci WITH (NOLOCK) 
-							INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON pa.CustId = ci.custid
+						FROM dbo.custInfo ci WITH (NOLOCK) 							
 						WHERE ci.recommend = t.custid 
 							AND ci.roleid = 1
-							AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+							AND ci.CustomerClass BETWEEN 8 AND 13
+							--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 						GROUP BY ci.recommend) AS pa	
 	END
 	ELSE IF @SearchRoleId = 1
 	BEGIN		
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason)
-		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.CreatedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
-		FROM  dbo.ProblemAccount p WITH (NOLOCK)
+		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0)
+		FROM  dbo.custinfo ci WITH (NOLOCK)
+			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.recommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 1
-			AND (p.CreatedDate >= @FromDate AND p.CreatedDate < DATEADD(DAY, 1, @ToDate))
+			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-			AND p.ReasonId IS NOT NULL
+			AND ci.CustomerClass BETWEEN 8 AND 13
+			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 		
 		SELECT @TotalRows = @@ROWCOUNT

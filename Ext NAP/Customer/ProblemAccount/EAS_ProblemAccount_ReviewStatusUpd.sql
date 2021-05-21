@@ -19,7 +19,7 @@ AS
 
 	Revisions:
 		- 20201012@Johnson: Initial SP [Redmine:#142957]		
-
+		- 20210426@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 	Param's Explanation:		
 		@RoleId: roleid of downlines
 		@CustomerList: list of downline id
@@ -71,12 +71,15 @@ BEGIN
 	INSERT INTO #tempCust(CustId)
 	SELECT d.custid
 	FROM #Downlines d
-		INNER JOIN dbo.ProblemAccount pa WITH (NOLOCK) ON d.CustId = pa.CustId
-	WHERE pa.IsReviewed = 0 AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+		INNER JOIN custInfo ci WITH(NOLOCK) ON ci.custid = d.custid
+		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
+	WHERE pa.IsReviewed = 0 
+		--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+		AND ci.CustomerClass BETWEEN 8 AND 13
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
-	FROM dbo.ProblemAccount pa WITH (NOLOCK)
+	FROM dbo.ProblemAccountClassification pa WITH (NOLOCK)
 		INNER JOIN #tempCust t ON pa.CustId = t.CustId
 	
 	WHILE (1=1)
