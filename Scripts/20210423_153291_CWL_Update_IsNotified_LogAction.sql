@@ -1,3 +1,4 @@
+/*<info serverAlias="dblog-bodb_CustomerLog" executers="" isFunction="0"></info>*/
 /*
 	Created: 20191218@Helen
 	Task: Update IsNotified for Winlimit History - insert log action - [Redmine: 153291] 
