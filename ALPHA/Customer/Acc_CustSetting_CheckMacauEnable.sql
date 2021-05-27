@@ -18,6 +18,8 @@ BEGIN
 			- 20201229@Eden: MaxGame [Redmine: #147232]
 			- 20210302@Winfred: add Habanero  [RedmineID: #145459]
 			- 20210324@Winfred: Check Creative Gaming on site [Redmine: #146016]
+			- 20210506@Winfred: Check AdvantPlay on site [Redmine: #154258]
+			- 20210514@Winfred: Check AdvantPlay Mini on site [Redmine: #155133]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -59,6 +61,8 @@ BEGIN
 					   WHEN  237  THEN 60 -- MaxGame
 					   WHEN  238  THEN 61 -- Habanero 
 					   WHEN  167  THEN 62 -- Creative Gaming
+					   WHEN  172  THEN 67 -- AdvantPlay
+					   WHEN  174  THEN 68 -- AdvantPlay Mini
 					   ELSE 55 END as ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	
