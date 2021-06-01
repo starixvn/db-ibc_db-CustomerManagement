@@ -1,17 +1,15 @@
-/*<info serverAlias="DBACC-bodb_ACC" executers="" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_ACC]
-GO
-
+/*<info serverAlias="DBACC-bodb02" executers="" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Task_BetMonitoring_CustTotalBetUpd_Job]
 AS
 /*  
 	Creator: Elodie
 	Date: 20160705
 	Task: Update the sum of bet ticket's sportbook - [Redmine:#58401]
-	DB: DBACC/bodb_ACC
+	DB: DBACC/bodb02
   
 	Revisions:  
 		- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+		- 20210512@Eden: Migrate bodb_Acc to main server [#152636]
 		
 */
 BEGIN
@@ -27,8 +25,8 @@ BEGIN
 	
 	INSERT INTO #tmpCustBetting (CustID, SportType, BetCount)
 	SELECT b.CustID, m.sporttype, SUM(1)
-	FROM bodb02.dbo.bettrans b WITH (NOLOCK)
-		INNER JOIN bodb02.dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
+	FROM dbo.bettrans b WITH (NOLOCK)
+		INNER JOIN dbo.match m WITH (NOLOCK) ON b.matchid = m.matchid
 	WHERE winlostdate = @WinLostDate
 		AND b.statusID IN (112,113,111) --WON,LOSE,DRAW
 		AND m.sporttype <= 99
