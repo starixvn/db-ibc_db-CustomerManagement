@@ -1,7 +1,4 @@
-/*<info serverAlias="DBACC-bodb_ACC" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_ACC]
-GO
-
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_BettingMonitor_SettingUpd]
 	@MinimumTickets SMALLINT,
 	@Threshold TINYINT,
@@ -14,9 +11,10 @@ AS
 	Creator: Elodie
 	Date: 20160705
 	Task: Get customer list to send email - [Redmine:#58401]
-	DB: DBACC/bodb_ACC
+	DB: DBACC/bodb02
   
-	History:  
+	Revisions:		
+		- 20210512@Eden: Migrate bodb_Acc to main server [#152636]  
 
 	Example: EXEC NAP_BettingMonitor_SettingUpd @MinimumTickets = 200, @Threshold = 100, @UserID = 8
 
@@ -97,7 +95,7 @@ BEGIN
 							+ ' ErrMsg="'+ coalesce(cast(ERROR_MESSAGE() as varchar(400)),space(1))+'"'
 							+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'			
 
-		EXEC DBTXN.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+		EXEC DBCUST.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 			@UserID = @UserID,
 			@ActionID = 31402,
 			@TrackingValue = @LogSPData,

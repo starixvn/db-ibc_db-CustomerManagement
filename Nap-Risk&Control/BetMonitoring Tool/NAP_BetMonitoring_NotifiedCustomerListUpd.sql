@@ -1,7 +1,4 @@
-/*<info serverAlias="DBACC-bodb_ACC" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_ACC]
-GO
-
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_BetMonitoring_NotifiedCustomerListUpd]
 	@CustList VARCHAR(MAX)
 AS
@@ -9,10 +6,12 @@ AS
 	Creator: Elodie
 	Date: 20160705
 	Task: Get customer list to send email - [Redmine:#58401]
-	DB: DBACC/bodb_ACC
+	DB: DBACC/bodb02
   
 	Revisions:  
 	- 20170808@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
+	- 20210512@Eden: Migrate bodb_Acc to main server [#152636] 
+
 	Param's Explanation:  
 		- @CustList = '<Notify>
 							<row c = "1" s = "1"/>
@@ -92,7 +91,7 @@ BEGIN
 					,	@Duration = @duration;			
 		END TRY
 		BEGIN CATCH
-			EXECUTE	DBTXN.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
+			EXECUTE	DBCUST.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 						@UserID = 8
 					,	@CustID = @CustID
 					,	@ActionID = 31401

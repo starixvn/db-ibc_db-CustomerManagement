@@ -1,7 +1,4 @@
-/*<info serverAlias="DBACC-bodb_ACC" executers="" viewers="vnteam" isFunction="0"></info>*/
-USE [bodb_ACC]
-GO
-
+/*<info serverAlias="DBACC-bodb02" executers="" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Task_BetMonitoring_CustTotalBetReachThreshold_Job]
 	@MaxBatch INT = 500000 --Total CustID of a patch
 AS 
@@ -9,9 +6,10 @@ AS
 	Creator: Elodie
 	Date: 20160705
 	Task: Detect customer who reach threshold - [Redmine:#58401]
-	DB: DBACC/bodb_ACC
+	DB: DBACC/bodb02
   
-	History:  
+	Revisions:		
+		- 20210512@Eden: Migrate bodb_Acc to main server [#152636] 
 
 */
 BEGIN
