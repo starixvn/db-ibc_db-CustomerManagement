@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]  
     @CustID INT = 0,
 	@UplineUsername VARCHAR(30)='',	
@@ -41,6 +40,7 @@ AS
 
 	Revisions:
 		- 20200529@Johnson: initial sp [redmine: #132782]
+		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 	Param's Explanation:		
 	*/
 BEGIN
@@ -256,39 +256,31 @@ BEGIN
 */
 	DECLARE	@1stLoginTime DATETIME
 
-	IF EXISTS (	SELECT	TOP 1 1 
-				FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
-				WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0)
-	BEGIN
-		SELECT	@1stLoginTime = LoginTime 
-		FROM	DBONUSER.ON_USER.dbo.On_User_Agent WITH (NOLOCK) 
-		WHERE	CustID = @CustID AND SubAccID = @SubAccID AND ServerID<>0 AND isKickedOut = 0
+	EXEC Age_OnUser_Agent_LoginTime_Sel_Wrapper @CustID = @CustID, @SubAccID = @SubAccID, @LoginTime = @1stLoginTime OUTPUT
 		
-		IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
-		BEGIN 		
-			SELECT @LogData =  'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Unknown_Login)'	
+	IF DATEDIFF(SECOND, @1stLoginTime, CURRENT_TIMESTAMP)< 5
+	BEGIN 		
+		SELECT @LogData =  'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Unknown_Login)'	
 			
-			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
-				@UserID = @CustID, 
-				@RoleID = @RoleID, 
-				@SubAccID = @SubAccID,
-				@ServerID = @ServerID,
-				@LoginIP = @inputLoginIP,
-				@DomainName = @LoginDomain,	
-				@ActionID = 1337,
-				@Doing = @LogData,
-				@BrowserName = @BrowserName,
-				@Platform = @Platform,
-				@CountryCode = @CountryCode,
-				@Duration = @Duration
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
 			
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
-					ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
-				END , @ErrCode=107    
-			RETURN
-		END 
-	END
-		
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Login error! Session expired.'  
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](80005,@Language)
+			END , @ErrCode=107    
+		RETURN
+	END 	
 	  
 	SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Success'  
 
