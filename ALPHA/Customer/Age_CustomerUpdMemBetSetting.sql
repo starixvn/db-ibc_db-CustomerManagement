@@ -106,6 +106,7 @@ Revisions:
     - 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
 	- 20200724@Eden: Minimize UM Time - Lock updating customer settings [#136464]
+	- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 
 Param's Explanation:
 • @custid: custid that need to be viewed.   
@@ -1265,7 +1266,7 @@ BEGIN
 		OR @MinBetv161 != @old_MinBetv161 OR @MaxBetv161 != @old_MaxBetv161 OR @MaxPerMatchv161 != @old_MaxPerMatchv161 OR @MaxPerBallv161 != @old_MaxPerBallv161 
 		OR @MinBetv164 != @old_MinBetv164 OR @MaxBetv164 != @old_MaxBetv164 OR @MaxPerMatchv164 != @old_MaxPerMatchv164)
 	BEGIN
-		EXEC DBONUSER.On_User.dbo.Age_MessageNoticeUpd @custID = @custid, @userID = @UserID, @TypeID = 2
+		EXEC dbo.Age_MessageNoticeUpd_Wrapper @custID = @custid, @userID = @UserID, @TypeID = 2
 	END		
 END
 
