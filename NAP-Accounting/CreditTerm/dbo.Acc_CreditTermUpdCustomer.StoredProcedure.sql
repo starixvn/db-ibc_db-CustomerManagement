@@ -1,4 +1,7 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CreditTermUpdCustomer]
 	@custid int,
 	@creditgrade nvarchar(1) = '',
@@ -41,6 +44,7 @@ Original:
 		- 20181107@Louis: Credit Collection [Redmine: #98621]
 		- 20200120@Tiara: Change message and allow to remove group which has 1 member [Redmine: #125991]
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
+		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -81,6 +85,41 @@ BEGIN
 		EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		if @ErrCode <>0 return
 	--end
+
+	-- Check super prefix
+	DECLARE @RoleId TINYINT, @SiteId INT, @Currency INT, @UserName VARCHAR(50)
+	SELECT @RoleId	= c.RoleId
+		,@SiteId	= s.SiteId
+		,@Currency	= c.Currency
+		,@UserName	= c.UserName
+	FROM dbo.Customer c WITH (NOLOCK)
+		INNER JOIN dbo.Site s WITH (NOLOCK) ON c.Site = s.Site
+	WHERE c.CustId = @CustId
+
+	IF @RoleId = 4
+	BEGIN
+		DECLARE @tblPrefix TABLE (GroupName VARCHAR(50), Prefix VARCHAR(10), AllowNewSuper BIT)
+		INSERT INTO @tblPrefix (GroupName, Prefix, AllowNewSuper)
+		SELECT sp.GroupName, sp.Prefix, sp.AllowNewSuper
+		FROM NAP_UserControl.dbo.EaGroupHeadline egh WITH (NOLOCK)
+			INNER JOIN dbo.Acc_SuperPrefix sp WITH (NOLOCK) ON egh.GroupName = sp.GroupName
+		WHERE egh.GroupHeadlineId = @GroupId AND egh.SiteId = @SiteId AND egh.ExchangeId = @Currency
+		
+		IF @@ROWCOUNT <> 0
+		BEGIN
+			SET @ErrMsg = NULL
+			SELECT @ErrMsg = COALESCE(@ErrMsg + ', ', '') + a.GroupName
+			FROM (SELECT DISTINCT t.GroupName FROM @tblPrefix t WHERE t.GroupName NOT IN (SELECT p.GroupName FROM @tblPrefix p WHERE @UserName LIKE p.Prefix + '%' AND AllowNewSuper = 1)) a
+			
+			SELECT @ErrMsg = ISNULL(@ErrMsg, '')
+			
+			IF @ErrMsg <> ''
+			BEGIN
+				SELECT @ErrCode = 105, @ErrMsg = 'Wrong username prefix for the group(s) ' + @ErrMsg + '.'
+				RETURN
+			END
+		END
+	END
 
 	set @NotFound = 0
 
@@ -252,6 +291,28 @@ BEGIN
 		@IsGroupHeadline = @IsGroupHeadline,
 		@checker = @checker
 
+	-- Auto add External Group (follow Headline)
+	BEGIN
+		DECLARE @AffectedSupers VARCHAR(MAX)
+		IF EXISTS (SELECT 1 FROM NAP_UserControl.dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId IN (@GroupId, @db_groupID))
+			EXEC NAP_UserControl.dbo.Acc_ExternalGroupHeadline_UpdSuper
+				@UserId					= @UserId
+				,@CustId				= @CustId
+				,@GroupHeadlineId		= @GroupId
+				,@Old_GroupHeadlineId	= @db_groupID
+				,@HeadlineId			= @Old_Headline
+				,@SPName				= 'Acc_CreditTermUpdCustomer'
+				,@AffectedSupers		= @AffectedSupers OUTPUT
+
+		IF @db_groupID <> 0 AND ISNULL(@AffectedSupers, '') <> ''
+		BEGIN
+			IF @TotalMember = 1
+				SELECT @ErrCode = 0, @ErrMsg = 'The headline group has been removed, the former headline is enqueued to be removed from its old External Groups on 0:00 tomorrow.'
+			ELSE
+				SELECT @ErrCode = 0, @ErrMsg = 'The super has been successfully removed from the Headline Group. This super is enqueued to be removed from its old External Groups on 0:00 tomorrow.'
+		END
+	END
+
 
 	DECLARE @LogSPData AS NVARCHAR(MAX)
 	DECLARE @TrackingValue2 AS NVARCHAR(MAX)
@@ -344,6 +405,5 @@ BEGIN
 		SELECT @ErrCode = 107, @ErrMsg = 'Internal error! Please try again or contact the administrator!'
 		RETURN
 	END CATCH
-END	
+END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CreditTermUpdCustomer] TO [bodbAdminNet]

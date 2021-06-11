@@ -1,4 +1,7 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+USE CustDB
+GO
+
 ALTER PROCEDURE [dbo].[Acc_CreditTermUpdAddToGroup]
 	@username varchar(30),
 	@groupID int,
@@ -9,7 +12,8 @@ ALTER PROCEDURE [dbo].[Acc_CreditTermUpdAddToGroup]
 	@IP varchar(15) = '',
 	@Case INT = 0 OUTPUT,
 	@Old_Headline INT = 0 OUTPUT,
-	@New_Headline INT = 0 OUTPUT
+	@New_Headline INT = 0 OUTPUT,
+	@AffectedSupers	VARCHAR(MAX) = '' OUTPUT
 AS
 --Original: adm_acct_UpdateCustAccount
 /*	Created by: [Creator]
@@ -29,6 +33,7 @@ AS
 		- 20181105@Louis: Credit Collection Summary  [RedmineID: #98621]
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
+		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -52,13 +57,10 @@ BEGIN
 	If @ErrCode <> 0
 		RETURN
 	--end
-	Declare @Custid int
+	Declare @Custid int, @SiteId int, @Currency int, @RoleId tinyint
 
-	select @custid = custid,@srecommend=srecommend,@site=Site from customer with (nolock) where username = @username
-	IF @site IS NULL
-	BEGIN
-		select @site=Site from customer with (nolock) where Custid = @srecommend
-	END
+	select @custid = custid,@srecommend=srecommend,@site=Site,@Currency=currency, @RoleId = RoleId from customer with (nolock) where username = @username
+	select @SiteId = siteid from dbo.Site with (nolock) where site = @site
 	select @custid = isnull(@custid, 0)
 
 	if @custid = 0
@@ -97,6 +99,33 @@ BEGIN
 			@ErrCode = 104
 		RETURN
 	END
+
+	-- Check super prefix
+	IF @RoleId = 4
+	BEGIN
+		DECLARE @tblPrefix TABLE (GroupName VARCHAR(50), Prefix VARCHAR(10), AllowNewSuper BIT)
+		INSERT INTO @tblPrefix (GroupName, Prefix, AllowNewSuper)
+		SELECT sp.GroupName, sp.Prefix, sp.AllowNewSuper
+		FROM NAP_UserControl.dbo.EaGroupHeadline egh WITH (NOLOCK)
+			INNER JOIN dbo.Acc_SuperPrefix sp WITH (NOLOCK) ON egh.GroupName = sp.GroupName
+		WHERE egh.GroupHeadlineId = @GroupId AND egh.SiteId = @SiteId AND egh.ExchangeId = @Currency
+		
+		IF @@ROWCOUNT <> 0
+		BEGIN
+			SET @ErrMsg = NULL
+			SELECT @ErrMsg = COALESCE(@ErrMsg + ', ', '') + a.GroupName
+			FROM (SELECT DISTINCT t.GroupName FROM @tblPrefix t WHERE t.GroupName NOT IN (SELECT p.GroupName FROM @tblPrefix p WHERE @UserName LIKE p.Prefix + '%' AND AllowNewSuper = 1)) a
+			
+			SELECT @ErrMsg = ISNULL(@ErrMsg, '')
+			
+			IF @ErrMsg <> ''
+			BEGIN
+				SELECT @ErrCode = 105, @ErrMsg = 'Wrong username prefix for the group(s) ' + @ErrMsg + '.'
+				RETURN
+			END
+		END
+	END
+
 	Declare @creditgrade nvarchar(1),
 		@preagreeamount money,
 		@installmentamount money,
@@ -133,6 +162,19 @@ BEGIN
 	-- Send email notification for create new
 	EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1000,@NotificationInfo = @NotificationInfo, @CreateDate = @startRun							
 	
+	-- Auto add External Group (follow Headline)
+	IF @RoleId = 4 -- Super only
+	BEGIN
+		IF EXISTS (SELECT 1 FROM NAP_UserControl.dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId = @GroupId AND SiteId = @SiteId AND ExchangeId = @Currency)
+			EXEC NAP_UserControl.dbo.Acc_ExternalGroupHeadline_UpdSuper
+				@UserId					= @UserId
+				,@CustId				= @CustId
+				,@GroupHeadlineId		= @GroupId
+				,@Old_GroupHeadlineId	= @Old_GroupId
+				,@HeadlineId			= @CustID_Headline
+				,@SPName 				= 'Acc_CreditTermUpdAddToGroup'
+				,@AffectedSupers		= @AffectedSupers OUTPUT
+	END
 
 	declare @LogSPData nvarchar(1000)
 
@@ -179,8 +221,5 @@ BEGIN
 		SELECT @ErrCode = 107, @ErrMsg = 'Internal error! Please try again or contact the administrator!'
 		RETURN
 	END CATCH
-END	
+END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CreditTermUpdAddToGroup] TO [bodbAdminNet]	
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CreditTermUpdAddToGroup] TO [vnteam]
