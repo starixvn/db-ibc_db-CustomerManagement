@@ -16,6 +16,7 @@ AS
 		- 20190910@Bobby: Implement headline - balance info [Redmine:119961]
 		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
 		- 20200602@Percy: Separate PendingTransfer3rd from Cash and Balance [RedmineID: #135200]
+		- 20210505@Sol: NAP - Alpha - Allow more time for transfer - [Redmine: #149927]
 	
 	Param's Explaination:
 		- @CustId: custid
@@ -27,6 +28,15 @@ BEGIN
 	DECLARE @yesterday SMALLDATETIME, @today SMALLDATETIME
 	SELECT @today =   CAST(CURRENT_TIMESTAMP AS DATE)
 		, @yesterday = CONVERT(DATE, DATEADD(DAY, -1, @today))
+
+	-- get move bet date
+	DECLARE @balanceUpDay SMALLDATETIME, @moveBetsDay SMALLDATETIME
+	DECLARE @tblMoveBetBalanceUp AS TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME)
+
+	INSERT INTO @tblMoveBetBalanceUp(BalanceUpDay,MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	SELECT @balanceUpDay = BalanceUpDay, @moveBetsDay = MoveBetsDay FROM @tblMoveBetBalanceUp
 
 	-- Get bettype --
 	DECLARE @isTest BIT = 0
@@ -121,6 +131,10 @@ BEGIN
 				b.winlostdate < @yesterday
 				OR NOT EXISTS (SELECT TOP 1 1 FROM #SportBettype s WHERE s.Bettype = b.bettype AND s.RefTable IN (1, 2))
 			)
+			AND 1 = CASE 
+						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+					ELSE 1 END
 
 		SELECT
 			SUM(memberCash) AS Cash,
@@ -211,6 +225,10 @@ BEGIN
 		WHERE b.recommend = @custid
 			AND b.ruben = 1
 			AND b.winlostdate < @yesterday		
+			AND 1 = CASE 
+						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+					ELSE 1 END
 			
 			
 		; WITH Bettrans_CTE AS (			
@@ -224,6 +242,10 @@ BEGIN
 			WHERE b.recommend = @custid
 				AND b.ruben = 1
 				AND b.winlostdate >= @yesterday	
+				AND 1 = CASE 
+							WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+							WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+						ELSE 1 END
 			GROUP BY Winlostdate, bettype				
 			)			
 		INSERT INTO #BalanceInfo (agentCash, yesterday_agentCash, agentOutstanding, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
@@ -347,6 +369,10 @@ BEGIN
 			AND b.recommend  <> 0     --- level Agent and Customer
 			AND b.ruben = 1
 			AND b.winlostdate < @yesterday		
+			AND 1 = CASE 
+						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+					ELSE 1 END
 			
 
 		; WITH Bettrans_CTE AS (
@@ -363,7 +389,11 @@ BEGIN
 					b.mrecommend = @CustId 
 					AND b.recommend  <> 0     --- level Agent and Customer
 					AND b.ruben = 1
-					AND b.winlostdate >= @yesterday		
+					AND b.winlostdate >= @yesterday	
+					AND 1 = CASE 
+								WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+								WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+							ELSE 1 END
 				GROUP BY Winlostdate, bettype
 			)
 		INSERT INTO #BalanceInfo (masterCash, yesterday_masterCash, masterOutstanding, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)
@@ -513,6 +543,10 @@ BEGIN
 			AND b.recommend <> 0     --- level Agent and Customer
 			AND b.ruben = 1
 			AND b.winlostdate < @yesterday
+			AND 1 = CASE 
+						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+					ELSE 1 END
 
 		;WITH Bettrans_CTE AS (
 			SELECT winlostdate, Bettype,
@@ -531,6 +565,10 @@ BEGIN
 				AND b.recommend <> 0     --- level Agent and Customer
 				AND b.ruben = 1
 				AND b.winlostdate >= @yesterday
+				AND 1 = CASE 
+							WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+							WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+						ELSE 1 END
 			GROUP BY winlostdate, Bettype 
 		 )
 		INSERT INTO #BalanceInfo (superCash, yesterday_superCash, superOutstanding, masterCash, yesterday_masterCash, agentCash, yesterday_agentCash, memberCash, yesterday_memberCash, memberOutstanding, PendingTransfer3rd)

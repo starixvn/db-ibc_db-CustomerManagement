@@ -1,2 +1,7 @@
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
+NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
+NAP-Accounting\Customer\CN88\CS_Acc_CustomerInfo_HeadlineSel.sql
+ALPHA\Customer\Age_BalanceAgentSel.sql
+ALPHA\Customer\Age_BalanceMasterSel.sql
+ALPHA\Customer\Age_BalanceMemberSel.sql
