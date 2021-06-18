@@ -10,7 +10,7 @@ AS
 	DB: DBCUST/CustDB
 	
 	Revisions:	
-		- 20210616@Elodie: apply color for suspend account [RedmineID: #157050]	
+		- 20210616@Elodie: apply color for closed and suspend account [RedmineID: #157050]	
 */
 BEGIN
 	SET NOCOUNT ON
