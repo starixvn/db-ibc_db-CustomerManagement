@@ -17,7 +17,7 @@ BEGIN
 
 	IF @roleid = 2
 	BEGIN		
-		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason
+		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason, c.closed
 		FROM custinfo c WITH (NOLOCK)
 			INNER JOIN CustProductStatus cs WITH(NOLOCK) ON c.custid = cs.CustID
 			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid = cl.CustID
@@ -27,7 +27,7 @@ BEGIN
 	END
 	ELSE IF @roleid = 3
 	BEGIN
-		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason
+		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason, c.closed
 		FROM custinfo c WITH (NOLOCK)
 			INNER JOIN CustProductStatus cs WITH(NOLOCK) ON c.custid = cs.CustID
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid = cl.CustID
@@ -37,7 +37,7 @@ BEGIN
 	END
 	ELSE IF @roleid = 4
 	BEGIN
-		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason
+		SELECT c.custid, cs.SuspendInfo, ISNULL(cl.ClosedReason,0) AS ClosedReason, c.closed
 		FROM custinfo c WITH (NOLOCK)
 			INNER JOIN CustProductStatus cs WITH(NOLOCK) ON c.custid = cs.CustID
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid = cl.CustID
