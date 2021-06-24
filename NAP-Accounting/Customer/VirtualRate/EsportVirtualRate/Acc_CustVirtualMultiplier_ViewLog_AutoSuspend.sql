@@ -14,6 +14,7 @@ AS
 	DB: DBLOG/bodb_CustomerLog
 	Revisions:
 		- 20191101@Eden: First commit [Redmind: #121876]
+		- 20210624@Elodie: Aplly VRCustLog archive [Redmine: #157434]
 	Parameter:
 
 	
@@ -67,6 +68,9 @@ BEGIN
 	CREATE CLUSTERED INDEX IX_LogID2 ON #DataOld(LogID)
 	CREATE CLUSTERED INDEX IX_LogID1 ON #DataNew(LogID)
 
+	DECLARE @__archiveDate DATETIME
+	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
 	SELECT @CustID = CustID
 	FROM bodb02.dbo.Customer c WITH(NOLOCK)
 	WHERE username = @Username
@@ -79,13 +83,43 @@ BEGIN
 		RETURN
 	END
 	
-	INSERT INTO #VRCustLogAutoSuspend(LogID, CustID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
-	SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
-	FROM VRCustLog WITH(NOLOCK)
-	WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
-		AND SportType = @SportType
-		AND ActionID = @ActionID 
-		AND CustID = @CustID
+	IF @StartLogTime >= @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspend(LogID, CustID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = @CustID
+	END
+	ELSE IF @EndLogTime < @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspend(LogID, CustID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = @CustID
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspend(LogID, CustID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @__archiveDate AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = @CustID
+		UNION ALL
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < @__archiveDate
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = @CustID
+	END
 
 	WHILE(1=1)
 	BEGIN
