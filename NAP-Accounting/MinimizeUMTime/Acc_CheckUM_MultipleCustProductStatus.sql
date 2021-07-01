@@ -1,0 +1,63 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CheckUM_MultipleCustProductStatus]
+	@CustIDs	VARCHAR(MAX) ,
+	@ProductID tinyint ,
+	@FunctionType tinyint = 1
+
+AS
+BEGIN
+/*
+Created: 20200723@Eden
+Task :  Check UM of Status (multiple Credit customer)
+DB: DBCUST.CustDB
+Revisions:	
+	- 20200723@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
+Param's Explanation:
+	- @FunctionType : Affect funtion
+		1. Edit
+		
+Examples : 
+		EXEC [Acc_CheckUM_MultipleCustProductStatus] @CustIDs = '1,2,0,20,1287,1296' 
+			, @ProductID = 41, @FunctionType = 1
+		EXEC [Acc_CheckUM_MultipleCustProductStatus] @CustIDs = '1,2,0,20,1287,1296' 
+			, @ProductID = 23, @FunctionType = 1
+*/
+SET NOCOUNT ON	
+	CREATE TABLE #Customers (CustID INT PRIMARY KEY)
+
+	INSERT INTO #Customers(CustID)
+	SELECT val FROM dbo.f_SplitString(@CustIDs,',')
+
+	SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
+	INTO #UMConfig
+	FROM #Customers s
+		CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
+	WHERE c.SettingType IN (4,11,13,0)
+		AND c.FunctionType IN( @FunctionType, 0)
+		AND c.ProductID IN (@ProductID, 0)
+
+	--Delete Non-offered Products
+	DELETE ft
+	FROM #UMConfig ft
+		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Sporttype = ft.SportType															
+		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = ft.CustID
+		CROSS APPLY dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder) Hd
+	WHERE hd.value = 1
+
+	DELETE ft
+	FROM #UMConfig ft
+		INNER JOIN SportNonOfferedSiteCurrency nof WITH(NOLOCK)
+			ON ft.SportType = nof.SportType
+			AND nof.siteID IN (ft.SiteID, 0)
+			AND nof.Currency IN (ft.Currency, 0)
+	WHERE NOT EXISTS(	SELECT 1 
+						FROM ProductSettingDetail p WITH(NOLOCK) 
+						WHERE nof.SportType = p.SportType 
+							AND nof.BetType <> p.BetType 
+							AND p.SettingStatus = 0 
+					)
+
+	SELECT CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp
+	FROM #UMConfig
+END
+GO
