@@ -114,7 +114,7 @@ BEGIN
 			AND CustID = @CustID
 		UNION ALL
 		SELECT LogID, CustID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
-		FROM VRCustLog WITH(NOLOCK)
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog WITH(NOLOCK)
 		WHERE LogTime >= @StartLogTime AND LogTime < @__archiveDate
 			AND SportType = @SportType
 			AND ActionID = @ActionID 

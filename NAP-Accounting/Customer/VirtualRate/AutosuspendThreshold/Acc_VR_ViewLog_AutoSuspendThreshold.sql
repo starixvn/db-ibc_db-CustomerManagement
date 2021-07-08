@@ -69,14 +69,47 @@ BEGIN
 
 	CREATE CLUSTERED INDEX IX_LogID2 ON #DataOld(LogID)
 	CREATE CLUSTERED INDEX IX_LogID1 ON #DataNew(LogID)
-	
-	INSERT INTO #VRCustLogAutoSuspendThreshold(LogID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
-	SELECT LogID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
-	FROM VRCustLog WITH(NOLOCK)
-	WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
-		AND SportType = @SportType
-		AND ActionID = @ActionID 
-		AND CustID = 0
+
+	DECLARE @__archiveDate DATETIME
+	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
+	IF @StartLogTime >= @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspendThreshold(LogID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = 0
+	END
+	ELSE IF @EndLogTime < @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspendThreshold(LogID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = 0
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #VRCustLogAutoSuspendThreshold(LogID, TrackingValue1, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @__archiveDate AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = 0
+		UNION ALL
+		SELECT LogID, dbo.DecompressString(TrackingValue1),dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog WITH(NOLOCK)
+		WHERE LogTime >= @StartLogTime AND LogTime < @__archiveDate
+			AND SportType = @SportType
+			AND ActionID = @ActionID 
+			AND CustID = 0
+	END
 
 	WHILE(1=1)
 	BEGIN
