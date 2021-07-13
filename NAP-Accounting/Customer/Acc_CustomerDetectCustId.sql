@@ -10,6 +10,7 @@ AS
     
     Revisions:
         - 20191115@Elodie: Detect custid from search text on Left panel of NAP [Redmine: #123918]
+        - 20210616@Winfred: NAP -Left Panel -Allow to search sub account nickname [Redmine: #155713]
     Param's Explanation:
     
     Example:
@@ -32,6 +33,22 @@ BEGIN
 			FROM dbo.Customer c WITH (NOLOCK) 
 			WHERE c.username2 = @SearchText AND roleid IN (0,1,2,3,4)
 			
+			IF @CustId IS NULL
+			BEGIN
+				--Search username custSub
+				SELECT @CustId = custid 
+				FROM dbo.custSub c WITH (NOLOCK) 
+				WHERE c.username = @SearchText
+			END
+			
+			IF @CustId IS NULL
+			BEGIN
+				--Search username custSub
+				SELECT @CustId = custid 
+				FROM dbo.custSub c WITH (NOLOCK) 
+				WHERE c.username2 = @SearchText
+			END
+			
 			IF @CustId IS NULL AND ~(CAST(PATINDEX('%[^0-9]%',@SearchText) as BIT)) = 1				
 			BEGIN
 				IF LEN(@SearchText) BETWEEN 1 AND 9 OR (LEN(@SearchText) = 10 AND @SearchText <= '2147483647') --check overflow 
@@ -40,6 +57,15 @@ BEGIN
 					SELECT @CustId = custid 
 					FROM dbo.Customer c WITH (NOLOCK) 
 					WHERE c.custid = CAST(@SearchText AS INT) AND roleid IN (0,1,2,3,4)
+					
+					IF @CustId IS NULL
+					BEGIN
+						--Search username custSub
+						SELECT @CustId = custid 
+						FROM dbo.custSub c WITH (NOLOCK) 
+						WHERE c.subaccid = CAST(@SearchText AS INT)
+					END
+					
 				END
 			END
 		END

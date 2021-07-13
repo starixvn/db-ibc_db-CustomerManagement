@@ -1,1 +1,3 @@
-NAP-Accounting\ExternalSite\Group\dbo.Acc_CustGroupAddByUsername_Multiple.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+Ext NAP\UserControl\SpecialSite\Acc_CustomerIsSpecialSite.sql
+NAP-Accounting\UserControl\HideSpecialSite\Acc_CustomerIsAllowedAccess.sql
