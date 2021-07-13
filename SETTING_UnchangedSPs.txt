@@ -1,5 +1,4 @@
 NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
 NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
 NAP-Accounting\Customer\CN88\CS_Acc_CustomerInfo_HeadlineSel.sql
 ALPHA\Customer\Age_BalanceAgentSel.sql
