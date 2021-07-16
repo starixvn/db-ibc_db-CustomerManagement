@@ -12,6 +12,7 @@ AS
 		- 20190918@Percy: Remove inactive products [RedmineID: #118699]
 		- 20191007@Johnson: remove credit info [redmine:#121538]
 		- 20200602@Percy: Separate PendingTransfer3rd from Cash and Balance [RedmineID: #135200]
+		- 20210505@Sol: NAP - Alpha - Allow more time for transfer - [Redmine: #149927]
 
 	Example: EXEC Age_BalanceAgentSel @CustID=1382167
 */
@@ -38,6 +39,15 @@ BEGIN
 		PendingTransfer3rd MONEY DEFAULT ((0))
 	)
 
+	-- get move bet date
+	DECLARE @balanceUpDay SMALLDATETIME, @moveBetDay SMALLDATETIME
+	DECLARE @tblMoveBetBalanceUp AS TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME)
+
+	INSERT INTO @tblMoveBetBalanceUp(BalanceUpDay,MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	SELECT @balanceUpDay = BalanceUpDay, @moveBetDay = MoveBetsDay FROM @tblMoveBetBalanceUp
+
 	INSERT INTO #BalanceInfo
 	(
 		superCash,  yesterdaySuperCash,
@@ -46,7 +56,7 @@ BEGIN
 		memberCash, yesterdayMemberCash,
 		PendingTransfer3rd
 	)
-	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId
+	EXEC dbo.Acc_CustomerSelCash @CustId = @CustId, @MoveBetDay = @moveBetDay
 
 	INSERT INTO #BalanceInfo
 	(
