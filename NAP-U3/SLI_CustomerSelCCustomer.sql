@@ -10,6 +10,7 @@ DB: DBCUST/CustDB
 Original: Acc_CustomerSelCEditCustomer 
 Revisions:
     - 20200601@Tiara: View Super setting information on NAP-U3 site [Redmine: #123584] 
+	- 20210721@Winfred: Remove Comm on U3 site [Redmine: #123584]
     
 Param's Explanation:
 	@CustID: Super ID
@@ -216,13 +217,6 @@ BEGIN
 		CS3.maxbetv161,
 		CS3.minbetv164,
 		CS3.maxbetv164,
-		0.0025  AS groupa_max,
-		0.005 AS groupb_max,
-		0.0075 AS groupc_max,
-		0.01 AS groupd_max,
-		0.01 AS discountcs_max,
-		--1x2 
-		0.0025 AS discount1x2_max,	
 		--v161
 		CS3.v161spositiontaking_81_min,
 		CS3.v161spositiontaking_83_min,

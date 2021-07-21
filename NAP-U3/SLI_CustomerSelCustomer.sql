@@ -198,13 +198,7 @@ Param's Explanation:
 		ISNULL(MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.maxbet ELSE 0 END), 0) AS MaxBetv161,	
 		ISNULL(MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.minbet ELSE 0 END), 0) AS MinBetv164,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.maxbet ELSE 0 END), 0) AS MaxBetv164,		
-		0 AS discount,	
-		0 AS discountCS,	
-		0 AS discount1x2, --1x2
-		0 AS playerdiscount,
-		0 AS playerdiscountCS,
-		0 AS playerdiscount1x2, --1x2
-		 
+	
 		--v161
 		ISNULL(MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161apositiontaking_81,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 83 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161apositiontaking_83,

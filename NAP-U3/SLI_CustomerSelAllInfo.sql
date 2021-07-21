@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbadminNet,bodbDownlineNet,bodbExtaCCNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbadminNet,bodbDownlineNet,bodbExtaCCNet" viewers="" isFunction="0"  ></info>*/
 CREATE PROCEDURE [dbo].[SLI_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0,
@@ -14,6 +14,7 @@ Original: Acc_CustomerSelAllInfo
 
 Revisions:
 	- 20200107@Tiara: Get Customer general info to display on U3 site [Redmine: #123584]
+	- 20201202@Winfred: Check Customer credit archived on U3 site [Redmine: #123584]
 Param's Explanation:
 	@username: username want to get all info related
 */		

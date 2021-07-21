@@ -12,6 +12,7 @@ Original: Acc_CustomerSelCEditCustomer
 
 Revisions:
 	- 20200107@Tiara: View Master setting information on NAP-U3 site [Redmine: #123584] 
+	- 20210721@Winfred: Remove Comm on U3 site [Redmine: #123584]
 Param's Explanation:
 	@CustID: Master ID
 	@Srecommend
@@ -57,7 +58,7 @@ Param's Explanation:
 	
 	
 		----------------------------------
-		@ga DECIMAL(9,8), @gb DECIMAL(9,8), @gc DECIMAL(9,8), @gd DECIMAL(9,8), @dis DECIMAL(9,8),@dis1x2 DECIMAL(9,8), @maxdownline SMALLMONEY 
+		@maxdownline SMALLMONEY 
 
 	DECLARE @MinBetv161_Max MONEY,
 		@MaxBetv161_Min MONEY,
@@ -213,14 +214,7 @@ Param's Explanation:
 		ISNULL(@MaxBetv164_Min, 0) AS MaxBetv164_Min,	
 		ISNULL(@MaxPerMatchv164_Min, 0) AS MaxPerMatchv164_Min,	
 		ISNULL(@MaxPerMatchv164_Max, 0) AS MaxPerMatchv164_Max,
-	
-		@ga AS groupa_max,
-		@gb AS groupb_max,
-		@gc AS groupc_max,
-		@gd AS groupd_max,
-		@dis AS discountcs_max,
-		@dis1x2 AS discount1x2_max,	
-	
+		
 		-- number game
 		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.isautopositiontaking ELSE 0 END) AS isauto_v161spositiontaking_81,
 		MAX(CASE WHEN CS3.bettype = 83 AND CS3.sporttype=161 THEN CS3.isautopositiontaking ELSE 0 END) AS isauto_v161spositiontaking_83,	

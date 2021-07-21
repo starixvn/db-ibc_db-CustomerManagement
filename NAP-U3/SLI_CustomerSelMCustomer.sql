@@ -12,6 +12,7 @@ Original: Acc_CustomerSelMEditCustomer
 
 Revisions:
 	 - 20200801@Tiara: View Agent setting information on NAP-U3 site [Redmine: #123584] 
+	 - 20210721@Winfred: Remove Comm on U3 site [Redmine: #123584]
 Param's Explanation:
   @CustID: AgentID
   @Mrecommend
@@ -40,11 +41,7 @@ Param's Explanation:
 		@MinBetv164_Max MONEY,
 		@MaxBetv164_Min MONEY,	
 		@MaxPerMatchv164_Min MONEY,	
-		@MaxPerMatchv164_Max MONEY,
-	
-		@ga DECIMAL(9,8), @gb DECIMAL(9,8), @gc DECIMAL(9,8), @gd DECIMAL(9,8), @dis DECIMAL(9,8), 
-			@dis1x2 DECIMAL(9,8)
-
+		@MaxPerMatchv164_Max MONEY
 	---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	SELECT 
@@ -263,13 +260,6 @@ Param's Explanation:
 		ISNULL(@MaxPerMatchv164_Min, 0) AS MaxPerMatchv164_Min,	
 		ISNULL(@MaxPerMatchv164_Max, 0) AS MaxPerMatchv164_Max,
 	
-		@ga AS groupa_max,
-		@gb AS groupb_max,
-		@gc AS groupc_max,
-		@gd AS groupd_max,
-		@dis AS discountCS_max,
-		@dis1x2 AS discount1x2_max,
-
 		--max (m2+a2)
 
 		@max_v161mapositiontaking_81 AS max_v161mapositiontaking_81,
