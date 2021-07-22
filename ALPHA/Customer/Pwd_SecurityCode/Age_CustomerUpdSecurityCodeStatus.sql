@@ -16,6 +16,7 @@
 		
 		Revisions:
 		-- 20170619@Winnie: Apply color for closed Accounts RedmineID: #74494
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 
 		Parameter's Explanation:
 			- @CheckedSecurityCode: = 1: check security code success
@@ -49,7 +50,7 @@ SET NOCOUNT ON
 			
 			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '	
 														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+														--+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
@@ -63,7 +64,7 @@ SET NOCOUNT ON
 			BEGIN CATCH
 				SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '		
 														+ 'CheckedSecurityCode="' + COALESCE(CAST(@CheckedSecurityCode AS VARCHAR(10)), SPACE(1)) + '" '																										
-														+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+														--+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 														+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 														+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 														+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
@@ -77,16 +78,16 @@ SET NOCOUNT ON
 		END
 		ELSE 
 		BEGIN
-			UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-			SET closed = 1 
+			UPDATE CustProductStatus WITH(UPDLOCK,ROWLOCK)
+			SET Locked = 1 
 			WHERE custid = @custid
 			
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = 0,ClosedReason=3
+			SET securityCodeCount = 0
 			WHERE custid = @custid
 			
-			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong SC over 5 times. Please contact CSD or your upline to reopen.'
-									ELSE [dbo].[f_Get_MsgNamebyMsgID](40025,@Language) END,
+			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your account has been locked due to multiple failed security check. Please contact your upline to unlock.'
+									ELSE [dbo].[f_Get_MsgNamebyMsgID](40045,@Language) END,
 				@ErrCode = 200		
 				
 			SELECT @LogSPData = '<Age_CustomerUpdSecurityCodeStatus custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '																											
@@ -125,4 +126,3 @@ SET NOCOUNT ON
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus] TO [bodbDownlineNet]

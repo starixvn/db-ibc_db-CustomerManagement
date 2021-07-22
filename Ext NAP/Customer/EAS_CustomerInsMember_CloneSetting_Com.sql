@@ -39,6 +39,8 @@ AS
 		- 20201019@Johnson: check group of admin to assign super to EXT group [Redmine:#136501]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -326,9 +328,9 @@ BEGIN
 				,recommend
 				,dangercust
 				,autosuspend
-				,reject
+				--,reject
 				,credit
-				,closed
+				--,closed
 				,MatchLimit
 				,VirtualMultiplier
 				,maxpermatch
@@ -368,9 +370,9 @@ BEGIN
 				,0 as recommend
 				,dangercust
 				,0 AS autosuspend
-				,reject
+				--,reject
 				,@Credit AS Credit
-				,closed
+				--,closed
 				,MatchLimit
 				,0 AS VirtualMultiplier
 				,maxpermatch
@@ -495,7 +497,10 @@ BEGIN
 
 	DECLARE @isForcedChangeSecurityCode BIT = 0, @ClosedReason TINYINT=0,@Closed BIT,
 		@SystemID INT = 4 --EXT NAP
-	SELECT TOP 1 @Closed=Closed FROM custInfo WITH(NOLOCK) WHERE custid=@ExistingCustid
+
+	SELECT TOP 1 @Closed= CASE WHEN cps.CloseInfo > 0 THEN 1 ELSE 0 END
+	FROM CustProductStatus cps WITH(NOLOCK) 
+	WHERE custid=@ExistingCustid
 
 	IF (@SystemID=1 AND @Closed=1)
 		SELECT @ClosedReason=1

@@ -1,7 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
+/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelAllInfo]  
     @GroupName	VARCHAR(50), 
 	@UserName	VARCHAR(30),  
@@ -14,6 +11,7 @@ DB: DBCUST/CustDB
 
 Revisions:  
 	- 20181030@Elodie: Search Customer on left panel of EXT NAP [Redmine:#95978]
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
@@ -95,6 +93,8 @@ BEGIN
 	    FROM dbo.CustLoginInfo WITH(NOLOCK)
 	    WHERE custid = @CustId
 
+	DECLARE @Locked TINYINT
+
 	IF @RoleId = 4
 	BEGIN		
 		SELECT	c.CustId, c.RoleId, @Site AS site,			
@@ -102,11 +102,20 @@ BEGIN
 				ISNULL(cp.lastname, '') AS lastname,
 				c.username, c.username2,
 				cp.fax, cp.phone, cp.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
-				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
-				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
+				ci.Enabled, ps.closed, ISNULL(ps.reject, 0) AS suspended,
+				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
+				ISNULL(ps.Locked,0) AS Locked,
+				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed
 		FROM CustSuperProfile cp WITH (NOLOCK)
 			INNER JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+										, CloseInfo
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps
 		WHERE c.custid = @CustId			
 	END
 	ELSE
@@ -116,10 +125,19 @@ BEGIN
 				ISNULL(c.lastname, '') AS lastname,
 				c.username, c.username2,
 				c.fax, c.phone, c.mobilephone, ISNULL(@ClosedReason,0) AS ClosedReason, @UplineHasSecurityCode AS UplineHasSecurityCode,
-				ci.Enabled, ci.closed, ISNULL(ci.reject, 0) AS suspended,
-				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName
+				ci.Enabled, ps.closed, ISNULL(ps.reject, 0) AS suspended,
+				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
+				ISNULL(ps.Locked,0) AS Locked,
+				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed
 		FROM dbo.customer c WITH (NOLOCK) 
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+										, CloseInfo
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps
 		WHERE c.custid = @CustId	
 	END
 END

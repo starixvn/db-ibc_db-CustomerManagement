@@ -1,6 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet, bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-USE bodb02
-GO
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelTotalDownline]
 	@CustId INT,
@@ -12,7 +10,8 @@ AS
 	DB: DBAGE/bodb02
 	
 	Revisions:	
-		- 20181108@Elodie: Get total downline info [RedmineID: #58776]	
+		- 20181108@Elodie: Get total downline info [RedmineID: #58776]
+		- 20210524@Tina: Lock account & indirect close account [redmine: #148600]	
 
 	Explanation: 
 	
@@ -27,10 +26,15 @@ BEGIN
 	BEGIN
 		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
 		SELECT	RoleID,
-				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0) 
-		FROM custinfo (NOLOCK) 
+				ISNULL(SUM(CASE WHEN cps.Closed = 0 AND ISNULL(cps.reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN cps.Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(cps.reject,0) = 1 AND cps.closed = 0 THEN 1 ELSE 0 END), 0) 
+		FROM custinfo ci (NOLOCK) 
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 		WHERE recommend = @custID AND RoleId = 1
 		GROUP BY roleid	
 	END
@@ -38,10 +42,15 @@ BEGIN
 	BEGIN
 		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
 		SELECT	RoleID,
-				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)				
-		FROM custinfo (NOLOCK) 
+				ISNULL(SUM(CASE WHEN cps.Closed = 0 AND ISNULL(cps.reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN cps.Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(cps.reject,0) = 1 AND cps.closed = 0 THEN 1 ELSE 0 END), 0)				
+		FROM custinfo ci (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps 
 		WHERE mrecommend = @custID  AND RoleId IN (2,1)
 		GROUP BY roleid
 	END	
@@ -49,10 +58,15 @@ BEGIN
 	BEGIN
 		INSERT INTO @TotalDownline (RoleId, TotalActive, TotalClosed, TotalSuspended)		
 		SELECT	RoleID,
-				ISNULL(SUM(CASE WHEN Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN Closed = 1 THEN 1 ELSE 0 END), 0),
-				ISNULL(SUM(CASE WHEN ISNULL(reject,0) = 1 AND closed = 0 THEN 1 ELSE 0 END), 0)	
-		FROM custinfo (NOLOCK) 
+				ISNULL(SUM(CASE WHEN cps.Closed = 0 AND ISNULL(cps.reject,0) = 0 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN cps.Closed = 1 THEN 1 ELSE 0 END), 0),
+				ISNULL(SUM(CASE WHEN ISNULL(cps.reject,0) = 1 AND cps.closed = 0 THEN 1 ELSE 0 END), 0)	
+		FROM custinfo ci (NOLOCK) 
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps 
 		WHERE srecommend = @custID  AND RoleId IN (3,2,1)
 		GROUP BY roleid		
 	END	

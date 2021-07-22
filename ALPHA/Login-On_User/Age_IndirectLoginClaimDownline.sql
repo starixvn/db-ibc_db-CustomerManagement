@@ -41,6 +41,7 @@ AS
 	Revisions:
 		- 20200529@Johnson: initial sp [redmine: #132782]
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	Param's Explanation:		
 	*/
 BEGIN
@@ -60,9 +61,11 @@ BEGIN
 	WHERE CustID = @CustID
 	
 	IF (@SubAccID = 0
-		AND EXISTS (SELECT 1 FROM custinfo WITH(NOLOCK) 
-					WHERE custid = @custid
-						AND (closed = 1 OR enabled = 0))
+		AND EXISTS (SELECT 1 
+					FROM custinfo ci WITH(NOLOCK) 
+						INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ci.custid = ps.CustID
+					WHERE ci.custid = @custid
+						AND (ps.CloseInfo > 0 OR enabled = 0))
 		) 
 		OR (@SubAccID > 0
 			AND EXISTS (SELECT 1 FROM custsub WITH(NOLOCK) 
@@ -94,7 +97,34 @@ BEGIN
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](80002,@Language) 
 							END ,@ErrCode=108    				
 		RETURN	
-	END	
+	END
+	ELSE IF(@SubAccID = 0
+		AND EXISTS (SELECT 1 FROM CustProductStatus WITH(NOLOCK) WHERE custid = @custid AND ISNULL(Locked,0) > 0))	
+	BEGIN
+		SELECT @LogData = 'From account: ' + @UplineUsername + ' - To account: ' + @DownlineUsername + ' Login Result:Failed(Account_Locked)'
+				
+		SET @End = GETDATE()
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)		
+
+		EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+			@UserID = @CustID, 
+			@RoleID = @RoleID, 
+			@SubAccID = @SubAccID,
+			@ServerID = @ServerID,
+			@LoginIP = @inputLoginIP,
+			@DomainName = @LoginDomain,	
+			@ActionID = 1337,
+			@Doing = @LogData,
+			@BrowserName = @BrowserName,
+			@Platform = @Platform,
+			@CountryCode = @CountryCode,
+			@Duration = @Duration
+			
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account is locked, please unlock it and try again.'  
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](40057,@Language) 
+							END ,@ErrCode=109    				
+		RETURN
+	END
 	
 	IF NOT EXISTS (SELECT 1 FROM CustInDirectLogin WITH(NOLOCK)
 					WHERE custid = @UplineCustid

@@ -27,6 +27,8 @@ AS
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20180703@Elodie: Poker Games Product - Support search by PlayerID [Redmine: #97675]
 		- 20200511@Elodie: Change format of PlayerID [Redmine: #133755]
+		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
+
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -112,12 +114,16 @@ BEGIN
 			,	tmp.IsAutoReset
 			,	tmp.MaxWinLimit
 			,	tmp.MaxLossLimit
+			,	tmp.Locked
+			,   tmp.ClosedReason
 		FROM	(
-			SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, ci.closed, ISNULL(ci.reject, 0), ci.username) AS RowNumber
+			SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, cps.closed, ISNULL(cps.reject, 0), ci.username) AS RowNumber
 				,	ci.username
-				,	ci.closed
+				,	CAST(cps.closed AS BIT) closed
 				,	ci.enabled
-				,	ISNULL(ci.reject, 0) AS suspended
+				,	CAST(ISNULL(cps.reject, 0) AS BIT) AS suspended
+				,   cps.Locked
+				,   li.ClosedReason
 				,	ci.credit
 				,	mb.CustId				
 				,	c.firstname
@@ -134,8 +140,15 @@ BEGIN
 					ON	ci.CustId = cwllm.CustId 
 					AND	cwllm.SportType = @SportType 
 					AND	cwllm.BetType = @BetType
-			GROUP BY	ci.username, ci.closed, ci.Enabled, ISNULL(ci.reject, 0), ci.credit, c.firstname, c.lastname
-					,	cwllm.IsAutoReset, cwllm.MaxWinLimit, cwllm.MaxLossLimit, mb.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, ISNULL(Locked, 0) Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
+			INNER JOIN CustLoginInfo_Member li WITH (NOLOCK) ON li.CustID = ci.custid
+			GROUP BY	ci.username, cps.closed, ci.Enabled, ISNULL(cps.reject, 0), cps.Locked, ci.credit, c.firstname, c.lastname
+					,	cwllm.IsAutoReset, cwllm.MaxWinLimit, cwllm.MaxLossLimit, mb.custid, li.ClosedReason
 		) tmp
 			LEFT JOIN dbo.CustUserMapping3rd cm ON cm.Custid = tmp.CustId AND cm.VendorID = @VendorID
 		WHERE	tmp.RowNumber BETWEEN @RowStart AND @RowEnd
@@ -144,13 +157,15 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT	RowNumber, closed, enabled, suspended, username, firstname, lastname, credit, CustId, IsAutoReset, MaxWinLimit, MaxLossLimit
+		SELECT	RowNumber, closed, enabled, suspended, username, firstname, lastname, credit, CustId, IsAutoReset, MaxWinLimit, MaxLossLimit, Locked, ClosedReason
 		FROM (
-			SELECT ROW_NUMBER() OVER (ORDER BY c.enabled DESC, c.closed, ISNULL(c.reject, 0), c.username) AS RowNumber
+			SELECT ROW_NUMBER() OVER (ORDER BY c.enabled DESC, cps.closed, ISNULL(cps.reject, 0), c.username) AS RowNumber
 				, c.username
-				, c.closed
+				, CAST(cps.closed AS BIT) closed
 				, c.enabled
-				, ISNULL(c.reject, 0) AS suspended
+				, CAST(ISNULL(cps.reject, 0) AS BIT) AS suspended
+				, cps.Locked
+				, li.ClosedReason
 				, c.credit
 				, b.CustId
 				, cc.firstname
@@ -162,8 +177,15 @@ BEGIN
 				INNER JOIN dbo.custInfo c WITH(NOLOCK) ON b.CustId = c.custid
 				INNER JOIN dbo.customer cc WITH(NOLOCK) ON b.CustId = cc.CustId
 				INNER JOIN dbo.CustWinLimit cwl WITH(NOLOCK) ON c.CustId = cwl.CustId AND cwl.SportType = @SportType AND cwl.BetType = @BetType
-			GROUP BY c.username, closed, enabled, ISNULL(c.reject, 0), credit, firstname, lastname
-				, IsAutoReset, MaxWinLimit, MaxLossLimit, b.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, ISNULL(Locked, 0) Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
+				INNER JOIN CustLoginInfo_Member li WITH (NOLOCK) ON li.CustID = c.custid
+			GROUP BY c.username, cps.closed, enabled, ISNULL(cps.reject, 0), cps.Locked, credit, firstname, lastname
+				, IsAutoReset, MaxWinLimit, MaxLossLimit, b.custid, li.ClosedReason
 		)tmp
 		WHERE tmp.RowNumber BETWEEN @RowStart AND @RowEnd
 		ORDER BY RowNumber

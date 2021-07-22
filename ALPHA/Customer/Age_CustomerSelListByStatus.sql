@@ -1,7 +1,4 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-USE bodb02
-GO
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelListByStatus]
 	@CustId INT,
 	@RoleId TINYINT,
@@ -18,7 +15,8 @@ AS
 	DB: DBACC/bodb02
 	
 	Revisions:	
-		- 20181108@Elodie: Get downline list by status in left panel [RedmineID: #58776]	
+		- 20181108@Elodie: Get downline list by status in left panel [RedmineID: #58776]
+		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]	
 
 	Explanation: 
 		@Status:1: Active
@@ -33,66 +31,90 @@ BEGIN
 	DECLARE @RowCount int, @RowStart int, @RowEnd INT
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
 
-	DECLARE @CustList TABLE (Username NVARCHAR(30), CustId INT)		
+	DECLARE @CustList TABLE (Username NVARCHAR(30), CustId INT, [Enabled] BIT, CLosed BIT, Reject BIT)		
 
 	IF @RoleId = 2
 	BEGIN	
 		IF @Status = 1 --Active
 		BEGIN
-			INSERT INTO @CustList(username,Custid)
-			SELECT c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 1 and c.recommend = @custid
-				AND c.closed = 0 AND ISNULL(reject,0) = 0
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 0
 		END
 		ELSE IF @Status = 2 --Closed
 		BEGIN
-			INSERT INTO @CustList(username,Custid)
-			SELECT c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 1 and c.recommend = @custid
-				AND c.closed = 1
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 1
 		END
 		ELSE IF @Status = 3 --Suppend
 		BEGIN
-			INSERT INTO @CustList(username,Custid)
-			SELECT c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 1 and c.recommend = @custid
-				AND c.closed = 0 AND ISNULL(reject,0) = 1
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 1
 		END
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
 		IF @Status = 1 --Active
 		BEGIN
-			INSERT INTO @CustList(username,Custid)		
-			SELECT  c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 2 and c.mrecommend = @custid
-				AND c.closed = 0 AND ISNULL(reject,0) = 0
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 0
 		END
 		ELSE IF @Status = 2 --Closed
 		BEGIN
-			INSERT INTO @CustList(username,Custid)		
-			SELECT  c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 2 and c.mrecommend = @custid
-				AND c.closed = 1
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 1
 		END
 		ELSE IF @Status = 3 --Suppend
 		BEGIN
-			INSERT INTO @CustList(username,Custid)		
-			SELECT  c.username,c.Custid
+			INSERT INTO @CustList(username,Custid,[Enabled],CLosed,Reject)
+			SELECT c.username,c.Custid,c.[Enabled],cps.closed,cps.reject
 			FROM custinfo c WITH (NOLOCK)
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 			WHERE c.roleid = 2 and c.mrecommend = @custid
-				AND c.closed = 0 AND ISNULL(reject,0) = 1
-			ORDER BY c.enabled DESC, c.closed, c.reject, c.username	
+				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 1
 		END
 	END	
 
@@ -109,7 +131,7 @@ BEGIN
 	(
 		SELECT 
 			UserName,Custid,
-			ROW_NUMBER() OVER (ORDER BY (SELECT 0)) AS RowNumber 
+			ROW_NUMBER() OVER (ORDER BY enabled DESC, closed, reject, username) AS RowNumber 
 		FROM @CustList 
 	) c
 	WHERE c.RowNumber BETWEEN @RowStart AND @RowEnd

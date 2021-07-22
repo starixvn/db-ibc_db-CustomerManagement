@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[EAS_CustomerSelAllStatus]
 	@custid INT
 	, @SettingStatus TINYINT = 0
@@ -18,6 +17,8 @@ AS
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
@@ -25,7 +26,7 @@ AS
 BEGIN
     SET NOCOUNT ON
 	DECLARE @GameType TABLE (GameTypeID INT, IBCBetTypeID INT)
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
+    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1, @Locked TINYINT
 		    	
 	--Downline/Upline status 
     DECLARE @upLineDisableCasino			BIT   
@@ -40,7 +41,6 @@ BEGIN
           , @uplineDoubleCommLosing BIT      
 		  , @UplineHasSecurityCode	BIT = 0  
           , @DisableAutoMPT			BIT  
-		  , @isDirectSuspend		BIT = 0
 		  , @HasSecurityCode		BIT = 0
 		  , @TransferOption			BIT
 		  
@@ -51,8 +51,8 @@ BEGIN
     IF @roleID=1 --for member
     BEGIN	
 	    --Upline
-		SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+		SELECT		@upLineSuspend = ISNULL(ps.reject, 0)
+				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -63,8 +63,13 @@ BEGIN
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 
 				,	@uplineid = custid
-		FROM custinfo WITH(NOLOCK)
-		WHERE custID = @recommend	
+		FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps
+		WHERE ci.custID = @recommend	
 
 		SELECT @HasSecurityCode = 1 FROM dbo.CustLoginInfo_Member WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @recommend AND SecurityCode IS NOT NULL
@@ -73,8 +78,8 @@ BEGIN
     ELSE IF @roleID = 2 --for agent
     BEGIN
 	    --Upline
-		SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+		SELECT		@upLineSuspend = ISNULL(ps.reject, 0)
+				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -85,7 +90,12 @@ BEGIN
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
 				
 				,	@uplineid = custid
-		FROM custinfo WITH(NOLOCK)
+		FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps
 		WHERE custID = @mrecommend		
 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
@@ -96,8 +106,8 @@ BEGIN
     ELSE IF @roleID = 3 --for master
     BEGIN
 	    --Upline
-	    SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+	    SELECT		@upLineSuspend = ISNULL(ps.reject, 0)
+				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -108,7 +118,12 @@ BEGIN
 				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
 				
 				,	@uplineid = custid
-	    FROM custinfo WITH(NOLOCK)
+	    FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps
 	    WHERE custID = @srecommend		
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
@@ -135,17 +150,14 @@ BEGIN
 	    SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1
     END
-	--check suspend status is direct or not
-	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
-	FROM dbo.CustProductStatus WITH(NOLOCK)
-	WHERE custid = @custid
 	
 	-------------------------------------------------------------------------	    
 	--Non product status
 	SELECT	@HasDownline AS HasDownline,
-			ci.closed,
-			ci.reject AS suspended,
-			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
+			ps.closed,
+			ps.reject AS suspended,
+			ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.SuspendInfo)),0) as isDirectSuspend,
+			ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,
 			@upLineClosed AS upLineClosed,
@@ -155,9 +167,18 @@ BEGIN
 			@TransferOption AS DisableTransfer,
 			@upLineDisableOutright AS upLineDisableOutright,
 			@HasSecurityCode AS HasSecurityCode, 
-			@UplineHasSecurityCode AS UplineHasSecurityCode
+			@UplineHasSecurityCode AS UplineHasSecurityCode,
+			ISNULL(ps.Locked,0) AS Locked
 	FROM customer c WITH (NOLOCK)
-	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
+	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid
+	    CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+										, SuspendInfo
+										, CloseInfo
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS ps	
     WHERE c.custid = @custid	
 
 	INSERT INTO @GameType (GameTypeID, IBCBetTypeID)

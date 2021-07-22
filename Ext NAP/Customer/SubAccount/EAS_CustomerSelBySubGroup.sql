@@ -16,6 +16,8 @@ AS
 		- 20201116@Johnson: get sub group for supers list [redmine:#145199]
 		- 20201211@Johnson: enhance sort super list [redmine:#146741]
 		- 20201222@Johnson: Exclude disabled accounts [redmine:#147578]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -38,11 +40,16 @@ BEGIN
 	INSERT INTO #SuperList(custid,username,closed,suspended,enabled)
 	SELECT ci.custid, 
 		ci.username, 
-		ci.closed, 
-		ISNULL(ci.reject, 0) AS suspended,
+		cps.closed, 
+		ISNULL(cps.reject, 0) AS suspended,
 		ci.enabled			
 	FROM Acc_CustGroup c WITH(NOLOCK)
 		INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 	WHERE c.GroupName = @GroupName
 		AND ci.roleid = 4
 		AND ci.enabled = 1

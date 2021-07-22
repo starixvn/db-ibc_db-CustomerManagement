@@ -17,6 +17,8 @@ AS
 	
 	Revisions:
 		- 20200721@winfred: initial sp [redmine: #137009]
+		- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
+
 	Parameter's Explanation:
 		- @AssociationList
 		<ROOT>
@@ -70,13 +72,18 @@ BEGIN
 	i.CustID
 	,c.username
 	,c.roleid
-	,c.reject
-	,c.closed
+	,cps.reject
+	,cps.closed
 	,c.Enabled
 	,i.[Date]
 	FROM #Input i WITH(NOLOCK)
-	INNER JOIN Custinfo c WITH(NOLOCK) on i.custid = c.custid
-	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
+		INNER JOIN Custinfo c WITH(NOLOCK) on i.custid = c.custid
+		INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 	WHERE ca.GroupName = @GroupName AND  i.CustSubId = 0
 	-- Check Data Sub 
 	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
@@ -84,13 +91,18 @@ BEGIN
 	i.CustID
 	,c.username
 	,c.roleid
-	,c.reject
-	,c.closed
+	,cps.reject
+	,cps.closed
 	,c.Enabled
 	,i.[Date]
 	FROM #Input i WITH(NOLOCK)
 	INNER JOIN Custinfo c WITH(NOLOCK) on i.CustSubId = c.custid
 	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
+	CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = c.custid
+								) AS cps
 	WHERE ca.GroupName = @GroupName AND  i.CustSubId <> 0
 	-- Show Pages
 	SELECT @TotalRows = COUNT(1)

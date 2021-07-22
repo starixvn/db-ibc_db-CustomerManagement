@@ -59,6 +59,7 @@ AS
 		- 20190412@Johnson: add suspendinfo [redmine: #105587]					
 		- 20191008@Johnson: remove credit info[Redmine: #121538]		
 		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -69,7 +70,8 @@ BEGIN
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
     DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
-			@isDirectSuspend BIT = 0, @transid BIGINT
+			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT,
+			@isDirectClosed BIT
 
     SELECT @username = RTRIM(LTRIM(@username))
 
@@ -148,15 +150,18 @@ BEGIN
 	END
 	
 	--check suspend status is direct or not
-	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
+	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)),
+		@isDirectClosed = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,CloseInfo)),
+		@Locked = ISNULL(Locked,0)
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
 	-------------------------------------------------------------------------
     SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ISNULL(@ClosedReason,0) AS ClosedReason, 
-			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, ci.closed, 
-			ci.reject AS suspended,
+			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, cs.closed, 
+			cs.reject AS suspended,
 			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
+			ISNULL(@isDirectClosed,0) as isDirectClosed,
 			CASE WHEN c.roleid = 1 THEN c.custid ELSE NULL END AS memberID,
 			CASE WHEN c.roleid = 1 THEN c.username ELSE NULL END AS memberName,	
 			a.custid AS agentID,
@@ -165,9 +170,14 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn			
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn, @Locked AS Locked			
     FROM custinfo ci WITH (NOLOCK)
-		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid	
+		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs	
 	    LEFT JOIN custinfo a WITH (NOLOCK) ON c.recommend = a.custid
 	    LEFT JOIN custinfo m WITH (NOLOCK) ON c.mrecommend = m.custid
 	    LEFT JOIN custinfo s WITH (NOLOCK) ON c.srecommend = s.custid

@@ -8,7 +8,8 @@ AS
 	DB: DBACC/bodb02
   
 	Revisions:		
-		- 20210512@Eden: Migrate bodb_Acc to main server [#152636]  
+		- 20210512@Eden: Migrate bodb_Acc to main server [#152636]
+		- 20210524@Tina: Lock account & indirect close account [redmine: #148600]  
 
 */
 BEGIN
@@ -18,7 +19,16 @@ BEGIN
 	FROM dbo.BetMonitoring_CustTotalBet_History his WITH (NOLOCK)
 		INNER JOIN dbo.CustInfo ci WITH (NOLOCK) ON his.CustID = ci.custid
 		INNER JOIN dbo.Sports s WITH (NOLOCK) ON s.SportType = his.SportType
-	WHERE his.NotifiedStatus = 1 AND ci.closed = 0
+		OUTER APPLY  (  SELECT TOP 1 ci.closed, ci.reject
+			      		FROM bodb02.dbo.Dep_CustSuper  WITH(NOLOCK)
+			 			WHERE CustID = ci.srecommend
+						UNION ALL
+						SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+						FROM bodb02.dbo.CustProductStatus  WITH(NOLOCK)
+						WHERE CustID = ci.custid
+			     ) AS cps
+	WHERE his.NotifiedStatus = 1 AND cps.closed = 0
 	ORDER BY s.SportType
 END
 GO

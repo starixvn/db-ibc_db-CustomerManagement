@@ -66,6 +66,17 @@ AS
 		- 20201113@Johnson: get sub group for supers list [redmine:#145199]
 		- 20201209@Johnson: remove default value for @GroupName [redmine:#145199]
 		- 20201222@Johnson: put WITH NOLOCK for Acc_CustGroup [redmine:#147578]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+
+	Explanation's Param:
+		@Status = 
+			0: All
+			1: Open
+			2: Suspended
+			3: Closed
+			4: Disabled
+			5: Locked
+
 	Example: EXEC EAS_CustomerSelByCom @GroupName='ACCUUS', @UserID = 8   
 */
 BEGIN
@@ -91,22 +102,29 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
 		SELECT ci.custID, ci.username, LimitDays, MinDate,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4		
 			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 										 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-			AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-										 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+			AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+										 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
-										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
+			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+										 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
+			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -114,23 +132,30 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
 		SELECT ci.custID, ci.username, LimitDays, MinDate,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4		
 			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 										 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-			AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-										 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+			AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+										 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-			AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
-										 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
+			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+										 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
 			AND c.username LIKE @UserName + '%'
+			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END	
@@ -171,9 +196,9 @@ BEGIN
 	SELECT	c.custid,
 			c.username,
 			ci.enabled,
-			ci.closed,
+			cps.closed,
 			ci.SyncCasino,
-			ISNULL(ci.reject, 0) AS suspended,
+			ISNULL(cps.reject, 0) AS suspended,
 			c.roleid,
 			ISNULL(cp.firstname, '') AS firstname,
 			ISNULL(cp.lastname, '') AS lastname,			
@@ -195,21 +220,27 @@ BEGIN
 		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
 			
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs
-           			
+			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs,
+			ISNULL(cps.Locked,0) AS Locked         			
 	FROM @tmpSuperList sl
 		INNER JOIN dbo.customer c WITH(NOLOCK) on sl.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 		INNER JOIN dbo.CustSuperProfile cp WITH(NOLOCK) ON cp.CustId = c.CustId
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1
 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, 
+	GROUP BY c.custid, c.username, ci.enabled, cps.closed, ci.SyncCasino, cps.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			sl.LimitDays, sl.MinDate, sl.SubGroup, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate
+			sl.LimitDays, sl.MinDate, sl.SubGroup, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate,cps.Locked
 	
 	ORDER BY RowNumber
 			   

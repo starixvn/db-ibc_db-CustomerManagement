@@ -88,7 +88,7 @@ Revisions:
 	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
 	- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
 	- 20210426@Tina: Add VGaming [Redmine: #153938]
-
+	- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
 
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -365,48 +365,48 @@ Param's Explanation:
 		
 	SELECT 			
 	-- For AllBet
-		@DisableAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBet), 1),
-		@HideAllbet  = CAST(CASE WHEN @IsHidden_AllBet = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_AllBet), 1) = 0 THEN 0 ELSE 1 END AS BIT),
-		@SyncedAllbet = ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_AllBet), 0),		
+		@DisableAllbet = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBet)), 1),
+		@HideAllbet  = CAST(CASE WHEN @IsHidden_AllBet = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_AllBet)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@SyncedAllbet = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_AllBet)), 0),		
 	-- For SA Gaming
-		@DisableSAGaming = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SAGaming), 1),	
-		@HideSAGaming  = CAST(CASE WHEN @IsHidden_SAGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SAGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableSAGaming = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SAGaming)), 1),	
+		@HideSAGaming  = CAST(CASE WHEN @IsHidden_SAGaming = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SAGaming)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For Sexy Gaming
-		@DisableSexyGaming = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SexyGaming), 1),	
-		@HideSexyGaming  = CAST(CASE WHEN @IsHidden_SexyGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SexyGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableSexyGaming = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SexyGaming)), 1),	
+		@HideSexyGaming  = CAST(CASE WHEN @IsHidden_SexyGaming = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SexyGaming)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For GTCasino
-		@DisableGTCasino = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_GTCasino), 1),	
-		@HideGTCasino  = CAST(CASE WHEN @IsHidden_GTCasino = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_GTCasino), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableGTCasino = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_GTCasino)), 1),	
+		@HideGTCasino  = CAST(CASE WHEN @IsHidden_GTCasino = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_GTCasino)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For ION
-		@DisableION = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_ION), 1),	
-		@HideION  = CAST(CASE WHEN @IsHidden_ION = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_ION), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableION = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_ION)), 1),	
+		@HideION  = CAST(CASE WHEN @IsHidden_ION = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_ION)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BBIN
-		@DisableBBIN = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BBIN), 1),	
-		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BBIN), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableBBIN = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BBIN)), 1),	
+		@HideBBIN  = CAST(CASE WHEN @IsHidden_BBIN = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BBIN)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For Lottery
-		@DisableLottery = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Lottery), 1),	
-		@HideLottery  = CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Lottery), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableLottery = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Lottery)), 1),	
+		@HideLottery  = CAST(CASE WHEN @IsHidden_Lottery = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Lottery)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For TableGames
-		@DisableTableGames = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_TableGames), 1),	
-		@HideTableGames  = CAST(CASE WHEN @IsHidden_TableGames = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_TableGames), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableTableGames = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_TableGames)), 1),	
+		@HideTableGames  = CAST(CASE WHEN @IsHidden_TableGames = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_TableGames)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For RNGWar
-		@DisableRNGWar = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_RNGWar), 1),	
-		@HideRNGWar  = CAST(CASE WHEN @IsHidden_RNGWar = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_RNGWar), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableRNGWar = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_RNGWar)), 1),	
+		@HideRNGWar  = CAST(CASE WHEN @IsHidden_RNGWar = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_RNGWar)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For WM
-		@DisableWM = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_WM), 1),	
-		@HideWM  = CAST(CASE WHEN @IsHidden_WM = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_WM), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableWM = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_WM)), 1),	
+		@HideWM  = CAST(CASE WHEN @IsHidden_WM = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_WM)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For GDG
-		@DisableGDG = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_GDG), 1),	
-		@HideGDG  = CAST(CASE WHEN @IsHidden_GDG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_GDG), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableGDG = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_GDG)), 1),	
+		@HideGDG  = CAST(CASE WHEN @IsHidden_GDG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_GDG)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BG
-		@DisableBG = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_BG), 1),	
-		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_BG), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+		@DisableBG = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BG)), 1),	
+		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BG)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For Sports Lottery
-	@DisableSportsLottery  = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery ), 1),	
-	@HideSportsLottery   = CAST(CASE WHEN @IsHidden_SportsLottery  = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SportsLottery ), 1) = 0 THEN 0 ELSE 1 END AS BIT),	
+	@DisableSportsLottery  = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery)), 1),	
+	@HideSportsLottery   = CAST(CASE WHEN @IsHidden_SportsLottery  = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SportsLottery)), 1) = 0 THEN 0 ELSE 1 END AS BIT),	
 	-- For PPLive
-		@DisablePPLive = ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_PPLive), 1),	
-		@HidePPLive  = CAST(CASE WHEN @IsHidden_PPLive = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_PPLive), 1) = 0 THEN 0 ELSE 1 END AS BIT)
+		@DisablePPLive = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PPLive)), 1),	
+		@HidePPLive  = CAST(CASE WHEN @IsHidden_PPLive = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_PPLive)), 1) = 0 THEN 0 ELSE 1 END AS BIT)
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 	WHERE ci.CustID = @CustID
@@ -432,8 +432,9 @@ Param's Explanation:
     		IF @IsDeposit<>1
 				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
 	END
-	SELECT	ISNULL(reject,0) AS Suspend,
-			ISNULL(closed,0) As Closed,
+	SELECT	ISNULL(cps.reject,0) AS Suspend,
+			ISNULL(cps.closed,0) As Closed,
+			ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.CloseInfo)),0) as isDirectClosed,
 			ISNULL(autosuspend,0) As AutoSuspend,	
 			ISNULL(cm.DisableAutoMPT ,0) As DisableAutoMPT,	
 			ISNULL(SyncCasino,0) AS SyncCasino,
@@ -458,11 +459,11 @@ Param's Explanation:
 			ISNULL(DisableColossusBet,1) as DisableColossusBet,
 			ISNULL(HideColossusBet,1) as HideColossusBet,
 			-- For MuayThai
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_MuayThai),1) AS DisableMuayThai,
-			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_MuayThai),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)),1) AS DisableMuayThai,
+			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
 			-- For Esports
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_Esports),1) AS DisableEsports,
-			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_Esports),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Esports)),1) AS DisableEsports,
+			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION + GDG)
@@ -471,7 +472,7 @@ Param's Explanation:
 			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 OR @SyncedWM = 1 OR @SyncedGDG = 1 OR @SyncedBG = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
 			-- For Allbet
 			@DisableAllbet AS DisableAllbet,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP), 1) AS DisableAllBetVIP,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)), 1) AS DisableAllBetVIP,
 			@HideAllbet AS HideAllbet,
 			@SyncedAllbet AS SyncedAllbet,
 			--For SA Gaming
@@ -496,15 +497,15 @@ Param's Explanation:
 			@SyncedBBIN AS SyncedBBIN,
 
 			-- For FishingWorld
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)), 1) AS DisableFishingWorld,		
+			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_FishingWorld)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_FishingWorld)), 0) AS SyncedFishingWorld,
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
 			-- For VoidBridge
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge), 1) AS DisableVoidBridge,
-			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VoidBridge), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_VoidBridge), 0) AS SyncedVoidBridge,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VoidBridge)), 1) AS DisableVoidBridge,
+			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VoidBridge)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_VoidBridge)), 0) AS SyncedVoidBridge,
 
 			-- For RNGLottery (Lottery+ TableGames + RNGWar)
 			CAST(CASE WHEN @DisableLottery = 0 OR @DisableTableGames= 0 OR @DisableRNGWar= 0 THEN 0 ELSE 1 END AS BIT)AS DisableRNGLottery,		
@@ -527,26 +528,26 @@ Param's Explanation:
 			@SyncedRNGWar AS SyncedRNGWar,
 
 			-- For NG2
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_NG2),1) AS DisableNG2,
-			CAST(CASE WHEN @IsHidden_NG2 = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_NG2),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_NG2), 0) AS SyncedNG2,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_NG2)),1) AS DisableNG2,
+			CAST(CASE WHEN @IsHidden_NG2 = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_NG2)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideNG2,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_NG2)), 0) AS SyncedNG2,
 
 			CASE WHEN @IsDeposit=1 THEN 1 ELSE ISNULL(@ClosedReason,0) END AS ClosedReason,
 			ISNULL(@IsAllDayBalTransfer, 0) IsAllDayBalTransfer,
 
 			-- For VS
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VS), 1) AS DisableVirtualSports,		
-			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VS), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VS)), 1) AS DisableVirtualSports,		
+			CAST(CASE WHEN @IsHidden_VS = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VS)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualSports,
 
 			-- For VG
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VG), 1) AS DisableVirtualGames,		
-			CAST(CASE WHEN @IsHidden_VG = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VG), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VG)), 1) AS DisableVirtualGames,		
+			CAST(CASE WHEN @IsHidden_VG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VG)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVirtualGames,
 			-- For SabaClub
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SabaClub), 1) AS DisableSabaClub,		
-			CAST(CASE WHEN @IsHidden_SabaClub = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SabaClub), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaClub,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaClub)), 1) AS DisableSabaClub,		
+			CAST(CASE WHEN @IsHidden_SabaClub = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaClub)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaClub,
 			-- For Saba Vitual Sports
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_SabaVirtualSport),1) AS DisableSabaVirtualSport,
-			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_SabaVirtualSport),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaVirtualSport,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaVirtualSport)),1) AS DisableSabaVirtualSport,
+			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaVirtualSport)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaVirtualSport,
 			--For WM
 			@DisableWM AS DisableWM,
 			@HideWM AS HideWM,
@@ -568,19 +569,31 @@ Param's Explanation:
 			@HidePPLive AS HidePPLive,
 			@SyncedPPLive AS SyncedPPLive,
 			--For VGaming
-			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_VGaming), 1) AS DisableVGaming,		
-			CAST(CASE WHEN @IsHidden_VGaming = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_VGaming), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVGaming
-			
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VGaming)), 1) AS DisableVGaming,		
+			CAST(CASE WHEN @IsHidden_VGaming = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VGaming)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVGaming,
+			cps.Locked
+
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
 		LEFT JOIN dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
-		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, ISNULL(Locked,0) Locked
+										, bitmapIsHidden
+										, bitmapIsDisabled
+										, bitmapHasSynced
+										, CloseInfo
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 		
 	WHERE ci.CustID = @CustID
 	GROUP BY
-			ci.reject,
-			ci.closed,
+			cps.reject,
+			cps.closed,
+			cps.Locked,
+			cps.CloseInfo,
 			ci.autosuspend,
 			cm.DisableAutoMPT,		
 			ci.SyncCasino, 

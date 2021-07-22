@@ -109,6 +109,7 @@ Revisions:
 	- 20200602@Sol: Show IsAutoEnableADBMaster [Redmine: #134242]
 	- 202008066@Elodie: Get CustSuspendLockUpd info [Redmine: #138255]
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -137,7 +138,6 @@ BEGIN
 		  , @HasDownline BIT = 0
 		  , @ClosedReason TINYINT
 		  ,	@UplineHasSecurityCode	BIT=0
-		  , @isDirectSuspend BIT = 0
 		  , @HeadlineName VARCHAR(50)
 		  , @HeadlineID INT
 		  , @HeadlineEnabled BIT
@@ -356,67 +356,72 @@ BEGIN
 		BEGIN
 			SELECT @TotalMAgentActive =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 3 AND Closed = 0 AND ISNULL(reject, 0) = 0 THEN 1
+								  WHEN RoleID = 3 AND cs.Closed = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMAgentClosed =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 3 AND Closed = 1 THEN 1
+								  WHEN RoleID = 3 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
 								  ELSE 0 END
 							   ), 0
 						   )
 				 , @TotalMAgentSuspended =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 3 AND ISNULL(reject, 0) = 1 AND Closed = 0 THEN 1
+								  WHEN RoleID = 3 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalAgentActive =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 2 AND Closed = 0 AND ISNULL(reject, 0) = 0 THEN 1
+								  WHEN RoleID = 2 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalAgentClosed =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 2 AND Closed = 1 THEN 1
+								  WHEN RoleID = 2 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalAgentSuspended =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 2 AND ISNULL(reject, 0) = 1 AND Closed = 0 THEN 1
+								  WHEN RoleID = 2 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMemberActive =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND Closed = 0 AND ISNULL(reject, 0) = 0 THEN 1
+								  WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMemberClosed =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND Closed = 1 THEN 1
+								  WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMemberSuspended =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND ISNULL(reject, 0) = 1 AND Closed = 0 THEN 1
+								  WHEN RoleID = 1 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
-			FROM dbo.custInfo WITH(NOLOCK)
+			FROM dbo.custInfo ci WITH(NOLOCK)
+				OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid AND @IsDeposit = 0
+								) AS cs
 			WHERE srecommend = @custid
 		END
     END								  
@@ -460,15 +465,20 @@ BEGIN
 		ELSE
 		BEGIN
 			SELECT
-				@TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(reject,0) = 1 AND Closed = 0 THEN 1 ELSE 0 END), 0),
+				@TotalAgentActive = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
+				@TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
+				@TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0),
     	
-				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND Closed = 0 THEN 1 ELSE 0 END), 0)
-			FROM Custinfo WITH(NOLOCK)
-			WHERE MRecommend = @custid
+				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
+				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
+				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0)
+			FROM Custinfo ci WITH(NOLOCK)
+				OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid AND @IsDeposit = 0
+								) AS cs
+			WHERE ci.MRecommend = @custid
 		END
 
         --------------
@@ -504,11 +514,16 @@ BEGIN
 		ELSE
 		BEGIN
 			SELECT
-				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 0 AND ISNULL(reject,0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND Closed = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(reject,0) = 1 AND Closed = 0 THEN 1 ELSE 0 END), 0)
-			FROM Custinfo WITH(NOLOCK)
-			WHERE Recommend = @custid
+				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
+				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
+				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0)
+			FROM Custinfo ci WITH(NOLOCK)
+				OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid AND @IsDeposit = 0
+								) AS cs
+			WHERE ci.Recommend = @custid
 		END
 				   --------------
 		SELECT 
@@ -599,10 +614,6 @@ BEGIN
 
 	END
 
-	--check suspend status is direct or not
-	SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
-	FROM dbo.CustProductStatus WITH(NOLOCK)
-	WHERE custid = @custid
 	--get headline username for cn88
 	SELECT @headlineName = username, @HeadlineID = custID, @headlineEnabled = Enabled
 	FROM custinfo (NOLOCK)
@@ -634,9 +645,10 @@ BEGIN
 	    ci.virtualmultiplier as EnableVirtualrate,
 	    important,
 	    ci.Abnormal,
-	    ci.closed, 
-		ci.reject as suspended,
-		ISNULL(@isDirectSuspend,0) as isDirectSuspend,
+	    ISNULL(cps.closed,ci.closed) closed, 
+		ISNULL(cps.reject,ci.reject) as suspended,
+		ISNULL((SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.SuspendInfo)),0) as isDirectSuspend,
+		ISNULL((SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.CloseInfo)),0) as isDirectClosed,
 		ci.autosuspend,		 
 		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
 	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
@@ -686,6 +698,7 @@ BEGIN
 		,@SabaClubPlayerID3rd AS SabaClubPlayerID3rd
 		,ISNULL(@IsAutoEnableADBMaster,0) IsAutoEnableADBMaster
 		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
+		,ISNULL(cps.Locked,0) Locked
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
@@ -696,7 +709,15 @@ BEGIN
 						INNER JOIN Customer C ON CA.custid = C.custid 
 					 WHERE ca.GroupID = GroupHeadline.GroupID AND ca.IsGroupHeadLine = 1 AND @IsDeposit = 0
 					) AS Headline
-		OUTER APPLY f_CS_GetCustomerStatus(@custid) cs		
+		OUTER APPLY f_CS_GetCustomerStatus(@custid) cs	
+		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+										, SuspendInfo
+										, CloseInfo
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid AND @IsDeposit = 0
+								) AS cps	
     WHERE c.custid = @custid
     
 	

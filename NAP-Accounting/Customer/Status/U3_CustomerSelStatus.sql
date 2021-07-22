@@ -63,6 +63,7 @@ Revisions:
 	- 20190917@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
 	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -248,8 +249,8 @@ Param's Explanation:
     		IF @IsDeposit<>1
 				SELECT @ClosedReason=ClosedReason FROM CustLoginInfo WITH(NOLOCK) WHERE Custid=@custid	
 	END
-	SELECT	ISNULL(reject,0) AS Suspend,
-			ISNULL (closed,0) As Closed,
+	SELECT	ISNULL(cps.reject,0) AS Suspend,
+			ISNULL (cps.closed,0) As Closed,
 			ISNULL (autosuspend,0) As AutoSuspend,	
 			ISNULL (cm.DisableAutoMPT ,0) As DisableAutoMPT,	
 			CAST (1 AS BIT) AS DisableHorseracing,
@@ -343,12 +344,19 @@ Param's Explanation:
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
 		LEFT JOIN dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID IN (1501,1503,1504,1505,1507,1508,1509,1511,1513)		
-		LEFT JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, bitmapHasSynced
+										, bitmapIsDisabled
+										, bitmapIsHidden
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 		
 	WHERE ci.CustID = @CustID
 	GROUP BY
-			ci.reject,
-			ci.closed,
+			cps.reject,
+			cps.closed,
 			ci.autosuspend,
 			cm.DisableAutoMPT,
 			ci.SyncCasino, 

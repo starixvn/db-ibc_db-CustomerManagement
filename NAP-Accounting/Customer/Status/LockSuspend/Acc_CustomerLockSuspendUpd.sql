@@ -14,6 +14,8 @@ AS
 
 	Revisions:
 		- 20200216@Elodie: Initial SP [Redmine:#128451]
+		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
+
 	Param's Explanation:
 		@CustIDList: id of customer
 		@Lock: 1:Lock, 2:Unlock
@@ -111,9 +113,14 @@ BEGIN
 	IF @Lock = 1
 	BEGIN
 		INSERT INTO #CustLog (CustId, RoleId, Reject)
-		SELECT ci.custid, ci.roleid, ci.reject
+		SELECT ci.custid, ci.roleid, cs.reject
 		FROM #CustList t
 			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username 
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs
 		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
 
 		INSERT INTO CustSuspendLockUpd (CustId)
@@ -123,10 +130,15 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO #CustLog (CustId, RoleId, Reject)
-		SELECT ci.custid, ci.roleid, ci.reject
+		SELECT ci.custid, ci.roleid, cps.reject
 		FROM #CustList t
 			INNER JOIN dbo.custInfo ci ON t.UserName = ci.username
 			INNER JOIN CustSuspendLockUpd cs WITH (NOLOCK) ON ci.custid = cs.custid		
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 
 		DELETE CustSuspendLockUpd
 		WHERE custid IN (SELECT custid FROM #CustLog t)

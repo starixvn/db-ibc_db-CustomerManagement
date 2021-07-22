@@ -11,45 +11,53 @@ AS
 	DB: DBCUST.CustDB
 	
 	Revisions:	
-		- 20170620@Winnie: apply color for closed account [RedmineID: #74494]	
+		- 20170620@Winnie: apply color for closed account [RedmineID: #74494]
+		- 20210408@Tina: apply color for locked account [redmine: #148600]
+			
 */
 
 SET NOCOUNT ON
 
 if @roleid = 2
 BEGIN		
-	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
-	from custinfo c with (nolock)
-	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid AND c.closed=1
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM custinfo c WITH (NOLOCK)
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
+		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE c.roleid = 1 and c.recommend = @custid AND (ps.CloseInfo > 0 OR ps.Locked > 0)
 	UNION ALL
-	SELECT cl.custid,cl.ClosedReason
-	from CustLoginInfo cl WITH(NOLOCK) 
-	where cl.CustID = @custid
+	SELECT cl.custid,cl.ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM CustLoginInfo cl WITH(NOLOCK) 
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON cl.custid = ps.CustID
+	WHERE cl.CustID = @custid
 	
 END
 else if @roleid = 3
 BEGIN
-	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
-	from custinfo c with (nolock)
-	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid  AND c.closed=1	
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM custinfo c WITH (NOLOCK)
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
+		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE c.roleid = 1 and c.recommend = @custid  AND (ps.CloseInfo>0 OR ps.Locked > 0)	
 	UNION ALL	
-	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
-	from custinfo c with (nolock)
-	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 2 and c.mrecommend = @custid AND c.closed=1
+	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM custinfo c WITH (NOLOCK)
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
+		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE c.roleid = 2 and c.mrecommend = @custid AND (ps.CloseInfo>0 OR ps.Locked > 0)
 END
-else if @roleid = 4
+ELSE IF @roleid = 4
 BEGIN
-	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
-	from custinfo c with (nolock)
-	LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid = 1 and c.recommend = @custid  AND c.closed=1	
+	SELECT c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM custinfo c WITH (NOLOCK)
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
+		LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE c.roleid = 1 and c.recommend = @custid  AND (ps.CloseInfo>0 OR ps.Locked > 0)	
 	UNION ALL		
-	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason
-	from custinfo  c with (nolock)
-	LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	where c.roleid IN(2,3) and c.srecommend = @custid  AND c.closed=1	
+	SELECT  c.custid,ISNULL(cl.ClosedReason,0) AS ClosedReason, ISNULL(ps.Locked,0) Locked
+	FROM custinfo  c WITH (NOLOCK)
+		INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
+		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	WHERE c.roleid IN(2,3) and c.srecommend = @custid  AND (ps.CloseInfo>0 OR ps.Locked > 0)	
 END
 GO

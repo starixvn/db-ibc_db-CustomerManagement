@@ -23,10 +23,11 @@ AS
 		- 20150609@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20210716@Tina: Lock account & indirect close account [redmine: #148600]
 */
 BEGIN
 	SET NOCOUNT ON 
-	DECLARE @LogData VARCHAR(500), @AgentUserName VARCHAR(30)
+	DECLARE @LogData VARCHAR(500), @AgentUserName VARCHAR(30), @isLicensee BIT = 0
 	SET @ErrCode = 0
 
 	IF @system = 'EXTERNAL'
@@ -52,16 +53,34 @@ BEGIN
 
 	SELECT @AgentUserName = username FROM custinfo (NOLOCK) WHERE custid = @agentID
 
+	--check Licensee customer
+	SELECT @isLicensee = 1
+	FROM CustInfo ci WITH (NOLOCK)
+		INNER JOIN Dep_CustSuper sup WITH (NOLOCK) ON ci.srecommend = sup.custid
+	WHERE ci.custid = @agentID
+
 	IF @closedOnly = 1
 	BEGIN
-		UPDATE custinfo SET credit = 0 
-		OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
-		WHERE roleid = 1 AND closed=1 AND recommend = @agentID AND Credit != 0 
+		IF (@isLicensee = 1)
+		BEGIN
+			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
+			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+			WHERE roleid = 1 AND closed=1 AND recommend = @agentID AND Credit != 0 
+		END
+		ELSE
+		BEGIN
+			UPDATE ci  SET credit = 0 
+			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+			FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
+				INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+			WHERE roleid = 1 AND cps.CloseInfo > 0 AND recommend = @agentID AND Credit != 0 
+		END
+
 		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines [CLOSED ACCOUNTS ONLY]'
 	END
 	ELSE
 	BEGIN
-		UPDATE custinfo SET credit = 0 
+		UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
 		OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
 		WHERE roleid = 1 AND recommend = @agentID AND Credit != 0 
 		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines'

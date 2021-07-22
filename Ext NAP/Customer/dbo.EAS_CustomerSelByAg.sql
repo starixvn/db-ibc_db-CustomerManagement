@@ -61,6 +61,16 @@ Revisions:
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+
+	Explanation's Param:
+	@Status = 
+		0: All
+		1: Open
+		2: Suspended
+		3: Closed
+		4: Disabled
+		5: Locked
 		
 	Example: EXEC EAS_CustomerSelBySAg @srecommend=9367272, @UserID = 8   
 */  
@@ -97,20 +107,27 @@ BEGIN
 		BEGIN
 			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 			SELECT ci.custID, ci.username,
-				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 			FROM dbo.custinfo ci WITH(NOLOCK)
 				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			WHERE ci.recommend = @recommend
 				AND ci.roleid = 1	
 				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-				AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-											 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+				AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-				AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
-											 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
+				AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+											 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
+				AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 			
 
 			SELECT @TotalRows = @@ROWCOUNT
@@ -119,21 +136,28 @@ BEGIN
 		BEGIN
 			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 			SELECT ci.custID, ci.username,
-				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, ci.closed, ISNULL(ci.reject,0), c.username) as RowNumber
+				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 			FROM dbo.custinfo ci WITH(NOLOCK)
 				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			WHERE ci.recommend = @recommend
 				AND ci.roleid = 1			
 				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
-				AND ISNULL(closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-											 WHEN @Status = 3 THEN 1 ELSE ISNULL(closed, 0) END
+				AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-				AND ISNULL(reject, 0) = CASE WHEN @Status = 1 THEN 0
-											 WHEN @Status = 2 THEN 1 ELSE ISNULL(reject, 0) END
+				AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+											 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 				AND c.username LIKE @UserName + '%'
+				AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 
 			SELECT @TotalRows = @@ROWCOUNT
 		END
@@ -151,9 +175,9 @@ BEGIN
 	SELECT	c.custid,
 			c.username,
 			ci.enabled,
-			ci.closed,
+			cps.closed,
 			ci.SyncCasino,
-			ISNULL(ci.reject, 0) AS suspended,
+			ISNULL(cps.reject, 0) AS suspended,
 			c.roleid,
 			c.ugroup,
 			ISNULL(c.username2,'') AS NickName,
@@ -176,19 +200,25 @@ BEGIN
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END) AS playerdiscount,			
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscountcs,
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscount1x2
-           	
+			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscount1x2,
+			ISNULL(cps.Locked,0) AS Locked
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+										, Locked
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cps
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 AND @IsMyanmarOdds = 1
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, ci.closed, ci.SyncCasino, ci.reject, c.roleid, c.ugroup, c.username2,
+	GROUP BY c.custid, c.username, ci.enabled, cps.closed, ci.SyncCasino, cps.reject, c.roleid, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			cl.SecurityCode, ml.RowNumber  ,AC.playerdiscount
+			cl.SecurityCode, ml.RowNumber  ,AC.playerdiscount,cps.Locked
 	
 	ORDER BY RowNumber
 

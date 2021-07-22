@@ -62,6 +62,7 @@ AS
 		- 20170724@Elodie: Don't reset login count of main account when sub account login successfull - [Redmine: #80409] 
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20200624@Johnson: add superid, siteid for BF login to prevent robot [redmine:#135142] 
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -77,6 +78,7 @@ AS
 				108: account closed
 				109: login exceed 5 times
 				110: login failed because access from outsite throught test accounts
+				111: account locked
 		• @ErrMsg: Error description.
 */
 BEGIN
@@ -86,7 +88,8 @@ BEGIN
 	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
 		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
 		-- For checking login domain
-		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT	
+		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT,
+		@Locked TINYINT	
 
 	SET @Begin = GETDATE()
 	SELECT @inputLoginIP = @LoginIP		
@@ -471,7 +474,7 @@ BEGIN
 				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 					@UserID = @CustID,
 					@CustID = @CustID,
-					@ActionID = 908,
+					@ActionID = 950,
 					@TrackingValue = @LogSPData,
 					@Duration = @Duration				
 			END
@@ -838,8 +841,13 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @closed = closed, @db_enabled = ISNULL(enabled,0), @superid = srecommend
+	SELECT @db_enabled = ISNULL(enabled,0), @superid = srecommend
 	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
+
+	SELECT @Locked = CASE WHEN @IsSubAccount = 1 THEN 0 ELSE CPS.Locked END, 
+		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
+	FROM CustProductStatus CPS WITH (NOLOCK)
+	WHERE CPS.CustID = @db_custid
 
 	IF @db_enabled <> 1
 	BEGIN
@@ -933,6 +941,52 @@ BEGIN
 						ELSE [dbo].[f_Get_MsgNamebyMsgID](80002,@Language)
 				   END ,@ErrCode=108  
 		RETURN  
+	END
+	ELSE IF ISNULL(@Locked, 0) > 0
+	BEGIN  
+		SELECT @LogData =  @role + @UserName + ' Result:Failed(A/C_Locked)'
+		
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+
+		IF @isNickname = 1
+		BEGIN							
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @db_custid, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1304,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @Nickname							
+		END	
+		ELSE
+		BEGIN				
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @db_custid, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1304,
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration				
+		END	
+
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been locked due to multiple failed security check. Please contact your upline to unlock.'  
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](80007,@Language)
+				   END ,@ErrCode=111  
+		RETURN  
 	END  
 	ELSE IF @db_userpwd <> @UserPWD
 	BEGIN 
@@ -987,7 +1041,7 @@ BEGIN
 		
 		IF @failedcount > 5 	
 		BEGIN
-			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
 		    
 			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
 			
@@ -1012,7 +1066,9 @@ BEGIN
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
 				 END ,@ErrCode= case when @failedcount > 5 then 109 else 106 end
 	  return  
-	END  
+	END
+	
+	  
 	  
 	-- Successful  
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  

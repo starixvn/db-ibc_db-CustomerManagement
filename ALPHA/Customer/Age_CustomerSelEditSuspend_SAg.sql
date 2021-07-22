@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustomerSelEditSuspend_SAg]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerSelEditSuspend_SAg]
 	@CustID INT
 AS
 
@@ -9,17 +10,18 @@ DB: DBCUST.CustDB
 Original: 
 Revisions:
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	
 */
+BEGIN
+	SET NOCOUNT ON
+	
+	DECLARE @srecommend INT
+	SELECT @srecommend = srecommend FROM Custinfo WITH (NOLOCK) WHERE custid = @CustID
+	
+	SELECT CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS UplineSuspended									
+	FROM dbo.CustProductStatus  WITH(NOLOCK)
+	WHERE CustID = @srecommend
 
-SET NOCOUNT ON
-
-SELECT ISNULL(reject, 0) UplineSuspended 
-FROM CustInfo WITH (NOLOCK)
-WHERE custid = (SELECT srecommend FROM Custinfo WITH (NOLOCK) WHERE custid = @CustID )
-
-
+END
 GO
-GRANT EXECUTE ON [Age_CustomerSelEditSuspend_SAg] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [Age_CustomerSelEditSuspend_SAg] TO [bodbDownlineNetView]
-
