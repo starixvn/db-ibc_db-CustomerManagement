@@ -1,8 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingBySAg]
 (
 	@SRecommend INT,
@@ -33,6 +30,7 @@ AS
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
 		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -52,12 +50,12 @@ BEGIN
 	(
 		SELECT 
 			ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled,0) = 0 THEN 3 
-											WHEN ISNULL(ci.closed,0) = 1 THEN 2 
-											WHEN ISNULL(ci.reject,0) = 1 THEN 1 
+											WHEN ISNULL(ps.closed,0) = 1 THEN 2 
+											WHEN ISNULL(ps.reject,0) = 1 THEN 1 
 											ELSE 0 
 										END, ci.username) AS RowNumber,
-			ci.closed, ci.enabled, 
-			ISNULL(ci.reject,0) AS suspended,
+			ps.closed, ci.enabled, 
+			ISNULL(ps.reject,0) AS suspended,
 			ci.username, 
 			ci.custid, 
 				
@@ -134,14 +132,21 @@ BEGIN
 			-- Mix Parlay of Mixed Sports
 			MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_9,
 
-			ISNULL(cl.ClosedReason,0) AS ClosedReason	
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,
+			ISNULL(ps.Locked,0)	AS Locked	
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
 			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid	
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+							, Locked
+						FROM dbo.CustProductStatus  WITH(NOLOCK)
+						WHERE CustID = ci.custid
+					) AS ps
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3
 		GROUP BY
-			ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
+			ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason, ps.Locked
 	) t 
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
  

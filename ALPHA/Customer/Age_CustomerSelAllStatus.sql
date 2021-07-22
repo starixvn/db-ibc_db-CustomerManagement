@@ -15,6 +15,7 @@ AS
 		- 20200310@Percy: Return IsAllDayBalTransfer [RedmineID: #130091]
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
@@ -40,7 +41,9 @@ BEGIN
           , @uplineDoubleCommLosing BIT        
           , @DisableAutoMPT			BIT  
 		  , @isDirectSuspend 		BIT = 0
+		  , @isDirectClosed 		BIT = 0
 		  , @DisableKeno			BIT
+		  , @Locked					TINYINT
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -49,8 +52,8 @@ BEGIN
     IF @roleID=1 --for member
     BEGIN	
 	    --Upline
-		SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+		SELECT		@upLineSuspend = ISNULL(cs.reject, 0)
+				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -61,14 +64,19 @@ BEGIN
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 
 				,	@uplineid = custid
-	     FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @recommend	
+	     FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs
+	     WHERE ci.custID = @recommend	
     END 
     ELSE IF @roleID = 2 --for agent
     BEGIN
 	    --Upline
-	    SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+	    SELECT		@upLineSuspend = ISNULL(cs.reject, 0)
+				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -79,16 +87,21 @@ BEGIN
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
-	     FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @mrecommend		
+	     FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs
+	     WHERE ci.custID = @mrecommend		
 
 		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
     END
     ELSE IF @roleID = 3 --for master
     BEGIN
 	    --Upline
-	    SELECT		@upLineSuspend = ISNULL(reject, 0)
-				,	@upLineClosed = ISNULL(closed, 0)
+	    SELECT		@upLineSuspend = ISNULL(cs.reject, 0)
+				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
@@ -99,15 +112,22 @@ BEGIN
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
-	     FROM custinfo WITH(NOLOCK)
-	     WHERE custID = @srecommend		
+	     FROM custinfo ci WITH(NOLOCK)
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs
+	     WHERE ci.custID = @srecommend		
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 	    SELECT @DisableAutoMPT = DisableAutoMPT, @IsAllDayBalTransfer = IsAllDayBalTransfer FROM CustMaster (NOLOCK) WHERE CustID = @custID
     END
     
 	--check suspend status is direct or not
-	SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo))
+	SELECT @isDirectSuspend = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)),
+		   @isDirectClosed = (SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,CloseInfo)),
+		   @Locked = ISNULL(Locked,0)
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
@@ -130,9 +150,10 @@ BEGIN
     
 	--Non product status
 	SELECT	@HasDownline AS HasDownline,
-			ci.closed,
-			ci.reject AS suspended,
+			cs.closed,
+			cs.reject AS suspended,
 			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
+			ISNULL(@isDirectClosed,0) as isDirectClosed,
 			@TransferOption AS TransferOption,
 			ci.DoubleCommLosing, 
 			@DisableAutoMPT AS DisableAutoMPT,
@@ -141,10 +162,15 @@ BEGIN
 			@uplineDoubleCommLosing AS uplineDoubleCommLosing,
 			ci.DisableOutright,
 			@upLineDisableOutright AS upLineDisableOutright,
-			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer
-	FROM customer c WITH (NOLOCK)
-	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
-    WHERE c.custid = @custid
+			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer,
+			@Locked AS Locked
+	FROM custinfo ci WITH (NOLOCK)
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									FROM dbo.CustProductStatus  WITH(NOLOCK)
+									WHERE CustID = ci.custid
+								) AS cs
+    WHERE ci.custid = @custid
 	
 	--Product Status
 	SELECT	ci.SyncCasino,
@@ -160,9 +186,8 @@ BEGIN
 			@uplineDisableEsports AS uplineDisableEsports,
 			@DisableKeno AS DisableKeno,
 			ci.HideKeno
-	FROM customer c WITH (NOLOCK)
-	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
-    WHERE c.custid = @custid
+	FROM custinfo ci WITH (NOLOCK)
+    WHERE ci.custid = @custid
 
 	-- For Product DCS
 	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus

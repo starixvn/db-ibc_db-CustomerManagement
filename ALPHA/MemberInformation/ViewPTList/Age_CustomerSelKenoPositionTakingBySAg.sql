@@ -20,6 +20,7 @@ AS
 		- 20161116@Winnie: Show MaxKeno 2, Hide Massac,Malta [RedmineID: #66058]
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -49,28 +50,35 @@ BEGIN
 	SELECT *
 	  FROM (SELECT ROW_NUMBER() OVER(ORDER BY CASE 
 	                                            WHEN ISNULL(ci.enabled, 0) = 0 THEN 3
-											    WHEN ISNULL(ci.closed, 0) = 1 THEN 2
-											    WHEN ISNULL(ci.reject, 0) = 1 THEN 1
+											    WHEN ISNULL(ps.closed, 0) = 1 THEN 2
+											    WHEN ISNULL(ps.reject, 0) = 1 THEN 1
 											    ELSE 0
 										      END, ci.username
 									) AS RowNumber,
-		           ci.closed,
+		           ps.closed,
 		           ci.enabled,
-		           ISNULL(ci.reject, 0) AS suspended,
+		           ISNULL(ps.reject, 0) AS suspended,
 	               ci.username,
 		           ci.custid,
 		           MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.spositiontaking ELSE 0 END) AS spositiontaking_1501,
-				   ISNULL(cl.ClosedReason,0) AS ClosedReason
-	          FROM custinfo ci with(nolock)
-        inner join CustSettingGame cg with(nolock) on ci.custid = cg.custid
-        inner join CustGameType ct with(nolock) on ci.custid = ct.CustID
-        inner join @tmp_GameType gt on gt.GameTypeID = ct.GameTypeID and gt.IBCBetTypeID = cg.Bettype
+				   ISNULL(cl.ClosedReason,0) AS ClosedReason,
+				   ISNULL(ps.Locked,0) Locked
+	    FROM custinfo ci WITH(NOLOCK)
+        INNER JOIN CustSettingGame cg WITH(NOLOCK) ON ci.custid = cg.custid
+        INNER JOIN CustGameType ct WITH(NOLOCK) ON ci.custid = ct.CustID
+        INNER JOIN @tmp_GameType gt ON gt.GameTypeID = ct.GameTypeID and gt.IBCBetTypeID = cg.Bettype
+		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
+							, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
+							, Locked
+						FROM dbo.CustProductStatus  WITH(NOLOCK)
+						WHERE CustID = ci.custid
+					) AS ps
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		     WHERE 1 = 1
 		       and ci.SRecommend = @SRecommend
 		       AND ci.roleid = 3
 		       AND cg.sporttype = 202
-		  GROUP BY ci.enabled, ci.closed, ci.reject, ci.username, ci.custid,cl.ClosedReason
+		  GROUP BY ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason,ps.Locked
 	       ) t
 	 WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1
 	   AND RowNumber <= @PageIndex * @PageSize

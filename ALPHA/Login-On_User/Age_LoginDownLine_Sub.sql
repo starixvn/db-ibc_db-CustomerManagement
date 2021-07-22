@@ -66,6 +66,8 @@ Revisions:
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 
 	- 20170724@Elodie: Don't reset login count of main account when sub account login successfull
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20210524@Tina: Lock account & indirect close account [redmine: #148600]
+
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
 • @ErrCode:
@@ -659,6 +661,10 @@ BEGIN
 			,@isCasinoDisabled = DisableCasino
 			,@db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
+
+	SELECT @closed = CASE WHEN cps.CloseInfo > 0 THEN 1 ELSE 0 END
+	FROM CustProductStatus cps WITH (NOLOCK)
+	WHERE CustID = @db_custid
 
 	IF (@db_enabled <> 1)
 	BEGIN

@@ -69,6 +69,7 @@ AS
 		- 20130409@Johnson: Get more fields SecurityCode and isForcedChangeSecurityCode 
 		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 	
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -85,7 +86,8 @@ AS
 				107: login failed
 				108: account closed
 				109: login exceed 5 times
-				110: login failed because access from outsite throught test accounts	
+				110: login failed because access from outsite throught test accounts
+				111: account locked	
   
 		• @ErrMsg: Error description.
 
@@ -96,7 +98,7 @@ BEGIN
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @LogData NVARCHAR(200) 
 	DECLARE	@inputLoginIP VARCHAR(15), @rowcount INT, @OldUserPwd VARCHAR(40)
 	DECLARE @db_custid INT, @db_userpwd NVARCHAR(50), @db_roleid TINYINT, @failedcount INT, @role NVARCHAR(20)  
-	DECLARE @db_currency TINYINT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT
+	DECLARE @db_currency TINYINT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
     
 	SET @Begin = GETDATE() 
 	SELECT	@inputLoginIP = @LoginIP 
@@ -488,10 +490,14 @@ BEGIN
 	 END  
 
 	 
-	SELECT	@closed = closed,@IsCasinoSync = SyncCasino
+	SELECT @IsCasinoSync = SyncCasino
 			,@isCasinoDisabled = DisableCasino
 			,@db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
+
+	SELECT	@locked = Locked,
+		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
+	FROM CustProductStatus with (nolock) WHERE custid = @db_custid AND @SubAccID <= 0
 
 	IF (@db_enabled <> 1)
 	BEGIN
@@ -588,6 +594,51 @@ BEGIN
 	  --@ErrCode=108  
 	  --raiserror (@ErrMsg, 16, 1)  
 	  return  
+	 END
+	IF (IsNull(@locked, 0) > 0)
+	 BEGIN  
+	  SELECT @LogData =  @role + @UserName + ' - ' + 'Login Result:Failed (A/C_Locked)'  
+	  
+		SET	@End = GETDATE() 
+		SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+		IF @IsNickname =1 	
+		BEGIN
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @db_custid, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1310,		 
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration,
+				@Nickname = @Nickname				
+		END	
+		ELSE
+		BEGIN
+			EXEC dbo.Acc_WriteLog_UserLog_Login_Wrapper
+				@UserID = @db_custid, 
+				@RoleID = @RoleID, 
+				@SubAccID = @SubAccID,
+				@ServerID = @ServerID,
+				@LoginIP = @inputLoginIP,
+				@DomainName = @LoginDomain,	
+				@ActionID = 1310,		 
+				@Doing = @LogData,
+				@BrowserName = @BrowserName,
+				@Platform = @Platform,
+				@CountryCode = @CountryCode,
+				@Duration = @Duration				
+		 END 
+		select @ErrMsg = case @Language when 'E' then 'Your account has been locked due to multiple failed security check. Please contact your upline to unlock.'  
+		ELSE [dbo].[f_Get_MsgNamebyMsgID](80007,@Language)
+	   end ,@ErrCode=111  
+	  return  
 	 END  
 	ELSE IF (@db_userpwd <> @UserPWD)
 	BEGIN  
@@ -643,7 +694,7 @@ BEGIN
 		/* START --Jamie@20130327 Close accounts after 5 logins failed */
 		IF @failedcount > 5
 		BEGIN
-			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
 		    
 			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
 			--log data to UserLog_RunSP 

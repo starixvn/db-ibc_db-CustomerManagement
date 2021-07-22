@@ -24,6 +24,7 @@ AS
 
 	Revisions:
 		- 20200526@Johnson: initial sp [redmine:#133846]
+		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	
 	Parameter's explaination:
 		- @isSkipPWD = 1: not check pwd, just write log login
@@ -58,9 +59,11 @@ BEGIN
 	END
 	
 	IF (@SubAccIDIndirect = 0
-		AND EXISTS (SELECT 1 FROM custinfo WITH(NOLOCK) 
-					WHERE custid = @custidIndirect 
-						AND (closed = 1 OR enabled = 0))
+		AND EXISTS (SELECT 1 
+					FROM custinfo ci WITH(NOLOCK) 
+						INNER JOIN CustProductStatus cs WITH (NOLOCK) ON ci.custid = cs.CustID
+					WHERE ci.custid = @custidIndirect 
+						AND (cs.CloseInfo > 0 OR enabled = 0))
 		) 
 		OR (@SubAccIDIndirect > 0
 			AND EXISTS (SELECT 1 FROM custsub WITH(NOLOCK) 
@@ -75,6 +78,15 @@ BEGIN
 				ELSE [dbo].[f_Get_MsgNamebyMsgID](60036,@Language)
 			END	,@ErrCode=102		
 		RETURN	
+	END
+	ELSE IF (@SubAccIDIndirect = 0
+		AND EXISTS (SELECT 1 FROM CustProductStatus WITH(NOLOCK) WHERE custid = @custidIndirect AND ISNULL(Locked,0) > 0))
+	BEGIN
+		SELECT @ErrMsg = CASE @Language 
+				WHEN 'E' THEN 'This account is locked, please unlock it and try again.'
+				ELSE [dbo].[f_Get_MsgNamebyMsgID](40057,@Language)
+			END	,@ErrCode=104		
+		RETURN
 	END	
 	
 	IF @SubAccIDIndirect = 0
@@ -103,7 +115,7 @@ BEGIN
 		BEGIN
 			IF @SubAccIDIndirect = 0
 			BEGIN
-				UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET closed = 1 WHERE custid = @custidIndirect 
+				UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @custidIndirect 
 				
 				UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @custidIndirect 
 				

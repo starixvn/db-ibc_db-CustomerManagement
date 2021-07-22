@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 	-- 20170619@Winnie: Apply color for closed accounts RedmineID: #74494
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 
 	Param's Explanation:
 		- @CheckedOTP:	= 1: check OTP success
@@ -54,7 +55,6 @@ BEGIN
 				SELECT @LogSPData = '<Age_OTP_CustomerStatusUpdAfterVerifiedOTP custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '	
 															+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" '
 															+ 'CheckedOTP="' + COALESCE(CAST(@CheckedOTP AS VARCHAR(10)), SPACE(1)) + '" '
-															+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 															+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 															+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
@@ -69,7 +69,6 @@ BEGIN
 					SELECT @LogSPData = '<Age_OTP_CustomerStatusUpdAfterVerifiedOTP custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '		
 															+ 'SubAccount="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" '
 															+ 'CheckedOTP="' + COALESCE(CAST(@CheckedOTP AS VARCHAR(10)), SPACE(1)) + '" '																										
-															+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 															+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 															+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 															+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
@@ -152,7 +151,7 @@ BEGIN
 			
 				SELECT @LogSPData = '<Age_OTP_CustomerStatusUpdAfterVerifiedOTP custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '	
 															+ 'CheckedOTP="' + COALESCE(CAST(@CheckedOTP AS VARCHAR(10)), SPACE(1)) + '" '
-															+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+															--+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 															+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 															+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" />'
 			
@@ -166,7 +165,7 @@ BEGIN
 				BEGIN CATCH
 					SELECT @LogSPData = '<Age_OTP_CustomerStatusUpdAfterVerifiedOTP custid="' + COALESCE(CAST(@custid AS VARCHAR(10)), SPACE(1)) + '" '		
 															+ 'CheckedOTP="' + COALESCE(CAST(@CheckedOTP AS VARCHAR(10)), SPACE(1)) + '" '																										
-															+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
+															--+ 'FunctionName="' + COALESCE(@FunctionName, SPACE(1)) + '" ' +
 															+ 'Language="' + COALESCE(@Language, SPACE(1)) + '" ' +
 															+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 															+ 'ErrMsg="'+ COALESCE(ERROR_MESSAGE(), SPACE(1)) + '" />'
@@ -180,17 +179,17 @@ BEGIN
 			END
 			ELSE 
 			BEGIN
-				UPDATE CustInfo WITH(UPDLOCK, ROWLOCK)
-				SET closed = 1 
+				UPDATE CustProductStatus WITH(UPDLOCK, ROWLOCK)
+				SET Locked = 1 
 				WHERE CustID = @CustID
 			
 				UPDATE CustLoginInfo WITH(UPDLOCK, ROWLOCK)
-				SET VerifyOTPCount = 0,ClosedReason=3
+				SET VerifyOTPCount = 0
 				WHERE CustID = @CustID
 			
 				SELECT	@ErrCode = 200,
-						@ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong OTP over 5 times. Please contact CSD or your upline to reopen.'
-										ELSE [dbo].[f_Get_MsgNamebyMsgID](40034, @Language) END
+						@ErrMsg = CASE WHEN @Language = 'E' THEN 'Your account has been locked due to multiple failed security check attempts. Please contact your upline to unlock.'
+										ELSE [dbo].[f_Get_MsgNamebyMsgID](40045, @Language) END
 					
 				
 				SELECT @LogSPData = '<Age_OTP_CustomerStatusUpdAfterVerifiedOTP custid="' + COALESCE(CAST(@CustID AS VARCHAR(10)), SPACE(1)) + '" '																											
@@ -233,8 +232,4 @@ BEGIN
 	IF @ErrMsg IS NULL
 		SELECT @ErrMsg = N''
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerStatusUpdAfterVerifiedOTP] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerStatusUpdAfterVerifiedOTP] TO [bodbDownlineNetView] AS [dbo]
 GO
