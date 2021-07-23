@@ -40,7 +40,7 @@ AS
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		
+		- 20210723@Johnson: set new super limit = 300 for 789's group [redmine:#158946]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -169,9 +169,9 @@ BEGIN
 		WHERE custId IN (SELECT custid FROM @tmpCustGroup)
 			AND creatdate >= @fromdate 
 			
-		IF @countSuper >= 200
+		IF @countSuper >= 300
 		BEGIN
-			SELECT @ErrMsg =  'You can only create up to 200 supers per month.',
+			SELECT @ErrMsg =  'You can only create up to 300 supers per month.',
 				@ErrCode = 201
 			RETURN		
 		END	
