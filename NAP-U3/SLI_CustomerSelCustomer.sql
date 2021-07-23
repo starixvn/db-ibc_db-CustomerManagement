@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[SLI_CustomerSelCustomer]
+ALTER PROCEDURE [dbo].[SLI_CustomerSelCustomer]
 	@CustID int
 AS
 BEGIN
@@ -10,7 +10,8 @@ DB: DBCUST/CustDB
 Original: Acc_CustomerSelEditCustomer
 
 Revisions:
-    - 20200601@Tiara: View Member setting information on NAP-U3 site [Redmine: #123584] 
+    - 20200601@Tiara: View Member setting information on NAP-U3 site [Redmine: #123584]  
+	- 20210721@Winfred: Remove Comm and get PT SMA on U3 site [Redmine: #123584]
  
 Param's Explanation:
 • @CustID: member ID
@@ -204,17 +205,68 @@ Param's Explanation:
 		ISNULL(MAX(CASE WHEN CS3.bettype = 83 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161apositiontaking_83,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 86 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161apositiontaking_86,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 88 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161apositiontaking_88,
-
-		ISNULL(MAX(CASE WHEN CS3.bettype = 85 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_85,
+		
+		ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.mpositiontaking ELSE 0 END), 0) AS v161mpositiontaking_81,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 83 AND cs3.sporttype=161 THEN cs3.mpositiontaking ELSE 0 END), 0) AS v161mpositiontaking_83,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.mpositiontaking ELSE 0 END), 0) AS v161mpositiontaking_86,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 88 AND cs3.sporttype=161 THEN cs3.mpositiontaking ELSE 0 END), 0) AS v161mpositiontaking_88,    
+		  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.spositiontaking ELSE 0 END), 0) AS v161spositiontaking_81,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 83 AND cs3.sporttype=161 THEN cs3.spositiontaking ELSE 0 END), 0) AS v161spositiontaking_83,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.spositiontaking ELSE 0 END), 0) AS v161spositiontaking_86,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 88 AND cs3.sporttype=161 THEN cs3.spositiontaking ELSE 0 END), 0) AS v161spositiontaking_88,    
+  
+  		ISNULL(MAX(CASE WHEN CS3.bettype = 85 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_85,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 86 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_86,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 87 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_87,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 89 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_89,
 		ISNULL(MAX(CASE WHEN CS3.bettype = 90 AND CS3.sporttype=161 THEN CS3.alivepositiontaking ELSE 0 END), 0) AS v161alivepositiontaking_90,
 
-		0 AS groupa,
-		0 AS groupb,
-		0 AS groupc,
-		0 AS groupd,
+		ISNULL(MAX(CASE WHEN cs3.bettype = 85 AND cs3.sporttype=161 THEN cs3.mlivepositiontaking ELSE 0 END), 0) AS v161mlivepositiontaking_85,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.mlivepositiontaking ELSE 0 END), 0) AS v161mlivepositiontaking_86,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 87 AND cs3.sporttype=161 THEN cs3.mlivepositiontaking ELSE 0 END), 0) AS v161mlivepositiontaking_87,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 89 AND cs3.sporttype=161 THEN cs3.mlivepositiontaking ELSE 0 END), 0) AS v161mlivepositiontaking_89,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 90 AND cs3.sporttype=161 THEN cs3.mlivepositiontaking ELSE 0 END), 0) AS v161mlivepositiontaking_90,  
+
+		ISNULL(MAX(CASE WHEN cs3.bettype = 85 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_85,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_86,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 87 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_87,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 89 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_89,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 90 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_90,  
+	
+		ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_81,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 83 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_83,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_86,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 88 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_88,    
+		    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 85 AND cs3.sporttype=161 THEN cs3.autolivepositiontaking ELSE 0 END), 0) AS auto_v161slivepositiontaking_85,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.autolivepositiontaking ELSE 0 END), 0) AS auto_v161slivepositiontaking_86,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 87 AND cs3.sporttype=161 THEN cs3.autolivepositiontaking ELSE 0 END), 0) AS auto_v161slivepositiontaking_87,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 89 AND cs3.sporttype=161 THEN cs3.autolivepositiontaking ELSE 0 END), 0) AS auto_v161slivepositiontaking_89,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 90 AND cs3.sporttype=161 THEN cs3.autolivepositiontaking ELSE 0 END), 0) AS auto_v161slivepositiontaking_90, 
+		
+		ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.isautopositiontaking ELSE 0 END), 0) AS isauto_v161spositiontaking_mem_81,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 83 AND cs3.sporttype=161 THEN cs3.isautopositiontaking ELSE 0 END), 0) AS isauto_v161spositiontaking_mem_83,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.isautopositiontaking ELSE 0 END), 0) AS isauto_v161spositiontaking_mem_86,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 88 AND cs3.sporttype=161 THEN cs3.isautopositiontaking ELSE 0 END), 0) AS isauto_v161spositiontaking_mem_88,    
+		    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 85 AND cs3.sporttype=161 THEN cs3.isautolivepositiontaking ELSE 0 END), 0)  AS isauto_v161slivepositiontaking_mem_85,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 AND cs3.sporttype=161 THEN cs3.isautolivepositiontaking ELSE 0 END), 0)  AS isauto_v161slivepositiontaking_mem_86,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 87 AND cs3.sporttype=161 THEN cs3.isautolivepositiontaking ELSE 0 END), 0)  AS isauto_v161slivepositiontaking_mem_87,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 89 AND cs3.sporttype=161 THEN cs3.isautolivepositiontaking ELSE 0 END), 0)  AS isauto_v161slivepositiontaking_mem_89,    
+		ISNULL(MAX(CASE WHEN cs3.bettype = 90 AND cs3.sporttype=161 THEN cs3.isautolivepositiontaking ELSE 0 END), 0)  AS isauto_v161slivepositiontaking_mem_90,    
+		
+		ISNULL(max(case when cs3.bettype = 81 and cs3.sporttype=161 then cs3.isautompositiontaking else 0 end), 0) as isauto_v161mpositiontaking_mem_81,  
+		ISNULL(max(case when cs3.bettype = 83 and cs3.sporttype=161 then cs3.isautompositiontaking else 0 end), 0) as isauto_v161mpositiontaking_mem_83,  
+		ISNULL(max(case when cs3.bettype = 86 and cs3.sporttype=161 then cs3.isautompositiontaking else 0 end), 0) as isauto_v161mpositiontaking_mem_86,  
+		ISNULL(max(case when cs3.bettype = 88 and cs3.sporttype=161 then cs3.isautompositiontaking else 0 end), 0) as isauto_v161mpositiontaking_mem_88,  
+		  
+		ISNULL(max(case when cs3.bettype = 85 and cs3.sporttype=161 then cs3.isautolivempositiontaking else 0 end), 0) as isauto_v161mlivepositiontaking_mem_85,  
+		ISNULL(max(case when cs3.bettype = 86 and cs3.sporttype=161 then cs3.isautolivempositiontaking else 0 end), 0) as isauto_v161mlivepositiontaking_mem_86,  
+		ISNULL(max(case when cs3.bettype = 87 and cs3.sporttype=161 then cs3.isautolivempositiontaking else 0 end), 0) as isauto_v161mlivepositiontaking_mem_87,  
+		ISNULL(max(case when cs3.bettype = 89 and cs3.sporttype=161 then cs3.isautolivempositiontaking else 0 end), 0) as isauto_v161mlivepositiontaking_mem_89,  
+		ISNULL(max(case when cs3.bettype = 90 and cs3.sporttype=161 then cs3.isautolivempositiontaking else 0 end), 0) as isauto_v161mlivepositiontaking_mem_90,  
+		
 		--v161
 		ISNULL(@v161apositiontaking_81_max, 0) AS maxv161pos_81,
 		ISNULL(@v161apositiontaking_83_max, 0) AS maxv161pos_83,
@@ -263,11 +315,12 @@ Param's Explanation:
 		C.phone, 
 		C.mobilephone, 
 		C.fax, 	
+		-- number game
 		CI.maxpermatch161,
 		CI.maxperball161,
 		CI.maxpermatch164,
+		-- number game
 		C.site, 
-		C.ugroup, 
 		C.roleid,
 		CI.disablenumber
     
