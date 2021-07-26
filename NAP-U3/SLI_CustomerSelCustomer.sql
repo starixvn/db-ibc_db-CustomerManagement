@@ -233,6 +233,17 @@ Param's Explanation:
 		ISNULL(MAX(CASE WHEN cs3.bettype = 87 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_87,  
 		ISNULL(MAX(CASE WHEN cs3.bettype = 89 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_89,  
 		ISNULL(MAX(CASE WHEN cs3.bettype = 90 AND cs3.sporttype=161 THEN cs3.slivepositiontaking ELSE 0 END), 0) AS v161slivepositiontaking_90,  
+		
+		ISNULL(MAX(CASE when cs3.bettype = 81 and cs3.sporttype=161 then cs3.autompositiontaking else 0 end), 0) as auto_v161mpositiontaking_mem_81,  
+		ISNULL(MAX(CASE when cs3.bettype = 83 and cs3.sporttype=161 then cs3.autompositiontaking else 0 end), 0) as auto_v161mpositiontaking_mem_83,  
+		ISNULL(MAX(CASE when cs3.bettype = 86 and cs3.sporttype=161 then cs3.autompositiontaking else 0 end), 0) as auto_v161mpositiontaking_mem_86,  
+		ISNULL(MAX(CASE when cs3.bettype = 88 and cs3.sporttype=161 then cs3.autompositiontaking else 0 end), 0) as auto_v161mpositiontaking_mem_88,  
+		  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 85 and cs3.sporttype=161 then cs3.autolivempositiontaking else 0 end), 0) as auto_v161mlivepositiontaking_mem_85,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 86 and cs3.sporttype=161 then cs3.autolivempositiontaking else 0 end), 0) as auto_v161mlivepositiontaking_mem_86,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 87 and cs3.sporttype=161 then cs3.autolivempositiontaking else 0 end), 0) as auto_v161mlivepositiontaking_mem_87,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 89 and cs3.sporttype=161 then cs3.autolivempositiontaking else 0 end), 0) as auto_v161mlivepositiontaking_mem_89,  
+		ISNULL(MAX(CASE WHEN cs3.bettype = 90 and cs3.sporttype=161 then cs3.autolivempositiontaking else 0 end), 0) as auto_v161mlivepositiontaking_mem_90,  
 	
 		ISNULL(MAX(CASE WHEN cs3.bettype = 81 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_81,    
 		ISNULL(MAX(CASE WHEN cs3.bettype = 83 AND cs3.sporttype=161 THEN cs3.autopositiontaking ELSE 0 END), 0) AS auto_v161spositiontaking_83,    
