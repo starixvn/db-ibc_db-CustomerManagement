@@ -44,6 +44,7 @@ Revisions:
 	- 20200619@Elodie: add USD into IBCIndo, INDOWIN group - [Redmine: #136096]
 	- 20200923@Elodie: Add MMK into ACCMMKMyanmar group, Add UUS into ACCUUSMyanmar group - [Redmine: #141926]
 	- 20201102@Winfred: rename group ACCMMKMyanmar to IBCMMR - [Redmine: #141926]
+	- 20210301@Percy: Make BC to real group [RedmineID: #146710]
 	- 20210305@Tina: add more group ACCSABA789 - [Redmine: #151213]
 	- 20210309@Tina: add more group ACCAthena000
 	
@@ -58,7 +59,7 @@ BEGIN
 		SELECT ExchangeID 
 		FROM Exchange WITH (NOLOCK)
 	END	
-	ELSE IF(@System IN ('ACCTHAI','ACCTHAI2','ACCTHAI56','ACCTHAI99'))
+	ELSE IF(@System IN ('ACCTHAI','BC'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
