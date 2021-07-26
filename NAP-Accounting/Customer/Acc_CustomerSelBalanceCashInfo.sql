@@ -427,10 +427,6 @@ BEGIN
 		WHERE custid = @custid
 			AND b.matchid = 0
 			AND b.bettype >= 19999
-			AND 1 = CASE 
-						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
-						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
-					ELSE 1 END
 
 		SELECT
 			SUM(masterCash) AS masterCash,
@@ -612,10 +608,6 @@ BEGIN
 			AND (b.recommend * @ID) = 0   --- level master and super 
 			AND b.matchid = 0
 			AND b.bettype >= 19999
-			AND 1 = CASE 
-						WHEN bettype = 19999 and winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
-						WHEN bettype < 19999 and winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
-					ELSE 1 END
 
 		SELECT
 			SUM(superCash) AS superCash,
