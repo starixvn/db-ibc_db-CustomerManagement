@@ -61,6 +61,7 @@ Revisions:
 	- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
 	- 20210426@Tina: Add VGaming [Redmine: #153938]
 	- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20210728@Tina: NAP - Cannot setting Casino for Licensee account [Redmine: #159140]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -259,8 +260,8 @@ Param's Explanation:
 		   customer.email,
 		   customer.username2,
 		   ci.currency,  
-		   cps.closed, 
-		   cps.reject as suspend,
+		   ISNULL(cps.closed, ci.closed) closed, 
+		   ISNULL(cps.reject, ci.reject) as suspend,
 		   ci.srecommend as superid,
 		   ci.mrecommend as masterid,
 		   ci.recommend as agentid, 
@@ -423,13 +424,14 @@ Param's Explanation:
 				 on Customer.CustID = ci.CustID --Shifu
 		 INNER JOIN Exchange as e with (NOLOCK)
 				 ON Customer.currency = e.exchangeid
-		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, bitmapHasSynced
 										, bitmapIsDisabled
 										, bitmapIsHidden
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
+										AND ci.srecommend NOT IN (SELECT CustID FROM Dep_CustSuper WITH (NOLOCK))
 								) AS cps
 		-- Upline Status
 		LEFT JOIN	dbo.CustProductStatus AS cpsUpline WITH (NOLOCK)
