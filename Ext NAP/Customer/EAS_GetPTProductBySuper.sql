@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySuper] 
 	-- Add the parameters for the stored procedure here
 	@Supers VARCHAR(MAX),
@@ -20,6 +20,7 @@ AS
 		- 20210426@Tina: Add VGaming [Redmine: #153938]
 		- 20210506@Winfred: Get value PT  AdvantPlay for customer [Redmine: #154258]
 		- 20210514@Winfred: Get value PT  AdvantPlay Mini for customer [Redmine: #155133]
+		- 20210728@Winfred: Grant Permission Alpha [Redmine: #155133]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
