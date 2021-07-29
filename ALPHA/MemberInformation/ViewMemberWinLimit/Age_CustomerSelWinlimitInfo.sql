@@ -21,7 +21,7 @@ AS
 		- 20160318@Billy:	Include tickets from [bettransLC] table - [Redmine: #54306]
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
 		- 20200414@Sophia: BBIN - add Transfer In/Out Amount [Redmine: #131358]
-	
+		- 20210729@Elodie: Change use CustProductStatus.CloseInfo instead of CustInfo.closed [Redmine: #148600]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -57,8 +57,12 @@ BEGIN
 	IF @RoleId = 4
 	BEGIN
 		INSERT INTO #Cust_Downline(CustId,enabled,closed,reject,username)
-		SELECT c.custid,c.enabled, c.closed, ISNULL(c.reject, 0), c.username
+		SELECT c.custid,c.enabled, 
+			CASE WHEN cs.CloseInfo > 0 THEN 1 ELSE 0 END,
+			CASE WHEN cs.SuspendInfo > 0 THEN 1 ELSE 0 END,
+			c.username
 		FROM dbo.CustInfo c WITH(NOLOCK)
+			INNER JOIN CustProductStatus cs WITH (NOLOCK) ON c.custid = cs.custid
 		WHERE c.srecommend = @CustId
 			AND roleid = 1
 			AND c.mrecommend = @mrecommend
@@ -70,8 +74,12 @@ BEGIN
 	ELSE IF @RoleId = 3
 	BEGIN
 		INSERT INTO #Cust_Downline(CustId,enabled,closed,reject,username)
-		SELECT c.custid,c.enabled, c.closed, ISNULL(c.reject, 0), c.username
+		SELECT c.custid,c.enabled, 
+			CASE WHEN cs.CloseInfo > 0 THEN 1 ELSE 0 END,
+			CASE WHEN cs.SuspendInfo > 0 THEN 1 ELSE 0 END,
+				c.username
 		FROM dbo.CustInfo c WITH(NOLOCK)
+			INNER JOIN CustProductStatus cs WITH (NOLOCK) ON c.custid = cs.custid
 		WHERE c.mrecommend = @CustId
 			AND roleid = 1
 			AND c.srecommend = @srecommend 
@@ -83,8 +91,12 @@ BEGIN
 	ELSE IF @RoleId = 2
 	BEGIN
 		INSERT INTO #Cust_Downline(CustId,enabled,closed,reject,username)
-		SELECT c.custid,c.enabled, c.closed, ISNULL(c.reject, 0), c.username
+		SELECT c.custid,c.enabled, 
+			CASE WHEN cs.CloseInfo > 0 THEN 1 ELSE 0 END,
+			CASE WHEN cs.SuspendInfo > 0 THEN 1 ELSE 0 END,
+			c.username
 		FROM dbo.CustInfo c WITH(NOLOCK)
+			INNER JOIN CustProductStatus cs WITH (NOLOCK) ON c.custid = cs.custid
 		WHERE c.recommend = @CustId
 			AND roleid = 1
 			AND c.srecommend = @srecommend
