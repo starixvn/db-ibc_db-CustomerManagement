@@ -106,7 +106,7 @@ BEGIN
 		DECLARE @tblPrefix TABLE (GroupName VARCHAR(50), Prefix VARCHAR(10), AllowNewSuper BIT)
 		INSERT INTO @tblPrefix (GroupName, Prefix, AllowNewSuper)
 		SELECT sp.GroupName, sp.Prefix, sp.AllowNewSuper
-		FROM NAP_UserControl.dbo.EaGroupHeadline egh WITH (NOLOCK)
+		FROM dbo.EaGroupHeadline egh WITH (NOLOCK)
 			INNER JOIN dbo.Acc_SuperPrefix sp WITH (NOLOCK) ON egh.GroupName = sp.GroupName
 		WHERE egh.GroupHeadlineId = @GroupId AND egh.SiteId = @SiteId AND egh.ExchangeId = @Currency
 		
@@ -165,8 +165,8 @@ BEGIN
 	-- Auto add External Group (follow Headline)
 	IF @RoleId = 4 -- Super only
 	BEGIN
-		IF EXISTS (SELECT 1 FROM NAP_UserControl.dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId = @GroupId AND SiteId = @SiteId AND ExchangeId = @Currency)
-			EXEC NAP_UserControl.dbo.Acc_ExternalGroupHeadline_UpdSuper
+		IF EXISTS (SELECT 1 FROM dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId = @GroupId AND SiteId = @SiteId AND ExchangeId = @Currency)
+			EXEC dbo.Acc_ExternalGroupHeadline_UpdSuper
 				@UserId					= @UserId
 				,@CustId				= @CustId
 				,@GroupHeadlineId		= @GroupId
