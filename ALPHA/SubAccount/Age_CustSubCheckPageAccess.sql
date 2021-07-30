@@ -1,4 +1,5 @@
-﻿ALTER PROCEDURE [dbo].[Age_CustSubCheckPageAccess]
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustSubCheckPageAccess]
 	@SubAccID int,
 	@spPageAccess varchar(50),
 	@Language varchar(2) = 'E',
@@ -16,6 +17,8 @@ Revisions:
     - 20090318@Hanh: add Korean language
     - 20090818@Phuc: check upline closed.
 	- 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language
+	- 20210730@Tina: hot fix cannot allow/disallow double comm (single/multiple) trên Customer list OLd [RedmineID: 148600]
+
 Param's Explanation:
 • @SubAccID: sub account id
 • @spPageAccess: 
@@ -31,7 +34,10 @@ Set @SubAllow = 0
 --Check Upline closed
 IF @UserID > 0
 BEGIN
-	Select @IsUplineClosed = ISNULL(closed,0) From Custinfo (nolock) Where CustID = @UserID
+	SELECT @IsUplineClosed = (CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END) 
+	FROM CustProductStatus WITH (NOLOCK) 
+	WHERE CustID = @UserID
+
 	Set @SubAllow = 1
 END
 IF @SubAccID <> 0
@@ -66,11 +72,4 @@ GO
 SET QUOTED_IDENTIFIER OFF 
 GO
 SET ANSI_NULLS ON 
-GO
-
-GRANT EXECUTE ON [dbo].[Age_CustSubCheckPageAccess] TO [bodbAdminNet]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubCheckPageAccess]  TO [bodbDownlineNet]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubCheckPageAccess]  TO [bodbDownlineNetView]
 GO
