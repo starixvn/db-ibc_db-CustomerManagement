@@ -7,6 +7,7 @@ ALTER PROCEDURE [dbo].[Age_CustSubCheckPageAccess]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) ='' OUTPUT
 AS
+BEGIN
 /*
 Created: 
 Task : Check AllowUpdate of Sub-Account
@@ -67,9 +68,5 @@ BEGIN
 	@ErrCode = 106
 END
 
-
-GO
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
+END
 GO
