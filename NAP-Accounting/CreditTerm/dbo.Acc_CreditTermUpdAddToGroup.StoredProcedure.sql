@@ -163,9 +163,8 @@ BEGIN
 	EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1000,@NotificationInfo = @NotificationInfo, @CreateDate = @startRun							
 	
 	-- Auto add External Group (follow Headline)
-	IF @RoleId = 4 -- Super only
 	BEGIN
-		IF EXISTS (SELECT 1 FROM dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId = @GroupId AND SiteId = @SiteId AND ExchangeId = @Currency)
+		IF EXISTS (SELECT 1 FROM dbo.EaGroupHeadline WITH (NOLOCK) WHERE GroupHeadlineId IN (@GroupId, @Old_GroupId))
 			EXEC dbo.Acc_ExternalGroupHeadline_UpdSuper
 				@UserId					= @UserId
 				,@CustId				= @CustId

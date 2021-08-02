@@ -354,6 +354,7 @@ BEGIN
 		SET e1.TrackingValue = e2.TrackingValue
 		FROM #ExtraPTLog e1
 			INNER JOIN #ExtraPTLog e2 ON e1.CustId = e2.CustId
+		WHERE e1.TrackingValue2 IS NOT NULL AND e2.TrackingValue IS NOT NULL
 
 		DELETE e
 		FROM (
