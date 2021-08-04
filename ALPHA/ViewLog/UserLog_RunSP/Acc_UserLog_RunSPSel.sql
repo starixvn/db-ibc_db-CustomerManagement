@@ -38,6 +38,7 @@ AS
 		- 20200310@Percy: Add ActionID 705, 706 under Status [RedmineID: #130091]
 		- 20200602@Sol: Show log for action update of IsAutoEnableADBMaster [Redmine: #134242]
 		- 20210518@Winfred: Show log for Parlay Max Payout [RedmineID:#154104]
+		- 20210804@Elodie: Show log betsetting for downlines [RedmineID:#158073]
 
 	Description:
 		- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
@@ -491,7 +492,8 @@ BEGIN
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 								AND ul.ActionId <> 1050 --Message Customer Read Status Update
-								AND ul.ActionID NOT IN (220001,220003,220005) 
+								AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+								AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						
 						IF @ActionTypeId = 3 -- BET LIMIT
 						BEGIN
@@ -524,9 +526,10 @@ BEGIN
 									AND LogDate BETWEEN @FromDate AND @ToDate
 									AND  la.ActionTypeID = @ActionTypeId
 									AND IsInternal <= @IsInternal
-									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)		
-									AND ul.ActionID IN (220001,220003,220005) 
+									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END	
+									AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+										OR ul.ActionID BETWEEN 220008 AND 220019)
+									AND LogDate > @creatdate
 						END
 
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -586,7 +589,8 @@ BEGIN
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 								AND ul.ActionId <> 1050 --Message Customer Read Status Update
-								AND ul.ActionID NOT IN (220001,220003,220005) 
+								AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+								AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						
 						IF @ActionTypeId = 3 -- BET LIMIT
 						BEGIN
@@ -619,8 +623,9 @@ BEGIN
 									AND  la.ActionTypeID = @ActionTypeId
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-									AND ul.ActionID IN (220001,220003,220005) 
+									AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+										OR ul.ActionID BETWEEN 220008 AND 220019)
+									AND LogDate > @creatdate
 						END
 							
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -680,7 +685,8 @@ BEGIN
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 								AND ul.ActionId <> 1050 --Message Customer Read Status Update
-								AND ul.ActionID NOT IN (220001,220003,220005) 
+								AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+								AND ul.ActionID NOT BETWEEN 220008 AND 220019
 														
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -712,7 +718,8 @@ BEGIN
 								AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
 								AND ul.ActionID NOT BETWEEN 31000 AND 31100					
 								AND ul.ActionId <> 1050 --Message Customer Read Status Update
-								AND ul.ActionID NOT IN (220001,220003,220005) 
+								AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+								AND ul.ActionID NOT BETWEEN 220008 AND 220019
 				
 						IF @ActionTypeId = 3 -- BET LIMIT
 						BEGIN
@@ -745,8 +752,9 @@ BEGIN
 									AND  la.ActionTypeID = @ActionTypeId
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-									AND ul.ActionID IN (220001,220003,220005) 
+									AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+										OR ul.ActionID BETWEEN 220008 AND 220019)
+									AND LogDate > @creatdate 
 															
 							INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 								, SPName, IsInternal, CustID, CustName, ActionName)
@@ -777,8 +785,9 @@ BEGIN
 									AND  la.ActionTypeID = @ActionTypeId
 									AND IsInternal <= @IsInternal
 									AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-									AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)	
-									AND ul.ActionID IN (220001,220003,220005) 
+									AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+										OR ul.ActionID BETWEEN 220008 AND 220019)
+									AND LogDate > @creatdate
 						END	
 				
 						INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -907,7 +916,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 					
 					-- check  Parlay Max Payout Indirectly
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -938,8 +948,9 @@ BEGIN
 							AND LogDate BETWEEN @FromDate AND @ToDate				
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005) 		
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate 		
 					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1008,7 +1019,9 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
+
 					-- check  Parlay Max Payout Indirectly
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1038,8 +1051,9 @@ BEGIN
 							AND LogDate BETWEEN @FromDate AND @ToDate				
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005)  
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate   
 							
 							
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -1109,7 +1123,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							--	OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
-							AND ul.ActionID NOT IN (220001,220003,220005)
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 							
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1148,7 +1163,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						 	--AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 								--OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))	
-							AND ul.ActionID NOT IN (220001,220003,220005)
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 					
 					-- check  Parlay Max Payout Indirectly
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -1180,7 +1196,9 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005) 
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate 	
 							
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
@@ -1211,8 +1229,9 @@ BEGIN
 							AND IsInternal <= @IsInternal
 							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005) 
-					
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate 	
 							
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
 							, SPName, IsInternal, CustID, CustName, ActionName)
