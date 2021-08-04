@@ -76,7 +76,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
     @maxPOpermatchv99mp MONEY = NULL, 
     @maxPOpermatchv1mp  MONEY = NULL,
 	
-	@systemID TINYINT = 1,
+	@systemID TINYINT = NULL,
 	@userid int, --updater Id	
 	@subaccid int = 0, --Sub-AccountID
 	@language varchar(2) = 'E',
