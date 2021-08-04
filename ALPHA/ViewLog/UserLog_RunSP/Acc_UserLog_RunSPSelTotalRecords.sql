@@ -37,6 +37,7 @@ AS
 		- 20200310@Percy: Add ActionID 705, 706 under Status [RedmineID: #130091]
 		- 20200602@Sol: Show log for action update of IsAutoEnableADBMaster [Redmine: #134242]
 		- 20210518@Winfred: Show log for Parlay Max Payout [RedmineID:#154104]
+		- 20210804@Elodie: Show log betsetting for downlines [RedmineID:#158073]
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -296,7 +297,8 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -312,9 +314,9 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID IN (220001,220003,220005) 
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -346,7 +348,8 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -362,9 +365,9 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID IN (220001,220003,220005) 
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -396,7 +399,8 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -412,7 +416,8 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005) 
+							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 					
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -430,8 +435,9 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005)  
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate
 						
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -448,8 +454,9 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
-							AND ul.ActionID IN (220001,220003,220005) 
+							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+								OR ul.ActionID BETWEEN 220008 AND 220019)
+							AND LogDate > @creatdate
 					
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -505,7 +512,8 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005) 
+						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -522,7 +530,9 @@ BEGIN
 						AND IsInternal <= @IsInternal							
 						AND IsInternal <= @IsInternal				
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND ul.ActionID IN (220001,220003,220005) 
+						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							OR ul.ActionID BETWEEN 220008 AND 220019)
+						AND LogDate > @creatdate
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -562,10 +572,27 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005) 
+						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT BETWEEN 220008 AND 220019
+
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
 
+				-- check  Parlay Max Payout Indirectly
+				SELECT  @__cntTemp = COUNT(LogID)
+				FROM    bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
+						INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+						LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+				WHERE    ((ul.CustID in ( @srecommend ) AND @roleid  = 3 )
+						OR (ul.CustID in ( @srecommend ,@mrecommend ) AND @roleid  = 2 )
+						OR (ul.CustID in ( @srecommend ,@mrecommend , @recommend ) AND @roleid  = 1 ))
+						AND LogDate BETWEEN @FromDate AND @ToDate								
+						AND IsInternal <= @IsInternal				
+						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							OR ul.ActionID BETWEEN 220008 AND 220019)
+						AND LogDate > @creatdate
+									 
 				-- check  Parlay Max Payout Indirectly
 				SELECT  @__cntTemp = COUNT(LogID)
 				FROM    bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK)
@@ -615,7 +642,8 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005) 
+						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT BETWEEN 220008 AND 220019 
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -637,7 +665,8 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 						OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005) 
+						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT BETWEEN 220008 AND 220019  
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -650,7 +679,9 @@ BEGIN
 						AND LogDate BETWEEN @__archiveDate AND @ToDate								
 						AND IsInternal <= @IsInternal
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND ul.ActionID IN (220001,220003,220005)   
+						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							OR ul.ActionID BETWEEN 220008 AND 220019)
+						AND LogDate > @creatdate
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -665,7 +696,9 @@ BEGIN
 						AND LogDate >= @FromDate AND LogDate < @__archiveDate								
 						AND IsInternal <= @IsInternal			
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND ul.ActionID IN (220001,220003,220005)   
+						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							OR ul.ActionID BETWEEN 220008 AND 220019)
+						AND LogDate > @creatdate 
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -766,5 +799,4 @@ BEGIN
 		END
 	END
 END
-
 GO
