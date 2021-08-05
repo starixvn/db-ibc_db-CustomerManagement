@@ -110,6 +110,7 @@ Revisions:
 	- 202008066@Elodie: Get CustSuspendLockUpd info [Redmine: #138255]
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -356,7 +357,7 @@ BEGIN
 		BEGIN
 			SELECT @TotalMAgentActive =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 3 AND cs.Closed = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
+								  WHEN RoleID = 3 AND ISNULL(cs.closed, ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
