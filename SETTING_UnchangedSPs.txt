@@ -4,3 +4,6 @@ NAP-Accounting\Customer\CN88\CS_Acc_CustomerInfo_HeadlineSel.sql
 ALPHA\Customer\Age_BalanceAgentSel.sql
 ALPHA\Customer\Age_BalanceMasterSel.sql
 ALPHA\Customer\Age_BalanceMemberSel.sql
+ALPHA\Customer\Credit\Age_CustomerUpdCredit_Ag.sql
+NAP-Accounting\Customer\Credit\Acc_CustomerUpdClearCredit.sql
+NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
