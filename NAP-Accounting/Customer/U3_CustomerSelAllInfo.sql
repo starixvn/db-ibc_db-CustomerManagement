@@ -94,6 +94,7 @@ Revisions:
 	- 20190926@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
 
 Param's Explanation:
 	- @username: username want to get all info related
@@ -351,6 +352,7 @@ BEGIN
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
+										AND NOT EXISTS (SELECT 1 FROM Dep_CustSuper ds WITH (NOLOCK) WHERE ds.CustID = ci.srecommend)
 								) AS cs
 	     WHERE ci.srecommend = @custid
     END								  
@@ -387,6 +389,7 @@ BEGIN
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
+										AND NOT EXISTS (SELECT 1 FROM Dep_CustSuper ds WITH (NOLOCK) WHERE ds.custID = ci.srecommend)
 								) AS cs
 	    WHERE ci.MRecommend = @custid
 
@@ -418,6 +421,7 @@ BEGIN
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
+										AND NOT EXISTS (SELECT 1 FROM Dep_CustSuper ds WITH (NOLOCK) WHERE ds.custID = ci.srecommend)
 								) AS cs
 	    WHERE Recommend = @custid
 				   --------------
@@ -589,11 +593,12 @@ BEGIN
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
-		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, Locked
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
+										AND NOT EXISTS (SELECT 1 FROM Dep_CustSuper ds WITH (NOLOCK) WHERE ds.custID = ci.srecommend)
 								) AS cs
 	    LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 AND @IsDeposit = 0
 		OUTER APPLY (SELECT C.username
