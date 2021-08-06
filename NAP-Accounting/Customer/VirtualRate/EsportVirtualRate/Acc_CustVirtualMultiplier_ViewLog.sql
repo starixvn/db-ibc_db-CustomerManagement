@@ -18,6 +18,7 @@ AS
 		- 20191106@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200207@Tiara: New VR structure for Soccer [Redmind: #126243]
 		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
+		- 20210624@Elodie: Aplly VRCustLog archive [Redmine: #157434]
 
 	Parameter:
 	Mapping log columns:
@@ -74,6 +75,9 @@ BEGIN
 
 	CREATE CLUSTERED INDEX IX_LogID ON #Data(LogID)
 
+	DECLARE @__archiveDate DATETIME
+	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
+
 	SELECT @CustID = CustID
 	FROM bodb02.dbo.Customer c(NOLOCK)
 	WHERE username = @Username
@@ -111,15 +115,44 @@ BEGIN
 		SELECT @CustID
 	END
 	
-	INSERT INTO #VRCustLog(LogID, CustID, TrackingValue2, IsExec, UserID, LogTime)
-	SELECT LogID, CustID, dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
-	FROM VRCustLog (NOLOCK)
-	WHERE CustID IN (SELECT CustID FROM #VRLineCustID) 
-		AND LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
-		AND SportType = @SportType
-		AND ActionID = 808
-	
-	
+	IF @StartLogTime >= @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLog(LogID, CustID, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog (NOLOCK)
+		WHERE CustID IN (SELECT CustID FROM #VRLineCustID) 
+			AND LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = 808
+	END
+	ELSE IF @EndLogTime < @__archiveDate
+	BEGIN
+		INSERT INTO #VRCustLog(LogID, CustID, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog (NOLOCK)
+		WHERE CustID IN (SELECT CustID FROM #VRLineCustID) 
+			AND LogTime >= @StartLogTime AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = 808
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #VRCustLog(LogID, CustID, TrackingValue2, IsExec, UserID, LogTime)
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM VRCustLog (NOLOCK)
+		WHERE CustID IN (SELECT CustID FROM #VRLineCustID) 
+			AND LogTime >= @__archiveDate AND LogTime < DATEADD(DAY,1,@EndLogTime)
+			AND SportType = @SportType
+			AND ActionID = 808
+		UNION ALL
+		SELECT LogID, CustID, dbo.DecompressString(TrackingValue2), 0, UserID, LogTime
+		FROM bodb_CustomerLog_Archive.dbo.VRCustLog (NOLOCK)
+		WHERE CustID IN (SELECT CustID FROM #VRLineCustID) 
+			AND LogTime >= @StartLogTime AND LogTime < @__archiveDate
+			AND SportType = @SportType
+			AND ActionID = 808
+	END
+
 	UPDATE #VRCustLog
 	SET CurrencyRate = CAST(CAST(TrackingValue2 AS XML).value('(/Root/@actualrate)[1]', 'nvarchar(100)') AS FLOAT) 
 
