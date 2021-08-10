@@ -46,6 +46,7 @@ Revisions:
 	- 20200629@Johnson: Allow IBCIndo for INDOBS group [redmine: #136467]
 	- 20200923@Elodie: Allow 76666B for ACCMMKMyanmar, ACCUUSMyanmar group - [Redmine: #141926]
 	- 20201102@Winfred: rename group ACCMMKMyanmar to IBCMMR - [Redmine: #141926]
+	- 20210301@Percy: Make BC to real group [RedmineID: #146710]
 	- 20210305@Tina: add more group ACCSABA789 - [Redmine: #151213]
 	- 20210309@Tina: add more group ACCAthena000
 	
@@ -67,7 +68,7 @@ BEGIN
 		FROM [Site] WITH (NOLOCK)
 		WHERE isLicensee = 0 AND isActive = 1
 	END
-	ELSE IF(@System IN ('ACCTHAI','ACCTHAI2','ACCTHAI56','ACCTHAI99'))
+	ELSE IF(@System IN ('ACCTHAI','BC'))
 	BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 22 --755555,...
