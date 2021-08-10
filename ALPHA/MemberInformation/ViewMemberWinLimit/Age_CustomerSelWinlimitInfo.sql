@@ -22,6 +22,7 @@ AS
 		- 20170116@Helen:  Alpha - Member Win Limit report - Current Win Loss amount and Balance show zero while member actually has tickets on RNG - [Redmine:70397]
 		- 20200414@Sophia: BBIN - add Transfer In/Out Amount [Redmine: #131358]
 		- 20210729@Elodie: Change use CustProductStatus.CloseInfo instead of CustInfo.closed [Redmine: #148600]
+		- 20210505@Sol: NAP - Alpha - Allow more time for transfer - [Redmine: #149927]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -52,6 +53,15 @@ BEGIN
 	CREATE TABLE #Cust_tmp (CustID INT PRIMARY KEY,rownumber INT)
 	
 	CREATE TABLE #Cust_Downline (CustID INT PRIMARY KEY,enabled BIT, closed BIT,reject BIT, username NVARCHAR(50))
+
+	-- get move bet date
+	DECLARE @balanceUpDay SMALLDATETIME, @moveBetsDay SMALLDATETIME
+	DECLARE @tblMoveBetBalanceUp AS TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME)
+
+	INSERT INTO @tblMoveBetBalanceUp(BalanceUpDay,MoveBetsDay)
+	EXEC bodb02.dbo.Age_SelBalanceUpDay
+
+	SELECT @balanceUpDay = BalanceUpDay, @moveBetsDay = MoveBetsDay FROM @tblMoveBetBalanceUp
 
 	
 	IF @RoleId = 4
@@ -136,6 +146,10 @@ BEGIN
 		LEFT JOIN #SportBettype s ON s.bettype = b.Bettype
 	
 	WHERE b.statusID NOT IN (0,1,101,102)	
+		AND 1 = CASE 
+					WHEN b.bettype = 19999 and b.winlostdate > @moveBetsDay THEN 0 --> get data from ticket detail
+					WHEN b.bettype < 19999 and b.winlostdate <= @moveBetsDay THEN 0 --> get data from sum record
+				ELSE 1 END
 	GROUP BY c.custid
 
 	--get data from bettransRnG table within 2 days: today & yesterday
