@@ -7,3 +7,4 @@ ALPHA\Customer\Age_BalanceMemberSel.sql
 ALPHA\Customer\Credit\Age_CustomerUpdCredit_Ag.sql
 NAP-Accounting\Customer\Credit\Acc_CustomerUpdClearCredit.sql
 NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
+NAP-Accounting\DormantAccountList\Acc_DormantAccountList_Sel.sql
