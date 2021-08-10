@@ -297,7 +297,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -314,7 +314,7 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 								OR ul.ActionID BETWEEN 220008 AND 220019)
 							AND LogDate > @creatdate
 
@@ -348,7 +348,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -365,7 +365,7 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 								OR ul.ActionID BETWEEN 220008 AND 220019)
 							AND LogDate > @creatdate
 
@@ -399,7 +399,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -416,7 +416,7 @@ BEGIN
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
 							AND (ul.ActionID <> 237 OR ul.TrackingValue IS NOT NULL)
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
-							AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 					
 					SET @__cnt = @__cnt + @__cntTemp
@@ -435,7 +435,7 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 								OR ul.ActionID BETWEEN 220008 AND 220019)
 							AND LogDate > @creatdate
 						
@@ -454,7 +454,7 @@ BEGIN
 							AND ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-							AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+							AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 								OR ul.ActionID BETWEEN 220008 AND 220019)
 							AND LogDate > @creatdate
 					
@@ -512,7 +512,7 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						
 				SET @__cnt = @__cnt + @__cntTemp
@@ -530,7 +530,7 @@ BEGIN
 						AND IsInternal <= @IsInternal							
 						AND IsInternal <= @IsInternal				
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+						AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 							OR ul.ActionID BETWEEN 220008 AND 220019)
 						AND LogDate > @creatdate
 						
@@ -572,7 +572,7 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
 
 				SET @__cnt = @__cnt + @__cntTemp
@@ -589,7 +589,7 @@ BEGIN
 						AND LogDate BETWEEN @FromDate AND @ToDate								
 						AND IsInternal <= @IsInternal				
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+						AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 							OR ul.ActionID BETWEEN 220008 AND 220019)
 						AND LogDate > @creatdate
 									 
@@ -642,7 +642,7 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019 
 						
 				SET @__cnt = @__cnt + @__cntTemp
@@ -665,7 +665,7 @@ BEGIN
 						AND ul.ActionId <> 1050 --Message Customer Read Status Update
 						AND (ul.ActionId NOT BETWEEN 31620 AND 31622 
 						OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
-						AND ul.ActionID NOT IN (220001,220003,220005,22021,22023,22025) 
+						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019  
 						
 				SET @__cnt = @__cnt + @__cntTemp
@@ -679,7 +679,7 @@ BEGIN
 						AND LogDate BETWEEN @__archiveDate AND @ToDate								
 						AND IsInternal <= @IsInternal
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+						AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 							OR ul.ActionID BETWEEN 220008 AND 220019)
 						AND LogDate > @creatdate
 						
@@ -696,7 +696,7 @@ BEGIN
 						AND LogDate >= @FromDate AND LogDate < @__archiveDate								
 						AND IsInternal <= @IsInternal			
 						AND c.roleid <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
-						AND (ul.ActionID IN (220001,220003,220005,22021,22023,22025) 
+						AND (ul.ActionID IN (220001,220003,220005,220021,220023,220025) 
 							OR ul.ActionID BETWEEN 220008 AND 220019)
 						AND LogDate > @creatdate 
 						
