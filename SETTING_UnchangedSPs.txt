@@ -1,2 +1,10 @@
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
+NAP-Accounting\Customer\CN88\CS_Acc_CustomerInfo_HeadlineSel.sql
+ALPHA\Customer\Age_BalanceAgentSel.sql
+ALPHA\Customer\Age_BalanceMasterSel.sql
+ALPHA\Customer\Age_BalanceMemberSel.sql
+ALPHA\Customer\Credit\Age_CustomerUpdCredit_Ag.sql
+NAP-Accounting\Customer\Credit\Acc_CustomerUpdClearCredit.sql
+NAP-Accounting\Customer\Credit\Acc_CustomerUpdCredit.sql
+NAP-Accounting\DormantAccountList\Acc_DormantAccountList_Sel.sql
