@@ -1,3 +1,2 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-Ext NAP\UserControl\SpecialSite\Acc_CustomerIsSpecialSite.sql
-NAP-Accounting\UserControl\HideSpecialSite\Acc_CustomerIsAllowedAccess.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
