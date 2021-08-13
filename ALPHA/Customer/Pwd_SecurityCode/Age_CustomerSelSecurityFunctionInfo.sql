@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-custDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE Age_CustomerSelSecurityFunctionInfo
 	@custid		INT,
