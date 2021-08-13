@@ -55,16 +55,18 @@ BEGIN
     END							  									  										  							  
     ---------------------------------------------------------------------------
 	--General info
-    SELECT C.Custid,
-		C.username, 
-		C.firstname, C.lastname, 
-	    C.username2, 		
-	    CI.roleid, 
+    SELECT 
+		C.Custid,
+		C.UserName, 
+		C.FirstName, 
+		C.LastName, 
+	    C.UserName2, 		
+	    CI.RoleID, 
 	    CI.Enabled,
-	    C.phone, 
-		C.mobilephone, 
-		C.fax, 
-	    C.site
+	    C.Phone, 
+		C.MobilePhone, 
+		C.Fax, 
+	    C.Site
     FROM Customer C WITH(NOLOCK)
 	    INNER JOIN Custinfo CI WITH(NOLOCK) ON C.Custid = CI.Custid
 		OUTER APPLY f_CS_GetCustomerStatus(@Custid) CS		
@@ -72,17 +74,17 @@ BEGIN
 
     -------------------------------------------------------------------------
     --Agency info
-    SELECT CASE WHEN C.roleid = 1 THEN C.Custid ELSE NULL END AS memberID,
-	    CASE WHEN C.roleid = 1 THEN C.username ELSE NULL END AS memberName,								    		
-	    A.Custid AS agentID,
-	    A.username AS agentName,	
-	    A.Enabled AS agentEnabled,
-	    M.Custid AS masterID,
-	    M.username AS masterName,
-	    M.Enabled AS masterEnabled,
-	    S.Custid AS superID,
-	    S.username AS superName,
-	    S.Enabled AS superEnabled
+    SELECT CASE WHEN C.roleid = 1 THEN C.Custid ELSE NULL END AS MemberID,
+	    CASE WHEN C.roleid = 1 THEN C.username ELSE NULL END  AS MemberName,								    		
+	    A.Custid	AS AgentID,
+	    A.username	AS AgentName,	
+	    A.Enabled	AS AgentEnabled,
+	    M.Custid	AS MasterID,
+	    M.username	AS MasterName,
+	    M.Enabled	AS MasterEnabled,
+	    S.Custid	AS SuperID,
+	    S.username	AS SuperName,
+	    S.Enabled	AS SuperEnabled
     FROM Custinfo C WITH(NOLOCK)
 	    LEFT JOIN Custinfo A WITH(NOLOCK) on C.recommend = A.Custid
 	    LEFT JOIN Custinfo M WITH(NOLOCK) on C.mrecommend = M.Custid
