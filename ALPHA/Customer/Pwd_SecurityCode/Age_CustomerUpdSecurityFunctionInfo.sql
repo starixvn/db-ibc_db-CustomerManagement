@@ -34,7 +34,7 @@ BEGIN
 	IF @ErrCode <> 0 RETURN
 	
 	IF (@SubAccID = 0 AND NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo WITH(NOLOCK) WHERE custid = @custid))
-			OR (@SubAccID <> 0 AND NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo_Sub WITH(NOLOCK) WHERE custid = @custid AND SubAccId = @SubAccID))
+			OR (@SubAccID <> 0 AND NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfoSub WITH(NOLOCK) WHERE custid = @custid AND SubAccId = @SubAccID))
 	BEGIN
 		SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Invalid user.'
 										ELSE [dbo].[f_Get_MsgNamebyMsgID](40002,@Language) END,
@@ -90,19 +90,21 @@ BEGIN
 		RETURN
 	END
 			
-	SELECT @LogSPData = '<R '+ @Function + '="' + COALESCE(CAST(@IsOn AS VARCHAR(1)),SPACE(1)) + '" ' 								
+	SELECT @LogSPData = '<R '+ @Function + '="' + COALESCE(CAST(@IsOn AS VARCHAR(1)),SPACE(1)) + '" ' 		
+							+ 'SubAcc="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" '						
 							+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
 							+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
 							+ 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
 	
-	SELECT @Old_LogSPData = '<R '+ @Function + '="' + COALESCE(CAST(@Old_IsOn AS VARCHAR(1)),SPACE(1)) + '" ' 								
+	SELECT @Old_LogSPData = '<R '+ @Function + '="' + COALESCE(CAST(@Old_IsOn AS VARCHAR(1)),SPACE(1)) + '" ' 		
+							+ 'SubAcc="' + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)), SPACE(1)) + '" '						
 							+ 'IP="' + COALESCE(@IP,SPACE(1)) + '" '
 							+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(10)), SPACE(1)) + '" ' 
 							+ 'ErrMsg="' + COALESCE(@ErrMsg, SPACE(1)) + '" />'
 	SET @endRun = GETDATE()
 	SET @duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)
 		
-	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP_Wrapper
+	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 		@UserID = @CustID,
 		@CustID = @CustID, 
 		@ActionID = 951, 
