@@ -13,5 +13,5 @@ AS
 		- 20210812@Elodie: initial sp [redmine: #159628]
 	Parameter's Explanation:
 */
-	RETURN(SELECT CASE WHEN @FunctionInfo&power(2,@bitOrder-1) > 0 THEN 1 ELSE 0 END AS FunctionInfo)
+	RETURN(SELECT CASE WHEN @FunctionInfo&power(2,@bitOrder-1) > 0 THEN 1 ELSE 0 END AS IsOn)
 GO	

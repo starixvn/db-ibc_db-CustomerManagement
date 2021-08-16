@@ -11,23 +11,24 @@ AS
 	DB: DBACC/bodb02
 		
 	Revisions:
-		- 20210812@Elodie: Initial sp [redmine: #159628]
+		- 20210812@Elodie: Initial sp [Redmine: #159628]
 
 	Parameter's Explanation:
+	Example: EXEC Age_CustomerSelSecurityFunctionInfo @custid = 838203
 */ 
 BEGIN
 	SET NOCOUNT ON
 	IF @SubAccId = 0 
-		SELECT f1.FunctionInfo AS 'BetList', f2.FunctionInfo AS 'Statement'
+		SELECT f1.IsOn AS 'BetList', f2.IsOn AS 'Statement'
 		FROM CustLoginInfo cl WITH(NOLOCK)
-			CROSS APPLY (SELECT FunctionInfo FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
-			CROSS APPLY (SELECT FunctionInfo FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
 		WHERE custid = @custid
 	ELSE
-		SELECT f1.FunctionInfo AS 'BetList', f2.FunctionInfo AS 'Statement'
+		SELECT f1.IsOn AS 'BetList', f2.IsOn AS 'Statement'
 		FROM CustLoginInfo_Sub cl WITH(NOLOCK)
-			CROSS APPLY (SELECT FunctionInfo1 FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
-			CROSS APPLY (SELECT FunctionInfo2 FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
 		WHERE custid = @custid AND cl.SubAccId = @SubAccId
 END
 GO
