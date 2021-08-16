@@ -5,7 +5,6 @@ ALTER PROCEDURE Age_CustomerUpdSecurityFunctionInfo
 	@SubAccID	INT = 0,
 	@Function	VARCHAR(30),
 	@IsOn		BIT,
-	@Userid		INT,
 	@Language	VARCHAR(2) = 'E' ,
 	@IP			VARCHAR(20) = '',
 	@ErrCode	INT = 0 OUTPUT,
@@ -21,6 +20,8 @@ ALTER PROCEDURE Age_CustomerUpdSecurityFunctionInfo
 		- 20210812@Elodie: Initial sp [Redmine: #159628]
 
 	Parameter's Explanation:
+	Example: EXEC Age_CustomerUpdSecurityFunctionInfo @Custid = 838203, @Function = 'Statement', @IsOn = 0, @SubAccId = 29183
+
 */ 
 BEGIN	
 	SET NOCOUNT ON
