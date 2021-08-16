@@ -75,7 +75,6 @@ BEGIN
 	END
 	ELSE
 	BEGIN			
-		SELECT 'aa'
 		UPDATE cl 
 		SET cl.FunctionInfo = f.FunctionInfo
 		FROM CustLoginInfoSub cl WITH(ROWLOCK)
