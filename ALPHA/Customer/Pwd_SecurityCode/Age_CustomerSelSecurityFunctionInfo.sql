@@ -21,14 +21,14 @@ BEGIN
 	IF @SubAccId = 0 
 		SELECT f1.IsOn AS 'BetList', f2.IsOn AS 'Statement'
 		FROM CustLoginInfo cl WITH(NOLOCK)
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,ISNULL(cl.FunctionInfo,0))) f1
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,ISNULL(cl.FunctionInfo,0))) f2
 		WHERE custid = @custid
 	ELSE
 		SELECT f1.IsOn AS 'BetList', f2.IsOn AS 'Statement'
-		FROM CustLoginInfo_Sub cl WITH(NOLOCK)
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,cl.FunctionInfo)) f1
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,cl.FunctionInfo)) f2
+		FROM CustLoginInfoSub cl WITH(NOLOCK)
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(1,ISNULL(cl.FunctionInfo,0))) f1
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(2,ISNULL(cl.FunctionInfo,0))) f2
 		WHERE custid = @custid AND cl.SubAccId = @SubAccId
 END
 GO

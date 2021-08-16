@@ -54,12 +54,12 @@ BEGIN
 	IF @SubAccID = 0
 		SELECT @Old_IsOn = f.IsOn
 		FROM CustLoginInfo cl WITH (NOLOCK) 
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(@BitOrder,cl.FunctionInfo)) f
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(@BitOrder,ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid
 	ELSE
 		SELECT @Old_IsOn = f.IsOn 
 		FROM CustLoginInfoSub cl WITH (NOLOCK) 
-			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(@BitOrder,cl.FunctionInfo)) f
+			CROSS APPLY (SELECT IsOn FROM f_GetSecurityFunctionInfo(@BitOrder,ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid AND SubAccID = @SubAccID
 
 	IF @Old_IsOn = @IsOn
@@ -70,15 +70,16 @@ BEGIN
 		UPDATE cl 
 		SET cl.FunctionInfo = f.FunctionInfo
 		FROM CustLoginInfo cl WITH(ROWLOCK)
-			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, cl.FunctionInfo)) f
+			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid
 	END
 	ELSE
 	BEGIN			
+		SELECT 'aa'
 		UPDATE cl 
 		SET cl.FunctionInfo = f.FunctionInfo
 		FROM CustLoginInfoSub cl WITH(ROWLOCK)
-			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, cl.FunctionInfo)) f
+			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid AND SubAccID = @SubAccID
 	END				
 			
