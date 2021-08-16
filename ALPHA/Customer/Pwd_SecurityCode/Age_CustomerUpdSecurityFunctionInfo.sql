@@ -109,6 +109,5 @@ BEGIN
 		@TrackingValue = @LogSPData,
 		@TrackingValue2 = @Old_LogSPData,
 		@duration = @duration	
-	END
 END
 GO
