@@ -45,11 +45,11 @@ BEGIN
 
 	IF @Function = 'BetList'
 	BEGIN
-		SELECT @BitOrder = 1
+		SELECT @BitOrder = 1, @ActionID = 951
 	END
 	ELSE IF @Function = 'Statement'
 	BEGIN
-		SELECT @BitOrder = 2
+		SELECT @BitOrder = 2, @ActionID = 952
 	END
 
 	IF @SubAccID = 0
@@ -108,7 +108,7 @@ BEGIN
 	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 		@UserID = @CustID,
 		@CustID = @CustID, 
-		@ActionID = 951, 
+		@ActionID = @ActionID, 
 		@TrackingValue = @LogSPData,
 		@TrackingValue2 = @Old_LogSPData,
 		@duration = @duration	
