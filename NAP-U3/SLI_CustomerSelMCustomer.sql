@@ -180,14 +180,14 @@ Param's Explanation:
 		ISNULL(c.mobilephone,'') AS MobilePhone, 
 		ISNULL(c.email,'') AS Email,
 		ISNULL(c.fax,'') AS Fax,
-		CI.maxpermatch161 AS MaxPerMatchv161,
-		CI.maxperball161 AS  MaxPerBallv161,
-		CI.maxpermatch164 AS MaxPerMatchv164,
-		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.minbet ELSE 0 END) AS MinBetv161,
-		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.maxbet ELSE 0 END) AS MaxBetv161,
+		CI.maxpermatch161 AS v161MaxPerMatch,
+		CI.maxperball161  AS v161MaxPerBall,
+		CI.maxpermatch164 AS v164MaxPerMatch,
+		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.minbet ELSE 0 END) AS v161MinBet,
+		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.maxbet ELSE 0 END) AS v161MaxBet,
 	
-		MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.minbet ELSE 0 END) AS MinBetv164,
-		MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.maxbet ELSE 0 END) AS MaxBetv164,
+		MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.minbet ELSE 0 END) AS v164MinBet,
+		MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.maxbet ELSE 0 END) AS v164MaxBet,
 
 		MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END) AS v161aPositionTaking_81,
 		MAX(CASE WHEN CS3.bettype = 83 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END) AS v161aPositionTaking_83,
@@ -249,16 +249,16 @@ Param's Explanation:
 		@max_v161malivepositiontaking_90 AS Auto_v161mLivePositiontaking_90_Max,
 	
 		--------------------------------------------------------------------------------------------------------------
-		ISNULL(@MinBetv161_Max, 0)		AS MinBetv161_Max,
-		ISNULL(@MaxBetv161_Min, 0)		AS MaxBetv161_Min,	
-		ISNULL(@MaxPerMatchv161_Min, 0) AS MaxPerMatchv161_Min,	
-		ISNULL(@MaxPerMatchv161_Max, 0) AS MaxPerMatchv161_Max,
-		ISNULL(@MaxPerBallv161_Max, 0)  AS MaxPerBallv161_Max,
+		ISNULL(@MinBetv161_Max, 0)		AS v161MinBet_Max,
+		ISNULL(@MaxBetv161_Min, 0)		AS v161MaxBet_Min,	
+		ISNULL(@MaxPerMatchv161_Min, 0) AS v161MaxPerMatch_Min,	
+		ISNULL(@MaxPerMatchv161_Max, 0) AS v161MaxPerMatch_Max,
+		ISNULL(@MaxPerBallv161_Max, 0)  AS v161MaxPerBall_Max,
 	
-		ISNULL(@MinBetv164_Max, 0) AS MinBetv164_Max,
-		ISNULL(@MaxBetv164_Min, 0) AS MaxBetv164_Min,	
-		ISNULL(@MaxPerMatchv164_Min, 0) AS MaxPerMatchv164_Min,	
-		ISNULL(@MaxPerMatchv164_Max, 0) AS MaxPerMatchv164_Max,
+		ISNULL(@MinBetv164_Max, 0) AS v164MinBet_Max,
+		ISNULL(@MaxBetv164_Min, 0) AS v164MaxBet_Min,	
+		ISNULL(@MaxPerMatchv164_Min, 0) AS v164MaxPerMatch_Min,	
+		ISNULL(@MaxPerMatchv164_Max, 0) AS v164MaxPerMatch_Max,
 	
 		--max (m2+a2)
 
@@ -308,8 +308,6 @@ Param's Explanation:
 		MAX(CASE WHEN CO3.bettype = 89 AND CO3.sporttype=161 THEN CASE WHEN CO3.maxlivepositiontaking<@v161alivepositiontaking_89_max THEN CO3.maxlivepositiontaking ELSE @v161alivepositiontaking_89_max END ELSE 0 END) AS v161aLivePositionTaking_89_Max,
 		MAX(CASE WHEN CO3.bettype = 90 AND CO3.sporttype=161 THEN CASE WHEN CO3.maxlivepositiontaking<@v161alivepositiontaking_90_max THEN CO3.maxlivepositiontaking ELSE @v161alivepositiontaking_90_max END ELSE 0 END) AS v161aLivePositionTaking_90_Max,
 		CI.DisableNumber
-
-
 	FROM 
 		customer AS c WITH (NOLOCK) 
 		INNER JOIN custinfo AS CI WITH (NOLOCK) ON C.custid = CI.custid
