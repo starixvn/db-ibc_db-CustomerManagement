@@ -12,7 +12,7 @@ DB: DBCUST/CustDB
 Revisions:  
 	- 20181030@Elodie: Search Customer on left panel of EXT NAP [Redmine:#95978]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#95978]
+	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#160682]
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
 */
