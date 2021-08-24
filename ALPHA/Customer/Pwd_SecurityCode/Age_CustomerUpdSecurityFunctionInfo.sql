@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE Age_CustomerUpdSecurityFunctionInfo
 	@Custid		INT,
@@ -14,7 +14,7 @@ ALTER PROCEDURE Age_CustomerUpdSecurityFunctionInfo
 	Created: Elodie
 	Date: 20210812
 	Task: Update security function info 
-	DB: DBACC/bodb02
+	DB: DBCUST/CustDB
 		
 	Revisions:
 		- 20210812@Elodie: Initial sp [Redmine: #159628]
