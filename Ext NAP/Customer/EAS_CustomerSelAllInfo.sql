@@ -12,7 +12,7 @@ DB: DBCUST/CustDB
 Revisions:  
 	- 20181030@Elodie: Search Customer on left panel of EXT NAP [Redmine:#95978]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-
+	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#95978]
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
 */
@@ -107,7 +107,7 @@ BEGIN
 				ISNULL(ps.Locked,0) AS Locked,
 				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed
 		FROM CustSuperProfile cp WITH (NOLOCK)
-			INNER JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
+			RIGHT JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
