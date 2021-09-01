@@ -29,7 +29,7 @@ BEGIN
 			@site VARCHAR(50),
 			@currency INT
 			
-	DECLARE @tblCust TABLE(custid INT, username NVARCHAR(50))
+	DECLARE @tblCust TABLE(custid INT, username VARCHAR(50))
 	
 	INSERT INTO @tblCust(username)
 	SELECT val
@@ -118,14 +118,7 @@ BEGIN
 	SELECT DISTINCT ProductID, SportType,Bettype
 	INTO #SportBettypeFilter
 	FROM dbo.ProductSettingDetail WITH(NOLOCK)
-	WHERE ProductID IN (5,--VS
-						41,--Live CS
-						22,--Macau Games
-						24,--FW
-						44,--RnG lottery
-						38,--Virtual Games
-						6--VGaming
-					)
+	WHERE SettingType IN (6,12)--win/loss limit settingtype
 		AND SettingStatus = 0
 
 	INSERT INTO @tblProduct(ProductID,SportType)
