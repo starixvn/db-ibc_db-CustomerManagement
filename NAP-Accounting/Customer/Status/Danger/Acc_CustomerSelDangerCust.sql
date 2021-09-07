@@ -14,7 +14,7 @@ Original:Accounting site
 
 Revisions:
 	- 20200508@Tiara: NAP Enhance Dangerous Grouping function [#Redmine: 129306]
-
+	- 20210819@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
 Param's Explanation:
 	@username: username to get danger info
 */	
@@ -48,7 +48,10 @@ BEGIN
     ELSE
 	    SET @isBA=0
 
-	SELECT ci.roleid, CI.danger, CI.danger2, CI.danger3, CI.dangercust, CI.DangerLevel, @isBA AS IsBA
+	SELECT ci.roleid, CI.danger, CI.danger2, CI.danger3,
+	ISNULL(ci.danger4,0) as danger4,
+	ISNULL(ci.danger5,0) as danger5,
+	CI.dangercust, CI.DangerLevel, @isBA AS IsBA
 	FROM CUSTINFO CI WITH (NOLOCK)
 	WHERE CI.custid = @custid
 END

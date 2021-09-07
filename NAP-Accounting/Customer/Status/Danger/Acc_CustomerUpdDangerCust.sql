@@ -42,7 +42,8 @@ AS
 		- 20191015@Johnson: Add param @sytem & check permission [PossessStatistics_CN88_DangerLevel] when update from NAP CM [redmine: #117714]
 		- 20200218@Elodie: Prevent update level 41 -> 50 on NAP site [Redmine:#128250]
 		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
-
+		- 20210820@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
+		
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -126,7 +127,17 @@ BEGIN
 	BEGIN 
 		SET @oldvalue=(Select Danger3 from custInfo (NOLOCK) where custid=@CustID)
 		SET @dangerfield='Danger3'
+	END	
+	ELSE IF (@DangerType=4)
+	BEGIN 
+		SET @oldvalue=(Select Danger4 from custInfo (NOLOCK) where custid=@CustID)
+		SET @dangerfield='Danger4'
 	END		
+	ELSE IF (@DangerType=5)
+	BEGIN 
+		SET @oldvalue=(Select Danger5 from custInfo (NOLOCK) where custid=@CustID)
+		SET @dangerfield='Danger5'
+	END	
 		
 	IF @roleid > 1 AND @updateDownline = 1 
 	BEGIN
@@ -168,6 +179,18 @@ BEGIN
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
 			SET Danger3 = @DangerLevel 
+			WHERE custid = @custid
+		END
+		ELSE IF @DangerType= 4
+		BEGIN
+			UPDATE custInfo with (UPDLOCK,ROWLOCK)
+			SET Danger4 = @DangerLevel 
+			WHERE custid = @custid
+		END
+		ELSE IF @DangerType= 5
+		BEGIN
+			UPDATE custInfo with (UPDLOCK,ROWLOCK)
+			SET Danger5 = @DangerLevel 
 			WHERE custid = @custid
 		END
 	END
