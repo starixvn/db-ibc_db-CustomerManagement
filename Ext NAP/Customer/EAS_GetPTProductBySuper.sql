@@ -21,6 +21,7 @@ AS
 		- 20210506@Winfred: Get value PT  AdvantPlay for customer [Redmine: #154258]
 		- 20210514@Winfred: Get value PT  AdvantPlay Mini for customer [Redmine: #155133]
 		- 20210728@Winfred: Grant Permission Alpha [Redmine: #155133]
+		- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
 		
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -74,7 +75,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #ProductSettingDetail b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,22,42,44,66) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming
+	WHERE (B.ProductID IN (41,22,42,44,66,69) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World

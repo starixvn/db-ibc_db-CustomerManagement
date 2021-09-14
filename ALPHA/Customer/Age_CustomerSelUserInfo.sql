@@ -62,6 +62,7 @@ Revisions:
 	- 20210426@Tina: Add VGaming [Redmine: #153938]
 	- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210728@Tina: NAP - Cannot setting Casino for Licensee account [Redmine: #159140]
+	- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -175,9 +176,9 @@ Param's Explanation:
 		,	@bitmapOrder_PPLive			INT
 		--VGaming
 		,	@bitmapOrder_VGaming		INT
+		--Bitcoin
+		,	@bitmapOrder_Bitcoin		INT 
 		 
-		 
-
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
@@ -199,7 +200,7 @@ Param's Explanation:
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)	
 	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
 	SET @bitmapOrder_VGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 171 AND Bettype = 3801)
-
+	SET @bitmapOrder_Bitcoin = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -225,6 +226,7 @@ Param's Explanation:
 		,	@IsHidden_SportsLottery	INT = 1
 		,	@IsHidden_PPLive		INT = 1
 		,	@IsHidden_VGaming		INT = 1
+		,	@IsHidden_Bitcoin		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -248,6 +250,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 66, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VGaming OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -414,7 +417,9 @@ Param's Explanation:
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VGaming)), 1) AS DisableVGaming,		
 			CAST(CASE WHEN @IsHidden_VGaming = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VGaming)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVGaming,
 			--end VGaming
-				
+			-- For Bitcoin
+			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Bitcoin)) AS DisableBitcoin,			
+			CAST(CASE WHEN @IsHidden_Bitcoin = 0 AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Bitcoin)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBitcoin,	
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,
