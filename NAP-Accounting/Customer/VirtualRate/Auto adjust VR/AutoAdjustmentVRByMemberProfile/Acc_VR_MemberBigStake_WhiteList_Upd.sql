@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd   
+ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd 
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
 	,@UpdateType TINYINT = 0 
@@ -24,6 +24,7 @@ AS
 			0: Update status = 1 when check performance
 			1: Update when check Credit <= config credit
 			2: Manual
+			3: High VR
 
 	Examples:
 		EXEC Acc_VR_MemberBigStake_WhiteList_Upd @CustIDList = '1,4935,5029,5052'
@@ -35,67 +36,56 @@ BEGIN
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
-	DECLARE @DeletedCount INT
-	DECLARE @UpdatedCount INT
 	SET @startRun = getdate()
 
 	DECLARE @CustTbl TABLE ( CustID INT PRIMARY KEY)
-	DECLARE @UpdatedTbl TABLE (CustID INT PRIMARY KEY, IsLog BIT Default 0)
-	DECLARE @DeletedCustTbl TABLE (CustID INT)
+	DECLARE @Whitelist_TBL TABLE (CustID INT PRIMARY KEY, IsLog BIT Default 0)
 
 	INSERT INTO @CustTbl(CustID)
 	SELECT DISTINCT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
 
-	--- Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table
-	DELETE t 
-	OUTPUT deleted.CustID INTO @DeletedCustTbl(CustID)
-	FROM @CustTbl t
-		INNER JOIN customer c WITH(NOLOCK) ON c.custid = t.custid
-		INNER JOIN VRMemberBigStake v (NOLOCK) ON c.custid = v.CustID
-		INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
-		INNER JOIN CustVirtualSetting cvs WITH(NOLOCK) ON cvs.custid = t.custid
-		INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK) ON  cvs.seqNo = pvs.seqNo
-	WHERE pvs.isActive = 1
-		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
-		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) >= p.VRValue
-		AND v.Status <> 1
-
-	DELETE v
-	FROM VRMemberBigStake v WITH(ROWLOCK)
-		INNER JOIN @DeletedCustTbl t ON v.CustID = t.CustID
-	WHERE v.Type = @Type
-
-	SET @DeletedCount = @@ROWCOUNT
-
 	--> Update Status = 1
 	UPDATE v
 	SET v.Status = 1
-	OUTPUT deleted.CustID INTO @UpdatedTbl( CustID)
+	OUTPUT deleted.CustID INTO @Whitelist_TBL(CustID)
 	FROM VRMemberBigStake v WITH(ROWLOCK)
 		INNER JOIN @CustTbl t ON v.CustID = t.CustID
 	WHERE v.Type = @Type
 		AND v.Status <> 1
-		AND v.FirstBetDate IS NOT NULL
+		AND (v.FirstBetDate IS NOT NULL 
+				OR @UpdateType IN (2,3) --White list  by Manual or HighVR no need Bet ticket 
+			)
+	
+	IF @UpdateType IN (2,3) --White list  by Manual or HighVR no need Bet ticket
+	BEGIN
+		INSERT INTO VRMemberBigStake (CustID,Type,Status)
+		OUTPUT inserted.CustID INTO @Whitelist_TBL(CustID)
+		SELECT t.CustID, @Type, 1
+		FROM @CustTbl t 
+			INNER JOIN Customer c WITH(NOLOCK) ON t.CustID = c.custid
+			INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
+			LEFT JOIN VRMemberBigStake v WITH(NOLOCK) ON v.CustID = t.CustID AND v.Type = p.Type
+		WHERE v.CustID IS NULL
+			AND c.creatdate >= p.ReleasedDate
+			AND p.type = @type
+	END
 
-	SET @UpdatedCount = @@ROWCOUNT
-
-	IF @DeletedCount + @UpdatedCount  = 0
-		RETURN -- nothing to log
+	IF NOT EXISTS( SELECT 1 FROM @Whitelist_TBL)
+		RETURN 
 
 	DECLARE @NewLogData VARCHAR(MAX)
 	DECLARE @custID INT
 
 	--Log Update VR for each customer
-	IF @UpdatedCount > 0
 	BEGIN
 		WHILE 1 = 1
 		BEGIN
 			UPDATE TOP(1)  c
 			SET c.islog = 1,
 				@custID = c.CustID
-			FROM @UpdatedTbl c
+			FROM @Whitelist_TBL c
 			WHERE Islog = 0
 
 			IF @@ROWCOUNT = 0 BREAK;
@@ -108,6 +98,7 @@ BEGIN
 								+ 'Reason="'
 										+ CASE	WHEN @UpdateType = 1 THEN 'Credit' 
 												WHEN @UpdateType = 2 THEN 'Manual'
+												WHEN @UpdateType = 3 THEN 'High VR'
 												ELSE 'Winloss'
 											END+ '" '
 								+ ' />'
@@ -124,21 +115,14 @@ BEGIN
 	set @duration  = datediff (millisecond,@startRun,@endRun) 
 
 	SELECT @NewLogData = CONVERT( VARCHAR(MAX), 
-			(	SELECT *
-				FROM
-					(SELECT  CustID AS '@CustID',
-							@Type AS '@Type', 
-							CASE WHEN @UpdateType  = 1 THEN 'WhiteListByCredit' 
-								WHEN @UpdateType  = 2 THEN 'WhiteListByManual'
-								ELSE 'WhiteListByWinLoss' 
-							END AS '@Action'
-					FROM @UpdatedTbl
-					UNION ALL
-					SELECT  CustID AS '@CustID',
-							@Type AS '@Type', 
-							'Removed' AS '@Action'
-					FROM @DeletedCustTbl
-				) t
+			(	SELECT  CustID AS '@CustID',
+						@Type AS '@Type', 
+						CASE WHEN @UpdateType  = 1 THEN 'WhiteListByCredit' 
+							WHEN @UpdateType  = 2 THEN 'WhiteListByManual'
+							WHEN @UpdateType  = 3 THEN 'WhiteListByHighVR'
+							ELSE 'WhiteListByWinLoss' 
+						END AS '@Action'
+				FROM @Whitelist_TBL
 				FOR XML PATH('Row'), ROOT ('R'), TYPE)
 			)
 

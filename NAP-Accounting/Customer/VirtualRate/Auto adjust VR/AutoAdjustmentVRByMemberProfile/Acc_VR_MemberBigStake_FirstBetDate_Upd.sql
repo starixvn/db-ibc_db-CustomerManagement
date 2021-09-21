@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_FirstBetDate_Upd   
+ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_FirstBetDate_Upd
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
 	,@BetDate	DATE
@@ -14,6 +14,7 @@ AS
 	    - 20210219@Eden: First commit [#150298]
 		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#152095]
 		- 20210323@Eden: Enhancement for VR Member Big Stake [#150298]
+		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 
 	Param's Explanation:  
 		@Type = 
@@ -28,40 +29,15 @@ BEGIN
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
-	DECLARE @DeletedCount INT
-	DECLARE @UpdatedCount INT
 	SET @startRun = getdate()
 
 	DECLARE @InputCustTbl TABLE (CustID INT)
 	DECLARE @UpdatedCustTbl TABLE (CustID INT)
-	DECLARE @DeletedCustTbl TABLE (CustID INT)
 
 	INSERT INTO @InputCustTbl(CustID)
 	SELECT DISTINCT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
-
-	--- Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table
-	DELETE t 
-	OUTPUT deleted.CustID INTO @DeletedCustTbl(CustID)
-	FROM @InputCustTbl t
-		INNER JOIN customer c WITH(NOLOCK) ON c.custid = t.custid
-		INNER JOIN VRMemberBigStake v (NOLOCK) ON c.custid = v.CustID
-		INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
-		INNER JOIN CustVirtualSetting cvs WITH(NOLOCK) ON cvs.custid = t.custid
-		INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK) ON  cvs.seqNo = pvs.seqNo
-	WHERE pvs.isActive = 1
-		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
-		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) >= p.VRValue
-		AND v.Status <> 1
-
-	DELETE v
-	FROM VRMemberBigStake v WITH(ROWLOCK)
-		INNER JOIN @DeletedCustTbl t ON v.CustID = t.CustID
-	WHERE v.Type = @Type
-		AND v.FirstBetDate IS NULL
-
-	SET @DeletedCount = @@ROWCOUNT
 	  
 	UPDATE v
 	SET v.FirstBetDate = @BetDate
@@ -70,10 +46,12 @@ BEGIN
 		INNER JOIN @InputCustTbl t ON v.CustID = t.CustID
 	WHERE v.Type = @Type
 		AND v.FirstBetDate IS NULL
+		AND v.Status <> 1
 
-	SET @UpdatedCount = @@ROWCOUNT
+	IF NOT EXISTS( SELECT 1 FROM @UpdatedCustTbl)
+		RETURN 
 
-	IF @UpdatedCount > 0
+	--White list by Credit
 	BEGIN
 		--Update Status = 1 for members with credit < RMCredit Config
 		DECLARE @UpdateWL_CustIDList VARCHAR(MAX) = ''
@@ -81,7 +59,7 @@ BEGIN
 		FROM Customer c WITH(NOLOCK)
 			INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
 			INNER JOIN @UpdatedCustTbl t ON c.CustID = t.CustID
-			INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
+			INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site AND p.Type = @Type
 			INNER JOIN exchange e WITH(NOLOCK) On ci.currency = e.ExchangeId
 			INNER JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = c.custid AND v.Type = p.Type
 		WHERE ci.credit <= p.credit / (CASE WHEN ci.currency <> 20 THEN  e.actualrate ELSE 1 END)
@@ -95,9 +73,6 @@ BEGIN
 				@Type = @Type,
 				@UpdateType = 1
 	END
-
-	IF @UpdatedCount + @DeletedCount = 0
-		RETURN -- nothing to log
 
 	DECLARE @UpdatedCustTbl_NotWL TABLE (CustID INT, Islog BIT DEFAULT 0)
 
@@ -127,7 +102,6 @@ BEGIN
 										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
 												ELSE space(1) 
 											END+ '" '
-								--+ 'BetDate="' + ISNULL(CONVERT(VARCHAR(10),@BetDate),'') +  '" '
 								+ ' />'
 	
 			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
@@ -144,20 +118,10 @@ BEGIN
 	DECLARE @NewLogData VARCHAR(MAX)
 	
 	SELECT @NewLogData = CONVERT( VARCHAR(MAX), 
-			(	SELECT *
-				FROM
-					(SELECT  CustID AS '@CustID',
-							@Type AS '@Type', 
-							@BetDate AS '@BetDate',
-							'Updated' AS '@Action'
-					FROM @UpdatedCustTbl
-					UNION ALL
-					SELECT  CustID AS '@CustID',
-							@Type AS '@Type', 
-							@BetDate AS '@BetDate',
-							'Removed' AS '@Action'
-					FROM @DeletedCustTbl
-					) t
+			(	SELECT  CustID AS '@CustID',
+						@Type AS '@Type', 
+						@BetDate AS '@BetDate'
+				FROM @UpdatedCustTbl
 				FOR XML PATH('Row'), ROOT ('R'), TYPE)
 			)
 

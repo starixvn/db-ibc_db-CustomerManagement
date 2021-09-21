@@ -13,6 +13,7 @@ AS
   
 	Revisions:  
 	    - 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
+		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 
 		ErrorCode table Return:
 			Validate Code
@@ -21,8 +22,8 @@ AS
 
 			Partial Update Code
 				1003: Already whitelisted accounts:
-				1004: No ticket accounts:
-				1005: Accounts which had been removed from queue before:
+				--1004: No ticket accounts:
+				--1005: Accounts which had been removed from queue before:
 				0: Successfully whitelisted accounts:
 
 	Param's Explanation:  	
@@ -43,15 +44,20 @@ BEGIN
 	OPTION (MAXRECURSION 0)
 
 	UPDATE t
-	SET t.CustID = ci.Custid
+	SET t.CustID = c.Custid
 		,t.WLStatus = v.Status
 		,t.FirstBetDate = v.FirstBetDate
-	FROm @CustTbl t
-		INNER JOIN custinfo ci WITH(NOLOCK)
-			ON ci.username = t.Username
-		INNER JOIN VRMemberBigStake v WITH(NOLOCK)
-			ON ci.CustID = v.CustID
-			AND v.Type = @Type
+	FROM @CustTbl t
+		INNER JOIN customer c WITH(NOLOCK)
+			ON c.username = t.Username
+		INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p 
+			ON p.site = c.site
+		LEFT JOIN VRMemberBigStake v WITH(NOLOCK)
+			ON c.CustID = v.CustID
+			AND v.Type = p.Type
+	WHERE c.roleid = 1
+		AND c.creatdate > = p.ReleasedDate
+		AND p.type = @type
 
 	INSERT INTO @ErrorTbl (Username,ErrorCode,ErrorMsg)
 	SELECT Username,1001,'These accounts don''t belong to big stake VR adjustment flow: '
@@ -72,10 +78,11 @@ BEGIN
 	FROM @CustTbl
 	WHERE WLStatus = 1
 
-	INSERT INTO @ErrorTbl (Username,ErrorCode,ErrorMsg)
-	SELECT Username,1004,'No ticket accounts: '
-	FROM @CustTbl
-	WHERE FirstBetDate IS NULL
+	--INSERT INTO @ErrorTbl (Username,ErrorCode,ErrorMsg)
+	--SELECT Username,1004,'No ticket accounts: '
+	--FROM @CustTbl
+	--WHERE FirstBetDate IS NULL
+	--	AND WLStatus IS NOT NULL --on queue but no ticket
 
 	DELETE t
 	FROM @CustTbl t
@@ -95,11 +102,9 @@ BEGIN
 
 	INSERT INTO @ErrorTbl (Username,ErrorCode,ErrorMsg)
 	SELECT Username
-		,ErrorCode = CASE WHEN ci.CustID IS NOT NULL THEN 0 ELSE 1005 END
-		,ErrorMsg = CASE WHEN ci.CustID IS NOT NULL THEN 'Successfully whitelisted accounts:' ELSE 'Accounts which had been removed from queue before:' END
+		,ErrorCode = 0
+		,ErrorMsg = 'Successfully whitelisted accounts:'
 	FROM @CustTbl v
-		LEFT JOIN VRMemberBigStake ci WITH(NOLOCK)
-			ON ci.custid = v.CustID
 
 	EndStep:
 	SELECT * FROM @ErrorTbl
