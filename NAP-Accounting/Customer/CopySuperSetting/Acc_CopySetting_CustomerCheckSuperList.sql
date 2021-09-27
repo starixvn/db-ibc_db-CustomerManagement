@@ -4,6 +4,7 @@ ALTER PROCEDURE [dbo].[Acc_CopySetting_CustomerCheckSuperList]
 	@username VARCHAR(50),
 	@SuperList VARCHAR(MAX) = '',
 	@custid		INT = 0 OUTPUT,
+	@ProductList VARCHAR(MAX) = '',
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg  NVARCHAR(1000)='' OUTPUT
 AS
@@ -19,8 +20,7 @@ AS
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
-		@SuperList: super list destination
-		@ProductList: List product need to copy setting
+		@SuperList: super list destination		
 */
 BEGIN
 	SET NOCOUNT ON
@@ -115,7 +115,7 @@ BEGIN
 	INSERT INTO @tblProduct(ProductID,sporttype)
 	SELECT 6, 208 --casino
 	
-	SELECT DISTINCT ProductID, SportType,Bettype
+	SELECT DISTINCT ProductID, SportType, Bettype
 	INTO #SportBettypeFilter
 	FROM dbo.ProductSettingDetail WITH(NOLOCK)
 	WHERE SettingType IN (6,12)--win/loss limit settingtype
@@ -135,6 +135,35 @@ BEGIN
 					WHERE stt.CustID IN (SELECT custid FROM @tblCust)
 					) stt
 	WHERE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 1
+	
+	--check UM if apply on any super for list product
+	IF @ProductList <> ''
+	BEGIN
+		IF EXISTS(
+		SELECT TOP (1) 1
+			FROM customer cu WITH(NOLOCK)
+			INNER JOIN site s WITH(NOLOCK) ON s.site = cu.site		
+			INNER JOIN [dbo].UMConfig c WITH(NOLOCK) ON c.SuperID IN (cu.custid,0)
+		WHERE CONVERT(SMALLDATETIME,GETDATE()) BETWEEN c.BeginTime AND c.EndTime
+			AND c.SiteID IN (s.siteid,0)
+			AND c.Currency IN (cu.currency,0)
+			AND (cu.custid IN (SELECT custid FROM @tblCust WHERE custid > 0)
+				OR cu.custid = @custid)
+			AND (SportType IN (SELECT sporttype FROM @tblProduct)
+				OR c.Sporttype = 0)
+			AND c.SettingType IN(6,12,0)--settingtype win/loss limit		
+			AND (c.ProductID IN(SELECT ProductID FROM @tblProduct 
+								WHERE ProductID IN (SELECT val FROM dbo.strSplit(@ProductList,','))
+								)	
+				OR c.ProductID = 0)
+			AND c.FunctionType = 1			
+		)
+		BEGIN	
+			SELECT @ErrCode = 105,
+					@ErrMsg = 'One or many accounts are on UM, please try again later.'
+			RETURN;		
+		END
+	END
 	
 	SELECT * FROM @tblProduct	
 	
