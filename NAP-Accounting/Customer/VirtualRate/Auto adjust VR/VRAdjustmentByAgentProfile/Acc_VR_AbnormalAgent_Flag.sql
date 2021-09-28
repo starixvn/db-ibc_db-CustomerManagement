@@ -13,6 +13,7 @@ AS
 		- 20200911@Eden: Enhance to include new Agents with tickets the Abnormal checking [#141467]
 		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20210830@Eden: Max Payout Per Match [redmine: #158073]
 
 	Param's Explanation:  
 		@Type = 
@@ -66,11 +67,11 @@ BEGIN
 	;WITH tmp AS(
 		SELECT t.CustID,
 			AVG(c.credit) AS [AVGMemCredit],
-			AVG(c.maxpermatch) AS [AVGMemMaxPerMatch],
+			AVG(st.maxpermatch) AS [AVGMemMaxPerMatch],
 			AVG(st.maxbet) AS [AVGMemMaxBet]
 		FROM custInfo c WITH(NOLOCK)
 			INNER JOIN @AgentTbl t ON c.recommend = t.CustID 
-			INNER JOIN custSetting st WITH(NOLOCK) ON c.custid = st.custid AND st.sporttype = 1 AND st.bettype = 1
+			INNER JOIN CustBetSetting_Member st WITH(NOLOCK) ON c.custid = st.custid AND st.sporttype = 1 AND st.bettype = 1
 		WHERE c.roleid = 1 AND c.Enabled = 1
 		GROUP BY t.CustID
 	)

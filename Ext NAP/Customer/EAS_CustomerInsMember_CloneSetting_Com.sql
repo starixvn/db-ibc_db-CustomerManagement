@@ -41,6 +41,8 @@ AS
 		- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210723@Johnson: set new super limit = 300 for 789's group [redmine:#158946]
+		- 20210802@Eden: Max Payout Per Match [redmine: #158073]
+
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -351,7 +353,7 @@ BEGIN
 				,maxpermatch161
 				
 				,MaxPerBall161				
-				,maxpermatch164			
+				--,maxpermatch164			
 				,DoubleCommLosing	
 				,HideKeno
 				
@@ -375,33 +377,33 @@ BEGIN
 				--,closed
 				,MatchLimit
 				,0 AS VirtualMultiplier
-				,maxpermatch
-				,maxpermatch2
-				,maxpermatch3
-				,maxpermatch5
-				,maxpermatch8
-				,maxpermatch10
-				,maxpermatch11
-				,maxpermatch12
-				,maxpermatch99
+				,0
+				,0
+				,0
+				,0
+				,0
+				,0
+				,0
+				,0
+				,0
 				,Enabled  						
 				,DisableCasino
 				,0 as SyncCasino           
 				,DisableOutright				
-				,MaxPerMatch99MP
+				,0
 				,DisableNumber
 				
-				,maxpermatch161
+				,0
 				
-				,MaxPerBall161				
-				,maxpermatch164				
+				,0				
+				--,0				
 				,doubleCommLosing		
 				,HideKeno
 				
 				,HideGoldDeluxe 
 				,DisableGoldDeluxe
 				,DisableSuperLive
-				,MaxPerMatch1MP
+				,0
 				--,1
 		FROM dbo.custinfo WITH(NOLOCK)
 		WHERE custid=@ExistingCustid  
