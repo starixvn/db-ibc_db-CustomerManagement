@@ -1,19 +1,31 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelMinMaxLimit]
 	@custid int,
-	@userid int,
-	@MinBet_Max money output, @MaxBet_Min money output, @MaxPerMatch_Min money = 0 output, @MaxPerMatch_Max money output,
-	@MinBetv2_Max money output, @MaxBetv2_Min money output, @MaxPerMatchv2_Min money = 0  output, @MaxPerMatchv2_Max money output,
-	@MinBetv3_Max money output, @MaxBetv3_Min money output, @MaxPerMatchv3_Min money = 0  output, @MaxPerMatchv3_Max money output,
-	@MinBetv5_Max money output, @MaxBetv5_Min money output, @MaxPerMatchv5_Min money = 0  output, @MaxPerMatchv5_Max money output,
-	@MinBetv8_Max money output, @MaxBetv8_Min money output, @MaxPerMatchv8_Min money = 0  output, @MaxPerMatchv8_Max money output,
-	@MinBetv10_Max money output, @MaxBetv10_Min money output, @MaxPerMatchv10_Min money = 0  output, @MaxPerMatchv10_Max money output,
-	@MinBetv11_Max money output, @MaxBetv11_Min money output, @MaxPerMatchv11_Min money = 0  output, @MaxPerMatchv11_Max money output,
-	@MinBetv99_Max money output, @MaxBetv99_Min money output, @MaxPerMatchv99_Min money = 0  output, @MaxPerMatchv99_Max money output,	
-	@MinBetv99MP_Max money output, @MaxBetv99MP_Min money output, @MaxPerMatchv99MP_Min money = 0  output, @MaxPerMatchv99MP_Max money output,
-	@MinBetv1MP_Max money output, @MaxBetv1MP_Min money output, @MaxPerMatchv1MP_Min money = 0  output, @MaxPerMatchv1MP_Max money output,
-	@MinBetv161_Max money output, @MaxBetv161_Min money output, @MaxPerMatchv161_Min money = 0  output, @MaxPerMatchv161_Max money = 0 output, @MaxPerBallv161_Min money = 0 output, @MaxPerBallv161_Max money = 0 output,
-	@MinBetv164_Max money output, @MaxBetv164_Min money output, @MaxPerMatchv164_Min money = 0  output, @MaxPerMatchv164_Max money = 0 output
+	@userid int = 0,
+	@IsCreatedDowline BIT = 0, 
+	@MinBet_Max money = 0 output, @MaxBet_Min money = 0 output, @MaxPerMatch_Min money = 0 output, @MaxPerMatch_Max money = 0 output,
+	@MinBetv2_Max money = 0 output, @MaxBetv2_Min money = 0 output, @MaxPerMatchv2_Min money = 0 output, @MaxPerMatchv2_Max money = 0 output,
+	@MinBetv3_Max money = 0 output, @MaxBetv3_Min money = 0 output, @MaxPerMatchv3_Min money = 0 output, @MaxPerMatchv3_Max money = 0 output,
+	@MinBetv5_Max money = 0 output, @MaxBetv5_Min money = 0 output, @MaxPerMatchv5_Min money = 0 output, @MaxPerMatchv5_Max money = 0 output,
+	@MinBetv8_Max money = 0 output, @MaxBetv8_Min money = 0 output, @MaxPerMatchv8_Min money = 0 output, @MaxPerMatchv8_Max money = 0 output,
+	@MinBetv10_Max money = 0 output, @MaxBetv10_Min money = 0 output, @MaxPerMatchv10_Min money = 0 output, @MaxPerMatchv10_Max money = 0 output,
+	@MinBetv11_Max money = 0 output, @MaxBetv11_Min money = 0 output, @MaxPerMatchv11_Min money = 0 output, @MaxPerMatchv11_Max money = 0 output,
+	@MinBetv99_Max money = 0 output, @MaxBetv99_Min money = 0 output, @MaxPerMatchv99_Min money = 0 output, @MaxPerMatchv99_Max money = 0 output,	
+	@MinBetv99MP_Max money = 0 output, @MaxBetv99MP_Min money = 0 output, @MaxPerMatchv99MP_Min money = 0 output, @MaxPerMatchv99MP_Max money = 0 output,
+	@MinBetv1MP_Max money = 0 output, @MaxBetv1MP_Min money = 0 output, @MaxPerMatchv1MP_Min money = 0 output, @MaxPerMatchv1MP_Max money = 0 output,
+	@MinBetv161_Max money = 0 output, @MaxBetv161_Min money = 0 output, @MaxPerMatchv161_Min money = 0 output, @MaxPerMatchv161_Max money = 0 output, @MaxPerBallv161_Min money = 0 output, @MaxPerBallv161_Max money = 0 output,
+	@MinBetv164_Max money = 0 output, @MaxBetv164_Min money = 0 output, @MaxPerMatchv164_Min money = 0 output, @MaxPerMatchv164_Max money = 0 output,
+	--Max Payout Per Match
+	@MaxPayoutPerMatch_max money = 0 output,
+	@MaxPayoutPerMatchv2_max money = 0 output,
+	@MaxPayoutPerMatchv3_max money = 0 output,
+	@MaxPayoutPerMatchv5_max money = 0 output,
+	@MaxPayoutPerMatchv8_max money = 0 output,
+	@MaxPayoutPerMatchv10_max money = 0 output,
+	@MaxPayoutPerMatchv11_max money = 0 output,
+	@MaxPayoutPerMatchv99_max money = 0 output,
+	@MaxPayoutPerMatchv99mp_max money = 0 output,
+	@MaxPayoutPerMatchv1mp_max money = 0 output
 AS
 /*
 Created: 20090714@nqminh
@@ -29,469 +41,165 @@ Revisions:
 	- 20161109@Helen: Separate Bet Setting for Soccer - Parlay - [Redmine:66265]
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
+	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 Param's Explanation:
-• @custid: custid that need to be viewed.   
+	- @custid: custid that need to be viewed. 
+	-@IsCreatedDowline = :
+		0 : Upline view downline to Update
+		1 : Upline Create new Downline 
+						
 */
 
 SET NOCOUNT ON
+BEGIN
+	DECLARE @RoleId int, @srecommend int, @mrecommend int, @recommend int 
+	SELECT @RoleId = RoleId, @srecommend = srecommend ,@mrecommend = mrecommend, @recommend=recommend
+	FROM CustInfo WITH(NOLOCK)
+	WHERE CustId = @CustID
 
-Declare @RoleId int
-Select @RoleId = RoleId 
-From CustInfo (nolock)
-Where CustId = @CustID
+	SET @IsCreatedDowline = ISNULL(@IsCreatedDowline,0)
 
-If (@RoleId = 1)
-Begin
-	Select
-		@MinBet_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBet_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on 
-			(cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=1
-	where ci.custid = @CustID
+	IF @IsCreatedDowline = 0
+	BEGIN
+		IF @RoleId >= 4
+			RETURN
+		ELSE IF @RoleId = 3 -- get Super
+			SELECT @mrecommend = NULL, @recommend = NULL
+		ELSE IF @RoleId = 2 -- Get super and master
+			SELECT @recommend = NULL
+	END
+	ELSE
+	BEGIN
+		IF @RoleID = 1 OR @RoleID > 4
+			RETURN
+		ELSE IF @RoleId = 4 -- get Super
+			SELECT @mrecommend = NULL, @recommend = NULL
+		ELSE IF @RoleId = 3 -- Get super and master
+			SELECT @recommend = NULL
+	END
 
-	Select 
-		@MinBetv2_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv2_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=2
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv3_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv3_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=3
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv5_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv5_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=5
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv8_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv8_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=8
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv10_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv10_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=10
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv11_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv11_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=11
-	where ci.custid = @CustID
-
-
-	Select 
-		@MinBetv99_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv99_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=99
-	where ci.custid = @CustID
-	
-	Select 
-		@MinBetv99MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv99MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 9 and cs.sporttype=99
-	where ci.custid = @CustID	
-	
-	Select 
-		@MinBetv1MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv1MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 9 and cs.sporttype=1
-	where ci.custid = @CustID	
-	
-	
-	Select 
-		@MinBetv161_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv161_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.Recommend or cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
-		and cs3.bettype = 81 and cs3.sporttype=161
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.Recommend or cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
-		and cs3.bettype = 8101 and cs3.sporttype=164
-	where ci.custid = @CustID
-	
-	--MAX PER MATCH
-	Select 
-		@MaxPerMatch_Min = 0, 	
-		@MaxperMatch_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end), 
-		
-		@MaxPerMatchv2_Min = 0,	
-		@MaxPerMatchv2_Max = Min(case when cs.MaxPerMatch2 = 0 then NULL else cs.MaxPerMatch2 end), 
-
-		@MaxPerMatchv3_Min = 0,	
-		@MaxPerMatchv3_Max = Min(case when cs.MaxPerMatch3 = 0 then NULL else cs.MaxPerMatch3 end), 
-
-		@MaxPerMatchv5_Min = 0,	
-		@MaxPerMatchv5_Max = Min(case when cs.MaxPerMatch5 = 0 then NULL else cs.MaxPerMatch5 end), 
-		
-		@MaxPerMatchv8_Min = 0,	
-		@MaxPerMatchv8_Max = Min(case when cs.MaxPerMatch8 = 0 then NULL else cs.MaxPerMatch8 end), 
-
-		@MaxPerMatchv10_Min = 0,	
-		@MaxPerMatchv10_Max = Min(case when cs.MaxPerMatch10 = 0 then NULL else cs.MaxPerMatch10 end), 
-		
-		@MaxPerMatchv11_Min = 0,	
-		@MaxPerMatchv11_Max = Min(case when cs.MaxPerMatch11 = 0 then NULL else cs.MaxPerMatch11 end), 
-
-		@MaxPerMatchv99_Min = 0,	
-		@MaxPerMatchv99_Max = Min(case when cs.MaxPerMatch99 = 0 then NULL else cs.MaxPerMatch99 end),
-		
-		
-		@MaxPerMatchv161_Min = 0,	
-		@MaxPerMatchv161_Max = Min(case when cs.MaxPerMatch161 = 0 then NULL else cs.MaxPerMatch161 end),
-		
-		@MaxPerBallv161_Min = 0,
-		@MaxPerBallv161_Max = MIN(CASE WHEN cs.MaxPerBall161 = 0 THEN NULL ELSE cs.MaxPerBall161 END),
-		
-		@MaxPerMatchv164_Min = 0,	
-		@MaxPerMatchv164_Max = Min(case when cs.MaxPerMatch164 = 0 then NULL else cs.MaxPerMatch164 end),
-				
-		@MaxPerMatchv99MP_Min = 0,	
-		@MaxPerMatchv99MP_Max = Min(case when cs.MaxPerMatch99MP = 0 then NULL else cs.MaxPerMatch99MP end),
-		
-		@MaxPerMatchv1MP_Min = 0,	
-		@MaxPerMatchv1MP_Max = Min(case when cs.MaxPerMatch1MP = 0 then NULL else cs.MaxPerMatch1MP end)
-		
-	from 
-		custinfo as cs WITH (NOLOCK) 
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.Recommend or cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-	where ci.custid = @CustID
-End
-Else
-If (@RoleId = 2)
-Begin
-	Select
-		@MinBet_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBet_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=1
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv2_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv2_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=2
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv3_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv3_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=3
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv5_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv5_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=5
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv8_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv8_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=8
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv10_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv10_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=10
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv11_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv11_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=11
-	where ci.custid = @CustID
-
-
-	Select 
-		@MinBetv99_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv99_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 1 and cs.sporttype=99
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv99MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv99MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 9 and cs.sporttype=99
-	where ci.custid = @CustID
-	
-	Select 
-		@MinBetv1MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv1MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting as cs WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-		and cs.bettype = 9 and cs.sporttype=1
-	where ci.custid = @CustID
-	
-	Select 
-		@MinBetv161_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv161_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
-		and cs3.bettype = 81 and cs3.sporttype=161
-	where ci.custid = @CustID
-
-	Select 
-		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end)
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs3.CustID = ci.MRecommend or cs3.CustID = ci.SRecommend)
-		and cs3.bettype = 8101 and cs3.sporttype=164
-	where ci.custid = @CustID
-
-	--MAX PER MATCH
-	Select 
-		@MaxPerMatch_Min = 0, 	
-		@MaxperMatch_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end), 
-		
-		@MaxPerMatchv2_Min = 0,	
-		@MaxPerMatchv2_Max = Min(case when cs.MaxPerMatch2 = 0 then NULL else cs.MaxPerMatch2 end), 
-
-		@MaxPerMatchv3_Min = 0,	
-		@MaxPerMatchv3_Max = Min(case when cs.MaxPerMatch3 = 0 then NULL else cs.MaxPerMatch3 end), 
-
-		@MaxPerMatchv5_Min = 0,	
-		@MaxPerMatchv5_Max = Min(case when cs.MaxPerMatch5 = 0 then NULL else cs.MaxPerMatch5 end), 
-		
-		@MaxPerMatchv8_Min = 0,	
-		@MaxPerMatchv8_Max = Min(case when cs.MaxPerMatch8 = 0 then NULL else cs.MaxPerMatch8 end), 
-
-		@MaxPerMatchv10_Min = 0,	
-		@MaxPerMatchv10_Max = Min(case when cs.MaxPerMatch10 = 0 then NULL else cs.MaxPerMatch10 end), 
-		
-		@MaxPerMatchv11_Min = 0,	
-		@MaxPerMatchv11_Max = Min(case when cs.MaxPerMatch11 = 0 then NULL else cs.MaxPerMatch11 end), 
-
-		@MaxPerMatchv99_Min = 0,	
-		@MaxPerMatchv99_Max = Min(case when cs.MaxPerMatch99 = 0 then NULL else cs.MaxPerMatch99 end),
-		
-		@MaxPerMatchv99MP_Min = 0,	
-		@MaxPerMatchv99MP_Max = Min(case when cs.MaxPerMatch99MP = 0 then NULL else cs.MaxPerMatch99MP end),
-		
-		@MaxPerMatchv1MP_Min = 0,	
-		@MaxPerMatchv1MP_Max = Min(case when cs.MaxPerMatch1MP = 0 then NULL else cs.MaxPerMatch1MP end),
-		
-	
-		
-		@MaxPerBallv161_Min = 0,
-		@MaxPerBallv161_Max = MIN(CASE WHEN cs.MaxPerBall161 = 0 THEN NULL ELSE cs.MaxPerBall161 END),
-		
-		@MaxPerMatchv161_Min = 0,	
-		@MaxPerMatchv161_Max = Min(case when cs.MaxPerMatch161 = 0 then NULL else cs.MaxPerMatch161 end),
-		
-		@MaxPerMatchv164_Min = 0,	
-		@MaxPerMatchv164_Max = Min(case when cs.MaxPerMatch164 = 0 then NULL else cs.MaxPerMatch164 end)
-		
-	from 
-		custinfo as cs WITH (NOLOCK) 
-		INNER JOIN custinfo as ci WITH (NOLOCK) on (cs.CustID = ci.MRecommend or cs.CustID = ci.SRecommend)
-	where ci.custid = @CustID
-End
-Else
-If (@RoleId = 3)
-Begin
-	/*@userid is SRecommendID now*/
-	Select 
-		@MinBet_Max = MinBet,
-		@MaxBet_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=1		  
-		  
-	Select 
-		@MinBetv2_Max = MinBet,
-		@MaxBetv2_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=2
-
-	Select 
-		@MinBetv3_Max = MinBet,
-		@MaxBetv3_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=3
-
-	Select 
-		@MinBetv5_Max = MinBet,
-		@MaxBetv5_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=5
-
-	Select 
-		@MinBetv8_Max = MinBet,
-		@MaxBetv8_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=8
-
-	Select 
-		@MinBetv10_Max = MinBet,
-		@MaxBetv10_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=10
-
-	Select 
-		@MinBetv11_Max = MinBet,
-		@MaxBetv11_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=11
-
-	Select 
-		@MinBetv99_Max = MinBet,
-		@MaxBetv99_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  1 and cs.sporttype=99
-	
-	Select 
-		@MinBetv99MP_Max = MinBet,
-		@MaxBetv99MP_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  9 and cs.sporttype=99
-				
-	Select 
-		@MinBetv1MP_Max = MinBet,
-		@MaxBetv1MP_Min = MaxBet
-	from 
-		custsetting as cs WITH (NOLOCK)
-	where cs.custid = @userid and cs.bettype =  9 and cs.sporttype=1
-
-			
-	Select 
-		@MinBetv161_Max = MinBet,
-		@MaxBetv161_Min = MaxBet
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-	where cs3.custid = @userid and cs3.bettype =  81 and cs3.sporttype=161
-	
-	Select 
-		@MinBetv164_Max = MinBet,
-		@MaxBetv164_Min = MaxBet
-	from 
-		custsetting3rd as cs3 WITH (NOLOCK)
-	where cs3.custid = @userid and cs3.bettype =  8101 and cs3.sporttype=164
-	
-	--MAX PER MATCH
-	Select 
-		@MaxPerMatch_Min = 0,
-		@MaxperMatch_Max = MaxPerMatch,
-		
+	--MAX PER MATCH MIN
+	SELECT @MaxPerMatch_Min = 0,
 		@MaxPerMatchv2_Min = 0,
-		@MaxPerMatchv2_Max = MaxPerMatch2,
-		
 		@MaxPerMatchv3_Min = 0,
-		@MaxPerMatchv3_Max = MaxPerMatch3,
-		
 		@MaxPerMatchv5_Min = 0,
-		@MaxPerMatchv5_Max = MaxPerMatch5,
-		
 		@MaxPerMatchv8_Min = 0,
-		@MaxPerMatchv8_Max = MaxPerMatch8,
-		
 		@MaxPerMatchv10_Min = 0,
-		@MaxPerMatchv10_Max = MaxPerMatch10,
-		
-		@MaxPerMatchv11_Min = 0,
-		@MaxPerMatchv11_Max = MaxPerMatch11,		
-
+		@MaxPerMatchv11_Min = 0,	
 		@MaxPerMatchv99_Min = 0,
-		@MaxPerMatchv99_Max = MaxPerMatch99,
-		
 		@MaxPerMatchv99MP_Min = 0,
-		@MaxPerMatchv99MP_Max = MaxPerMatch99MP,
-		
 		@MaxPerMatchv1MP_Min = 0,
-		@MaxPerMatchv1MP_Max = MaxPerMatch1MP,
-	
 		@MaxPerBallv161_Min = 0,
-		@MaxPerBallv161_Max = MaxPerBall161,
-		
 		@MaxPerMatchv161_Min = 0,
-		@MaxPerMatchv161_Max = MaxPerMatch161,
-			
-		@MaxPerMatchv164_Min = 0,
-		@MaxPerMatchv164_Max = MaxPerMatch164			
-	from 
-		custinfo as ci WITH (NOLOCK) 
-	where ci.custid = @userid
+		@MaxPerMatchv164_Min = 0
 
-End
+	Select 
+		@MinBet_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBet_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatch_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatch_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=1
+
+	Select 
+		@MinBetv2_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv2_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv2_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv2_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=2
+
+	Select 
+		@MinBetv3_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv3_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv3_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv3_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=3
+
+	Select 
+		@MinBetv5_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv5_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv5_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv5_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=5
+
+	Select 
+		@MinBetv8_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv8_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv8_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv8_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=8
+
+	Select 
+		@MinBetv10_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv10_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv10_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv10_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=10
+	Select 
+		@MinBetv11_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv11_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv11_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv11_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=11
+
+
+	Select 
+		@MinBetv99_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv99_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv99_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv99_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=99
+
+
+	Select 
+		@MinBetv99MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv99MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv99MP_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv99MP_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 9 and cs.sporttype=99
+
+
+	Select 
+		@MinBetv1MP_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv1MP_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv1MP_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv1MP_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 9 and cs.sporttype=1
+
+	Select 
+		@MinBetv161_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv161_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv161_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPerBallv161_Max = Min(case when cs.MaxPerNumber = 0 then NULL else cs.MaxPerNumber end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 81 and cs.sporttype=161
+
+	Select 
+		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv164_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 8101 and cs.sporttype=164
+END
 GO
