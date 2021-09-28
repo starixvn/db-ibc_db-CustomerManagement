@@ -75,6 +75,21 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
     @maxPOpermatchv99   MONEY = NULL, 
     @maxPOpermatchv99mp MONEY = NULL, 
     @maxPOpermatchv1mp  MONEY = NULL,
+
+	--- Saba soccer
+	@minbetv1saba money = NULL,
+	@maxbetv1saba money = NULL,
+	@maxpermatchv1saba money  = NULL,
+	@maxPOpermatchv1saba money = NULL,
+
+	--- Saba basketball
+	@minbetv2saba money = NULL,
+	@maxbetv2saba money = NULL,
+	@maxpermatchv2saba money  = NULL,
+	@maxPOpermatchv2saba money = NULL,
+
+	@UpdateMinMaxBetv1saba bit = 1,
+	@UpdateMinMaxBetv2saba bit = 1,
 	
 	@systemID TINYINT = NULL,
 	@userid int, --updater Id	
@@ -121,6 +136,7 @@ Revisions:
 	- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 	- 20211005@Johnson: change param @UpdateMinMaxBetv1MP to @UpdateMinMaxBetMP [redmine:#161425]
+	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @UpdateMinMaxBet: is update min max bet?
@@ -230,6 +246,20 @@ BEGIN
 		@UpdateMinMaxBetMP = @UpdateMinMaxBetMP,			
 		@UpdateMinMaxBetv161 = @UpdateMinMaxBetv161,
 		@UpdateMinMaxBetv164 = @UpdateMinMaxBetv164,
+		--Saba
+		@minbetv1saba              	= @minbetv1saba,
+		@maxbetv1saba              	= @maxbetv1saba,
+		@maxpermatchv1saba         	= @maxpermatchv1saba ,
+		@MaxPOpermatchv1saba   		= @MaxPOpermatchv1saba ,
+
+		@minbetv2saba              	= @minbetv2saba,
+		@maxbetv2saba              	= @maxbetv2saba,
+		@maxpermatchv2saba         	= @maxpermatchv2saba ,
+		@MaxPOpermatchv2saba   		= @MaxPOpermatchv2saba ,
+
+		@UpdateMinMaxBetv1saba		= @UpdateMinMaxBetv1saba,
+		@UpdateMinMaxBetv2saba		= @UpdateMinMaxBetv2saba,
+
 		@SubAccID = @SubAccID,
 		@UserID = @UserID,
 		@Language = @Language,
