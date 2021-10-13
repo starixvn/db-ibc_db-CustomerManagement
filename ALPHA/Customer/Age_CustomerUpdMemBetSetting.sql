@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
 	@UpdateMinMaxBetv11 BIT = 1,	
 	@UpdateMinMaxBetv99 BIT = 1,
 	@UpdateMinMaxBetv99MP BIT = 1,
-	@UpdateMinMaxBetv1MP BIT = 1,
+	@UpdateMinMaxBetMP BIT = 1,
 
 	@UpdateMinMaxBetv161 BIT = 1,
 	@UpdateMinMaxBetv164 BIT = 1,
@@ -120,7 +120,7 @@ Revisions:
 	- 20200724@Eden: Minimize UM Time - Lock updating customer settings [#136464]
 	- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
-
+	- 20211005@Johnson: change param @UpdateMinMaxBetv1MP to @UpdateMinMaxBetMP [redmine:#161425]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @UpdateMinMaxBet: is update min max bet?
@@ -227,7 +227,7 @@ BEGIN
 		@UpdateMinMaxBetv11 = @UpdateMinMaxBetv11,
 		@UpdateMinMaxBetv99 = @UpdateMinMaxBetv99,
 		@UpdateMinMaxBetv99MP = @UpdateMinMaxBetv99MP,
-		@UpdateMinMaxBetv1MP = @UpdateMinMaxBetv1MP,			
+		@UpdateMinMaxBetMP = @UpdateMinMaxBetMP,			
 		@UpdateMinMaxBetv161 = @UpdateMinMaxBetv161,
 		@UpdateMinMaxBetv164 = @UpdateMinMaxBetv164,
 		@SubAccID = @SubAccID,
