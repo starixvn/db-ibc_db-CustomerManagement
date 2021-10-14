@@ -9,7 +9,7 @@ CREATE PROCEDURE [dbo].[Age_ProblemAccount_CustomerList]
 	@SearchUsername		NVARCHAR(50) = '',
 	@ReviewStatusId		TINYINT = 0,
 	@PageIndex			INT = 1,
-	@PageSize			INT = 500,
+	@PageSize			INT = 5000,
 	@TotalRows			INT = 0 OUTPUT
 AS
 
@@ -23,7 +23,7 @@ AS
 		- 20200306@Elodie: Allow view problem account for master and agent [Redmine:#129881]
 		- 20210422@Johnson: get problem account from Custinfo.CustomerClass 8->13 [redmine:#153059]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		
+		- 20211014@Elodie: No paging [Redmine:#163177]
 	Param's Explanation:
 		@CustId: Customer login
 		@SubAccId: SubAccount Id
