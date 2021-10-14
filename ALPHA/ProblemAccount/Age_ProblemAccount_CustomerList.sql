@@ -24,6 +24,7 @@ AS
 		- 20210422@Johnson: get problem account from Custinfo.CustomerClass 8->13 [redmine:#153059]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20211014@Elodie: No paging [Redmine:#163177]
+		
 	Param's Explanation:
 		@CustId: Customer login
 		@SubAccId: SubAccount Id
