@@ -159,7 +159,7 @@ BEGIN
 				OldValue,
 				NewValue,
 				IP,
-				CASE WHEN la.ActionID = 1221 THEN la.ActionNameEN ELSE Doing END AS Doing,
+				Doing,
 				ActionID,
 				IsInternal,
 				ActionTypeID,
