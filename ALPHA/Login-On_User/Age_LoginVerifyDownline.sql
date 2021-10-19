@@ -22,6 +22,8 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@RoleID TINYINT = 0 OUTPUT,
 	@SubUserName VARCHAR(50) ='' OUTPUT,
 	@IsKickOut BIT = 0 OUTPUT, 
+	@IsDarkMode BIT = 0,
+	@Location VARCHAR(30)= 'Login Page',
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
 AS
@@ -65,6 +67,7 @@ AS
 		- 20200624@Johnson: add superid, siteid for BF login to prevent robot [redmine:#135142] 
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20211019@Winfred: Add log Alpha Support Dark Mode [Redmine: #151816]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -132,7 +135,7 @@ BEGIN
 		RETURN
 	END
 	------- END: Thien@20130420: Prevent hacking from Viettel IPs ---
-	
+
 	-----Begin login using Sub account
 	DECLARE @SubNicknameLoginOnly BIT, @db_Username2 VARCHAR(50) = @UserName
 	SET @SubNicknameLoginOnly = 0
@@ -205,7 +208,7 @@ BEGIN
 			IF(@IsMatched = 0)
 			BEGIN
 				SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login to wrong domain (' + @Site + '/' + @LoginDomain + ')'
-				
+			
 				SET	@End = GETDATE() 
 				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 				
@@ -273,7 +276,7 @@ BEGIN
 		IF (@rowcount = 0)
 		BEGIN
 			SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login failed (User_Not_Found)'    
-			
+		
 			SET	@End = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
 						
@@ -548,7 +551,7 @@ BEGIN
 
 		DECLARE @NicknameLoginOnly BIT 
 		SET  @NicknameLoginOnly = 0
-	 
+
 		IF EXISTS (SELECT 1 FROM customer AS c WITH (NOLOCK) WHERE c.username2 = @UserName)
 		BEGIN
 			----use nickname
@@ -576,7 +579,7 @@ BEGIN
 				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @db_custid 
 
 			IF @NicknameLoginOnly = 1 
-																												BEGIN  
+																										BEGIN  
 			SELECT @LogData = 'Account:' + @UserName + ' - ' + 'Login Result:Failed! - Login Option: Nickname Only.'  
 			SELECT	@failedcount = @failedcount + 1
 			SET @End = GETDATE() 
@@ -1145,6 +1148,12 @@ BEGIN
 		iplogin = @inputLoginIP, 		
 		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
+
+	EXEC dbo.Acc_WriteLog_SwitchDarkMode
+			@CustID = @CustID,
+			@IsDarkMode = @IsDarkMode,
+			@IP = @inputLoginIP,
+			@Location = @Location
 
 	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
 
