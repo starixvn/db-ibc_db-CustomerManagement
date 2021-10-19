@@ -9,6 +9,8 @@ ALTER PROCEDURE [dbo].[Acc_WriteLog_SwitchDarkMode]
 	Created: 20211019@Winfred
     Task: Alpha Support Dark Mode
     DB: DBCUST/CustDB
+    
+    Revisions:
 		- 20211019@Winfred: Create SP add log Alpha Support Dark Mode [Redmine: #151816]
 
     Param's Explaination:    	
