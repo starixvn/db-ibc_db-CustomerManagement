@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Age_SwitchDarkMode]
 	@CustID INT = 0,	
 	@IsDarkMode BIT = 0,
 	@IP VARCHAR(20)= '', 
-	@Location VARCHAR(30)= 'Login Page'
+	@Location VARCHAR(30)= 'HeaderMenu'
 /* 
 	Created: 20211019@Winfred
     Task: Alpha Support Dark Mode

@@ -23,7 +23,6 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@SubUserName VARCHAR(50) ='' OUTPUT,
 	@IsKickOut BIT = 0 OUTPUT, 
 	@IsDarkMode BIT = 0,
-	@Location VARCHAR(30)= 'Login Page',
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
 AS
@@ -1153,7 +1152,7 @@ BEGIN
 			@CustID = @CustID,
 			@IsDarkMode = @IsDarkMode,
 			@IP = @inputLoginIP,
-			@Location = @Location
+			@Location = 'LoginPage'
 
 	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
 
