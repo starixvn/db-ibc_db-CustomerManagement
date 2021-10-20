@@ -29,8 +29,8 @@ BEGIN
 	SET @Begin = GETDATE()
 	
 	SELECT @LogData = '<R CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+  
-	'SubAccID="'+  coalesce(cast(@SubAccID as varchar(30)),space(1)) +  '" '+      
-	'DarkMode="'+  CASE WHEN @IsDarkMode = 0 THEN  'Light ' ELSE 'Dark' END +  '" '+    		
+	'SubAccName="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) as VARCHAR(30)), SPACE(1)) + '" ' +
+	'DarkMode="'+  CASE WHEN @IsDarkMode = 0 THEN  'Light' ELSE 'Dark' END +  '" '+    		
 	'Location="'+ coalesce(cast(@Location as varchar(30)),space(1)) + '" '+   
 	'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'    
   
