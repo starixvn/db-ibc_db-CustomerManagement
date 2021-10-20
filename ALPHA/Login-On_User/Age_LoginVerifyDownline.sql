@@ -22,7 +22,7 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@RoleID TINYINT = 0 OUTPUT,
 	@SubUserName VARCHAR(50) ='' OUTPUT,
 	@IsKickOut BIT = 0 OUTPUT, 
-	@IsDarkMode BIT = 0,
+	@IsDarkMode BIT = NULL,
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
 AS
@@ -1147,14 +1147,16 @@ BEGIN
 		iplogin = @inputLoginIP, 		
 		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
-
-	EXEC dbo.Age_SwitchDarkMode
-			@CustID = @CustID,
-			@SubAccID = @SubAccID,
-			@IsDarkMode = @IsDarkMode,
-			@IP = @inputLoginIP,
-			@Location = 'LoginPage'
-
+	
+	IF ISNULL(CAST(@IsDarkMode AS INT),-1) <> -1
+	BEGIN
+		EXEC dbo.Age_SwitchDarkMode
+				@CustID = @CustID,
+				@SubAccID = @SubAccID,
+				@IsDarkMode = @IsDarkMode,
+				@IP = @inputLoginIP,
+				@Location = 'LoginPage'
+	END
 	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
 
 	----------------------------------
