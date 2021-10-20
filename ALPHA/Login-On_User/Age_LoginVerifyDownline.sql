@@ -1150,6 +1150,7 @@ BEGIN
 
 	EXEC dbo.Age_SwitchDarkMode
 			@CustID = @CustID,
+			@SubAccID = @SubAccID,
 			@IsDarkMode = @IsDarkMode,
 			@IP = @inputLoginIP,
 			@Location = 'LoginPage'

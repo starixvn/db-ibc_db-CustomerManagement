@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_SwitchDarkMode]
-	@CustID INT = 0,	
+	@CustID INT = 0, 
+	@SubAccID INT,  	
 	@IsDarkMode BIT = 0,
 	@IP VARCHAR(20)= '', 
 	@Location VARCHAR(30)= 'HeaderMenu'
@@ -27,7 +28,8 @@ BEGIN
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT,@LogData NVARCHAR(200),@xml				XML
 	SET @Begin = GETDATE()
 	
-	SELECT @LogData = '<R CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+    
+	SELECT @LogData = '<R CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+  
+	'SubAccID="'+  coalesce(cast(@SubAccID as varchar(30)),space(1)) +  '" '+      
 	'DarkMode="'+  CASE WHEN @IsDarkMode = 0 THEN  'Light ' ELSE 'Dark' END +  '" '+    		
 	'Location="'+ coalesce(cast(@Location as varchar(30)),space(1)) + '" '+   
 	'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'    
