@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet" viewers="" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Acc_WriteLog_SwitchDarkMode]
+ALTER PROCEDURE [dbo].[Age_SwitchDarkMode]
 	@CustID INT = 0,	
 	@IsDarkMode BIT = 0,
 	@IP VARCHAR(20)= '', 
@@ -27,7 +27,7 @@ BEGIN
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT,@LogData NVARCHAR(200),@xml				XML
 	SET @Begin = GETDATE()
 	
-	SELECT @LogData = '<Acc_WriteLog_SwitchDarkMode CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+    
+	SELECT @LogData = '<R CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+    
 	'DarkMode="'+  CASE WHEN @IsDarkMode = 0 THEN  'Light ' ELSE 'Dark' END +  '" '+    		
 	'Location="'+ coalesce(cast(@Location as varchar(30)),space(1)) + '" '+   
 	'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'    
@@ -37,7 +37,7 @@ BEGIN
 
 	EXEC Acc_WriteLog_UserLog_RunSP_Wrapper @Userid = @CustID
 		, @CustId = @CustId
-		, @ActionID = 954
+		, @ActionID = 1342
 		, @TrackingValue = @LogData
 		, @Duration = @Duration;	
 				

@@ -1149,7 +1149,7 @@ BEGIN
 		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
 
-	EXEC dbo.Acc_WriteLog_SwitchDarkMode
+	EXEC dbo.Age_SwitchDarkMode
 			@CustID = @CustID,
 			@IsDarkMode = @IsDarkMode,
 			@IP = @inputLoginIP,
