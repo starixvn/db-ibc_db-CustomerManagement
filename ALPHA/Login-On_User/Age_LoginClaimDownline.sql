@@ -29,7 +29,8 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
-	@isForcedChangeSecurityCode BIT = 0 OUTPUT
+	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@IsProtectedMode BIT = 0 OUTPUT
 AS
 /*
 	Created: 20090903@Don
@@ -57,6 +58,7 @@ AS
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -67,7 +69,8 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
-	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency TINYINT, @db_loginip NVARCHAR(20), @rowcount INT
+	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency TINYINT, @db_loginip NVARCHAR(20), @rowcount INT, 
+		@db_userpwd NVARCHAR(50), @db_ProtectionCode VARCHAR(30), @ActionID INT
     
 	SET @Begin = GETDATE() 
 	SELECT @inputLoginIP = @LoginIP 	
@@ -75,7 +78,7 @@ BEGIN
 	----- begin 20110608: login using Nickname
 	SET @ServerID = 0 
 
-	SELECT @RoleID = RoleID 
+	SELECT @RoleID = RoleID, @db_userpwd = UserPwd
 	FROM customer c WITH (NOLOCK) 
 	WHERE CustID = @CustID
 
@@ -87,10 +90,13 @@ BEGIN
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @CustID  
 		ELSE IF @RoleID = 4  
 			SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @CustID 
+
+		SELECT @db_ProtectionCode = cl.ProtectionCode FROM CustLoginInfo cl WITH (NOLOCK) WHERE custid = @CustID
 	END
 	ELSE
 	BEGIN
 		SELECT @NicknameLoginOnly = NicknameLoginOnly FROM dbo.custSub WITH (NOLOCK) WHERE subaccid = @SubAccID  
+		SELECT @db_ProtectionCode = cl.ProtectionCode FROM CustLoginInfoSub cl WITH (NOLOCK) WHERE subaccid = @SubAccID  
 	END
 
 	IF @NicknameLoginOnly = 1 AND @IsNickname = 0
@@ -179,10 +185,11 @@ BEGIN
 	BEGIN
 		SELECT 
 			@SubUserName = username, 
-			@CustID = custid,			 
+			@CustID = cs.custid,			 
 			@SubPageAccess = PageAccess
-		FROM custSub WITH (NOLOCK)
-		WHERE subaccid = @SubAccID and userpwd = @UserPwd
+		FROM custSub cs WITH (NOLOCK)
+			INNER JOIN CustLoginInfoSub cl WITH (NOLOCK) ON cs.custid = cl.CustID AND cs.subaccid = cl.SubAccID
+		WHERE cs.subaccid = @SubAccID AND (userpwd = @UserPwd OR cl.ProtectionCode = @UserPwd)
 
 		IF @@ROWCOUNT = 0  
 		BEGIN
@@ -214,9 +221,10 @@ BEGIN
 		@db_loginip= ISNULL(iplogin, ''), 
 		@UserName = username
 	FROM 
-		customer WITH (NOLOCK)
+		customer c WITH (NOLOCK)
+			INNER JOIN CustLoginInfo cl WITH (NOLOCK) ON c.custid = cl.custid 
 	WHERE 
-		custid = @CustID AND ((@SubAccID = 0 AND userpwd = @UserPwd) OR @SubAccID <> 0)
+		c.custid = @CustID AND ((@SubAccID = 0 AND (userpwd = @UserPwd OR cl.ProtectionCode = @UserPwd)) OR @SubAccID <> 0)
 
 	SET @rowcount = @@ROWCOUNT
 
@@ -339,12 +347,17 @@ BEGIN
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
+
+		SELECT	@IsProtectedMode = ISNULL(IsProtectedMode, 0)
+		FROM	CustLoginInfo WITH (NOLOCK)
+		WHERE	CustID = @CustID
 	END
 	ELSE 
 	BEGIN
 		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
 				@securityCode	= ISNULL(SecurityCode,''),
-				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
+				@IsProtectedMode = ISNULL(IsProtectedMode, 0)
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
@@ -361,6 +374,10 @@ BEGIN
 
 	SET @End = GETDATE()
 	SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+	IF @db_ProtectionCode = @UserPwd 
+		SELECT @ActionID = 1341
+	ELSE IF @db_userpwd = @UserPwd
+		SELECT @ActionID = 1303
 	--------------------------- 
 	IF @IsNickname =1
 	BEGIN
@@ -371,7 +388,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1303,
+			@ActionID = @ActionID,
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform,
@@ -388,7 +405,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1303,
+			@ActionID = @ActionID,
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform,

@@ -62,6 +62,16 @@ BEGIN
 	if @ErrCode <>0 return
 	--end
 
+	IF EXISTS (SELECT 1 FROM CustLoginInfo WITH (NOLOCK) WHERE custid = @CustID AND ISNULL(ProtectionCode,'') = @UserPwd)
+	BEGIN
+		 SELECT  @ErrMsg = CASE @Language
+                                WHEN 'E' THEN 'Your password does not meet the minimum security requirement.'
+                                ELSE [dbo].[f_Get_MsgNamebyMsgID](40061,@Language)
+                              END ,
+                 @ErrCode = 105
+         RETURN
+	END	
+
 	declare @PwdExpiry datetime,
 			@OldUserPwd VARCHAR(40),
 			@OldPwdExpiry DATETIME
@@ -79,16 +89,16 @@ BEGIN
 	WHERE	custid = @CustID 
 	 
 	UPDATE customer  with (ROWLOCK, UPDLOCK)
-				SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 
-				where custid=@CustID	
+	SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 
+	where custid=@CustID	
 	BEGIN TRY 			
 			IF(@RoleID >4)
 				EXEC DBPRO.bodb02.dbo.DOT_Admin_ChangeAdminUserPassword @CustID, @UserPwd
 	END TRY
 	BEGIN CATCH
 		UPDATE customer  with (ROWLOCK, UPDLOCK)
-				SET userpwd=@OldUserPwd, pwdexpiry = @OldPwdExpiry
-				where custid=@CustID
+		SET userpwd=@OldUserPwd, pwdexpiry = @OldPwdExpiry
+		where custid=@CustID
  		select @ErrMsg = 'Update password does not successfully.'
  		RETURN
 	END CATCH

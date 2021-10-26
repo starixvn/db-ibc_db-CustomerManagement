@@ -111,7 +111,7 @@ Revisions:
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
-
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -145,6 +145,7 @@ BEGIN
 		  , @Site varchar(10)
 		  , @srecommend INT
 		  , @SabaClubPlayerID3rd VARCHAR(50) ='-'
+		  , @ProtectionMode BIT
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -262,7 +263,8 @@ BEGIN
 						      AND isLicensee =1)
 	    SET @IsDeposit =1
     	
-	    SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate,@ClosedReason=ClosedReason
+	    SELECT @LastChangedSecurityCodeDate = LastChangedSecurityCodeDate,@ClosedReason = ClosedReason,
+			@ProtectionMode = ISNULL(IsProtectedMode,0)
 	    FROM DBCUST.CustDB.dbo.CustLoginInfo WITH(NOLOCK)
 	    WHERE custid = @custid
     END
@@ -700,6 +702,7 @@ BEGIN
 		,ISNULL(@IsAutoEnableADBMaster,0) IsAutoEnableADBMaster
 		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
 		,ISNULL(cps.Locked,0) Locked
+		,@ProtectionMode AS IsProtectedMode
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 

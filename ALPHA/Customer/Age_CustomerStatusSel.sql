@@ -3,7 +3,8 @@
 	@custid INT,
 	@subAccID INT= 0,
 	@isActive BIT = 0 OUTPUT,
-	@Locked TINYINT = 0 OUTPUT	
+	@Locked TINYINT = 0 OUTPUT,
+	@IsProtectedMode BIT = 0 OUTPUT
 AS
 	/*
 		Created: Johnson
@@ -16,6 +17,7 @@ AS
 			- 20150303@Johnson: check status of sub-account by main account also
 			- 20150612@Kathy: Move sp from DBAGE.bodb02 to DBCUST.CustDB [Redmine:#36216]
 			- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+			- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 		Parameter's Explanation:
 			- @custid: id of main account
@@ -57,6 +59,10 @@ BEGIN
 		WHERE custid = @custid
 	END
 	
+	SELECT	@IsProtectedMode = ISNULL(IsProtectedMode,0) 
+	FROM DBCUST.CustDB.dbo.CustLoginInfo WITH(NOLOCK) 
+	WHERE Custid = @custid	
+
 	SELECT @isActive = ISNULL(@isActive,0)
 	SET @Locked = ISNULL(@Locked,0)
 END

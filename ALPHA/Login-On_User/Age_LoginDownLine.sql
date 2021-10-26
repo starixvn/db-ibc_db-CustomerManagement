@@ -28,6 +28,7 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline]
 	@NickName VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@IsKickOut BIT = 0 OUTPUT, 
 	@ErrCode int = 0 OUTPUT,  
 	@ErrMsg nvarchar(4000) = '' OUTPUT
 AS
@@ -70,6 +71,7 @@ AS
 		- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806] 	
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -95,9 +97,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @LogData NVARCHAR(200) 
+	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @LogData NVARCHAR(200), @ActionID INT
 	DECLARE	@inputLoginIP VARCHAR(15), @rowcount INT, @OldUserPwd VARCHAR(40)
-	DECLARE @db_custid INT, @db_userpwd NVARCHAR(50), @db_roleid TINYINT, @failedcount INT, @role NVARCHAR(20)  
+	DECLARE @db_custid INT, @db_userpwd NVARCHAR(50), @db_roleid TINYINT, @failedcount INT, @role NVARCHAR(20), @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT
 	DECLARE @db_currency TINYINT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
     
 	SET @Begin = GETDATE() 
@@ -148,7 +150,6 @@ BEGIN
 				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustMaster WITH (NOLOCK) WHERE CustID = @db_custid  
 			ELSE IF @db_roleid = 4  
 				SELECT @NicknameLoginOnly = NicknameLoginOnly FROM CustSuper WITH (NOLOCK) WHERE CustID = @db_custid 
-
 		END
 		ELSE
 		BEGIN 
@@ -199,7 +200,6 @@ BEGIN
 			FROM customer WITH (NOLOCK) 
 			WHERE username = @UserName
 					AND mrecommend <> 927780
-
 		END
 	END
 	ELSE  --- login Sub-account (called from sp Age_LoginDownLine_Sub )
@@ -499,6 +499,10 @@ BEGIN
 		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
 	FROM CustProductStatus with (nolock) WHERE custid = @db_custid AND @SubAccID <= 0
 
+	SELECT @db_ProtectionCode = ISNULL(ProtectionCode, ''), @db_IsProtectedMode = ISNULL(IsProtectedMode,0) 
+	FROM CustLoginInfo cl WITH (NOLOCK) 
+	WHERE CustId = @db_custid
+
 	IF (@db_enabled <> 1)
 	BEGIN
 		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account was disabled!'  
@@ -640,7 +644,7 @@ BEGIN
 	   end ,@ErrCode=111  
 	  return  
 	 END  
-	ELSE IF (@db_userpwd <> @UserPWD)
+	ELSE IF (@db_userpwd <> @UserPWD AND @db_ProtectionCode <> @UserPWD)
 	BEGIN  
 		SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
 				,@LastChangedPwdDate	= LastChangedPwdDate
@@ -742,6 +746,36 @@ BEGIN
 	  return  
 	 END  
 	  
+	IF @db_ProtectionCode = @UserPwd
+	BEGIN
+		IF @db_IsProtectedMode = 0
+		BEGIN
+			SET	@End = GETDATE() 
+			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+
+			UPDATE cl
+			SET IsProtectedMode = 1, @IsKickOut = 1
+			FROM CustLoginInfo cl WITH (ROWLOCK)
+			WHERE custid = @CustID
+
+			SELECT @LogData = '<Age_LoginDownLine IP="'+ @inputLoginIP + '" '
+											+'SubAccount="'  + COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) AS VARCHAR(30)),SPACE(1)) +'" ' +
+											+'Protected="1" />'  
+										
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @db_custid,
+				@CustID = @CustID,
+				@ActionID = 1185,
+				@TrackingValue = @LogData,
+				@Duration = @Duration	
+		END
+		SET @ActionID = 1339
+	 END
+	 ELSE
+	 BEGIN
+		SELECT @ActionID = 1310
+	 END
+
 	-- Successful  
 	SELECT @Currency = Currency, @CurrencyId = @db_currency FROM exchange with (nolock) WHERE exchangeid = @db_currency  
 
@@ -801,7 +835,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1310,	 
+			@ActionID = @ActionID,	 
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform ,
@@ -818,7 +852,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1310,	 
+			@ActionID = @ActionID,	 
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform ,

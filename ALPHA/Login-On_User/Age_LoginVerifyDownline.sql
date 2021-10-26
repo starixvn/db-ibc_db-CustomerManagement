@@ -21,6 +21,7 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@Site 	VARCHAR(10) = '' OUTPUT,
 	@RoleID TINYINT = 0 OUTPUT,
 	@SubUserName VARCHAR(50) ='' OUTPUT,
+	@IsKickOut BIT = 0 OUTPUT, 
 	@ErrCode INT = 0 OUTPUT,  
 	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
 AS
@@ -63,6 +64,8 @@ AS
 		- 20190422@Elodie: Offer unique nickname for CN88 [Redmine: 112287]
 		- 20200624@Johnson: add superid, siteid for BF login to prevent robot [redmine:#135142] 
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -85,11 +88,11 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
-	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), 
+	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), @ActionID INT,
 		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
 		-- For checking login domain
 		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT,
-		@Locked TINYINT	
+		@Locked TINYINT, @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT
 
 	SET @Begin = GETDATE()
 	SELECT @inputLoginIP = @LoginIP		
@@ -405,6 +408,9 @@ BEGIN
 		END
 		------------------------
 		
+		SELECT @db_ProtectionCode = ISNULL(ProtectionCode, '') FROM CustLoginInfoSub cl WITH (NOLOCK) WHERE SubAccID = @SubAccID
+		SELECT @db_IsProtectedMode = ISNULL(IsProtectedMode,0) FROM CustLoginInfo cl WITH (NOLOCK) WHERE custid = @CustID
+
 		IF ISNULL(@Closed,1) = 1
 		BEGIN    
 			SELECT @LogData = 'Sub-account: ' + @SubUserName + ', login failed, Result:Failed (A/C_Closed)'   
@@ -431,7 +437,7 @@ BEGIN
 							END ,@ErrCode=108    
 			RETURN    
 		END
-		ELSE IF @db_userpwd <> @UserPWD
+		ELSE IF (@db_userpwd <> @UserPWD AND @db_ProtectionCode <> @UserPWD)
 		BEGIN
 			SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
 					,@LastChangedPwdDate	= LastChangedPwdDate
@@ -492,6 +498,36 @@ BEGIN
 			RETURN    
 		END    
 
+		IF @db_ProtectionCode = @UserPwd
+		BEGIN
+			IF @db_IsProtectedMode = 0
+			BEGIN
+				SET	@End = GETDATE() 
+				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+
+				UPDATE cl
+				SET IsProtectedMode = 1, @IsKickOut = 1
+				FROM CustLoginInfo cl WITH (ROWLOCK)
+				WHERE custid = @CustID 
+
+				SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" '
+												+'SubAccount="'  + @SubUserName +'" ' +
+												+'Protected="1" />'  
+
+				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+					@UserID = @CustID,
+					@CustID = @CustID,
+					@ActionID = 1184,
+					@TrackingValue = @LogSPData,
+					@Duration = @Duration	
+			END
+			SET @ActionID = 1338	
+		 END
+		 ELSE
+		 BEGIN
+			SELECT @ActionID = 1304 
+		 END
+
 		UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = 0 WHERE subaccid = @subaccid 
 		
 		--Get username, password from customer table to login in the context of agent    
@@ -521,6 +557,8 @@ BEGIN
 			FROM customer c WITH (NOLOCK)
 			WHERE username2 = @UserName
 					and mrecommend <> 927780
+
+			SET @rowcount = @@ROWCOUNT
 		
 		END
 		ELSE
@@ -565,18 +603,20 @@ BEGIN
 
 			RETURN  
 		END  
-		----use username
+			----use username
 			SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @db_currency = currency, @failedcount = isnull(logincount,0),  
 					@site = site , @db_loginip= isnull(iplogin, ''),  @IsNickname = 0, @Nickname = UserName2
 			FROM customer WITH (NOLOCK)
 			WHERE username = @UserName
 					and mrecommend <> 927780
 
+			SET @rowcount = @@ROWCOUNT
 		END
 		-------end 20110608: login using Nickname
-	END 
 
-	SET @rowcount = @@ROWCOUNT
+		SELECT @db_ProtectionCode = ISNULL(ProtectionCode, ''), @db_IsProtectedMode = ISNULL(IsProtectedMode,0) FROM CustLoginInfo cl WITH (NOLOCK) WHERE custid = @db_custid
+
+	END 
 
 	-- Checking login domain and site
 	IF(@rowcount <> 0)
@@ -848,7 +888,7 @@ BEGIN
 		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
 	FROM CustProductStatus CPS WITH (NOLOCK)
 	WHERE CPS.CustID = @db_custid
-
+	
 	IF @db_enabled <> 1
 	BEGIN
 		 SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This account was disabled!'  
@@ -894,7 +934,6 @@ BEGIN
 		END	
 		RETURN
 	END
-
 	  
 	IF ISNULL(@closed, 1) = 1
 	BEGIN  
@@ -988,7 +1027,7 @@ BEGIN
 				   END ,@ErrCode=111  
 		RETURN  
 	END  
-	ELSE IF @db_userpwd <> @UserPWD
+	ELSE IF (@db_userpwd <> @UserPWD AND @db_ProtectionCode <> @UserPWD)
 	BEGIN 
 		SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
 				,@LastChangedPwdDate	= LastChangedPwdDate
@@ -1068,8 +1107,38 @@ BEGIN
 	  return  
 	END
 	
-	  
-	  
+	IF @IsSubAccount = 0 
+	BEGIN
+		IF @db_ProtectionCode = @UserPwd
+		BEGIN
+			IF @db_IsProtectedMode = 0
+			BEGIN
+				SET	@End = GETDATE() 
+				SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
+
+				UPDATE cl
+				SET IsProtectedMode = 1, @IsKickOut = 1
+				FROM CustLoginInfo cl WITH (ROWLOCK)
+				WHERE custid = @CustID 
+
+				SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" '
+												+'SubAccount="'  + @SubUserName +'" ' +
+												+'Protected="1" />'  
+
+				EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+					@UserID = @db_custid,
+					@CustID = @CustID,
+					@ActionID = 1184,
+					@TrackingValue = @LogSPData,
+					@Duration = @Duration	
+			END
+			SET @ActionID = 1338	
+		END
+		ELSE
+		BEGIN
+		SELECT @ActionID = 1304 
+		END
+	END
 	-- Successful  
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
@@ -1078,6 +1147,7 @@ BEGIN
 	WHERE custid = @db_custid  
 
 	SELECT @LogData =  @role + @UserName + ' - ' + ' [Before Login] Result:Success'
+
 	----------------------------------
 	--**Output LoginIP to check the first login**
 	SELECT @LoginIP=isnull(@db_loginip, ''),
@@ -1101,7 +1171,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1304,
+			@ActionID = @ActionID,
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform,
@@ -1118,7 +1188,7 @@ BEGIN
 			@ServerID = @ServerID,
 			@LoginIP = @inputLoginIP,
 			@DomainName = @LoginDomain,	
-			@ActionID = 1304,
+			@ActionID = @ActionID,
 			@Doing = @LogData,
 			@BrowserName = @BrowserName,
 			@Platform = @Platform,

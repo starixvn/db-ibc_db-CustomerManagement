@@ -18,7 +18,8 @@ AS
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
@@ -43,6 +44,7 @@ BEGIN
           , @DisableAutoMPT			BIT  
 		  , @HasSecurityCode		BIT = 0
 		  , @TransferOption			BIT
+		  , @IsProtectedMode		BIT
 		  
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -99,7 +101,12 @@ BEGIN
 		WHERE custID = @mrecommend		
 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
-		SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
+
+		SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
+				@IsProtectedMode = ISNULL(IsProtectedMode,0)
+		FROM CustLoginInfo WITH (NOLOCK) 
+		WHERE CustID = @custID
+
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @mrecommend AND SecurityCode IS NOT NULL
 		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustMaster WITH(NOLOCK) WHERE custid = @mrecommend
     END
@@ -129,7 +136,10 @@ BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
 		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustSuper WITH(NOLOCK) WHERE custid = @srecommend
-		SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
+		SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
+				@IsProtectedMode = ISNULL(IsProtectedMode,0)
+		FROM CustLoginInfo WITH (NOLOCK) 
+		WHERE CustID = @custID
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @srecommend AND SecurityCode IS NOT NULL
     END
     ELSE IF @roleID = 4 --for super
@@ -147,7 +157,10 @@ BEGIN
 				,	@uplineDisableGoldDeluxe = 0				
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
-	    SELECT @HasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
+	    SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
+				@IsProtectedMode = ISNULL(IsProtectedMode,0)
+		FROM CustLoginInfo WITH (NOLOCK) 
+		WHERE CustID = @custID
 		SELECT @UplineHasSecurityCode = 1
     END
 	
@@ -168,7 +181,8 @@ BEGIN
 			@upLineDisableOutright AS upLineDisableOutright,
 			@HasSecurityCode AS HasSecurityCode, 
 			@UplineHasSecurityCode AS UplineHasSecurityCode,
-			ISNULL(ps.Locked,0) AS Locked
+			ISNULL(ps.Locked,0) AS Locked,
+			@IsProtectedMode AS IsProtectedMode
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid
 	    CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed

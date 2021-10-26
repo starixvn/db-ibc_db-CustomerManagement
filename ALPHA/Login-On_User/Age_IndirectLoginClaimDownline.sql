@@ -31,7 +31,8 @@ ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
-	@isForcedChangeSecurityCode BIT = 0 OUTPUT
+	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@IsProtectedMode BIT = 0 OUTPUT
 AS
 	/*
 	Created: 20200529@Johnson
@@ -42,6 +43,8 @@ AS
 		- 20200529@Johnson: initial sp [redmine: #132782]
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 	Param's Explanation:		
 	*/
 BEGIN
@@ -327,6 +330,10 @@ BEGIN
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 		
+		SELECT @IsProtectedMode = ISNULL(IsProtectedMode,0)
+		FROM	CustLoginInfo WITH (NOLOCK)
+		WHERE	CustID = @CustID
+
 		SELECT @NicknameLoginOnly = NicknameLoginOnly,
 			@Nickname = username2,
 			@IsNickname = CASE WHEN ISNULL(username2,'') = '' THEN 0 ELSE 1 END
@@ -337,7 +344,8 @@ BEGIN
 	BEGIN
 		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
 				@securityCode	= ISNULL(SecurityCode,''),
-				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
+				@IsProtectedMode = ISNULL(IsProtectedMode,0)
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		

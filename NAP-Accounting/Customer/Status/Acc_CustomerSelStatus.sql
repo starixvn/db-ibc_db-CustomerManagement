@@ -90,6 +90,7 @@ Revisions:
 	- 20210426@Tina: Add VGaming [Redmine: #153938]
 	- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -581,7 +582,6 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_Bitcoin = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Bitcoin)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBitcoin,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_Bitcoin)), 0) AS SyncedBitcoin,
 			cps.Locked
-
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
