@@ -24,6 +24,8 @@ Revisions:
 	- 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language
 	- 20130328@Jamie: Update Old pwd and Last Changed Pwd 
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 */
 BEGIN
 	SET NOCOUNT ON
@@ -40,6 +42,16 @@ BEGIN
 	SELECT @failedcount = ISNULL(C.logincount,0), @SubAccname = C.username
 	FROM custSub C WITH (NOLOCK)
 	WHERE subaccid = @SubAccID and custid = @CustID
+
+	IF EXISTS (SELECT 1 FROM CustLoginInfoSub WITH (NOLOCK) WHERE custid = @CustID AND subaccid = @SubAccID AND ISNULL(ProtectionCode,'') = @UserPwd)
+	BEGIN
+		 SELECT  @ErrMsg = CASE @Language
+                                WHEN 'E' THEN 'Your password does not meet the minimum security requirement.'
+                                ELSE [dbo].[f_Get_MsgNamebyMsgID](40061,@Language)
+                              END ,
+                 @ErrCode = 105
+         RETURN
+	END	
 
 	IF NOT EXISTS (SELECT 1 FROM custsub WITH (NOLOCK) WHERE subaccid = @SubAccID and userpwd = @OldPwd)
 	BEGIN

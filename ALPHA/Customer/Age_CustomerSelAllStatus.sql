@@ -16,7 +16,8 @@ AS
 		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -44,7 +45,8 @@ BEGIN
 		  , @isDirectClosed 		BIT = 0
 		  , @DisableKeno			BIT
 		  , @Locked					TINYINT
-		  
+		  , @IsProtectedMode		BIT
+
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
     WHERE custid = @custid 
@@ -131,6 +133,9 @@ BEGIN
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
+	SELECT	@IsProtectedMode = ISNULL(IsProtectedMode,0) 
+	FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH (NOLOCK) 
+	WHERE custid = @custid
 	------------------------Keno-----------------------
 	SELECT  @query = N''		
 	SELECT	@query = @query + N'
@@ -163,7 +168,8 @@ BEGIN
 			ci.DisableOutright,
 			@upLineDisableOutright AS upLineDisableOutright,
 			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer,
-			@Locked AS Locked
+			@Locked AS Locked,
+			@IsProtectedMode AS IsProtectedMode
 	FROM custinfo ci WITH (NOLOCK)
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject

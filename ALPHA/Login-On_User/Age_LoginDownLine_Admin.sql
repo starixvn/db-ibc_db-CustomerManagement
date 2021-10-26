@@ -22,6 +22,7 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@accUserPwd varchar(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
+	@IsProtectedMode BIT = 0 OUTPUT,
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(4000) = '' OUTPUT
 AS
@@ -57,6 +58,8 @@ Revisions:
 	- 20161102@Helen: Apply Service Broker for Writing Log - [Redmine: 65806]
 	- 20190523@Andy: Internal login CN88 for Headline level - [Redmine: 113920]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -104,7 +107,8 @@ BEGIN
 		where CustId = @CustID
 		
 		SELECT @SecurityCode = ISNULL(SecurityCode,''),
-			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
+			@IsProtectedMode = ISNULL(IsProtectedMode,0)
 		FROM dbo.CustLoginInfo WITH(NOLOCK)
 		WHERE custid = @custid
 		------------------------

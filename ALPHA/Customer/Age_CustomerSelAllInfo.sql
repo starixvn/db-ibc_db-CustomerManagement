@@ -60,6 +60,7 @@ AS
 		- 20191008@Johnson: remove credit info[Redmine: #121538]		
 		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -70,7 +71,7 @@ BEGIN
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
     DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
-			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT,
+			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT, @ProtectionMode BIT,
 			@isDirectClosed BIT
 
     SELECT @username = RTRIM(LTRIM(@username))
@@ -146,7 +147,10 @@ BEGIN
 		IF @roleid=1
 			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid = @custid
 		ELSE
-			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) WHERE Custid = @custid	
+			SELECT	@ClosedReason=ClosedReason, 
+					@ProtectionMode = ISNULL(IsProtectedMode,0)
+			FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) 
+			WHERE Custid = @custid	
 	END
 	
 	--check suspend status is direct or not
@@ -170,7 +174,8 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn, @Locked AS Locked			
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn, @Locked AS Locked, 
+			@ProtectionMode AS IsProtectedMode			
     FROM custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed

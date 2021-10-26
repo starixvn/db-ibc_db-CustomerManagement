@@ -31,6 +31,7 @@ Revisions:
 	- 20160104@Helen: Disallow SMA changes password or updates account status of members - [Redmine:#49967]
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 	- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -89,6 +90,16 @@ BEGIN
          RETURN
 	END
 	
+	IF EXISTS (SELECT 1 FROM CustLoginInfo WITH (NOLOCK) WHERE custid = @CustID AND ISNULL(ProtectionCode,'') = @UserPwd)
+	BEGIN
+		 SELECT  @ErrMsg = CASE @Language
+                                WHEN 'E' THEN 'Your password does not meet the minimum security requirement.'
+                                ELSE [dbo].[f_Get_MsgNamebyMsgID](40061,@Language)
+                              END ,
+                 @ErrCode = 105
+         RETURN
+	END	
+
 	SELECT	@OldPwd	= userpwd, @roleid = roleid
 	FROM	Customer WITH (NOLOCK) 
 	WHERE	custid = @CustID

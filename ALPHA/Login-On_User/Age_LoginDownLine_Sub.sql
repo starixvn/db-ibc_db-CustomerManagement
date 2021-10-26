@@ -32,7 +32,8 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]
 	@NicknameLoginOnly BIT = 0 OUTPUT,
 	@NickName VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
-	@SecurityCode VARCHAR(50) = '' OUTPUT			
+	@SecurityCode VARCHAR(50) = '' OUTPUT,	
+	@IsKickOut BIT = 0 OUTPUT		
 AS    
 
 /*
@@ -67,6 +68,7 @@ Revisions:
 	- 20170724@Elodie: Don't reset login count of main account when sub account login successfull
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20210524@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
@@ -84,12 +86,14 @@ BEGIN
 	DECLARE @End		DATETIME
 	DECLARE @Duration	INT
 	Declare @AdminUsername varchar(30)
-	Declare @LogSPData varchar(1000)
+	Declare @LogSPData varchar(1000), @ActionID INT
 
 	SET @Begin = GETDATE()
 
 	declare @LogData nvarchar(200),
-			@OldUserPwd	VARCHAR(40)   
+			@OldUserPwd	VARCHAR(40), 
+			@db_ProtectionCode VARCHAR(30),   
+			@db_IsProtectedMode BIT
 	-------------------------------------  
 	--Hard-code for AdminLogin
 	-------------------------------------  
@@ -194,6 +198,11 @@ BEGIN
 		 return    
 	 END
 	 
+	SELECT @db_ProtectionCode = ISNULL(ProtectionCode, '') FROM CustLoginInfoSub cl WITH (NOLOCK) WHERE SubAccID = @SubAccID
+
+	SELECT @db_IsProtectedMode = ISNULL(IsProtectedMode, 0) FROM CustLoginInfo cl WITH (NOLOCK) WHERE CustID = @CustID
+
+
 	IF IsNull(@Closed,1) = 1 
 	BEGIN    
 		Select @LogData = 'Sub-account: ' + @SubUserName + ', login failed, Result:Failed(A/C_Closed)'    
@@ -266,7 +275,7 @@ BEGIN
 		--raiserror (@ErrMsg, 16, 1)    
 		return    
 	END
-	ELSE IF @db_userpwd <> @UserPWD
+	ELSE IF (@db_userpwd <> @UserPWD AND @db_ProtectionCode <> @UserPWD)
 	BEGIN
 		SELECT	 @OldUserPwd			= ISNULL(OldUserPwd,'')
 				,@LastChangedPwdDate	= LastChangedPwdDate
@@ -829,6 +838,35 @@ BEGIN
 		RETURN
 	END
 
+	IF @db_ProtectionCode = @UserPwd
+	BEGIN
+		IF @db_IsProtectedMode = 0
+		BEGIN
+			SET	@End = GETDATE() 
+			SET @Duration = DATEDIFF(millisecond,@Begin,@End)
+
+			UPDATE cl
+			SET IsProtectedMode = 1, @IsKickOut = 1
+			FROM CustLoginInfo cl WITH (ROWLOCK)
+			WHERE custid = @CustID
+
+			SELECT @LogSPData = '<Age_LoginDownLine_Sub IP="'+ @LoginIP + '" '
+											+'SubAccount="'  + @SubUserName +'" ' +
+											+'Protected="1" />'  
+
+			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @db_custid,
+				@CustID = @CustID,
+				@ActionID = 1186,
+				@TrackingValue = @LogSPData,
+				@Duration = @Duration	
+		END
+		SET @ActionID = 1340
+	 END
+	 ELSE
+	 BEGIN
+		SELECT @ActionID = 1302
+	 END
 
 	----------------------------------
 	--**Output LoginIP to check the first login**
