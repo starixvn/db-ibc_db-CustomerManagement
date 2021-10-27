@@ -11,7 +11,7 @@ AS
 
 	Revisions:	
 		- 20180710@Razor: Grant permission for bodbExtAccNet
-		- 20211018@Elodie: Support IPv6 Phase 1 - Support for 3rd party product bet tickets  [Redmine:#160390]
+		- 20211018@Elodie: Support IPv6 Phase 1 - Support for 3rd party product bet tickets  [Redmine:#90903]
 */
 BEGIN
 	SET NOCOUNT ON
