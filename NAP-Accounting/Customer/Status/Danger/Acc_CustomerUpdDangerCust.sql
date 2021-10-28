@@ -43,7 +43,7 @@ AS
 		- 20200218@Elodie: Prevent update level 41 -> 50 on NAP site [Redmine:#128250]
 		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 		- 20210820@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
-		
+		- 20211021@Johnson: Auto add & remove ABI Danger Level [redmine:#162834]
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -56,7 +56,7 @@ BEGIN
 	declare @endRun datetime
 	declare @duration int, @roleid int
 	set @startRun = getdate()
-
+	
 	IF @system = 'NAP'
 	BEGIN
 		EXECUTE dbo.Acc_CustomerCheckDangerCustList
@@ -80,8 +80,20 @@ BEGIN
 	END
 
 	DECLARE @dangerfield AS VARCHAR(10)
-	DECLARE @oldvalue AS VARCHAR(10)
-	DECLARE @BAMemberAg VARCHAR(MAX) = ''
+		,@oldvalue AS VARCHAR(10)
+		,@dangerfield2 AS VARCHAR(10)
+		,@oldvalue2 AS VARCHAR(10)
+		,@DangerLevel2 INT 
+		,@UpdateDanger2 BIT
+		,@BAMemberAg VARCHAR(MAX) = ''
+		
+	--Auto add & remove ABI Danger Level	
+	IF @DangerType = 2
+	BEGIN
+		SELECT @DangerLevel2 = CASE WHEN @DangerLevel= 11 THEN 15 
+								 WHEN @DangerLevel= 16 THEN 49 END,
+			@UpdateDanger2 = CASE WHEN @DangerLevel IN (11,16) THEN 1 ELSE 0 END
+	END	
 	
 	SELECT @roleid = roleid FROM custinfo (NOLOCK) WHERE custid = @CustID
 
@@ -120,8 +132,13 @@ BEGIN
 	END
 	ELSE IF (@DangerType=2)
 	BEGIN 
-		SET @oldvalue=(Select Danger2 from custInfo (NOLOCK) where custid=@CustID)
-		SET @dangerfield='Danger2'
+		SELECT @oldvalue= Danger2,
+			@oldvalue2= Danger4
+		FROM custInfo (NOLOCK) 
+		WHERE custid=@CustID
+		
+		SELECT @dangerfield='Danger2',
+			@dangerfield2='Danger4'
 	END	
 	ELSE IF (@DangerType=3)
 	BEGIN 
@@ -172,7 +189,10 @@ BEGIN
 		ELSE IF @DangerType= 2
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
-			SET Danger2 = @DangerLevel 
+			SET Danger2 = @DangerLevel,
+				Danger4 = CASE WHEN @DangerLevel = 11 THEN 15
+							WHEN @DangerLevel = 16 THEN 49
+							ELSE Danger4 END
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 3
@@ -220,5 +240,25 @@ BEGIN
 			@ActionID = 1114,
 			@TrackingValue = @LogSPData,
 			@duration = @duration	
+			
+	IF ISNULL(@UpdateDanger2,0) = 1
+	BEGIN
+		Select @LogSPData = '<Acc_CustomerUpdDangercust CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '"'
+						+' ' +  @dangerfield2 + 'Old="' + coalesce(cast(@oldvalue2 as varchar(50)),space(1)) + '"' 
+						+' ' + @dangerfield2 + '="'  + coalesce(cast(@DangerLevel2 as varchar(50)),space(1)) + '"'
+						+ ' UpdateDownline="' + coalesce(convert(varchar(1),@UpdateDownline),space(1)) + '"'
+						+ ' UserID="'+ coalesce(cast(@UserID as varchar(50)),space(1)) + '"'
+						+ ' Language= "'+ coalesce(cast(@Language as varchar(2)),space(1))+'"'
+						+ ' ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '"'
+						+ ' ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1))+'"'
+						+ ' IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
+
+		EXEC Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserID = @UserID,
+				@CustID = @CustID,
+				@ActionID = 1114,
+				@TrackingValue = @LogSPData,
+				@duration = @duration	
+	END
 END
 GO
