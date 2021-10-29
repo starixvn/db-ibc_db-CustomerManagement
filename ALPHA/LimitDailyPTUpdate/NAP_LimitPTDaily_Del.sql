@@ -56,7 +56,7 @@ BEGIN
 		
 		DELETE t
 		FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
-		WHERE CustID = @CustID and ProductID = @ProductID AND Site = @SiteID AND Currency = @Currency
+		WHERE CustID = @CustID and ProductID = @ProductID AND SiteID = @SiteID AND Currency = @Currency
  	
 	END TRY
 	BEGIN CATCH
