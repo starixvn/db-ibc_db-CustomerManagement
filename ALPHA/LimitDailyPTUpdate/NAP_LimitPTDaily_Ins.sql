@@ -2,8 +2,6 @@
 ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins] 
 	-- Add the parameters for the stored procedure here
 	  @ProductID			TINYINT,
-	  @SportType			SMALLINT,
-	  @BetType				SMALLINT,
 	  @SMAName				VARCHAR(MAX) = '',
 	  @Currency				TINYINT,
 	  @SiteID				INT,
@@ -84,7 +82,7 @@ BEGIN
 		--exclude the already added accounts from the input accounts
 		DELETE tc FROM @tblCust tc 
 		INNER JOIN LimitPTDailySetting t  WITH (NOLOCK)  ON tc.CustID = t.CustID 
-		WHERE t.ProductID = @ProductID AND t.SportType = @SportType AND  t.BetType =  @BetType AND t.Type = 1
+		WHERE t.ProductID = @ProductID AND t.Type = 1
 		
 		IF EXISTS( SELECT TOP 1 1 FROM @tblCust t )
 		BEGIN
@@ -95,8 +93,7 @@ BEGIN
 	 END	
 	
 	IF EXISTS( SELECT TOP 1 1 FROM LimitPTDailySetting t WITH(NOLOCK) 
-							  WHERE t.ProductID = @ProductID AND SportType = @SportType
-								 AND  BetType =  @BetType AND Currency = @Currency AND SiteID = @SiteID AND Type IN (2,3,4) )
+							  WHERE t.ProductID = @ProductID AND Currency = @Currency AND SiteID = @SiteID AND Type IN (2,3,4) )
 	BEGIN
 		SELECT @ErrCode = 1 ,
 			@ErrMsg = 'The selected rule exists already.'
@@ -106,14 +103,14 @@ BEGIN
 	BEGIN TRY
 		IF @Type = 1
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,SportType,BetType,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT @ProductID , @SportType,@BetType,t.CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
+			SELECT @ProductID ,t.CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
 			FROM @tblCust t
 		END
 		ELSE
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,SportType,BetType,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT @ProductID , @SportType,@BetType, 0 AS CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
+			SELECT @ProductID , 0 AS CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
 		END 
 	END TRY
 	BEGIN CATCH

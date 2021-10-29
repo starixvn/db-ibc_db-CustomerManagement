@@ -36,13 +36,11 @@ BEGIN
 	
 	SELECT @CustID = CustID FROM  dbo.Custinfo ci WITH (NOLOCK) WHERE username = @CustName
 	
-	SELECT ProductID,ProductName,SportType,BetType,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName
+	SELECT ProductID,ProductName,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName
 	FROM (
 		SELECT 
 			l.ProductID
 			,@ProductName AS ProductName
-			,l.SportType
-			,l.BetType
 			,l.CustID
 			,c.username
 			,l.Currency
@@ -67,8 +65,6 @@ BEGIN
 		SELECT 
 			l.ProductID
 			,@ProductName AS ProductName
-			,l.SportType
-			,l.BetType
 			,l.CustID
 			,'' AS username
 			,l.Currency

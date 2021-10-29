@@ -2,8 +2,6 @@
 ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Del] 
 	-- Add the parameters for the stored procedure here
 	  @ProductID			TINYINT,
-	  @SportType			SMALLINT,
-	  @BetType				SMALLINT,
 	  @CustID				INT,
 	  @Currency				TINYINT,
 	  @SiteID				INT,
@@ -47,8 +45,7 @@ BEGIN
 		RETURN
 
 	IF NOT EXISTS( SELECT TOP 1 1 FROM LimitPTDailySetting t WITH(NOLOCK) 
-							  WHERE t.ProductID = @ProductID AND SportType = @SportType
-								 AND  BetType =  @BetType AND Currency = @Currency AND SiteID = @SiteID AND CustID = @CustID)
+							  WHERE t.ProductID = @ProductID AND Currency = @Currency AND SiteID = @SiteID AND CustID = @CustID)
 	BEGIN
 		SELECT @ErrCode = 1 ,
 			@ErrMsg = 'The selected rule not exists .'
@@ -59,7 +56,7 @@ BEGIN
 		
 		DELETE t
 		FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
-		WHERE CustID = @CustID and ProductID = @ProductID AND SportType = @SportType AND BetType = @BetType AND Site = @SiteID AND Currency = @Currency
+		WHERE CustID = @CustID and ProductID = @ProductID AND Site = @SiteID AND Currency = @Currency
  	
 	END TRY
 	BEGIN CATCH
