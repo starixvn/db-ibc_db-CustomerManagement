@@ -31,6 +31,7 @@ BEGIN
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
 	DECLARE @tblCust TABLE (CustInfo VARCHAR(50), CustID INT )
+	DECLARE @tblDuplicate TABLE (CustInfo VARCHAR(50), countCust INT )
 	
 	-- Select ProductName
 	SELECT @ProductName = p.ProductName
@@ -54,6 +55,26 @@ BEGIN
 		 FROM dbo.f_SplitString(@SMAName, ',')  
 		 WHERE val <> ''  
 		 OPTION (MAXRECURSION 0)
+		 
+		IF (SELECT COUNT(CustInfo) FROM @tblCust t) > 500
+		BEGIN
+			SELECT @ErrCode = 1 			
+			SELECT @ErrMsg = 'The function can only support up to 500 accounts per request.'
+			RETURN
+		END	
+		 
+		INSERT INTO @tblDuplicate(CustInfo,countCust) 
+		SELECT CustInfo,COUNT(CustInfo) AS countCust FROM @tblCust GROUP BY CustInfo HAVING COUNT(CustInfo) > 1
+		
+		IF NOT EXISTS( SELECT TOP 1 1 FROM @tblDuplicate t )
+		BEGIN
+			SELECT @ErrCode = 2 			
+			SELECT @ErrMsg = 'Duplicated account(s): ' +  STUFF((SELECT DISTINCT ',' + cast(CustInfo AS VARCHAR(50))
+									FROM @tblDuplicate
+									FOR XML PATH('')), 1, 1, '')
+			RETURN
+		END	 
+		 
 		-- Update Cust Super 
 		UPDATE tc
 		SET CustID = ci.CustID
@@ -71,8 +92,8 @@ BEGIN
 		
 		IF EXISTS( SELECT TOP 1 1 FROM @tblCust t WHERE CustID IS NULL )
 		BEGIN
-			SELECT @ErrCode = 1 			
-			SELECT @ErrMsg = 'The following account(s) are not Super, Direct Master or Direct Agent: ' +  STUFF((SELECT DISTINCT ',' + cast(CustInfo AS VARCHAR(50))
+			SELECT @ErrCode = 3 			
+			SELECT @ErrMsg = 'The following account(s) are not credit site''s Super, Direct Master or Direct Agent: ' +  STUFF((SELECT DISTINCT ',' + cast(CustInfo AS VARCHAR(50))
 									FROM @tblCust
 									WHERE CustID IS NULL
 									FOR XML PATH('')), 1, 1, '')
@@ -84,7 +105,7 @@ BEGIN
 		INNER JOIN LimitPTDailySetting t  WITH (NOLOCK)  ON tc.CustID = t.CustID 
 		WHERE t.ProductID = @ProductID AND t.Type = 1
 		
-		IF EXISTS( SELECT TOP 1 1 FROM @tblCust t )
+		IF NOT EXISTS( SELECT TOP 1 1 FROM @tblCust t )
 		BEGIN
 			SELECT @ErrCode = 1 			
 			SELECT @ErrMsg = 'Invalid account: ' +  @SMAName
