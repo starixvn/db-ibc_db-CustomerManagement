@@ -6,7 +6,10 @@ ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Sel]
 	  @MutilCurrency		NVARCHAR(Max) = '',
 	  @MutilSite			NVARCHAR(Max) = '',
 	  @Type					TINYINT,
-	  @SettingStatus		TINYINT = 0
+	  @SettingStatus		TINYINT = 0,
+	  @PageSize    INT = 100,  
+	  @PageIndex    INT = 1,  
+	  @TotalItems    INT = 0 OUTPUT  
 AS
 /*
 		Task : NAP CM -  Limit Daily PT Update
@@ -17,6 +20,7 @@ AS
 	*/
 BEGIN
 	SET NOCOUNT ON;
+	DECLARE @RowCount INT, @RowStart INT, @RowEnd INT  
 	DECLARE @ProductName	VARCHAR(50) ,@CustID INT
 	CREATE TABLE #Site (siteid INT PRIMARY KEY)
 	CREATE TABLE #Exchange (exchangeid INT PRIMARY KEY)
@@ -36,7 +40,9 @@ BEGIN
 	
 	SELECT @CustID = CustID FROM  dbo.Custinfo ci WITH (NOLOCK) WHERE username = @CustName
 	
-	SELECT ProductID,ProductName,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName
+	SELECT ProductID,ProductName,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName,
+	ROW_NUMBER() OVER (ORDER BY Type,username ,site ,CurrencyName ) AS RowNumber 
+	INTO #Result
 	FROM (
 		SELECT 
 			l.ProductID
@@ -83,6 +89,15 @@ BEGIN
 		AND (l.Type = @Type OR @Type = 0) 
 		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END  
 	) KQ
-	ORDER BY Type,username ,site ,CurrencyName 
+	
+	 SELECT @TotalItems = COUNT(1) FROM #Result  
+	 SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1   
+	  
+	 SELECT *  
+	 FROM #Result  
+	 WHERE RowNumber BETWEEN @RowStart AND @RowEnd    
+	 ORDER BY RowNumber  
+	
+	DROP TABLE #Result,#Site,#Exchange
 END
 GO
