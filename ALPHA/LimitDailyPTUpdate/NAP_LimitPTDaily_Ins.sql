@@ -66,7 +66,7 @@ BEGIN
 		INSERT INTO @tblDuplicate(CustInfo,countCust) 
 		SELECT CustInfo,COUNT(CustInfo) AS countCust FROM @tblCust GROUP BY CustInfo HAVING COUNT(CustInfo) > 1
 		
-		IF NOT EXISTS( SELECT TOP 1 1 FROM @tblDuplicate t )
+		IF EXISTS( SELECT TOP 1 1 FROM @tblDuplicate t )
 		BEGIN
 			SELECT @ErrCode = 2 			
 			SELECT @ErrMsg = 'Duplicated account(s): ' +  STUFF((SELECT DISTINCT ',' + cast(CustInfo AS VARCHAR(50))
