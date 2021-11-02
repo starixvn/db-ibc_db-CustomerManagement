@@ -59,7 +59,7 @@ BEGIN
 		AND l.Type = 1 
 		AND @Type IN ( 0,1)
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
-		AND (Si.SiteID IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
+		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
 		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END 
 		UNION ALL
 		SELECT 
@@ -79,7 +79,7 @@ BEGIN
 		LEFT JOIN exchange e WITH (NOLOCK) ON e.ExchangeId = l.Currency
 		WHERE l.ProductID = @ProductID 
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
-		AND (Si.SiteID IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
+		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
 		AND (l.Type = @Type OR @Type = 0) 
 		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END  
 	) KQ
