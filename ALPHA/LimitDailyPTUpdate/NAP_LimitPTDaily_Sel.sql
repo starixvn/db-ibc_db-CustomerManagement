@@ -87,7 +87,7 @@ BEGIN
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
 		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
 		AND (l.Type = @Type OR @Type = 0)
-		AND l.Type <> 1
+		AND l.Type <> 1 AND @CustName <> ''
 		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END  
 	) KQ
 	
