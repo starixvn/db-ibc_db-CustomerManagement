@@ -5,7 +5,6 @@ ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins]
 	  @SMAName				VARCHAR(MAX) = '',
 	  @Currency				TINYINT,
 	  @SiteID				INT,
-	  @MaxCount				TINYINT,
 	  @Type					TINYINT,
 	  @SettingStatus		TINYINT = 0
 	, @UserId				INT = 0 
