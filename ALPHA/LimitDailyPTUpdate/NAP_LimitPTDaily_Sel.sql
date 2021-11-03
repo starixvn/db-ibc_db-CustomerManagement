@@ -81,7 +81,7 @@ BEGIN
 			,Si.[site] 
 			,e.currency as CurrencyName
 		FROM LimitPTDailySetting l WITH(NOLOCK)
-		LEFT JOIN Site Si WITH (NOLOCK) ON Si.site = l.SiteID
+		LEFT JOIN Site Si WITH (NOLOCK) ON Si.SiteID = l.SiteID
 		LEFT JOIN exchange e WITH (NOLOCK) ON e.ExchangeId = l.Currency
 		WHERE l.ProductID = @ProductID 
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
