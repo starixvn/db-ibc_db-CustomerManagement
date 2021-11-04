@@ -37,15 +37,6 @@ BEGIN
 	FROM DBACC.bodb02.dbo.Products AS p WITH(NOLOCK)
 	WHERE p.ProductID = @ProductID
 		
-	EXEC NAP_UserControl.dbo.NAP_User_CheckPermission 
-		@UserId=@userid,
-		@SiteKey='CustomerManagement',
-		@FunctionKey='LimitDailyPTUpdate',
-		@ErrCode=@ErrCode OUTPUT,
-		@ErrMsg=@ErrMsg OUTPUT
-
-	IF @ErrCode <> 0
-		RETURN
 	IF @SMAName <> ''
 	BEGIN
 		-- get list transId (single + sub-parlay)  
@@ -107,7 +98,7 @@ BEGIN
 		IF NOT EXISTS( SELECT TOP 1 1 FROM @tblCust t )
 		BEGIN
 			SELECT @ErrCode = 1 			
-			SELECT @ErrMsg = 'Invalid account: ' +  @SMAName
+			SELECT @ErrMsg = 'The following account(s) are not credit site''s Super, Direct Master or Direct Agent: ' +  @SMAName
 			RETURN
 		END	
 	 END	
