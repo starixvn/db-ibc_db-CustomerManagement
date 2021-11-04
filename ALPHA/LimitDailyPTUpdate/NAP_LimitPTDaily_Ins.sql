@@ -41,7 +41,7 @@ BEGIN
 	BEGIN
 		-- get list transId (single + sub-parlay)  
 		 INSERT INTO @tblCust (CustInfo)  
-		 SELECT DISTINCT LTRIM(RTRIM(val))
+		 SELECT LTRIM(RTRIM(val))
 		 FROM dbo.f_SplitString(@SMAName, ',')  
 		 WHERE val <> ''  
 		 OPTION (MAXRECURSION 0)
