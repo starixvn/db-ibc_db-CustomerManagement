@@ -34,16 +34,6 @@ BEGIN
 	FROM DBACC.bodb02.dbo.Products AS p WITH(NOLOCK)
 	WHERE p.ProductID = @ProductID
 		
-	EXEC NAP_UserControl.dbo.NAP_User_CheckPermission 
-		@UserId=@userid,
-		@SiteKey='CustomerManagement',
-		@FunctionKey='LimitDailyPTDel',
-		@ErrCode=@ErrCode OUTPUT,
-		@ErrMsg=@ErrMsg OUTPUT
-
-	IF @ErrCode <> 0
-		RETURN
-
 	IF NOT EXISTS( SELECT TOP 1 1 FROM LimitPTDailySetting t WITH(NOLOCK) 
 							  WHERE t.ProductID = @ProductID AND Currency = @Currency AND SiteID = @SiteID AND CustID = @CustID)
 	BEGIN
