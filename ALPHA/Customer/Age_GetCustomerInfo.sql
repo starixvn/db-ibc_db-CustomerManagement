@@ -11,6 +11,7 @@ AS
 		- 20180821@Elodie: Get Customer Info - [Redmine: #96019]
 		- 20200310@Percy: Get IsAllDayBalTransfer on CustMaster (under master level) [RedmineID: #130091]
 		- 20200312@Andy:   Get Customer Info - [Redmine: #129673]
+		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 
 	Parameter's Explaination:
 		
@@ -35,9 +36,11 @@ BEGIN
 			WHEN c.site = '789y' THEN 7
 			WHEN c.site = 'EU88' THEN 8 
 								ELSE 1 
-		END AS SiteCode
+		END AS SiteCode,
+		ISNULL(IsProtectedMode,0) AS IsProtectedMode
 	FROM dbo.customer c WITH (NOLOCK)
 		INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = c.custid
+		INNER JOIN DBCUST.CustDB.dbo.CustLoginInfo cl WITH(NOLOCK) ON ci.custid = cl.custid
 		INNER JOIN dbo.CustSuper s WITH (NOLOCK) ON c.srecommend = s.custid
 		INNER JOIN dbo.Exchange e WITH (NOLOCK) ON e.exchangeid = ci.currency
 		LEFT JOIN dbo.CustMaster m WITH (NOLOCK) ON c.mrecommend = m.custid

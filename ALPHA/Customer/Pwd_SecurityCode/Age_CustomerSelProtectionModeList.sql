@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE Age_CustomerSelProtectionModeList
 	@Custid			INT,
@@ -25,6 +25,7 @@ BEGIN
 	INSERT INTO @CustListTmp (CustId)
 	SELECT  val
 	FROM f_SplitString (@CustList, ',')
+	OPTION (maxrecursion 0)
 
 	SELECT ci.custid, ci.username, ci.roleid, ISNULL(IsProtectedMode,0) AS IsProtectedMode
 	FROM CustLoginInfo cl WITH(NOLOCK)
