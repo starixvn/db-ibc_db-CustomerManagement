@@ -77,7 +77,7 @@ BEGIN
 		SET CustID = ci.CustID
 		FROM @tblCust tc
     		INNER JOIN dbo.Customer ci WITH (NOLOCK) ON ci.username = tc.CustInfo 
-    		INNER JOIN dbo.Acc_CustDirect cd WITH (NOLOCK) ON ci.custID = cd.custid 
+    		INNER JOIN dbo.CustDirectAccount cd WITH (NOLOCK) ON ci.custID = cd.custid 
 		WHERE ci.roleid  in (2,3)
 		
 		IF EXISTS( SELECT TOP 1 1 FROM @tblCust t WHERE CustID IS NULL )
@@ -139,6 +139,7 @@ BEGIN
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
 
 	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
+			@CustID  = @UserID,
 			@UserID = @UserID,
 			@ActionID = 6060,
 			@TrackingValue = @LogSPData,
