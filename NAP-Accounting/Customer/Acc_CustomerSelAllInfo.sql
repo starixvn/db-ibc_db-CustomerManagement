@@ -112,6 +112,7 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -634,7 +635,9 @@ BEGIN
 	END
 
     SELECT c.custid, c.username, c.firstname, c.lastname, 
-	    c.username2, 		
+	    c.username2, 	
+		c.postal as Review,
+		c.State as Review2,
 	    ci.roleid, 
 	    lastlogged, 
 	    iplogin lastloginip, 
