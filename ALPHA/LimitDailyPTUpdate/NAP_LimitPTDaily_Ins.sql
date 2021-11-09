@@ -152,7 +152,7 @@ BEGIN
 			EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 					@CustID  = @CustID,
 					@UserID = @UserID,
-					@ActionID = 6060,
+					@ActionID = 470,
 					@TrackingValue = @LogSPData,
 					@duration = @Duration
 		END
@@ -162,7 +162,7 @@ BEGIN
 		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustID  = @UserID,
 			@UserID = @UserID,
-			@ActionID = 6060,
+			@ActionID = 470,
 			@TrackingValue = @LogSPData,
 			@duration = @Duration
 	END
