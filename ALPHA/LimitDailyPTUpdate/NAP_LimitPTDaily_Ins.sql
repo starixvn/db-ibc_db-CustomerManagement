@@ -98,7 +98,7 @@ BEGIN
 		IF NOT EXISTS( SELECT TOP 1 1 FROM @tblCust t )
 		BEGIN
 			SELECT @ErrCode = 1 			
-			SELECT @ErrMsg = 'The following account(s) are not credit site''s Super, Direct Master or Direct Agent: ' +  @SMAName
+			SELECT @ErrMsg = 'The selected rule exists already: ' +  @SMAName
 			RETURN
 		END	
 	 END	
