@@ -70,7 +70,7 @@ BEGIN
 		SET CustID = ci.CustID
 		FROM @tblCust tc
     		INNER JOIN dbo.Customer ci WITH (NOLOCK) ON ci.username = tc.CustInfo 
-		WHERE ci.roleid  = 4
+		WHERE ci.roleid  = 4 AND ci.custid > 100
 		
 		-- Update Direct Account 
 		UPDATE tc
