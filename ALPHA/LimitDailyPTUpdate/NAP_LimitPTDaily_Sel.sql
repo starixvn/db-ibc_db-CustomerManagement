@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Sel] 
 	-- Add the parameters for the stored procedure here
-	  @ProductID			TINYINT,
+	  @ProductID			NVARCHAR(Max) = '',
 	  @CustName				VARCHAR(50) = '',
 	  @MutilCurrency		NVARCHAR(Max) = '',
 	  @MutilSite			NVARCHAR(Max) = '',
@@ -24,12 +24,9 @@ BEGIN
 	DECLARE @ProductName	VARCHAR(50) ,@CustID INT
 	CREATE TABLE #Site (siteid INT PRIMARY KEY)
 	CREATE TABLE #Exchange (exchangeid INT PRIMARY KEY)
+	CREATE TABLE #Product (ProductID TINYINT PRIMARY KEY ,ProductName	VARCHAR(50) )
 
 	-- Select ProductName
-	SELECT @ProductName = p.ProductName
-	FROM DBACC.bodb02.dbo.Products AS p WITH(NOLOCK)
-	WHERE p.ProductID = @ProductID
-	
 	INSERT INTO #Site  (siteid)	
 	SELECT S.val
 	FROM dbo.strSplit(@MutilSite, ',') S
@@ -37,6 +34,15 @@ BEGIN
 	INSERT INTO #Exchange  (exchangeid)	
 	SELECT C.val exchangeid
 	FROM dbo.strSplit(@MutilCurrency, ',') C
+	
+	INSERT INTO #Product  (ProductID)	
+	SELECT S.val
+	FROM dbo.strSplit(@ProductID, ',') S
+	
+	UPDATE tc
+	SET tc.ProductName = p.ProductName
+	FROM #Product tc
+		INNER JOIN DBACC.bodb02.dbo.Products p WITH(NOLOCK) ON p.ProductID = tc.ProductID 
 	
 	SELECT @CustID = CustID FROM  dbo.Custinfo ci WITH (NOLOCK) WHERE username = @CustName
 	
@@ -46,7 +52,7 @@ BEGIN
 	FROM (
 		SELECT 
 			l.ProductID
-			,@ProductName AS ProductName
+			,P.ProductName
 			,l.CustID
 			,c.username
 			,l.Currency
@@ -60,8 +66,8 @@ BEGIN
 		INNER JOIN Customer c WITH (NOLOCK) ON l.CustID = c.CustID
 		LEFT JOIN Site Si WITH (NOLOCK) ON Si.site = c.Site
 		LEFT JOIN exchange e WITH (NOLOCK) ON e.ExchangeId = c.Currency
-		WHERE l.ProductID = @ProductID 
-		AND (l.CustID = @CustID OR  @CustName = '')
+		INNER JOIN #Product p WITH (NOLOCK) ON l.ProductID = p.ProductID
+		WHERE (l.CustID = @CustID OR  @CustName = '')
 		AND l.Type = 1 
 		AND @Type IN ( 0,1)
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
@@ -70,7 +76,7 @@ BEGIN
 		UNION ALL
 		SELECT 
 			l.ProductID
-			,@ProductName AS ProductName
+			,P.ProductName
 			,l.CustID
 			,'' AS username
 			,l.Currency
@@ -83,6 +89,7 @@ BEGIN
 		FROM LimitPTDailySetting l WITH(NOLOCK)
 		LEFT JOIN Site Si WITH (NOLOCK) ON Si.SiteID = l.SiteID
 		LEFT JOIN exchange e WITH (NOLOCK) ON e.ExchangeId = l.Currency
+		INNER JOIN #Product p WITH (NOLOCK) ON l.ProductID = p.ProductID
 		WHERE l.ProductID = @ProductID 
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
 		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
