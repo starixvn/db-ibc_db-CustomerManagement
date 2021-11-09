@@ -27,9 +27,10 @@ BEGIN
 		, @Duration		INT
 		, @ProductName	VARCHAR(50)
 		, @logSpData		 NVARCHAR(MAX)
+		, @CustID INT
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
-	DECLARE @tblCust TABLE (CustInfo VARCHAR(50), CustID INT )
+	DECLARE @tblCust TABLE (CustInfo VARCHAR(50), CustID INT, IsFinished BIT DEFAULT (0) )
 	DECLARE @tblDuplicate TABLE (CustInfo VARCHAR(50), countCust INT )
 	
 	-- Select ProductName
@@ -137,13 +138,34 @@ BEGIN
 						
 
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
+	IF @Type = 1
+	BEGIN
+		WHILE (1=1)
+		BEGIN
+			UPDATE TOP (1) @tblCust
+			SET IsFinished = 1, 
+				@CustID = custid
+			WHERE IsFinished = 0
 
-	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
+			IF @@ROWCOUNT = 0 BREAK
+			
+			EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
+					@CustID  = @CustID,
+					@UserID = @UserID,
+					@ActionID = 6060,
+					@TrackingValue = @LogSPData,
+					@duration = @Duration
+		END
+	END
+	ELSE
+	BEGIN
+		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustID  = @UserID,
 			@UserID = @UserID,
 			@ActionID = 6060,
 			@TrackingValue = @LogSPData,
 			@duration = @Duration
+	END
 
 END
 GO

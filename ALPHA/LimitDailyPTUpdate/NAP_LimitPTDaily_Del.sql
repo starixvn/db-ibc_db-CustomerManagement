@@ -62,13 +62,26 @@ BEGIN
 						
 
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
+	IF @Type = 1
+	BEGIN
+		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
+			@CustID  = @CustID,
+			@UserID = @UserID,
+			@ActionID = 471,
+			@TrackingValue = @LogSPData,
+			@duration = @Duration
 
-	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
+	END
+	ELSE
+	BEGIN
+		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustID  = @UserID,
 			@UserID = @UserID,
 			@ActionID = 471,
 			@TrackingValue = @LogSPData,
 			@duration = @Duration
 
+	END
+	
 END
 GO
