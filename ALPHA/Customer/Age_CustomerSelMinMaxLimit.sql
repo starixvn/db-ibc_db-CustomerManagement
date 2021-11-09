@@ -25,7 +25,12 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelMinMaxLimit]
 	@MaxPayoutPerMatchv11_max money = 0 output,
 	@MaxPayoutPerMatchv99_max money = 0 output,
 	@MaxPayoutPerMatchv99mp_max money = 0 output,
-	@MaxPayoutPerMatchv1mp_max money = 0 output
+	@MaxPayoutPerMatchv1mp_max money = 0 output,
+	--Saba
+	--- Saba soccer
+	@MinBetv1saba_Max money = 0 output, @MaxBetv1saba_Min money = 0 output, @MaxPerMatchv1saba_Min money = 0 output, @MaxPerMatchv1saba_Max money = 0 output,@MaxPayoutPerMatchv1saba_max money = 0 output,
+	--- Saba Basketball
+	@MinBetv2saba_Max money = 0 output, @MaxBetv2saba_Min money = 0 output, @MaxPerMatchv2saba_Min money = 0 output, @MaxPerMatchv2saba_Max money = 0 output,@MaxPayoutPerMatchv2saba_max money = 0 output
 AS
 /*
 Created: 20090714@nqminh
@@ -42,6 +47,7 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
+	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
 Param's Explanation:
 	- @custid: custid that need to be viewed. 
 	-@IsCreatedDowline = :
@@ -91,7 +97,9 @@ BEGIN
 		@MaxPerMatchv1MP_Min = 0,
 		@MaxPerBallv161_Min = 0,
 		@MaxPerMatchv161_Min = 0,
-		@MaxPerMatchv164_Min = 0
+		@MaxPerMatchv164_Min = 0,
+		@MaxPerMatchv1saba_Min =0,
+		@MaxPerMatchv2saba_Min =0
 
 	Select 
 		@MinBet_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
@@ -146,6 +154,7 @@ BEGIN
 	from CustBetSetting_Agent as cs WITH (NOLOCK)
 	where cs.custid IN (@recommend,@MRecommend,@srecommend)
 		and cs.bettype = 1 and cs.sporttype=10
+
 	Select 
 		@MinBetv11_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
 		@MaxBetv11_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
@@ -201,5 +210,23 @@ BEGIN
 	from CustBetSetting_Agent as cs WITH (NOLOCK)
 	where cs.custid IN (@recommend,@MRecommend,@srecommend)
 		and cs.bettype = 8101 and cs.sporttype=164
+
+	Select 
+		@MinBetv1saba_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv1saba_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv1saba_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv1saba_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=9901
+	
+	Select 
+		@MinBetv2saba_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
+		@MaxBetv2saba_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
+		@MaxperMatchv2saba_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
+		@MaxPayoutPerMatchv2saba_max = Min(case when cs.MaxPayoutPerMatch = 0 then NULL else cs.MaxPayoutPerMatch end)
+	from CustBetSetting_Agent as cs WITH (NOLOCK)
+	where cs.custid IN (@recommend,@MRecommend,@srecommend)
+		and cs.bettype = 1 and cs.sporttype=9902
 END
 GO
