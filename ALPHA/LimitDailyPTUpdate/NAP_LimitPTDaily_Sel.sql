@@ -84,8 +84,7 @@ BEGIN
 		FROM LimitPTDailySetting l WITH(NOLOCK)
 		LEFT JOIN Site Si WITH (NOLOCK) ON Si.SiteID = l.SiteID
 		LEFT JOIN exchange e WITH (NOLOCK) ON e.ExchangeId = l.Currency
-		WHERE l.ProductID = @ProductID 
-		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
+		WHERE (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
 		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
 		AND (l.ProductID IN (SELECT ProductID from #Product) OR  EXISTS (SELECT TOP 1 1 FROM #Product WHERE ProductID = 0))
 		AND (l.Type = @Type OR @Type = 0)
