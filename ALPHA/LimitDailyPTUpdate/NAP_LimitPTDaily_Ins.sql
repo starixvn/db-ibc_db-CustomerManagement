@@ -76,7 +76,8 @@ BEGIN
 		SET CustID = ci.CustID
 		FROM @tblCust tc
     		INNER JOIN dbo.Customer ci WITH (NOLOCK) ON ci.username = tc.CustInfo 
-		WHERE ci.roleid  = 4 AND ci.custid > 100
+		WHERE ci.roleid  = 4 AND ci.custid > 100 AND site <> 'CN88'
+				AND NOT EXISTS (SELECT TOP 1 1 FROM Dep_CustSuper WITH (NOLOCK) WHERE custid = ci.custid)
 		
 		-- Update Direct Account 
 		UPDATE tc
