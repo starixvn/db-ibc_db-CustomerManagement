@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins] 
 	-- Add the parameters for the stored procedure here
-	  @ProductID			NVARCHAR(Max) = '',
+	  @ProductID			NVARCHAR(MAX) = '',
 	  @SMAName				VARCHAR(MAX) = '',
 	  @Currency				TINYINT,
 	  @SiteID				INT,
@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins]
 	, @UserId				INT = 0 
 	, @IP					VARCHAR(15) = ''
 	, @ErrCode				INT				= 0		OUTPUT
-	, @ErrMsg				NVARCHAR(200)	= ''	OUTPUT
+	, @ErrMsg				NVARCHAR(MAX)	= ''	OUTPUT
 AS
 /*
 		Task : NAP CM -  Limit Daily PT Update
