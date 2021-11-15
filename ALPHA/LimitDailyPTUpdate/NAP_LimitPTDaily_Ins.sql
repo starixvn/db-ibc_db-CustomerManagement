@@ -161,8 +161,8 @@ BEGIN
 			
 		SELECT @LogSPData = '<NAP_LimitPTDaily_Ins Product="'+ COALESCE(CAST(@ProductName AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" ' +
-							'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" ' +
-							'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" ' +
+							CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" '  ELSE '' END +
+							CASE WHEN @Type <> 1 THEN 'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" '   ELSE '' END +
 							'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
 							'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
 							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1)) + '" ' +
