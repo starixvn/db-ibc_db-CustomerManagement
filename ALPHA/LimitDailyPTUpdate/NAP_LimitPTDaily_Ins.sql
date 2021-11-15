@@ -28,6 +28,7 @@ BEGIN
 		, @ProductName	VARCHAR(50)
 		, @logSpData		 NVARCHAR(MAX)
 		, @CustID INT
+		, @site		NVARCHAR(50)
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
 	DECLARE @tblCust TABLE (CustInfo VARCHAR(50), CustID INT, IsFinished BIT DEFAULT (0) )
@@ -42,6 +43,15 @@ BEGIN
 	SET tc.ProductName = p.ProductName
 	FROM #Product tc
 		INNER JOIN DBACC.bodb02.dbo.Products p WITH(NOLOCK) ON p.ProductID = tc.ProductID 
+		
+	If 	@SiteID = 0
+	BEGIN
+		SET @site = 'ALL SITE'
+	END
+	ELSE
+	BEGIN
+		SELECT @site = site FROM Site WITH(NOLOCK) WHERE siteid = @SiteID
+	END
 		
 	IF @SMAName <> ''
 	BEGIN
@@ -148,6 +158,10 @@ BEGIN
 			
 		SELECT @LogSPData = '<NAP_LimitPTDaily_Ins Product="'+ COALESCE(CAST(@ProductName AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" ' +
+							'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" ' +
+							'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" ' +
+							'Type="'+ COALESCE(CAST(@Type as VARCHAR(5)),SPACE(1)) + '" ' +
+							'SettingStatus="'+ COALESCE(CAST(@SettingStatus as VARCHAR(2)),SPACE(1)) + '" ' +
 							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1)) + '" ' +
 							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" />'
 							
