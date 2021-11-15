@@ -29,6 +29,7 @@ BEGIN
 		, @logSpData		 NVARCHAR(MAX)
 		, @CustID INT
 		, @site		NVARCHAR(50)
+		, @TypeName			NVARCHAR(50)
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
 	DECLARE @tblCust TABLE (CustInfo VARCHAR(50), CustID INT, IsFinished BIT DEFAULT (0) )
@@ -46,7 +47,7 @@ BEGIN
 		
 	If 	@SiteID = 0
 	BEGIN
-		SET @site = 'ALL SITE'
+		SET @site = 'All sites'
 	END
 	ELSE
 	BEGIN
@@ -121,7 +122,7 @@ BEGIN
 	 END	
 	
 	IF EXISTS( SELECT TOP 1 1 FROM LimitPTDailySetting t WITH(NOLOCK) 
-							  WHERE t.ProductID IN ( SELECT ProductID FROM #Product) AND Currency = @Currency AND SiteID = @SiteID AND Type IN (2,3,4) )
+							  WHERE t.ProductID IN ( SELECT ProductID FROM #Product) AND Currency = @Currency AND SiteID = @SiteID AND @Type IN (2,3,4) )
 	BEGIN
 		SELECT @ErrCode = 1 ,
 			@ErrMsg = 'The selected rule exists already.'
@@ -147,6 +148,8 @@ BEGIN
 		RETURN
 	END CATCH
 
+	SELECT @TypeName = CASE @Type WHEN 1 THEN 'SMA Line' WHEN 2 THEN 'Site'  WHEN 3 THEN 'Currency' WHEN 4 THEN 'Site - Currency' ELSE 'SMA Line' END
+								
 	WHILE (1=1)
 	BEGIN
 		UPDATE TOP (1) #Product
@@ -160,8 +163,8 @@ BEGIN
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" ' +
 							'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" ' +
 							'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" ' +
-							'Type="'+ COALESCE(CAST(@Type as VARCHAR(5)),SPACE(1)) + '" ' +
-							'SettingStatus="'+ COALESCE(CAST(@SettingStatus as VARCHAR(2)),SPACE(1)) + '" ' +
+							'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
+							'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
 							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1)) + '" ' +
 							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" />'
 							
