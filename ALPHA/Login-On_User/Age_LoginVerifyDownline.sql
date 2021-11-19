@@ -1148,7 +1148,7 @@ BEGIN
 		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
 	
-	IF ISNULL(CAST(@IsDarkMode AS INT),-1) <> -1
+	IF ISNULL(CAST(@IsDarkMode AS INT),-1)  = 1 
 	BEGIN
 		EXEC dbo.Age_SwitchDarkMode
 				@CustID = @CustID,
