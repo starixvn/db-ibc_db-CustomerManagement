@@ -18,6 +18,7 @@ AS
 		Original: 
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
+			- 20211126@Winfred: Limit to update PT one time per day [Redmine: #165249]
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -133,13 +134,13 @@ BEGIN
 		IF @Type = 1
 		BEGIN
 			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
+			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 1 AS MaxCount, @Type , @SettingStatus
 			FROM @tblCust t , #Product b
 		END
 		ELSE
 		BEGIN
 			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 2 AS MaxCount, @Type , @SettingStatus
+			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 1 AS MaxCount, @Type , @SettingStatus
 			FROM #Product
 		END 
 	END TRY
