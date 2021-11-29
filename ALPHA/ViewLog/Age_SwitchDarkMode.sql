@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Age_SwitchDarkMode]
 	@CustID INT = 0, 
 	@SubAccID INT,  	
 	@IsDarkMode BIT = 0,
-	@IP VARCHAR(20)= '', 
+	@IP VARCHAR(45)= '', 
 	@Location VARCHAR(30)= 'HeaderMenu'
 /* 
 	Created: 20211019@Winfred
@@ -32,7 +32,7 @@ BEGIN
 	'SubAccName="'+ COALESCE(CAST(dbo.f_GetSubUsername(@SubAccID) as VARCHAR(30)), SPACE(1)) + '" ' +
 	'DarkMode="'+  CASE WHEN @IsDarkMode = 0 THEN  'Light' ELSE 'Dark' END +  '" '+    		
 	'Location="'+ coalesce(cast(@Location as varchar(30)),space(1)) + '" '+   
-	'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'    
+	'IP="'+ coalesce(cast(@IP as varchar(45)),space(1))+'" />'    
   
 	SET @End = GETDATE()    
 	SET @Duration  = DATEDIFF (MILLISECOND,@Begin,@End)    
