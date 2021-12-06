@@ -20,7 +20,7 @@ Param's Explanation:
 
 	DECLARE @MinBetv161_Max money, @MaxBetv161_Min money, @MaxPerMatchv161_Min money, @MaxPerMatchv161_Max money, @MaxPerBallv161_Max money,
 			@MinBetv164_Max money, @MaxBetv164_Min money, @MaxPerMatchv164_Min money, @MaxPerMatchv164_Max money,
-		
+			@MinBetv161 money, @MaxBetv161 money, @MaxPerMatchv161 money, @maxperballv161 money, @MinBetv164 money, @MaxBetv164 money, @MaxPerMatchv164 money,
 		@v161ap_81 smallmoney,@v161ap_83 smallmoney,@v161ap_86 smallmoney,@v161ap_88 smallmoney,
 		@v161alp_85 smallmoney,@v161alp_86 smallmoney,@v161alp_87 smallmoney,@v161alp_89 smallmoney,@v161alp_90 smallmoney,
 		@CS_v161ap_81 smallmoney,@CS_v161ap_83 smallmoney,@CS_v161ap_86 smallmoney,@CS_v161ap_88 smallmoney,
@@ -90,35 +90,36 @@ Param's Explanation:
 														AND CO3.bettype = CS3.bettype
 	WHERE CS3.CustID = @recommend
 
+	SELECT   
+	  @MinBetv161_Max = MAX(CASE WHEN MinBet = 0 THEN NULL ELSE MinBet END),   
+	  @MaxBetv161_Min = MIN(CASE WHEN MaxBet = 0 THEN NULL ELSE MaxBet END),
+	  @MaxPerMatchv161_Min = 0,	  
+	  @MaxperMatchv161_Max = MIN(CASE WHEN cs.MaxPerMatch = 0 THEN NULL ELSE cs.MaxPerMatch END),  
+	  @MaxPerBallv161_Max = MIN(CASE WHEN cs.MaxPerNumber = 0 THEN NULL ELSE cs.MaxPerNumber END)  
+	FROM CustBetSetting_Agent AS CS WITH (NOLOCK)  
+	WHERE cs.custid IN (@recommend,@MRecommend,@srecommend)  
+	  AND cs.bettype = 81 and cs.sporttype=161  
 
-	SELECT 
-		@MinBetv161_Max = MAX(CASE WHEN MinBet = 0 THEN NULL ELSE MinBet END), 
-		@MaxBetv161_Min = MIN(CASE WHEN MaxBet = 0 THEN NULL ELSE MaxBet END)
-	FROM 
-		custsetting3rd AS CS WITH (NOLOCK)
-		INNER JOIN custinfo AS CI WITH (NOLOCK) ON (CS.CustID = CI.recommend OR CS.CustID = CI.Mrecommend OR CS.CustID = CI.srecommend )
-		AND CS.bettype = 81 AND CS.sporttype=161
-	WHERE CI.custid = @CustID
+	SELECT   
+	  @MinBetv164_Max = MAX(CASE WHEN MinBet = 0 THEN NULL ELSE MinBet END),   
+	  @MaxBetv164_Min = MIN(CASE WHEN MaxBet = 0 THEN NULL ELSE MaxBet END),
+	  @MaxPerMatchv164_Min = 0,  
+	  @MaxperMatchv164_Max = MIN(CASE WHEN cs.MaxPerMatch = 0 THEN NULL ELSE cs.MaxPerMatch END)  
+	FROM CustBetSetting_Agent AS cs WITH (NOLOCK)  
+	WHERE cs.custid IN (@recommend,@MRecommend,@srecommend)  
+	  AND cs.bettype = 8101 AND cs.sporttype=164  
 
-	SELECT 
-		@MinBetv164_Max = MAX(CASE WHEN MinBet = 0 THEN NULL ELSE MinBet END), 
-		@MaxBetv164_Min = MIN(CASE WHEN MaxBet = 0 THEN NULL ELSE MaxBet END)
-	FROM 
-		custsetting3rd AS CS WITH (NOLOCK)
-		INNER JOIN custinfo AS CI WITH (NOLOCK) ON (CS.CustID = CI.recommend OR CS.CustID = CI.Mrecommend OR CS.CustID = CI.srecommend )
-		AND CS.bettype = 8101 AND CS.sporttype=164
-	WHERE CI.custid = @CustID
-
-	SELECT
-		@MaxPerMatchv161_Min = 0,
-		@MaxPerMatchv161_Max = MIN(CASE WHEN CS.MaxPerMatch161 = 0 THEN NULL ELSE CS.MaxPerMatch161 END),	
-		@MaxPerBallv161_Max = MIN(CASE WHEN CS.MaxPerBall161 = 0  THEN NULL ELSE CS.MaxPerBall161 END),
-		@MaxPerMatchv164_Min = 0,
-		@MaxPerMatchv164_Max = MIN(CASE WHEN CS.MaxPerMatch164 = 0 THEN NULL ELSE CS.MaxPerMatch164 END)	
-	FROM 
-		custinfo AS CS WITH (NOLOCK) 
-		INNER JOIN custinfo AS CI WITH (NOLOCK) ON (CS.CustID = CI.recommend OR CS.CustID = CI.Mrecommend OR CS.CustID = CI.srecommend )
-	WHERE CI.custid = @CustID
+	SELECT   
+	   @MinBetv161			= MAX(CASE WHEN cbs.bettype = 81 AND cbs.sporttype=161 THEN cbs.minbet ELSE 0 END)      
+	   ,@MaxBetv161			= MAX(CASE WHEN cbs.bettype = 81 AND cbs.sporttype=161 THEN cbs.maxbet ELSE 0 END)      
+	   ,@MaxPerMatchv161    = MAX(CASE WHEN cbs.bettype = 81 AND cbs.sporttype=161 THEN cbs.MaxPerMatch ELSE 0 END)     
+	   ,@maxperballv161		= MAX(CASE WHEN cbs.bettype = 81 AND cbs.sporttype=161 THEN cbs.MaxPerNumber ELSE 0 END)   
+	     
+	   ,@MinBetv164			= MAX(CASE WHEN cbs.bettype = 8101 AND cbs.sporttype=164 THEN cbs.minbet ELSE 0 END)      
+	   ,@MaxBetv164			= MAX(CASE WHEN cbs.bettype = 8101 AND cbs.sporttype=164 THEN cbs.maxbet ELSE 0 END)      
+	   ,@MaxPerMatchv164    = MAX(CASE WHEN cbs.bettype = 8101 AND cbs.sporttype=164 THEN cbs.MaxPerMatch ELSE 0 END)   
+  FROM CustBetSetting_Member cbs WITH(NOLOCK)   
+  WHERE CustID = @CustId  
 
 	SELECT
 		--v161
@@ -192,13 +193,13 @@ Param's Explanation:
 		ISNULL(C.mobilephone,'') AS MobilePhone, 
 		ISNULL(C.email,'') AS Email, 
 		ISNULL(C.fax,'') AS Fax, 
-		ISNULL(CI.maxpermatch161, 0)	AS v161MaxPerMatch,
-		ISNULL(CI.maxperball161,0)		AS v161MaxPerBall,
-		ISNULL(CI.maxpermatch164, 0)	AS v164MaxPerMatch,			
-		ISNULL(MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.minbet ELSE 0 END), 0)  	AS v161MinBet,
-		ISNULL(MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.maxbet ELSE 0 END), 0)  	AS v161MaxBet,	
-		ISNULL(MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.minbet ELSE 0 END), 0)	AS v164MinBet,
-		ISNULL(MAX(CASE WHEN CS3.bettype = 8101 AND CS3.sporttype=164 THEN CS3.maxbet ELSE 0 END), 0)	AS v164MaxBet,		
+		@MaxPerMatchv161				AS v161MaxPerMatch,
+		@maxperballv161					AS v161MaxPerBall,
+		@MaxPerMatchv164				AS v164MaxPerMatch,			
+		@MinBetv161  	AS v161MinBet,
+		@MaxBetv161 	AS v161MaxBet,	
+		@MinBetv164		AS v164MinBet,
+		@MaxBetv164		AS v164MaxBet,		
 	
 		--v161
 		ISNULL(MAX(CASE WHEN CS3.bettype = 81 AND CS3.sporttype=161 THEN CS3.apositiontaking ELSE 0 END), 0) AS v161aPositionTaking_81,

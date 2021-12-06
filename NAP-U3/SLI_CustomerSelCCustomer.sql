@@ -20,16 +20,13 @@ BEGIN
 
 	DECLARE @maxpermatchv161_min MONEY,
 		@maxpermatchv164_min MONEY,	
-		@maxperballv161_min MONEY
-
+		@maxperballv161_min MONEY,
+		@MinBetv161 MONEY, @MaxBetv161 MONEY, 
+		@MaxPerMatchv161 MONEY, @maxperballv161 MONEY, 
+		@MinBetv164 MONEY, @MaxBetv164 MONEY, @MaxPerMatchv164 MONEY
 
 	DECLARE	@tmpSetting3rd TABLE(
 		CustID	INT,
-		--min/max 
-		minbetv161	MONEY,
-		maxbetv161	MONEY,
-		minbetv164 MONEY,
-		maxbetv164 MONEY,
 		--min PT
 		v161spositiontaking_81_min	SMALLMONEY,
 		v161spositiontaking_83_min	SMALLMONEY,
@@ -75,10 +72,6 @@ BEGIN
 
 	INSERT INTO @tmpSetting3rd (
 		CustID		,
-		minbetv161	,
-		maxbetv161	,
-		minbetv164	,
-		maxbetv164	,
 		--Min PT
 		v161spositiontaking_81_min	,
 		v161spositiontaking_83_min	,
@@ -123,11 +116,6 @@ BEGIN
 
 	SELECT	
 		CI.CustID,
-		MAX(CASE WHEN CS3.bettype = 81 and CS3.sporttype=161 THEN CS3.minbet ELSE 0 END) AS minbetv161,
-		MAX(CASE WHEN CS3.bettype = 81 and CS3.sporttype=161 THEN CS3.maxbet ELSE 0 END) AS maxbetv161,
-		MAX(CASE WHEN CS3.bettype = 8101 and CS3.sporttype=164 THEN CS3.minbet ELSE 0 END) AS minbetv164,
-		MAX(CASE WHEN CS3.bettype = 8101 and CS3.sporttype=164 THEN CS3.maxbet ELSE 0 END) AS maxbetv164,
-
 		MAX(CASE WHEN CO3.bettype = 81 and CO3.sporttype=161 THEN CO3.minpositiontaking ELSE 0 END) AS v161spositiontaking_81_min,
 		MAX(CASE WHEN CO3.bettype = 83 and CO3.sporttype=161 THEN CO3.minpositiontaking ELSE 0 END) AS v161spositiontaking_83_min,
 		MAX(CASE WHEN CO3.bettype = 86 and CO3.sporttype=161 THEN CO3.minpositiontaking ELSE 0 END) AS v161spositiontaking_86_min,
@@ -174,6 +162,18 @@ BEGIN
 	WHERE	CI.roleid=4 and CI.custid=@CustID
 	GROUP BY CI.CustID 
 
+	 SELECT   
+		@MinBetv161			= MAX(CASE WHEN cbs.bettype = 81 and cbs.sporttype=161 THEN cbs.minbet ELSE 0 END)      
+	   ,@MaxBetv161			= MAX(CASE WHEN cbs.bettype = 81 and cbs.sporttype=161 THEN cbs.maxbet ELSE 0 END)      
+	   ,@MaxPerMatchv161    = MAX(CASE WHEN cbs.bettype = 81 and cbs.sporttype=161 THEN cbs.MaxPerMatch ELSE 0 END)     
+	   ,@maxperballv161		= MAX(CASE WHEN cbs.bettype = 81 and cbs.sporttype=161 THEN cbs.MaxPerNumber ELSE 0 END)   
+	     
+	   ,@MinBetv164			= MAX(CASE WHEN cbs.bettype = 8101 and cbs.sporttype=164 THEN cbs.minbet ELSE 0 END)      
+	   ,@MaxBetv164			= MAX(CASE WHEN cbs.bettype = 8101 and cbs.sporttype=164 THEN cbs.maxbet ELSE 0 END)      
+	   ,@MaxPerMatchv164    = MAX(CASE WHEN cbs.bettype = 8101 and cbs.sporttype=164 THEN cbs.MaxPerMatch ELSE 0 END)  
+	 FROM CustBetSetting_Agent cbs WITH(NOLOCK)   
+	  WHERE CustID = @CustId  
+
 	DECLARE	@firstname	nvarchar(50),
 			@lastname	nvarchar(50),
 			@phone		nvarchar(50),
@@ -209,14 +209,14 @@ BEGIN
 		ISNULL(@email,'') AS Email, 
 		ISNULL(@fax,'') AS Fax,
 		--@Site AS site, 	
-		CI.MaxPerMatch161	AS v161MaxPerMatch,	
-		CI.MaxPerBall161	AS v161MaxPerBall,
-		CI.MaxPerMatch164	AS v164MaxPerMatch,	
+		@MaxPerMatchv161	AS v161MaxPerMatch,	
+		@maxperballv161 	AS v161MaxPerBall,
+		@MaxPerMatchv164	AS v164MaxPerMatch,	
 		CI.DisableNumber,
-		CS3.MinBetv161	AS v161MinBet,
-		CS3.MaxBetv161	AS v161MaxBet,	
-		CS3.MinBetv164	AS v164MinBet,
-		CS3.MaxBetv164	AS v164MaxBet,		
+		@MinBetv161	AS v161MinBet,
+		@MaxBetv161	AS v161MaxBet,	
+		@MinBetv164	AS v164MinBet,
+		@MaxBetv164	AS v164MaxBet,		
 		--v161
 		CS3.v161sPositionTaking_81_Min,
 		CS3.v161sPositionTaking_83_Min,
