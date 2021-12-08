@@ -1,7 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[SLI_CustomerSelSCustomer]  
-	@CustId int,
-	@Srecommend int
+	@CustId int
 AS
 BEGIN
 /*
@@ -71,7 +70,10 @@ Param's Explanation:
 		@MinBetv164_Max MONEY,
 		@MaxBetv164_Min MONEY,
 		@MaxPerMatchv164_Min MONEY,
-		@MaxPerMatchv164_Max MONEY
+		@MaxPerMatchv164_Max MONEY,
+		@Srecommend int
+	
+	SELECT	@srecommend  = srecommend FROM custinfo WITH (NOLOCK) WHERE custid = @custid
 	
 	SELECT   
 	  @MinBetv161_Max = MAX(CASE WHEN MinBet = 0 THEN NULL ELSE MinBet END),   

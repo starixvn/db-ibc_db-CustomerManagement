@@ -1,7 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunctiON="0"></info>*/
 CREATE PROCEDURE [dbo].[SLI_CustomerSelMCustomer]
-	@CustId		INT,
-	@Mrecommend	INT
+	@CustId		INT
 AS
 BEGIN
 /*
@@ -20,8 +19,12 @@ Param's Explanation:
 
 	SET NOCOUNT ON
 	--Check Downline Belonging
-	DECLARE @roleid tinyint, @Username varchar(30),@srecommend  INT,@MinBetv161 money, @MaxBetv161 money, 
+	DECLARE @roleid tinyint, @Username varchar(30),@srecommend  INT,
+	@Mrecommend	INT,@MinBetv161 money, @MaxBetv161 money, 
 	@MaxPerMatchv161 money, @maxperballv161 money, @MinBetv164 money, @MaxBetv164 money, @MaxPerMatchv164 money
+	
+	SELECT	@srecommend  = srecommend , @Mrecommend = mrecommend FROM custinfo WITH (NOLOCK) WHERE custid = @custid
+	
 	EXEC Age_CustomerSelCheckBelongingByCustID 
 		@SessiONCustID = @Mrecommend, 
 		@Custid = @custid,
@@ -29,8 +32,6 @@ Param's Explanation:
 		@roleid = @roleid OUTPUT
 		IF (@roleid = 0) RETURN
 	---------------------------
-	SELECT	@srecommend  = srecommend FROM custinfo WITH (NOLOCK) WHERE custid = @custid
-	
 	DECLARE 
 
 		@MinBetv161_Max MONEY,
