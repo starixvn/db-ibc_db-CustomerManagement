@@ -15,7 +15,8 @@ AS
 	    
 	Revisions:    
 		- 20191025@Eden : First commit [Redmind: #121876]
-		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
+		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 
 	Param's Explanation:
 	• @AutoSuspendXML
@@ -31,12 +32,12 @@ AS
 			@IP = '10.1.1.0',
 			@AutoSuspendXML = 
 			'<Root>
-						<Row LevelID = "15" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0"/>
-						<Row LevelID = "17" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0"/>
-						<Row LevelID = "21" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1"/>
-						<Row LevelID = "22" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1"/>
-						<Row LevelID = "24" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0"/>
-						<Row LevelID = "25" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1"/>
+						<Row LevelID = "15" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0" IsOverrideASLive="1" IsOverrideASNonLive="0"/>
+						<Row LevelID = "17" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0" IsOverrideASLive="0" IsOverrideASNonLive="0"/>
+						<Row LevelID = "21" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1" IsOverrideASLive="0" IsOverrideASNonLive="0"/>
+						<Row LevelID = "22" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1" IsOverrideASLive="0" IsOverrideASNonLive="0"/>
+						<Row LevelID = "24" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="0" IsOverrideASLive="0" IsOverrideASNonLive="0"/>
+						<Row LevelID = "25" IsLiveAutoSuspend="0" IsNonLiveAutoSuspend="1" IsOverrideASLive="0" IsOverrideASNonLive="0"/>
 			</Root>'
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
@@ -52,6 +53,8 @@ BEGIN
 	DECLARE @ActionID INT = 809
 	DECLARE @TrackingValue1 VARCHAR(MAX) = '' -- New values
 			,@TrackingValue2 VARCHAR(MAX)= '' -- Old values
+	DECLARE @InitialBitMap_0 VARBINARY(30) = 0x000000000000000000000000000000000000000000000000000000000000
+	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
 	SELECT @ErrCode = 0, @ErrMsg = ''
 	
@@ -59,6 +62,8 @@ BEGIN
 		  LevelID				SMALLINT
 		, IsLiveAutoSuspend		BIT
 		, IsNonLiveAutoSuspend	BIT
+		, IsOverrideASLive		BIT
+		, IsOverrideASNonLive	BIT
 		)
 
 	SELECT @StartRun = GETDATE()   
@@ -73,12 +78,24 @@ BEGIN
 		EXEC sp_xml_preparedocument @iDoc OUTPUT
 			, @AutoSuspendXML
 
-		INSERT INTO #NewDisableStatTbl
-		SELECT *
+		INSERT INTO #NewDisableStatTbl(
+			LevelID,
+			IsLiveAutoSuspend,
+			IsNonLiveAutoSuspend,
+			IsOverrideASLive,
+			IsOverrideASNonLive
+		)
+		SELECT LevelID,
+			IsLiveAutoSuspend,
+			IsNonLiveAutoSuspend,
+			IsOverrideASLive,
+			IsOverrideASNonLive
 		FROM OPENXML(@iDoc, '/Root/Row', 1) WITH (
 				  LevelID					SMALLINT
 				, IsLiveAutoSuspend			BIT
 				, IsNonLiveAutoSuspend		BIT
+				, IsOverrideASLive			BIT
+				, IsOverrideASNonLive		BIT
 				)
 	
 		EXEC sp_xml_removedocument @iDoc
@@ -89,18 +106,27 @@ BEGIN
 		RETURN  
 	END CATCH
 
-
 	SELECT DISTINCT h.LevelID
 		,h.BetType
 		,Live.value as IsLiveAutoSuspend
 		,NonLive.value IsNonLiveAutoSuspend
 		,h.SportType
+		,O_Live.value AS IsOverrideASLive
+		,O_NonLive.value AS IsOverrideASNonLive
 	INTO #temp
 	FROM #NewDisableStatTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
-		OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (at.AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (at.AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
+		OUTER APPLY (	SELECT AutoSuspendLive, 
+							   AutoSuspendNonLive, 
+							   OverrideASLive, 
+							   OverrideASNonLive
+						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
+						WHERE custid = @CustID AND SportType = @SportType
+					) at
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 
 	CREATE CLUSTERED INDEX PK_temp_LevelID ON #temp(LevelID)
 
@@ -108,12 +134,18 @@ BEGIN
 	FROM #NewDisableStatTbl a
 		INNER JOIN #temp tmp  ON a.LevelID = tmp.LevelID
 	WHERE (tmp.BetType = -1 AND tmp.SportType = 43) 
-		OR (ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend) = tmp.IsLiveAutoSuspend AND ISNULL(a.IsNonLiveAutoSuspend, tmp.IsNonLiveAutoSuspend)  = tmp.IsNonLiveAutoSuspend)
+		OR (ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend) = tmp.IsLiveAutoSuspend 
+			AND ISNULL(a.IsNonLiveAutoSuspend, tmp.IsNonLiveAutoSuspend)  = tmp.IsNonLiveAutoSuspend
+			AND ISNULL(a.IsOverrideASLive, tmp.IsOverrideASLive)  = tmp.IsOverrideASLive
+			AND ISNULL(a.IsOverrideASNonLive, tmp.IsOverrideASNonLive)  = tmp.IsOverrideASNonLive
+			)
 		OR (tmp.SportType <> @SportType)
 
 	UPDATE a
 	SET  a.IsLiveAutoSuspend = ISNULL(a.IsLiveAutoSuspend,tmp.IsLiveAutoSuspend)
 		,a.IsNonLiveAutoSuspend = ISNULL(a.IsNonLiveAutoSuspend,tmp.IsNonLiveAutoSuspend)
+		,a.IsOverrideASLive = ISNULL(a.IsOverrideASLive,tmp.IsOverrideASLive)
+		,a.IsOverrideASNonLive = ISNULL(a.IsOverrideASNonLive,tmp.IsOverrideASNonLive)
 	FROM #NewDisableStatTbl a
 		INNER JOIN #temp tmp  ON a.LevelID = tmp.LevelID
 	
@@ -124,7 +156,8 @@ BEGIN
 
 	DECLARE @xmlStrAutoSuspendLive XML
 	DECLARE @xmlStrAutoSuspendNonLive XML
-	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @xmlStrOverrideASLive XML
+	DECLARE @xmlStrOverrideASNonLive XML
 	
 	SET @xmlStrAutoSuspendLive =(
 			SELECT (
@@ -152,69 +185,124 @@ BEGIN
 				, TYPE
 			)
 
+	SET @xmlStrOverrideASLive =(
+			SELECT (
+					SELECT h.BitmapOrderAutoSuspend	AS '@b'
+						 , tmp.IsOverrideASLive AS '@s'
+					FROM #NewDisableStatTbl tmp
+						INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
+					FOR XML PATH('r')
+						, TYPE
+					)
+			FOR XML PATH('root')
+				, TYPE
+			)
+
+	SET @xmlStrOverrideASNonLive =(
+			SELECT (
+					SELECT h.BitmapOrderAutoSuspend	AS '@b'
+						 , tmp.IsOverrideASNonLive AS '@s'
+					FROM #NewDisableStatTbl tmp
+						INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
+					FOR XML PATH('r')
+						, TYPE
+					)
+			FOR XML PATH('root')
+				, TYPE
+			)
+
 	SELECT @TrackingValue2 = (
 		SELECT tmp.LevelID, 
-			   h.SportType, 
-			   lg.GroupName LeagueGroup,
-			   bg.GroupName BettypeGroup,
-			   h.BetType,
-			   Live.value as IsLiveAutoSuspend,
-			   NonLive.value IsNonLiveAutoSuspend,
-			   h.SortOrder
+			h.SportType, 
+			lg.GroupName LeagueGroup,
+			bg.GroupName BettypeGroup,
+			h.BetType,
+			Live.value as IsLiveAutoSuspend,
+			NonLive.value IsNonLiveAutoSuspend,
+			h.SortOrder,
+			O_Live.value AS IsOverrideASLive,
+			O_NonLive.value AS IsOverrideASNonLive
 		FROM #NewDisableStatTbl tmp
-			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
-			   ON tmp.LevelID = h.LevelID
-			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
-			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
-			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
-			 OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
-			 OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
+				ON tmp.LevelID = h.LevelID
+			LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
+			LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
+			OUTER APPLY (	SELECT AutoSuspendLive, 
+								AutoSuspendNonLive, 
+								OverrideASLive, 
+								OverrideASNonLive
+						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
+						WHERE custid = @CustID AND SportType = @SportType
+					) at
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 	FOR XML  RAW('r')
 	)
 
 	SELECT @TrackingValue2 = '<Root>' + ISNULL(@TrackingValue2,'') + '</Root>'
-
+	
 	IF EXISTS ( SELECT TOP 1 1 FROM CustSettingAutoSuspend WITH(NOLOCK) WHERE CustID = @CustID AND SportType = @SportType)
 	BEGIN
 		UPDATE CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
-		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (AutoSuspendLive, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
-			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (AutoSuspendNonLive, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)))	
+		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(AutoSuspendLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
+			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(AutoSuspendNonLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive))),
+			OverrideASLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(OverrideASLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive))),
+			OverrideASNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(OverrideASNonLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)))	
 		WHERE CustID = @CustID AND SportType = @SportType
 	END
 	ELSE
 	BEGIN
-		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive,Sporttype)
+		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive,Sporttype,OverrideASLive,OverrideASNonLive)
 		SELECT @CustID
 			,a1.bitmap
 			,a2.bitmap
 			,@SportType
+			,a3.bitmap
+			,a4.bitmap
 		FROM dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive)) a1
 			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)) a2
+			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive)) a3
+			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)) a4
 	END
 	
-	DELETE FROM CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
+	DELETE 
+	FROM CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
 	WHERE CustID = @CustID
-		AND AutoSuspendLive = @InitialBitMap
-		AND AutoSuspendNonLive = @InitialBitMap
+		AND ISNULL(AutoSuspendLive,@InitialBitMap) = @InitialBitMap
+		AND ISNULL(AutoSuspendNonLive,@InitialBitMap) = @InitialBitMap
+		AND ISNULL(OverrideASLive,@InitialBitMap_0) = @InitialBitMap_0
+		AND ISNULL(OverrideASNonLive,@InitialBitMap_0) = @InitialBitMap_0
 		AND SportType = @SportType
 
 	SELECT @TrackingValue1 = (
 		SELECT tmp.LevelID, 
-			   h.SportType, 
-			   lg.GroupName LeagueGroup,
-			   bg.GroupName BettypeGroup,
-			   h.BetType,
-			   Live.value as IsLiveAutoSuspend,
-			   NonLive.value IsNonLiveAutoSuspend,
-			   h.SortOrder
+			h.SportType, 
+			lg.GroupName LeagueGroup,
+			bg.GroupName BettypeGroup,
+			h.BetType,
+			Live.value as IsLiveAutoSuspend,
+			NonLive.value IsNonLiveAutoSuspend,
+			h.SortOrder,
+			O_Live.value AS IsOverrideASLive,
+			O_NonLive.value AS IsOverrideASNonLive
 		FROM #NewDisableStatTbl tmp
-			 INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
-			   ON tmp.LevelID = h.LevelID
-			 LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
-			 LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
-			 OUTER APPLY ( SELECT AutoSuspendLive, AutoSuspendNonLive FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) WHERE custid = @CustID AND SportType = @SportType) at
-			 OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
-			 OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			INNER JOIN VRSettingHierarchy h WITH(NOLOCK)
+				ON tmp.LevelID = h.LevelID
+			LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
+			LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
+			OUTER APPLY (	SELECT AutoSuspendLive, 
+								AutoSuspendNonLive, 
+								OverrideASLive, 
+								OverrideASNonLive
+						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
+						WHERE custid = @CustID AND SportType = @SportType
+					) at
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 	FOR XML  RAW('r')
 	)
 

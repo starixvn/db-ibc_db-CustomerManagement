@@ -17,6 +17,7 @@ AS
 	
 	Revisions:
 		- 20210826@Eden: Initial SP [Redmine: #160766]
+		- 20211125@Eden: Override Auto Suspend [Redmine: #164888]
 
 	Explanation's Param:
 		
@@ -60,6 +61,8 @@ RETURN
 		,h.ParentLevelID
 		,h.VRAutoSuspendThresholdNonLive
 		,h.VRAutoSuspendThresholdLive
+		,O_Live.value AS IsOverrideASLive
+		,O_NonLive.value AS IsOverrideASNonLive
 	FROM Tmp_VRSettingHierarchy1 tmp
 	INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
 	LEFT JOIN VRCustSetting vr WITH(NOLOCK) 
@@ -67,22 +70,30 @@ RETURN
 			AND vr.LevelID = h.LevelID
 	LEFT JOIN VRValueMapping vlive WITH(NOLOCK) ON vr.ValueIDLIVE = vlive.ValueID
 	LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
-	OUTER APPLY (	SELECT AutoSuspendLive, AutoSuspendNonLive
+	OUTER APPLY (	SELECT AutoSuspendLive, AutoSuspendNonLive, OverrideASLive, OverrideASNonLive
 					FROM dbo.CustSettingAutoSuspend WITH(NOLOCK)
 					WHERE custid = @CustID AND SportType = @SportType
 				)t
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) Live
 	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.AutoSuspendNonLive,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF),h.BitmapOrderAutoSuspend) NonLive
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.OverrideASLive,0x000000000000000000000000000000000000000000000000000000000000),h.BitmapOrderAutoSuspend) O_Live
+	CROSS APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(t.OverrideASNonLive,0x000000000000000000000000000000000000000000000000000000000000),h.BitmapOrderAutoSuspend) O_NonLive
 	)
-	SELECT CASE WHEN @IsLive = 1 THEN (CASE  WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) 
-												AND @VRValue >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) 
-												AND COALESCE(h.IsLiveAutoSuspend,pr1.IsLiveAutoSuspend,pr2.IsLiveAutoSuspend,pr3.IsLiveAutoSuspend,1) = 1 
-													THEN 1 ELSE 0 END)
-								 ELSE (CASE WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) 
-												AND @VRValue >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) 
-												AND COALESCE(h.IsNonLiveAutoSuspend,pr1.IsNonLiveAutoSuspend,pr2.IsNonLiveAutoSuspend,pr3.IsNonLiveAutoSuspend,1) = 1 
-													THEN 1 ELSE 0 END) 
-				END IsVRAutoSuspend
+	SELECT CASE WHEN @IsLive = 1 THEN 
+						(CASE   WHEN COALESCE(h.IsOverrideASLive,pr1.IsOverrideASLive,pr2.IsOverrideASLive,pr3.IsOverrideASLive) = 1 THEN 1
+								WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) 
+									AND @VRValue >= COALESCE(h.VRAutoSuspendThresholdLive,pr1.VRAutoSuspendThresholdLive,pr2.VRAutoSuspendThresholdLive,pr3.VRAutoSuspendThresholdLive) 
+									AND COALESCE(h.IsLiveAutoSuspend,pr1.IsLiveAutoSuspend,pr2.IsLiveAutoSuspend,pr3.IsLiveAutoSuspend,1) = 1 
+									THEN 1 
+								ELSE 0 END)
+				ELSE 
+						(CASE   WHEN COALESCE(h.IsOverrideASNonLive,pr1.IsOverrideASNonLive,pr2.IsOverrideASNonLive,pr3.IsOverrideASNonLive,1) = 1 THEN 1
+								WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) 
+									AND @VRValue >= COALESCE(h.VRAutoSuspendThresholdNonLive,pr1.VRAutoSuspendThresholdNonLive,pr2.VRAutoSuspendThresholdNonLive,pr3.VRAutoSuspendThresholdNonLive) 
+									AND COALESCE(h.IsNonLiveAutoSuspend,pr1.IsNonLiveAutoSuspend,pr2.IsNonLiveAutoSuspend,pr3.IsNonLiveAutoSuspend,1) = 1 
+									THEN 1 
+								ELSE 0 END) 
+			END IsVRAutoSuspend
 	FROM tempVR pr3
 		LEFT JOIN tempVR pr2
 			ON pr2.ParentLevelID = pr3.LevelID 

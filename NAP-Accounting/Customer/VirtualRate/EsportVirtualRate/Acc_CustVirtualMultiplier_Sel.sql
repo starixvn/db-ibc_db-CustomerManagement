@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_Sel]
 	@CustID INT
 	, @SportType INT
@@ -16,6 +15,7 @@ AS
 		- 20190626@Eden : Esport VR Phase 2 - Integrate Auto Suspend [Redmind: #121876]
 		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
+		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
   
 */ 
 BEGIN
@@ -72,11 +72,16 @@ BEGIN
 	SELECT @CustID CustID,@Username Username, @Currency Currency,@ActualRate ActualRate, @UplineCustID UplineCustID, @UplineUsername UplineUsername , @RoleID AS RoleID
 
 	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @InitialBitMap_0 VARBINARY(30) = 0x000000000000000000000000000000000000000000000000000000000000
 	DECLARE @AutoSuspendLive    VARBINARY(30) = @InitialBitMap, 
-			@AutoSuspendNonLive VARBINARY(30) = @InitialBitMap
+			@AutoSuspendNonLive VARBINARY(30) = @InitialBitMap,
+			@OverrideASLive		VARBINARY(30) = @InitialBitMap_0,
+			@OverrideASNonLive	VARBINARY(30) = @InitialBitMap_0
 			
 	SELECT @AutoSuspendLive = AutoSuspendLive, 
-		   @AutoSuspendNonLive = AutoSuspendNonLive
+		   @AutoSuspendNonLive = AutoSuspendNonLive,
+		   @OverrideASLive = ISNULL(OverrideASLive, @OverrideASLive),
+		   @OverrideASNonLive = ISNULL(OverrideASNonLive, @OverrideASNonLive)
 	FROM dbo.CustSettingAutoSuspend WITH(NOLOCK)
 	WHERE custid = @CustID AND SportType = @SportType
 
@@ -94,6 +99,8 @@ BEGIN
 		,h.SortOrder
 		,h.VRAutoSuspendThresholdNonLive
 		,h.VRAutoSuspendThresholdLive
+		,O_Live.value AS IsOverrideASLive
+		,O_NonLive.value AS IsOverrideASNonLive
 	INTO #tempVR
 	FROM VRSettingHierarchy h WITH(NOLOCK)
 		LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
@@ -105,6 +112,8 @@ BEGIN
 		LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
 		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
 		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@OverrideASLive,h.BitmapOrderAutoSuspend) O_Live
+		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@OverrideASNonLive,h.BitmapOrderAutoSuspend) O_NonLive
 	WHERE h.SportType = @SportType
 
 	CREATE CLUSTERED INDEX PK_tempVR_LevelID ON #tempVR(LevelID)
@@ -120,8 +129,12 @@ BEGIN
 		h.ValueLIVE, 
 		h.ValueIDNonLIVE, 
 		h.ValueNonLIVE, 
-		IsLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsLiveAutoSuspend END, 
-		IsNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsNonLiveAutoSuspend END,
+		IsLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL
+								--WHEN h.IsOverrideASLive = 1 THEN 1 
+								ELSE h.IsLiveAutoSuspend END, 
+		IsNonLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL
+									--WHEN h.IsOverrideASNonLive = 1 THEN 1 
+									ELSE h.IsNonLiveAutoSuspend END,
 		IsDisableLiveAutoSuspend = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL
 										 WHEN COALESCE(h.ValueLIVE,pr1.ValueLIVE,pr2.ValueLIVE,pr3.ValueLIVE) >= h.VRAutoSuspendThresholdLive THEN 0 
 									ELSE 1 END,
@@ -129,7 +142,9 @@ BEGIN
 											WHEN COALESCE(h.ValueNonLIVE,pr1.ValueNonLIVE,pr2.ValueNonLIVE,pr3.ValueNonLIVE) >= h.VRAutoSuspendThresholdNonLive THEN 0 
 									ELSE 1 END,
 		h.VRAutoSuspendThresholdLive,
-		h.VRAutoSuspendThresholdNonLive
+		h.VRAutoSuspendThresholdNonLive,
+		IsOverrideASLive = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsOverrideASLive END,
+		IsOverrideASNonLive = CASE WHEN h.BetTypeID = -1 AND h.sporttype <> 2 THEN NULL ELSE h.IsOverrideASNonLive END
 	FROM #tempVR h
 		LEFT JOIN #tempVR pr1 WITH(NOLOCK)
 			ON h.ParentLevelID = pr1.LevelID
