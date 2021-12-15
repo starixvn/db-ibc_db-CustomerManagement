@@ -1,5 +1,5 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE Acc_CustVirtualMultiplier_ViewLog_AutoSuspend 
+ALTER PROCEDURE Acc_CustVirtualMultiplier_ViewLog_AutoSuspend
 	@Username NVARCHAR(100)
 	, @SportType INT
 	, @StartLogTime DATETIME
@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20191101@Eden: First commit [Redmind: #121876]
 		- 20210624@Elodie: Aplly VRCustLog archive [Redmine: #157434]
+		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 	Parameter:
 
 	
@@ -50,6 +51,8 @@ BEGIN
 			, IsNonLiveAutoSuspend BIT 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsOverrideASLive		BIT
+			, IsOverrideASNonLive	BIT
 	)
 	CREATE TABLE #DataNew (
 			  LogID BIGINT
@@ -63,6 +66,8 @@ BEGIN
 			, IsNonLiveAutoSuspend BIT 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsOverrideASLive		BIT
+			, IsOverrideASNonLive	BIT
 	)
 
 	CREATE CLUSTERED INDEX IX_LogID2 ON #DataOld(LogID)
@@ -149,6 +154,8 @@ BEGIN
 						, SortOrder
 						, SportType
 						, UserID
+						, IsOverrideASLive
+						, IsOverrideASNonLive
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -161,6 +168,8 @@ BEGIN
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
+				, tmp.IsOverrideASLive
+				, tmp.IsOverrideASNonLive
 		FROM OPENXML (@LogDocHandler1, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -171,6 +180,8 @@ BEGIN
 			, IsNonLiveAutoSuspend BIT 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsOverrideASLive BIT 
+			, IsOverrideASNonLive BIT 
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -179,7 +190,8 @@ BEGIN
 				, tmp.LevelID
 				, tmp.IsLiveAutoSuspend
 				, tmp.IsNonLiveAutoSuspend
-
+				, tmp.IsOverrideASLive
+				, tmp.IsOverrideASNonLive
 		INSERT INTO #DataOld(LogID 
 						, Logtime
 						, LeagueGroup
@@ -191,6 +203,8 @@ BEGIN
 						, SortOrder
 						, SportType
 						, UserID
+						, IsOverrideASLive
+						, IsOverrideASNonLive
 			)
 		SELECT	@LogID LogID
 				, @LogTime AS Logtime
@@ -203,6 +217,8 @@ BEGIN
 				, MIN(tmp.SortOrder)
 				, tmp.SportType
 				, @UserID AS UserID
+				, tmp.IsOverrideASLive
+				, tmp.IsOverrideASNonLive
 		FROM OPENXML (@LogDocHandler2, '/Root/r',1) 
 		WITH (
 			  LeagueGroup NVARCHAR(200)
@@ -213,6 +229,8 @@ BEGIN
 			, IsNonLiveAutoSuspend BIT 
 			, SortOrder SMALLINT
 			, SportType SMALLINT
+			, IsOverrideASLive BIT 
+			, IsOverrideASNonLive BIT 
 		) AS tmp
 		GROUP BY  tmp.SportType 
 				, tmp.LeagueGroup
@@ -221,6 +239,8 @@ BEGIN
 				, tmp.LevelID
 				, tmp.IsLiveAutoSuspend
 				, tmp.IsNonLiveAutoSuspend
+				, tmp.IsOverrideASLive
+				, tmp.IsOverrideASNonLive
 		
 		EXEC sp_xml_removedocument @LogDocHandler1
 		EXEC sp_xml_removedocument @LogDocHandler2
@@ -238,7 +258,11 @@ BEGIN
 		   d1.IsLiveAutoSuspend AS IsLiveAutoSuspendNew, 
 		   d2.IsLiveAutoSuspend AS IsLiveAutoSuspendOld, 
 		   d1.IsNonLiveAutoSuspend AS IsNonLiveAutoSuspendNew, 
-		   d2.IsNonLiveAutoSuspend AS IsNonLiveAutoSuspendOld
+		   d2.IsNonLiveAutoSuspend AS IsNonLiveAutoSuspendOld,
+		   d1.IsOverrideASLive AS IsOverrideASLiveNew, 
+		   d2.IsOverrideASLive AS IsOverrideASLiveOld, 
+		   d1.IsOverrideASNonLive AS IsOverrideASNonLiveNew, 
+		   d2.IsOverrideASNonLive AS IsOverrideASNonLiveOld
 	FROM #DataNew d1
 		 INNER JOIN #DataOld d2
 		   ON d1.LevelID = d2.LevelID
