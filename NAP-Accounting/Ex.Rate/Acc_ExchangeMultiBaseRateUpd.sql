@@ -51,7 +51,7 @@ BEGIN
 			INNER JOIN #Exchange ex ON e.ExchangeId = ex.ExchangeId
 	END TRY
 	BEGIN CATCH
-		SELECT @ErrCode = 100, @ErrMsg = ''
+		SELECT @ErrCode = 100, @ErrMsg = 'Error occurs. update unsucessfully.'
 		RETURN
 	END CATCH
 

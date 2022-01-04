@@ -1,12 +1,18 @@
-CREATE PROCEDURE [dbo].[Acc_ChangeRate_Main_Upd] @TableName VARCHAR(200)
+/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+CREATE PROCEDURE [dbo].[Acc_ChangeRate_Main_Upd] 
+	@TableName VARCHAR(200)
 AS
 /*
- 	DB: DBTXN/bodb02
- 	Task : Update rates for all existed tickets once financial change rates
- 	
- 	Revisions:			
+	Created: 20211229@Malcolm
+	DB: DBTXN-bodb02
+	Task: Update rates for all existed tickets once financial change rates
+
+	Revisions:
+		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
+
+	Param's Explanation:
 	
-	Notes: call tables
+	@TableName :
 		1-bettransRnG
 		2-bettransLC
 		3-translog
@@ -27,11 +33,12 @@ BEGIN
 	SELECT @__winlostdate = CONVERT(VARCHAR(10), GETDATE(), 23)
 
 	EXEC dbo.ExecRep_00 @Winlostdate = @__winlostdate
-		, @Target = 'DBTRANS' -- DBTRANS/REPLICATED
-		, @TableName = @TableName
+			, @Target = 'DBTRANS' -- DBTRANS/REPLICATED
+			, @TableName = @TableName
 
 	EXEC dbo.ExecRep_00 @Winlostdate = @__winlostdate
-		, @Target = 'REPLICATED' -- DBTRANS/REPLICATED
-		, @TableName = @TableName
+			, @Target = 'REPLICATED' -- DBTRANS/REPLICATED
+			, @TableName = @TableName
+
 
 END
