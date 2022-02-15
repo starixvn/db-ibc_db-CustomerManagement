@@ -1,5 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_Ins
+	@IsTest BIT = 0
 AS  
 /*  
 	Created:	20210219@Eden:	
@@ -11,10 +12,12 @@ AS
 	    - 20210219@Eden: First commit [#150298]
 		- 20210301@Eden: If member soccer hdp vr < site value, then insert the members into the VRMemberBigStake [#150298]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 	Examples:
-		EXEC Acc_VR_MemberBigStake_Ins
+		EXEC Acc_VR_MemberBigStake_Ins 
+		@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -47,6 +50,7 @@ BEGIN
 		AND pvs.isActive = 1
 		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
 		--AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) < p.VRValue
+		AND ci.currency = CASE WHEN @IsTest = 1 THEN 20 ELSE ci.currency END
 
 	--Insert members to queue
 	WHILE 0 = 0
@@ -132,25 +136,27 @@ BEGIN
 
 		IF @@ROWCOUNT = 0 BREAK;
 
-		SET @UpdateWL_CustIDList =  ''
+		SELECT @UpdateWL_CustIDList = CONVERT(VARCHAR(MAX),
+				(
+					SELECT c.custid AS '@CustID',
+						   dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) AS '@SoccerHDPVR'
+					FROM Customer c WITH(NOLOCK)
+						INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
+						INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site AND p.Type = @Type
+						INNER JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = c.custid AND v.Type = p.Type
+						INNER JOIN CustVirtualSetting cvs WITH(NOLOCK)
+							ON cvs.custid = ci.custid
+						INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK)
+							ON  cvs.seqNo = pvs.seqNo
+					WHERE pvs.isActive = 1
+						AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
+						AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) >= p.VRValue
+						AND v.Status <> 1
+						AND ci.currency = CASE WHEN @IsTest = 1 THEN 20 ELSE ci.currency END
+					FOR XML PATH('Row'), ROOT ('Root'), TYPE)
+				)
 
-		SELECT @UpdateWL_CustIDList = @UpdateWL_CustIDList + ',' + CONVERT(varchar,c.custid) 
-		FROM Customer c WITH(NOLOCK)
-			INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
-			INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site AND p.Type = @Type
-			INNER JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = c.custid AND v.Type = p.Type
-			INNER JOIN CustVirtualSetting cvs WITH(NOLOCK)
-				ON cvs.custid = ci.custid
-			INNER JOIN  ProfileVirtualSetting pvs WITH(NOLOCK)
-				ON  cvs.seqNo = pvs.seqNo
-		WHERE pvs.isActive = 1
-			AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
-			AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) >= p.VRValue
-			AND v.Status <> 1
-		
-		SELECT @UpdateWL_CustIDList = ISNULL(STUFF(@UpdateWL_CustIDList,1,1,''),'')
-
-		IF @UpdateWL_CustIDList <> ''
+		IF ISNULL(@UpdateWL_CustIDList,'') <> ''
 			EXEC Acc_VR_MemberBigStake_WhiteList_Upd 
 				@CustIDList = @UpdateWL_CustIDList,
 				@Type = @Type,

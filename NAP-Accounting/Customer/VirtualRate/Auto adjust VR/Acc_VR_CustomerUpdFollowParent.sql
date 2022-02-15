@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFollowParent   
+ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFollowParent
 	 @CustIDList VARCHAR(max)
 	,@Sporttype INT
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	
@@ -14,11 +15,16 @@ AS
 		- 20200811@Eden: Adjust VR setting for Other Sports of Haifa, IBO, Mansion88 & Happy8 [redmine: #139229]
 		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 	Examples:
-		EXEC Acc_VR_CustomerUpdFollowParent @CustIDList = '1,2'
+		EXEC Acc_VR_CustomerUpdFollowParent 
+		@CustIDList = '<Root>
+						<Row CustID="1" WL="1000" TotalTO="2000" AIOTO="20000"  />	
+					</Root>'
 		,@Sporttype = 99
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -27,17 +33,59 @@ BEGIN
 	DECLARE @duration int 
 	SET @startRun = getdate()
 
-	DECLARE @Input_CustTbl TABLE ( CustID INT)
-	DECLARE @Update_CustTbl TABLE ( CustID INT, AgentID INT, IsLog BIT DEFAULT 0)
 
-	INSERT INTO @Input_CustTbl(CustID)
-	SELECT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
-	 
+	DECLARE @Input_CustTbl TABLE (
+		CustID  INT, 
+		WL      DECIMAL (19, 4), 
+		TotalTO DECIMAL (19, 4), 
+		AIOTO   DECIMAL (19, 4)
+		)
+
+	DECLARE @Update_CustTbl TABLE(
+		CustID  INT, 
+		AgentID INT, 
+		IsLog   BIT DEFAULT 0, 
+		WL      DECIMAL (19, 4), 
+		TotalTO DECIMAL (19, 4), 
+		AIOTO   DECIMAL (19, 4)
+	)
+
+	DECLARE @DocHandler INT	
+
+	--Parse input XML
+	IF @CustIDList <> ''
+	BEGIN				
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @CustIDList
+
+		INSERT INTO @Input_CustTbl(CustID,WL,TotalTO,AIOTO)
+		SELECT DISTINCT Data.CustID,
+			Data.WL,
+			Data.TotalTO,
+			Data.AIOTO
+		FROM OPENXML (@DocHandler, '/Root/Row',1) 
+		WITH (
+			CustID	INT,
+			WL DECIMAL (19, 4),
+			TotalTO DECIMAL (19, 4),
+			AIOTO DECIMAL (19, 4)
+		) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END	
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @Input_CustTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
+
 	DECLARE @CustID INT
 		, @BasketBallLevelID INT
-		, @Update_CustIDList VARCHAR(MAX) = ''
+		, @WL DECIMAL (19, 4)
+		, @TotalTO DECIMAL (19, 4)
+		, @AIOTO DECIMAL (19, 4)
 
 	SELECT @BasketBallLevelID = levelID
 	FROM VRSettingHierarchy  WITH(NOLOCK)
@@ -46,8 +94,8 @@ BEGIN
 		AND BetType = -1
 
 	--> Scan all members with Status = 2
-	INSERT INTO @Update_CustTbl(CustID,AgentID)
-	SELECT v.custid,c.recommend
+	INSERT INTO @Update_CustTbl(CustID,AgentID,WL,TotalTO,AIOTO)
+	SELECT v.custid,c.recommend,t.WL,t.TotalTO,t.AIOTO
 	FROM VRCustAutoAdjustment v WITH(NOLOCK)
 		 INNER JOIN @Input_CustTbl t ON v.CustID = t.CustID
 		 INNER JOIN custInfo c WITH(NOLOCK) ON t.custid = c.custid AND c.roleid = 1
@@ -163,12 +211,14 @@ BEGIN
 
 	IF @Sporttype = 100 
 		SET @VRLockedStatus_Soccer = 0 --unlock VR lock status for soccer 
-
 	WHILE 1 = 1
 	BEGIN
 		UPDATE TOP (1) @Update_CustTbl
 		SET IsLog = 1,
-			@CustID = CustID
+			@CustID = CustID,
+			@WL = WL,
+			@TotalTO = TotalTO,
+			@AIOTO = AIOTO
 		WHERE IsLog = 0
 
 		IF @@ROWCOUNT = 0
@@ -186,8 +236,11 @@ BEGIN
 		SELECT @LogData = '<R '
 						+ 'Sporttype="'
 									+ CASE WHEN @Sporttype = 100 THEN 'Sportsbook except Esports' ELSE coalesce(cast(@Sporttype as varchar(50)),space(1)) END
-									+ '" ' 
-						+ ' />'
+									+ '" '
+						+ 'WinLoss="' + coalesce(cast(@WL as varchar(50)),space(1)) + '" ' 
+						+ 'TotalTurnover="' + coalesce(cast(@TotalTO as varchar(50)),space(1)) + '" ' 
+						+ 'AIOTurnover="' + coalesce(cast(@AIOTO as varchar(50)),space(1)) + '" ' 
+						+ ' />' 
 		
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 			@UserId				= 0,
@@ -195,21 +248,23 @@ BEGIN
 			@ActionId			= 816,
 			@TrackingValue		= @LogData,
 			@Duration			= @Duration
-
-		SELECT @Update_CustIDList = @Update_CustIDList + ',' + CONVERT(varchar,@CustID)
-
 	END
 	
-	SELECT @Update_CustIDList = STUFF(@Update_CustIDList,1,1,'')
-
 	set @endRun = getdate()  
 	set @duration  = datediff (millisecond,@startRun,@endRun) 
+
 	DECLARE @NewLogData VARCHAR(MAX)
-	SELECT @NewLogData = '<R '
-						+ 'InputCustIDList="'+ coalesce(cast(@CustIDList as varchar(MAX)),space(1)) + '" '
-						+ 'UpdatedCustIDList="'+ coalesce(cast(@Update_CustIDList as varchar(MAX)),space(1)) + '" '
-						+ 'Sporttype="'+ coalesce(cast(@Sporttype as varchar(50)),space(1)) + '" ' 
-						+ ' />'
+	SELECT @NewLogData = CONVERT( VARCHAR(MAX), 
+			(	SELECT  a.CustID AS '@CustID',
+						a.WL AS '@WL', 
+						a.TotalTO AS '@TotalTO',
+						a.AIOTO AS '@AIOTO',
+						CASE WHEN b.custID IS NOT NULL THEN 1 ELSE 0 END  AS '@IsUpdated',
+						@Sporttype AS '@Sporttype'
+				FROM @Input_CustTbl a
+					LEFT JOIN @Update_CustTbl b ON a.CustID = b.CustID
+				FOR XML PATH('Row'), ROOT ('R'), TYPE)
+			)
 
 	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 		@UserId				= 0,

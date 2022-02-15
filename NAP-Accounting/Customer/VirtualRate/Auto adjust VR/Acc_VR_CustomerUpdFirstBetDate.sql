@@ -3,6 +3,7 @@ ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFirstBetDate
 	@CustIDList VARCHAR(max)
 	,@Sporttype INT
 	,@BetDate	DATE
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	
@@ -12,12 +13,15 @@ AS
   
 	Revisions:  
 	    - 20200805@Eden: First commit [#138168]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 	Examples:
-		EXEC Acc_VR_CustomerUpdFirstBetDate @CustIDList = '1,2'
+		EXEC Acc_VR_CustomerUpdFirstBetDate
+		 @CustIDList = '1,2'
 		,@Sporttype = 2
 		,@BetDate = '2020/08/05'
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -31,6 +35,14 @@ BEGIN
 	SELECT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @CustTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 	  
 	UPDATE v
 	SET v.FirstBetDate = @BetDate
