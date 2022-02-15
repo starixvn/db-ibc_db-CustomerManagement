@@ -2,6 +2,7 @@
 ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdAutoAdjustmentStatus   
 	 @CustIDList VARCHAR(max)
 	,@Sporttype INT
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	
@@ -11,11 +12,14 @@ AS
   
 	Revisions:  
 	    - 20200811@Eden: First commit [#139229]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 	Examples:
-		EXEC Acc_VR_CustomerUpdAutoAdjustmentStatus @CustIDList = '1,2'
+		EXEC Acc_VR_CustomerUpdAutoAdjustmentStatus
+		 @CustIDList = '1,2'
 		,@Sporttype = 99
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -30,6 +34,14 @@ BEGIN
 	SELECT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @Input_CustTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 
 	--> Update Status = 4 : Keep VR
 	UPDATE v

@@ -14,6 +14,7 @@ AS
 	Revisions:  
 	    - 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 		ErrorCode table Return:
 			Validate Code
@@ -89,10 +90,13 @@ BEGIN
 		INNER JOIN @ErrorTbl e ON t.Username = e.Username
 
 	DECLARE @CustIDList VARCHAR(MAX) = ''
-	SELECT @CustIDList = @CustIDList + ',' + CONVERT(varchar,c.custid) 
-	FROM @CustTbl c
-		
-	SELECT @CustIDList = ISNULL(STUFF(@CustIDList,1,1,''),'')
+
+	SELECT @CustIDlist = CONVERT(VARCHAR(MAX),
+				(
+					SELECT CustID AS '@CustID'
+					FROM @CustTbl
+					FOR XML PATH('Row'), ROOT ('Root'), TYPE)
+				)
 
 	EXEC Acc_VR_MemberBigStake_WhiteList_Upd 
 			 @CustIDList = @CustIDList

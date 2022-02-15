@@ -4,6 +4,7 @@ ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd
 	,@Type TINYINT
 	,@UpdateType TINYINT = 0 
 	,@UserID INT = 0
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	20210219@Eden:	
@@ -15,6 +16,7 @@ AS
 	    - 20210219@Eden: First commit [#150298]
 		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#150298]
 		- 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 		@Type = 
@@ -27,8 +29,12 @@ AS
 			3: High VR
 
 	Examples:
-		EXEC Acc_VR_MemberBigStake_WhiteList_Upd @CustIDList = '1,4935,5029,5052'
+		EXEC Acc_VR_MemberBigStake_WhiteList_Upd 
+			@CustIDList  = '<Root>
+								<Row CustID="1" WL="1000" Credit="1000" SoccerHDPVR="1.00" />	
+							</Root>'
 			,@Type = 1
+
 	
 */  
 BEGIN  
@@ -38,13 +44,50 @@ BEGIN
 	DECLARE @duration int 
 	SET @startRun = getdate()
 
-	DECLARE @CustTbl TABLE ( CustID INT PRIMARY KEY)
-	DECLARE @Whitelist_TBL TABLE (CustID INT PRIMARY KEY, IsLog BIT Default 0)
+	DECLARE @CustTbl TABLE ( 
+		CustID		INT PRIMARY KEY,
+		WL			DECIMAL (19, 4),
+		Credit		MONEY,
+		SoccerHDPVR SMALLMONEY
+	)
+	DECLARE @Whitelist_TBL TABLE (
+		CustID INT PRIMARY KEY,
+		WL			DECIMAL (19, 4),
+		Credit		MONEY,
+		SoccerHDPVR SMALLMONEY,
+		IsLog		BIT Default 0
+	)
 
-	INSERT INTO @CustTbl(CustID)
-	SELECT DISTINCT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
+	DECLARE @DocHandler INT	
+
+	--Parse input XML
+	IF @CustIDList <> ''
+	BEGIN				
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @CustIDList
+
+		INSERT INTO @CustTbl(CustID,WL,Credit,SoccerHDPVR)
+		SELECT DISTINCT Data.CustID,
+			Data.WL,
+			Data.Credit,
+			Data.SoccerHDPVR
+		FROM OPENXML (@DocHandler, '/Root/Row',1) 
+		WITH (
+			CustID		INT,
+			WL			DECIMAL (19, 4),
+			Credit		MONEY,
+			SoccerHDPVR SMALLMONEY
+		) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END	
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @CustTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 
 	--> Update Status = 1
 	UPDATE v
@@ -75,8 +118,18 @@ BEGIN
 	IF NOT EXISTS( SELECT 1 FROM @Whitelist_TBL)
 		RETURN 
 
+	UPDATE t
+	SET t.WL = m.WL,
+		t.SoccerHDPVR = m.SoccerHDPVR,
+		t.Credit = m.Credit
+	FROM @Whitelist_TBL t
+		INNER JOIN @CustTbl m ON t.CustID = m.CustID
+
 	DECLARE @NewLogData VARCHAR(MAX)
-	DECLARE @custID INT
+	DECLARE @custID		INT,
+			@WL			DECIMAL (19, 4),
+			@Credit		MONEY,
+			@SoccerHDPVR SMALLMONEY
 
 	--Log Update VR for each customer
 	BEGIN
@@ -84,7 +137,10 @@ BEGIN
 		BEGIN
 			UPDATE TOP(1)  c
 			SET c.islog = 1,
-				@custID = c.CustID
+				@custID = c.CustID,
+				@WL = c.WL,
+				@Credit = c.Credit,
+				@SoccerHDPVR = c.SoccerHDPVR
 			FROM @Whitelist_TBL c
 			WHERE Islog = 0
 
@@ -101,6 +157,11 @@ BEGIN
 												WHEN @UpdateType = 3 THEN 'High VR'
 												ELSE 'Winloss'
 											END+ '" '
+								+ CASE	WHEN @UpdateType = 1 THEN 'Credit="' + coalesce(cast(@Credit as varchar(50)),space(1)) + '" '
+												WHEN @UpdateType = 3 THEN 'SoccerHdpVirtualMultiplier="' + coalesce(cast(@SoccerHDPVR as varchar(50)),space(1)) + '" '
+												WHEN @UpdateType = 0 THEN 'WinLoss="' + coalesce(cast(@WL as varchar(50)),space(1)) + '" '
+												ELSE ''
+											END
 								+ ' />'
 	
 			EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
@@ -121,7 +182,11 @@ BEGIN
 							WHEN @UpdateType  = 2 THEN 'WhiteListByManual'
 							WHEN @UpdateType  = 3 THEN 'WhiteListByHighVR'
 							ELSE 'WhiteListByWinLoss' 
-						END AS '@Action'
+						END AS '@Action',
+						CASE WHEN @UpdateType  = 1 THEN Credit
+							WHEN @UpdateType  = 0 THEN WL
+							WHEN @UpdateType  = 3 THEN SoccerHDPVR
+						END AS '@Value'
 				FROM @Whitelist_TBL
 				FOR XML PATH('Row'), ROOT ('R'), TYPE)
 			)

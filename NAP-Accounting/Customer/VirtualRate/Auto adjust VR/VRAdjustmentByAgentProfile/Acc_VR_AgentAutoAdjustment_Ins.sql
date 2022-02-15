@@ -1,5 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	dbo.Acc_VR_AgentAutoAdjustment_Ins   
+ALTER PROCEDURE	dbo.Acc_VR_AgentAutoAdjustment_Ins
+	@IsTest BIT = 0 
 AS  
 /*  
 	Created:	20200827@Eden:	
@@ -9,6 +10,7 @@ AS
   
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 	Examples:
@@ -33,37 +35,13 @@ BEGIN
 		AND c.creatdate BETWEEN DATEADD(hh,-25,GETDATE()) AND GETDATE()
 		AND NOT EXISTS( SELECT 1 FROM VRAgentAutoAdjustment v WITH(NOLOCK) WHERE v.AgentID = c.custid AND v.Type = p.Type)
 		AND c.creatdate >= p.ReleaseDate
+		AND c.currency = CASE WHEN @IsTest = 1 THEN 20 ELSE c.currency END
 
 	IF NOT EXISTS( SELECT 1 FROM @Inserted_Agent)
 		RETURN
 
 	DECLARE @AgentID INT, @Type TINYINT
 	DECLARE @NewLogData VARCHAR(MAX)
-
-	--WHILE 1 = 1
-	--BEGIN
-	--	UPDATE TOP(1)  c
-	--	SET c.islog = 1,
-	--		@AgentID = c.AgentID,
-	--		@Type = c.Type
-	--	FROM @Inserted_Agent c
-	--	WHERE Islog = 0
-
-	--	IF @@ROWCOUNT = 0 BREAK;
-
-	--	SELECT @NewLogData = '<R '
-	--						+ 'Type="'
-	--								+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
-	--										ELSE space(1) 
-	--									END+ '" '
-	--						+ ' />'
-	
-	--	EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
-	--		@UserId				= 0,
-	--		@custID				= @AgentID,
-	--		@ActionId			= 819,
-	--		@TrackingValue		= @NewLogData
-	--END
 
 	SET @endRun = getdate()  
 	SET @duration  = datediff (millisecond,@startRun,@endRun) 

@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Flag   
 	@Type TINYINT
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	20200827@Eden
@@ -14,12 +15,15 @@ AS
 		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20210830@Eden: Max Payout Per Match [redmine: #158073]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
 	Examples:
-		EXEC Acc_VR_AbnormalAgent_Flag @Type = 1
+		EXEC Acc_VR_AbnormalAgent_Flag 
+		 @Type = 1
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -46,6 +50,14 @@ BEGIN
 	WHERE v.Type = @Type
 		AND c.creatdate >= CONVERT(DATE,GETDATE() - 3)
 		AND v.Status = 0
+		
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @AgentTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 
 	/* -- Start : Delete Agents who have VR = 0 or VR is disable
 	DECLARE @temp TABLE (CustID INT PRIMARY KEY)

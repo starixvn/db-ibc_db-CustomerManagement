@@ -2,6 +2,7 @@
 ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Unflag   
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	20200827@Eden
@@ -13,13 +14,18 @@ AS
 	    - 20200827@Eden: First commit [#140421]
 		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
 	Examples:
-		EXEC Acc_VR_AbnormalAgent_Unflag @CustIDList = '1,2'
+		EXEC Acc_VR_AbnormalAgent_Unflag 
+		@CustIDList  = '<Root>
+							<Row CustID="1" TotalWL="1000" />	
+						</Root>'
 		,@Type = 1
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -28,20 +34,41 @@ BEGIN
 	DECLARE @duration int 
 	SET @startRun = getdate()
 
-	DECLARE @AgentTbl TABLE ( CustID INT PRIMARY KEY)
-	--DECLARE @Update_CustTbl TABLE ( CustID INT, AgentID INT, IsLog BIT DEFAULT 0)
+	DECLARE @AgentTbl TABLE ( CustID INT PRIMARY KEY, TotalWL DECIMAL (19, 4))
 
-	INSERT INTO @AgentTbl(CustID)
-	SELECT DISTINCT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
+	DECLARE @DocHandler INT	
+
+	--Parse input XML
+	IF @CustIDList <> ''
+	BEGIN				
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @CustIDList
+
+		INSERT INTO @AgentTbl(CustID,TotalWL)
+		SELECT DISTINCT Data.CustID,
+			Data.TotalWL
+		FROM OPENXML (@DocHandler, '/Root/Row',1) 
+		WITH (
+			CustID	INT,
+			TotalWL DECIMAL (19, 4)
+		) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+	END	
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @AgentTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 
 	DELETE t
 	FROM VRAgentAutoAdjustment v WITH(NOLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type
 		AND v.Status <> 2
-
+		
 	--/* Start : Delete Agents list who have VR <> 0 
 	DECLARE @temp TABLE (CustID INT PRIMARY KEY)
 	INSERT INTO @TEMP(CustID)
@@ -65,7 +92,7 @@ BEGIN
 	FROM @AgentTbl t
 		INNER JOIN custInfo c WITH(NOLOCK) ON c.recommend = t.CustID 
 	WHERE c.Enabled = 1
-
+	
 	----Exclude list of Auto Update VR Job 
 	--DELETE t
 	--FROM @Update_CustTbl t
@@ -172,15 +199,17 @@ BEGIN
 	WHERE v.Type = @Type
 
 	DECLARE @NewLogData VARCHAR(MAX)
-	DECLARE @custID INT
+	DECLARE @custID INT, @TotalWL DECIMAL (19, 4)
 	--Log Update VR for each customer + Unlock VR status
 	WHILE 1 = 1
 	BEGIN
 		UPDATE TOP(1)  c
 		SET c.islog = 1,
-			@custID = c.CustID
+			@custID = c.CustID,
+			@TotalWL = a.TotalWL
 		FROM @Update_CustTbl c
-		WHERE Islog = 0
+			LEFT JOIN @AgentTbl a ON c.CustID = a.CustID
+		WHERE c.Islog = 0
 
 		IF @@ROWCOUNT = 0 BREAK;
 
@@ -198,6 +227,7 @@ BEGIN
 									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
 											ELSE space(1) 
 										END+ '" '
+							+ ISNULL('TotalMemberWL="' + cast(@TotalWL as varchar(50)) + '" ', '') 
 							+ ' />'
 	
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
@@ -212,7 +242,8 @@ BEGIN
 
 	SELECT @NewLogData = CONVERT( VARCHAR(MAX), 
 			(	SELECT  CustID AS '@AgentID',
-						@Type AS '@Type' 
+						@Type AS '@Type',
+						@TotalWL AS '@TotalWL'
 				FROM @AgentTbl
 				FOR XML PATH('Row'), ROOT ('R'), TYPE)
 		)

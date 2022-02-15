@@ -12,6 +12,7 @@ AS
   
 	Revisions:  
 	    - 20200827@Eden: First commit [#140421]
+		- 20220105@Eden: unused SP [Redmine:#166626]
 
 	Param's Explanation:  
 		@Type = 
@@ -22,6 +23,7 @@ AS
 		,@BetDate = '2020/08/05'
 */  
 BEGIN  
+	/*
 	SET NOCOUNT ON  
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
@@ -56,6 +58,7 @@ BEGIN
 		@ActionId			= 818,
 		@TrackingValue		= @NewLogData,
 		@Duration			= @Duration
-
+	*/
+	RETURN
 END
 GO

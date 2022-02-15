@@ -3,6 +3,7 @@ ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_FirstBetDate_Upd
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
 	,@BetDate	DATE
+	,@IsTest BIT = 0
 AS  
 /*  
 	Created:	20210219@Eden:	
@@ -15,6 +16,7 @@ AS
 		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#152095]
 		- 20210323@Eden: Enhancement for VR Member Big Stake [#150298]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
+		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 
 	Param's Explanation:  
 		@Type = 
@@ -23,6 +25,7 @@ AS
 		EXEC Acc_VR_MemberBigStake_FirstBetDate_Upd @CustIDList = '1,4935,5029'
 		,@Type = 1
 		,@BetDate = '2021/02/19'
+		,@IsTest = 1
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -38,6 +41,14 @@ BEGIN
 	SELECT DISTINCT p.val
 	FROM dbo.f_StringSplit(@CustIDList,',') p
 	OPTION (MAXRECURSION 0)
+
+	IF @IsTest = 1 -- UUS only 
+	BEGIN
+		DELETE t
+		FROM @InputCustTbl t
+			INNER JOIN custInfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		WHERE ci.currency <> 20
+	END
 	  
 	UPDATE v
 	SET v.FirstBetDate = @BetDate
@@ -53,9 +64,9 @@ BEGIN
 
 	--White list by Credit
 	BEGIN
-		--Update Status = 1 for members with credit < RMCredit Config
-		DECLARE @UpdateWL_CustIDList VARCHAR(MAX) = ''
-		SELECT @UpdateWL_CustIDList = @UpdateWL_CustIDList + ',' + CONVERT(varchar,c.custid) 
+		SELECT c.custid,
+			ci.credit
+		INTO #WL_Tbl
 		FROM Customer c WITH(NOLOCK)
 			INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
 			INNER JOIN @UpdatedCustTbl t ON c.CustID = t.CustID
@@ -64,10 +75,19 @@ BEGIN
 			INNER JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = c.custid AND v.Type = p.Type
 		WHERE ci.credit <= p.credit / (CASE WHEN ci.currency <> 20 THEN  e.actualrate ELSE 1 END)
 			AND v.FirstBetDate IS NOT NULL
-		
-		SELECT @UpdateWL_CustIDList = ISNULL(STUFF(@UpdateWL_CustIDList,1,1,''),'')
 
-		IF @UpdateWL_CustIDList <> ''
+		--Update Status = 1 for members with credit < RMCredit Config
+		DECLARE @UpdateWL_CustIDList VARCHAR(MAX) = ''
+
+		SELECT @UpdateWL_CustIDList = CONVERT(VARCHAR(MAX),
+				(
+					SELECT c.custid AS '@CustID',
+						   c.credit AS '@Credit'
+					FROM #WL_Tbl c
+					FOR XML PATH('Row'), ROOT ('Root'), TYPE)
+				)
+
+		IF ISNULL(@UpdateWL_CustIDList,'') <> ''
 			EXEC Acc_VR_MemberBigStake_WhiteList_Upd 
 				@CustIDList = @UpdateWL_CustIDList,
 				@Type = @Type,
@@ -83,8 +103,7 @@ BEGIN
 	INSERT INTO @UpdatedCustTbl_NotWL(CustID)
 	SELECT t.CustID
 	FROM @UpdatedCustTbl t
-	WHERE t.CustID NOT IN (SELECT p.val FROM dbo.f_StringSplit(@UpdateWL_CustIDList,',') p )
-	OPTION (MAXRECURSION 0)
+	WHERE t.CustID NOT IN (SELECT custid FROM #WL_Tbl)
 	
 	BEGIN
 		WHILE 1 = 1
@@ -130,6 +149,8 @@ BEGIN
 		@ActionId			= 826,
 		@TrackingValue		= @NewLogData,
 		@Duration			= @Duration
+
+	DROP TABLE #WL_Tbl
 
 END
 GO
