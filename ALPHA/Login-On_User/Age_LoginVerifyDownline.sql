@@ -1142,7 +1142,7 @@ BEGIN
 	-- Successful  
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
-		iplogin = CASE WHEN @db_loginip<>'' THEN @inputLoginIP ELSE '' END, 		
+		iplogin = @inputLoginIP, 		
 		lastlogged = CURRENT_TIMESTAMP 
 	WHERE custid = @db_custid  
 
