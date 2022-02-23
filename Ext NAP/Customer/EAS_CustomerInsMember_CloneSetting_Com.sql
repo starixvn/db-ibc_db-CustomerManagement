@@ -97,7 +97,8 @@ BEGIN
 			,@Enabled BIT
 			,@currency INT
 			,@site VARCHAR(10)			
-	
+			,@EnableVR BIT
+
 	SELECT @existingUsername =  ISNULL(username,''), 
 		@roleid = ISNULL(roleid,0), 
 		@Enabled = ISNULL(Enabled, 0), 
@@ -319,6 +320,8 @@ BEGIN
 	FROM dbo.exchange WITH (NOLOCK) 
 	WHERE exchangeid = @currency
 	
+	SELECT @EnableVR = EnableVR FROM f_GenerateVirtualStatusBySite (@site)
+
 	BEGIN TRY
 		-- insert CustInfo info
 		INSERT INTO dbo.custInfo
@@ -377,7 +380,7 @@ BEGIN
 				,@Credit AS Credit
 				--,closed
 				,MatchLimit
-				,0 AS VirtualMultiplier
+				,@EnableVR AS VirtualMultiplier
 				,0
 				,0
 				,0
