@@ -9,7 +9,7 @@ ALTER PROCEDURE dbo.NAP_CWL_Update_Settings
 	@Level3    MONEY, 
 	@Level101  MONEY, 
 	@Level102  MONEY, 
-	@Currency  VARCHAR(500) = '' ---
+	@Currency  VARCHAR(MAX) = '' ---
 AS
 
 /*	
@@ -18,8 +18,8 @@ AS
 	DB		 : DBCUST.CustDB
 	
 	Revisions	 : 
-				- 20180531@Robert: Update CWL Settings
-				- 20220215@Robert: Update CWL Setting by Currency
+				- 20180531@Robert: Update CWL Settings				
+				- 20220223@Johnson: Global setting by currency [#168583]
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -86,21 +86,24 @@ AS
 				  102 AS LevelId, 
 				  @Level102 AS Level;
 
-	 --  UPDATE g
-		--SET 
-		--    Level1 = @Level1, 
-		--    Level2 = @Level2, 
-		--    level3 = @Level3, 
-		--    Level101 = @Level101, 
-		--    Level102 = @Level102
-	 --  FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
-	 --  WHERE 
-		--    ProductID = @ProductId
-		--    AND GroupID = @GroupId;
-
 	   IF(@Currency = '')
 		  BEGIN
-
+			UPDATE g
+			SET 
+				Level1 = @Level1, 
+				Level2 = @Level2, 
+				level3 = @Level3, 
+				Level101 = @Level101, 
+				Level102 = @Level102
+			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
+			WHERE 
+				ProductID = @ProductId
+				AND GroupID = @GroupId
+				AND g.Currency NOT IN (SELECT currency FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
+											WHERE ProductID = @ProductId
+												AND GroupID = @GroupId
+												AND currency <> 0
+											)
 			 UPDATE psd
 			   SET 
 				  psd.MaxWinLimit_RM = l.Level, 
@@ -115,10 +118,31 @@ AS
 			 WHERE 
 				  psd.MaxWinLimit_RM IS NOT NULL
 				  AND psd.ProductID = @ProductId
-				  AND psd.GroupID = @GroupId;
+				  AND psd.GroupID = @GroupId
+				  AND psd.ExchangeID NOT IN (SELECT currency FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
+											WHERE ProductID = @ProductId
+												AND GroupID = @GroupId
+												AND currency <> 0
+											);
 		  END;
 		  ELSE
 		  BEGIN
+			UPDATE g
+			SET 
+				Level1 = @Level1, 
+				Level2 = @Level2, 
+				level3 = @Level3, 
+				Level101 = @Level101, 
+				Level102 = @Level102
+			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
+			WHERE 
+				ProductID = @ProductId
+				AND GroupID = @GroupId
+				AND g.Currency IN (SELECT ExchangeId 
+									FROM Exchange e WITH(NOLOCK) 
+									INNER JOIN @tblCurrency c ON e.currency = c.Currency
+									)
+											
 			 UPDATE psd
 			   SET 
 				  psd.MaxWinLimit_RM = l.Level, 
