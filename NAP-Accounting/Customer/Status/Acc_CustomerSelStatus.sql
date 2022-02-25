@@ -108,13 +108,13 @@ Param's Explanation:
 	
 	BEGIN TRY
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType g WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBACC.bodb02.dbo.GameType g WITH (NOLOCK)
 		WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
 		
 	END TRY
 	BEGIN CATCH
 		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBACC.bodb02.dbo.GameType g WITH (NOLOCK)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType g WITH (NOLOCK)
 		WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
 		
 	END CATCH
