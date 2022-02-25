@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelStatus]
 	@CustID		INT,
 	@AdminID	INT			= 0,
@@ -10,7 +10,7 @@ BEGIN
 /*
 Created: 20090125@nqminh
 Task : Select customer's status
-DB: DBACC.bodb02
+DB: DBCUST-CustDB
 Original: 
 
 Revisions:
@@ -92,6 +92,7 @@ Revisions:
 	- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211203@Johnson: Add Cashout [redmine:#164902]
+	- 20220225@Winfred: Migrate Sp DBCUST [redmine:#168849]
 
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -594,7 +595,7 @@ Param's Explanation:
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
-		LEFT JOIN dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
+		LEFT JOIN DBACC.bodb02.dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
 		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, ISNULL(Locked,0) Locked
