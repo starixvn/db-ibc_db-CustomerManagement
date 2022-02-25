@@ -105,18 +105,19 @@ Param's Explanation:
 
 	----- 20150610@Kos -------------------
 	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)	
-	INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType g WITH (NOLOCK)
-	WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
 	
-	--BEGIN TRY
-		--INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		--SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM dbo.GameType WITH (NOLOCK)
-	--END TRY
-	--BEGIN CATCH
-	--	INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-	--	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK)
-	--END CATCH
+	BEGIN TRY
+		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType g WITH (NOLOCK)
+		WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
+		
+	END TRY
+	BEGIN CATCH
+		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
+		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBACC.bodb02.dbo.GameType g WITH (NOLOCK)
+		WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
+		
+	END CATCH
 	----- 20150610@Kos -------------------
 
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
