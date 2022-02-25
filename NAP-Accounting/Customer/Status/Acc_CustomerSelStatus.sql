@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelStatus]
 	@CustID		INT,
 	@AdminID	INT			= 0,
@@ -10,7 +10,7 @@ BEGIN
 /*
 Created: 20090125@nqminh
 Task : Select customer's status
-DB: DBCUST-CustDB
+DB: DBACC.bodb02
 Original: 
 
 Revisions:
