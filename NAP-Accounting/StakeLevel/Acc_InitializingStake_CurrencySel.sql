@@ -3,14 +3,15 @@ CREATE PROCEDURE [dbo].[Acc_InitializingStake_CurrencySel]
 	-- Add the parameters for the stored procedure here
 	  @Mode	tinyint = 0	 -- 0: All, 1 : Credit, 2 :Deposit
 AS
-BEGIN
-	/*
+/*
 		Task : NAP -  Flexible Initializing Stake Level
 		DB: DBCUST/CustDB
 		Original: 
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
 	*/
+BEGIN
+	
 	SET NOCOUNT ON;
 				
 	SELECT 
