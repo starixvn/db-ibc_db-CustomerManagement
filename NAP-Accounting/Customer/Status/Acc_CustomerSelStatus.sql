@@ -104,8 +104,11 @@ Param's Explanation:
 	SET NOCOUNT ON
 
 	----- 20150610@Kos -------------------
-	--DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)	
-
+	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)	
+	INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
+	SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType g WITH (NOLOCK)
+	WHERE g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
+	
 	--BEGIN TRY
 		--INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
 		--SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM dbo.GameType WITH (NOLOCK)
@@ -595,7 +598,7 @@ Param's Explanation:
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		LEFT JOIN CustGameType cg WITH(NOLOCK) ON ci.custid = cg.custid
-		LEFT JOIN DBACC.bodb02.dbo.GameType g WITH(NOLOCK) ON cg.GameTypeID = g.GameTypeID and g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0
+		LEFT JOIN @tmp_GameType g ON cg.GameTypeID = g.GameTypeID
 		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, ISNULL(Locked,0) Locked
