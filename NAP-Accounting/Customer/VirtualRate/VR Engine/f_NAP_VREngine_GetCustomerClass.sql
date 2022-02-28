@@ -9,7 +9,8 @@ RETURNS TABLE
 	Original:
 
 	Revisions:  
-	- 20210428@Eden: First commit [Redmine:#136423]
+		- 20210428@Eden: First commit [Redmine:#136423]
+		- 20220228@Elodie: Add new class 131,132 [Redmine:#169232]
 
 	Parameter explanation:	
 
