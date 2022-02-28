@@ -52,5 +52,7 @@ RETURN
 	SELECT 11, 'Bonus Hunter' UNION ALL
 	SELECT 12, 'Info Bet' UNION ALL
 	SELECT 13, 'Robot User' UNION ALL
-	SELECT 100, 'VVIP internal'
+	SELECT 100, 'VVIP internal' UNION ALL
+	SELECT 131, 'Bad Robot' UNION ALL
+	SELECT 132, 'Good Robot'
 GO
