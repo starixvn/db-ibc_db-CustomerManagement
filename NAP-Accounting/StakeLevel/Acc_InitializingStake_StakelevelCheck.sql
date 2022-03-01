@@ -2,34 +2,34 @@
 ALTER PROCEDURE [dbo].[Acc_InitializingStake_StakelevelCheck] 
 	-- Add the parameters for the stored procedure here
 	 @InputData				VARCHAR(MAX) = ''
-	,@Language				VARCHAR(2) = 'E'
 	,@NotiCode				INT = 0				OUTPUT
+	,@NotiMsg				NVARCHAR(4000) = '' OUTPUT
 	,@ErrCode				INT = 0				OUTPUT
 	,@ErrMsg				NVARCHAR(4000) = '' OUTPUT
 AS
 /*
-		Task : NAP -  Flexible Initializing Stake Level
-		DB: DBCUST/CustDB
-		Original: 
-		Revisions:
-			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
-		
-		Param's Explanation:
-			• @pInputData : 
-			<ROOT>
-				<BetLimit 
-						SportType="1" 
-						BetType="1"
-						CreditCurrency = "US$, Yen, $US, UT, USD" 
-						DepositCurrency = "US$, USDT"
-						NewMinBet="1" 
-						NewMaxBet="30000" 
-						CurMinBet="30000" 
-						CurMaxBet="30000" 
-						GameGroupID="30000" 
-				/>
-		</ROOT>
-	*/
+	Task : NAP -  Flexible Initializing Stake Level 
+	DB: DBCUST/CustDB
+	Original: 
+	Revisions:
+		- 20220210@Winfred: NAP -  Flexible Initializing check Stake Level [Redmine: #167128]
+	
+	Param's Explanation:
+		• @pInputData : 
+		<ROOT>
+			<BetLimit 
+					SportType="1" 
+					BetType="1"
+					CreditCurrency = "US$, Yen, $US, UT, USD" 
+					DepositCurrency = "US$, USDT"
+					NewMinBet="1" 
+					NewMaxBet="30000" 
+					CurMinBet="30000" 
+					CurMaxBet="30000" 
+					GameGroupID="30000" 
+			/>
+	</ROOT>
+*/
 BEGIN
 	SET NOCOUNT ON;
 	
@@ -66,11 +66,12 @@ BEGIN
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128))
 	CREATE TABLE #Sports(SportType TINYINT PRIMARY KEY, SportName NVARCHAR(50))
 	CREATE TABLE #Currency(Currency	VARCHAR(50))
+	CREATE TABLE #RowDuplicate(RowIDF INT, RowIDT INT)
 	
 	IF @InputData IS NULL OR @InputData = ''
 		RETURN
 	
-	SELECT	@ErrCode	= 0 , @ErrMsg = '' , @NotiCode = 0
+	SELECT	@ErrCode	= 0 , @ErrMsg = '' , @NotiCode = 0 ,  @NotiMsg = ''
 	
 	--Parse XML data
 	DECLARE @iDoc INT
@@ -195,9 +196,7 @@ BEGIN
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
-		
-	SELECT * FROM #NewInputDateTbl order by RowID,SportType,BetType, Currency,CurMinBet,NewMinBet	
-		
+	
 	SELECT TOP(1) @ErrCode = 107 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SportType AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.SettingType,0) = 0 OR NOT EXISTS( SELECT TOP 1 1 FROM #Sports WHERE SportType =  tmp.SportType)
@@ -218,7 +217,7 @@ BEGIN
 	
 	SELECT TOP(1) @ErrCode = 109 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE ISNULL(tmp.Currency,'') <> '' AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,1))
+	WHERE ISNULL(tmp.Currency,'') <> '' AND tmp.IsCredit = 1 AND  NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency  AND IsActive = 1 AND OfferSite IN (0,1))
 	IF 	@ErrCode = 109			
 	BEGIN
 		SELECT @ErrMsg = 'The Credit Currency ' + @ValueError + ' does not exist.' 
@@ -227,7 +226,7 @@ BEGIN
 	
 	SELECT TOP(1) @ErrCode = 110 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE ISNULL(tmp.Currency,'') <> '' AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,2))
+	WHERE ISNULL(tmp.Currency,'') <> ''  AND tmp.IsCredit = 0 AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,2))
 	IF 	@ErrCode = 110			
 	BEGIN
 		SELECT @ErrMsg = 'The Deposit Currency ' + @ValueError + ' does not exist.' 
@@ -260,7 +259,7 @@ BEGIN
 	SELECT TOP(1) @ErrCode = 113 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.GameGroupID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType IN (8)  AND NOT EXISTS( SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
-									WHERE RefSportType =  tmp.SportType AND RefBetType = BetType AND GameGroupID = tmp.GameGroupID
+									WHERE RefSportType =  tmp.SportType AND RefBetType = OrgBetType AND GameGroupID = tmp.GameGroupID
 									AND ((tmp.IsCredit = 1 AND IsDeposit = 0) OR (tmp.IsCredit = 0 AND IsDeposit = 1)))
 	IF 	@ErrCode = 113			
 	BEGIN
@@ -303,32 +302,7 @@ BEGIN
 		SELECT @ErrMsg = 'You input missing data with the product''''s format. Please input data on Current Max Bet.'  
 		RETURN
 	END
-	
---===========================================================================================================	
-	--SELECT @AffectedList =  STUFF((SELECT DISTINCT ',' + cast(custid AS VARCHAR(10))
-	--								FROM @tmpCust
-	--								FOR XML PATH('')), 1, 1, '')
 
-
-
-	SELECT TOP(1) @NotiCode = 100 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE ISNULL(tmp.Currency,'') <> '' AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,1))
-	IF 	@NotiCode = 100			
-	BEGIN
-		SELECT @ErrMsg = 'The Credit Currency ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
-	
-	SELECT TOP(1) @ErrCode = 110 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE ISNULL(tmp.Currency,'') <> '' AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,2))
-	IF 	@ErrCode = 110			
-	BEGIN
-		SELECT @ErrMsg = 'The Deposit Currency ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
-	
 	INSERT INTO #Currency (Currency)
 	SELECT tmp.Currency
 	FROM #NewInputDateTbl tmp
@@ -341,23 +315,29 @@ BEGIN
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #Currency )			
 	BEGIN
 		SET @NotiCode = 100
-		SELECT @ErrMsg = '"there are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
+		SELECT @NotiMsg = 'there are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
 									FROM #Currency
 									FOR XML PATH('')), 1, 1, '')
 		
 	END
 	
-	SELECT TOP(1) @ErrCode = 110 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
+	INSERT INTO #RowDuplicate(RowIDF,RowIDT)
+	SELECT DISTINCT tmp.RowID , ndt.RowID
 	FROM #NewInputDateTbl tmp
 	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.OrgBetType = ndt.OrgBetType 
-				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.CurMinBet = ndt.CurMinBet AND tmp.CurMaxBet = ndt.CurMaxBet
-	WHERE ISNULL(tmp.Currency,'') <> '' AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,2))
-	IF 	@ErrCode = 110			
+				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.CurMinBet = ndt.CurMinBet AND tmp.CurMaxBet = ndt.CurMaxBet AND tmp.GameGroupID  = ndt.GameGroupID
+	WHERE tmp.RowID <  ndt.RowID
+	IF 	EXISTS(	SELECT TOP 1 1 FROM #RowDuplicate )			
 	BEGIN
-		SELECT @ErrMsg = 'row <row id>, row <row id>: these rows have duplicate data' 
+		SET @ErrCode = 118
+		SELECT @ErrMsg = STUFF((SELECT ', row ' + cast(RowIDF AS nvarchar(50)) + ' - row ' + cast(RowIDT AS nvarchar(50)) 
+									FROM #RowDuplicate tmp
+									ORDER BY RowIDF
+									FOR XML PATH('')), 1, 1, '') + ' : these rows have duplicate data' 
 		RETURN
 	END	
 	
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #Currency
+	DROP TABLE #RowDuplicate
 END								
