@@ -13,6 +13,7 @@ AS
 
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
+		- 20220301@Malcolm: Fix Logs [RedmineID: #163417]
 
 	Param's Explanation:
 		. @Exhange 
@@ -65,7 +66,7 @@ BEGIN
 		
 		SELECT @OldActualrate = OldActualrate, @NewActualrate = NewActualrate, @Exchangeid = ExchangeId FROM #LogExchange WHERE ID = @ID
 		
-		SELECT @LogData = 'Update exchange rate: newRMRate=' + ISNULL(CONVERT(VARCHAR(10), @OldActualrate), '') +',oldRMRate=' + ISNULL(CONVERT(VARCHAR(10), @NewActualRate), '')
+		SELECT @LogData = 'Update exchange rate: newRMRate=' + ISNULL(CONVERT(VARCHAR(10), @NewActualRate), '') +',oldRMRate=' + ISNULL(CONVERT(VARCHAR(10), @OldActualrate), '')
 		
 		EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 			@UserID		= @UserID, 
