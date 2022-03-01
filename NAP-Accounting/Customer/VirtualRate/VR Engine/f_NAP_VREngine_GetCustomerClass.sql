@@ -9,7 +9,8 @@ RETURNS TABLE
 	Original:
 
 	Revisions:  
-	- 20210428@Eden: First commit [Redmine:#136423]
+		- 20210428@Eden: First commit [Redmine:#136423]
+		- 20220228@Elodie: Add new class 131,132 [Redmine:#169232]
 
 	Parameter explanation:	
 
@@ -52,5 +53,7 @@ RETURN
 	SELECT 11, 'Bonus Hunter' UNION ALL
 	SELECT 12, 'Info Bet' UNION ALL
 	SELECT 13, 'Robot User' UNION ALL
-	SELECT 100, 'VVIP internal'
+	SELECT 131, 'Bad Robot' UNION ALL
+	SELECT 132, 'Good Robot' UNION ALL
+	SELECT 100, 'VVIP internal' 	
 GO
