@@ -61,7 +61,7 @@ BEGIN
 			, CurMinBet		DECIMAL(19,8)
 			, CurMaxBet		DECIMAL(19,8)
 			, GameGroupID	INT
-			, IsCredit		BIT Default((0))
+			, IsCredit		BIT DEFAULT((0))
 			, SettingType	SMALLINT
 		)
 	
@@ -92,9 +92,8 @@ BEGIN
 			)
 	EXEC sp_xml_removedocument @iDoc
 	
-	INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, NewMinBet, NewMaxBet, CurMinBet	
-								, CurMaxBet, GameGroupID, IsCredit)
-	SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 1 AS IsCredit 
+	INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, IsCredit)
+	SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 1 AS IsCredit
 	FROM @NewStakeLevelTbl nsl
 		CROSS APPLY (
 				SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.CreditCurrency, ',')
@@ -111,9 +110,13 @@ BEGIN
 	UPDATE a 
 	SET a.ExchangeId = CASE WHEN a.IsCredit = 1 AND e.OfferSite IN (0,1) THEN e.ExchangeId
 							WHEN a.IsCredit = 0 AND e.OfferSite IN (0,2) THEN e.ExchangeId
-						ELSE NULL END,
-		a.MinLabel	= 	CAST(CAST(NewMinBet AS money) AS VARCHAR(50)),
-		a.MaxLabel	=	CONVERT(VARCHAR(20),CONVERT(FLOAT,NewMaxBet)) --NewMaxBet		
+						ELSE NULL END
+		,a.MinLabel  =  CASE WHEN CAST(NewMinBet AS BIGINT) < NewMinBet 
+						THEN REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0') 
+						ELSE REPLACE(REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0'),'.','') END 
+		,a.MaxLabel  =  CASE WHEN CAST(NewMaxBet AS BIGINT) < NewMaxBet 
+						THEN REPLACE(RTRIM(REPLACE(NewMaxBet, '0', ' ')), ' ', '0') 
+						ELSE REPLACE(REPLACE(RTRIM(REPLACE(NewMaxBet, '0', ' ')), ' ', '0'),'.','') END 								
 	FROM  #NewInputDateTbl a
 		INNER JOIN Exchange e WITH(NOLOCK) ON a.Currency = e.currency
 	
@@ -131,13 +134,85 @@ BEGIN
 	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
 	
 	-- Credit Group Stake Level
+	--INSERT INTO StakeLevel(GameTypeID,ExchangeId,GameGroupID)
+	SELECT a.OrgBetType AS GameTypeID,ExchangeId,GameGroupID
+	FROM #NewInputDateTbl a 
+	WHERE a.IsCredit =  1 AND SettingType IN (8) 
+	AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
+					WHERE tmp.GameTypeID = a.OrgBetType AND a.ExchangeId = tmp.ExchangeId 
+						  AND a.GameGroupID = tmp.GameGroupID)
+	ORDER BY a.OrgBetType
+	
+	;WITH STAKE_TEMP AS (
+		SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.ExchangeId,s.GameGroupID
+		FROM #NewInputDateTbl s 
+		CROSS APPLY (
+			SELECT StakeLevelID  FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
+		) t
+		WHERE s.IsCredit =  1 AND SettingType IN (8)
+	)
+	--Select * from STAKE_TEMP ORDER BY GameTypeID
+	MERGE StakeLevelGroupDetail as g 
+	USING STAKE_TEMP s on g.StakeLevelID = s.StakeLevelID AND g.GameTypeID = s.GameTypeID
+	WHEN MATCHED THEN UPDATE SET 
+						g.MinLabel = s.MinLabel,
+						g.MaxLabel = s.MaxLabel,
+						g.MinStake =  s.MinStake,
+						g.MaxStake =  s.MaxStake
+	WHEN NOT MATCHED THEN 
+						INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
+						VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
+						 ;
+	-- Credit Stake Level
+	--INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId)
+	SELECT a.BetType AS GameTypeID,MinLabel,MaxLabel,NewMinBet,NewMaxBet, ExchangeId
+	FROM #NewInputDateTbl a 
+	WHERE a.IsCredit =  1 AND SettingType IN (7,17) 
+	AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
+					WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
+						  AND a.NewMinBet = MinStake AND a.NewMaxBet = MaxStake)
+	ORDER BY a.BetType
 	
 	
 	
 	
 	
-	select * , CAST(NewMinBet as float) as znew , CONVERT(FLOAT,NewMaxBet)  as znewMax
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	select  *
+	--NewMinBet , CHARINDEX('.',MinLabel) AS z, 
+	--LEN(MinLabel) as z1 ,
+	--CONVERT(VARCHAR(30), CAST(NewMinBet AS DECIMAL(19,0))) as z2 , 
+	--CONVERT(float, '0.' + SUBSTRING(MinLabel, CHARINDEX('.',MinLabel) + 1  , LEN(MinLabel)  - CHARINDEX('.',MinLabel))) as z4,
+	--CONVERT(VARCHAR(30),CONVERT(float, '0.' + SUBSTRING(MinLabel, CHARINDEX('.',MinLabel) + 1  , LEN(MinLabel)  - CHARINDEX('.',MinLabel)))) as z6,
+	--LEN(MinLabel)  - CHARINDEX('.',MinLabel) as z7,
+	--SUBSTRING(CONVERT(VARCHAR(30),CONVERT(float, '0.' + SUBSTRING(MinLabel, CHARINDEX('.',MinLabel) + 1, LEN(MinLabel)  - CHARINDEX('.',MinLabel)))), 3,LEN(MinLabel)  - CHARINDEX('.',MinLabel)) as z5
+	--,CAST(MinLabel AS DECIMAL(19,0)) as  z6
+	--,NewMinBet as z9
+	--,CONVERT(VARCHAR(30), CAST(MinLabel AS DECIMAL(19,0))) + CASE WHEN CAST(MinLabel AS DECIMAL(19,0)) < NewMinBet THEN '.' +	
+	--SUBSTRING(CONVERT(VARCHAR(30),CONVERT(float, '0.' + SUBSTRING(MinLabel, CHARINDEX('.',MinLabel) + 1, LEN(MinLabel)  - CHARINDEX('.',MinLabel)))), 3,LEN(MinLabel)  - CHARINDEX('.',MinLabel)) ELSE '' END as z8
+	--* , CAST(NewMinBet as float) as znew ,
+	-- CONVERT(FLOAT,NewMaxBet)  as znewMax,
+	-- cast(cast(NewMaxBet as DECIMAL(19,8)) as float) AS MaxLabel
+	, CASE WHEN CAST(NewMinBet AS BiGINT) < NewMinBet 
+						THEN REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0') 
+						ELSE SUBSTRING(REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0'),1,LEN(REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0')) -1) END  as z1
+						, REPLACE(RTRIM(REPLACE(NewMinBet, '0', ' ')), ' ', '0')  as z2
+						,CAST(NewMinBet AS BiGINT) as z3
+						,NewMinBet as z4
 		from #NewInputDateTbl order by RowID
+		
+		
 		
 	DROP TABLE #NewInputDateTbl
 END								
