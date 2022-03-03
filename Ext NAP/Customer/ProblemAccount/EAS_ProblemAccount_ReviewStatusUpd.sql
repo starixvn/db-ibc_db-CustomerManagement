@@ -20,6 +20,7 @@ AS
 	Revisions:
 		- 20201012@Johnson: Initial SP [Redmine:#142957]		
 		- 20210426@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
+		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 	Param's Explanation:		
 		@RoleId: roleid of downlines
 		@CustomerList: list of downline id
@@ -75,7 +76,7 @@ BEGIN
 		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
 	WHERE pa.IsReviewed = 0 
 		--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
-		AND ci.CustomerClass BETWEEN 8 AND 13
+		AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
