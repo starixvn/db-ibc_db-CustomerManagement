@@ -20,6 +20,7 @@ AS
 			<BetLimit 
 					SportType="1" 
 					BetType="1"
+					Site="53"
 					CreditCurrency = "US$, Yen, $US, UT, USD" 
 					DepositCurrency = "US$, USDT"
 					NewMinBet="1" 
@@ -39,6 +40,7 @@ BEGIN
 			RowID				INT IDENTITY (1,1)
 			, SportType			SMALLINT
 			, BetType			SMALLINT
+			, SiteID			INT
 			, CreditCurrency	VARCHAR(500)
 			, DepositCurrency	VARCHAR(500)
 			, NewMinBet			DECIMAL(19,8)
@@ -53,6 +55,7 @@ BEGIN
 			, SportType		SMALLINT
 			, OrgBetType	SMALLINT
 			, BetType		SMALLINT
+			, SiteID		INT
 			, Currency		VARCHAR(50)
 			, ExchangeId	INT
 			, MinLabel		VARCHAR(50)
@@ -78,11 +81,12 @@ BEGIN
 		EXEC sp_xml_preparedocument @iDoc OUTPUT
 			, @InputData
 
-		INSERT INTO @NewStakeLevelTbl(SportType, BetType, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID)
-		SELECT SportType, BetType, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID
+		INSERT INTO @NewStakeLevelTbl(SportType, BetType, SiteID, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID)
+		SELECT SportType, BetType, Site, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID
 		FROM OPENXML(@iDoc, '/ROOT/BetLimit', 1) WITH (
 					SportType			SMALLINT
 					, BetType			SMALLINT
+					, Site				INT
 					, CreditCurrency	VARCHAR(500)
 					, DepositCurrency	VARCHAR(500)
 					, NewMinBet			DECIMAL(19,8)
@@ -93,15 +97,15 @@ BEGIN
 				)
 		EXEC sp_xml_removedocument @iDoc
 		
-		INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, IsCredit)
-		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 1 AS IsCredit
+		INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, IsCredit, SiteID)
+		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 1 AS IsCredit, SiteID
 		FROM @NewStakeLevelTbl nsl
 			CROSS APPLY (
 					SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.CreditCurrency, ',')
 				) t
 		WHERE nsl.CreditCurrency <> ''
 		UNION ALL
-		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 0 AS IsCredit 
+		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 0 AS IsCredit, SiteID 
 		FROM @NewStakeLevelTbl nsl
 			CROSS APPLY (
 					SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.DepositCurrency, ',')
@@ -216,17 +220,17 @@ BEGIN
 		-- Deposit Stake Level
 		SELECT @Dep_MaxSLID = MAX(StakeLevelID) FROM DEP_StakeLevel WITH(NOLOCK)
 		
-		INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,StakeLevelID)
-		SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID , StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid)  
+		INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,SiteID,StakeLevelID)
+		SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid)  
 		FROM (
-			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,a.GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake
+			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,a.GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake,SiteID
 			FROM #NewInputDateTbl a
 			WHERE a.IsCredit =  0 AND SettingType IN (7) 
 				 AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
 								 WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
-								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake)
+								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake AND tmp.SiteID = a.SiteID)
 			UNION
-			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,a.GameGroupID, NULL AS MinLabel, NULL AS MaxLabel, NULL AS MinStake, NULL AS MaxStake
+			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,a.GameGroupID, NULL AS MinLabel, NULL AS MaxLabel, NULL AS MinStake, NULL AS MaxStake,SiteID
 			FROM #NewInputDateTbl a
 			WHERE a.IsCredit =  0 AND SettingType IN (8) 
 				 AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
@@ -257,7 +261,7 @@ BEGIN
 		SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
 		FROM Dep_StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
-								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake
+								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake AND a.SiteID = dst.SiteID
 		WHERE a.IsCredit =  0 AND SettingType IN (7) 						 	 
 	END TRY
 	BEGIN CATCH

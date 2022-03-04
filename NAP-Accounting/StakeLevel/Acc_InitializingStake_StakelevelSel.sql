@@ -37,7 +37,7 @@ BEGIN
 	CREATE TABLE #ProductSettingDetail(SportType TINYINT , SportName NVARCHAR(50),BetType INT, typenamee NVARCHAR(128),SettingType SMALLINT,IsCredit BIT Default((0)))
 	CREATE TABLE #StakeLevel(SportType TINYINT , SportName NVARCHAR(50),BetType INT, typenamee NVARCHAR(128),
 							ExchangeIdCredit INT,ExchangeIdDeposit INT,NewMinStake	DECIMAL(19,8),NewMaxStake DECIMAL(19,8),
-							CurMinStake	DECIMAL(19,8),CurMaxStake DECIMAL(19,8),GameGroupID	INT )
+							CurMinStake	DECIMAL(19,8),CurMaxStake DECIMAL(19,8),GameGroupID	INT, SiteID	INT )
 		
 	INSERT INTO #Sports  (SportType,SportName)	
 	SELECT SportType,SportName 
@@ -83,10 +83,10 @@ BEGIN
 	ORDER BY SportType,BetType
    
 	INSERT INTO #StakeLevel(SportType, SportName ,BetType, typenamee ,ExchangeIdCredit ,ExchangeIdDeposit ,
-							NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID)
+							NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, SiteID)
 	-- Credit Stakelevel							
 	SELECT a.SportType,a.SportName,a.BetType,a.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID
+		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID, 0 AS SiteID
 	FROM #ProductSettingDetail a
 	INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 	WHERE a.SettingType IN ( 7 , 17) 
@@ -95,7 +95,7 @@ BEGIN
 		AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	UNION ALL -- Credit Group Stakelevel	
 	SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-		  0 AS NewMinStake, 0 AS NewMaxStake, slg.MinStake AS CurMinStake, slg.MaxStake AS CurMaxStake, S.GameGroupID
+		  0 AS NewMinStake, 0 AS NewMaxStake, slg.MinStake AS CurMinStake, slg.MaxStake AS CurMaxStake, S.GameGroupID, 0 AS SiteID
 	FROM #ProductSettingDetail a
 	INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 	INNER JOIN StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
@@ -106,7 +106,7 @@ BEGIN
 		AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	UNION ALL -- Deposit Stakelevel
 	SELECT a.SportType,a.SportName,a.BetType,a.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID
+		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID, 0 AS SiteID
 	FROM #ProductSettingDetail a
 	INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 	WHERE a.SettingType IN ( 7) 
@@ -115,7 +115,7 @@ BEGIN
 		AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	UNION ALL -- Deposit Group Stakelevel
 	SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-		  0 AS NewMinStake, 0 AS NewMaxStake, slg.MinStake AS CurMinStake, slg.MaxStake AS CurMaxStake, S.GameGroupID
+		  0 AS NewMinStake, 0 AS NewMaxStake, slg.MinStake AS CurMinStake, slg.MaxStake AS CurMaxStake, S.GameGroupID, 0 AS SiteID
 	FROM #ProductSettingDetail a
 	INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 	INNER JOIN Dep_StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
@@ -129,13 +129,14 @@ BEGIN
 	FROM #StakeLevel
 
 	SELECT SportType, SportName ,BetType, typenamee ,ExchangeIdCredit ,ExchangeIdDeposit ,
-	      NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit
+	      NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit, t.SiteID, s.site
 	FROM(
 	    SELECT ROW_NUMBER() OVER(ORDER by SportType desc, BetType,ExchangeIdCredit DESC ,ExchangeIdDeposit ,GameGroupID) rn, *
 	    FROM #StakeLevel
 	   )t
 	 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
 	 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
+	 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
 	WHERE rn BETWEEN @RowStart AND @RowEnd
 
    

@@ -20,6 +20,7 @@ AS
 			<BetLimit 
 					SportType="1" 
 					BetType="1"
+					Site="53"
 					CreditCurrency = "US$, Yen, $US, UT, USD" 
 					DepositCurrency = "US$, USDT"
 					NewMinBet="1" 
@@ -38,6 +39,7 @@ BEGIN
 			RowID				INT IDENTITY (1,1)
 			, SportType			SMALLINT
 			, BetType			SMALLINT
+			, SiteID			INT
 			, CreditCurrency	VARCHAR(500)
 			, DepositCurrency	VARCHAR(500)
 			, NewMinBet			DECIMAL(19,8)
@@ -52,6 +54,7 @@ BEGIN
 			, SportType		SMALLINT
 			, OrgBetType	SMALLINT
 			, BetType		SMALLINT
+			, SiteID		INT
 			, Currency		VARCHAR(50)
 			, ExchangeId	INT
 			, NewMinBet		DECIMAL(19,8)
@@ -79,11 +82,12 @@ BEGIN
 	EXEC sp_xml_preparedocument @iDoc OUTPUT
 		, @InputData
 
-	INSERT INTO @NewStakeLevelTbl(SportType, BetType, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID)
-	SELECT SportType, BetType, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID
+	INSERT INTO @NewStakeLevelTbl(SportType, BetType, SiteID, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID)
+	SELECT SportType, BetType, Site, CreditCurrency, DepositCurrency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID
 	FROM OPENXML(@iDoc, '/ROOT/BetLimit', 1) WITH (
 				SportType			SMALLINT
 				, BetType			SMALLINT
+				, Site				INT
 				, CreditCurrency	VARCHAR(500)
 				, DepositCurrency	VARCHAR(500)
 				, NewMinBet			DECIMAL(19,8)
@@ -125,9 +129,9 @@ BEGIN
 	IF	@ErrCode <> 0 RETURN
 	
 	INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, NewMinBet, NewMaxBet, CurMinBet	
-								, CurMaxBet, GameGroupID, IsCredit)
+								, CurMaxBet, GameGroupID, IsCredit, SiteID)
 	SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet	
-								, CurMaxBet, GameGroupID, 1 AS IsCredit 
+								, CurMaxBet, GameGroupID, 1 AS IsCredit, SiteID
 	FROM @NewStakeLevelTbl nsl
 		CROSS APPLY (
 				SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.CreditCurrency, ',')
@@ -135,7 +139,7 @@ BEGIN
 	WHERE nsl.CreditCurrency <> ''
 	UNION ALL
 	SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet	
-								, CurMaxBet, GameGroupID, 0 AS IsCredit 
+								, CurMaxBet, GameGroupID, 0 AS IsCredit, SiteID
 	FROM @NewStakeLevelTbl nsl
 		CROSS APPLY (
 				SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.DepositCurrency, ',')
@@ -195,6 +199,15 @@ BEGIN
 	IF 	@ErrCode = 111			
 	BEGIN
 		SELECT @ErrMsg = 'The Deposit Currency ' + @ValueError + ' does not exist.' 
+		RETURN
+	END
+	
+	SELECT TOP(1) @ErrCode = 120 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SiteID AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE tmp.SiteID <> 0 AND tmp.SettingType = 7  AND tmp.IsCredit = 0 AND NOT EXISTS( SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid =  tmp.SiteID AND IsActive = 1 AND isLicensee =1)
+	IF 	@ErrCode = 120			
+	BEGIN
+		SELECT @ErrMsg = 'The Site  ' + @ValueError + ' does not exist.' 
 		RETURN
 	END
 	
