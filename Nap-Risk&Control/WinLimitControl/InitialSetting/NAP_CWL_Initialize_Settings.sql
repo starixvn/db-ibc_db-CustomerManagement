@@ -12,13 +12,8 @@ ALTER PROC NAP_CWL_Initialize_Settings
    , @Level2                                 MONEY         = 30000
    , @Level3                                 MONEY         = 100000
    , @Level101                               MONEY         = -10000
-   , @Level102                               MONEY         = -30000
-   , @Level1_Currency                        MONEY         = 10000
-   , @Level2_Currency                        MONEY         = 30000
-   , @Level3_Currency                        MONEY         = 100000
-   , @Level101_Currency                      MONEY         = -10000
-   , @Level102_Currency                      MONEY         = -30000
-   , @Currency						     VARCHAR(500)  = ''
+   , @Level102                               MONEY         = -30000  
+   , @Currency						     	 VARCHAR(MAX)  = ''
    , @IsBlockedPlaceBet_DepositSite_Level1   BIT           = 0
    , @IsBlockedPlaceBet_DepositSite_Level2   BIT           = 0
    , @IsBlockedPlaceBet_DepositSite_Level3   BIT           = 0
@@ -48,8 +43,8 @@ AS
 	Revisions	 : 
 				- 20180319@Robert: Initialize CWL Settings
 				- 20181108@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
-				- 20191103@Robert: create new table WinLimit_ProductOffer [#122849]
-				- 20220220@Robert: Update setting by currency [#165590]
+				- 20191103@Robert: create new table WinLimit_ProductOffer [#122849]				
+				- 20220223@Johnson: Global setting by currency [#168583]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -81,7 +76,11 @@ BEGIN
 	  , GroupName VARCHAR(200));
 
     DECLARE @bettype INT;
-
+	
+	DECLARE @tmpCurrency TABLE(
+		Currency INT		
+	)
+	
     DECLARE @LicenseeCust TABLE(
 	    LicenseeID INT
 	  , Currency   INT);
@@ -138,7 +137,17 @@ BEGIN
 			 , @IsBlockedPlaceBet_CreditSite_Level102 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level102 AS IsBlockedTransfer_DepositSite
 			 , @IsBlockedTransfer_CreditSite_Level102 AS  IsBlockedTransfer_CreditSite;
-
+	
+	
+	INSERT INTO @tmpCurrency(Currency)
+	SELECT e.ExchangeID
+	FROM dbo.strSplit(@currency, ',') t
+		INNER JOIN  exchange e WITH(NOLOCK) ON t.val = e.currency
+	
+	IF NOT EXISTS (SELECT 1 FROM @tmpCurrency)
+	INSERT INTO @tmpCurrency(Currency)
+	SELECT 0--all currencies
+	
     INSERT INTO @LicenseeCust(LicenseeID
 					   , Currency)
 		 SELECT DISTINCT 
@@ -274,8 +283,9 @@ BEGIN
 								    , Level3
 								    , Level101
 								    , Level102
-								    , blockedTransferLvl3)
-		 SELECT t.ProductID
+								    , blockedTransferLvl3
+									, Currency)
+		 SELECT DISTINCT t.ProductID
 			 , t.BetTypeID
 			 , t.GroupID
 			 , t.GroupName
@@ -285,7 +295,9 @@ BEGIN
 			 , @Level101 AS                             Level101
 			 , @Level102 AS                             Level102
 			 , @IsBlockedTransfer_DepositSite_Level3 AS BlockedTransferLv3
+			 , c.Currency
 		 FROM #Temp AS t
+			CROSS APPLY @tmpCurrency c
 		 WHERE t.BetTypeID =
 		 (
 			SELECT MIN(BetTypeID)
@@ -298,6 +310,7 @@ BEGIN
 			WHERE t.ProductID = setting.ProductID
 				 AND t.GroupID = setting.GroupID
 				 AND t.GroupName = setting.GroupName
+				 AND c.Currency = setting.Currency
 		 );
 
 	   EXEC dbtxn.bodb02.dbo.NAP_CWL_ProductOffer_Initialize_Settings 
@@ -341,6 +354,7 @@ BEGIN
 		   ) AS l, 
 			   Site AS s
 		   WHERE e.currency NOT IN('H', 'C')
+				AND EXISTS (SELECT 1 FROM @tmpCurrency t WHERE currency = 0 OR e.Exchangeid = t.currency)
 			    AND s.isActive = 1
 			    AND (s.isLicensee = 1
 				    AND e.exchangeid IN
@@ -426,9 +440,10 @@ BEGIN
 	    , IsBlockedPlaceBet
 	    , IsBlockedTransfer
 	    , MaxWinLimit_RM
-    FROM WinLimit_ProductSettingDetail WITH (NOLOCK)
+    FROM WinLimit_ProductSettingDetail cs WITH (NOLOCK)
     WHERE ProductID = @ProductID
-		AND GroupID = @GroupID;
+		AND GroupID = @GroupID
+		AND EXISTS (SELECT 1 FROM @tmpCurrency t WHERE currency = 0 OR cs.Exchangeid = t.currency);
 
     SELECT ProductID
 	    , BettypeID
@@ -455,22 +470,20 @@ BEGIN
 	   WHERE t.ProductID = setting.ProductID
 		    AND t.GroupID = setting.GroupID
 		    AND t.GroupName = setting.GroupName
-    );
+    )
+	AND EXISTS (SELECT 1 FROM @tmpCurrency t WHERE currency = 0 OR Setting.Currency = t.currency);
 
-    -- Update setting by currency
-    IF @Currency <> ''
-    BEGIN
-	    EXEC dbo.NAP_CWL_Update_Settings 
-	    @ProductId    = @ProductID
-	  , @GroupId      = @GroupID
-	  , @Level1       = @Level1_Currency
-	  , @Level2       = @Level102_Currency
-	  , @Level3       = @Level3_Currency
-	  , @Level101     = @Level101_Currency
-	  , @Level102     = @Level102_Currency
-	  , @Currency	   = @Currency
-    END
-
+  
+	EXEC dbo.NAP_CWL_Update_Settings 
+	@ProductId    = @ProductID
+  , @GroupId      = @GroupID
+  , @Level1       = @Level1
+  , @Level2       = @Level2
+  , @Level3       = @Level3
+  , @Level101     = @Level101
+  , @Level102     = @Level102
+  , @Currency	   = @Currency
+    
     DROP TABLE #Temp;
     DROP TABLE #Currency_Deposit;
 END;

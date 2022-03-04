@@ -1,5 +1,4 @@
-USE CustDB
-GO
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[DBA_Task_CWL_InsertMissingSetting] 
 	@Mode TINYINT,
@@ -14,7 +13,7 @@ AS
 	Revisions:
 		- 20180326@Johnson: create sp [Redmine: #92012]
 		- 20181108@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
-
+		- 20220224@Johnson: Global setting by currency [#168583]
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -35,7 +34,7 @@ BEGIN
 		  INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName  AND S.isActive = 1
 		WHERE ex.currency NOT IN('H', 'C')
 
-		SELECT c.siteid, c.exchangeid, t.productid, t.groupID
+		SELECT c.siteid, c.exchangeid, t.productid, t.groupID, 0 isPrivate
 		INTO #site_currency
 		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK)
 			CROSS APPLY #Currency_Deposit c 
@@ -43,20 +42,32 @@ BEGIN
 																		AND t.GroupID = pd.GroupID
 																		AND c.siteid = pd.siteid
 																		AND c.exchangeid = pd.exchangeid
-		WHERE pd.siteid IS NULL																
+		WHERE pd.siteid IS NULL
+			AND t.currency = 0
 
+		UPDATE t
+		SET t.isPrivate = 1
+		FROM #site_currency t
+			INNER JOIN WinLimit_ProductGlobalSetting p WITH(NOLOCK) ON t.productid = p.productid
+																		AND t.GroupID = p.GroupID																		
+																		AND t.exchangeid = p.currency
+		
 
 		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c,p.Level1 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID															
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0,p.Level2 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID									
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
@@ -64,7 +75,9 @@ BEGIN
 				,p.Level3 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID									
+											AND p.groupID = s.groupID	
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
@@ -72,7 +85,9 @@ BEGIN
 				,p.Level101 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID									
+											AND p.groupID = s.groupID	
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
@@ -80,7 +95,9 @@ BEGIN
 				,p.Level102 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID 
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 
 		UPDATE PSD
 			SET MaxWinLimit = CASE WHEN psd.ExchangeID = 20 THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
@@ -101,79 +118,77 @@ BEGIN
 		INSERT INTO @tmpCurrency (currency)
 		SELECT val
 		FROM dbo.StrSplit(@currencies,',')
-		
+
 		IF @@rowcount <= 0 
-			RETURN
-						
+		RETURN
+			
+		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 0 isPrivate
+		INTO #site_currencyCredit
+		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
+			CROSS JOIN EXCHANGE E (NOLOCK) 
+			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
+			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
+																		AND t.GroupID = pd.GroupID
+																		AND s.siteid = pd.siteid
+																		AND e.exchangeid = pd.exchangeid
+		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
+			AND  pd.siteid IS NULL
+			AND t.currency = 0
+			
+		
+		UPDATE t
+		SET t.isPrivate = 1
+		FROM #site_currencyCredit t
+			INNER JOIN WinLimit_ProductGlobalSetting p WITH(NOLOCK) ON t.productid = p.productid
+																		AND t.GroupID = p.GroupID																		
+																		AND t.exchangeid = p.currency
+
 		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
-		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 1, 0, 0,t.Level1 MaxWinLimit_RM
-		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
-			CROSS JOIN EXCHANGE E (NOLOCK) 
-			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
-			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
-																		AND t.GroupID = pd.GroupID
-																		AND s.siteid = pd.siteid
-																		AND e.exchangeid = pd.exchangeid
-		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
-			AND  pd.siteid IS NULL	
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c,p.Level1 MaxWinLimit_RM
+		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
+			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END	
 			
 		UNION ALL
-
-		SELECT DISTINCT t.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 2, 0, 0,t.Level2 MaxWinLimit_RM
-		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
-			CROSS JOIN EXCHANGE E (NOLOCK) 
-			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
-			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
-																		AND t.GroupID = pd.GroupID
-																		AND s.siteid = pd.siteid
-																		AND e.exchangeid = pd.exchangeid
-		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
-			AND  pd.siteid IS NULL
-			
+		
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0,p.Level2 MaxWinLimit_RM
+		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
+			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
-		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
-				,t.Level3 MaxWinLimit_RM
-		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
-			CROSS JOIN EXCHANGE E (NOLOCK) 
-			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
-			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
-																		AND t.GroupID = pd.GroupID
-																		AND s.siteid = pd.siteid
-																		AND e.exchangeid = pd.exchangeid
-		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
-			AND  pd.siteid IS NULL
-			
+				,p.Level3 MaxWinLimit_RM
+		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
+			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
+											AND p.groupID = s.groupID	
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
-				,t.Level101 MaxWinLimit_RM
-		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
-			CROSS JOIN EXCHANGE E (NOLOCK) 
-			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
-			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
-																		AND t.GroupID = pd.GroupID
-																		AND s.siteid = pd.siteid
-																		AND e.exchangeid = pd.exchangeid
-		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
-			AND  pd.siteid IS NULL
-			
+				,p.Level101 MaxWinLimit_RM
+		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
+			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
+											AND p.groupID = s.groupID	
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
-				,t.Level102 MaxWinLimit_RM
-		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
-			CROSS JOIN EXCHANGE E (NOLOCK) 
-			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
-			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
-																		AND t.GroupID = pd.GroupID
-																		AND s.siteid = pd.siteid
-																		AND e.exchangeid = pd.exchangeid
-		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
-			AND  pd.siteid IS NULL
+				,p.Level102 MaxWinLimit_RM
+		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
+			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
+											AND p.groupID = s.groupID
+		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
+						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 
 		--update exchange rate
 		UPDATE PSD
@@ -185,4 +200,3 @@ BEGIN
 	END
 END
 GO
-GRANT VIEW DEFINITION ON [dbo].[DBA_Task_CWL_InsertMissingSetting]  TO [vnteam]
