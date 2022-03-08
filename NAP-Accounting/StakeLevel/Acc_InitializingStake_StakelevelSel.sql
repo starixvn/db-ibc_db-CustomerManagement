@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingStake_StakelevelSel]
 	,@pMutilBetType			VARCHAR(MAX) = ''
 	,@pMutilCurrencyCredit	VARCHAR(MAX) = ''
 	,@pMutilCurrencyDeposit	VARCHAR(MAX) = ''
+	,@ExportData			INT	=	0
 	,@PageSize				INT	=	50
 	,@PageIndex				INT	=	0
 	,@TotalRows 			INT	=	0 OUTPUT
@@ -23,6 +24,7 @@ AS
 			@pMutilBetType  0 : All, <> 0 : Bettype
 			@pMutilCurrencyCredit  0 : All, <> 0 : Currency Credit
 			@pMutilCurrencyDeposit  0 : All, <> 0 : Currency Deposit
+			@ExportData  0 : Pages, <> 0 : All data
 
 	*/
 BEGIN
@@ -124,22 +126,34 @@ BEGIN
 		AND a.IsCredit = 0 
 		AND (@pMutilCurrencyDeposit = '0' OR s.ExchangeId IN (SELECT val FROM dbo.strSplit(@pMutilCurrencyDeposit, ',')))
 		AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
+	IF @ExportData = 1
+	BEGIN
 		
-	SELECT @TotalRows = COUNT(1)
-	FROM #StakeLevel
+		SELECT SportType, SportName ,BetType, typenamee ,ExchangeIdCredit ,ExchangeIdDeposit ,
+			  NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit, t.SiteID, s.site
+		FROM #StakeLevel t
+		 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
+		 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
+		 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
+		
+	END
+	ELSE
+	BEGIN
+		SELECT @TotalRows = COUNT(1)
+		FROM #StakeLevel
 
-	SELECT SportType, SportName ,BetType, typenamee ,ExchangeIdCredit ,ExchangeIdDeposit ,
-	      NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit, t.SiteID, s.site
-	FROM(
-	    SELECT ROW_NUMBER() OVER(ORDER by SportType desc, BetType,ExchangeIdCredit DESC ,ExchangeIdDeposit ,GameGroupID) rn, *
-	    FROM #StakeLevel
-	   )t
-	 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
-	 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
-	 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
-	WHERE rn BETWEEN @RowStart AND @RowEnd
-
-   
+		SELECT SportType, SportName ,BetType, typenamee ,ExchangeIdCredit ,ExchangeIdDeposit ,
+			  NewMinStake ,NewMaxStake ,CurMinStake ,CurMaxStake ,GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit, t.SiteID, s.site
+		FROM(
+			SELECT ROW_NUMBER() OVER(ORDER by SportType desc, BetType,ExchangeIdCredit DESC ,ExchangeIdDeposit ,GameGroupID) rn, *
+			FROM #StakeLevel
+		   )t
+		 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
+		 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
+		 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
+		WHERE rn BETWEEN @RowStart AND @RowEnd
+	END	
+	
    DROP TABLE #Bettype
    DROP TABLE #Sports 
    DROP TABLE #ProductSettingDetail 
