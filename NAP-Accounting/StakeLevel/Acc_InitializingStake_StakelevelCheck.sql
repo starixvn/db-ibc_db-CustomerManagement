@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[Acc_InitializingStake_StakelevelCheck] 
 	-- Add the parameters for the stored procedure here
 	 @InputData				VARCHAR(MAX) = ''
+	,@ProductID				TINYINT = 0			OUTPUT
 	,@NotiCode				INT = 0				OUTPUT
 	,@NotiMsg				NVARCHAR(4000) = '' OUTPUT
 	,@ErrCode				INT = 0				OUTPUT
@@ -64,6 +65,7 @@ BEGIN
 			, GameGroupID	INT
 			, IsCredit		BIT Default((0))
 			, SettingType	SMALLINT
+			, ProductID		TINYINT
 		)
 	
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128))
@@ -154,17 +156,27 @@ BEGIN
 		INNER JOIN Exchange e WITH(NOLOCK) ON a.Currency = e.currency
 	
 	UPDATE a 
-	SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType	
+	SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType , a.ProductID = psd.ProductID	
 	FROM  #NewInputDateTbl a
 		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 	WHERE a.IsCredit = 1 AND psd.SettingType IN (7, 17, 8)
 	
 	UPDATE a 
-	SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
+	SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType , a.ProductID  = ps.ProductID
 	FROM  #NewInputDateTbl a
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
+	
+	SELECT @ProductID = ProductID FROM #NewInputDateTbl tmp WHERE RowID = 1
+	IF 	EXISTS( SELECT TOP 1 1 FROM #NewInputDateTbl WHERE ProductID <> @ProductID)	
+	BEGIN
+		SELECT @ErrCode = 121	
+		SELECT  TOP(1) @ErrMsg = 'Row ' + CAST(RowID AS VARCHAR(10)) + ' : You can only upload setting for one product at a time.' 
+		FROM #NewInputDateTbl WHERE ProductID <> @ProductID
+		ORDER BY RowID 
+		RETURN
+	END	
 	
 	SELECT TOP(1) @ErrCode = 108 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SportType AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
@@ -296,7 +308,6 @@ BEGIN
 		SELECT @NotiMsg = 'there are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
 									FROM #Currency
 									FOR XML PATH('')), 1, 1, '')
-		
 	END
 	
 	INSERT INTO #RowDuplicate(RowIDF,RowIDT)
