@@ -34,7 +34,7 @@ BEGIN
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 		WHERE (@ProductID = 0 OR psd.ProductID = @ProductID) AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (psd.SettingType IN (7, 8, 17))
-		UNION ALL
+		UNION
 		SELECT DISTINCT
 			 psd.SportType
 			 ,s.SportName

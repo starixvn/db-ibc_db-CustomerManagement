@@ -31,7 +31,7 @@ BEGIN
 		FROM ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Products p WITH(NOLOCK) ON psd.ProductID = p.ProductID
 		WHERE (psd.SettingType IN (7, 8, 17)) AND (@ProductID = 0 OR psd.ProductID = @ProductID)
-		UNION ALL
+		UNION
 		SELECT DISTINCT
 			 ps.ProductID
 			 ,p.ProductName
