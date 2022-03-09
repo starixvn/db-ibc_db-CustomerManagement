@@ -20,7 +20,7 @@ BEGIN
 	SELECT 
 		 siteid, site
 	FROM Site  WITH(NOLOCK)
-	WHERE IsActive = 1 AND (@pMutilSite = '0' OR.siteid IN (SELECT val FROM dbo.strSplit(@pMutilSite, ',')))
+	WHERE IsActive = 1 AND (@pMutilSite = '0' OR siteid IN (SELECT val FROM dbo.strSplit(@pMutilSite, ',')))
 	ORDER BY siteid, site
 END
 GO
