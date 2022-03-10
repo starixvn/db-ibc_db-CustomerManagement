@@ -156,7 +156,7 @@ BEGIN
 		INNER JOIN Exchange e WITH(NOLOCK) ON a.Currency = e.currency
 	
 	UPDATE a 
-	SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType , a.ProductID = psd.ProductID	
+	SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType , a.ProductID = psd.RealProductId	
 	FROM  #NewInputDateTbl a
 		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 	WHERE a.IsCredit = 1 AND psd.SettingType IN (7, 17, 8)
