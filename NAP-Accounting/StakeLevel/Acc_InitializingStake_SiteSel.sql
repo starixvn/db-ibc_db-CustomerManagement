@@ -1,11 +1,11 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingStake_SiteSel] 
 	-- Add the parameters for the stored procedure here
 	  @pMutilSite	VARCHAR(Max) = ''
 AS
 /*
 		Task : NAP -  Flexible Initializing Stake Level
-		DB: DBCUST/CustDB
+		DB: DBACC/bodb02
 		Original: 
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]

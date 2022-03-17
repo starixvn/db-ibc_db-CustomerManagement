@@ -1,11 +1,11 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_InitializingStake_CurrencySel] 
 	-- Add the parameters for the stored procedure here
 	  @Mode	tinyint = 0	 -- 0: All, 1 : Credit, 2 :Deposit
 AS
 /*
 		Task : NAP -  Flexible Initializing Stake Level
-		DB: DBCUST/CustDB
+		DB: DBACC/bodb02
 		Original: 
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]

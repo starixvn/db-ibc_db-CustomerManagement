@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingStake_StakelevelSel] 
 	-- Add the parameters for the stored procedure here
 	 @ProductID				TINYINT
@@ -13,7 +13,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingStake_StakelevelSel]
 AS
 /*
 		Task : NAP -  Flexible Initializing Stake Level
-		DB: DBCUST/CustDB
+		DB: DBACC/bodb02
 		Original: 
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
@@ -43,11 +43,11 @@ BEGIN
 		
 	INSERT INTO #Sports  (SportType,SportName)	
 	SELECT SportType,SportName 
-	FROM DBACC.bodb02.dbo.Sports WITH(NOLOCK)
+	FROM dbo.Sports WITH(NOLOCK)
 	
 	INSERT INTO #Bettype  (typeid,typenamee)	
 	SELECT typeid,typenamee 
-	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
+	FROM dbo.Bettype WITH(NOLOCK)
 
 	INSERT INTO #ProductSettingDetail(SportType,SportName,BetType,typenamee,SettingType,IsCredit)				
 	SELECT SportType,SportName,BetType,typenamee,SettingType,IsCredit
