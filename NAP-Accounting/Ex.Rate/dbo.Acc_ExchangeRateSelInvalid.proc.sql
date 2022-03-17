@@ -13,6 +13,9 @@ AS
 		- 20170307@Percy: Add Forex Gain/Loss (RM) column [RedmineID: #71954]
 		- 20180808@Helen: DB05.DBPOLICY migration - - move to DBTRANS for exchangeRate [Redmine:99462]
 		- 20190114@Sophia: Move table transfer_fi from DBSUM.bodb_summary to DBARC.bodb_archive[Redmine: #105415]
+		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
+
+
 		
 */
 BEGIN
@@ -20,8 +23,8 @@ BEGIN
 
 	DECLARE @BalanceUpDay DATETIME, @tmpFromDate DATETIME, @tmpToDate DATETIME
 	SELECT TOP 1 @BalanceUpDay = winlostdate
-	FROM bettrans WITH(NOLOCK)
-	WHERE bettype = 20000 AND matchid = 0 AND custid = 3
+	FROM dbo.transfer WITH(NOLOCK)
+	WHERE bettype = 20000 AND custid = 3
 
 	IF @FromDate IS NULL OR @ToDate IS NULL
 		SELECT	@ToDate = CONVERT(DATETIME, CONVERT(VARCHAR(10), GETDATE(), 120)),
@@ -70,7 +73,7 @@ BEGIN
 
 		INSERT INTO #Transfer(RefNo, custId, GainLoss)
 		SELECT b.RefNo, b.custid, b.winlost - b.actual_stake
-		FROM dbo.bettrans b WITH (NOLOCK)
+		FROM dbo.transfer b WITH (NOLOCK)
 		WHERE b.winlostdate BETWEEN @tmpFromDate AND @tmpToDate
 			AND EXISTS (SELECT 1 FROM #RefNo r WHERE r.RefNo = b.RefNo)
 			AND b.bettype = 21003

@@ -61,6 +61,7 @@ AS
 		- 20191225@Johnson: enhance sp get max transdate [redmine: #125894]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -71,7 +72,7 @@ BEGIN
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
     DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
-			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT, @ProtectionMode BIT,
+			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT, @ProtectionMode BIT, @transferid BIGINT,
 			@isDirectClosed BIT
 
     SELECT @username = RTRIM(LTRIM(@username))
@@ -113,7 +114,15 @@ BEGIN
 			FROM custinfo WITH(NOLOCK)
 			WHERE custID = @recommend	
 		
-			SELECT @transdate = MAX(transdate) FROM bettrans WITH (NOLOCK) WHERE custid = @custid
+			SELECT @transdate = MAX(x.transdate) 
+			FROM
+			(
+				SELECT MAX(transdate)  AS transdate
+				FROM bettrans WITH (NOLOCK) WHERE custid = @custid
+				UNION ALL
+				SELECT MAX(transdate)  AS transdate
+				FROM dbo.transfer WITH (NOLOCK) WHERE custid = @custid
+			) x
 		END 
 		ELSE IF @roleID = 2 --for agent
 		BEGIN
@@ -124,10 +133,19 @@ BEGIN
 			
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE recommend = @custid
-				AND bettype NOT IN (20000,19999)
 			OPTION(OPTIMIZE FOR	UNKNOWN)
+
+			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
+			WHERE recommend = @custid
+				AND bettype NOT IN (20000,19999)
 			
-			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
+			SELECT @transdate = MAX(transdate)
+			FROM 
+			(
+				SELECT  transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
+				UNION ALL
+				SELECT  transdate FROM dbo.transfer WITH (NOLOCK) WHERE transid = @transferid
+			) x
 		END
 		ELSE IF @roleID = 3 --for master
 		BEGIN
@@ -138,10 +156,19 @@ BEGIN
 
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE mrecommend = @custid
-				AND bettype NOT IN (20000,19999)
 			OPTION(OPTIMIZE FOR	UNKNOWN)
+
+			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
+			WHERE mrecommend = @custid
+				AND bettype NOT IN (20000,19999)
 			
-			SELECT @transdate = transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
+			SELECT @transdate = MAX(transdate)
+			FROM 
+			(
+				SELECT  transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
+				UNION ALL
+				SELECT  transdate FROM dbo.transfer WITH (NOLOCK) WHERE transid = @transferid
+			) x
 		END
     
 		IF @roleid=1
