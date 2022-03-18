@@ -108,7 +108,7 @@ BEGIN
 		AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	UNION ALL -- Deposit Stakelevel
 	SELECT a.SportType,a.SportName,a.BetType,a.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID, 0 AS SiteID
+		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID, s.SiteID AS SiteID
 	FROM #ProductSettingDetail a
 	INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 	WHERE a.SettingType IN ( 7) 
