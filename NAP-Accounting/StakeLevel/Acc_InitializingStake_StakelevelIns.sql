@@ -223,7 +223,7 @@ BEGIN
 		INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,SiteID,StakeLevelID)
 		SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid)  
 		FROM (
-			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,a.GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake,SiteID
+			SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,0 AS GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake,SiteID
 			FROM #NewInputDateTbl a
 			WHERE a.IsCredit =  0 AND SettingType IN (7) 
 				 AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
