@@ -271,7 +271,7 @@ BEGIN
 	WHERE tmp.SettingType IN (8) AND ISNULL(tmp.GameGroupID,0) = 0
 	IF 	@ErrCode = 116			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''''s format. Please input data on Game Group ID.'  
+		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Game Group ID.'  
 		RETURN
 	END
 	
@@ -280,7 +280,7 @@ BEGIN
 	WHERE tmp.SettingType IN (7,17) AND ISNULL(tmp.CurMinBet,0) = 0 AND ISNULL(tmp.CurMaxBet,0) <> 0
 	IF 	@ErrCode = 117			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''''s format. Please input data on Current Min Bet.'  
+		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Current Min Bet.'  
 		RETURN
 	END
 	
@@ -289,7 +289,7 @@ BEGIN
 	WHERE tmp.SettingType IN (7,17) AND ISNULL(tmp.CurMaxBet,0) = 0 AND ISNULL(tmp.CurMinBet,0) <> 0
 	IF 	@ErrCode = 118			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''''s format. Please input data on Current Max Bet.'  
+		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Current Max Bet.'  
 		RETURN
 	END
 
