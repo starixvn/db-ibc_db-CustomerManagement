@@ -200,8 +200,7 @@ BEGIN
 		WHERE a.IsCredit =  1 AND SettingType IN (7,17) 
 		AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
 						WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
-							  AND ((a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake)
-							  OR (a.NewMinBet = MinStake AND a.NewMaxBet = MaxStake)))
+							  AND (a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake))
 		ORDER BY a.BetType
 		
 		UPDATE dst	

@@ -135,7 +135,7 @@ BEGIN
 		 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
 		 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
 		 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
-		
+		ORDER by SportType desc, BetType,ExchangeIdCredit DESC ,ExchangeIdDeposit ,GameGroupID	
 	END
 	ELSE
 	BEGIN
