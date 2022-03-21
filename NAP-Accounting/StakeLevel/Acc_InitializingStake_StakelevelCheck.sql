@@ -305,7 +305,7 @@ BEGIN
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #Currency )			
 	BEGIN
 		SET @NotiCode = 100
-		SELECT @NotiMsg = 'there are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
+		SELECT @NotiMsg = 'There are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
 									FROM #Currency
 									FOR XML PATH('')), 1, 1, '')
 	END
@@ -323,7 +323,7 @@ BEGIN
 		SELECT @ErrMsg = STUFF((SELECT ', row ' + cast(RowIDF AS nvarchar(50)) + ' - row ' + cast(RowIDT AS nvarchar(50)) 
 									FROM #RowDuplicate tmp
 									ORDER BY RowIDF
-									FOR XML PATH('')), 1, 1, '') + ' : these rows have duplicate data' 
+									FOR XML PATH('')), 1, 1, '') + ' : These rows have duplicate data' 
 		RETURN
 	END	
 	
