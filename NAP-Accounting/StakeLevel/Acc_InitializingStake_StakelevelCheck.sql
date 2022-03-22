@@ -220,7 +220,8 @@ BEGIN
 	
 	SELECT TOP(1) @ErrCode = 120 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SiteID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SiteID <> 0 AND tmp.SettingType = 7  AND tmp.IsCredit = 0 AND NOT EXISTS( SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid =  tmp.SiteID AND IsActive = 1 AND isLicensee =1)
+	WHERE tmp.SiteID <> 0 AND tmp.SettingType = 7  AND tmp.IsCredit = 0 
+		AND NOT EXISTS( SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid =  tmp.SiteID AND IsActive = 1 AND isLicensee =1 AND isDeposit = 1)
 	IF 	@ErrCode = 120			
 	BEGIN
 		SELECT @ErrMsg = 'The Site  ' + @ValueError + ' does not exist.' 
