@@ -115,6 +115,8 @@ BEGIN
 						   WHEN NewMinBet > NewMaxBet		THEN 105
 						   WHEN NewMinBet = 0				THEN 106
 						   WHEN NewMaxBet = 0				THEN 107
+						   WHEN ISNULL( CreditCurrency,'') = '' AND 
+								ISNULL( DepositCurrency,'') = ''	THEN 122
 						   ELSE 101 END ,
 		  @ErrMsg =	  CASE WHEN ISNULL( SportType,'') = ''	THEN 'The Sport Type is required field.' 
 						   WHEN ISNULL( BetType,'') = ''	THEN 'The Bet Type is required field.' 
@@ -123,6 +125,8 @@ BEGIN
 						   WHEN NewMinBet > NewMaxBet		THEN 'The New Max Bet must be greater than or equal to the New Min Bet.' 
 						   WHEN NewMinBet = 0				THEN 'The Min Bet must be different from 0.'
 						   WHEN NewMaxBet = 0				THEN 'The Max Bet must be different from 0.' 
+						   WHEN ISNULL( CreditCurrency,'') = '' AND 
+								ISNULL( DepositCurrency,'') = ''	THEN 'The Currency is required field.' 
 						   ELSE '' END 						   
 	FROM @NewStakeLevelTbl tmp
 	WHERE ISNULL( SportType,'') = '' OR ISNULL( BetType,'') = '' OR ISNULL( NewMinBet,0) = 0 OR ISNULL( NewMaxBet,0) = 0
@@ -168,7 +172,7 @@ BEGIN
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
 	
-	SELECT @ProductID = ProductID FROM #NewInputDateTbl tmp WHERE RowID = 1
+	SET @ProductID = (SELECT TOP 1 ProductID FROM #NewInputDateTbl tmp ORDER BY RowID)
 	IF 	EXISTS( SELECT TOP 1 1 FROM #NewInputDateTbl WHERE ProductID <> @ProductID)	
 	BEGIN
 		SELECT @ErrCode = 121	
@@ -227,13 +231,24 @@ BEGIN
 	FROM (
 		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 1 AS IsMin
 		FROM #NewInputDateTbl tmp
-		WHERE  CurMinBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  ))
-		OR (IsCredit = 0  AND tmp.SettingType IN (7) AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  )))
+		WHERE  CurMinBet <> 0 AND (IsCredit = 1 AND tmp.SettingType IN (7,17) 
+								AND (NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  )
+								 OR NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet )))
+		OR (IsCredit = 0  AND tmp.SettingType IN (7) 
+								AND (NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND (MinStake = CurMinBet ))
+								OR NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet )))
 		UNION ALL 
 		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 0 AS IsMin
 		FROM #NewInputDateTbl tmp
-		WHERE CurMaxBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
-		OR (IsCredit = 0 AND tmp.SettingType IN (7) AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
+		WHERE CurMaxBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
+								AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
+		OR (IsCredit = 0 AND tmp.SettingType IN (7) 
+							AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
 		)
 	) KQ
 	IF 	@ErrCode = 112			
