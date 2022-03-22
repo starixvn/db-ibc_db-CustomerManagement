@@ -332,7 +332,7 @@ BEGIN
 	FROM #NewInputDateTbl tmp
 	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.OrgBetType = ndt.OrgBetType 
 				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.CurMinBet = ndt.CurMinBet AND tmp.CurMaxBet = ndt.CurMaxBet AND tmp.GameGroupID  = ndt.GameGroupID
-				AND tmp.CurMinBet <> 0 AND  ndt.CurMinBet <> 0 AND tmp.CurMaxBet <> 0 AND ndt.CurMaxBet <> 0
+				AND tmp.NewMaxBet = ndt.NewMaxBet AND tmp.NewMinBet = ndt.NewMinBet AND tmp.IsCredit = ndt.IsCredit
 	WHERE tmp.RowID <  ndt.RowID
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #RowDuplicate )			
 	BEGIN
@@ -363,7 +363,7 @@ BEGIN
 	
 	IF 	@ErrCode = 123			
 	BEGIN
-		SELECT @ErrMsg = @ValueError + ': this stake level is already existed.' 
+		SELECT @ErrMsg = 'Row ' + @ValueError + ': this stake level is already existed.' 
 		RETURN
 	END	
 	
