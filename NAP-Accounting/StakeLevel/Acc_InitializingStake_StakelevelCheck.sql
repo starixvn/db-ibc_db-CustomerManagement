@@ -344,6 +344,29 @@ BEGIN
 		RETURN
 	END	
 	
+	SELECT TOP(1) @ErrCode = 123 ,  @ValueError = CAST(KQ.RowID AS VARCHAR(200))
+	FROM 
+	(	SELECT RowID 
+		FROM #NewInputDateTbl a
+		WHERE a.IsCredit =  1 AND SettingType IN (7,17) 
+		AND EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
+						WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
+							  AND (a.NewMinBet = MinStake AND a.NewMaxBet = MaxStake))
+		UNION ALL
+		SELECT RowID 
+		FROM #NewInputDateTbl a
+		WHERE a.IsCredit =  0 AND SettingType IN (7) 
+				 AND EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
+								 WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
+								 AND a.NewMinBet = MinStake AND a.NewMaxBet = MaxStake AND tmp.SiteID = a.SiteID)
+	) KQ
+	
+	IF 	@ErrCode = 123			
+	BEGIN
+		SELECT @ErrMsg = @ValueError + ': this stake level is already existed.' 
+		RETURN
+	END	
+	
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #Currency
 	DROP TABLE #RowDuplicate
