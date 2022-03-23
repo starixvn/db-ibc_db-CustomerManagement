@@ -232,7 +232,7 @@ BEGIN
 	FROM (
 		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 1 AS IsMin
 		FROM #NewInputDateTbl tmp
-		WHERE  CurMinBet <> 0 AND (IsCredit = 1 AND tmp.SettingType IN (7,17) 
+		WHERE  CurMinBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
 								AND (NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
 								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  )
 								 OR NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
@@ -241,7 +241,7 @@ BEGIN
 								AND (NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
 								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND (MinStake = CurMinBet ))
 								OR NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet )))
+								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet ))))
 		UNION ALL 
 		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 0 AS IsMin
 		FROM #NewInputDateTbl tmp
