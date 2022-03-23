@@ -35,7 +35,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @xml XML, @ErrBetType VARCHAR(10), @ValueError VARCHAR(200) = ''
+	DECLARE @xml XML, @ErrBetType VARCHAR(10), @ValueError VARCHAR(200) = '' , @RowError VARCHAR(200) = ''
 	DECLARE @NewStakeLevelTbl TABLE (
 			RowID				INT IDENTITY (1,1)
 			, SportType			SMALLINT
@@ -118,13 +118,13 @@ BEGIN
 						   WHEN ISNULL( CreditCurrency,'') = '' AND 
 								ISNULL( DepositCurrency,'') = ''	THEN 122
 						   ELSE 101 END ,
-		  @ErrMsg =	  CASE WHEN ISNULL( SportType,'') = ''	THEN 'The Sport Type is required field.' 
-						   WHEN ISNULL( BetType,'') = ''	THEN 'The Bet Type is required field.' 
-						   WHEN ISNULL( NewMinBet,0) = 0	THEN 'The New Min Bet is required field.' 
-						   WHEN ISNULL( NewMaxBet,0) = 0	THEN 'The New Max Bet is required field.' 
-						   WHEN NewMinBet > NewMaxBet		THEN 'The New Max Bet must be greater than or equal to the New Min Bet.' 
-						   WHEN NewMinBet = 0				THEN 'The Min Bet must be different from 0.'
-						   WHEN NewMaxBet = 0				THEN 'The Max Bet must be different from 0.' 
+		  @ErrMsg =	  CASE WHEN ISNULL( SportType,'') = ''	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Sport Type is required field.' 
+						   WHEN ISNULL( BetType,'') = ''	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Bet Type is required field.' 
+						   WHEN ISNULL( NewMinBet,0) = 0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Min Bet is required field.' 
+						   WHEN ISNULL( NewMaxBet,0) = 0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet is required field.' 
+						   WHEN NewMinBet > NewMaxBet		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be greater than or equal to the New Min Bet.' 
+						   WHEN NewMinBet = 0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
+						   WHEN NewMaxBet = 0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Bet must be different from 0.' 
 						   WHEN ISNULL( CreditCurrency,'') = '' AND 
 								ISNULL( DepositCurrency,'') = ''	THEN 'The Currency is required field.' 
 						   ELSE '' END 						   
@@ -182,55 +182,56 @@ BEGIN
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode = 108 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SportType AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 108 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SportType AS VARCHAR(200)) , @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.SettingType,0) = 0 OR NOT EXISTS( SELECT TOP 1 1 FROM #Sports WHERE SportType =  tmp.SportType)
 	IF 	@ErrCode = 108			
 	BEGIN
-		SELECT @ErrMsg = 'The Sport Type ' + @ValueError + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode = 109 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.BetType AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 109 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.BetType AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE NOT EXISTS( SELECT TOP 1 1 FROM #Bettype WHERE typeid =  tmp.BetType)
 	IF 	@ErrCode = 109			
 	BEGIN
-		SELECT @ErrMsg = 'The Bet Type ' + @ValueError + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode = 110 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 110 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.Currency,'') <> '' AND tmp.IsCredit = 1 AND  NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency  AND IsActive = 1 AND OfferSite IN (0,1))
 	IF 	@ErrCode = 110			
 	BEGIN
-		SELECT @ErrMsg = 'The Credit Currency ' + @ValueError + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Credit Currency ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode = 111 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 111 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.currency AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.Currency,'') <> ''  AND tmp.IsCredit = 0 AND NOT EXISTS( SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency =  tmp.Currency AND IsActive = 1 AND OfferSite IN (0,2))
 	IF 	@ErrCode = 111			
 	BEGIN
-		SELECT @ErrMsg = 'The Deposit Currency ' + @ValueError + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Deposit Currency ' + @ValueError + ' does not exist.' 
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 120 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SiteID AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 120 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SiteID AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SiteID <> 0 AND tmp.SettingType = 7  AND tmp.IsCredit = 0 
-		AND NOT EXISTS( SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid =  tmp.SiteID AND IsActive = 1 AND isLicensee =1 AND isDeposit = 1)
+	WHERE tmp.SettingType = 7  AND tmp.IsCredit = 0  AND (tmp.SiteID = 0  OR (tmp.SiteID <> 0  
+		AND NOT EXISTS( SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid =  tmp.SiteID AND IsActive = 1 AND isLicensee =1 AND isDeposit = 1)))
 	IF 	@ErrCode = 120			
 	BEGIN
-		SELECT @ErrMsg = 'The Site  ' + @ValueError + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Site  ' + @ValueError + ' does not exist.' 
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = CASE WHEN IsMin = 1 THEN 112 ELSE 113 END  , @ErrBetType = CAST(BetType AS VARCHAR(10)) , @ValueError = CAST((CASE WHEN IsMin = 1 THEN CurMinBet ELSE CurMaxBet END) AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = CASE WHEN IsMin = 1 THEN 112 ELSE 113 END  , @ErrBetType = CAST(BetType AS VARCHAR(10)) , 
+				@ValueError = CAST((CASE WHEN IsMin = 1 THEN CurMinBet ELSE CurMaxBet END) AS VARCHAR(200)), @RowError = CAST(RowID  AS VARCHAR(200))
 	FROM (
-		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 1 AS IsMin
+		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 1 AS IsMin, RowID
 		FROM #NewInputDateTbl tmp
 		WHERE  CurMinBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
 								AND (NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
@@ -243,7 +244,7 @@ BEGIN
 								OR NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
 								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet ))))
 		UNION ALL 
-		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 0 AS IsMin
+		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 0 AS IsMin, RowID
 		FROM #NewInputDateTbl tmp
 		WHERE CurMaxBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
 								AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
@@ -254,59 +255,59 @@ BEGIN
 	) KQ
 	IF 	@ErrCode = 112			
 	BEGIN
-		SELECT @ErrMsg = 'The Current Min Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Current Min Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
 		RETURN
 	END
 	ELSE IF @ErrCode = 113
 	BEGIN
-		SELECT @ErrMsg = 'The Current Max Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Current Max Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 114 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.GameGroupID AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 114 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.GameGroupID AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType IN (8)  AND NOT EXISTS( SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
 									WHERE RefSportType =  tmp.SportType AND RefBetType = OrgBetType AND GameGroupID = tmp.GameGroupID
 									AND ((tmp.IsCredit = 1 AND IsDeposit = 0) OR (tmp.IsCredit = 0 AND IsDeposit = 1)))
 	IF 	@ErrCode = 114
 	BEGIN
-		SELECT @ErrMsg = 'The Game Group ID ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.'  
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Game Group ID ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.'  
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 115 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = ''
+	SELECT TOP(1) @ErrCode = 115 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = '', @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.CurMinBet = NewMinBet AND CurMaxBet = NewMaxBet
 	IF 	@ErrCode = 115			
 	BEGIN
-		SELECT @ErrMsg = 'The New Min Bet and New Max Bet are the same as The Current Min Bet and The Current Max Bet. Please input another value for the New Min Bet and the New Max Bet again.'  
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The New Min Bet and New Max Bet are the same as The Current Min Bet and The Current Max Bet. Please input another value for the New Min Bet and the New Max Bet again.'  
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 116 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.GameGroupID AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 116 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.GameGroupID AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType IN (8) AND ISNULL(tmp.GameGroupID,0) = 0
 	IF 	@ErrCode = 116			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Game Group ID.'  
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': You input missing data with the product''s format. Please input data on Game Group ID.'  
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 117 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.CurMinBet AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 117 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.CurMinBet AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType IN (7,17) AND ISNULL(tmp.CurMinBet,0) = 0 AND ISNULL(tmp.CurMaxBet,0) <> 0
 	IF 	@ErrCode = 117			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Current Min Bet.'  
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': You input missing data with the product''s format. Please input data on Current Min Bet.'  
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = 118 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.CurMaxBet AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode = 118 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) ,  @ValueError = CAST(tmp.CurMaxBet AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType IN (7,17) AND ISNULL(tmp.CurMaxBet,0) = 0 AND ISNULL(tmp.CurMinBet,0) <> 0
 	IF 	@ErrCode = 118			
 	BEGIN
-		SELECT @ErrMsg = 'You input missing data with the product''s format. Please input data on Current Max Bet.'  
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': You input missing data with the product''s format. Please input data on Current Max Bet.'  
 		RETURN
 	END
 
@@ -322,7 +323,7 @@ BEGIN
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #Currency )			
 	BEGIN
 		SET @NotiCode = 100
-		SELECT @NotiMsg = 'There are new currencies : ' +  STUFF((SELECT DISTINCT ',' + cast(Currency AS nvarchar(50))
+		SELECT @NotiMsg = 'There are new currencies : ' +  STUFF((SELECT DISTINCT ',' + CAST(Currency AS NVARCHAR(50))
 									FROM #Currency
 									FOR XML PATH('')), 1, 1, '')
 	END
@@ -337,7 +338,7 @@ BEGIN
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #RowDuplicate )			
 	BEGIN
 		SET @ErrCode = 119
-		SELECT @ErrMsg = STUFF((SELECT ', row ' + cast(RowIDF AS nvarchar(50)) + ' - row ' + cast(RowIDT AS nvarchar(50)) 
+		SELECT @ErrMsg = STUFF((SELECT ', row ' + CAST(RowIDF AS NVARCHAR(50)) + ' - row ' + CAST(RowIDT AS NVARCHAR(50)) 
 									FROM #RowDuplicate tmp
 									ORDER BY RowIDF
 									FOR XML PATH('')), 1, 1, '') + ' : These rows have duplicate data' 
