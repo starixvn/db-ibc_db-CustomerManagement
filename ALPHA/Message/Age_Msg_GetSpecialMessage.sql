@@ -35,7 +35,7 @@ BEGIN
 		SELECT DISTINCT m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
 						m.Content_jp, m.Content_th, m.Content_it, m.Content_ko,
 						m.Content_es, m.Content_vn, m.Content_id, m.Content_el,
-						m.Content_mx,
+						m.Content_mx, m.Content_zhcn,
 						m.PostTime, m.CreateTime, m.LastUpdateTime,
 						m.MsgType, m.IsSticky, m.IsTest, m.MatchId, m.IsBatch,
 						m.Creator, m.LastUpdator, 

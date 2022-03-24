@@ -1,11 +1,4 @@
-﻿USE [bodb_Message]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-ALTER PROCEDURE [dbo].[Dot_Msg_GetSpecialMessage]
+﻿ALTER PROCEDURE [dbo].[Dot_Msg_GetSpecialMessage]
 	@targetid int = 0,
 	@targetid2 varchar(100) = '0',
 	@special int = 2,
@@ -26,6 +19,7 @@ BEGIN
         Scott@20110322 : if len(siteid) is 4 transfer to 7
 		20120109@Scott(DB07): add condition for new flag column [isDeleted] to filter deleted data.
 		20161130@Paul: sort by TopLevel column [RedmineID #66535]
+		20180828@Scott : Added Content_zhcn
     Param's Explanation:
     
     */
@@ -43,7 +37,7 @@ BEGIN
 		SELECT DISTINCT m.MessageId, m.Content_en, m.Content_cs, m.Content_ch,
 						m.Content_jp, m.Content_th, m.Content_it, m.Content_ko,
 						m.Content_es, m.Content_vn, m.Content_id, m.Content_el,
-						m.Content_mx,
+						m.Content_mx, m.Content_zhcn,
 						m.PostTime, m.CreateTime, m.LastUpdateTime,
 						m.MsgType, m.IsSticky, m.IsTest, m.MatchId, m.IsBatch,
 						m.Creator, m.LastUpdator, 
@@ -79,10 +73,3 @@ BEGIN
 		ELSE 0 END = 1
 	ORDER BY TopLevel, PostTime DESC
 END
-
-GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetSpecialMessage] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetSpecialMessage] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Dot_Msg_GetSpecialMessage] TO vnteam
