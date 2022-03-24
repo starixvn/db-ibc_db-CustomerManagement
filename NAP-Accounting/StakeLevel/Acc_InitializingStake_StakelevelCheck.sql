@@ -331,7 +331,7 @@ BEGIN
 	INSERT INTO #RowDuplicate(RowIDF,RowIDT)
 	SELECT DISTINCT tmp.RowID , ndt.RowID
 	FROM #NewInputDateTbl tmp
-	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.OrgBetType = ndt.OrgBetType 
+	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.BetType = ndt.BetType 
 				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.CurMinBet = ndt.CurMinBet AND tmp.CurMaxBet = ndt.CurMaxBet AND tmp.GameGroupID  = ndt.GameGroupID
 				AND tmp.NewMaxBet = ndt.NewMaxBet AND tmp.NewMinBet = ndt.NewMinBet AND tmp.IsCredit = ndt.IsCredit AND (tmp.SettingType = 8 OR (tmp.SettingType = 7 AND tmp.SiteID = ndt.SiteID))
 	WHERE tmp.RowID <  ndt.RowID 
