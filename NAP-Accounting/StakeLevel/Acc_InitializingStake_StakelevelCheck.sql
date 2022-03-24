@@ -35,7 +35,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @xml XML, @ErrBetType VARCHAR(10), @ValueError VARCHAR(200) = '' , @RowError VARCHAR(200) = ''
+	DECLARE @xml XML, @ErrBetType VARCHAR(10), @ValueError VARCHAR(500) = '' , @RowError VARCHAR(200) = '',@SportType   SMALLINT  ,@BetType   SMALLINT 
 	DECLARE @NewStakeLevelTbl TABLE (
 			RowID				INT IDENTITY (1,1)
 			, SportType			SMALLINT
@@ -172,12 +172,12 @@ BEGIN
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
 	
-	SET @ProductID = (SELECT TOP 1 ProductID FROM #NewInputDateTbl tmp ORDER BY RowID)
-	IF 	EXISTS( SELECT TOP 1 1 FROM #NewInputDateTbl WHERE ProductID <> @ProductID)	
+	SELECT TOP (1) @ProductID = ProductID , @SportType = SportType, @BetType = OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
+	IF 	EXISTS( SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType <> @SportType OR @BetType <> OrgBetType)	
 	BEGIN
 		SELECT @ErrCode = 121	
 		SELECT  TOP(1) @ErrMsg = 'Row ' + CAST(RowID AS VARCHAR(10)) + ' : You can only upload setting for one product at a time.' 
-		FROM #NewInputDateTbl WHERE ProductID <> @ProductID
+		FROM #NewInputDateTbl WHERE SportType <> @SportType OR @BetType <> OrgBetType
 		ORDER BY RowID 
 		RETURN
 	END	
@@ -228,39 +228,24 @@ BEGIN
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode = CASE WHEN IsMin = 1 THEN 112 ELSE 113 END  , @ErrBetType = CAST(BetType AS VARCHAR(10)) , 
-				@ValueError = CAST((CASE WHEN IsMin = 1 THEN CurMinBet ELSE CurMaxBet END) AS VARCHAR(200)), @RowError = CAST(RowID  AS VARCHAR(200))
-	FROM (
-		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 1 AS IsMin, RowID
-		FROM #NewInputDateTbl tmp
-		WHERE  CurMinBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
-								AND (NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  )
-								 OR NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet )))
-		OR (IsCredit = 0  AND tmp.SettingType IN (7) 
-								AND (NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND (MinStake = CurMinBet ))
-								OR NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet ))))
-		UNION ALL 
-		SELECT SettingType, SportType, BetType , CurMinBet, CurMaxBet, GameGroupID, IsCredit, 0 AS IsMin, RowID
-		FROM #NewInputDateTbl tmp
-		WHERE CurMaxBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
-								AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
-								WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
-		OR (IsCredit = 0 AND tmp.SettingType IN (7) 
-							AND NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MaxStake = CurMaxBet))
-		)
-	) KQ
+	SELECT TOP(1) @ErrCode = 112,  @ErrBetType = CAST(BetType AS VARCHAR(10))
+	 , @ValueError = CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50))
+	 , @RowError = CAST(tmp.RowID  AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE  CurMinBet <> 0 AND ((IsCredit = 1 AND tmp.SettingType IN (7,17) 
+							AND (NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+							WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet  )
+							 OR NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+							WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet )))
+	OR (IsCredit = 0  AND tmp.SettingType IN (7) 
+							AND (NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
+							WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND (MinStake = CurMinBet ))
+							OR NOT EXISTS( SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
+							WHERE BetType = GameTypeID AND ExchangeId = tmp.ExchangeId AND MinStake = CurMinBet AND MaxStake = CurMaxBet ))))
+	
 	IF 	@ErrCode = 112			
 	BEGIN
-		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Current Min Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
-		RETURN
-	END
-	ELSE IF @ErrCode = 113
-	BEGIN
-		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Current Max Bet ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': Bet Type ' + @ErrBetType + ' does not have any existing stake level with Current Min Bet: ' + @ValueError + ' .' 
 		RETURN
 	END
 	
@@ -364,7 +349,7 @@ BEGIN
 	
 	IF 	@ErrCode = 123			
 	BEGIN
-		SELECT @ErrMsg = 'Row ' + @ValueError + ': this stake level is already existed.' 
+		SELECT @ErrMsg = 'Row ' + @ValueError + ': This stake level is already existed.' 
 		RETURN
 	END	
 	
