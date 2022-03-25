@@ -105,7 +105,7 @@ BEGIN
 	WHERE a.SettingType IN (8) 
 		AND a.IsCredit = 1 
 		AND (@pMutilCurrencyCredit = '0' OR s.ExchangeId IN (SELECT val FROM dbo.strSplit(@pMutilCurrencyCredit, ',')))
-		AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
+		AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	UNION ALL -- Deposit Stakelevel
 	SELECT a.SportType,a.SportName,a.BetType,a.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
 		  0 AS NewMinStake, 0 AS NewMaxStake, s.MinStake AS CurMinStake, S.MaxStake AS CurMaxStake, S.GameGroupID, s.SiteID AS SiteID
@@ -125,7 +125,7 @@ BEGIN
 	WHERE a.SettingType IN (8) 
 		AND a.IsCredit = 0 
 		AND (@pMutilCurrencyDeposit = '0' OR s.ExchangeId IN (SELECT val FROM dbo.strSplit(@pMutilCurrencyDeposit, ',')))
-		AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
+		AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 	IF @ExportData = 1
 	BEGIN
 		

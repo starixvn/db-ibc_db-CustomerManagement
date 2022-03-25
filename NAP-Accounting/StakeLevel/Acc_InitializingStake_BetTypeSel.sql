@@ -32,7 +32,19 @@ BEGIN
 			 ,b.typenamee 
 		FROM ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
-		WHERE (psd.SettingType IN (7, 8, 17)) 
+		WHERE (psd.SettingType IN (7, 17)) 
+			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
+			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
+			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
+		UNION
+		SELECT DISTINCT
+			 slg.GameTypeID AS BetType
+			 ,b.typenamee 
+		FROM ProductSettingDetail psd WITH(NOLOCK)
+			INNER JOIN StakeLevel sl WITH(NOLOCK) ON psd.BetType = sl.GameTypeID
+			INNER JOIN StakeLevelGroupDetail slg WITH(NOLOCK) ON sl.StakeLevelID = slg.StakeLevelID
+			INNER JOIN #Bettype b WITH(NOLOCK) ON slg.GameTypeID = b.typeid
+		WHERE (psd.SettingType IN (8)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
@@ -43,10 +55,23 @@ BEGIN
 		FROM Dep_ProductSetting ps WITH(NOLOCK)
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
-		WHERE (ps.SettingType IN (7, 8)) 
+		WHERE (ps.SettingType IN (7)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
+		UNION
+		SELECT DISTINCT
+			 slg.GameTypeID AS BetType
+			 ,b.typenamee 
+		FROM Dep_ProductSetting ps WITH(NOLOCK)
+			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
+			INNER JOIN Dep_StakeLevel sl WITH(NOLOCK) ON psd.BetType = sl.GameTypeID
+			INNER JOIN Dep_StakeLevelGroupDetail slg WITH(NOLOCK) ON sl.StakeLevelID = slg.StakeLevelID
+			INNER JOIN #Bettype b WITH(NOLOCK) ON slg.GameTypeID = b.typeid
+		WHERE (ps.SettingType IN (8)) 
+			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
+			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
+			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))	
 			) KQ
 	ORDER BY BetType
    
