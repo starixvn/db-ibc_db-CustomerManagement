@@ -34,6 +34,7 @@ AS
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
+		- 20210825@Percy: Remove check super prefix [RemineID: #170693]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -101,6 +102,7 @@ BEGIN
 	END
 
 	-- Check super prefix
+	/*
 	IF @RoleId = 4
 	BEGIN
 		DECLARE @tblPrefix TABLE (GroupName VARCHAR(50), Prefix VARCHAR(10), AllowNewSuper BIT)
@@ -125,6 +127,7 @@ BEGIN
 			END
 		END
 	END
+	*/
 
 	Declare @creditgrade nvarchar(1),
 		@preagreeamount money,
