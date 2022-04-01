@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
 		- 20220301@Malcolm: Fix Logs [RedmineID: #163417]
+		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 
 	Param's Explanation:
 		. @Exhange 
@@ -47,7 +48,8 @@ BEGIN
 
 	BEGIN TRY
 		UPDATE e WITH(ROWLOCK)
-			SET e.actualrate = ex.Actualrate
+			SET e.actualrate = ex.Actualrate,
+				e.RepUpdateTime = SYSDATETIME()
 		FROM dbo.Exchange e 
 			INNER JOIN #Exchange ex ON e.ExchangeId = ex.ExchangeId
 	END TRY

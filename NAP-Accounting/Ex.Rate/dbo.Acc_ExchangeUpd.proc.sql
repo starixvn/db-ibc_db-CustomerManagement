@@ -37,6 +37,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190627@Elodie: Apply currency min bet constrain for Bet Setting [Redmine:#115126]
 		- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
+		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -107,7 +108,8 @@ BEGIN
 		Description = @Description,
 		MultipliedBy = @MultipliedBy,
 		OfferSite = @OfferSite,
-		IsActive = @IsActive
+		IsActive = @IsActive,
+		RepUpdateTime = SYSDATETIME()
 	WHERE exchangeid=@exchangeid
 
 	IF @old_minbet <> @minbet OR @old_minbetlive <> @minbetlive 
