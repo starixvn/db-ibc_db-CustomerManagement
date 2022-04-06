@@ -9,6 +9,7 @@ AS
 
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
+	- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
 
 	Parameter explanation:
 
@@ -55,7 +56,7 @@ BEGIN
 	WHERE isActive = 1
 	ORDER BY Site
 
-	SELECT CustomerClass,Name FROM dbo.f_NAP_VREngine_GetCustomerClass()
+	SELECT CustomerClass,Name FROM dbo.f_NAP_VREngine_GetCustomerClass() ORDER BY 1
 	SELECT BetFrom,Name FROM dbo.f_NAP_VREngine_GetBetFrom() ORDER BY 2
 
 	SELECT * FROM #SportVR
