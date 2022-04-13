@@ -50,7 +50,8 @@ Revisions:
 	- 20210305@Tina: add more group ACCSABA789 - [Redmine: #151213]
 	- 20210309@Tina: add more group ACCAthena000
 	- 20210812@Percy: Add back ACCTHAI2, ACCTHAI56, ACCTHAI99 as normal group [RedmineID: #146710]
-	
+	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
+
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -69,7 +70,7 @@ BEGIN
 		FROM [Site] WITH (NOLOCK)
 		WHERE isLicensee = 0 AND isActive = 1
 	END
-	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99'))
+	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT'))
 	BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 22 --755555,...
