@@ -25,7 +25,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20211014@Elodie: No paging [Redmine:#163177]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
-		
+		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 	Param's Explanation:
 		@CustId: Customer login
 		@SubAccId: SubAccount Id
@@ -61,7 +61,7 @@ BEGIN
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 		WHERE c.srecommend = @CustId
 			AND c.roleid = 3
-			AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			--AND p.ReasonId IS NOT NULL
@@ -76,7 +76,7 @@ BEGIN
 						FROM dbo.custInfo ci WITH (NOLOCK) 							
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
-							AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+							AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 						GROUP BY ci.mrecommend) AS pa		
 	END
 	ELSE
@@ -105,7 +105,7 @@ BEGIN
 					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 				WHERE c.mrecommend = @CustId
 					AND c.roleid = 2
-					AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND p.ReasonId IS NOT NULL
@@ -122,7 +122,7 @@ BEGIN
 					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
 				WHERE c.roleid = 2
-					AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 					AND ((@UplineId IS NULL AND c.srecommend = @CustId) OR (@UplineId IS NOT NULL AND c.mrecommend = @UplineId))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -140,7 +140,7 @@ BEGIN
 							WHERE ci.recommend = t.custid 
 								AND ci.roleid = 1
 								--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
-								AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+								AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 							GROUP BY ci.recommend) AS pa	
 		END
 		ELSE IF @SearchRoleId = 1
@@ -156,7 +156,7 @@ BEGIN
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 				WHERE c.recommend = @CustId
 					AND c.roleid = 1
-					AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND p.ReasonId IS NOT NULL
@@ -176,7 +176,7 @@ BEGIN
 					AND ((@UplineId IS NULL AND CASE WHEN @RoleId = 4 THEN c.srecommend WHEN @RoleId = 3 THEN c.mrecommend END = @CustId) 
 						OR (@UplineId IS NOT NULL AND c.recommend = @UplineId))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
-					AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
 					AND  c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'

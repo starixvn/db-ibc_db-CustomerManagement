@@ -22,6 +22,7 @@ AS
 		- 20210426@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
+		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 	Parameter's Explanation:
 		@GroupName: ext group
 		@UplineUsername: search downlines under @UplineUsername, not required
@@ -68,7 +69,7 @@ BEGIN
 								FROM @tmpSuper
 								WHERE 1 = CASE WHEN (@UplineID IS NOT NULL AND custId= @UplineID) OR @UplineID IS NULL THEN 1 ELSE 0 END
 								)
-			AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))					
+			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 			AND c.roleid = 3
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -84,7 +85,7 @@ BEGIN
 						FROM dbo.custInfo ci WITH (NOLOCK) 							
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
-							AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+							AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 							--AND pa.ReasonId IS NOT NULL
 						GROUP BY ci.mrecommend) AS pa		
 	END
@@ -100,7 +101,7 @@ BEGIN
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.mrecommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 2
-			AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))	
+			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			--AND p.ReasonId IS NOT NULL
@@ -133,7 +134,7 @@ BEGIN
 			AND c.roleid = 1
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-			AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 		
