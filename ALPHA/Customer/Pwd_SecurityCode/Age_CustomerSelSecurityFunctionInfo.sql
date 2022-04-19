@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-custDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE Age_CustomerSelSecurityFunctionInfo
 	@custid		INT,
@@ -8,11 +8,11 @@ AS
 	Created: Elodie
 	Date: 20210812
 	Task: Get security function info 
-	DB: DBACC/bodb02
+	DB: DBCUST/custDB
 		
 	Revisions:
 		- 20210812@Elodie: Initial sp [Redmine: #159628]
-
+		- 20220419@Elodie: Move SP to DBCUST [Redmine: #171669]
 	Parameter's Explanation:
 	Example: EXEC Age_CustomerSelSecurityFunctionInfo @custid = 838203
 */ 
