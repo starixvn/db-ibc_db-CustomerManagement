@@ -21,6 +21,7 @@ AS
 		- 20200306@Elodie: Allow view problem account for master and agent [Redmine:#129881]
 		- 20210422@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
+		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 	Param's Explanation:
 		@UserId: Customer login
 		@SubAccId: SubAccount Id
@@ -84,7 +85,7 @@ BEGIN
 		INNER JOIN custInfo ci WITH(NOLOCK) ON d.custid = ci.custid
 		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
 	WHERE pa.IsReviewed = 0 
-		AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
+		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 		--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 
 	UPDATE pa
