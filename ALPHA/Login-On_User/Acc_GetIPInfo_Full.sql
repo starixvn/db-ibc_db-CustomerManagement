@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE Acc_GetIPInfo_Full
 	@IP VARCHAR(45)
 AS
@@ -12,6 +12,7 @@ AS
 	Revisions:	
 		- 20180710@Razor: Grant permission for bodbExtAccNet
 		- 20211018@Elodie: Support IPv6 Phase 1 - Support for 3rd party product bet tickets  [Redmine:#90903]
+		- 20220420@Elodie:  Grant permission for bodbLicenseeNet  [Redmine:#168737]
 */
 BEGIN
 	SET NOCOUNT ON
