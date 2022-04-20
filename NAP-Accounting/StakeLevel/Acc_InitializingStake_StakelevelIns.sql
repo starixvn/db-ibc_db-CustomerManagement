@@ -148,7 +148,7 @@ BEGIN
 		UPDATE a 
 		SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType	
 		FROM  #NewInputDateTbl a
-			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
+			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType AND ( psd.SettingType  = 8 OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 		WHERE a.IsCredit = 1 AND psd.SettingType IN (7, 17, 8)
 		
 		UPDATE a 
@@ -156,7 +156,7 @@ BEGIN
 		FROM  #NewInputDateTbl a
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 			INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
-		WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
+		WHERE a.IsCredit = 0   AND ( ps.SettingType = 8 OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
