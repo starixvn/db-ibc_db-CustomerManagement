@@ -14,6 +14,7 @@ AS
 	Original: 
 	Revisions:
 		- 20220210@Winfred: NAP -  Flexible Initializing check Stake Level [Redmine: #167128]
+		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
 	
 	Param's Explanation:
 		• @pInputData : 
@@ -162,15 +163,15 @@ BEGIN
 	UPDATE a 
 	SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType , a.ProductID = psd.RealProductId	
 	FROM  #NewInputDateTbl a
-		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
+		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType AND ( psd.SettingType  = 8 OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 	WHERE a.IsCredit = 1 AND psd.SettingType IN (7, 17, 8)
 	
 	UPDATE a 
 	SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType , a.ProductID  = ps.ProductID
 	FROM  #NewInputDateTbl a
-		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
+		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
-	WHERE a.IsCredit = 0  AND ps.SettingType IN (7, 8)
+	WHERE a.IsCredit = 0  AND ( ps.SettingType = 8 OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
 	
 	SELECT TOP (1) @ProductID = ProductID , @SportType = SportType, @BetType = OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
 	IF 	EXISTS( SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType <> @SportType OR @BetType <> OrgBetType)	
@@ -182,21 +183,21 @@ BEGIN
 		RETURN
 	END	
 	
+	SELECT TOP(1) @ErrCode = 109 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.BetType AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE NOT EXISTS( SELECT TOP 1 1 FROM #Bettype WHERE typeid =  tmp.BetType) OR OrgBetType IS NULL
+	IF 	@ErrCode = 109			
+	BEGIN
+		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
+		RETURN
+	END	
+
 	SELECT TOP(1) @ErrCode = 108 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.SportType AS VARCHAR(200)) , @RowError = CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.SettingType,0) = 0 OR NOT EXISTS( SELECT TOP 1 1 FROM #Sports WHERE SportType =  tmp.SportType)
 	IF 	@ErrCode = 108			
 	BEGIN
 		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
-	
-	SELECT TOP(1) @ErrCode = 109 , @ErrBetType = CAST(tmp.BetType AS VARCHAR(10)) , @ValueError = CAST(tmp.BetType AS VARCHAR(200)), @RowError = CAST(tmp.RowID  AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE NOT EXISTS( SELECT TOP 1 1 FROM #Bettype WHERE typeid =  tmp.BetType)
-	IF 	@ErrCode = 109			
-	BEGIN
-		SELECT @ErrMsg = 'Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
@@ -323,7 +324,7 @@ BEGIN
 	UNION ALL
 	SELECT DISTINCT tmp.RowID , ndt.RowID  
 	FROM #NewInputDateTbl tmp  
-		INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.BetType = ndt.BetType   
+		INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.BetType = ndt.BetType
 			AND tmp.ExchangeId = ndt.ExchangeId AND tmp.IsCredit = ndt.IsCredit AND tmp.SettingType = 8 
 	WHERE tmp.RowID <  ndt.RowID 
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #RowDuplicate )			
