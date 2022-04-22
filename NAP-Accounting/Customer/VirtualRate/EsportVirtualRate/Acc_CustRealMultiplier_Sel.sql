@@ -1,4 +1,3 @@
-
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustRealMultiplier_Sel]
@@ -14,6 +13,7 @@ AS
 	    
 	Revisions:    
 		- 20190722@Dominic : First commit
+		- 20220422@Eden: SQL Server Upgrade to 2019 Phase 5 [Redmine: #171831]
   
 */ 
 BEGIN
@@ -57,21 +57,32 @@ BEGIN
 
 
 	INSERT INTO #VRLineCustID(CustID, RoleID)
-	SELECT CustID,MAX(RoleID) RoleID
-	FROM (
-		SELECT upv.Val CustID, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) RoleID
-		FROM (
-			SELECT custid,recommend,mrecommend,srecommend,0 [Global]
-			FROM Customer (NOLOCK)
-			WHERE CustID=@CustID
-		) t
-		UNPIVOT
-		(
-			Val
-			FOR col IN (custid,recommend,mrecommend,srecommend,[Global])
-		) upv
-	) tmp
-	GROUP BY CustID
+	SELECT v.custid, MAX(v.roleid) AS RoleID
+	FROM Customer c WITH (NOLOCK)
+	CROSS APPLY
+		(VALUES (c.custid, 1),
+				 (c.recommend, 2),
+				 (c.mrecommend, 3),
+				 (c.srecommend, 4),
+				 (0, 5)
+		 ) v(CustID, RoleId)
+	WHERE c.custid = @CustID
+	GROUP BY v.custid
+	--SELECT CustID,MAX(RoleID) RoleID
+	--FROM (
+	--	SELECT upv.Val CustID, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) RoleID
+	--	FROM (
+	--		SELECT custid,recommend,mrecommend,srecommend,0 [Global]
+	--		FROM Customer (NOLOCK)
+	--		WHERE CustID=@CustID
+	--	) t
+	--	UNPIVOT
+	--	(
+	--		Val
+	--		FOR col IN (custid,recommend,mrecommend,srecommend,[Global])
+	--	) upv
+	--) tmp
+	--GROUP BY CustID
 
 	INSERT INTO #VRCustSetting(CustID, LevelID, ValueIDLive, ValueIDNonLive)
 	SELECT vr.CustID, vr.LevelID, ValueIDLive, ValueIDNonLive

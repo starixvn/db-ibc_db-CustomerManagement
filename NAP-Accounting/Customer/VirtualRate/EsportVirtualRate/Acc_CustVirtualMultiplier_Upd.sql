@@ -27,6 +27,7 @@ AS
 		- 20200310@Eden : E-sport VR Phase 3 - Manually Updated Virtual Rate Accounts [Redmind: #128749]
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
 		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
+		- 20220422@Eden: SQL Server Upgrade to 2019 Phase 5 [Redmine: #171831]
 
 	Mapping log columns:
 		, IsNew							AS C1
@@ -151,21 +152,32 @@ BEGIN
 	--Get Upline's custIDs
 	IF @CustID > 0 --Not Global
 		INSERT INTO #VRLineCustID(CustID, RoleID)
-		SELECT CustID,MAX(RoleID) RoleID
-		FROM (
-			SELECT upv.Val CustID, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) RoleID
-			FROM (
-				SELECT custid,recommend,mrecommend,srecommend,0 [Global]
-				FROM Customer (NOLOCK)
-				WHERE CustID=@CustID
-			) t
-			UNPIVOT
-			(
-			  Val
-			  FOR col IN (custid,recommend,mrecommend,srecommend,[Global])
-			) upv
-		) tmp
-		GROUP BY CustID
+		SELECT v.custid, MAX(v.roleid) AS RoleID
+		FROM Customer c WITH (NOLOCK)
+		CROSS APPLY
+			(VALUES (c.custid, 1),
+					 (c.recommend, 2),
+					 (c.mrecommend, 3),
+					 (c.srecommend, 4),
+					 (0, 5)
+			 ) v(CustID, RoleId)
+		WHERE c.custid = @CustID
+		GROUP BY v.custid
+		--SELECT CustID,MAX(RoleID) RoleID
+		--FROM (
+		--	SELECT upv.Val CustID, ROW_NUMBER() OVER (ORDER BY (SELECT 0)) RoleID
+		--	FROM (
+		--		SELECT custid,recommend,mrecommend,srecommend,0 [Global]
+		--		FROM Customer (NOLOCK)
+		--		WHERE CustID=@CustID
+		--	) t
+		--	UNPIVOT
+		--	(
+		--	  Val
+		--	  FOR col IN (custid,recommend,mrecommend,srecommend,[Global])
+		--	) upv
+		--) tmp
+		--GROUP BY CustID
 	ELSE --Global
 		INSERT INTO #VRLineCustID(CustID, RoleID)
 		SELECT 0, 5
