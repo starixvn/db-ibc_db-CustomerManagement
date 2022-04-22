@@ -13,6 +13,7 @@ AS
 	Original: 
 	Revisions:
 		- 20220210@Winfred: NAP -  Flexible Initializing insert Stake Level [Redmine: #167128]
+		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
 	
 	Param's Explanation:
 		• @pInputData : 
