@@ -27,6 +27,7 @@ AS
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20201103@Tina: move site for members level [Redmine: #144323]
 		- 20210202@Winfred : Virtual Rate for Basketball - New 611111 site super must have VR setting = 0%   [Redmine: #149369]	
+		- 20220419@Eden: Turn off VR Basketball & E-sports for 611111 site [Redmine: #171609]
 		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -146,7 +147,55 @@ BEGIN
 		BEGIN
 			SELECT @ErrMsg = 'Update VRCustSetting fail. Please try again'
 			RETURN
-		END		
+		END	
+		
+		DECLARE @VirtualRateMultiplier2 VARCHAR(MAX) = '' --Esports
+		SELECT @VirtualRateMultiplier2 = CONVERT(VARCHAR(MAX),(  SELECT b.LevelID,vr.ValueID AS ValueIDLive,vr.ValueID AS ValueIDNonLive 
+															FROM VRSettingHierarchy b WITH(NOLOCK) 
+																CROSS APPLY VRValueMapping vr (NOLOCK)
+															WHERE b.SportType = 43 
+																AND b.VRLeagueGroupID = -1 
+																AND b.BetType = -1 
+																AND vr.Value = 1
+															FOR XML RAW('Row'), ROOT ('Root'))
+											)
+
+		EXEC [Acc_CustVirtualMultiplier_Upd]
+			  @CustID = @CustID
+			, @SportType = 43
+			, @VirtualMultiplier = @VirtualRateMultiplier2
+			, @UserID  = @UserId
+			, @IP  = @IP
+			, @ErrCode = @ErrCode OUTPUT 
+			, @ErrMsg = @ErrMsg OUTPUT
+
+		IF @ErrCode > 0
+		BEGIN
+			SELECT @ErrMsg = 'Update VRCustSetting fail. Please try again'
+			RETURN
+		END	
+
+		--Add to [VRSettingManualUpdAcc]
+		INSERT INTO [VRSettingManualUpdAcc](CustID,SportType)
+		SELECT @CustID,2 AS SportType
+		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 2)
+		UNION ALL
+		SELECT @CustID,43 AS SportType
+		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 43)	
+
+		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR
+		EXEC [dbo].[Acc_CustomerInfo_Execrep_04] 
+			@custid = @custid
+			,@roleid = @roleid
+			,@action = 'DisableVR2Downline'
+			,@Sporttype = 2
+
+		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR, And set all member with Override AS = 1
+		EXEC [dbo].[Acc_CustomerInfo_Execrep_04] 
+			@custid = @custid
+			,@roleid = @roleid
+			,@action = 'DisableVR2Downline'
+			,@Sporttype = 43
 	 END
 
 	--print('write log')-- Write Log Here
