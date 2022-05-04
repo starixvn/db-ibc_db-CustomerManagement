@@ -23,7 +23,8 @@ AS
 	Original:
 
 	Revisions:  
-	- 20210622@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
+		- 20210622@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
+		- 20220504@Elodie: Tuning SP [RedmineID: #172311]
 
 	Parameter Definition
 		-@FilterStageID: apply for headline dirrect acccounts
@@ -132,7 +133,14 @@ BEGIN
 		ClearedGivenCredit_dl MONEY,
 		RN				 INT IDENTITY(1,1) PRIMARY KEY
 	);
-	
+	CREATE TABLE #ArchiveSMA
+	(
+		CustID			INT, 
+		RoleId			TINYINT, 
+		srecommend		INT, 
+		mrecommend		INT, 
+		TotalDownline	INT
+	)
 	CREATE TABLE #FilterRole(RoleID TINYINT)
 
 	CREATE TABLE #Exclude(
@@ -264,37 +272,26 @@ BEGIN
 	IF @FilterDateType IN(0,1) --include filter Closed Stage
 	BEGIN
 		INSERT INTO #Exclude(recommend,mrecommend,srecommend)
-		SELECT a.custid,MAX(a.mrecommend) as mrecommend,MAX(a.srecommend) as srecommend
-		FROM custInfo a WITH(NOLOCK) 
-			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
-				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.recommend = a.custid AND dl.roleid = 1
-		WHERE a.roleid = 2
-			AND c.StageID = 1
-		GROUP BY a.custid
+		SELECT c.custid,MAX(c.mrecommend) as mrecommend,MAX(c.srecommend) as srecommend
+		FROM #ArchiveSMA c WITH(NOLOCK) 		
+			INNER JOIN custInfo dl WITH(NOLOCK) ON dl.recommend = c.custid AND dl.roleid = 1
+		WHERE c.RoleID = 2
+		GROUP BY c.custid
 		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
 		UNION
-		SELECT 0,a.custid,MAX(a.srecommend) as srecommend
-		FROM custInfo a WITH(NOLOCK) 
-			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
-				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.mrecommend = a.custid AND dl.roleid IN (1,2)
-		WHERE a.roleid = 3
-			AND c.StageID = 1 
-		GROUP BY a.custid
+		SELECT 0,c.custid,MAX(c.srecommend) as srecommend
+		FROM #ArchiveSMA c WITH(NOLOCK) 
+			INNER JOIN custInfo dl WITH(NOLOCK) ON dl.mrecommend = c.custid AND dl.roleid IN (1,2)
+		WHERE c.roleid = 3
+		GROUP BY c.custid
 		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
 		UNION 
-		SELECT 0,0,a.custid as srecommend
-		FROM custInfo a WITH(NOLOCK) 
-			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
-				ON a.custid = c.CustID
+		SELECT 0,0,c.custid as srecommend
+		FROM #ArchiveSMA c WITH(NOLOCK) 
 			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.srecommend = a.custid AND dl.roleid IN (1,2,3)
-		WHERE a.roleid = 4
-			AND c.StageID = 1 
-		GROUP BY a.custid
+				ON dl.srecommend = c.custid AND dl.roleid IN (1,2,3)
+		WHERE c.roleid = 4
+		GROUP BY c.custid
 		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
 	END
 
