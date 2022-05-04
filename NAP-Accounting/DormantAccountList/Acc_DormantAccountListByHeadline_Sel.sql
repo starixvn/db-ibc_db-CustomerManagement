@@ -269,6 +269,10 @@ BEGIN
 	WHERE fn.IsInternal = 1 
 		AND t.RoleId = 1
 
+	INSERT INTO #ArchiveSMA (custid, roleid, srecommend, mrecommend, TotalDownline)
+	SELECT ca.CustID, RoleID, srecommend, mrecommend, TotalDownline
+	FROM Cust_ArchiveAccount ca WITH (NOLOCK) WHERE StageID = 1 and RoleID IN (2,3,4)
+
 	IF @FilterDateType IN(0,1) --include filter Closed Stage
 	BEGIN
 		INSERT INTO #Exclude(recommend,mrecommend,srecommend)
