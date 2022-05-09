@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
+CREATE PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),
 	@SettingStatus TINYINT = 0 
@@ -11,7 +11,8 @@ AS
 
 	Revisions:
 		- 20211105@Winfred: Get value PT setting product for customer SMA [Redmine: #159664]
-		
+		- 20220509@Winfred: Hotfix miss Get value PT FGG And vitual games [Redmine: #159664]
+
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
 						</ROOT>'
@@ -72,11 +73,11 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
 	FROM #ProductSettingDetail b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,22,42,44,66,69) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin
+	WHERE (B.ProductID IN (41,22,42,44,66,69,64) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
-			or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
+			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
 			or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2			
 			)
 
