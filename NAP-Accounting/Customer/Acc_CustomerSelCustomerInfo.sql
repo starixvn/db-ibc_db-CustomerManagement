@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelCustomerInfo] 
 	@CustID INT = null,
 	@Username NVARCHAR(50) = null
@@ -15,6 +15,7 @@ Revisions:
 	- 20120504@Johnson: get superid, masterid 
 	- 20150609@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 */	
 SET NOCOUNT ON
 IF @CustID IS NOT NULL
@@ -26,9 +27,7 @@ BEGIN
 END
 ELSE IF @Username IS NOT NULL
 BEGIN
-	Select ISNULL(c.DisableCasino,0) AS DisableCasino,	
-		ISNULL(c.synccasino,0) AS synccasino,			
-		m.custid as MasterID,
+	Select m.custid as MasterID,
 		m.username as MasterName,
 		s.username as SuperName,
 		s.custid as SuperID,
@@ -39,15 +38,4 @@ BEGIN
 	WHERE c.username = @Username
 END
 
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCustomerInfo] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCustomerInfo] TO [bodbExtAccNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCustomerInfo] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCustomerInfo] TO [bodbDownlineNetView]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCustomerInfo] TO [vnteam]

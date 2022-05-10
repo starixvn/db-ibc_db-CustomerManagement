@@ -113,6 +113,7 @@ Revisions:
 	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -126,11 +127,9 @@ BEGIN
           , @roleid TINYINT
           , @UsedCredit MONEY     
           , @DisableDownlinesNumber BIT
-          --, @DisableDownlinesVirtualSports BIT
-          --, @DisableDownlinesEsports BIT
+
           , @DownlinesSelectedBetting BIT		  
-		  , @IsSyncUplineGoldDeluxe BIT
-		  , @DisabledUplineGoldDeluxe BIT		  
+	  
 		  , @DisableDownlinesSuperLive BIT
           , @IsInternal BIT
           , @LimitPerIP TINYINT
@@ -277,8 +276,7 @@ BEGIN
 	    FROM	customer c WITH(NOLOCK)
 		    INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.recommend
 	    WHERE ci.custid = @custid
-    	SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
-
+    	
 	    IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
 							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
 					    WHERE custid = @uplineid
@@ -315,9 +313,6 @@ BEGIN
     BEGIN
 		SELECT @UplineHasSecurityCode=1
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
-		SELECT @IsSyncUplineGoldDeluxe=1
-		SELECT @DisabledUplineGoldDeluxe=0
-
 
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -433,7 +428,6 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
-		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
 				
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -495,7 +489,6 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
 		SELECT	@uplineid = mrecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
-		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
 		
 	    SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0),
@@ -661,21 +654,11 @@ BEGIN
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
 		--ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
 		ISNULL(@DisableDownlinesSuperLive,0) DisableDownlinesSuperLive,
-		@IsSyncUplineGoldDeluxe AS IsSyncUplineGoldDeluxe,
-		@DisabledUplineGoldDeluxe AS DisabledUplineGoldDeluxe,
 	 
 	    ci.DisableNumber,
 	    ci.DisableOutRight,
-	    ci.disablecasino,
-	    ci.synccasino,
-	 
-	 
-	    --ci.DisableVirtualSports,
-	    --ci.HideVirtualSports,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
-		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,			
-		ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
 		ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,

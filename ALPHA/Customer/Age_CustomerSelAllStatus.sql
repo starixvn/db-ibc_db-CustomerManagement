@@ -17,6 +17,7 @@ AS
 		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
@@ -30,10 +31,7 @@ BEGIN
 	DECLARE @IsAllDayBalTransfer BIT,@ExecuteSQL NVARCHAR(MAX) = '',@query NVARCHAR(MAX) = '',@Param NVARCHAR(MAX) 	
     
 	--Downline/Upline status 
-    DECLARE @upLineDisableCS				BIT       
-          , @uplineDisabledNumber			BIT
-		  , @uplineHideGoldDeluxe			BIT   
-		  , @uplineDisableGoldDeluxe		BIT		
+    DECLARE @uplineDisabledNumber			BIT	
           , @uplineDisableEsports			BIT 
 		  
 	DECLARE @upLineDisableOutright	BIT
@@ -58,13 +56,8 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-
 				,	@uplineid = custid
 	     FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -81,11 +74,7 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
@@ -106,11 +95,7 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@uplineDisableCS = ISNULL(DisableCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)	
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
@@ -179,15 +164,8 @@ BEGIN
     WHERE ci.custid = @custid
 	
 	--Product Status
-	SELECT	ci.SyncCasino,
-			ci.DisableCasino,
-			@upLineDisableCS AS uplineDisableCS,
-			ci.DisableNumber,
+	SELECT	ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			@uplineHideGoldDeluxe AS uplineHideGoldDeluxe,
-			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
-			ci.DisableGoldDeluxe,
-			ci.HideGoldDeluxe,
 			ci.DisableEsports, 
 			@uplineDisableEsports AS uplineDisableEsports,
 			@DisableKeno AS DisableKeno,

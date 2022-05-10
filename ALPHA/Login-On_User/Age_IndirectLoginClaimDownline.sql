@@ -19,8 +19,6 @@ ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]
 	@SubPageAccess VARCHAR(50) = '' OUTPUT,   
 	@SubUserName VARCHAR(30) = '' OUTPUT,   
 	@site VARCHAR(20) = '' OUTPUT,  
-	@isCasinoDisabled BIT = FALSE OUTPUT,
-	@IsCasinoSync BIT = FALSE OUTPUT,
 	@LoginTime DATETIME = null, --VARCHAR(50) = NULL,
 	@Language VARCHAR(2) = 'E',  
 	@isFirstLogin	BIT = 0 OUTPUT,
@@ -44,6 +42,7 @@ AS
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:		
 	*/
@@ -260,11 +259,6 @@ BEGIN
 					END ,@ErrCode=106  
 		RETURN  
 	END 
-
-	SELECT 
-		@IsCasinoSync = SyncCasino, 
-		@isCasinoDisabled = DisableCasino
-	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
 	  
 	-- Successful  
 	SELECT 
@@ -273,9 +267,6 @@ BEGIN
 	FROM 
 		exchange WITH (NOLOCK) 
 	WHERE exchangeid = @db_currency  
-
-	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
-	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
 
 	IF @RoleID = 2  
 		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  

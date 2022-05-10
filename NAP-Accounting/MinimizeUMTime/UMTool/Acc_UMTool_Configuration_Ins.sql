@@ -23,6 +23,7 @@ BEGIN
 	DB: DBCUST.CustDB
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:   
 		
@@ -78,7 +79,7 @@ SET NOCOUNT ON
 		GOTO ReturnErrorTbl;
 	END
 
-	IF (@ProductID IN (0,1,6,8,12) AND (@SportType <> 0 OR @SettingType <> 0 ))
+	IF (@ProductID IN (0,1,8,12) AND (@SportType <> 0 OR @SettingType <> 0 ))
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',12,'Must Config for All Sport/SettingType' 
@@ -109,7 +110,7 @@ SET NOCOUNT ON
 						AND ( SettingType = @SettingType OR @SettingType = 0)
 						AND SettingStatus = 0
 					) 
-		AND @ProductID NOT IN (0,1,6,8,12)
+		AND @ProductID NOT IN (0,1,8,12)
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',15,'Product/Sport/SettingType does not exist' 

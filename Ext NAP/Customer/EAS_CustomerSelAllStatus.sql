@@ -19,6 +19,7 @@ AS
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -30,11 +31,7 @@ BEGIN
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1, @Locked TINYINT
 		    	
 	--Downline/Upline status 
-    DECLARE @upLineDisableCasino			BIT   
-		  , @uplineSyncCasino				BIT    		   
-          , @uplineDisabledNumber			BIT
-		  , @uplineHideGoldDeluxe			BIT   
-		  , @uplineDisableGoldDeluxe		BIT		  
+    DECLARE @uplineDisabledNumber			BIT  
 		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
@@ -57,13 +54,7 @@ BEGIN
 				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
-
+				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)		
 				,	@uplineid = custid
 		FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -85,12 +76,7 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)				
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)				
-				
 				,	@uplineid = custid
 		FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -118,12 +104,7 @@ BEGIN
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
 				
-				,	@upLineDisableCasino = ISNULL(DisableCasino, 0)
-				,	@uplineSyncCasino = ISNULL(SyncCasino, 0)
 				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
-				,	@uplineHideGoldDeluxe = ISNULL(HideGoldDeluxe, 0)
-				,	@uplineDisableGoldDeluxe = ISNULL(DisableGoldDeluxe, 0)
-				
 				,	@uplineid = custid
 	    FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -150,12 +131,8 @@ BEGIN
 				,	@upLineDisableOutright = 0
 				,	@uplineDoubleCommLosing = 1
 				
-				,	@upLineDisableCasino = 0
-				,	@uplineSyncCasino = 0
 				,	@uplineDisabledNumber = 0
-				,	@uplineHideGoldDeluxe = 0
-				,	@uplineDisableGoldDeluxe = 0				
-		 
+				
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
 	    SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
 				@IsProtectedMode = ISNULL(IsProtectedMode,0)
@@ -199,16 +176,8 @@ BEGIN
 	SELECT GameTypeID, IBCBetTypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE IBCBetTypeID BETWEEN 1501 AND 1599 AND IsDisabled = 0
 
 	--Product Status
-	SELECT	ci.SyncCasino,
-			ci.DisableCasino,
-			@upLineDisableCasino AS uplineDisableCasino,
-			@uplineSyncCasino AS uplineSyncCasino,
-			ci.DisableNumber,
+	SELECT	ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
-			1 AS uplineHideGoldDeluxe,
-			@uplineDisableGoldDeluxe AS uplineDisableGoldDeluxe,
-			ci.DisableGoldDeluxe,
-			1 as HideGoldDeluxe,
 			ci.HideKeno,
 			MAX(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
 	FROM customer c WITH (NOLOCK)
@@ -216,7 +185,7 @@ BEGIN
 		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
 		INNER JOIN @GameType g ON g.GameTypeID = cg.GameTypeID
     WHERE c.custid = @custid
-	GROUP BY ci.SyncCasino, ci.DisableCasino, ci.DisableNumber, ci.DisableGoldDeluxe, ci.HideGoldDeluxe, ci.HideKeno
+	GROUP BY ci.DisableNumber, ci.HideKeno
 
 	-- For Product DCS
 	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus

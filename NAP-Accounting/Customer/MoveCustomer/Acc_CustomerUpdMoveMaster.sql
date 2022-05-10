@@ -69,7 +69,8 @@ Revisions:
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20190814@Johnson: dont touch on cn88 customers [redmine:#116691]
 	- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-	
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -96,43 +97,28 @@ BEGIN
             @srecommend_old        INT,
             @sDisableOutright    BIT,
             @mDisableOutright    BIT,
-            @sDisableCasino        BIT,
-            @mDisableCasino        BIT,           
+                      
             @sDoubleCommLosing    BIT,
             @mDoubleCommLosing  BIT,
             @sSuspended            BIT,    
             @mSuspended            BIT,
       
             @sHideKeno                    BIT,
-            @mHideKeno                    BIT,
-            @mHideGoldDeluxe		BIT,
-            @sHideGoldDeluxe		BIT,
-            @sDisableGoldDeluxe		BIT,
-            @mDisableGoldDeluxe		BIT      
+            @mHideKeno                    BIT  
 
     SELECT    @srecommend            = custid,         
             @sDisableOutright    = DisableOutright,
-            @sDisableCasino        = DisableCasino,        
-            @sDoubleCommLosing  = DoubleCommLosing,    
-          
-            @sHideKeno                = HideKeno,
-			@sDisableGoldDeluxe		= DisableGoldDeluxe,
-			@sHideGoldDeluxe	= HideGoldDeluxe
-            
-      FROM    custinfo WITH(NOLOCK) 
+            @sDoubleCommLosing  = DoubleCommLosing,
+            @sHideKeno                = HideKeno
+	FROM    custinfo WITH(NOLOCK) 
     WHERE    username = @supername AND roleid = 4;
 
     SELECT    @mrecommend            = custid,
             @srecommend_old        = srecommend,         
             @mDisableOutright    = DisableOutright,
-            @mDisableCasino        = DisableCasino,
-          
             @mDoubleCommLosing    = DoubleCommLosing,
-       
-            @mHideKeno                = HideKeno,
-			@mDisableGoldDeluxe		= DisableGoldDeluxe,
-			@mHideGoldDeluxe	= HideGoldDeluxe          
-      FROM    custinfo WITH(NOLOCK) 
+            @mHideKeno                = HideKeno         
+    FROM    custinfo WITH(NOLOCK) 
     WHERE    username = @mastername AND roleid = 3;
 
 	-- 20160218@Dominic: Not allow to move a IMBC customer to MBC line and vice versa
@@ -329,21 +315,6 @@ BEGIN
 
     END;
 
-    IF @sDisableCasino = 1 AND (@sDisableCasino <> @mDisableCasino)
-    BEGIN
-
-        UPDATE Custinfo WITH (UPDLOCK, ROWLOCK)
-           SET    DisableCasino = 1 
-        WHERE    custid IN(SELECT CustID FROM #CustInfo);
-        IF @@ERROR <>0
-        BEGIN
-            SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 308;
-            RETURN;
-        END;
-
-    END;
-
     -- Keno
     IF @sHideKeno = 0 AND (@sHideKeno <> @mHideKeno)
     BEGIN
@@ -355,20 +326,6 @@ BEGIN
             SELECT    @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
                     @ErrCode = 311;
             RETURN; 
-        END;
-    END;
-    
-	 IF @sDisableGoldDeluxe = 1 AND @sDisableGoldDeluxe <> @mDisableGoldDeluxe
-    BEGIN
-        UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-           SET DisableGoldDeluxe = 1
-        WHERE custid IN (SELECT custid FROM #CustInfo);
-        
-        IF @@ERROR <>0 
-        BEGIN
-            SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 309;
-            RETURN;
         END;
     END;
 
@@ -476,7 +433,7 @@ INNER JOIN CustGameType mcg ON scg.CustID = @srecommend AND mcg.GameTypeID = scg
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1508;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1509;
     EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'Keno', @sporttype = 202, @bettype = 1514;
-    EXEC dbo.Acc_CustSetting3rd_04 @custid = @mrecommend, @srecommend = @srecommend, @roleid = 3, @mode = 'GoldDeluxe', @sporttype = 255, @bettype = 1701;
+   
 
     --when separate code we must update db07.bodb02.dbo.custsetting 
     UPDATE cs

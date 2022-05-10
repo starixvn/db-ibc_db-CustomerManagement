@@ -1,7 +1,4 @@
 /*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[Acc_CustomerCheckMoveMaster]
 	@supername	VARCHAR(40),
 	@mastername VARCHAR(40),
@@ -34,6 +31,7 @@ AS
 		- 20170601@Elodie: Remove Inspired Virtual Sport [Redmine: #77274]
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 		- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	Param's Explanation:
 	- @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -56,14 +54,12 @@ BEGIN
 			@srecommend_old			INT, 
 			@scurrency				TINYINT, 
 			@mcurrency				TINYINT,		
-			@sSyncCasino			BIT,
-			@mSyncCasino			BIT,			
+						
 			@sIsInternal			BIT,
 			@mIsInternal			BIT,
 			@sDisableOutright		BIT,
 			@mDisableOutright		BIT,
-			@sDisableCasino			BIT,
-			@mDisableCasino			BIT,			
+						
 			@sDisableNumber			BIT,
 			@mDisableNumber			BIT,
 		
@@ -80,8 +76,7 @@ BEGIN
 			@mDisableEsports	    BIT,
 			@sHideKeno				BIT, 
 			@mHideKeno				BIT,
-			@mHideGoldDeluxe		BIT,
-			@sHideGoldDeluxe		BIT,
+			
 			@mDisableSuperLive		BIT,
 			@sDisableSuperLive		BIT,
 			@AdminUser				VARCHAR(50)
@@ -90,40 +85,31 @@ BEGIN
 
 	SELECT @srecommend			= custid
 	     , @scurrency			= currency	    
-	     , @sSyncCasino		    = SyncCasino
 	 
 	     , @sDisableOutright	= DisableOutright
-	     , @sDisableCasino		= DisableCasino	     
-	 
 	     , @sDisableNumber		= DisableNumber
 	     , @sClosed			    = closed
 	     , @sSuspended			= reject	   
 	     , @sDisableEsports     = DisableEsports
 	     , @sGivenCredit		= credit
 	     , @sHideKeno			= HideKeno
-	     , @sHideGoldDeluxe		= HideGoldDeluxe
-		 , @sDisableSuperLive	= DisableSuperLive
-	  FROM custinfo WITH(NOLOCK) 
+	     , @sDisableSuperLive	= DisableSuperLive
+	 FROM custinfo WITH(NOLOCK) 
 	 WHERE username = @supername
 	   AND roleid = 4
 
 	SELECT @mrecommend			= custid
 	     , @srecommend_old		= srecommend
 	     , @mcurrency			= currency	   
-	     , @mSyncCasino		    = SyncCasino	     
-	    
 	     , @mDisableOutright	= DisableOutright
-	     , @mDisableCasino		= DisableCasino	    
-	   
 	     , @mDisableNumber		= DisableNumber
 	     , @mSuspended			= reject
 	     , @mClosed			    = closed	     
 	     , @mDisableEsports     = DisableEsports
 	     , @mGivenCredit		= credit
 	     , @mHideKeno			= HideKeno 		
-	     , @mHideGoldDeluxe		= HideGoldDeluxe
-		 , @mDisableSuperLive	= DisableSuperLive
-	  FROM custinfo WITH(NOLOCK)
+	     , @mDisableSuperLive	= DisableSuperLive
+	 FROM custinfo WITH(NOLOCK)
 	 WHERE username = @mastername
 	   AND roleid = 3
 
@@ -270,25 +256,6 @@ BEGIN
 			@ErrCode = 9113
 		return
 	END
-	
-	--Check Casino sync:
-	IF @sSyncCasino = 0 AND @mSyncCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Casino but new super is not synchronized Casino.',
-			@ErrCode = 114					 
-		RETURN
-	END
-	/*
-	--Check Casino enable status
-	IF @sDisableCasino = 1 AND (@mDisableCasino = 0)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enable Casino but new super is not enable Casino.',
-			@ErrCode = 115
-		RETURN
-	END
-	*/
-
-
 
 	IF @sdisableNumber = 1 AND @mdisableNumber = 0
 	BEGIN
@@ -322,15 +289,6 @@ BEGIN
 		return
 	END
 
-	
-	--Check Gold Deluxe sport enable status
-	IF @sHideGoldDeluxe = 1 and @mHideGoldDeluxe = 0
-	BEGIN
-		SELECT @ErrMsg = 'Master is offered Gold Deluxe but new super is not offered Gold Deluxe.',
-			@ErrCode = 125
-		return
-	END
-	
 	--Check Number Game
 	IF EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 161)
 		AND NOT EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @srecommend AND sporttype = 161)
@@ -399,25 +357,6 @@ BEGIN
 		RETURN	
 	END
 
-	--Check commission for Gold Deluxe
-	IF EXISTS(
-			SELECT	1 
-			FROM	CustSettingGame AS scs WITH(NOLOCK)
-				INNER JOIN CustSettingGame mcs WITH(NOLOCK) 
-					ON	mcs.custid = @mrecommend 
-						AND scs.sporttype = mcs.sporttype 
-						AND scs.bettype = mcs.bettype
-			WHERE	scs.custid = @srecommend 
-					AND scs.sporttype = 255 
-					AND scs.bettype = 1701
-					AND scs.sdiscount < mcs.adiscount
-	)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @mastername + ': Super''s commission for Gold Deluxe is less than master''s commission.',
-				@ErrCode = 204
-		RETURN	
-	END
-	
 	--Check Position Taking
 		--n4<=s3+m3<=s4		IF i3=0
 		--m3<=s4 and u3<=s4	IF i3=1
@@ -559,37 +498,6 @@ BEGIN
 		RETURN
 	END
 	
-	--Check Position Taking for Gold Deluxe
-		--n4<=s3+m3<=s4		IF i3=0
-		--m3<=s4 and u3<=s4	IF i3=1
-		--u3+m3>=n4 IF i3=1
-	IF EXISTS (
-		SELECT	1
-		FROM	CustSettingGame scs WITH(NOLOCK) 
-			INNER JOIN CustSettingGame mcs WITH(NOLOCK) 
-				ON	mcs.custid = @mrecommend 
-					AND mcs.sporttype = scs.sporttype 
-					AND mcs.bettype = scs.bettype 
-			INNER JOIN CustOverrideGame sco WITH(NOLOCK) 
-				ON	sco.custid = @srecommend 
-					AND sco.sporttype = scs.sporttype 
-					AND sco.bettype = scs.bettype
-		WHERE	scs.custid = @srecommend 
-				AND scs.sporttype = 255 
-				AND scs.bettype = 1701
-				AND (
-				--n4<=s3+m3<=s4	IF i3=0
-				(mcs.isautopositiontaking = 0 AND ((mcs.mpositiontaking + mcs.spositiontaking < sco.minpositiontaking) OR (mcs.mpositiontaking + mcs.spositiontaking > scs.spositiontaking)))
-				OR --m3<=s4 and u3<=s4	IF i3=1
-				(mcs.isautopositiontaking = 1 AND (mcs.mpositiontaking > scs.spositiontaking OR mcs.autopositiontaking > scs.spositiontaking OR mcs.mpositiontaking + mcs.autopositiontaking < sco.minpositiontaking))	 
-				)	
-	)	
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': Master exceeded new super position taking.',
-			@ErrCode = 207				 
-		RETURN
-	END
-	
 	--Check Position Taking	
 		--all a2<=a4
 		--all a1<=a4
@@ -719,33 +627,6 @@ BEGIN
 
 		return
 	END
-
-	--Check Position Taking	for Gold Deluxe
-		--all a2<=a4
-		--all a1<=a4
-	IF exists (
-			SELECT	1 
-			FROM CustSettingGame as scs with (nolock)
-				inner join CustSettingGame as acs with (nolock) 
-					ON	scs.custid = @srecommend  
-						and scs.sporttype = acs.sporttype 
-						AND scs.bettype = acs.bettype
-				INNER JOIN custInfo c WITH (NOLOCK) 
-					ON	c.custid = acs.custid 
-						AND c.roleid IN (1,2) 
-						AND c.Enabled = 1
-						and c.mrecommend = @mrecommend --get member and agent			
-			where	(acs.apositiontaking > scs.apositiontaking) 
-					AND scs.sporttype = 255
-	)
-	BEGIN	
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': Agent or member of existing master exceeded new super position taking.',
-			@ErrCode = 213				 
-
-		return
-	END
-	
-
 
 	-- Check Max Win Limit for DCS
 	SELECT	@DCSSportType = 0

@@ -70,6 +70,7 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20190830@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	
 Param's Explanation:
 • @ErrCode:
@@ -100,30 +101,23 @@ declare	@srecommend			int,
 			@mrecommend_old		int,
 			@mDisableOutright	BIT,
 			@aDisableOutright	BIT,
-			@mDisableCasino		BIT,
-			@aDisableCasino		BIT,		
+					
 			@mDoubleCommLosing	BIT,
 			@aDoubleCommLosing	BIT,			
 			@aSuspended			BIT,	
 			@mSuspended			BIT,
 	
 			@aHideKeno				BIT,		
-			@mHideKeno				BIT,
-			@mHideGoldDeluxe	BIT,
-			@aHideGoldDeluxe	BIT,
-			@mDisableGoldDeluxe	BIT,
-			@aDisableGoldDeluxe	BIT
+			@mHideKeno				BIT
 
 	select	@srecommend			= srecommend, 
 			@mrecommend			= custid, 
 			@mDisableOutright	= DisableOutright,			
-			@mDisableCasino		= disableCasino,		
+					
 			@mDoubleCommLosing	= DoubleCommLosing,			
 			@mSuspended			= reject,
 		
-			@mHideKeno			= HideKeno,
-			@mHideGoldDeluxe	= HideGoldDeluxe,
-			@mDisableGoldDeluxe = DisableGoldDeluxe
+			@mHideKeno			= HideKeno
 	from	custinfo with (nolock) 
 	where	username = @mastername and roleid = 3;
 
@@ -131,13 +125,11 @@ declare	@srecommend			int,
 			@srecommend_old		= srecommend, 
 			@mrecommend_old		= mrecommend, 			
 			@aDisableOutright	= DisableOutright,			
-			@aDisableCasino		= disableCasino,		
+				
 			@aDoubleCommLosing	= DoubleCommLosing,		
 			@aSuspended			= reject,
 		
-			@aHideKeno			= HideKeno ,
-			@aHideGoldDeluxe	= HideGoldDeluxe,
-			@aDisableGoldDeluxe = DisableGoldDeluxe 		
+			@aHideKeno			= HideKeno		
 	from	custinfo with (NOLOCK) 
 	where	username = @agentname and roleid = 2;
 
@@ -255,19 +247,6 @@ BEGIN
 	END;
 END; 
 
-IF @mDisableCasino = 1 AND (@mDisableCasino <> @aDisableCasino)
-BEGIN
-	UPDATE	Custinfo WITH (UPDLOCK,ROWLOCK)
-	SET		DisableCasino = 1 
-	WHERE	custid IN(SELECT CustID FROM #CustInfo);
-	IF @@ERROR <>0
-	BEGIN
-		Select	@ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-				@ErrCode = 308;
-		RETURN; 
-	END;
-END;
-
 -- Keno
 IF @mHideKeno = 0 AND (@mHideKeno <> @aHideKeno)
 BEGIN
@@ -278,20 +257,6 @@ BEGIN
 	BEGIN
 		Select	@ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
 				@ErrCode = 311;
-		RETURN; 
-	END;
-END;
-
--- Gold Deluxe
-IF @mDisableGoldDeluxe = 1 AND (@mDisableGoldDeluxe <> @aDisableGoldDeluxe)
-BEGIN
-	UPDATE	Custinfo WITH (UPDLOCK,ROWLOCK)
-	SET		DisableGoldDeluxe = 1 
-	WHERE	custid IN(SELECT CustID FROM #CustInfo);
-	IF @@ERROR <>0
-	BEGIN
-		Select	@ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-				@ErrCode = 313;
 		RETURN; 
 	END;
 END;
@@ -362,14 +327,6 @@ END;
 EXEC Acc_CustSetting_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'number', @roleid = 2;	
 
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=180, @bettype = 1201, @roleid = 2;	
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=181, @bettype = 1231, @roleid = 2;
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=182, @bettype = 1231, @roleid = 2;
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=183, @bettype = 1231, @roleid = 2;
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=184, @bettype = 1231, @roleid = 2;	
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=185, @bettype = 1231, @roleid = 2;
---EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @recommend = @recommend, @mode = 'virtual-sports', @sporttype=186, @bettype = 1220, @roleid = 2;	
-
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1501, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1511, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1503, @roleid = 2;	
@@ -379,8 +336,7 @@ EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend,
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1507, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1508, @roleid = 2;	
 EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1509, @roleid = 2;
-EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1514, @roleid = 2;
-EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'GoldDeluxe', @sporttype=255, @bettype = 1701, @roleid = 2;		
+EXEC Acc_CustSetting3rd_04 @srecommend = @srecommend, @mrecommend = @mrecommend, @custid = @recommend, @mode = 'Keno', @sporttype=202, @bettype = 1514, @roleid = 2;		
 
 --Correct PT for DCS products
 DECLARE @xml XML;

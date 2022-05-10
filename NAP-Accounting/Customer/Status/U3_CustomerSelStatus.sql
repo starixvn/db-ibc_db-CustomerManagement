@@ -64,6 +64,7 @@ Revisions:
 	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
 	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		
 Param's Explanation:
 � @system: = NAP : internal login from NAP
@@ -256,8 +257,8 @@ Param's Explanation:
 			CAST (1 AS BIT) AS DisableHorseracing,
 			CAST (1 AS BIT) AS DisableOpenTote,
 			CAST (1 AS BIT) AS DisableFI,
-			ISNULL(SyncCasino,0) AS SyncCasino,
-			ISNULL(DisableCasino,0) AS DisableCasino,
+			CAST (0 AS BIT) AS SyncCasino,
+			CAST (1 AS BIT) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
 			CAST (1 AS BIT) AS DisableBingo,
 			ISNULL(DisableNumber,0) AS DisableNumber,
@@ -278,8 +279,8 @@ Param's Explanation:
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
 			MAX(CASE WHEN g.IBCBetTypeID in (1501,1503,1504,1505,1507,1508,1509,1511,1513) THEN cg.IsDisabled ELSE 1 END) AS DisableKeno,
-			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
-			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
+			CAST (1 AS BIT) as DisableGoldDeluxe,
+			CAST (1 AS BIT) as HideGoldDeluxe,
 			
 			CAST (1 AS BIT) AS DisableColossusBet,
 			CAST (1 AS BIT) AS HideColossusBet,
@@ -359,8 +360,7 @@ Param's Explanation:
 			cps.closed,
 			ci.autosuspend,
 			cm.DisableAutoMPT,
-			ci.SyncCasino, 
-			ci.DisableCasino, 
+			 
 			ci.DisableOutright, 
 			ci.DisableNumber, 
 			ci.srecommend, 
@@ -369,8 +369,7 @@ Param's Explanation:
 			ci.DoubleCommLosing,
 			ci.DisableEsports,
 			ci.HideKeno,
-			ci.DisableGoldDeluxe, 
-			ci.HideGoldDeluxe,
+			
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,

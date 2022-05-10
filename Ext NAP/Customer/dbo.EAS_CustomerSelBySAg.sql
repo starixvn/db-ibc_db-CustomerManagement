@@ -60,6 +60,7 @@ AS
 		- 20181112@Elodie: Rewrite SP for function customer list - [Redmine: #104570]
 		- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		
 	Explanation's Param:
 		@Status = 
@@ -165,7 +166,7 @@ BEGIN
 			c.username,
 			ci.enabled,
 			cps.closed,
-			ci.SyncCasino,
+			
 			ISNULL(cps.reject, 0) AS suspended,
 			c.roleid,
 			ISNULL(c.firstname, '') AS firstname,
@@ -200,7 +201,7 @@ BEGIN
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, cps.closed, ci.SyncCasino, cps.reject, c.roleid, 
+	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, 
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber  ,ac.CustId,AC.CommRate,cps.Locked

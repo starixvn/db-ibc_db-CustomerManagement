@@ -1,5 +1,4 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_CustomerSelUserInfo]
 	@CustID INT
 AS
@@ -16,6 +15,7 @@ Revisions:
 						2.Code aligning
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 	- 20190527@Johnson: add headline info for cn88 [redmine:#112225]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -72,8 +72,6 @@ BEGIN
 		refcode2,
 		@remark as remark,
 		isnull(important, 0) as important,
-		ci.synccasino,
-		ci.disablecasino,
 		c.currency as exchangeid
 	FROM customer c WITH (NOLOCK) inner join custinfo ci WITH (NOLOCK)
 		ON c.custid = ci.custid  

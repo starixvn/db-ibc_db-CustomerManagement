@@ -95,6 +95,7 @@ Revisions:
 	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 Param's Explanation:
 	- @username: username want to get all info related
@@ -111,7 +112,7 @@ BEGIN
           , @DisableDownlinesHR BIT
           , @DisableDownlinesOpenTote BIT
           , @DisableDownlinesFI BIT
-          , @DisableDownlinesCS BIT
+          , @DisableDownlinesCS BIT = 0
           , @DisableDownlinesBI BIT
           , @DisableDownlinesNumber BIT
           , @DisableDownlinesLiveCS BIT
@@ -119,9 +120,9 @@ BEGIN
           --, @DisableDownlinesVirtualSports BIT
           , @DisableDownlinesEsports BIT
           , @DownlinesSelectedBetting BIT
-		  , @DisableDownlinesGoldDeluxe BIT
-		  , @IsSyncUplineGoldDeluxe BIT
-		  , @DisabledUplineGoldDeluxe BIT
+		  , @DisableDownlinesGoldDeluxe BIT = 0
+		  , @IsSyncUplineGoldDeluxe BIT = 1
+		  , @DisabledUplineGoldDeluxe BIT = 0
 		  , @DisableDownlinesColossusBet BIT 
 		  , @DisableDownlinesSuperLive BIT
           , @IsInternal BIT
@@ -174,13 +175,6 @@ BEGIN
 
     IF @roleid > 4
 	    RETURN
-    -----------------------------	
-    										  
-    SELECT @DisableDownlinesCS = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableCasino = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableCasino = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableCasino,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableCasino = 1) 											
-										      ELSE 0 END
-			
 
     SELECT @DisableDownlinesNumber = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableNumber = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableNumber = 1) 											 
@@ -192,11 +186,6 @@ BEGIN
 											WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
 											WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE recommend = @custid  AND DisableEsports = 1)
 											ELSE 0 END
-
-    SELECT @DisableDownlinesGoldDeluxe = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableGoldDeluxe = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableGoldDeluxe = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableGoldDeluxe,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableGoldDeluxe = 1) 											 
-										      ELSE 0 END
 
 	SELECT @DisableDownlinesColossusBet = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableColossusBet = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableColossusBet,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableColossusBet = 1) 											 
@@ -231,8 +220,7 @@ BEGIN
 	    FROM	customer c WITH(NOLOCK)
 		    INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.recommend
 	    WHERE ci.custid = @custid
-    	SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
-
+    	
 	    IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
 							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
 					    WHERE custid = @uplineid
@@ -264,10 +252,7 @@ BEGIN
     IF @roleid = 4 --super
     BEGIN
 		SELECT @UplineHasSecurityCode=1
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
-		SELECT @IsSyncUplineGoldDeluxe=1
-		SELECT @DisabledUplineGoldDeluxe=0
-
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3	
 
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -360,8 +345,7 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
-		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
-
+		
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
@@ -404,8 +388,7 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
 		SELECT	@uplineid = mrecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
-		SELECT @IsSyncUplineGoldDeluxe=CASE WHEN HideGoldDeluxe=0 THEN 1 ELSE 0 END,@DisabledUplineGoldDeluxe=ISNULL(DisableGoldDeluxe,1)  FROM custInfo WITH(NOLOCK) WHERE custid=@uplineid
-	    SELECT 
+		SELECT 
 		    @IsInternal = ISNULL(IsInternal, 0),
 		    @LimitPerIP = ISNULL(LimitPerIP, 0),
 		    @SelectedBetting =  ISNULL(SelectedBetting, 0),
@@ -555,16 +538,16 @@ BEGIN
 	    CAST (1 AS BIT) AS DisableBingo,
 	    ci.DisableNumber,
 	    ci.DisableOutRight,
-	    ci.disablecasino,
-	    ci.synccasino,
+	    CAST (0 AS BIT) AS disablecasino,
+	    CAST (1 AS BIT) AS synccasino,
 	    CAST (0 AS BIT) AS syncbingo,
 	    CAST (1 AS BIT) AS disableLiveCasino,
 	    CAST (0 AS BIT) AS synclivecasino,
 	    CAST (1 AS BIT) AS DisableHRFixedOdds,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
-		ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,			
-		ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
+		CAST (0 AS BIT) AS DisableGoldDeluxe,			
+		CAST (0 AS BIT) AS HideGoldDeluxe,
 		ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
