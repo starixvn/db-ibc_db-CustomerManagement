@@ -63,6 +63,7 @@ Revisions:
 	- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210728@Tina: NAP - Cannot setting Casino for Licensee account [Redmine: #159140]
 	- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -178,6 +179,7 @@ Param's Explanation:
 		,	@bitmapOrder_VGaming		INT
 		--Bitcoin
 		,	@bitmapOrder_Bitcoin		INT 
+		,   @bitmapOrder_SabaCasino		INT  
 		 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
@@ -201,6 +203,7 @@ Param's Explanation:
 	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
 	SET @bitmapOrder_VGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 171 AND Bettype = 3801)
 	SET @bitmapOrder_Bitcoin = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
+	SET @bitmapOrder_SabaCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 208 AND Bettype = 2101)
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -227,6 +230,7 @@ Param's Explanation:
 		,	@IsHidden_PPLive		INT = 1
 		,	@IsHidden_VGaming		INT = 1
 		,	@IsHidden_Bitcoin		INT = 1
+		,	@IsHidden_SabaCasino	INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -251,6 +255,8 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 66, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
+
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -269,13 +275,7 @@ Param's Explanation:
 		   ci.mrecommend as masterid,
 		   ci.recommend as agentid, 
 		   Customer.roleid as roleid,
-		   ci.synccasino,
-	
-		   ci.disablecasino,		
-			
-		  
-		   ISNULL(ci.DisableGoldDeluxe,1) AS DisableGoldDeluxe,
-		   ISNULL(ci.HideGoldDeluxe,1) AS HideGoldDeluxe,
+		   
 		   
 		   	-- For MuayThai
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)),1) AS DisableMuayThai,
@@ -420,6 +420,10 @@ Param's Explanation:
 			-- For Bitcoin
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Bitcoin)) AS DisableBitcoin,			
 			CAST(CASE WHEN @IsHidden_Bitcoin = 0 AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Bitcoin)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBitcoin,	
+			-- For SabaCasino
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaCasino)), 1) AS DisableSabaCasino,		
+			CAST(CASE WHEN @IsHidden_SabaCasino = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaCasino)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaCasino,
+			
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,

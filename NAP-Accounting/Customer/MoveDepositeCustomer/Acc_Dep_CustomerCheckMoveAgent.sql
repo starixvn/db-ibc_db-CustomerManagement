@@ -17,6 +17,7 @@ Revisions:
 	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086] 
 	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699] 
+	- 20220112@Eden: LAP - RNG Casino - Implement DCS Settings [Redmine: #166217] 
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -43,13 +44,8 @@ BEGIN
 			@mIsInternal		BIT,
 			@aIsInternal		BIT,
 			@mDisableOutright	BIT,
-			@aDisableOutright	BIT,
-			@mSyncCasino		BIT,
-			@aSyncCasino		BIT,			
+			@aDisableOutright	BIT,			
 		
-			@mDisableCasino		BIT,
-			@aDisableCasino		BIT,		
-			
 			@mDisableNumber		BIT,
 			@aDisableNumber		BIT,		
 			@aClosed			BIT,	
@@ -65,10 +61,7 @@ BEGIN
 			@scurrency			= currency, 			
 		
 			@mDisableOutright	= DisableOutright,
-			@mSyncCasino		= syncCasino,		
-		
 			@mDisableNumber		= DisableNumber,
-			@mDisableCasino		= disableCasino,			
 			@mClosed			= closed,
 			@mSuspended			= reject
 	from	custinfo with (nolock) 
@@ -80,10 +73,7 @@ BEGIN
 			@acurrency			= currency, 		
 			
 			@aDisableOutright	= DisableOutright,
-			@aSyncCasino		= syncCasino,			
-		
 			@aDisableNumber		= DisableNumber,
-			@aDisableCasino		= disableCasino,			
 			@aClosed			= closed,
 			@aSuspended			= reject
 	from	custinfo with (NOLOCK) 
@@ -157,25 +147,6 @@ BEGIN
 		return
 	END
 
-	--Check SyncCasino between Master and Agent 
-	IF @mSyncCasino = 0 AND @aSyncCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is synchronized Casino but new master is not synchronized Casino.',
-			@ErrCode = 114					 
-		RETURN
-	END
-
-	/*
-	--Check Casino enable status
-	IF @mDisableCasino = 1 AND (@aDisableCasino = 0)
-	BEGIN
-		SELECT @ErrMsg = 'Error Master ' + @mastername + ', agent ' + @agentname + ': agent is enabled Casino but new master is not enabled Casino.',
-			@ErrCode = 115					
-		RETURN
-	END
-	*/
-
-
 	--Check Number Game + Bingo enable status
 	if @mdisableNumber = 1 and @adisableNumber = 0
 	BEGIN
@@ -183,9 +154,6 @@ BEGIN
 			@ErrCode = 117					 
 		return
 	END
-
-	
-
 
 	--Check identical auto master PT 
 	if (@DisableAutoMPT_old = 0 and @DisableAutoMPT = 1)
@@ -203,15 +171,6 @@ BEGIN
 			@ErrCode = 122					 
 		return
 	END
-
-	--Check casino Syn
-	--Remove checking Casino 
-	--if exists(select 1 from custinfo with (nolock) where custid = @recommend and SyncCasino = 1)
-	--BEGIN
-	--	Select @ErrMsg = 'Error master ' + @mastername + ', agent ' + @agentname + ': agent is already Casino-synchronized.',
-	--		@ErrCode = 112					 
-	--	return
-	--END
 
 	--Check commission 
 

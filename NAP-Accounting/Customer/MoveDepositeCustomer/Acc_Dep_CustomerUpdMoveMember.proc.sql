@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Dep_CustomerUpdMoveMember]
 	@agentname varchar(40),
 	@membername varchar(40),
@@ -46,6 +46,7 @@ Revisions:
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]			
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  					
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20220112@Eden: LAP - RNG Casino - Implement DCS Settings [Redmine: #166217] 
 	
 Param's Explanation:
 • @ErrCode:
@@ -84,8 +85,7 @@ BEGIN
 			@disableFI			bit,
 			@aDisableOutright	bit,
 			@DisableOutright	bit,
-			@aSyncCasino		bit,
-			@SyncCasino			bit,	
+			
 			
 			@aDisableNumber		BIT,
 			@DisableNumber		BIT,
@@ -101,7 +101,6 @@ BEGIN
 			@acurrency			= currency, 		
 			
 			@aDisableOutright	= DisableOutright,
-			@aSyncCasino		= syncCasino,	
 		
 			@aDisableNumber		= DisableNumber,
 			@aClosed			= closed,
@@ -117,8 +116,7 @@ BEGIN
 			@currency_old		= currency,		
 		
 			@DisableOutright	= DisableOutright,
-			@SyncCasino			= SyncCasino ,	
-		
+			
 			@DisableNumber		= DisableNumber,
 			@Closed				= closed,
 			@Suspended			= reject
@@ -186,17 +184,6 @@ BEGIN
 		return
 	END
 
-
-	--Check CS SyncCasino between Agent and Member 
-	IF @aSyncCasino = 0 AND @SyncCasino = 1 
-	BEGIN
-		SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': member is synchronized Casino but new agent is not synchronized Casino.',
-			@ErrCode = 113	
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return	
-	END 
-
 	if @adisableNumber = 1 and @disableNumber = 0
 	BEGIN
 		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Number Game but new agent is not enabled Number Game.',
@@ -219,17 +206,6 @@ BEGIN
 			RaisError (@ErrMsg, 16, 1)
 		return
 	END
-
-	if exists(select 1 from custinfo with (nolock) where custid = @custid and SyncCasino = 1)
-	BEGIN
-		Select @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already Casino-synchronized.',
-			@ErrCode = 121					 
-		if @ReturnErrCode = 0
-			RaisError (@ErrMsg, 16, 1)
-		return
-	END
-
-
 
 	----------------------------
 	DECLARE

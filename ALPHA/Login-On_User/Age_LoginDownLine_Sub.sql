@@ -21,8 +21,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub]
 	@site varchar(20) = '' OUTPUT,    
 	@SubPageAccess varchar(50) = '' OUTPUT,    
 --	@IsWapLogin bit = false,
-	@isCasinoDisabled bit = false OUTPUT,
-	@IsCasinoSync bit = false OUTPUT,
 	@isFirstLogin	BIT =0 OUTPUT,
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT,
@@ -69,6 +67,7 @@ Revisions:
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20210524@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
@@ -666,8 +665,7 @@ BEGIN
 	SELECT @role = CASE @db_roleid WHEN 1 THEN 'Customer:' WHEN 2 THEN 'Agent:' WHEN 3 THEN 'Master:' WHEN 4 THEN 'Super:' ELSE 'Unknown:' END  
 
 	 
-	SELECT	@closed = closed,@IsCasinoSync = SyncCasino
-			,@isCasinoDisabled = DisableCasino
+	SELECT	@closed = closed
 			,@db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
 
@@ -823,10 +821,6 @@ BEGIN
 	  
 	-- Successful  
 	SELECT @Currency = Currency, @CurrencyId = @db_currency FROM exchange with (nolock) WHERE exchangeid = @db_currency  
-
-	SELECT @isCasinoDisabled = isnull(@isCasinoDisabled,1)
-	SELECT @IsCasinoSync = isnull(@IsCasinoSync,0)
-
 	  
 	UPDATE customer with (rowlock, updlock)  
 	SET iplogin = case when @db_loginip<>'' then @LoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 

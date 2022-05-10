@@ -9,6 +9,7 @@ AS
 
 	Revisions:  
 		- 20200923@Eden: First commit [Redmine: #141832]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -32,13 +33,13 @@ BEGIN
 
 	SELECT ProductId
 	FROM @products
-	WHERE ProductId IN(3,6,8,12) --Non-DCS products
+	WHERE ProductId IN(3,8,12) --Non-DCS products
 	UNION ALL --DCS products
 	SELECT DISTINCT d.ProductId
 	FROM @products p
 		INNER JOIN DBACC.bodb02.dbo.ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
-	WHERE p.ProductId NOT IN (1,3,6,8,12,16) 
+	WHERE p.ProductId NOT IN (1,3,8,12,16) 
 		AND d.SettingType IN (4,11,13)
 	ORDER BY ProductId
 END

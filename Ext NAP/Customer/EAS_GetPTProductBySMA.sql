@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20211105@Winfred: Get value PT setting product for customer SMA [Redmine: #159664]
 		- 20220509@Winfred: Hotfix miss Get value PT FGG And vitual games [Redmine: #159664]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -73,7 +74,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
 	FROM #ProductSettingDetail b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,22,42,44,66,69,64) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG
+	WHERE (B.ProductID IN (41,22,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -150,15 +151,15 @@ BEGIN
 	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
 	
 	-- Gold Deluxe
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID, cs.Sporttype, cs.Bettype, 12 AS ProductID,   
-				   CASE WHEN ss.roleid = 4 THEN cs.spositiontaking 
-						WHEN ss.roleid = 3 THEN cs.mpositiontaking
-						WHEN ss.roleid = 2 THEN cs.apositiontaking
-						ELSE cs.spositiontaking END AS ValuePT,ss.roleid
-	FROM #SMATemp ss
-	INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.CustID = cs.CustID 
-	WHERE  cs.sporttype = 255 AND cs.bettype = 1701
+	--INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
+	--SELECT ss.CustID, cs.Sporttype, cs.Bettype, 12 AS ProductID,   
+	--			   CASE WHEN ss.roleid = 4 THEN cs.spositiontaking 
+	--					WHEN ss.roleid = 3 THEN cs.mpositiontaking
+	--					WHEN ss.roleid = 2 THEN cs.apositiontaking
+	--					ELSE cs.spositiontaking END AS ValuePT,ss.roleid
+	--FROM #SMATemp ss
+	--INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.CustID = cs.CustID 
+	--WHERE  cs.sporttype = 255 AND cs.bettype = 1701
 	
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a

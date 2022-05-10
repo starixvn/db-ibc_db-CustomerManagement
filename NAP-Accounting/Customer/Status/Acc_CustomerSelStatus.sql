@@ -94,6 +94,7 @@ Revisions:
 	- 20211203@Johnson: Add Cashout [redmine:#164902]
 	- 20220225@Winfred: Migrate Sp DBCUST [redmine:#168849]
 	- 20220315@Johnson: Add FGG [redmine:#165682]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -247,6 +248,7 @@ Param's Explanation:
 		,	@bitmapOrder_Bitcoin		INT  
 		,	@bitmapOrder_CashOut		INT  
 		,	@bitmapOrder_FGG				INT	
+		,   @bitmapOrder_SabaCasino		INT  	
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -276,6 +278,7 @@ Param's Explanation:
 	SET @bitmapOrder_Bitcoin = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
 	SET @bitmapOrder_CashOut = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9903 AND Bettype = 1)
 	SET @bitmapOrder_FGG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 176 AND Bettype = 8201)
+	SET @bitmapOrder_SabaCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 208 AND Bettype = 2101)
 
     DECLARE	@IsHidden_MuayThai		INT = 1
 		,	@IsHidden_Esports		INT = 1
@@ -304,6 +307,7 @@ Param's Explanation:
 		,	@IsHidden_Bitcoin		INT = 1
 		,	@IsHidden_Cashout		INT = 1
 		,	@IsHidden_FGG			INT = 1
+		,	@IsHidden_SabaCasino	INT = 1
 
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT	
@@ -333,6 +337,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 25, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Cashout OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 64, @SettingStatus = @SettingStatus, @Sporttype = 176, @IsHide = @IsHidden_FGG OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
 	
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN + ION)
 	DECLARE	@DisableAllbet			BIT,
@@ -473,8 +478,6 @@ Param's Explanation:
 			ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.CloseInfo)),0) as isDirectClosed,
 			ISNULL(autosuspend,0) As AutoSuspend,	
 			ISNULL(cm.DisableAutoMPT ,0) As DisableAutoMPT,	
-			ISNULL(SyncCasino,0) AS SyncCasino,
-			ISNULL(DisableCasino,0) AS DisableCasino,
 			ISNULL(DisableOutright,0) AS DisableOutright,
 		
 			ISNULL(DisableNumber,0) AS DisableNumber,	
@@ -490,8 +493,6 @@ Param's Explanation:
 
 			ISNULL(ci.HideKeno,0) as HideKeno, 
 			MAX(CASE WHEN g.IBCBetTypeID IS NOT NULL THEN cg.IsDisabled ELSE 1 END) AS DisableKeno,
-			ISNULL(DisableGoldDeluxe,1) as DisableGoldDeluxe,
-			ISNULL(HideGoldDeluxe,1) as HideGoldDeluxe,
 			ISNULL(DisableColossusBet,1) as DisableColossusBet,
 			ISNULL(HideColossusBet,1) as HideColossusBet,
 			-- For MuayThai
@@ -623,7 +624,10 @@ Param's Explanation:
 			--For Cashout
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_CashOut)), 1) AS DisableCashout,		
 			CAST(CASE WHEN @IsHidden_Cashout = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_CashOut)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideCashout,
-			
+			--For SabaCasino
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaCasino)), 1) AS DisableSabaCasino,		
+			CAST(CASE WHEN @IsHidden_SabaCasino = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaCasino)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaCasino,
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_SabaCasino)), 0) AS SyncedSabaCasino,
 			cps.Locked
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
@@ -647,9 +651,7 @@ Param's Explanation:
 			cps.Locked,
 			cps.CloseInfo,
 			ci.autosuspend,
-			cm.DisableAutoMPT,		
-			ci.SyncCasino, 
-			ci.DisableCasino, 
+			cm.DisableAutoMPT,	
 			ci.DisableOutright, 
 		
 			ci.DisableNumber, 
@@ -658,8 +660,7 @@ Param's Explanation:
 			ci.recommend, 
 			ci.DoubleCommLosing,
 			ci.HideKeno,
-			ci.DisableGoldDeluxe, 
-			ci.HideGoldDeluxe,
+			
 			ci.DisableColossusBet,
 			ci.HideColossusBet,
 			cps.bitmapIsDisabled,

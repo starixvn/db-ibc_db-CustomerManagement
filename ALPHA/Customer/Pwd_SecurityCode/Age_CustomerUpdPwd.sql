@@ -3,7 +3,6 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdPwd]
     @CustID INT ,
     @UserPwd NVARCHAR(50) ,
     @UserID INT ,
-    @DisCasino BIT = 0 ,
     @Language VARCHAR(2) = 'E' ,
     @SubAccID INT = 0 , --Sub-AccountID
     @LoginIP VARCHAR(20) = '' ,
@@ -32,6 +31,7 @@ Revisions:
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 	- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -57,21 +57,6 @@ BEGIN
 			,@PwdExpiry DATETIME
 			,@OldPwd	VARCHAR(40)
 			,@roleid TINYINT
-
-    IF ( @DisCasino = 1
-         AND EXISTS ( SELECT    1
-                      FROM      CustInfo WITH ( NOLOCK )
-                      WHERE     SyncCasino = 1
-                                AND Custid = @CustID )
-       ) 
-        BEGIN
-            SELECT  @ErrMsg = CASE @Language
-                                WHEN 'E' THEN 'This CHANGED PASSWORD function is temporarily unavailable, please update later.'
-                                ELSE [dbo].[f_Get_MsgNamebyMsgID](40022,@Language)
-                              END ,
-                    @ErrCode = 100
-            RETURN
-        END
     
     IF EXISTS (SELECT 1 FROM custSub WITH(NOLOCK) WHERE custid = @custid AND subaccID = @SubAccID)
 	 BEGIN

@@ -1,6 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-GO
-CREATE PROCEDURE [dbo].[Age_GetOfferedProductByCust]
+ALTER PROCEDURE [dbo].[Age_GetOfferedProductByCust]
 	@custid INT
 	, @SettingStatus TINYINT = 0
 AS
@@ -21,6 +20,7 @@ AS
 		- 20210324@Winfred: Get product Creative Gaming in MaCau Game [Redmine: #146016]
 		- 20210506@Winfred: Get product AdvantPlay in MaCau Game [Redmine: #154258]
 		- 20210514@Winfred: Get product AdvantPlay Mini in MaCau Game [Redmine: #155133]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -31,12 +31,10 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-	DECLARE @SyncCasino BIT, @HideKeno BIT, @HideGoldDeluxe BIT	,@Currency INT,@Site varchar(10)
+	DECLARE @HideKeno BIT, @Currency INT,@Site varchar(10)
 
 	--Product Status
-	SELECT	@SyncCasino = ci.SyncCasino,
-			@HideKeno = ci.HideKeno,
-			@HideGoldDeluxe = ci.HideGoldDeluxe,
+	SELECT	@HideKeno = ci.HideKeno,
 			@Site = site,
 			@Currency = c.currency
 	FROM customer c WITH (NOLOCK)
@@ -121,10 +119,6 @@ BEGIN
 		SELECT ProductID, isHidden FROM #OfferProduct
 		UNION ALL
 		SELECT 8, @HideKeno
-		UNION ALL
-		SELECT 12, @HideGoldDeluxe
-		UNION ALL
-		SELECT 6, CASE WHEN @SyncCasino = 1 THEN 0 ELSE 1 END
 		UNION ALL
 		SELECT 1, 0 --Sportbook always offer for all customer
 		UNION ALL

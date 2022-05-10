@@ -14,8 +14,6 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@On_UserID int OUTPUT,
 	@Currency varchar(10) = '' OUTPUT,
 	@CurrencyId int = 0 OUTPUT,
-	@CasinoDisable bit = false OUTPUT,	
-	@CasinoSync bit = false OUTPUT,
 	@Language varchar(2)= 'E',
 	@accUserID int = 0, --UserID of Admin
 	@accUsername varchar(50) = '' OUTPUT,
@@ -59,7 +57,7 @@ Revisions:
 	- 20190523@Andy: Internal login CN88 for Headline level - [Redmine: 113920]
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
-
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -95,7 +93,7 @@ BEGIN
 	else
 	BEGIN
 		Select	@CustID  = CustInfo.CustID, @RoleID = CustInfo.RoleID, @Currency = Exchange.Currency, @CurrencyId = Exchange.ExchangeId
-				,@CasinoDisable = CustInfo.DisableCasino, @CasinoSync = CustInfo.SyncCasino
+				
 		from 
 			CustInfo with (NOLOCK) 
 			INNER JOIN Exchange with (NOLOCK) ON CustInfo.Currency=  Exchange.ExchangeID

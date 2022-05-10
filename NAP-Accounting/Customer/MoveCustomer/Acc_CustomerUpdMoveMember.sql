@@ -71,6 +71,7 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20190903@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	
 Param's Explanation:
 - @ErrCode:
@@ -109,8 +110,6 @@ BEGIN
           ,	@custid					INT         
           , @aDisableOutright		BIT
           , @DisableOutright		BIT
-          , @aSyncCasino			BIT
-          , @SyncCasino				BIT        
        
           , @aDisableNumber			BIT
           , @DisableNumber			BIT
@@ -127,10 +126,7 @@ BEGIN
           , @aGivenCredit			MONEY
           , @GivenCredit			MONEY
           , @aUsedCredit			MONEY
-          , @aDisableGoldDeluxe		BIT
-          , @DisableGoldDeluxe		BIT
-          , @aHideGoldDeluxe		BIT
-          , @HideGoldDeluxe			BIT
+         
 		  , @aDisableSuperLive		BIT
           , @DisableSuperLive		BIT
           , @DCSSportType			INT
@@ -143,7 +139,6 @@ BEGIN
          , @acurrency		      = currency
        
          , @aDisableOutright      = DisableOutright
-         , @aSyncCasino		      = syncCasino
      
          , @aDoubleCommLosing     = DoubleCommLosing
          , @aDisableNumber	      = DisableNumber
@@ -153,8 +148,7 @@ BEGIN
          , @aHideKeno			  = HideKeno
          , @aDisableEsports       = DisableEsports
          , @aGivenCredit		  = credit	
-         , @aDisableGoldDeluxe	  = DisableGoldDeluxe
-         , @aHideGoldDeluxe		  = HideGoldDeluxe
+         
 		 , @aDisableSuperLive	  = DisableSuperLive
       FROM custinfo WITH(NOLOCK)
      WHERE username = @agentname
@@ -167,7 +161,6 @@ BEGIN
          , @currency_old		 = currency
        
          , @DisableOutright		 = DisableOutright
-         , @SyncCasino			 = SyncCasino
     
          , @DisableNumber		 = DisableNumber
          , @DoubleCommLosing	 = DoubleCommLosing
@@ -177,8 +170,6 @@ BEGIN
          , @HideKeno			 = HideKeno
          , @DisableEsports       = DisableEsports
          , @GivenCredit			 = credit
-         , @DisableGoldDeluxe	 = DisableGoldDeluxe 
-         , @HideGoldDeluxe		 = HideGoldDeluxe
 		 , @DisableSuperLive	 = DisableSuperLive
       FROM custinfo WITH(NOLOCK)
      WHERE username = @membername
@@ -281,16 +272,6 @@ BEGIN
     BEGIN
 	    SELECT @ErrMsg = 'Member is offered Keno but new agent is not offered Keno.',
 		    @ErrCode = 119					 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
-    
-    --Check Gold Deluxe enable status:
-    IF @aHideGoldDeluxe = 1 AND @HideGoldDeluxe = 0
-    BEGIN
-	    SELECT @ErrMsg = 'Member is offered Gole Deluxe but new agent is not offered Gold Deluxe.',
-		    @ErrCode = 120					 
 	    IF @ReturnErrCode = 0
 		    RAISERROR(@ErrMsg, 16, 1)
 	    return
@@ -426,33 +407,6 @@ BEGIN
 		RETURN
 	END
 
-	--Check Gold Deluxe
-    IF @aDisableGoldDeluxe = 1 AND @DisableGoldDeluxe = 0
-    BEGIN
-		UPDATE CustInfo WITH(UPDLOCK,ROWLOCK)
-           SET DisableGoldDeluxe = 1
-        WHERE custid  = @custid
-        
-        IF @@ERROR <>0 
-        BEGIN
-            SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': update unsuccessfully (custinfo).',
-                    @ErrCode = 309
-            RETURN
-        END
-    END
-
-
-    --Check CS SyncCasino between Agent AND Member 
-    IF @aSyncCasino = 0 AND @SyncCasino = 1 
-    BEGIN
-	    SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': member is synchronized Casino but new agent is not synchronized Casino.',
-		    @ErrCode = 113	
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return	
-    END 
-
-
     IF @adisableNumber = 1 AND @disableNumber = 0
     BEGIN
 	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is enabled Number Game but new agent is not enabled Number Game.',
@@ -489,15 +443,6 @@ BEGIN
     BEGIN
 	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': agent does not have Number Game setting.',
 		    @ErrCode = 202				 
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)
-	    return
-    END
-
-    IF exists(SELECT 1 FROM custinfo WITH(NOLOCK) WHERE custid = @custid AND SyncCasino = 1)
-    BEGIN
-	    SELECT @ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': member is already Casino-synchronized.',
-		    @ErrCode = 203					 
 	    IF @ReturnErrCode = 0
 		    RAISERROR(@ErrMsg, 16, 1)
 	    return
@@ -566,12 +511,12 @@ BEGIN
 	    return
     END
 
-    --Check identical auto master position taking for live casino, keno, Gold Deluxe
+    --Check identical auto master position taking for live casino, keno
     IF EXISTS (
 		    SELECT 1
 		    FROM CustSettingGame acs_old WITH(NOLOCK) 
 			    INNER JOIN CustSettingGame acs_new WITH(NOLOCK) ON acs_new.custid = @recommend AND acs_new.sporttype = acs_old.sporttype AND acs_new.bettype = acs_old.bettype
-		    WHERE acs_old.custid = @recommend_old AND acs_old.sporttype in (202, 255) AND (acs_old.bettype = 1101 OR acs_old.bettype between 1501 AND 1599 OR acs_old.Bettype = 1701)
+		    WHERE acs_old.custid = @recommend_old AND acs_old.sporttype in (202) AND (acs_old.bettype = 1101 OR acs_old.bettype between 1501 AND 1599)
 			    AND acs_old.isautompositiontaking <> acs_new.isautompositiontaking
 	    )
     BEGIN
@@ -712,8 +657,6 @@ BEGIN
 	    @v202apositiontaking_1509 SMALLMONEY,
 	    @v202apositiontaking_1514 SMALLMONEY,
 	    
-	    -- Gold Deluxe
-	    @v255apositiontaking_1701 SMALLMONEY,
 	    @PTXML						XML, --DCS
 	    @IsGrouped				BIT 
 	    
@@ -839,9 +782,6 @@ BEGIN
     SELECT @v202apositiontaking_1509 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 202 AND bettype = 1509
     SELECT @v202apositiontaking_1514 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 202 AND bettype = 1514
     
-    -- Gold Deluxe
-    SELECT @v255apositiontaking_1701 = apositiontaking FROM CustSettingGame WITH(NOLOCK) WHERE custid = @custid AND sporttype = 255 AND bettype = 1701
-
     print  'Move member '+@membername+' FROM agent id '+convert(VARCHAR(20), @recommend_old)+' to agent '+@agentname+' (id ' + convert(VARCHAR(20), @recommend)+')'    
 
     IF (@aDoubleCommLosing = 0 AND @DoubleCommLosing = 1)
@@ -1479,31 +1419,6 @@ BEGIN
 	    return
     END
     
-      -- Gold Deluxe
-        EXEC dbo.Acc_CustomerUpdMemberGoldDeluxe_Positiontaking
-	    @custid  = @custid,
-	    @v255apositiontaking_1701 = @v255apositiontaking_1701,
-    	
-	    @UserID	= @UserID,	
-	    @ErrCode = @ErrCode OUTPUT,
-	    @ErrMsg	 = @ErrMsg OUTPUT	
-
-    IF @ErrCode > 0
-    BEGIN
-	    --ROLLBACK TRANSACTION MANUALLY
-	    update customer with (ROWLOCK, UPDLOCK) SET srecommend = @srecommend_old, mrecommend = @mrecommend_old,
-											    recommend = @recommend_old
-	    WHERE custid = @custid
-    	
-	    update custinfo with (ROWLOCK, UPDLOCK) SET srecommend = @srecommend_old, mrecommend = @mrecommend_old,
-											    recommend = @recommend_old
-	    WHERE custid = @custid
-    	
-	    IF @ReturnErrCode = 0
-		    RAISERROR(@ErrMsg, 16, 1)	
-	    return
-    END
-    
     --- update suspended status
     IF @aSuspended = 1 AND @Suspended = 0
     BEGIN
@@ -1551,102 +1466,6 @@ BEGIN
 		    RETURN 
 	    END
     END
-    
-     --Gold Deluxe
-    --IF @aHideGoldDeluxe = 0 AND (@aHideGoldDeluxe <> @HideGoldDeluxe)
-    --BEGIN
-	   -- UPDATE	Custinfo WITH (UPDLOCK,ROWLOCK)
-	   -- SET		HideGoldDeluxe = 0
-	   -- WHERE	custid = @custid 
-	   -- IF @@ERROR <>0
-	   -- BEGIN
-		  --  Select	@ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-				--    @ErrCode = 507
-		  --  IF @ReturnErrCode = 0
-			 --   RAISERROR(@ErrMsg, 16, 1)
-		  --  RETURN 
-	   -- END
-    --END
-    
-    --Gold Deluxe
-    IF @aDisableGoldDeluxe = 0 AND (@aDisableGoldDeluxe <> @DisableGoldDeluxe)
-    BEGIN
-	    UPDATE	Custinfo WITH (UPDLOCK,ROWLOCK)
-	    SET		DisableGoldDeluxe = 0
-	    WHERE	custid = @custid 
-	    IF @@ERROR <>0
-	    BEGIN
-		    Select	@ErrMsg = 'Error member ' + @membername + ', agent ' + @agentname + ': update unsuccessfully (custinfo).',
-				    @ErrCode = 507
-		    IF @ReturnErrCode = 0
-			    RAISERROR(@ErrMsg, 16, 1)
-		    RETURN 
-	    END
-    END
-
-	----Update productstus for DCS
-	--DECLARE @xmlStrDisabled XML
-	--DECLARE @xmlStrHidden XML
-
-	--SET @xmlStrDisabled =(
-	--			SELECT (
-	--					SELECT stt.bitmapOrder	AS '@b'
-	--						, 1	AS '@s'
-	--					FROM dbo.ProductStatusProfile stt WITH(NOLOCK)
-	--						INNER JOIN dbo.CustProductStatus a WITH(NOLOCK)ON a.CustID = @recommend
-	--						INNER JOIN dbo.CustProductStatus m WITH(NOLOCK)ON m.CustID = @custid
-	--					WHERE dbo.f_GetProductStatus(m.bitmapIsDisabled, stt.bitmapOrder) = 0
-	--							AND dbo.f_GetProductStatus(a.bitmapIsDisabled, stt.bitmapOrder) = 1
-		
-	--					FOR XML PATH('r')
-	--						, TYPE
-	--					)
-	--			FOR XML PATH('root')
-	--				, TYPE
-	--			)
-
-	--IF CONVERT(VARCHAR(MAX),@xmlStrDisabled) <> '<root/>'
-	--BEGIN
-	--	UPDATE CustProductStatus
-	--		SET bitmapIsDisabled = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (bitmapIsDisabled, CONVERT(VARCHAR(MAX),@xmlStrDisabled)))	
-	--	WHERE	custid = @custid
-	--	IF @@ERROR <>0
-	--	BEGIN
-	--		SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': update unsuccessfully (custinfo).',
-	--				@ErrCode = 9116
-	--		RETURN 
-	--	END
-	--END
-
-	--SET @xmlStrHidden =(
-	--			SELECT (
-	--					SELECT stt.bitmapOrder	AS '@b'
-	--						, 0	AS '@s'
-	--					FROM dbo.ProductStatusProfile stt WITH(NOLOCK)
-	--						INNER JOIN dbo.CustProductStatus a WITH(NOLOCK)ON a.CustID = @recommend
-	--						INNER JOIN dbo.CustProductStatus m WITH(NOLOCK)ON m.CustID = @custid
-	--					WHERE dbo.f_GetProductStatus(m.bitmapIsHidden, stt.bitmapOrder) = 1
-	--							AND dbo.f_GetProductStatus(a.bitmapIsHidden, stt.bitmapOrder) = 0
-		
-	--					FOR XML PATH('r')
-	--						, TYPE
-	--					)
-	--			FOR XML PATH('root')
-	--				, TYPE
-	--			)
-
-	--IF CONVERT(VARCHAR(MAX),@xmlStrHidden) <> '<root/>'
-	--BEGIN
-	--	UPDATE CustProductStatus
-	--		SET bitmapIsHidden = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (bitmapIsHidden, CONVERT(VARCHAR(MAX),@xmlStrHidden)))	
-	--	WHERE	custid = @custid
-	--	IF @@ERROR <>0
-	--	BEGIN
-	--		SELECT @ErrMsg = 'Error Agent ' + @agentname + ', member ' + @membername + ': update unsuccessfully (custinfo).',
-	--				@ErrCode = 9117
-	--		RETURN 
-	--	END
-	--END
 	
     UPDATE	cg WITH (UPDLOCK,ROWLOCK)
     SET		cg.IsDisabled = 1 
@@ -1824,13 +1643,13 @@ BEGIN
 		    return
     END
     
-    --Keno, gold deluxe
+    --Keno
 
     UPDATE cs WITH(UPDLOCK,ROWLOCK)
     SET sdiscount = scs.sdiscount
     FROM CustSettingGame scs WITH(NOLOCK)
 	    INNER JOIN CustSettingGame cs ON scs.custid = @srecommend AND scs.sporttype = cs.sporttype AND scs.bettype = cs.bettype
-    WHERE cs.custid = @custid AND cs.sporttype in (202, 255) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599 OR cs.Bettype = 1701)
+    WHERE cs.custid = @custid AND cs.sporttype in (202) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599)
 	    AND scs.sdiscount < cs.sdiscount
 
     IF @@ERROR<>0
@@ -1885,12 +1704,12 @@ BEGIN
 			    RAISERROR(@ErrMsg, 16, 1)
 		    return
     END
-    -- keno, gold deluxe
+    -- keno
     UPDATE cs WITH(UPDLOCK,ROWLOCK) 
     SET adiscount = mcs.adiscount
     FROM CustSettingGame mcs WITH(NOLOCK) 
 	    INNER JOIN CustSettingGame cs ON mcs.custid = @mrecommend AND mcs.sporttype = cs.sporttype AND mcs.bettype = cs.bettype 
-    WHERE cs.custid = @custid AND cs.sporttype in (202, 255) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599 OR cs.Bettype = 1701)
+    WHERE cs.custid = @custid AND cs.sporttype in (202) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599)
 	    AND mcs.adiscount < cs.adiscount
 
     IF @@ERROR <> 0
@@ -1946,12 +1765,12 @@ BEGIN
 		    return
     END
 
-    -- keno, gold deluxe
+    -- keno
     UPDATE cs WITH(UPDLOCK,ROWLOCK) 
     SET cs.discount = acs.discount
     FROM CustSettingGame acs WITH(NOLOCK)
 	    INNER JOIN CustSettingGame cs ON acs.custid = @recommend AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-    WHERE cs.custid = @custid AND cs.sporttype in (202, 255) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599 OR cs.Bettype = 1701)
+    WHERE cs.custid = @custid AND cs.sporttype in (202) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599)
 	    AND acs.discount < cs.discount
 
     IF @@ERROR <> 0
@@ -2025,12 +1844,12 @@ BEGIN
 		    return
     END
 
-    -- keno, gold deluxe
+    -- keno
     UPDATE cs WITH(UPDLOCK,ROWLOCK)
     SET playerdiscount = acs.discount
     FROM CustSettingGame acs WITH(NOLOCK) 
 	    INNER JOIN CustSettingGame cs ON acs.custid = @recommend AND acs.sporttype = cs.sporttype AND acs.bettype = cs.bettype 
-    WHERE cs.custid = @custid AND cs.sporttype in (202, 255) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599 OR cs.Bettype = 1701)
+    WHERE cs.custid = @custid AND cs.sporttype in (202) AND (cs.bettype = 1101 OR cs.bettype between 1501 AND 1599)
 	    AND acs.discount < cs.playerdiscount
 
     IF @@ERROR<>0

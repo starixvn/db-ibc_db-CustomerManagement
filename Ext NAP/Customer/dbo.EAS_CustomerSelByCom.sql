@@ -67,6 +67,7 @@ AS
 		- 20201209@Johnson: remove default value for @GroupName [redmine:#145199]
 		- 20201222@Johnson: put WITH NOLOCK for Acc_CustGroup [redmine:#147578]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Explanation's Param:
 		@Status = 
@@ -197,7 +198,7 @@ BEGIN
 			c.username,
 			ci.enabled,
 			cps.closed,
-			ci.SyncCasino,
+			
 			ISNULL(cps.reject, 0) AS suspended,
 			c.roleid,
 			ISNULL(cp.firstname, '') AS firstname,
@@ -237,7 +238,7 @@ BEGIN
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1
 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, cps.closed, ci.SyncCasino, cps.reject, c.roleid, 
+	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, 
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
 			sl.LimitDays, sl.MinDate, sl.SubGroup, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate,cps.Locked

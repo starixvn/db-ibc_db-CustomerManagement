@@ -23,6 +23,8 @@ AS
 		- 20210728@Winfred: Grant Permission Alpha [Redmine: #155133]
 		- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
 		- 20220317@Johnson: add FGG [redmine: #165682]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
 		
@@ -75,7 +77,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #ProductSettingDetail b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,22,42,44,66,69,64) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games
+	WHERE (B.ProductID IN (41,22,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -135,13 +137,6 @@ BEGIN
 	FROM #Supers ss
 		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.CustID = cs.CustID 
 	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
-	
-	-- Gold Deluxe
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.CustID, cs.Sporttype, cs.Bettype, 12 AS ProductID, cs.spositiontaking AS SuperPT
-	FROM #Supers ss
-	INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.CustID = cs.CustID 
-	WHERE  cs.sporttype = 255 AND cs.bettype = 1701
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 

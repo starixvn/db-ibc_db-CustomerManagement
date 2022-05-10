@@ -16,6 +16,7 @@ AS
 
 	Revision:
 		- 20210716@Johnson: initial sp [redmine:#158174]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	
 	Parameter's Explanation:
 		@custid: output source custid
@@ -111,9 +112,6 @@ BEGIN
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
 		
 	DECLARE @tblProduct TABLE (productID INT, SportType INT)
-	
-	INSERT INTO @tblProduct(ProductID,sporttype)
-	SELECT 6, 208 --casino
 	
 	SELECT DISTINCT ProductID, SportType, Bettype
 	INTO #SportBettypeFilter

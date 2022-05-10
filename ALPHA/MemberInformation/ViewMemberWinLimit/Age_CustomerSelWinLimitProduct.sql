@@ -1,5 +1,4 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
 	@CustId INT
 	, @SettingStatus TINYINT = 0
@@ -21,19 +20,12 @@ AS
 		- 20200428@Malcolm : re-order products [Redmine : #132760]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)
-
-	--RnG Casino
-	IF EXISTS (SELECT 1	FROM dbo.custInfo WITH(NOLOCK)	WHERE CustId = @CustId AND SyncCasino = 1)
-	BEGIN
-		INSERT INTO @Products(BetType, SportType, ProductName, ProductID)
-		SELECT 2101, 208, ProductName, ProductID
-		FROM dbo.Products WITH(NOLOCK) WHERE ProductID = 6
-	END
 	
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
@@ -70,13 +62,6 @@ BEGIN
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
-
-	--DELETE	p
-	--FROM		@Products AS p
-	--INNER JOIN	dbo.f_CustSetting_SportBetTypeHiddenBySiteCurrency(@CustId, NULL) AS sbhsc
-	--		ON	sbhsc.SportType = p.SportType
-	--		AND	sbhsc.BetType = p.BetType
-	--WHERE	sbhsc.IsHidden = 1
 
 	SELECT p.BetType, 
 		   p.SportType, 

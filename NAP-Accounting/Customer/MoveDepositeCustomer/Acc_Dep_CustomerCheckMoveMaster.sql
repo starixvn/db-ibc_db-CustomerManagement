@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Dep_CustomerCheckMoveMaster]
 	@supername	VARCHAR(40),
 	@mastername VARCHAR(40),
@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]  
+		- 20220112@Eden: LAP - RNG Casino - Implement DCS Settings [Redmine: #166217] 
 	Param's Explanation:
 	• @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -38,15 +39,12 @@ BEGIN
 			@mcurrency			TINYINT,			
 			@sdisableFI			BIT, 
 			@mdisableFI			BIT,
-			@sSyncCasino		BIT,
-			@mSyncCasino		BIT,
 		
 			@sIsInternal		BIT,
 			@mIsInternal		BIT,
 			@sDisableOutright	BIT,
 			@mDisableOutright	BIT,
-			@sDisableCasino		BIT,
-			@mDisableCasino		BIT,		
+				
 			@sDisableNumber		BIT,
 			@mDisableNumber		BIT,
 		
@@ -57,13 +55,8 @@ BEGIN
 		
 
 	SELECT	@srecommend			= custid, 
-			@scurrency			= currency, 			
-			
-			@sSyncCasino		= SyncCasino,
-	
+			@scurrency			= currency,
 			@sDisableOutright	= DisableOutright,
-			@sDisableCasino		= DisableCasino,		
-			
 			@sDisableNumber		= DisableNumber,
 			@sClosed			= closed,
 			@sSuspended			= reject		
@@ -73,12 +66,7 @@ BEGIN
 	SELECT	@mrecommend			= custid, 
 			@srecommend_old		= srecommend, 
 			@mcurrency			= currency, 			
-			
-			@mSyncCasino		= SyncCasino,		
-		
 			@mDisableOutright	= DisableOutright,
-			@mDisableCasino		= DisableCasino,			
-			
 			@mDisableNumber		= DisableNumber,
 			@mSuspended			= reject,
 			@mClosed			= closed		
@@ -147,52 +135,12 @@ BEGIN
 		RETURN
 	END
 
-	--Check Casino sync:
-	IF @sSyncCasino = 0 AND @mSyncCasino = 1
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is synchronized Casino but new super is not synchronized Casino.',
-			@ErrCode = 114					 
-		RETURN
-	END
-	/*
-	--Check Casino enable status
-	IF @sDisableCasino = 1 AND (@mDisableCasino = 0)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enable Casino but new super is not enable Casino.',
-			@ErrCode = 115
-		RETURN
-	END
-	*/
-	
-
-
-
-
 	IF @sdisableNumber = 1 AND @mdisableNumber = 0
 	BEGIN
 		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': master is enabled Number Game but new super is not enabled Number Game.',
 			@ErrCode = 118
 		RETURN
 	END
-
-
-	--Check Horse, FI, Casino sync status:
-	--no need to check for Horse
-	/*IF EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 151)
-		AND NOT EXISTS(SELECT 1 FROM custsetting3rd WITH (NOLOCK) WHERE custid = @srecommend AND sporttype = 151)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': super does not have Horse Racing setting.',
-			@ErrCode = 110					 
-		RETURN
-	END*/
-	--no need to check for Financial
-	/*IF EXISTS(SELECT 1 FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 201)
-		AND NOT EXISTS(SELECT 1 FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @srecommend AND sporttype = 201)
-	BEGIN
-		SELECT @ErrMsg = 'Error super ' + @supername + ', master ' + @Mastername + ': super does not have Finance setting.',
-			@ErrCode = 200					 
-		RETURN
-	END*/
 
 	--Check Number Game
 	IF EXISTS(SELECT 1 FROM dep_custsetting3rd WITH (NOLOCK) WHERE custid = @mrecommend AND sporttype = 161)

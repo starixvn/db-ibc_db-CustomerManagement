@@ -18,8 +18,7 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline]
 	@MasterUsername varchar(50) = '' OUTPUT,  
 	@SubAccID int = 0, --Sub-AccountID,  
 	@site varchar(20) = '' OUTPUT,  
-	@isCasinoDisabled bit = false OUTPUT,
-	@IsCasinoSync bit = false OUTPUT,
+	
 	@isFirstLogin	BIT = 0 OUTPUT,
 	@PwdExpiry		DATETIME = NULL OUTPUT,
 	@LastChangedPwdDate	DATETIME = NULL OUTPUT, 	
@@ -72,6 +71,7 @@ AS
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -490,9 +490,7 @@ BEGIN
 	 END  
 
 	 
-	SELECT @IsCasinoSync = SyncCasino
-			,@isCasinoDisabled = DisableCasino
-			,@db_enabled = isnull(enabled,0)
+	SELECT @db_enabled = isnull(enabled,0)
 	FROM custinfo with (nolock) WHERE custid = @db_custid
 
 	SELECT	@locked = Locked,
@@ -778,10 +776,6 @@ BEGIN
 
 	-- Successful  
 	SELECT @Currency = Currency, @CurrencyId = @db_currency FROM exchange with (nolock) WHERE exchangeid = @db_currency  
-
-	SELECT @isCasinoDisabled = isnull(@isCasinoDisabled,1)
-	SELECT @IsCasinoSync = isnull(@IsCasinoSync,0)
-
 
 	if @RoleID = 2  
 	 select @MasterUsername = lower(username) from customer (nolock) where custid = (select mrecommend from customer (nolock) where custid = @CustID)  

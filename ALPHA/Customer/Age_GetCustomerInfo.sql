@@ -12,6 +12,7 @@ AS
 		- 20200310@Percy: Get IsAllDayBalTransfer on CustMaster (under master level) [RedmineID: #130091]
 		- 20200312@Andy:   Get Customer Info - [Redmine: #129673]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 	Parameter's Explaination:
 		
@@ -22,8 +23,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	SELECT	ci.custid, ci.username, ci.roleid, ci.currency, e.currency AS CurrencyName, ci.Enabled,
-			ci.recommend, ci.mrecommend, ci.srecommend, 
-			ci.SyncCasino, 
+			ci.recommend, ci.mrecommend, ci.srecommend,  
 		CASE 
 			WHEN m.custid IS NOT NULL 
 			THEN m.IsAllDayBalTransfer 

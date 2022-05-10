@@ -8,6 +8,7 @@ Task :  Get FuntionType/ProductID/Sportype/SettingType matrix to add UM config
 DB: DBCUST.CustDB
 Revisions:	
 	- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 Param's Explanation:
 	FunctionType = : 
@@ -34,7 +35,7 @@ SET NOCOUNT ON
 	--Edit Setting (Non-DCS)
 	SELECT 1,0,0,0 UNION ALL --All Sport
 	SELECT 1,1,0,0 UNION ALL --SB + NG
-	SELECT 1,6,0,0 UNION ALL --RNG Casino
+	--SELECT 1,6,0,0 UNION ALL --RNG Casino
 	SELECT 1,8,0,0 UNION ALL -- RNG Keno
 	SELECT 1,12,0,0  --GD
 

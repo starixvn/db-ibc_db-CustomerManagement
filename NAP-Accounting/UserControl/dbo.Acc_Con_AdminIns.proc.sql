@@ -34,6 +34,7 @@ Revisions:
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 	- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 
 Param's Explanation:
 • @ErrCode:
@@ -80,8 +81,8 @@ BEGIN
 	INSERT  INTO customer (username, userpwd, roleid, firstname, lastname, creator, pwdexpiry)
 	VALUES               (@username, @userpwd, @roleid, @firstname, @lastname, @UserID, @pwdexpiry);
 	SELECT @CustID = @@IDENTITY;
-	INSERT  INTO dbo.custinfo (username, [custid], [currency], [MaxPerMatch], [MaxPerMatch2], [MaxPerMatch3], [MaxPerMatch5], [MaxPerMatch8], [MaxPerMatch10], [MaxPerMatch11], [MaxPerMatch12], [MaxPerMatch99], [MaxPerMatch161], [MaxPerMatch99MP], [MaxPerBall161], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableCasino], [DisableOutright], [DisableNumber], [SyncCasino], [danger], [danger2], [danger3], [Enabled], [closed])
-	VALUES                   (@username, @custid, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
+	INSERT  INTO dbo.custinfo (username, [custid], [currency], [MaxPerMatch], [MaxPerMatch2], [MaxPerMatch3], [MaxPerMatch5], [MaxPerMatch8], [MaxPerMatch10], [MaxPerMatch11], [MaxPerMatch99], [MaxPerMatch161], [MaxPerMatch99MP], [MaxPerBall161], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [DisableNumber], [danger], [danger2], [danger3], [Enabled], [closed])
+	VALUES                   (@username, @custid, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
 	IF @@ERROR <> 0
 		BEGIN
 			ROLLBACK;
