@@ -228,6 +228,22 @@ BEGIN
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake
 		WHERE a.IsCredit = 1 AND SettingType IN (7,17) 
 
+		--CREDIT: delete update MinStake only
+		DELETE his
+		FROM @History_StakeLevelTbl his
+			INNER JOIN StakeLevel sl ON sl.StakeLevelID=his.StakeLevelID
+									AND sl.MaxStake=his.MaxStake
+									AND sl.MaxLabel=his.MaxLabel
+		WHERE IsGroup=0
+
+		DELETE his
+		FROM @History_StakeLevelTbl his
+			INNER JOIN StakeLevelGroupDetail slg ON slg.StakeLevelID=his.StakeLevelID
+												AND slg.GameTypeID=his.GameTypeID
+												AND slg.MaxStake=his.MaxStake
+												AND slg.MaxLabel=his.MaxLabel
+		WHERE IsGroup=1
+
 		--CREDIT: Insert history of update global StakeLevel
 		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=1)
 		BEGIN
@@ -325,6 +341,22 @@ BEGIN
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake AND a.SiteID = dst.SiteID
 		WHERE a.IsCredit =  0 AND SettingType IN (7) 		
+		
+		--Delete update MinStake only
+		DELETE his
+		FROM @History_StakeLevelTbl his
+			INNER JOIN Dep_StakeLevel sl ON sl.StakeLevelID=his.StakeLevelID
+									AND sl.MaxStake=his.MaxStake
+									AND sl.MaxLabel=his.MaxLabel
+		WHERE IsGroup=0 AND IsCredit=0
+
+		DELETE his
+		FROM @History_StakeLevelTbl his
+			INNER JOIN Dep_StakeLevelGroupDetail slg ON slg.StakeLevelID=his.StakeLevelID
+												AND slg.GameTypeID=his.GameTypeID
+												AND slg.MaxStake=his.MaxStake
+												AND slg.MaxLabel=his.MaxLabel
+		WHERE IsGroup=1 AND IsCredit=0
 		
 		--DEPOSIT: Insert history of update global StakeLevel
 		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=0)
