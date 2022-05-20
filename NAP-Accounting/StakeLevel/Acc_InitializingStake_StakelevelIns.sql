@@ -14,8 +14,8 @@ AS
 	Revisions:
 		- 20220210@Winfred: NAP -  Flexible Initializing insert Stake Level [Redmine: #167128]
 		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
+		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-	
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -36,6 +36,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
+	DECLARE @SettingList VARCHAR(MAX)
 	DECLARE @xml XML, @StartRun	DATETIME, @EndRun DATETIME, @Duration INT, @logSpData NVARCHAR(MAX)
 	DECLARE @Dep_MaxSLID INT
 	DECLARE @NewStakeLevelTbl TABLE (
@@ -70,7 +71,17 @@ BEGIN
 			, IsCredit		BIT DEFAULT((0))
 			, SettingType	SMALLINT
 		)
-	
+
+	DECLARE @History_StakeLevelTbl TABLE (
+			  StakeLevelID	INT
+			, GameTypeID	INT
+			, MaxLabel		NVARCHAR(50)
+			, MaxStake		DECIMAL(19,8)
+			, UpdateTime	DATETIME
+			, IsGroup		BIT
+			, IsCredit		BIT
+		)	
+
 	IF @InputData IS NULL OR @InputData = ''
 		RETURN
 		
@@ -194,7 +205,10 @@ BEGIN
 		WHEN NOT MATCHED THEN 
 							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
 							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
-							 ;
+							
+							OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 1, 1
+								INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit);
+
 		-- Credit Stake Level
 		INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId)
 		SELECT DISTINCT a.BetType AS GameTypeID,MinLabel,MaxLabel,NewMinBet,NewMaxBet, ExchangeId
@@ -207,10 +221,52 @@ BEGIN
 		
 		UPDATE dst	
 		SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
+		OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 1
+			INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
 		FROM StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake
 		WHERE a.IsCredit = 1 AND SettingType IN (7,17) 
+
+		--CREDIT: Insert history of update global StakeLevel
+		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=1)
+		BEGIN
+			SET @SettingList = (SELECT	StakeLevelID	AS '@StakeLevelID',
+										GameTypeID		AS '@GameTypeID',
+										MaxLabel		AS '@MaxLabel',
+										MaxStake		AS '@MaxStake',
+										'NULL'			AS '@MaxGameStake',
+										UpdateTime		AS '@UpdateTime'	
+								FROM @History_StakeLevelTbl
+								WHERE IsGroup=0 AND IsCredit=1
+								FOR XML PATH('r') , ROOT('root')
+								)
+
+			EXEC Task_DetectBet_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=0, @ErrMsg=@ErrMsg OUTPUT
+
+			IF @ErrMsg<>''
+				RETURN
+		END
+
+		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=1 AND IsCredit=1)
+		BEGIN
+			SET @SettingList = (SELECT	StakeLevelID	AS '@StakeLevelID',
+										GameTypeID		AS '@GameTypeID',
+										MaxLabel		AS '@MaxLabel',
+										MaxStake		AS '@MaxStake',
+										'NULL'			AS '@MaxGameStake',
+										UpdateTime		AS '@UpdateTime'	
+								FROM @History_StakeLevelTbl
+								WHERE IsGroup=1 AND IsCredit=1
+								FOR XML PATH('r') , ROOT('root')
+								)
+
+			EXEC Task_DetectBet_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=1, @ErrMsg=@ErrMsg OUTPUT
+
+			IF @ErrMsg<>''
+				RETURN
+		END
+
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
@@ -257,13 +313,57 @@ BEGIN
 		WHEN NOT MATCHED THEN 
 							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
 							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
-							 ;
+							
+							OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 1, 0
+								INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
+							;
 		UPDATE dst	
 		SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
+		OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 0
+			INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
 		FROM Dep_StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake AND a.SiteID = dst.SiteID
-		WHERE a.IsCredit =  0 AND SettingType IN (7) 						 	 
+		WHERE a.IsCredit =  0 AND SettingType IN (7) 		
+		
+		--DEPOSIT: Insert history of update global StakeLevel
+		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=0)
+		BEGIN
+			SET @SettingList = (SELECT	StakeLevelID	AS '@StakeLevelID',
+										GameTypeID		AS '@GameTypeID',
+										MaxLabel		AS '@MaxLabel',
+										MaxStake		AS '@MaxStake',
+										'NULL'			AS '@MaxGameStake',
+										UpdateTime		AS '@UpdateTime'	
+								FROM @History_StakeLevelTbl
+								WHERE IsGroup=0 AND IsCredit=0
+								FOR XML PATH('r') , ROOT('root')
+								)
+
+			EXEC Task_DetectBet_Dep_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=0, @ErrMsg=@ErrMsg OUTPUT
+
+			IF @ErrMsg<>''
+				RETURN
+		END
+
+		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=1 AND IsCredit=0)
+		BEGIN
+			SET @SettingList = (SELECT	StakeLevelID	AS '@StakeLevelID',
+										GameTypeID		AS '@GameTypeID',
+										MaxLabel		AS '@MaxLabel',
+										MaxStake		AS '@MaxStake',
+										'NULL'			AS '@MaxGameStake',
+										UpdateTime		AS '@UpdateTime'	
+								FROM @History_StakeLevelTbl
+								WHERE IsGroup=1 AND IsCredit=0
+								FOR XML PATH('r') , ROOT('root')
+								)
+
+			EXEC Task_DetectBet_Dep_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=1, @ErrMsg=@ErrMsg OUTPUT
+
+			IF @ErrMsg<>''
+				RETURN
+		END
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
