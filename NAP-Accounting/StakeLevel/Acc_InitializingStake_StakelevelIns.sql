@@ -77,6 +77,7 @@ BEGIN
 			, GameTypeID	INT
 			, MaxLabel		NVARCHAR(50)
 			, MaxStake		DECIMAL(19,8)
+			, SiteID		INT
 			, UpdateTime	DATETIME
 			, IsGroup		BIT
 			, IsCredit		BIT
@@ -252,6 +253,7 @@ BEGIN
 										MaxLabel		AS '@MaxLabel',
 										MaxStake		AS '@MaxStake',
 										'NULL'			AS '@MaxGameStake',
+										'NULL'			AS '@SiteID',
 										UpdateTime		AS '@UpdateTime'	
 								FROM @History_StakeLevelTbl
 								WHERE IsGroup=0 AND IsCredit=1
@@ -271,6 +273,7 @@ BEGIN
 										MaxLabel		AS '@MaxLabel',
 										MaxStake		AS '@MaxStake',
 										'NULL'			AS '@MaxGameStake',
+										'NULL'			AS '@SiteID',
 										UpdateTime		AS '@UpdateTime'	
 								FROM @History_StakeLevelTbl
 								WHERE IsGroup=1 AND IsCredit=1
@@ -335,8 +338,8 @@ BEGIN
 							;
 		UPDATE dst	
 		SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
-		OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 0
-			INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
+		OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.SiteID, GETDATE(), 0, 0
+			INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, SiteID, UpdateTime, IsGroup, IsCredit)
 		FROM Dep_StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake AND a.SiteID = dst.SiteID
@@ -346,8 +349,8 @@ BEGIN
 		DELETE his
 		FROM @History_StakeLevelTbl his
 			INNER JOIN Dep_StakeLevel sl ON sl.StakeLevelID=his.StakeLevelID
-									AND sl.MaxStake=his.MaxStake
-									AND sl.MaxLabel=his.MaxLabel
+										AND sl.MaxStake=his.MaxStake
+										AND sl.MaxLabel=his.MaxLabel
 		WHERE IsGroup=0 AND IsCredit=0
 
 		DELETE his
@@ -366,6 +369,7 @@ BEGIN
 										MaxLabel		AS '@MaxLabel',
 										MaxStake		AS '@MaxStake',
 										'NULL'			AS '@MaxGameStake',
+										SiteID			AS '@SiteID',
 										UpdateTime		AS '@UpdateTime'	
 								FROM @History_StakeLevelTbl
 								WHERE IsGroup=0 AND IsCredit=0
@@ -385,6 +389,7 @@ BEGIN
 										MaxLabel		AS '@MaxLabel',
 										MaxStake		AS '@MaxStake',
 										'NULL'			AS '@MaxGameStake',
+										'NULL'			AS '@SiteID',
 										UpdateTime		AS '@UpdateTime'	
 								FROM @History_StakeLevelTbl
 								WHERE IsGroup=1 AND IsCredit=0
