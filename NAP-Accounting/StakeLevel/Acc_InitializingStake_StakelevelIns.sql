@@ -67,6 +67,7 @@ BEGIN
 			, NewMaxBet		DECIMAL(19,8)
 			, CurMinBet		DECIMAL(19,8)
 			, CurMaxBet		DECIMAL(19,8)
+			, MaxGameStake	DECIMAL(19,8)
 			, GameGroupID	INT
 			, IsCredit		BIT DEFAULT((0))
 			, SettingType	SMALLINT
@@ -172,6 +173,19 @@ BEGIN
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 			INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 		WHERE a.IsCredit = 0   AND ( ps.SettingType = 8 OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
+
+		UPDATE a 
+		SET a.MaxGameStake=CASE WHEN  OrgBetType BETWEEN 6401 AND 6700	THEN 98*a.NewMaxBet	--Joker
+								WHEN (OrgBetType BETWEEN 4001 AND 4100) OR
+									 (OrgBetType BETWEEN 4101 AND 4300) OR 
+									 (OrgBetType BETWEEN 6701 AND 7000) OR
+									 (OrgBetType BETWEEN 4301 AND 4600)
+																		THEN 100*a.NewMaxBet	--Macau Games, PP, SG
+																		ELSE a.NewMaxBet
+					END
+		FROM  #NewInputDateTbl a
+			INNER JOIN dbtxn.bodb02.dbo.bettype bt WITH (NOLOCK) ON bt.typeid=a.OrgBetType
+		WHERE bt.typedesc='BuyBonus'
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
@@ -205,8 +219,8 @@ BEGIN
 							g.MinStake = s.MinStake,
 							g.MaxStake = s.MaxStake
 		WHEN NOT MATCHED THEN 
-							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
-							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
+							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
+							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake, s.MaxGameStake)					
 							
 							OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.MaxGameStake, GETDATE(), 1, 1
 								INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, MaxGameStake, UpdateTime, IsGroup, IsCredit);
@@ -331,8 +345,8 @@ BEGIN
 							g.MinStake =  s.MinStake,
 							g.MaxStake =  s.MaxStake
 		WHEN NOT MATCHED THEN 
-							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
-							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
+							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
+							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake,s.MaxGameStake)					
 							
 							OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.MaxGameStake, GETDATE(), 1, 0
 								INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, MaxGameStake, UpdateTime, IsGroup, IsCredit)
