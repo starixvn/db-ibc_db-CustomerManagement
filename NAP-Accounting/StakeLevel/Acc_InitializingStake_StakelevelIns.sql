@@ -78,8 +78,8 @@ BEGIN
 			, GameTypeID	INT
 			, MaxLabel		NVARCHAR(50)
 			, MaxStake		DECIMAL(19,8)
-			, MaxGameStake	DECIMAL(19,8)
-			, SiteID		INT
+			, MaxGameStake	VARCHAR(100)
+			, SiteID		VARCHAR(50)
 			, UpdateTime	DATETIME
 			, IsGroup		BIT
 			, IsCredit		BIT
