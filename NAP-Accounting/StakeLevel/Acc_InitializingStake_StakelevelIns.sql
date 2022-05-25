@@ -74,7 +74,6 @@ BEGIN
 
 	DECLARE @History_StakeLevelTbl TABLE (
 			  StakeLevelID	INT
-			, SportType		SMALLINT
 			, GameTypeID	INT
 			, MaxLabel		NVARCHAR(50)
 			, MaxStake		DECIMAL(19,8)
@@ -191,7 +190,7 @@ BEGIN
 		ORDER BY a.OrgBetType
 		
 		;WITH STAKE_TEMP AS (
-			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.ExchangeId,s.GameGroupID, s.SportType
+			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.ExchangeId,s.GameGroupID
 			FROM #NewInputDateTbl s 
 			CROSS APPLY (
 				SELECT StakeLevelID  FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
@@ -209,8 +208,8 @@ BEGIN
 							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake)
 							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake)					
 							
-							OUTPUT deleted.StakeLevelID, g.SportType, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 1, 1
-								INTO @History_StakeLevelTbl(StakeLevelID, SportType, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit);
+							OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 1, 1
+								INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit);
 
 		-- Credit Stake Level
 		INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId)
@@ -224,8 +223,8 @@ BEGIN
 		
 		UPDATE dst	
 		SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
-		OUTPUT deleted.StakeLevelID, a.SportType, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 1
-			INTO @History_StakeLevelTbl(StakeLevelID, SportType, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
+		OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 1
+			INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
 		FROM StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN  #NewInputDateTbl a	ON 	dst.GameTypeID = a.BetType AND a.ExchangeId = dst.ExchangeId 
 								 AND a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake
@@ -249,12 +248,13 @@ BEGIN
 
 		--Update: MaxGameStake
 		UPDATE his
-		SET his.MaxGameStake=CASE WHEN GameTypeID BETWEEN 6401 AND 6700  AND SportType=234 THEN 98*MaxStake	--Joker
-								  WHEN (GameTypeID BETWEEN 4001 AND 4100 AND SportType=212) OR
-									  ((GameTypeID BETWEEN 4101 AND 4300) OR (GameTypeID BETWEEN 6701 AND 7000) AND SportType=248) OR
-									   (GameTypeID BETWEEN 4301 AND 4600 AND SportType=247)
-									THEN 100*MaxStake	--Macau Games, PP, SG
-									ELSE MaxStake
+		SET his.MaxGameStake=CASE WHEN  GameTypeID BETWEEN 6401 AND 6700	THEN 98*MaxStake	--Joker
+								  WHEN (GameTypeID BETWEEN 4001 AND 4100) OR
+									   (GameTypeID BETWEEN 4101 AND 4300) OR 
+									   (GameTypeID BETWEEN 6701 AND 7000) OR
+									   (GameTypeID BETWEEN 4301 AND 4600)
+																			THEN 100*MaxStake	--Macau Games, PP, SG
+																			ELSE MaxStake
 							END
 		FROM @History_StakeLevelTbl his
 			INNER JOIN dbtxn.bodb02.dbo.bettype bt WITH (NOLOCK) ON bt.typeid=his.GameTypeID
@@ -378,12 +378,13 @@ BEGIN
 		
 		--Update: MaxGameStake
 		UPDATE his
-		SET his.MaxGameStake=CASE WHEN GameTypeID BETWEEN 6401 AND 6700  AND SportType=234 THEN 98*MaxStake	--Joker
-								  WHEN (GameTypeID BETWEEN 4001 AND 4100 AND SportType=212) OR
-									  ((GameTypeID BETWEEN 4101 AND 4300) OR (GameTypeID BETWEEN 6701 AND 7000) AND SportType=248) OR
-									   (GameTypeID BETWEEN 4301 AND 4600 AND SportType=247)
-									THEN 100*MaxStake	--Macau Games, PP, SG
-									ELSE MaxStake
+		SET his.MaxGameStake=CASE WHEN  GameTypeID BETWEEN 6401 AND 6700	THEN 98*MaxStake	--Joker
+								  WHEN (GameTypeID BETWEEN 4001 AND 4100) OR
+									   (GameTypeID BETWEEN 4101 AND 4300) OR 
+									   (GameTypeID BETWEEN 6701 AND 7000) OR
+									   (GameTypeID BETWEEN 4301 AND 4600)
+																			THEN 100*MaxStake	--Macau Games, PP, SG
+																			ELSE MaxStake
 							END
 		FROM @History_StakeLevelTbl his
 			INNER JOIN dbtxn.bodb02.dbo.bettype bt WITH (NOLOCK) ON bt.typeid=his.GameTypeID
