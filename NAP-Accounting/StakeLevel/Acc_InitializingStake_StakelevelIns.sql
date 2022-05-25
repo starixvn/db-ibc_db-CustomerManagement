@@ -204,7 +204,7 @@ BEGIN
 		ORDER BY a.OrgBetType
 		
 		;WITH STAKE_TEMP AS (
-			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.ExchangeId,s.GameGroupID
+			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake, s.MaxGameStake,s.ExchangeId,s.GameGroupID
 			FROM #NewInputDateTbl s 
 			CROSS APPLY (
 				SELECT StakeLevelID  FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
@@ -217,7 +217,9 @@ BEGIN
 							g.MinLabel = s.MinLabel,
 							g.MaxLabel = s.MaxLabel,
 							g.MinStake = s.MinStake,
-							g.MaxStake = s.MaxStake
+							g.MaxStake = s.MaxStake,
+							g.MaxGameStake = s.MaxGameStake
+
 		WHEN NOT MATCHED THEN 
 							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
 							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake, s.MaxGameStake)					
@@ -258,6 +260,7 @@ BEGIN
 												AND slg.GameTypeID=his.GameTypeID
 												AND slg.MaxStake=his.MaxStake
 												AND slg.MaxLabel=his.MaxLabel
+												AND slg.MaxGameStake=his.MaxGameStake
 		WHERE IsGroup=1
 
 		--CREDIT: Insert history of update global StakeLevel
@@ -330,7 +333,7 @@ BEGIN
 		 ) KQ 
 		
 		;WITH STAKE_TEMP AS (
-			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.ExchangeId,s.GameGroupID
+			SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.MaxGameStake,s.ExchangeId,s.GameGroupID
 			FROM #NewInputDateTbl s 
 			CROSS APPLY (
 				SELECT StakeLevelID  FROM Dep_StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
@@ -343,7 +346,9 @@ BEGIN
 							g.MinLabel = s.MinLabel,
 							g.MaxLabel = s.MaxLabel,
 							g.MinStake =  s.MinStake,
-							g.MaxStake =  s.MaxStake
+							g.MaxStake =  s.MaxStake,
+							g.MaxGameStake = s.MaxGameStake
+
 		WHEN NOT MATCHED THEN 
 							INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
 							VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake,s.MaxGameStake)					
@@ -374,6 +379,7 @@ BEGIN
 												AND slg.GameTypeID=his.GameTypeID
 												AND slg.MaxStake=his.MaxStake
 												AND slg.MaxLabel=his.MaxLabel
+												AND slg.MaxGameStake=his.MaxGameStake
 		WHERE IsGroup=1 AND IsCredit=0
 
 		--DEPOSIT: Insert history of update global StakeLevel
