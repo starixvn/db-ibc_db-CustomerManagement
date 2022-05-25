@@ -175,16 +175,16 @@ BEGIN
 		WHERE a.IsCredit = 0   AND ( ps.SettingType = 8 OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
 
 		UPDATE a 
-		SET a.MaxGameStake=CASE WHEN  OrgBetType BETWEEN 6401 AND 6700	THEN 98*a.NewMaxBet	--Joker
-								WHEN (OrgBetType BETWEEN 4001 AND 4100) OR
-									 (OrgBetType BETWEEN 4101 AND 4300) OR 
-									 (OrgBetType BETWEEN 6701 AND 7000) OR
-									 (OrgBetType BETWEEN 4301 AND 4600)
+		SET a.MaxGameStake=CASE WHEN  BetType BETWEEN 6401 AND 6700	THEN 98*a.NewMaxBet	--Joker
+								WHEN (BetType BETWEEN 4001 AND 4100) OR
+									 (BetType BETWEEN 4101 AND 4300) OR 
+									 (BetType BETWEEN 6701 AND 7000) OR
+									 (BetType BETWEEN 4301 AND 4600)
 																		THEN 100*a.NewMaxBet	--Macau Games, PP, SG
 																		ELSE a.NewMaxBet
 					END
 		FROM  #NewInputDateTbl a
-			INNER JOIN dbtxn.bodb02.dbo.bettype bt WITH (NOLOCK) ON bt.typeid=a.OrgBetType
+			INNER JOIN dbtxn.bodb02.dbo.bettype bt WITH (NOLOCK) ON bt.typeid=a.BetType
 		WHERE bt.typedesc='BuyBonus'
 	END TRY
 	BEGIN CATCH
