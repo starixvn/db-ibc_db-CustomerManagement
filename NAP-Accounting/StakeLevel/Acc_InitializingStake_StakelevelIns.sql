@@ -176,7 +176,7 @@ BEGIN
 			INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 		WHERE a.IsCredit = 0   AND ( ps.SettingType = 8 OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
 
-		--Get bettype - BuyBonus
+		--Get bettype - Joker, Macau Games, PP, SG
 		BEGIN TRY
 			INSERT INTO #BetType (TypeID, typedesc)
 			SELECT typeid, typedesc
