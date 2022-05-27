@@ -73,7 +73,7 @@ BEGIN
 			, SettingType	SMALLINT
 		)
 
-	CREATE TABLE #BetType (TypeID INT)
+	CREATE TABLE #BetType (TypeID INT, typedesc NVARCHAR(128))
 
 	DECLARE @History_StakeLevelTbl TABLE (
 			  StakeLevelID	INT
@@ -178,16 +178,18 @@ BEGIN
 
 		--Get bettype - BuyBonus
 		BEGIN TRY
-			INSERT INTO #BetType (TypeID)
-			SELECT typeid
+			INSERT INTO #BetType (TypeID, typedesc)
+			SELECT typeid, typedesc
 			FROM dbage.bodb02.dbo.bettype WITH (NOLOCK)
-			WHERE typedesc='BuyBonus'
+			WHERE typeid BETWEEN 4001 and 4600
+				OR (typeid BETWEEN 6401 and 7000)
 		END TRY
 		BEGIN CATCH
-			INSERT INTO #BetType (TypeID)
-			SELECT typeid
+			INSERT INTO #BetType (TypeID, typedesc)
+			SELECT typeid, typedesc
 			FROM dbtxn.bodb02.dbo.bettype WITH (NOLOCK)
-			WHERE typedesc='BuyBonus'
+			WHERE typeid BETWEEN 4001 and 4600
+				OR (typeid BETWEEN 6401 and 7000)
 		END CATCH
 
 		UPDATE a 
@@ -201,6 +203,7 @@ BEGIN
 					END
 		FROM  #NewInputDateTbl a
 			INNER JOIN #BetType bt WITH (NOLOCK) ON bt.typeid=a.BetType
+		WHERE typedesc='BuyBonus'
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
