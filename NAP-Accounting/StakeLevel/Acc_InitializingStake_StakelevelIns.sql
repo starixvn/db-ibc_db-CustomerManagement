@@ -183,6 +183,7 @@ BEGIN
 			FROM dbage.bodb02.dbo.bettype WITH (NOLOCK)
 			WHERE typeid BETWEEN 4001 and 4600
 				OR (typeid BETWEEN 6401 and 7000)
+				OR (typeid BETWEEN 5800 AND 5999)
 		END TRY
 		BEGIN CATCH
 			INSERT INTO #BetType (TypeID, typedesc)
@@ -190,6 +191,7 @@ BEGIN
 			FROM dbtxn.bodb02.dbo.bettype WITH (NOLOCK)
 			WHERE typeid BETWEEN 4001 and 4600
 				OR (typeid BETWEEN 6401 and 7000)
+				OR (typeid BETWEEN 5800 AND 5999)
 		END CATCH
 
 		UPDATE a 
@@ -197,7 +199,8 @@ BEGIN
 								WHEN (BetType BETWEEN 4001 AND 4100) OR
 									 (BetType BETWEEN 4101 AND 4300) OR 
 									 (BetType BETWEEN 6701 AND 7000) OR
-									 (BetType BETWEEN 4301 AND 4600)
+									 (BetType BETWEEN 4301 AND 4600) OR
+									 (BetType BETWEEN 5800 AND 5999)
 																	THEN 100*a.NewMaxBet	--Macau Games, PP, SG
 																	ELSE a.NewMaxBet
 					END
