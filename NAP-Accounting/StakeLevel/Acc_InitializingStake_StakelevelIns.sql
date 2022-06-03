@@ -283,6 +283,8 @@ BEGIN
 												AND slg.MaxLabel=his.MaxLabel
 		WHERE IsGroup=1
 
+		DELETE @History_StakeLevelTbl WHERE StakeLevelID IS NULL
+
 		--CREDIT: Insert history of update global StakeLevel
 		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=1)
 		BEGIN
@@ -400,6 +402,8 @@ BEGIN
 												AND slg.MaxStake=his.MaxStake
 												AND slg.MaxLabel=his.MaxLabel
 		WHERE IsGroup=1 AND IsCredit=0
+
+		DELETE @History_StakeLevelTbl WHERE StakeLevelID IS NULL
 
 		--DEPOSIT: Insert history of update global StakeLevel
 		IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=0 AND IsCredit=0)
