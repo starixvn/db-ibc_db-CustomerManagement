@@ -281,7 +281,6 @@ BEGIN
 												AND slg.GameTypeID=his.GameTypeID
 												AND slg.MaxStake=his.MaxStake
 												AND slg.MaxLabel=his.MaxLabel
-												AND slg.MaxGameStake=his.MaxGameStake
 		WHERE IsGroup=1
 
 		--CREDIT: Insert history of update global StakeLevel
@@ -400,7 +399,6 @@ BEGIN
 												AND slg.GameTypeID=his.GameTypeID
 												AND slg.MaxStake=his.MaxStake
 												AND slg.MaxLabel=his.MaxLabel
-												AND slg.MaxGameStake=his.MaxGameStake
 		WHERE IsGroup=1 AND IsCredit=0
 
 		--DEPOSIT: Insert history of update global StakeLevel
