@@ -20,6 +20,7 @@ AS
 		- 20120601@Sophia: Modify @LogData
 		- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20220517@Winfred: Insert new OTP Login requried for VPN's users [redmine:170994]
 
 */
 BEGIN
@@ -72,12 +73,25 @@ BEGIN
 				FROM   Acc_GroupPolicy WITH (NOLOCK)
 				WHERE  GroupId = @GroupID;
 				IF @@ERROR <> 0
-				   BEGIN
-					  ROLLBACK;
-					  SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END,
-							 @ErrCode = 103;
-					  RETURN;
-				   END
+				BEGIN
+					ROLLBACK;
+					SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END,
+							@ErrCode = 103;
+					RETURN;
+				END
+
+				EXEC Dbo.NAP_Admin_OTPIns 
+					@CustId			= @CustId,
+					@System			= 'NAP',
+					@UserId			= @UserID,
+					@ErrCode		= @ErrCode OUTPUT,
+					@ErrMsg			= @ErrMsg OUTPUT
+
+				IF @@ERROR <> 0
+				BEGIN
+					SELECT @ErrCode = @ErrCode, @ErrMsg = @ErrMsg
+					RETURN
+				END
 				COMMIT TRANSACTION;
 			 END
 	   END
