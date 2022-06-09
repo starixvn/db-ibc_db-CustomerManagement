@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminInsFromExisted]
 	@username VARCHAR (30), 
 	@GroupId INT, 
@@ -11,7 +11,7 @@ AS
 /*
 	Created: 
 	Task : create AccAdmin from existed Admin
-	DB: DBCUST/NAP_UserControl
+	DB: DBPOL/NAP_UserControl
 	Original:
 
 	Revisions:
