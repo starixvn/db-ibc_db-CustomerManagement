@@ -27,6 +27,7 @@ AS
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20211112@Eden: Alpha/NAP - In-house Replication (isDeleted & RepUpdateTime) [RedmineID: #164321]
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+	- 20220610@Tacy: Alpha/NAP - Remove IsDeleted field in League and Team Tables [RedmineID: #171699]
 
 	Parameter explanation:
 
@@ -108,7 +109,7 @@ BEGIN
 		DECLARE @ErrorLeagueIDs VARCHAR(MAX) = '' 
 		SELECT @ErrorLeagueIDs = @ErrorLeagueIDs + ', ' + CONVERT(VARCHAR,tmp.LeagueID)
 		FROM #League tmp
-			LEFT JOIN DBACC.BODB02.dbo.League l WITH(NOLOCK) ON tmp.LeagueID = l.leagueID AND l.IsActive = 1 AND ISNULL(l.IsDeleted,0) = 0
+			LEFT JOIN DBACC.BODB02.dbo.League l WITH(NOLOCK) ON tmp.LeagueID = l.leagueID AND l.IsActive = 1
 			OUTER APPLY ( SELECT TOP (1) 1 AS haveGroup FROM #LeagueGroup WHERE LeagueGroupID = l.LeagueGroupID) lg
 		WHERE lg.haveGroup IS NULL
 

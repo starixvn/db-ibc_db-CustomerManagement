@@ -13,6 +13,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20211112@Eden: Alpha/NAP - In-house Replication (isDeleted & RepUpdateTime) [RedmineID: #164321]
+	- 20220610@Tacy: Alpha/NAP - Remove IsDeleted field in League and Team Tables [RedmineID: #171699]
 
 	Parameter explanation:
 
@@ -95,7 +96,6 @@ BEGIN
 		CROSS APPLY ( SELECT TOP (1) 1 AS haveGroup FROM #LeagueGroup WHERE LeagueGroupID = l.LeagueGroupID) lg
 	WHERE l.IsActive = 1
 		AND l.leaguename LIKE '%' + @Leaguename + '%'
-		AND ISNULL(l.IsDeleted,0) = 0
 	ORDER BY l.leaguename
 
 	DROP TABLE #LeagueGroup
