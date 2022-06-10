@@ -83,7 +83,7 @@ BEGIN
 				EXEC Dbo.NAP_Admin_OTPIns 
 					@CustId			= @CustId,
 					@System			= 'NAP',
-					@UserId			= @UserID,
+					@UserId			= @creator,
 					@ErrCode		= @ErrCode OUTPUT,
 					@ErrMsg			= @ErrMsg OUTPUT
 
