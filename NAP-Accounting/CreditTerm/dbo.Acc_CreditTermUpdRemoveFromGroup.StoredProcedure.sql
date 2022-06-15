@@ -31,6 +31,8 @@ AS
 		- 20200120@Tiara: Allow to remove group which has 1 member [Redmine: #125991]
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto remove Super into External Group (follow Headline) [RedmineID: #146710]
+		- 20220510@Danny: Use String_split built-in function [RemineID: #171831]
+
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -62,7 +64,7 @@ BEGIN
 
 	DECLARE @CustIds TABLE (CustId INT)
 	INSERT INTO @CustIds (CustId)
-	SELECT DISTINCT val FROM dbo.strSplit(@CustIdList, ',')
+	SELECT DISTINCT value FROM STRING_SPLIT(@CustIdList, ',')
 
 	--Check an account disabled or not
 	declare @username nvarchar(100), @CustID_Headline INT,@HeadlineName VARCHAR(30)
@@ -83,7 +85,7 @@ BEGIN
 	FROM custaccount CA WITH (NOLOCK)
 		INNER JOIN (SELECT groupID, CASE WHEN groupID=0 THEN 0 ELSE (count(CA.custid)) END TotalMember FROM custAccount CA WITH (NOLOCK) INNER JOIN customer C WITH (NOLOCK) ON CA.custid = C.custid  GROUP BY groupID) B ON B.groupID = CA.groupID
 		RIGHT JOIN customer C  WITH (NOLOCK) ON  CA.custid = C.custid 
-	WHERE C.custid IN (SELECT val FROM dbo.strSplit(@CustIDList, ',')) 
+	WHERE C.custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ',')) 
 		AND ISNULL(C.site,'')<>'CN88'
 	-- Get Headline
 	SELECT @CustID_Headline = CustID FROM dbo.CustGroupHeadline WITH (NOLOCK) WHERE GroupID = @groupID
@@ -93,9 +95,9 @@ BEGIN
 	BEGIN
 		UPDATE custAccount WITH (ROWLOCK, UPDLOCK) 
 		SET groupID = 0, IsGroupHeadLine = 0
-		WHERE custid IN (SELECT val FROM dbo.strSplit(@CustIDList, ','))
+		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 
-		DELETE dbo.CustGroupHeadline WHERE custid IN (SELECT val FROM dbo.strSplit(@CustIDList, ','))
+		DELETE dbo.CustGroupHeadline WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 		SELECT @ErrMsg = 'Group of ' + COALESCE(CAST(@UsernameHL AS NVARCHAR(300)), SPACE(1)) + ' has been removed.'
 
 		SET @Case = 2
@@ -104,7 +106,7 @@ BEGIN
 	BEGIN
 		UPDATE custAccount WITH (ROWLOCK, UPDLOCK) 
 		SET groupid = 0 
-		WHERE custid IN (SELECT val FROM dbo.strSplit(@CustIDList, ','))
+		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 			AND isgroupheadline <> 1
 			-- TO Control: Email Notification
 		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
@@ -114,7 +116,7 @@ BEGIN
 			
 			, 1002 AS ActionID		
 									
-		FROM (SELECT val AS custid FROM dbo.strSplit(@CustIDList, ',')) AS tmp
+		FROM (SELECT value AS custid FROM STRING_SPLIT(@CustIDList, ',')) AS tmp
 
 		SELECT @Case = 1, @New_Headline = 0, @Old_Headline = @CustID_Headline
 	END
@@ -442,7 +444,7 @@ BEGIN
 				1002,
 				'<Acc_CreditTermUpdRemoveFromGroup CustID="'+ CustID + '" ' + @LogData,
 				@duration
-		FROM (SELECT val CustID FROM dbo.strSplit(@CustIDList, ',')) tbCust
+		FROM (SELECT value CustID FROM STRING_SPLIT(@CustIDList, ',')) tbCust
 	END TRY
 	BEGIN CATCH
 		Select @LogData = 'GroupID="' + convert(varchar(20), @groupID) + '" ' +
@@ -455,7 +457,7 @@ BEGIN
 				1002,
 				'<Acc_CreditTermUpdRemoveFromGroup CustID="'+ CustID + '" ' + @LogData,
 				@duration
-		FROM (SELECT val CustID FROM dbo.strSplit(@CustIDList, ',')) tbCust
+		FROM (SELECT value CustID FROM STRING_SPLIT(@CustIDList, ',')) tbCust
 	END CATCH
 
 	BEGIN TRY
@@ -466,7 +468,7 @@ BEGIN
 				911,
 				'<Acc_CreditTermUpdRemoveFromGroup HeadlineID="'+ CAST(ISNULL(@CustID_Headline,0)  AS VARCHAR(20))+ '" HeadlineName ="'+ ISNULL(@HeadlineName, '') +'"/>',
 				@IP
-		FROM (SELECT val CustID FROM dbo.strSplit(@CustIDList, ',')) tbCust
+		FROM (SELECT value CustID FROM STRING_SPLIT(@CustIDList, ',')) tbCust
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrCode = 107, @ErrMsg = 'Internal error! Please try again or contact the administrator!'
