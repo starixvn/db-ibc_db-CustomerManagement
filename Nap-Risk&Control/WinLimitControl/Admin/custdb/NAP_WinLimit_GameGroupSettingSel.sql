@@ -13,7 +13,7 @@ Task: #168458 - CWL - Enhance Currency Win Limit Setting page
 DB: DBCUST/CustDB
 
 Revisions:
-20220518@Jacob: Enhance Currency Win Limit Setting page [168458]
+20220518@Robert: Enhance Currency Win Limit Setting page [168458]
 Parameters Explanation:     
      
 Example:

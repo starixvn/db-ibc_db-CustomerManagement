@@ -19,6 +19,7 @@ AS
 				- 20180531@Robert: Update CWL Settings				
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+				- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -46,7 +47,7 @@ AS
 	   DECLARE 
 		   @tblCurrency TABLE
 						  (
-		   Currency VARCHAR(3)
+		   Currency VARCHAR(5)
 						  );
 
 

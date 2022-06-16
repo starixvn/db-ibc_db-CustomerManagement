@@ -1,40 +1,42 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROC NAP_CWL_Initialize_Settings 
-	@ProductID                              INT
-   , @BetTypeID_Begin                        INT
-   , @BetTypeID_End                          INT
-   , @BettypeIDs                             VARCHAR(2000) = ''
-   , @RepresentativeBettype				INT		    
-   , @GroupID                                INT
-   , @GroupName                              VARCHAR(200)
-   , @Level1                                 MONEY         = 10000
-   , @Level2                                 MONEY         = 30000
-   , @Level3                                 MONEY         = 100000
-   , @Level101                               MONEY         = -10000
-   , @Level102                               MONEY         = -30000  
-   , @Currency						     	 VARCHAR(MAX)  = ''
-   , @IsBlockedPlaceBet_DepositSite_Level1   BIT           = 0
-   , @IsBlockedPlaceBet_DepositSite_Level2   BIT           = 0
-   , @IsBlockedPlaceBet_DepositSite_Level3   BIT           = 0
-   , @IsBlockedPlaceBet_DepositSite_Level101 BIT           = 0
-   , @IsBlockedPlaceBet_DepositSite_Level102 BIT           = 0
-   , @IsBlockedPlaceBet_CreditSite_Level1    BIT           = 0
-   , @IsBlockedPlaceBet_CreditSite_Level2    BIT           = 0
-   , @IsBlockedPlaceBet_CreditSite_Level3    BIT           = 0
-   , @IsBlockedPlaceBet_CreditSite_Level101  BIT           = 0
-   , @IsBlockedPlaceBet_CreditSite_Level102  BIT           = 0
-   , @IsBlockedTransfer_DepositSite_Level1   BIT           = 0
-   , @IsBlockedTransfer_DepositSite_Level2   BIT           = 0
-   , @IsBlockedTransfer_DepositSite_Level3   BIT           = 0
-   , @IsBlockedTransfer_DepositSite_Level101 BIT           = 0
-   , @IsBlockedTransfer_DepositSite_Level102 BIT           = 0
-   , @IsBlockedTransfer_CreditSite_Level1    BIT           = 0
-   , @IsBlockedTransfer_CreditSite_Level2    BIT           = 0
-   , @IsBlockedTransfer_CreditSite_Level3    BIT           = 0
-   , @IsBlockedTransfer_CreditSite_Level101  BIT           = 0
-   , @IsBlockedTransfer_CreditSite_Level102  BIT           = 0
-AS
+	@ProductID                              INT, 
+	@BetTypeID_Begin                        INT, 
+	@BetTypeID_End                          INT, 
+	@BettypeIDs                             VARCHAR(2000) = '', 
+	@RepresentativeBettype                  INT, 
+	@GroupID                                INT, 
+	@GroupName                              VARCHAR(200), 
+	@Level1                                 MONEY         = 10000, 
+	@Level2                                 MONEY         = 30000, 
+	@Level3                                 MONEY         = 100000, 
+	@Level101                               MONEY         = -10000, 
+	@Level102                               MONEY         = -30000, 
+	@Currency                               VARCHAR(MAX)  = '', 
+	@IsBlockedPlaceBet_DepositSite_Level1   BIT           = 0, 
+	@IsBlockedPlaceBet_DepositSite_Level2   BIT           = 0, 
+	@IsBlockedPlaceBet_DepositSite_Level3   BIT           = 0, 
+	@IsBlockedPlaceBet_DepositSite_Level101 BIT           = 0, 
+	@IsBlockedPlaceBet_DepositSite_Level102 BIT           = 0, 
+	@IsBlockedPlaceBet_CreditSite_Level1    BIT           = 0, 
+	@IsBlockedPlaceBet_CreditSite_Level2    BIT           = 0, 
+	@IsBlockedPlaceBet_CreditSite_Level3    BIT           = 0, 
+	@IsBlockedPlaceBet_CreditSite_Level101  BIT           = 0, 
+	@IsBlockedPlaceBet_CreditSite_Level102  BIT           = 0, 
+	@IsBlockedTransfer_DepositSite_Level1   BIT           = 0, 
+	@IsBlockedTransfer_DepositSite_Level2   BIT           = 0, 
+	@IsBlockedTransfer_DepositSite_Level3   BIT           = 0, 
+	@IsBlockedTransfer_DepositSite_Level101 BIT           = 0, 
+	@IsBlockedTransfer_DepositSite_Level102 BIT           = 0, 
+	@IsBlockedTransfer_CreditSite_Level1    BIT           = 0, 
+	@IsBlockedTransfer_CreditSite_Level2    BIT           = 0, 
+	@IsBlockedTransfer_CreditSite_Level3    BIT           = 0, 
+	@IsBlockedTransfer_CreditSite_Level101  BIT           = 0, 
+	@IsBlockedTransfer_CreditSite_Level102  BIT           = 0, 
+	@UserID                                 INT           = 0, 
+	@IP                                     VARCHAR(20)   = ''
+AS;
 
 /*	Creator	 : 20180319@Robert
 	Task		 : Initialize CWL Settings [#91762]
@@ -46,6 +48,7 @@ AS
 				- 20191103@Robert: create new table WinLimit_ProductOffer [#122849]				
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+				- 20220607@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -98,6 +101,14 @@ BEGIN
 	  , IsBlockedTransfer_DepositSite BIT
 	  , IsBlockedTransfer_CreditSite  BIT);
 
+    DECLARE 
+	    @StartRun       DATETIME
+	  , @EndRun         DATETIME
+	  , @Duration       INT
+	  , @TrackingValue1 VARCHAR(500);
+    
+    SELECT @StartRun = GETDATE();
+
     INSERT INTO @LevelSettings(LevelId
 					    , Level
 					    , IsBlockedPlaceBet_DepositSite
@@ -145,8 +156,7 @@ BEGIN
 	FROM STRING_SPLIT(@currency, ',') t
 		INNER JOIN  exchange e WITH(NOLOCK) ON t.value = e.currency
 	WHERE t.value <> ''
-	
-	IF NOT EXISTS (SELECT 1 FROM @tmpCurrency)
+		
 	INSERT INTO @tmpCurrency(Currency)
 	SELECT 0--all currencies
 	
@@ -477,14 +487,43 @@ BEGIN
 
   
 	EXEC dbo.NAP_CWL_Update_Settings 
-	@ProductId    = @ProductID
-  , @GroupId      = @GroupID
-  , @Level1       = @Level1
-  , @Level2       = @Level2
-  , @Level3       = @Level3
-  , @Level101     = @Level101
-  , @Level102     = @Level102
-  , @Currency	   = @Currency
+	@ProductId = @ProductID, 
+	@GroupId = @GroupID, 
+	@Level1 = @Level1, 
+	@Level2 = @Level2, 
+	@Level3 = @Level3, 
+	@Level101 = @Level101, 
+	@Level102 = @Level102, 
+	@Currency = @Currency;  
+
+    BEGIN -- Write Log
+	   SELECT 
+			@EndRun = GETDATE(), 
+			@Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
+	   SET @TrackingValue1 = '<NAP_CWL_Initialize_Settings ';
+	   SET @TrackingValue1 = @TrackingValue1 + '" BettypeIDs ="' + CONVERT(VARCHAR(20), @BettypeIDs);
+	   SET @TrackingValue1 = @TrackingValue1 + '" GroupId="' + CONVERT(VARCHAR(20), @GroupId);
+	   SET @TrackingValue1 = @TrackingValue1 + '" GroupName="' + CONVERT(VARCHAR(50), @GroupName);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Level101="' + CONVERT(VARCHAR(50), @Level101);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Level102="' + CONVERT(VARCHAR(50), @Level102);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Level1="' + CONVERT(VARCHAR(50), @Level1);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Level2="' + CONVERT(VARCHAR(50), @Level2);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Level3="' + CONVERT(VARCHAR(50), @Level3);
+	   SET @TrackingValue1 = @TrackingValue1 + '" RepresentativeBettype="' + CONVERT(VARCHAR(20), @RepresentativeBettype);
+	   SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedTransfer_DepositSite_Level3 ="' + CONVERT(VARCHAR(20), @IsBlockedTransfer_DepositSite_Level3);
+	   SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedPlaceBet_DepositSite_Level3 ="' + CONVERT(VARCHAR(20), @IsBlockedPlaceBet_DepositSite_Level3);
+	   SET @TrackingValue1 = @TrackingValue1 + '" UserId="' + CONVERT(VARCHAR(20), @UserId);
+	   SET @TrackingValue1 = @TrackingValue1 + '" IP="' + COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1)) + '" />';
+	   BEGIN TRY
+		  EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+			  @UserID = @UserID, 
+			  @ActionID = 31201, 
+			  @TrackingValue = @TrackingValue1, 
+			  @Duration = @Duration;
+	   END TRY
+	   BEGIN CATCH
+	   END CATCH;
+    END;
     
     DROP TABLE #Temp;
     DROP TABLE #Currency_Deposit;
