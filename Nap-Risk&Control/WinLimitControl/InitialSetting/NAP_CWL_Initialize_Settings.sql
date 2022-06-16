@@ -45,6 +45,7 @@ AS
 				- 20181108@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 				- 20191103@Robert: create new table WinLimit_ProductOffer [#122849]				
 				- 20220223@Johnson: Global setting by currency [#168583]
+				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -141,8 +142,9 @@ BEGIN
 	
 	INSERT INTO @tmpCurrency(Currency)
 	SELECT e.ExchangeID
-	FROM dbo.strSplit(@currency, ',') t
-		INNER JOIN  exchange e WITH(NOLOCK) ON t.val = e.currency
+	FROM STRING_SPLIT(@currency, ',') t
+		INNER JOIN  exchange e WITH(NOLOCK) ON t.value = e.currency
+	WHERE t.value <> ''
 	
 	IF NOT EXISTS (SELECT 1 FROM @tmpCurrency)
 	INSERT INTO @tmpCurrency(Currency)
@@ -205,17 +207,17 @@ BEGIN
 				, GroupID
 				, GroupName)
 		 SELECT settings.ProductID
-			 , val AS BettypeID
+			 , value AS BettypeID
 			 , settings.GroupID
 			 , settings.GroupName
-		 FROM dbo.strSplit(@BettypeIDs, ',')
+		 FROM STRING_SPLIT(@BettypeIDs, ',')
 				 CROSS APPLY
 		 (
 			SELECT @ProductID AS ProductID
 				, @GroupID AS   GroupID
 				, @GroupName AS GroupName
 		 ) AS settings
-		 WHERE val > 0;
+		 WHERE value > 0;
 
     DELETE FROM #Temp
     WHERE BetTypeID = 0;

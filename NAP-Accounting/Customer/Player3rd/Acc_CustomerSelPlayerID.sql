@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20180924@Phillip: Init
 		- 20190605@Kan: Add new permission control to view CN88 Accounts [RedmineId:#114215]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	
 	Param's Explanation:
 	- @UserId: User ID
@@ -55,7 +56,7 @@ BEGIN
 	
 	IF (ISNULL(@PlayerIDs, '') <> '')
 	BEGIN
-		SELECT DISTINCT LTRIM(RTRIM(val)) AS val INTO #PlayerIDs FROM dbo.f_StringSplit(@PlayerIDs,',') OPTION(MAXRECURSION 0)
+		SELECT DISTINCT LTRIM(RTRIM(value)) AS val INTO #PlayerIDs FROM STRING_SPLIT(@PlayerIDs,',') WHERE value <> ''
 		
 		SELECT DISTINCT c.VendorID, c.PlayerID3rd, c.Custid
 		INTO #Player3rd
@@ -83,7 +84,7 @@ BEGIN
 	
 	IF (ISNULL(@Usernames, '') <> '')
 	BEGIN
-		SELECT DISTINCT LTRIM(RTRIM(val)) AS val INTO #Usernames FROM dbo.f_StringSplit(@Usernames,',') OPTION(MAXRECURSION 0)
+		SELECT DISTINCT LTRIM(RTRIM(value)) AS val INTO #Usernames FROM STRING_SPLIT(@Usernames,',') WHERE value <> ''
 		
 		SELECT	c.custid AS MemberId, 
 				c.username AS MemberName, 

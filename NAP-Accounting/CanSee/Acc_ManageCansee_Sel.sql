@@ -18,6 +18,7 @@ BEGIN
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 			- 20201118@Tina: Add 1 more value is 0 which use to get all sports [Redmine: #131241]
 			- 20201207@Tina: multiple selection for @SportType, @SiteID
+			- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	*/
 	SET NOCOUNT ON;
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128))
@@ -29,14 +30,14 @@ BEGIN
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
 	INSERT INTO #Site  (siteid, [SiteName])	
-	SELECT S.val, CASE WHEN S.val = 0 THEN 'All Sites' ELSE Si.[site] END SiteName
-	FROM dbo.strSplit(@pMutilSite, ',') S
-		LEFT JOIN [Site] Si WITH (NOLOCK) ON Si.siteid = S.val
+	SELECT S.value, CASE WHEN S.value = 0 THEN 'All Sites' ELSE Si.[site] END SiteName
+	FROM STRING_SPLIT(@pMutilSite, ',') S
+		LEFT JOIN [Site] Si WITH (NOLOCK) ON Si.siteid = S.value
 	
 	INSERT INTO #Exchange  (exchangeid,currency)	
-	SELECT C.val exchangeid, CASE WHEN C.val = 0 THEN 'All Currencies' ELSE E.currency END currency
-	FROM dbo.strSplit(@pMutilCurrency, ',') C
-		LEFT JOIN exchange E WITH(NOLOCK) ON C.val = E.ExchangeId
+	SELECT C.value exchangeid, CASE WHEN C.value = 0 THEN 'All Currencies' ELSE E.currency END currency
+	FROM STRING_SPLIT(@pMutilCurrency, ',') C
+		LEFT JOIN exchange E WITH(NOLOCK) ON C.value = E.ExchangeId
 		
 	SELECT 
 		 plsc.SportType
@@ -53,7 +54,7 @@ BEGIN
 		INNER JOIN #Site s WITH(NOLOCK) ON plsc.SiteID = s.siteid
 		INNER JOIN #Exchange cc WITH(NOLOCK) ON cc.exchangeid = plsc.Currency
 		INNER JOIN #Bettype bt ON bt.typeid = plsc.BetType
-		INNER JOIN dbo.strSplit(@pMutilSportType, ',') SP ON SP.val = plsc.SportType
+		INNER JOIN STRING_SPLIT(@pMutilSportType, ',') SP ON SP.value = plsc.SportType
 	WHERE bt.typenamee LIKE N'%' + @BettypeName + '%'
 		AND (@BetType IS NULL OR plsc.BetType = @BetType )
 	ORDER BY Plsc.SiteID,plsc.SportType,plsc.BetType

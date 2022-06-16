@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[Age_ProblemAccount_ReviewStatusUpd]
+ALTER PROCEDURE [dbo].[Age_ProblemAccount_ReviewStatusUpd]
 	@UserId					INT,
 	@SubAccId				INT = 0,
 	@RoleId					TINYINT,
@@ -22,6 +22,7 @@ AS
 		- 20210422@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	Param's Explanation:
 		@UserId: Customer login
 		@SubAccId: SubAccount Id
@@ -45,9 +46,9 @@ BEGIN
 	SET @startRun = GETDATE()
 
 	INSERT INTO #Downlines(CustId)
-	SELECT CONVERT(INT, Val)
-	FROM dbo.f_StringSplit(@CustomerList, ',')
-	OPTION(MAXRECURSION 0)
+	SELECT CONVERT(INT, value)
+	FROM STRING_SPLIT(@CustomerList, ',')
+	WHERE value <> ''
 
 	SELECT @UserRoleId = roleId FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @UserId
 

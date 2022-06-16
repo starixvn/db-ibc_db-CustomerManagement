@@ -23,6 +23,7 @@ AS
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 		- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 
 	Param's Explanation:  
 		- @SportType = 0 : All
@@ -113,15 +114,15 @@ BEGIN
            ,[seqNo]
            ,[bitmapVirtual]
 	FROM CustVirtualSetting c
-	INNER JOIN	dbo.strSplit(@ListCustID, ',') AS ss ON c.custid=ss.val
+	INNER JOIN	string_split(@ListCustID, ',') AS ss ON c.custid=ss.value
 	
 	--When the [VR Auto Adjustment] job runs to update members to +200% (1st and 16th of every month), update VR of the BA accounts = 0 with margin >= 4%
 	IF EXISTS (SELECT 1 FROM @tblVirtualrate WHERE VirtualMultiplier = 3)
 	BEGIN
 		INSERT INTO #CustList (CustID)
-		SELECT CONVERT(INT,ss.val)
+		SELECT CONVERT(INT,ss.value)
 		FROM @tblVirtualrate AS tv
-			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss
+			CROSS APPLY	string_split(tv.CustIDs, ',') AS ss
 		WHERE VirtualMultiplier = 3
 
 		INSERT INTO #BACust(CustID)
@@ -173,8 +174,8 @@ BEGIN
 	BEGIN
 		INSERT INTO #log
 			(	CustID, LogValue, isFinished)
-		SELECT	CAST(ss.val AS INT)
-			,	(	SELECT	ss.val		AS '@CustID'
+		SELECT	CAST(ss.value AS INT)
+			,	(	SELECT	ss.value	AS '@CustID'
 						,	@UserID		AS '@UserID'
 						,	@SportType  AS '@SportType'
 						,	@ErrCode	AS '@ErrCode'
@@ -194,14 +195,14 @@ BEGIN
 				)
 			,	0
 		FROM		@tblVirtualrate AS tv
-		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+		CROSS APPLY	string_split(tv.CustIDs, ',') AS ss;
 	END
 	ELSE IF(@SportType=1)
 	BEGIN
 		INSERT INTO #log
 			(	CustID, LogValue, isFinished)
-		SELECT	CAST(ss.val AS INT)
-			,	(	SELECT	ss.val		AS '@CustID'
+		SELECT	CAST(ss.value AS INT)
+			,	(	SELECT	ss.value	AS '@CustID'
 						,	@UserID		AS '@UserID'
 						,	@SportType  AS '@SportType'
 						,	@ErrCode	AS '@ErrCode'
@@ -222,14 +223,14 @@ BEGIN
 				)
 			,	0
 		FROM		@tblVirtualrate AS tv
-		CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+		CROSS APPLY	string_split(tv.CustIDs, ',') AS ss;
 	END
 	ELSE IF(@SportType=2)
 	BEGIN 
 		INSERT INTO #log
 				(	CustID, LogValue, isFinished)
-			SELECT	CAST(ss.val AS INT)
-				,	(	SELECT	ss.val		AS '@CustID'
+			SELECT	CAST(ss.value AS INT)
+				,	(	SELECT	ss.value	AS '@CustID'
 							,	@UserID		AS '@UserID'
 							,	@SportType  AS '@SportType'
 							,	@ErrCode	AS '@ErrCode'
@@ -250,7 +251,7 @@ BEGIN
 					)
 				,	0
 			FROM		@tblVirtualrate AS tv
-			CROSS APPLY	dbo.strSplit(tv.CustIDs, ',') AS ss;
+			CROSS APPLY	string_split(tv.CustIDs, ',') AS ss;
 	END
 
 	-- Update via Execrep
@@ -272,13 +273,13 @@ BEGIN
 				,	@virtualmultiplier;
 
 		INSERT INTO	@tbl_PositiveVR (CustID)
-		SELECT	CAST(ss.val AS INT)
+		SELECT	CAST(ss.value AS INT)
 		FROM OPENXML (@DocHandler, '/ROOT/Rate', 1) 
 		WITH (
 			CustIds				VARCHAR(MAX)
 		,	VirtualMultiplier	SMALLMONEY	
 		) AS Data
-		CROSS APPLY	dbo.f_StringSplit(Data.CustIds, ',') AS ss
+		CROSS APPLY	string_split(Data.CustIds, ',') AS ss
 		WHERE Data.VirtualMultiplier >= 1.00
 		OPTION (MAXRECURSION 0)
 

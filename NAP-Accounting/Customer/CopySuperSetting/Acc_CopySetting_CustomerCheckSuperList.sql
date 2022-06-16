@@ -17,6 +17,7 @@ AS
 	Revision:
 		- 20210716@Johnson: initial sp [redmine:#158174]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	
 	Parameter's Explanation:
 		@custid: output source custid
@@ -33,8 +34,9 @@ BEGIN
 	DECLARE @tblCust TABLE(custid INT, username VARCHAR(50))
 	
 	INSERT INTO @tblCust(username)
-	SELECT val
-	FROM dbo.strSplit(@SuperList,',')
+	SELECT value
+	FROM STRING_SPLIT(@SuperList,',')
+	WHERE value <> ''
 		
 	IF NOT EXISTS(SELECT 1 FROM custinfo WITH(NOLOCK) 
 				WHERE username = @username
@@ -151,7 +153,7 @@ BEGIN
 				OR c.Sporttype = 0)
 			AND c.SettingType IN(6,12,0)--settingtype win/loss limit		
 			AND (c.ProductID IN(SELECT ProductID FROM @tblProduct 
-								WHERE ProductID IN (SELECT val FROM dbo.strSplit(@ProductList,','))
+								WHERE ProductID IN (SELECT value FROM STRING_SPLIT(@ProductList,','))
 								)	
 				OR c.ProductID = 0)
 			AND c.FunctionType = 1			

@@ -26,6 +26,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20211112@Eden: Alpha/NAP - In-house Replication (isDeleted & RepUpdateTime) [RedmineID: #164321]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Parameter explanation:
 
@@ -74,15 +75,13 @@ BEGIN
 			AND m.IsActive = 1
 
 		DELETE #LeagueGroup
-		WHERE LeagueGroupID IN (SELECT val FROM dbo.f_StringSplit(@LeagueGroupList_NotApply,','))
-		OPTION (MAXRECURSION 0)
+		WHERE LeagueGroupID IN (SELECT value FROM STRING_SPLIT(@LeagueGroupList_NotApply,','))
 	END
 	ELSE
 	BEGIN
 		INSERT INTO #LeagueGroupInput(LeagueGroupID)
-		SELECT CAST(val AS SMALLINT) AS LeagueGroupID 
-		FROM dbo.f_StringSplit(@LeagueGroupList,',') le
-		OPTION (MAXRECURSION 0)
+		SELECT CAST(value AS SMALLINT) AS LeagueGroupID 
+		FROM STRING_SPLIT(@LeagueGroupList,',') le
 
 		INSERT INTO #LeagueGroup(LeagueGroupID)
 		SELECT bt.LeagueGroupID
@@ -99,10 +98,10 @@ BEGIN
 	END
 
 	--> get league
-	SELECT CAST(val AS INT) AS LeagueID
+	SELECT CAST(value AS INT) AS LeagueID
 	INTO #League
-	FROM dbo.f_StringSplit(@LeagueList,',') le
-	OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@LeagueList,',') le
+	WHERE value <> ''
 
 	IF @LeagueList <> '-1'
 	BEGIN
@@ -124,40 +123,34 @@ BEGIN
 	END
 
 	--> Site
-	SELECT CAST(val AS INT) AS SiteID 
+	SELECT CAST(value AS INT) AS SiteID 
 	INTO #Site
-	FROM dbo.f_StringSplit(@SiteIDList,',') t
-	OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@SiteIDList,',') t
+	WHERE value <> ''
 	
 	--> CustomerClass
-	SELECT CAST(val AS SMALLINT) AS CustomerClass 
+	SELECT CAST(value AS SMALLINT) AS CustomerClass 
 	INTO #CC
-	FROM dbo.f_StringSplit(@CustomerClassList,',') t
-	OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@CustomerClassList,',') t
+	WHERE value <> ''
 
 	--> DateOfWeek
-	SELECT CAST(val AS TINYINT) AS DateOfWeek 
+	SELECT CAST(value AS TINYINT) AS DateOfWeek 
 	INTO #DateOfWeek
-	FROM dbo.f_StringSplit(@DateOfWeekList,',') t
-	OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@DateOfWeekList,',') t
+	WHERE value <> ''
 
 	--> Get sport
-	SELECT CAST(val AS SMALLINT) AS Sporttype 
+	SELECT CAST(value AS SMALLINT) AS Sporttype 
 	INTO #Sport
-	FROM dbo.f_StringSplit(@SporttypeList,',') t
-	OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@SporttypeList,',') t
+	WHERE value <> ''
 	
 	--get Bettype
-	SELECT CAST(val AS INT) AS Bettype 
+	SELECT CAST(value AS INT) AS Bettype 
 	INTO #Bettype
-	FROM dbo.f_StringSplit(@BettypeList,',') t
-	OPTION (MAXRECURSION 0)
-	
-	-----Get LG
-	--SELECT CAST(val AS SMALLINT) AS LeagueGroupID 
-	--INTO #LeagueGroup
-	--FROM dbo.f_StringSplit(@LeagueGroupList,',') le
-	--OPTION (MAXRECURSION 0)
+	FROM STRING_SPLIT(@BettypeList,',') t
+	WHERE value <> ''
 
 	INSERT INTO #ValidData(Sporttype,Bettype,LeagueGroupID,LeagueID,SiteID,CustomerClass,DateOfWeek,IsApply)
 	SELECT
@@ -177,34 +170,33 @@ BEGIN
 		CROSS APPLY #DateOfWeek dw
 		CROSS APPLY #CC cc
 	UNION
-	SELECT CAST(val AS SMALLINT),0,-1,-1,0,0,0,0
-	FROM dbo.f_StringSplit(@SporttypeList_NotApply,',') t 
-	WHERE ISNULL(CAST(val AS SMALLINT),0) <> 0
+	SELECT CAST(value AS SMALLINT),0,-1,-1,0,0,0,0
+	FROM STRING_SPLIT(@SporttypeList_NotApply,',') t 
+	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,CAST(val AS INT),-1,-1,0,0,0,0
-	FROM dbo.f_StringSplit(@BettypeList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS INT),0) <> 0
+	SELECT 0,CAST(value AS INT),-1,-1,0,0,0,0
+	FROM STRING_SPLIT(@BettypeList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,CAST(val AS SMALLINT),-1,0,0,0,0
-	FROM dbo.f_StringSplit(@LeagueGroupList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS SMALLINT),0) <> 0
+	SELECT 0,0,CAST(value AS SMALLINT),-1,0,0,0,0
+	FROM STRING_SPLIT(@LeagueGroupList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,0,-1,CAST(val AS INT),0,0,0,0
-	FROM dbo.f_StringSplit(@LeagueList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS INT),0) <> 0
+	SELECT 0,0,-1,CAST(value AS INT),0,0,0,0
+	FROM STRING_SPLIT(@LeagueList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,CAST(val AS INT),0,0,0
-	FROM dbo.f_StringSplit(@SiteIDList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS INT),0) <> 0
+	SELECT 0,0,-1,-1,CAST(value AS INT),0,0,0
+	FROM STRING_SPLIT(@SiteIDList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,CAST(val AS SMALLINT),0,0
-	FROM dbo.f_StringSplit(@CustomerClassList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS SMALLINT),0) <> 0
+	SELECT 0,0,-1,-1,0,CAST(value AS SMALLINT),0,0
+	FROM STRING_SPLIT(@CustomerClassList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,0,CAST(val AS TINYINT),0
-	FROM dbo.f_StringSplit(@DateOfWeekList_NotApply,',') t
-	WHERE ISNULL(CAST(val AS TINYINT),0) <> 0
-	OPTION (MAXRECURSION 0)
+	SELECT 0,0,-1,-1,0,0,CAST(value AS TINYINT),0
+	FROM STRING_SPLIT(@DateOfWeekList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS TINYINT),0) <> 0
 
 	DROP TABLE #Sport
 	DROP TABLE #Bettype

@@ -9,6 +9,8 @@ AS
 	Revisions:
 		- 20180315@Johnson: create sp [Redmine: #91989]
 		- 20180731@Winnie: Sync RNG Casino function - exclude CN88 customers [Redmine: #117672]
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 */
 BEGIN
 	SET NOCOUNT ON 	
@@ -21,7 +23,7 @@ BEGIN
 					WHEN 3 THEN srecommend END,
 		currency, syncCasino
 	FROM dbo.Custinfo WITH(NOLOCK)
-	WHERE username IN (SELECT val FROM strSplit(@strUserName,','))
+	WHERE username IN (SELECT value FROM string_split(@strUserName,','))
 	
 	
 	UPDATE t

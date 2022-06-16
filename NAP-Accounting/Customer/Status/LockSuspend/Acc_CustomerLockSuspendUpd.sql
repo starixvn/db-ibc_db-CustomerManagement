@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20200216@Elodie: Initial SP [Redmine:#128451]
 		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Param's Explanation:
 		@CustIDList: id of customer
@@ -50,8 +51,9 @@ BEGIN
 	SET @StartRun = GETDATE()
 
 	INSERT INTO #CustList (UserName)
-	SELECT LTRIM(RTRIM(val))
-	FROM dbo.strSplit(@CustList,',') t
+	SELECT LTRIM(RTRIM(value))
+	FROM STRING_SPLIT(@CustList,',') t
+	WHERE value <> ''
 		
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 	FROM #CustList t

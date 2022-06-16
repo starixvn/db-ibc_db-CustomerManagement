@@ -24,6 +24,7 @@ BEGIN
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Param's Explanation:   
 		
@@ -129,9 +130,9 @@ SET NOCOUNT ON
 	IF ISNULL(@UserNames,'')  <> ''
 	BEGIN
 		INSERT INTO @SuperTbl (UserName)
-		SELECT DISTINCT p.val
-		FROM dbo.f_StringSplit(@UserNames,',') p
-		OPTION (MAXRECURSION 0)
+		SELECT DISTINCT p.value
+		FROM STRING_SPLIT(@UserNames,',') p
+		WHERE value <> ''
 
 		UPDATE t
 			SET t.SuperID = c.custid,

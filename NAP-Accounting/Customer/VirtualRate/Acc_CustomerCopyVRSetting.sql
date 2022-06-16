@@ -15,6 +15,7 @@ AS
   
 	Revisions:  
 	    - 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Param's Explanation:  	
 
@@ -46,9 +47,9 @@ BEGIN
 	END
 
 	INSERT INTO @CustTbl(Username)
-	SELECT DISTINCT LTRIM(RTRIM(p.val))
-	FROM dbo.f_StringSplit(@Dest_Usernames,',') p
-	OPTION (MAXRECURSION 0)
+	SELECT DISTINCT LTRIM(RTRIM(p.value))
+	FROM STRING_SPLIT(@Dest_Usernames,',') p
+	WHERE value <> ''
 
 	IF EXISTS (SELECT 1 FROM @CustTbl WHERE Username = @Source_Username) 
 	BEGIN

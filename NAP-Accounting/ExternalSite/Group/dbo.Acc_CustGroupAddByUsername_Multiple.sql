@@ -17,6 +17,7 @@ AS
 		- 20180409@Kan: Insert multiple supers to Group [RedmineID: #77733]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 */
 
 BEGIN
@@ -44,9 +45,9 @@ BEGIN
 	SET @ErrMsg = '<ROOT>';
 
 	INSERT INTO @TempGroupSuper(GroupName, SuperName)
-	SELECT DISTINCT LTRIM(RTRIM(g.val)), LTRIM(RTRIM(s.val))
-    FROM dbo.strSplit(@GroupName,',') g
-		CROSS JOIN dbo.strSplit(@Username,',') s
+	SELECT DISTINCT LTRIM(RTRIM(g.value)), LTRIM(RTRIM(s.value))
+    FROM STRING_SPLIT(@GroupName,',') g
+		CROSS JOIN STRING_SPLIT(@Username,',') s
 
 	WHILE (SELECT COUNT(1) FROM @TempGroupSuper) > 0
 	BEGIN

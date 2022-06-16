@@ -17,6 +17,7 @@ AS
 		- 20201211@Johnson: enhance sort super list [redmine:#146741]
 		- 20201222@Johnson: Exclude disabled accounts [redmine:#147578]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Parameter's explanation:
 		- @GroupName: main group
@@ -34,8 +35,9 @@ BEGIN
 	CREATE TABLE #SuperList (custid INT, username VARCHAR(50), closed BIT, suspended BIT, Enabled BIT, SubGroup VARCHAR(1000), rn INT)
 	
 	INSERT INTO @tmpGroup (GroupName)
-	SELECT val
-	FROM strSplit (@SubGroup,',')
+	SELECT value
+	FROM STRING_SPLIT (@SubGroup,',')
+	WHERE value <> ''
 	
 	INSERT INTO #SuperList(custid,username,closed,suspended,enabled)
 	SELECT ci.custid, 

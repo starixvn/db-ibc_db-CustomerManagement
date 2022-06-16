@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_GroupPolicyUpd]  
  @OldGroupPolicys NVARCHAR (MAX) = '',  
  @GroupPolicys NVARCHAR (MAX) = '',  
@@ -16,16 +16,16 @@ AS
  DB: DBCUST/NAP_UserControl
   
  Revisions:  
-  - 20110526@Tom: Remove condition @System and Write log into table DB03.bodb_CustomerLog.dbo.UserLog_UserControl  
-  - 20110624@Tom: Change DB02 to DBTRANS (Splitting DB02 to DBPros and DBTRANS)  
-  - 20111017@Johnson: Check permission for update ABS system  
-  - 20120604@Sophia: . Edit @LogData  
-					 . Add new parametter @OldGroupPolicys  
-  - 20121110@Viet: get username from currrent server instead of DBTrans    
-  - 20130118@Elodie: Get Username by GroupID from currrent server instead of DBTrans 
-					 Write more log on UserLog table in case of DBLOG server failure
- - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]					 
-     
+	  - 20110526@Tom: Remove condition @System and Write log into table DB03.bodb_CustomerLog.dbo.UserLog_UserControl  
+	  - 20110624@Tom: Change DB02 to DBTRANS (Splitting DB02 to DBPros and DBTRANS)  
+	  - 20111017@Johnson: Check permission for update ABS system  
+	  - 20120604@Sophia: . Edit @LogData  
+						 . Add new parametter @OldGroupPolicys  
+	  - 20121110@Viet: get username from currrent server instead of DBTrans    
+	  - 20130118@Elodie: Get Username by GroupID from currrent server instead of DBTrans 
+						 Write more log on UserLog table in case of DBLOG server failure
+	 - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]					 
+     - 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
  Explain @Paramater  
   -- Format of @GroupPolicys: @FuncID,@Policy@FuncID,@Policy ...   
 */  
@@ -74,8 +74,9 @@ BEGIN
 	  End  
 	  
 	DECLARE OldGroupPolicysCur CURSOR FOR  
-	   SELECT Distinct val AS row_index  
-	   FROM     dbo.strSplit (@OldGroupPolicys, ';')  
+	   SELECT Distinct value AS row_index  
+	   FROM string_split (@OldGroupPolicys, ';')  
+	   WHERE value <> ''
 	  
 	OPEN OldGroupPolicysCur  
 	FETCH NEXT FROM OldGroupPolicysCur INTO @OldGroupPolicy  
@@ -118,8 +119,9 @@ BEGIN
 	 )  
 	       
 	DECLARE GroupPolicysCur CURSOR  
-	   FOR SELECT Distinct val AS row_index  
-		   FROM     dbo.strSplit (@GroupPolicys, ';')  
+	   FOR SELECT Distinct value AS row_index  
+		   FROM string_split (@GroupPolicys, ';') 
+		   WHERE value <> ''
 	  
 	OPEN GroupPolicysCur  
 	FETCH NEXT FROM GroupPolicysCur INTO @GroupPolicy  

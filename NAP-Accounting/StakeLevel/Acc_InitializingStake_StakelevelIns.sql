@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20220210@Winfred: NAP -  Flexible Initializing insert Stake Level [Redmine: #167128]
 		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	
 	Param's Explanation:
 		• @pInputData : 
@@ -102,14 +103,14 @@ BEGIN
 		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 1 AS IsCredit, SiteID
 		FROM @NewStakeLevelTbl nsl
 			CROSS APPLY (
-					SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.CreditCurrency, ',')
+					SELECT DISTINCT RTRIM(LTRIM(value)) AS Currency FROM STRING_SPLIT(nsl.CreditCurrency, ',') WHERE value <> ''
 				) t
 		WHERE nsl.CreditCurrency <> ''
 		UNION ALL
 		SELECT RowID, SportType, BetType, t.Currency, NewMinBet, NewMaxBet, CurMinBet, CurMaxBet, GameGroupID, 0 AS IsCredit, SiteID 
 		FROM @NewStakeLevelTbl nsl
 			CROSS APPLY (
-					SELECT DISTINCT RTRIM(LTRIM(val)) AS Currency FROM dbo.strSplit(nsl.DepositCurrency, ',')
+					SELECT DISTINCT RTRIM(LTRIM(value)) AS Currency FROM STRING_SPLIT(nsl.DepositCurrency, ',') WHERE value <> ''
 				) t		
 		WHERE nsl.DepositCurrency <> ''
 		

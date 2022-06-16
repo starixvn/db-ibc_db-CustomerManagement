@@ -25,6 +25,7 @@ AS
 	Revisions:  
 		- 20210622@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
 		- 20220504@Elodie: Tuning SP [RedmineID: #172311]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Parameter Definition
 		-@FilterStageID: apply for headline dirrect acccounts
@@ -156,7 +157,7 @@ BEGIN
 	
 	IF ISNULL(@FilterRoleID,'') != ''
 		INSERT INTO #FilterRole(RoleID)
-		SELECT t.val FROM dbo.f_StringSplit(@FilterRoleID,',') t WHERE val IN(1,2,3,4)
+		SELECT t.value FROM STRING_SPLIT(@FilterRoleID,',') t WHERE value IN(1,2,3,4)
 	ELSE
 		INSERT INTO #FilterRole(RoleID)
 		SELECT 1 UNION ALL

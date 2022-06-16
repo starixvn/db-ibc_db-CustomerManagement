@@ -18,6 +18,7 @@ Original:
 Revisions:	
 	- 20171124@Winnie: Update Danger, Danger2, Danger3 fields , and write log content [RedmineID:#86627]
 	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 Param's Explanation:
 	@CustList: List usernames of members will be updated,
 	@DangerType:  type of danger,
@@ -58,8 +59,9 @@ BEGIN
 	
 	--Get list Username
 	INSERT INTO @tmpCust(UserName)
-	SELECT ss.val	
-	FROM dbo.strSplit(@CustList, ',') AS ss	
+	SELECT ss.value	
+	FROM STRING_SPLIT(@CustList, ',') AS ss	
+	WHERE value <> ''
 	
 	-- get custid, roleid and danger
 

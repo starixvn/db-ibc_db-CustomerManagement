@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbLicenseeNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
+ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
 	@Licensee NVARCHAR(100)
 	,@Currency NVARCHAR(1000) = ''
 	,@ShowSportBook BIT = 1
@@ -18,6 +18,7 @@ Created: Dom
 			- 20170809@Winnie: Change Data Type of Sporttype [RedmineID: #73545]
 			- 20191218@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 			- 20200616@Johnson: add soccer parlay [redmine:#135261]
+			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 */
 
 BEGIN
@@ -104,7 +105,7 @@ BEGIN
 	INNER JOIN Exchange ex WITH(NOLOCK) ON ex.exchangeid = cbs.CurrencyID
 	LEFT JOIN CustInfo ci WITH(NOLOCK) ON ci.CustID = cbs.AgentID and ci.roleid=2
 	WHERE cbs.SportType IN(SELECT SportID FROM @Sport)
-		AND CurrencyID IN (SELECT val FROM dbo.strSplit(@Currency,','))
+		AND CurrencyID IN (SELECT value FROM string_split(@Currency,','))
 		AND [Site] = @Licensee
 	UNION ALL
 	SELECT [Site] Licensee
@@ -123,7 +124,7 @@ BEGIN
 	INNER JOIN @tmp_GameType bt ON bt.GameTypeID = cbs.gametypeid
 	INNER JOIN Exchange ex WITH(NOLOCK) ON ex.exchangeid = cbs.CurrencyID
 	WHERE @ShowKeno=1
-		AND CurrencyID IN (SELECT val FROM dbo.strSplit(@Currency,','))
+		AND CurrencyID IN (SELECT value FROM string_split(@Currency,','))
 		AND [Site] = @Licensee
 	ORDER BY 1,2,3,4
 
