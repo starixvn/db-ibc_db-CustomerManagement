@@ -57,6 +57,7 @@ Parameters Explanation:
 					  AND GroupId = @GroupId
 					  AND ExchangeID = @CurrencyId
 					  AND LevelID = @LevelId
+					  AND SiteID = @SiteId
 			   )
 		  BEGIN -- Update
 			 DECLARE 
@@ -71,7 +72,8 @@ Parameters Explanation:
 			 WHERE ProductID = @ProductId
 				  AND GroupId = @GroupId
 				  AND ExchangeID = @CurrencyId
-				  AND LevelID = @LevelId;
+				  AND LevelID = @LevelId
+				  AND SiteID = @SiteId;
 			 UPDATE s
 			   SET 
 				  s.MaxWinLimit_RM = @MaxWinLimit, 
@@ -96,7 +98,8 @@ Parameters Explanation:
 				 @ProductID = @ProductId, 
 				 @GroupId = @GroupId, 
 				 @CurrencyId = @CurrencyId, 
-				 @LevelID = @LevelId;
+				 @LevelID = @LevelId, 
+				 @SiteId = @SiteId;
 			 BEGIN -- Write Log
 
 				SELECT 
@@ -111,6 +114,7 @@ Parameters Explanation:
 				SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedPlaceBet="' + CONVERT(VARCHAR(20), @OldIsBlockedPlaceBet);
 				SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedTransfer="' + CONVERT(VARCHAR(20), @OldIsBlockedTransfer);
 				SET @TrackingValue1 = @TrackingValue1 + '" UserId="' + CONVERT(VARCHAR(20), @UserId);
+				SET @TrackingValue1 = @TrackingValue1 + '" SiteId="' + CONVERT(VARCHAR(20), @SiteId);
 				SET @TrackingValue1 = @TrackingValue1 + '" IP="' + COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1)) + '" />';
 				DECLARE 
 					@TrackingValue2 VARCHAR(500);
@@ -123,6 +127,7 @@ Parameters Explanation:
 				SET @TrackingValue2 = @TrackingValue2 + '" IsBlockedPlaceBet="' + CONVERT(VARCHAR(20), @IsBlockedPlaceBet);
 				SET @TrackingValue2 = @TrackingValue2 + '" IsBlockedTransfer="' + CONVERT(VARCHAR(20), @IsBlockedTransfer);
 				SET @TrackingValue2 = @TrackingValue2 + '" UserId="' + CONVERT(VARCHAR(20), @UserId);
+				SET @TrackingValue2 = @TrackingValue2 + '" SiteId="' + CONVERT(VARCHAR(20), @SiteId);
 				SET @TrackingValue2 = @TrackingValue2 + '" IP="' + COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1)) + '" />';
 				BEGIN TRY
 				    EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
@@ -165,7 +170,8 @@ Parameters Explanation:
 				 @ProductID = @ProductId, 
 				 @GroupId = @GroupId, 
 				 @CurrencyId = @CurrencyId, 
-				 @LevelID = @LevelId;
+				 @LevelID = @LevelId, 
+				 @SiteId = @SiteId;
 			 BEGIN -- Write log
 
 				SELECT 

@@ -494,14 +494,17 @@ BEGIN
 	@Level3 = @Level3, 
 	@Level101 = @Level101, 
 	@Level102 = @Level102, 
-	@Currency = @Currency;  
+	@Currency = @Currency,
+	@UserId = @UserId,
+	@IP = @IP;
 
     BEGIN -- Write Log
 	   SELECT 
 			@EndRun = GETDATE(), 
 			@Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
 	   SET @TrackingValue1 = '<NAP_CWL_Initialize_Settings ';
-	   SET @TrackingValue1 = @TrackingValue1 + '" BettypeIDs ="' + CONVERT(VARCHAR(20), @BettypeIDs);
+	   SET @TrackingValue1 = @TrackingValue1 + '" @ProductID ="' + CONVERT(VARCHAR(50), @ProductID);
+	   SET @TrackingValue1 = @TrackingValue1 + '" BettypeIDs ="' + CONVERT(VARCHAR(2000), @BettypeIDs);
 	   SET @TrackingValue1 = @TrackingValue1 + '" GroupId="' + CONVERT(VARCHAR(20), @GroupId);
 	   SET @TrackingValue1 = @TrackingValue1 + '" GroupName="' + CONVERT(VARCHAR(50), @GroupName);
 	   SET @TrackingValue1 = @TrackingValue1 + '" Level101="' + CONVERT(VARCHAR(50), @Level101);
@@ -509,6 +512,7 @@ BEGIN
 	   SET @TrackingValue1 = @TrackingValue1 + '" Level1="' + CONVERT(VARCHAR(50), @Level1);
 	   SET @TrackingValue1 = @TrackingValue1 + '" Level2="' + CONVERT(VARCHAR(50), @Level2);
 	   SET @TrackingValue1 = @TrackingValue1 + '" Level3="' + CONVERT(VARCHAR(50), @Level3);
+	   SET @TrackingValue1 = @TrackingValue1 + '" Currency="' + CONVERT(VARCHAR(MAX), @Currency);
 	   SET @TrackingValue1 = @TrackingValue1 + '" RepresentativeBettype="' + CONVERT(VARCHAR(20), @RepresentativeBettype);
 	   SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedTransfer_DepositSite_Level3 ="' + CONVERT(VARCHAR(20), @IsBlockedTransfer_DepositSite_Level3);
 	   SET @TrackingValue1 = @TrackingValue1 + '" IsBlockedPlaceBet_DepositSite_Level3 ="' + CONVERT(VARCHAR(20), @IsBlockedPlaceBet_DepositSite_Level3);
@@ -517,7 +521,7 @@ BEGIN
 	   BEGIN TRY
 		  EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
 			  @UserID = @UserID, 
-			  @ActionID = 31201, 
+			  @ActionID = 31209, 
 			  @TrackingValue = @TrackingValue1, 
 			  @Duration = @Duration;
 	   END TRY

@@ -41,9 +41,15 @@ Parameters Explanation:
 								WHEN st.isDeposit = 0
 								THEN 0
 								ELSE @IsBlockedTransfer
-							 END
+							 END, 
+		    s.MaxWinLimit = CASE
+						    WHEN s.ExchangeID = 20
+						    THEN @MaxWinLimit
+						    ELSE ROUND(@MaxWinLimit / e.actualrate, 2)
+						END
 	   FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK, UPDLOCK)
 		   INNER JOIN dbo.Site st WITH(ROWLOCK) ON s.SiteID = st.siteid
+		   INNER JOIN dbo.exchange e WITH(NOLOCK) ON e.ExchangeId = s.ExchangeID
 	   WHERE 
 		    s.ProductID = @ProductId
 		    AND CASE
@@ -58,4 +64,6 @@ Parameters Explanation:
 				  THEN s.ExchangeID
 				  ELSE @ExchangeID
 			   END = @ExchangeID;
+
+
     END;
