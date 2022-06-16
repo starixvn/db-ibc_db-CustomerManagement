@@ -21,6 +21,7 @@ AS
 		- 20180515@Elodie: Add new EU88 Alpha site [Redmine: #94865]
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181227@Phillip: Add new Credit Site [Redmine: #105338]
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		
 	Param's Explanation:
 		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
@@ -78,8 +79,10 @@ BEGIN
 	--Check Special Headline
 	IF @GroupID IS NOT NULL -- Headline
 	BEGIN
+		CREATE TABLE #tmpCustGroup (custid INT)
+
+		INSERT INTO #tmpCustGroup (custid)
 		SELECT custid
-		INTO #tmpCustGroup
 		FROM dbo.custAccount WITH(NOLOCK) 
 		WHERE groupID = @GroupID
 
@@ -95,6 +98,8 @@ BEGIN
 							INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = ag.site
 						WHERE SpecialGroup = 1 AND c.roleid = 1)
 			SELECT @IsSpecialHeadline = 1
+
+		DROP TABLE #tmpCustGroup
 	END
 END
 GO

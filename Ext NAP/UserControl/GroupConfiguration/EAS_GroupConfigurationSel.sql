@@ -1,5 +1,5 @@
 /*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_GroupConfigurationSel]
+ALTER PROCEDURE [dbo].[EAS_GroupConfigurationSel]
 	@ProductId	INT = NULL
 	,@GroupId	INT = NULL
 AS
@@ -14,13 +14,16 @@ AS
 		- 20191106@Percy:	Just get enabled products [RedmineID: #118699]
 		- 20200812@Sophia:  Format at openquery code [Redmine: #137767]
 		- 20200922@Danny:	Add OrderNo, Type column into result set [Redmine: #141832]
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 */
 BEGIN
 	SET NOCOUNT ON
 
+	CREATE TABLE #tmpProducts (ProductId TINYINT, ProductName VARCHAR(50), OrderNo INT, Type TINYINT)
+
 	-- Get all enabled products
+	INSERT INTO #tmpProducts (ProductId, ProductName, OrderNo, Type)
 	SELECT ProductId, ProductName, OrderNo, [Type]
-	INTO #tmpProducts
 	FROM OPENQUERY (DBAGE, 'SELECT		CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID 
 										,p.ProductName
 										,ISNULL(p.OrderNo,0) AS OrderNo

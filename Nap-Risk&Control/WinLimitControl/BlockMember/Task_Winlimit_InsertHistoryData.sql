@@ -11,6 +11,7 @@ AS
 	Revisions:
 		- 20170321@Helen: NAP Risk & Control - Phase 3A [Redmine: 72604]
 		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		
 	Param's Explanation:
 		
@@ -18,9 +19,30 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
+	CREATE TABLE #TempData (
+			CustId INT 
+			, ProductId TINYINT 
+			, GroupID INT 
+			, MaxWinLimit MONEY 
+			, TotalWinAmt MONEY 
+			, WinAmt MONEY  
+			, LevelID TINYINT 
+			, ActionID TINYINT 
+			, ModifiedDate DATETIME  
+			, IsNotified BIT  
+			, ModifiedBy INT  
+			, CreatedBy  INT 
+			, WinlostDate DATETIME  
+			, MaxWinLimitSetting XML 
+			, TotalWinAmt_RM MONEY
+			, BettypeIDList VARCHAR(500)
+	)
+
 	DECLARE @_hdoc INT
 	EXEC sp_xml_preparedocument @_hdoc OUTPUT, @XmlData
 
+	INSERT INTO #TempData (CustId, ProductId, GroupID, MaxWinLimit, TotalWinAmt, WinAmt, LevelID, ActionID, ModifiedDate, 
+						IsNotified, ModifiedBy, CreatedBy, WinlostDate, MaxWinLimitSetting, TotalWinAmt_RM, BettypeIDList)
 	SELECT 
 		CustId
 		, ProductId 
@@ -38,7 +60,6 @@ BEGIN
 		, MaxWinLimitSetting
 		, TotalWinAmt_RM
 		, BettypeIDList
-	INTO #TempData   
 	FROM OPENXML(@_hdoc,'/root/r', 2)   
 	WITH (CustId INT 'a1'
 		, ProductId TINYINT 'a2'
