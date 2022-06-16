@@ -12,6 +12,7 @@ AS
 
 	Revision:
 		- 20210928@Johnson: initial sp [redmine:#160980]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	
 	Parameter's Explanation:
 		@SuperList: super list		
@@ -24,8 +25,9 @@ BEGIN
 	
 	
 	INSERT INTO @tblCust(username)
-	SELECT val
-	FROM dbo.strSplit(@SuperList,',')
+	SELECT value
+	FROM STRING_SPLIT(@SuperList,',')
+	WHERE value <> ''
 	
 	UPDATE t
 	SET t.custid = c.custid,

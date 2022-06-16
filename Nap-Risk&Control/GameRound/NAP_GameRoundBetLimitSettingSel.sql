@@ -1,6 +1,4 @@
-
 /*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,Dot_Intg" viewers="" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[NAP_GameRoundBetLimitSettingSel] 
                 @ProductId VARCHAR(200) = NULL
 AS
@@ -15,7 +13,7 @@ DB: DBCUST/CustDB
 Revisions:
 20190312@Jacob: Implement Game Ground Bet Limit Control [#109866].
 20210315@Robert: 151686 - select name
-
+20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 Example:
 EXEC [NAP_GameRoundBetLimitSettingSel] @ProductId=0
 */
@@ -27,9 +25,11 @@ EXEC [NAP_GameRoundBetLimitSettingSel] @ProductId=0
                             Id INT
      );
      INSERT INTO @Products
-            SELECT 
-                   CAST(val AS INT)
-            FROM dbo.strSplit(@ProductId, ',');
+		SELECT 
+				CAST(value AS INT)
+		FROM STRING_SPLIT(@ProductId, ',')
+		WHERE value <> ''
+
      SELECT 
             b.ProductId, 
             p1.ProductName, 

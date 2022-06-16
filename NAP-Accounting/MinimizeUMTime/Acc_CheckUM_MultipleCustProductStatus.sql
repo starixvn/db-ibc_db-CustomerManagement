@@ -12,6 +12,7 @@ Task :  Check UM of Status (multiple Credit customer)
 DB: DBCUST.CustDB
 Revisions:	
 	- 20200723@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -26,7 +27,7 @@ SET NOCOUNT ON
 	CREATE TABLE #Customers (CustID INT PRIMARY KEY)
 
 	INSERT INTO #Customers(CustID)
-	SELECT val FROM dbo.f_SplitString(@CustIDs,',')
+	SELECT value FROM STRING_SPLIT(@CustIDs,',') WHERE value <> ''
 
 	SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
 	INTO #UMConfig

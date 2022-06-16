@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicyUpd]
 	@OldMemPolicys NVARCHAR(MAX)= '', 
 	@MemPolicys NVARCHAR(MAX)= '', 	
@@ -24,7 +24,8 @@ Revisions:
 	- 20130118@Elodie: Get Username from currrent server instead of DBTrans 
 					   Write more log on UserLog table in case of DBLOG server failure
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
-	
+	- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 Param's Explanation:
 	Format of @MemPolicys @FuncID,@Policy@FuncID,@Policy ...
 */
@@ -88,8 +89,9 @@ BEGIN
 			
 
 	DECLARE OldPolicysCur CURSOR
-	   FOR SELECT   DISTINCT val AS row_index
-		   FROM     dbo.strSplit (@OldMemPolicys, ';')
+	   FOR SELECT   DISTINCT value AS row_index
+		   FROM     string_split (@OldMemPolicys, ';')
+		   WHERE value <> ''
 
 	OPEN OldPolicysCur
 	FETCH NEXT FROM OldPolicysCur INTO @OldMemPolicy
@@ -134,8 +136,9 @@ BEGIN
 		)
 
 	DECLARE PolicysCur CURSOR
-	   FOR SELECT   DISTINCT val AS row_index
-		   FROM     dbo.strSplit (@MemPolicys, ';')
+	   FOR SELECT   DISTINCT value AS row_index
+		   FROM     string_split (@MemPolicys, ';')
+		   WHERE value <> ''
 
 	OPEN PolicysCur
 	FETCH NEXT FROM PolicysCur INTO @MemPolicy

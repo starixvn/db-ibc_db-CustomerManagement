@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_ProblemAccount_ReviewStatusUpd]
+ALTER PROCEDURE [dbo].[EAS_ProblemAccount_ReviewStatusUpd]
 	@CustomerList			VARCHAR(MAX) = '',	
 	@RoleId					TINYINT,	
 	@GroupName				VARCHAR(50) = '',
@@ -22,6 +22,7 @@ AS
 		- 20210426@Johnson: change source ProblemAccount to ProblemAccountClassification [redmine:#153059]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	Param's Explanation:		
 		@RoleId: roleid of downlines
 		@CustomerList: list of downline id
@@ -48,10 +49,10 @@ BEGIN
 	SET @startRun = GETDATE()
 
 	INSERT INTO #Downlines(CustId)
-	SELECT CONVERT(INT, Val)
-	FROM dbo.f_StringSplit(@CustomerList, ',')
-	OPTION(MAXRECURSION 0)
-	
+	SELECT CONVERT(INT, value)
+	FROM STRING_SPLIT(@CustomerList, ',')
+	WHERE value <> ''
+
 	IF EXISTS (SELECT 1
 				FROM #Downlines d
 					INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON d.CustId = ci.custid

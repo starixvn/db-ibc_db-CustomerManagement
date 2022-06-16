@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE [dbo].[DBA_Task_CWL_InsertMissingSetting] 
 	@Mode TINYINT,
 	@currencies VARCHAR(500) = ''
@@ -14,6 +13,7 @@ AS
 		- 20180326@Johnson: create sp [Redmine: #92012]
 		- 20181108@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 20220224@Johnson: Global setting by currency [#168583]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -116,8 +116,9 @@ BEGIN
 	BEGIN
 		DECLARE @tmpCurrency TABLE(currency INT)
 		INSERT INTO @tmpCurrency (currency)
-		SELECT val
-		FROM dbo.StrSplit(@currencies,',')
+		SELECT value
+		FROM STRING_SPLIT(@currencies,',')
+		WHERE value <> ''
 
 		IF @@rowcount <= 0 
 		RETURN

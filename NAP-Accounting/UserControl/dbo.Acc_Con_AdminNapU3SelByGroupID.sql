@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminNapU3SelByGroupID]
 	@Groupid VARCHAR(500) = ''
 AS
@@ -11,6 +11,8 @@ AS
  
 	Revisions:
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 	Explain @Param
 		-@groupid = '125' if user of Unit3 view
 				= '1,125' if IT view
@@ -21,8 +23,9 @@ SET NOCOUNT ON
 	IF @groupID = '' RETURN
 	
 	INSERT INTO @tmpGroup
-	SELECT val
-	FROM dbo.strSplit(@groupid,',')
+	SELECT value
+	FROM string_split(@groupid,',')
+	WHERE value <> ''
 
     SELECT   gi.groupname,
              ac.groupid,
@@ -50,6 +53,3 @@ SET NOCOUNT ON
     ORDER BY isnull(ci.closed, 0), c.username, ac.groupid
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminNapU3SelByGroupID] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminNapU3SelByGroupID] TO [vnteam] AS [dbo] 

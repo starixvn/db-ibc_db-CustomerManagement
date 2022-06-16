@@ -21,7 +21,8 @@ AS
 		
 		Revisions:
 			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-			
+			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 		Parameter's Explanation:
 	*/ 
 SET NOCOUNT ON
@@ -70,8 +71,9 @@ SET NOCOUNT ON
 	
 	IF (ISNULL(@AssigedGroupIDs,'')	<>'')
 		INSERT INTO @Groups (GroupID)
-		SELECT val
-		FROM dbo.[strSplit] (@AssigedGroupIDs,',')	
+		SELECT value
+		FROM string_split (@AssigedGroupIDs,',')	
+		WHERE value <> ''
 		
 	UPDATE eaFunction WITH(UPDLOCK,ROWLOCK)
 	SET FuncName	= @FuncName,

@@ -15,6 +15,8 @@ AS
 	Revisions:  
 		- 20200804@Johnson: initial sp [redmine:#136501]
 		- 20201229@Johnson: Exclude disabled accounts [redmine:#147578]
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 	Parameter's explanation:
 		- @GroupName: sub group need to assign supers
 		- @CustList : list custid need to update sub group
@@ -31,8 +33,9 @@ BEGIN
 	SELECT @startRun = GETDATE()
 	
 	INSERT INTO @tmpCust(custid)
-	SELECT val 
-	FROM strSplit (@CustList,',')
+	SELECT value
+	FROM string_split (@CustList,',')
+	WHERE value <> ''
 	
 	UPDATE t
 	SET isValid = 1

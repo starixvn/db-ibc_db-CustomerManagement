@@ -1,20 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_MonitorSel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_MonitorSel];
-GO
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
-CREATE PROCEDURE NAP_WinLimit_MonitorSel @FromDate        DATETIME,
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE NAP_WinLimit_MonitorSel @FromDate        DATETIME,
                                          @ToDate          DATETIME,
                                          @ProductId       INT          = 0,
                                          @UserName        NVARCHAR(50) = '',
@@ -37,6 +22,7 @@ Revisions:
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332] 
 	- 20170808@Jacob: Risk & Control - Phase 4 [#72870]
 	- 20171016@Jacob: Support multiple selection on dropdownlist "Reached Limit Level" [#84893]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 Parameters Explanation:   
    @FromDate: From date  
    @ToDate: To Date  
@@ -55,8 +41,9 @@ EXEC NAP_WinLimit_MonitorSel @FromDate = '20160101', @ToDate = '20191231'
          BEGIN --LevelIdTable
              DECLARE @Levels TABLE(LevelId INT);
              INSERT INTO @Levels(LevelId)
-                    SELECT CONVERT(INT, val)
-                    FROM dbo.strSplit(@LevelId, ',');
+                    SELECT CONVERT(INT, value)
+                    FROM STRING_SPLIT(@LevelId, ',')
+					WHERE value <> ''
          END;
          BEGIN -- #WinLimitMonitor  
              CREATE TABLE #WinLimitMonitor
@@ -187,8 +174,4 @@ EXEC NAP_WinLimit_MonitorSel @FromDate = '20160101', @ToDate = '20191231'
          END;
          DROP TABLE #WinLimitMonitor;
      END;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_MonitorSel] TO [bodbAdminNet];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_MonitorSel] TO [vnteam];
 GO

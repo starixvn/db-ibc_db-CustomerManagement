@@ -15,6 +15,7 @@ AS
 	    - 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 		ErrorCode table Return:
 			Validate Code
@@ -40,9 +41,9 @@ BEGIN
 	DECLARE @CustTbl TABLE (CustID INT, Username VARCHAR(30), FirstBetDate DATE, WLStatus tinyint, IsFinished BIT default 0)
 
 	INSERT INTO @CustTbl(Username)
-	SELECT DISTINCT LTRIM(RTRIM(p.val))
-	FROM dbo.f_StringSplit(@Usernames,',') p
-	OPTION (MAXRECURSION 0)
+	SELECT DISTINCT LTRIM(RTRIM(p.value))
+	FROM STRING_SPLIT(@Usernames,',') p
+	WHERE value <> ''
 
 	UPDATE t
 	SET t.CustID = c.Custid

@@ -14,6 +14,7 @@ AS
 	    
 	Revisions:    
 		- 20200310@Eden : First commit [Redmind: #128749]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Examples :
 		DECLARE @ErrMsg	NVARCHAR(MAX) = '', @ErrCode TINYINT = 0 
@@ -34,9 +35,9 @@ BEGIN
 	CREATE TABLE #CustIDs(CustID INT)
 
 	INSERT INTO #CustIDs(CustID)
-	SELECT val 
-	FROM dbo.f_StringSplit(@CustIDs,',') 
-	OPTION (MAXRECURSION 0)
+	SELECT value 
+	FROM STRING_SPLIT(@CustIDs,',') 
+	WHERE value <> ''
 
 	SELECT vr.CustID, CAST (0 AS BIT) IsProcessed
 	INTO #RealUpdateList

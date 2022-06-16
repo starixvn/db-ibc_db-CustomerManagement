@@ -17,6 +17,7 @@ AS
 		- 20210323@Eden: Enhancement for VR Member Big Stake [#150298]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Param's Explanation:  
 		@Type = 
@@ -38,9 +39,9 @@ BEGIN
 	DECLARE @UpdatedCustTbl TABLE (CustID INT)
 
 	INSERT INTO @InputCustTbl(CustID)
-	SELECT DISTINCT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
+	SELECT DISTINCT p.value
+	FROM STRING_SPLIT(@CustIDList,',') p
+	WHERE value <> ''
 
 	IF @IsTest = 1 -- UUS only 
 	BEGIN

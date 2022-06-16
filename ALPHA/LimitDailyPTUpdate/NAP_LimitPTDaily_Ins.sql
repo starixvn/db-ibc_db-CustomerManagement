@@ -19,6 +19,8 @@ AS
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
 			- 20211126@Winfred: Limit to update PT one time per day [Redmine: #165249]
+			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -38,8 +40,8 @@ BEGIN
 	CREATE TABLE #Product (ProductID TINYINT PRIMARY KEY ,ProductName VARCHAR(50), IsFinished BIT DEFAULT (0) )
 	
 	INSERT INTO #Product  (ProductID)	
-	SELECT S.val
-	FROM dbo.strSplit(@ProductID, ',') S
+	SELECT S.value
+	FROM string_split(@ProductID, ',') S WHERE value <> ''
 	
 	UPDATE tc
 	SET tc.ProductName = p.ProductName
@@ -59,9 +61,9 @@ BEGIN
 	BEGIN
 		-- get list transId (single + sub-parlay)  
 		 INSERT INTO @tblCust (CustInfo)  
-		 SELECT LTRIM(RTRIM(val))
-		 FROM dbo.f_SplitString(@SMAName, ',')  
-		 WHERE val <> ''  
+		 SELECT LTRIM(RTRIM(value))
+		 FROM string_split(@SMAName, ',')  
+		 WHERE value <> ''  
 		 OPTION (MAXRECURSION 0)
 		 
 		IF (SELECT COUNT(CustInfo) FROM @tblCust t) > 500

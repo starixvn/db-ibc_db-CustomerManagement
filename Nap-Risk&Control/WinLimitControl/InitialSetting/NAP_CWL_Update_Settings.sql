@@ -1,6 +1,4 @@
-
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
 ALTER PROCEDURE dbo.NAP_CWL_Update_Settings 
 	@ProductId INT, 
 	@GroupId   INT, 
@@ -20,6 +18,7 @@ AS
 	Revisions	 : 
 				- 20180531@Robert: Update CWL Settings				
 				- 20220223@Johnson: Global setting by currency [#168583]
+				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -56,8 +55,9 @@ AS
 			Currency
 		 )
 			SELECT 
-				  val
-			FROM strSplit(@currency, ',');
+				  value
+			FROM STRING_SPLIT(@currency, ',')
+			WHERE value <> ''
 
 
 

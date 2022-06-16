@@ -14,6 +14,7 @@ AS
 	Revisions:  
 	    - 20200805@Eden: First commit [#138168]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Param's Explanation:  
 	Examples:
@@ -32,9 +33,9 @@ BEGIN
 
 	DECLARE @CustTbl TABLE ( CustID INT)
 	INSERT INTO @CustTbl(CustID)
-	SELECT p.val
-	FROM dbo.f_StringSplit(@CustIDList,',') p
-	OPTION (MAXRECURSION 0)
+	SELECT p.value
+	FROM STRING_SPLIT(@CustIDList,',') p
+	WHERE value <> ''
 
 	IF @IsTest = 1 -- UUS only 
 	BEGIN

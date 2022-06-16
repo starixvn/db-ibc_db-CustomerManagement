@@ -13,6 +13,7 @@ ALTER PROCEDURE EAS_CustomerSelProtectionModeList
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20210824@Elodie: Initial sp [Redmine: #160151]
+		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 
 	Parameter's Explanation:
 
@@ -25,9 +26,9 @@ BEGIN
 	DECLARE @CustListTmp TABLE (CustId INT)
 
 	INSERT INTO @CustListTmp (CustId)
-	SELECT  val
-	FROM f_SplitString (@CustList, ',')
-	OPTION (maxrecursion 0)
+	SELECT  value
+	FROM STRING_SPLIT (@CustList, ',')
+	WHERE value <> ''
 
 	-- check belong to group 
 	IF EXISTS (	SELECT 1 

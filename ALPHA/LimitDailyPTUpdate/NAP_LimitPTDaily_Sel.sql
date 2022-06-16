@@ -17,6 +17,7 @@ AS
 		Original: 
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
+			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -28,16 +29,16 @@ BEGIN
 
 	-- Select ProductName
 	INSERT INTO #Site  (siteid)	
-	SELECT S.val
-	FROM dbo.strSplit(@MutilSite, ',') S
+	SELECT S.value
+	FROM string_split(@MutilSite, ',') S WHERE value <> ''
 	
 	INSERT INTO #Exchange  (exchangeid)	
-	SELECT C.val exchangeid
-	FROM dbo.strSplit(@MutilCurrency, ',') C
+	SELECT C.value exchangeid
+	FROM string_split(@MutilCurrency, ',') C WHERE value <> ''
 	
 	INSERT INTO #Product  (ProductID)	
-	SELECT S.val
-	FROM dbo.strSplit(@ProductID, ',') S
+	SELECT S.value
+	FROM string_split(@ProductID, ',') S WHERE value <> ''
 	
 	SELECT @CustID = CustID FROM  dbo.Custinfo ci WITH (NOLOCK) WHERE username = @CustName
 	

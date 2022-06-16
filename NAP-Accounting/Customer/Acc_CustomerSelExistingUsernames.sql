@@ -12,6 +12,7 @@ Revisions:
     - 20180530@Kan: Get existing username list from a string separated by (,) [RedmineId: #84739] 
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
+	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 Param's Explanation:
     @Usernames: username string want to check
 */		
@@ -21,7 +22,7 @@ BEGIN
     CREATE TABLE #TempUsername (Username VARCHAR(50))
 
     INSERT INTO #TempUsername(Username)
-    SELECT DISTINCT LTRIM(RTRIM(val)) FROM dbo.strSplit(@Usernames,',')
+    SELECT DISTINCT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@Usernames,',') WHERE value <> ''
 
     SELECT t.Username,
 		CASE 

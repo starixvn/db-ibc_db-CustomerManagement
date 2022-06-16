@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE dbo.Acc_CustSetting_SyncAPICustomerProfileSelect_CustID
 	@CustIDs	VARCHAR(MAX)	= NULL
@@ -5,8 +6,9 @@ AS
 /*
 	Created by: Jamie@20161101
 	Task: Getting the list of customers' profile [RedmineID:#65873 ]
-	DB: DBCUST.bodb02 
-
+	DB: DBCUST.CustDB 
+	Revisions:	
+			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 	Param's Explanation: 	
 		EXEC Acc_CustSetting_SyncAPICustomerProfileSelect_CustID @CustIDs ='7548,7404'
 
@@ -27,9 +29,9 @@ BEGIN
 		CustID INT
 	)
 	INSERT INTO #tmpCustIDs(CustID)
-	SELECT CAST(RTRIM(LTRIM(Val)) AS INT) FROM strSplit(@CustIDs,',');
+	SELECT CAST(RTRIM(LTRIM(Value)) AS INT) FROM string_split(@CustIDs,',') WHERE value <> ''
 
-	WITH cteCustInfo(CustID, UserName, RoleID, RoleName, UplineID, Currency,isSync)	AS (
+	;WITH cteCustInfo(CustID, UserName, RoleID, RoleName, UplineID, Currency,isSync)	AS (
 		SELECT	ci.CustID
 				,ci.Username
 				,ci.RoleID 
@@ -63,10 +65,6 @@ BEGIN
 			LEFT JOIN Exchange e WITH (NOLOCK) ON cte.Currency = e.exchangeid;
 						
 END
-GO
-GRANT  EXECUTE  ON [dbo].Acc_CustSetting_SyncAPICustomerProfileSelect_CustID  TO [bodbAdminNet]
-GO
-GRANT  EXECUTE  ON [dbo].Acc_CustSetting_SyncAPICustomerProfileSelect_CustID  TO [vnteam]
 GO
 
 

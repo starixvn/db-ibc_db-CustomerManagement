@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_Con_AdminSelByListGroupNameUserName
 	@ListGroupName VARCHAR (1000), 
 	@Username VARCHAR (30)='', 
@@ -13,7 +13,7 @@ AS
 	  
 	Revisions:  
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 	Params:
 		@ListGroupName: list group name will be denied ex:'THB,CSD'
 	Revisions:
@@ -29,8 +29,9 @@ BEGIN
 			   INNER JOIN
 			   acc_groupinfo AS gi WITH (NOLOCK)
 			   ON ac.groupid = gi.groupid
-		WHERE  gi.GroupName IN (SELECT val
-								FROM   dbo.strSplit (@ListGroupName, ','))
+		WHERE  gi.GroupName IN (SELECT value
+								FROM   string_split (@ListGroupName, ',')
+								WHERE value <> '')
 			   AND c.username = @Username;
 	ELSE
 		SELECT ac.custid
@@ -41,16 +42,11 @@ BEGIN
 			   INNER JOIN
 			   acc_groupinfo AS gi WITH (NOLOCK)
 			   ON ac.groupid = gi.groupid
-		WHERE  gi.GroupName IN (SELECT val
-								FROM   dbo.strSplit (@ListGroupName, ','))
+		WHERE  gi.GroupName IN (SELECT value
+								FROM   string_split (@ListGroupName, ',')
+								WHERE value <> '')
 			   AND c.custid = @CustID;
 END
 GO
-GRANT VIEW DEFINITION
-    ON [dbo].[Acc_Con_AdminSelByListGroupNameUserName] TO [vnteam];
 
-
-GO
-GRANT EXECUTE
-    ON [dbo].[Acc_Con_AdminSelByListGroupNameUserName] TO [bodbAdminNet];
 
