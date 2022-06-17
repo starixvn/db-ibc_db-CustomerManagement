@@ -42,6 +42,7 @@ Revisions:
 	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
+	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 
 Param's Explanation:
 • @HasComm: view Comm or view PT
@@ -52,10 +53,13 @@ Param's Explanation:
 
 SET NOCOUNT ON
 
+CREATE TABLE #tmp_Sports (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
+CREATE TABLE #tmp_Bettype (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
+
 ----- 20150610@Kos -------------------
 	BEGIN TRY
-		SELECT *
-		INTO #tmp_Sports
+		INSERT INTO #tmp_Sports (ID, Name, IsDisabled, IBCBettypeID)
+		SELECT ID, Name, IsDisabled, IBCBettypeID
 		FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBAGE')	
 	END TRY
 	BEGIN CATCH
@@ -63,14 +67,14 @@ SET NOCOUNT ON
 		BEGIN
 			TRUNCATE TABLE #tmp_Sports
 			INSERT INTO #tmp_Sports
-			SELECT *
+			SELECT ID, Name, IsDisabled, IBCBettypeID
 			FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBTXN')	
 		END
 	END CATCH
 
 	BEGIN TRY			
-		SELECT *
-		INTO #tmp_Bettype
+		INSERT INTO #tmp_Bettype (ID, Name, IsDisabled, IBCBettypeID)
+		SELECT ID, Name, IsDisabled, IBCBettypeID
 		FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBAGE')	
 	END TRY
 	BEGIN CATCH		
@@ -78,7 +82,7 @@ SET NOCOUNT ON
 		BEGIN
 			TRUNCATE TABLE #tmp_Bettype
 			INSERT INTO #tmp_Bettype
-			SELECT *
+			SELECT ID, Name, IsDisabled, IBCBettypeID
 			FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBTXN')	
 		END
 	END CATCH
@@ -603,7 +607,7 @@ Begin
 
 End
 
-
-
+DROP TABLE #tmp_Bettype
+DROP TABLE #tmp_Sports
 
 GO
