@@ -10,7 +10,8 @@ AS
 	Created: 20160812@Helen
 	Task: Betchoice Limit info for ALLBET - [redmine: 61873]
 	Database: DBCUST/CustDB
-	
+	Revisions:	
+		- 20220614@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	Param's Explanation:
 */
 BEGIN
@@ -22,8 +23,8 @@ BEGIN
     SELECT tmp.StakeLevelID,sla.BetType GameTypeID,tmp.MinLabel,tmp.MaxLabel
     FROM CustStakeLevel_Agent SLA WITH (NOLOCK) 
 		CROSS APPLY (SELECT SL.StakeLevelID,MinLabel,MaxLabel,ExchangeId 
-					 FROM dbo.strSplit(SLA.StakeLevelList,',') AS T
-						INNER JOIN StakeLevel SL (NOLOCK) ON T.val = SL.StakeLevelID ) AS tmp
+					 FROM string_split(SLA.StakeLevelList,',') AS T
+						INNER JOIN StakeLevel SL (NOLOCK) ON T.value = SL.StakeLevelID ) AS tmp
     WHERE SLA.CustID = @CustID AND SLA.BetType = @BettypeID  
     
     
