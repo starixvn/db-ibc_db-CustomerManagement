@@ -36,7 +36,7 @@ SET NOCOUNT ON
 			SettingType		TINYINT,
 			BeginTime		SMALLDATETIME,
 			EndTime			SMALLDATETIME,
-			Time_Stamp		TIMESTAMP,
+			Time_Stamp		VARBINARY(8),
 			SiteID			INT,
 			currency		TINYINT
 	)
