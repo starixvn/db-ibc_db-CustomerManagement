@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBCust-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[Acc_CustomerSelList]
 	@custid int,
 	@PageSize int = 500,
@@ -22,7 +19,7 @@ AS
 		- 20180627@Elodie: Enhance SP [RedmineID: #95978]
 		- 20190520@Johnson: support customer list for headline cn88 [redmine: #112225]	
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
-
+		- 20220620@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Explanation: 
 			
 	Example: EXEC Acc_CustomerSelList @CustID=24471545
@@ -34,7 +31,7 @@ BEGIN
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
 
 	DECLARE @CustList TABLE(	
-		username NVARCHAR(30),
+		username VARCHAR(30),
 		Custid INT,
 		Enabled BIT,
 		Closed BIT,
@@ -106,8 +103,11 @@ BEGIN
 			@TotalPages = COUNT(1),@TotalPages=@TotalPages/@PageSize + CASE WHEN @TotalPages%@PageSize > 0 THEN 1 ELSE 0 END
 		FROM @CustList c 
 	END
-		
-	SELECT UserName,Custid INTO #tmpList
+	
+	CREATE TABLE #tmpList(username VARCHAR(30),custid INT)
+	
+	INSERT INTO #tmpList(username,custid)	
+	SELECT UserName,Custid 
 	FROM 
 	(
 		SELECT 
@@ -126,5 +126,6 @@ BEGIN
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 	
+	DROP TABLE #tmpList
 END
 GO

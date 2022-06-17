@@ -14,6 +14,7 @@ AS
 		- 20181108@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 20220224@Johnson: Global setting by currency [#168583]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]
+		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -25,7 +26,8 @@ BEGIN
 	IF @mode = 1
 	BEGIN		
 		CREATE TABLE #Currency_Deposit (siteid INT, exchangeid INT, PRIMARY KEY (siteid,exchangeid))
-
+		CREATE TABLE #site_currency(siteid INT, exchangeid INT, productid TINYINT, groupID INT, isPrivate BIT)
+		
 		INSERT INTO #Currency_Deposit
 		SELECT DISTINCT  s.siteid,ex.exchangeid AS Id
 		FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
@@ -33,9 +35,9 @@ BEGIN
 		  INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
 		  INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName  AND S.isActive = 1
 		WHERE ex.currency NOT IN('H', 'C')
-
-		SELECT c.siteid, c.exchangeid, t.productid, t.groupID, 0 isPrivate
-		INTO #site_currency
+		
+		INSERT INTO #site_currency(siteid, exchangeid, productid, groupID, isPrivate)
+		SELECT c.siteid, c.exchangeid, t.productid, t.groupID, 0 isPrivate		
 		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK)
 			CROSS APPLY #Currency_Deposit c 
 			LEFT JOIN WinLimit_ProductSettingDetail pd WITH(NOLOCK) ON t.productid = pd.productid
@@ -122,9 +124,11 @@ BEGIN
 
 		IF @@rowcount <= 0 
 		RETURN
-			
-		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 0 isPrivate
-		INTO #site_currencyCredit
+		
+		CREATE TABLE #site_currencyCredit(ProductID TINYINT,GroupID INT,ExchangeID INT,SiteID INT,isPrivate BIT)
+		
+		INSERT INTO #site_currencyCredit(ProductID,GroupID,ExchangeID,SiteID,isPrivate)
+		SELECT DISTINCT T.ProductID, t.GroupID, e.ExchangeID, s.SiteID, 0 isPrivate		
 		FROM dbo.WinLimit_ProductGlobalSetting t WITH(NOLOCK) 
 			CROSS JOIN EXCHANGE E (NOLOCK) 
 			CROSS JOIN (SELECT siteid FROM Site WITH (NOLOCK) WHERE isActive = 1 AND isLicensee = 0 ) AS S	
@@ -198,6 +202,8 @@ BEGIN
 			INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
 		WHERE PSD.MaxWinLimit_RM IS NOT NULL 
 			AND e.exchangeid IN (SELECT currency FROM @tmpCurrency)
+		
+		DROP TABLE #site_currencyCredit
 	END
 END
 GO

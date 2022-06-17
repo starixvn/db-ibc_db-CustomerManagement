@@ -28,7 +28,7 @@ AS
 	- 20211112@Eden: Alpha/NAP - In-house Replication (isDeleted & RepUpdateTime) [RedmineID: #164321]
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	- 20220610@Tacy: Alpha/NAP - Remove IsDeleted field in League Table [RedmineID: #171699]
-
+	- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Parameter explanation:
 
 	Example: 
@@ -99,8 +99,10 @@ BEGIN
 	END
 
 	--> get league
-	SELECT CAST(value AS INT) AS LeagueID
-	INTO #League
+	CREATE TABLE #League(LeagueID INT)
+	
+	INSERT INTO #League(LeagueID)
+	SELECT CAST(value AS INT) AS LeagueID	
 	FROM STRING_SPLIT(@LeagueList,',') le
 	WHERE value <> ''
 
@@ -124,32 +126,38 @@ BEGIN
 	END
 
 	--> Site
-	SELECT CAST(value AS INT) AS SiteID 
-	INTO #Site
+	CREATE TABLE #Site(SiteID INT)
+	CREATE TABLE #CC(CustomerClass SMALLINT)
+	CREATE TABLE #DateOfWeek(DateOfWeek TINYINT)
+	CREATE TABLE #Sport(Sporttype SMALLINT)
+	CREATE TABLE #Bettype(Bettype SMALLINT)
+	
+	INSERT INTO #Site(SiteID)
+	SELECT CAST(value AS INT) AS SiteID 	
 	FROM STRING_SPLIT(@SiteIDList,',') t
 	WHERE value <> ''
 	
 	--> CustomerClass
-	SELECT CAST(value AS SMALLINT) AS CustomerClass 
-	INTO #CC
+	INSERT INTO #CC(CustomerClass)
+	SELECT CAST(value AS SMALLINT) AS CustomerClass 	
 	FROM STRING_SPLIT(@CustomerClassList,',') t
 	WHERE value <> ''
 
 	--> DateOfWeek
-	SELECT CAST(value AS TINYINT) AS DateOfWeek 
-	INTO #DateOfWeek
+	INSERT INTO #DateOfWeek(DateOfWeek)
+	SELECT CAST(value AS TINYINT) AS DateOfWeek 	
 	FROM STRING_SPLIT(@DateOfWeekList,',') t
 	WHERE value <> ''
 
 	--> Get sport
-	SELECT CAST(value AS SMALLINT) AS Sporttype 
-	INTO #Sport
+	INSERT INTO #Sport(Sporttype)
+	SELECT CAST(value AS SMALLINT) AS Sporttype
 	FROM STRING_SPLIT(@SporttypeList,',') t
 	WHERE value <> ''
 	
 	--get Bettype
-	SELECT CAST(value AS INT) AS Bettype 
-	INTO #Bettype
+	INSERT INTO #Bettype(Bettype)
+	SELECT CAST(value AS INT) AS Bettype 	
 	FROM STRING_SPLIT(@BettypeList,',') t
 	WHERE value <> ''
 
