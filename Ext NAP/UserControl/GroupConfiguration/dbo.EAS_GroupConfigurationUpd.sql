@@ -157,4 +157,6 @@ BEGIN
 		WHERE ProductId = @productId
 			AND GroupId = @groupId
 	END
+
+	DROP TABLE #tmpProducts
 END

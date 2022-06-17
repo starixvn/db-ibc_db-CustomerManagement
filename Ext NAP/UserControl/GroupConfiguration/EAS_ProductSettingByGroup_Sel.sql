@@ -46,5 +46,7 @@ BEGIN
 	WHERE p.ProductId NOT IN (1,3,8,12,16) 
 		AND d.SettingType IN (4,11,13)
 	ORDER BY ProductId
+
+	DROP TABLE #tmpProducts
 END
 GO

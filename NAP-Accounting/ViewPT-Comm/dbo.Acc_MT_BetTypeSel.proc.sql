@@ -63,5 +63,7 @@ BEGIN
 		INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
 	WHERE t.custid IN( 73104) AND t.sporttype = ISNULL(@sporttype, t.sporttype)
 	ORDER BY t.bettype
+
+	DROP TABLE #tmp_Bettype
 END
 GO
