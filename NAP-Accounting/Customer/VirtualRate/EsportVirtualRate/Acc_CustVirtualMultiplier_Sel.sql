@@ -16,7 +16,7 @@ AS
 		- 20200306@Eden: E-sport VR Phase 3 [Redmine: #128749] 
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
-  
+		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -77,7 +77,12 @@ BEGIN
 			@AutoSuspendNonLive VARBINARY(30) = @InitialBitMap,
 			@OverrideASLive		VARBINARY(30) = @InitialBitMap_0,
 			@OverrideASNonLive	VARBINARY(30) = @InitialBitMap_0
-			
+	
+	CREATE TABLE #tempVR(SportType SMALLINT, LeagueGroupID INT, LeagueGroup nvarchar(400), BettypeGroupID SMALLINT, BettypeGroup NVARCHAR(400),BetTypeID SMALLINT,LevelID INT,
+					ValueIDLIVE TINYINT, ValueLIVE smallmoney, ValueIDNonLIVE TINYINT,ValueNonLIVE smallmoney,IsLiveAutoSuspend BIT,IsNonLiveAutoSuspend BIT,
+					ParentLevelID INT,SortOrder INT,VRAutoSuspendThresholdNonLive INT,VRAutoSuspendThresholdLive INT,
+					IsOverrideASLive BIT,IsOverrideASNonLive BIT)
+					
 	SELECT @AutoSuspendLive = AutoSuspendLive, 
 		   @AutoSuspendNonLive = AutoSuspendNonLive,
 		   @OverrideASLive = ISNULL(OverrideASLive, @OverrideASLive),
@@ -86,6 +91,10 @@ BEGIN
 	WHERE custid = @CustID AND SportType = @SportType
 
 	--2nd Dataset: Virtual Rate
+	INSERT INTO #tempVR(SportType,LeagueGroupID,LeagueGroup,BettypeGroupID,BettypeGroup,BetTypeID,LevelID,
+					ValueIDLIVE,ValueLIVE,ValueIDNonLIVE,ValueNonLIVE,IsLiveAutoSuspend,IsNonLiveAutoSuspend,
+					ParentLevelID,SortOrder,VRAutoSuspendThresholdNonLive,VRAutoSuspendThresholdLive,
+					IsOverrideASLive,IsOverrideASNonLive)
 	SELECT h.SportType
 		,lg.GroupID LeagueGroupID, lg.GroupName LeagueGroup
 		,bg.GroupID BettypeGroupID, bg.GroupName BettypeGroup
@@ -100,8 +109,7 @@ BEGIN
 		,h.VRAutoSuspendThresholdNonLive
 		,h.VRAutoSuspendThresholdLive
 		,O_Live.value AS IsOverrideASLive
-		,O_NonLive.value AS IsOverrideASNonLive
-	INTO #tempVR
+		,O_NonLive.value AS IsOverrideASNonLive	
 	FROM VRSettingHierarchy h WITH(NOLOCK)
 		LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID

@@ -35,10 +35,12 @@ BEGIN
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
 		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = @CustID
 	-- all sport bettype on macau 	
+	CREATE TABLE #SportBettypeFilter(sporttype SMALLINT,bettype SMALLINT)
+	
+	INSERT INTO #SportBettypeFilter(sporttype,bettype)
 	SELECT
 			ft.SportType,
-			ft.BetType
-	INTO #SportBettypeFilter					   
+			ft.BetType						   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,8,@SettingStatus) ft 
 	WHERE @bitmapIsHidden = 0
 	-- delete non offer site

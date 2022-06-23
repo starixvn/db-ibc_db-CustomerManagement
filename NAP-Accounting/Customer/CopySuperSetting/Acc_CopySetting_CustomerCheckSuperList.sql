@@ -18,7 +18,7 @@ AS
 		- 20210716@Johnson: initial sp [redmine:#158174]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-	
+		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -113,10 +113,11 @@ BEGIN
 	FROM @tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
 		
-	DECLARE @tblProduct TABLE (productID INT, SportType INT)
+	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT)	
+	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT)
 	
-	SELECT DISTINCT ProductID, SportType, Bettype
-	INTO #SportBettypeFilter
+	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype)
+	SELECT DISTINCT ProductID, SportType, Bettype	
 	FROM dbo.ProductSettingDetail WITH(NOLOCK)
 	WHERE SettingType IN (6,12)--win/loss limit settingtype
 		AND SettingStatus = 0

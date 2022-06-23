@@ -13,6 +13,8 @@ Revisions:
 	- 20181120@Razor: Function to control group display [Redmine: #89929]
 	- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 	- 2001020@Winfred: Fix miss product when add new group and add new product apply all group [Redmine: #140026]
+	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+
 Param's Explanation:
 	- @data:		
 		<ROOT>
@@ -51,11 +53,13 @@ BEGIN
 		,IsNew BIT
 		)
 
+	CREATE TABLE #tmpProducts (ProductId TINYINT,ProductName VARCHAR(50))
+
 	SELECT @startRun = GETDATE()
-	
+
 	-- Get all enabled products
+	INSERT INTO #tmpProducts (ProductId, ProductName)
 	SELECT ProductId, ProductName
-	INTO #tmpProducts
 	FROM OPENQUERY (DBAGE, '
 							SELECT
 								CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID
@@ -153,4 +157,6 @@ BEGIN
 		WHERE ProductId = @productId
 			AND GroupId = @groupId
 	END
+
+	DROP TABLE #tmpProducts
 END

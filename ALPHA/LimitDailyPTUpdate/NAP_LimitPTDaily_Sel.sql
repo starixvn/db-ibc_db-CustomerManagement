@@ -18,6 +18,7 @@ AS
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+			- 20220616@Johnson: define temp table to avoid dump db [redmine:#174035]
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -26,7 +27,10 @@ BEGIN
 	CREATE TABLE #Site (siteid INT PRIMARY KEY)
 	CREATE TABLE #Exchange (exchangeid INT PRIMARY KEY)
 	CREATE TABLE #Product (ProductID TINYINT PRIMARY KEY ,ProductName	VARCHAR(50) )
-
+	
+	CREATE TABLE #Result(ProductID TINYINT, ProductName VARCHAR(50), CustID INT, username VARCHAR(30), Currency INT, SiteID INT,
+						MaxCount TINYINT, Type TINYINT, SettingStatus TINYINT, [site] NVARCHAR(100), CurrencyName NVARCHAR(100), RowNumber INT)
+	
 	-- Select ProductName
 	INSERT INTO #Site  (siteid)	
 	SELECT S.value
@@ -42,9 +46,9 @@ BEGIN
 	
 	SELECT @CustID = CustID FROM  dbo.Custinfo ci WITH (NOLOCK) WHERE username = @CustName
 	
+	INSERT INTO #Result(ProductID,ProductName,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName,RowNumber)
 	SELECT ProductID,ProductName,CustID,username,Currency,SiteID,MaxCount,Type,SettingStatus,[site],CurrencyName,
 	ROW_NUMBER() OVER (ORDER BY Type,username ,site ,CurrencyName ) AS RowNumber 
-	INTO #Result
 	FROM (
 		SELECT 
 			l.ProductID

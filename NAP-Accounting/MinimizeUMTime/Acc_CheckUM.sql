@@ -18,6 +18,8 @@ DB: DBCUST.CustDB
 Revisions:	
 	- 20200629@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
+	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -60,6 +62,21 @@ SET NOCOUNT ON
 
 	IF @ProductID IS NULL AND @FunctionType IS NULL -- For Announcement
 	BEGIN
+		CREATE TABLE #tmpUM (
+				ProductID		TINYINT, 
+				SportType		SMALLINT, 
+				BetType			SMALLINT,
+				IsLive			BIT,
+				SettingType		TINYINT, 
+				BeginTime		SMALLDATETIME, 
+				EndTime			SMALLDATETIME, 
+				Time_Stamp		BINARY(8), 
+				Functiontype	TINYINT, 
+				SiteID			INT,
+				Currency		INT
+		)
+
+		INSERT INTO #tmpUM (ProductID, SportType, BetType, IsLive, SettingType, BeginTime, EndTime, Time_Stamp, Functiontype, SiteID, Currency)
 		SELECT c.ProductID,
 				c.SportType,
 				c.BetType,
@@ -71,7 +88,6 @@ SET NOCOUNT ON
 				c.FunctionType,
 				ISNULL(s.siteid,ags.siteid) AS SiteID,
 				cu.currency
-		INTO #tmpUM
 		FROM customer cu WITH(NOLOCK)
 			INNER JOIN customer su WITH(NOLOCK) ON cu.srecommend = su.custid
 			LEFT JOIN customer ag WITH(NOLOCK) ON cu.recommend = ag.custid
@@ -160,6 +176,8 @@ SET NOCOUNT ON
 				 c.Sporttype, 
 				 c.SettingType,
 				 c.FunctionType
+		
+		DROP TABLE #tmpUM
 
 		GOTO RETURNDATA;
 	END

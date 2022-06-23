@@ -15,6 +15,7 @@ AS
 	Revisions:    
 		- 20200310@Eden : First commit [Redmind: #128749]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 
 	Examples :
 		DECLARE @ErrMsg	NVARCHAR(MAX) = '', @ErrCode TINYINT = 0 
@@ -33,14 +34,15 @@ BEGIN
 	SET @StartRun = GETDATE()
 
 	CREATE TABLE #CustIDs(CustID INT)
+	CREATE TABLE #RealUpdateList (CustID INT, IsProcessed BIT)
 
 	INSERT INTO #CustIDs(CustID)
 	SELECT value 
 	FROM STRING_SPLIT(@CustIDs,',') 
 	WHERE value <> ''
 
+	INSERT INTO #RealUpdateList (CustID, IsProcessed)
 	SELECT vr.CustID, CAST (0 AS BIT) IsProcessed
-	INTO #RealUpdateList
 	FROM [dbo].[VRSettingManualUpdAcc] vr WITH(NOLOCK)
 	WHERE vr.SportType = @SportType
 		AND vr.CustID IN ( SELECT CustID FROM #CustIDs)
@@ -83,4 +85,7 @@ BEGIN
 			@TrackingValue		= @LogData,
 			@Duration			= @Duration     
 	END  
+
+	DROP TABLE #CustIDs
+	DROP TABLE #RealUpdateList
 END

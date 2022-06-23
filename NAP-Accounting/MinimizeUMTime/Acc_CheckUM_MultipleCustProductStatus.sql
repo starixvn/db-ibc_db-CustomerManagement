@@ -13,6 +13,8 @@ DB: DBCUST.CustDB
 Revisions:	
 	- 20200723@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -26,11 +28,24 @@ Examples :
 SET NOCOUNT ON	
 	CREATE TABLE #Customers (CustID INT PRIMARY KEY)
 
+	CREATE TABLE #UMConfig (
+			CustID			INT,
+			ProductID		TINYINT, 
+			SportType		SMALLINT, 
+			BetType			SMALLINT, 
+			SettingType		TINYINT,
+			BeginTime		SMALLDATETIME,
+			EndTime			SMALLDATETIME,
+			Time_Stamp		VARBINARY(8),
+			SiteID			INT,
+			currency		TINYINT
+	)
+
 	INSERT INTO #Customers(CustID)
 	SELECT value FROM STRING_SPLIT(@CustIDs,',') WHERE value <> ''
 
+	INSERT INTO #UMConfig (CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp,Currency,SiteID)
 	SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
-	INTO #UMConfig
 	FROM #Customers s
 		CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
 	WHERE c.SettingType IN (4,11,13,0)
@@ -60,5 +75,8 @@ SET NOCOUNT ON
 
 	SELECT CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp
 	FROM #UMConfig
+
+	DROP TABLE #Customers
+	DROP TABLE #UMConfig
 END
 GO

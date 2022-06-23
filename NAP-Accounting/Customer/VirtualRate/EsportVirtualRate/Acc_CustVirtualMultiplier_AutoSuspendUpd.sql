@@ -17,7 +17,7 @@ AS
 		- 20191025@Eden : First commit [Redmind: #121876]
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
-
+		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Param's Explanation:
 	• @AutoSuspendXML
 		<Root>
@@ -105,15 +105,17 @@ BEGIN
 			, @ErrCode = 3  
 		RETURN  
 	END CATCH
-
+	
+	CREATE TABLE #temp(LevelID INT,BetType SMALLINT,IsLiveAutoSuspend BIT, IsNonLiveAutoSuspend BIT, SportType SMALLINT, IsOverrideASLive BIT, IsOverrideASNonLive BIT)
+	
+	INSERT INTO #temp(LevelID,BetType,IsLiveAutoSuspend,IsNonLiveAutoSuspend,SportType,IsOverrideASLive,IsOverrideASNonLive)
 	SELECT DISTINCT h.LevelID
 		,h.BetType
 		,Live.value as IsLiveAutoSuspend
 		,NonLive.value IsNonLiveAutoSuspend
 		,h.SportType
 		,O_Live.value AS IsOverrideASLive
-		,O_NonLive.value AS IsOverrideASNonLive
-	INTO #temp
+		,O_NonLive.value AS IsOverrideASNonLive	
 	FROM #NewDisableStatTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(NOLOCK) ON tmp.LevelID = h.LevelID
 		OUTER APPLY (	SELECT AutoSuspendLive, 

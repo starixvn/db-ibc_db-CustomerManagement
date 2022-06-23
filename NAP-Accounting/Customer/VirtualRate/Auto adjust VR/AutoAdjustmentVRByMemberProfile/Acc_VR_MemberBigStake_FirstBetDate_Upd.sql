@@ -18,7 +18,7 @@ AS
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-
+		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -65,9 +65,11 @@ BEGIN
 
 	--White list by Credit
 	BEGIN
+		CREATE TABLE #WL_Tbl(custid INT,credit MONEY)
+		
+		INSERT INTO #WL_Tbl(custid,credit)
 		SELECT c.custid,
-			ci.credit
-		INTO #WL_Tbl
+			ci.credit		
 		FROM Customer c WITH(NOLOCK)
 			INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.custid
 			INNER JOIN @UpdatedCustTbl t ON c.CustID = t.CustID

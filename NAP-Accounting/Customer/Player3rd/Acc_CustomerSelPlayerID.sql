@@ -17,6 +17,7 @@ AS
 		- 20180924@Phillip: Init
 		- 20190605@Kan: Add new permission control to view CN88 Accounts [RedmineId:#114215]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 	
 	Param's Explanation:
 	- @UserId: User ID
@@ -31,8 +32,16 @@ AS
 
 BEGIN
 	SET NOCOUNT ON
+
+	CREATE TABLE #DeniedSites (siteid INT, site NVARCHAR(50), SpecialGroup BIT)
+
+	CREATE TABLE #PlayerIDs (val NVARCHAR(MAX))
+	CREATE TABLE #Player3rd (VendorID SMALLINT, PlayerID3rd VARCHAR(50), Custid INT)
+
+	CREATE TABLE #Usernames (val NVARCHAR(MAX))
+
+	INSERT INTO #DeniedSites (siteid, site, SpecialGroup)
 	SELECT siteid, site, SpecialGroup 
-	INTO #DeniedSites
 	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@UserId) 
 	
 	IF @Permission <> ''
@@ -56,10 +65,13 @@ BEGIN
 	
 	IF (ISNULL(@PlayerIDs, '') <> '')
 	BEGIN
-		SELECT DISTINCT LTRIM(RTRIM(value)) AS val INTO #PlayerIDs FROM STRING_SPLIT(@PlayerIDs,',') WHERE value <> ''
-		
+		INSERT INTO #PlayerIDs (val)
+		SELECT DISTINCT LTRIM(RTRIM(value)) AS val 
+		FROM STRING_SPLIT(@PlayerIDs,',') 
+		WHERE value <> ''
+
+		INSERT INTO #Player3rd (VendorID, PlayerID3rd, Custid)
 		SELECT DISTINCT c.VendorID, c.PlayerID3rd, c.Custid
-		INTO #Player3rd
 		FROM dbo.CustUserMapping3rd c WITH (NOLOCK)
 		JOIN (SELECT val FROM #PlayerIDs) p ON c.PlayerID3rd LIKE '%' + p.val+'%' AND c.VendorID = @ProductID
 		
@@ -84,7 +96,10 @@ BEGIN
 	
 	IF (ISNULL(@Usernames, '') <> '')
 	BEGIN
-		SELECT DISTINCT LTRIM(RTRIM(value)) AS val INTO #Usernames FROM STRING_SPLIT(@Usernames,',') WHERE value <> ''
+		INSERT INTO #Usernames (val)
+		SELECT DISTINCT LTRIM(RTRIM(value)) AS val 
+		FROM STRING_SPLIT(@Usernames,',') 
+		WHERE value <> ''
 		
 		SELECT	c.custid AS MemberId, 
 				c.username AS MemberName, 

@@ -10,13 +10,17 @@ AS
 	Revisions:  
 		- 20200923@Eden: First commit [Redmine: #141832]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+
 */
 BEGIN
 	SET NOCOUNT ON
 
+	CREATE TABLE #tmpProducts (ProductId TINYINT)
+
 	-- Get all enabled products
+	INSERT INTO #tmpProducts (ProductId)
 	SELECT ProductId
-	INTO #tmpProducts
 	FROM DBACC.bodb02.dbo.Products p WITH (NOLOCK)
 	WHERE p.Enabled = 1
 
@@ -42,5 +46,7 @@ BEGIN
 	WHERE p.ProductId NOT IN (1,3,8,12,16) 
 		AND d.SettingType IN (4,11,13)
 	ORDER BY ProductId
+
+	DROP TABLE #tmpProducts
 END
 GO
