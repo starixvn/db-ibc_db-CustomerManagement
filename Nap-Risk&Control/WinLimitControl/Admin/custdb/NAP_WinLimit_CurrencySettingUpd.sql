@@ -1,17 +1,9 @@
 
 /*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-
-CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingUpd] 
-	@ProductId         INT, 
-	@GroupId           INT, 
-	@CurrencyId        INT, 
-	@SiteId            INT, 
-	@LevelId           INT, 
-	@MaxWinLimit       MONEY       = 0, 
-	@IsBlockedPlaceBet BIT         = 0, 
-	@IsBlockedTransfer BIT         = 0, 
-	@UserID            INT         = 0, 
-	@IP                VARCHAR(20) = ''
+ALTER PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingUpd] 
+	@xml	XML,
+	@UserID INT         = 0, 
+	@IP		VARCHAR(20) = ''
 AS
 
 /*
@@ -22,33 +14,85 @@ Task: #57722 - Implement Game Win Limit Control phase2
 DB: DBCUST/CustDB
 
 Revisions:
-20160923@Jacob: Risk & Control - Phase 3 [#61220].
-20170808@Jacob: Risk & Control - Phase 4 [#72870]
-20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
-
+	- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+	- 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+	- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
+	- 20220623@Johnson: enhance flow update [redmine:#168458]
 Parameters Explanation:	
-   @ProductId: Product ID.
-   @GroupId: Bettype ID.
-   @CurrencyId: Currency ID.
-   @SiteId: Site or Licensee ID.
-   @LevelId: Level ID.
-   @MaxWinLimit: Max Win Limit amount.
-   @IsBlockedPlaceBet: Is block place bet.
-   @IsBlockedTransfer: Is block transfer.
+   @xml = '<Root>
+				<r Product="1" Group="1" Currency="1" Site="1" Level="1" WinLimit="1000.0" PlaceBet="0" Transfer="0" />
+				<r Product="1" Group="1" Currency="2" Site="1" Level="1" WinLimit="1000.0" PlaceBet="0" Transfer="0" />
+			</Root>'
    @UserID: User making this action.
    @IP: IP of the machine making this action.
 */
 
-    BEGIN
-	   SET NOCOUNT ON;
-	   DECLARE 
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE 
 		   @StartRun       DATETIME
 		 , @EndRun         DATETIME
-		 , @Duration       INT
-		 , @TrackingValue1 VARCHAR(500);
-	   SELECT 
+		 , @Duration       INT		
+	
+	SELECT 
 			@StartRun = GETDATE();
-	   IF EXISTS
+			
+	DECLARE @ProductId         INT,
+			@GroupId           INT,
+			@CurrencyId        INT,
+			@SiteId            INT,
+			@LevelId           INT,
+			@MaxWinLimit       MONEY,
+			@IsBlockedPlaceBet BIT,
+			@IsBlockedTransfer BIT
+
+	DECLARE @OldMaxWinLimit MONEY, 
+		@OldIsBlockedPlaceBet BIT, 
+		@OldIsBlockedTransfer BIT, 
+		@TrackingValue1 VARCHAR(500),
+		@TrackingValue2 VARCHAR(500)
+	
+	CREATE TABLE #tblSetting (ProductId         INT,
+	                           GroupId           INT,
+	                           CurrencyId        INT,
+	                           SiteId            INT,
+	                           LevelId           INT,
+	                           MaxWinLimit       MONEY,
+	                           IsBlockedPlaceBet BIT,
+							   IsBlockedTransfer BIT,
+							   IsFinished BIT DEFAULT(0))
+							   
+	INSERT INTO #tblSetting(ProductID,GroupID,CurrencyId,SiteID,LevelId,MaxWinLimit,IsBlockedPlaceBet,IsBlockedTransfer)
+	SELECT 
+		t.c.value('@Product', 'INT') AS ProductId
+		,t.c.value('@Group', 'INT') AS GroupId
+		,t.c.value('@Currency', 'INT') AS CurrencyId
+		,t.c.value('@Site', 'INT') AS SiteId
+		,t.c.value('@Level', 'INT') AS LevelId
+		,t.c.value('@WinLimit', 'MONEY') AS MaxWinLimit
+		,t.c.value('@PlaceBet', 'BIT') AS IsBlockedPlaceBet
+		,t.c.value('@Transfer', 'BIT') AS IsBlockedTransfer
+	FROM @xml.nodes('Root/r') t(c)
+	
+	WHILE (1=1)
+	BEGIN
+		UPDATE TOP (1) t
+		SET @ProductId = ProductID,        
+		    @GroupId = GroupId,         
+		    @CurrencyId = CurrencyId,      
+		    @SiteId = SiteId,         
+		    @LevelId = LevelId,        
+		    @MaxWinLimit = MaxWinLimit,      
+		    @IsBlockedPlaceBet = IsBlockedPlaceBet,
+		    @IsBlockedTransfer = IsBlockedTransfer,
+			IsFinished = 1
+		FROM #tblSetting t
+		WHERE IsFinished = 0
+		
+		IF @@ROWCOUNT = 0
+			BREAK;
+		
+	    IF EXISTS
 			  (
 				 SELECT 
 					   1
@@ -59,11 +103,7 @@ Parameters Explanation:
 					  AND LevelID = @LevelId
 					  AND SiteID = @SiteId
 			   )
-		  BEGIN -- Update
-			 DECLARE 
-				 @OldMaxWinLimit       MONEY
-			    , @OldIsBlockedPlaceBet BIT
-			    , @OldIsBlockedTransfer BIT;
+		  BEGIN -- Update			 
 			 SELECT 
 				   @OldMaxWinLimit = MaxWinLimit_RM, 
 				   @OldIsBlockedPlaceBet = IsBlockedPlaceBet, 
@@ -116,8 +156,7 @@ Parameters Explanation:
 				SET @TrackingValue1 = @TrackingValue1 + '" UserId="' + CONVERT(VARCHAR(20), @UserId);
 				SET @TrackingValue1 = @TrackingValue1 + '" SiteId="' + CONVERT(VARCHAR(20), @SiteId);
 				SET @TrackingValue1 = @TrackingValue1 + '" IP="' + COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1)) + '" />';
-				DECLARE 
-					@TrackingValue2 VARCHAR(500);
+				
 				SET @TrackingValue2 = '<NAP_WinLimit_CurrencySettingUpd ';
 				SET @TrackingValue2 = @TrackingValue2 + '" ProductID ="' + CONVERT(VARCHAR(20), @ProductId);
 				SET @TrackingValue2 = @TrackingValue2 + '" GroupId="' + CONVERT(VARCHAR(20), @GroupId);
@@ -199,5 +238,5 @@ Parameters Explanation:
 				END CATCH;
 			 END;
 		  END;
-
+		END--while()
     END;
