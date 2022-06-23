@@ -34,6 +34,7 @@ AS
 		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
 		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20220623@Johnson: enhance sp [redmine:#174131]
 	Param's Explanation:  
 	• @Recommend: AgentID 
 
@@ -263,22 +264,23 @@ BEGIN
 		 MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.mpositiontaking ELSE 0 END) AS v99mpositiontaking_9,  
 		 MAX(CASE WHEN cs.bettype = 9 AND cs.sporttype=99 THEN cs.spositiontaking ELSE 0 END) AS v99spositiontaking_9 ,
 	
-		ISNULL(cl.ClosedReason,0) AS ClosedReason,
+		ps.ClosedReason,
 		ISNULL(ps.Locked,0)	AS Locked		   
 		FROM   
 		 custinfo AS ci WITH (NOLOCK)  
 		 INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid  
-		 CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+		 CROSS APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 							, Locked
-						FROM dbo.CustProductStatus  WITH(NOLOCK)
-						WHERE CustID = ci.custid
+							, ISNULL(cl.ClosedReason,0) AS ClosedReason
+						FROM dbo.CustProductStatus cs WITH(NOLOCK)
+							LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON cs.custid=cl.CustID
+						WHERE cs.CustID = ci.custid
 					) AS ps
-		 LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE  
 		 ci.Recommend = @recommend AND ci.roleid=1   
 		GROUP BY  
-		 ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason, ps.Locked  				
+		 ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,ps.ClosedReason, ps.Locked  				
 	) t
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize	
 
