@@ -11,6 +11,7 @@ ALTER PROC NAP_CWL_Initialize_Settings
 	@xml 					 XML,			
 	@UserID                  INT           = 0, 
 	@IP                      VARCHAR(20)   = ''
+	WITH RECOMPILE
 AS;
 
 /*	Creator	 : 20180319@Robert
@@ -149,6 +150,23 @@ BEGIN
 	  , IsBlockedTransfer_CreditSite  BIT);
 
     DECLARE 
+	@Winlimit_ProductGlobalSetting TABLE
+								  (
+	ProductID          INT, 
+	BettypeID          SMALLINT, 
+	GroupID            INT, 
+	GroupName          VARCHAR(200), 
+	Level1             MONEY, 
+	Level2             MONEY, 
+	Level3             MONEY, 
+	Level101           MONEY, 
+	Level102           MONEY, 
+	BlockedTransferLv3 BIT, 
+	Currency           INT
+								  );
+
+
+    DECLARE 
 	    @StartRun       DATETIME
 	  , @EndRun         DATETIME
 	  , @Duration       INT
@@ -212,6 +230,8 @@ BEGIN
 		,t.c.value('@Transfer_C102', 'bit') AS Transfer_C102
 	FROM @xml.nodes('Root/r') t(c)
 	
+	
+
 	WHILE(1=1)
 	BEGIN
 		DELETE @LevelSettings
@@ -219,12 +239,13 @@ BEGIN
 		DELETE @LicenseeCust
 		DELETE #Currency_Deposit
 		DELETE #Temp
+		DELETE @Winlimit_ProductGlobalSetting
 
 		UPDATE TOP (1) t
 		SET isFinished = 1,
 			@Currency = Currency,
 			@Level1 = Level1,                                
-			@Level2 = Level1,                               
+			@Level2 = Level2,                               
 			@Level3 = Level3,                               
 			@Level101 = Level101,                             
 			@Level102 = Level102,        
@@ -376,6 +397,8 @@ BEGIN
 		DELETE FROM #Temp
 		WHERE BetTypeID = 0;
 
+		
+
 		INSERT INTO Winlimit_Group(GroupID
 							, GroupName)
 			 SELECT DISTINCT 
@@ -430,44 +453,100 @@ BEGIN
 					 AND t.GroupID = g.GroupID
 			 );
 
-		INSERT INTO Winlimit_ProductGlobalSetting(ProductID
-										, BetTypeID
-										, GroupID
-										, GroupName
-										, Level1
-										, Level2
-										, Level3
-										, Level101
-										, Level102
-										, blockedTransferLvl3
-										, Currency)
-			 SELECT DISTINCT t.ProductID
-				 , t.BetTypeID
-				 , t.GroupID
-				 , t.GroupName
-				 , @Level1 AS                               Level1
-				 , @Level2 AS                               Level2
-				 , @Level3 AS                               Level3
-				 , @Level101 AS                             Level101
-				 , @Level102 AS                             Level102
-				 , @IsBlockedTransfer_DepositSite_Level3 AS BlockedTransferLv3
-				 , c.Currency
-			 FROM #Temp AS t
-				CROSS APPLY @tmpCurrency c
-			 WHERE t.BetTypeID =
-			 (
-				SELECT MIN(BetTypeID)
-				FROM #Temp
-			 )
-				  AND NOT EXISTS
-			 (
-				SELECT setting.BetTypeID
-				FROM Winlimit_ProductGlobalSetting AS setting WITH (NOLOCK)
-				WHERE t.ProductID = setting.ProductID
-					 AND t.GroupID = setting.GroupID
-					 AND t.GroupName = setting.GroupName
-					 AND c.Currency = setting.Currency
-			 );
+		
+		
+		
+		 INSERT INTO @Winlimit_ProductGlobalSetting
+			(
+			    ProductID, 
+			    BettypeID, 
+			    GroupID, 
+			    GroupName, 
+			    Level1, 
+			    Level2, 
+			    Level3, 
+			    Level101, 
+			    Level102, 
+			    BlockedTransferLv3, 
+			    Currency
+			)
+			    SELECT DISTINCT 
+					 t.ProductID, 
+					 t.BetTypeID, 
+					 t.GroupID, 
+					 t.GroupName, 
+					 @Level1 AS Level1, 
+					 @Level2 AS Level2, 
+					 @Level3 AS Level3, 
+					 @Level101 AS Level101, 
+					 @Level102 AS Level102, 
+					 @IsBlockedTransfer_DepositSite_Level3 AS BlockedTransferLv3, 
+					 c.Currency
+			    FROM #Temp AS t
+				    CROSS APPLY @tmpCurrency c
+			    WHERE t.BetTypeID = (SELECT 
+									  MIN(BetTypeID)
+								FROM #Temp)
+					AND NOT EXISTS
+							    (
+								   SELECT 
+										setting.BetTypeID
+								   FROM Winlimit_ProductGlobalSetting AS setting WITH(NOLOCK)
+								   WHERE t.ProductID = setting.ProductID
+									    AND t.GroupID = setting.GroupID
+									    AND t.GroupName = setting.GroupName
+									    AND c.Currency = setting.Currency
+								);
+		  
+
+		  IF(EXISTS
+				 (
+					SELECT 
+						  1
+					FROM dbo.Winlimit_ProductGlobalSetting w(NOLOCK)
+					WHERE w.ProductID = @ProductID AND w.GroupID = @GroupID
+				  ))
+			 BEGIN
+				UPDATE w
+				  SET 
+					 w.BettypeID = 
+					 (
+						SELECT 
+							  MIN(w.BetTypeID) bettype
+						FROM dbo.Winlimit_ProductGlobalSetting(NOLOCK) w
+						WHERE w.ProductID = @ProductID AND w.GroupID = @GroupID
+					 )
+				FROM @Winlimit_ProductGlobalSetting w;
+			 END;	    
+				
+
+		  INSERT INTO Winlimit_ProductGlobalSetting
+		  (
+			 ProductID, 
+			 BetTypeID, 
+			 GroupID, 
+			 GroupName, 
+			 Level1, 
+			 Level2, 
+			 Level3, 
+			 Level101, 
+			 Level102, 
+			 blockedTransferLvl3, 
+			 Currency
+		  )
+			 SELECT 
+				    w.ProductID, 
+				    w.BettypeID, 
+				    w.GroupID, 
+				    w.GroupName, 
+				    w.Level1, 
+				    w.Level2, 
+				    w.Level3, 
+				    w.Level101, 
+				    w.Level102, 
+				    w.BlockedTransferLv3, 
+				    w.Currency
+			 FROM @Winlimit_ProductGlobalSetting w;
 
 		   EXEC dbtxn.bodb02.dbo.NAP_CWL_ProductOffer_Initialize_Settings 
 			   @ProductID = @ProductID
@@ -676,6 +755,7 @@ BEGIN
 	
     DROP TABLE #Temp;
     DROP TABLE #Currency_Deposit;
-	DROP TABLE #tblSetting
+    DROP TABLE #tblSetting
+    
 END;
 GO
