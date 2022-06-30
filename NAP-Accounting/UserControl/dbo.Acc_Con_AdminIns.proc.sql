@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_Con_AdminIns]
+CREATE PROCEDURE [dbo].[Acc_Con_AdminIns]
 	@FirstName NVARCHAR (50), 
 	@LastName NVARCHAR (50), 
 	@UserName NVARCHAR (50), 
@@ -35,6 +35,7 @@ Revisions:
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 	- 20190828@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20220517@Winfred: Insert new OTP Login requried for VPN's users [redmine:170994]
 
 Param's Explanation:
 • @ErrCode:
@@ -105,6 +106,19 @@ BEGIN
 	END CATCH
 
 	EXEC NAP_UserControl.dbo.Acc_Con_AdminPolicyIns @CustID = @Custid, @Userid = @UserID, @GroupID = @GroupID, @System = @System;
+
+	EXEC NAP_UserControl.dbo.NAP_Admin_OTPIns 
+		@CustId			= @CustId,
+		@System			= 'NAP',
+		@UserId			= @UserID,
+		@ErrCode		= @ErrCode OUTPUT,
+		@ErrMsg			= @ErrMsg OUTPUT
+
+	IF @@ERROR <> 0
+	BEGIN
+		SELECT @ErrCode = @ErrCode, @ErrMsg = @ErrMsg
+		RETURN
+	END
 	/**************Write to Log table ********************/
 	DECLARE @LogData AS NVARCHAR (500), 
 	@End AS DATETIME, 
