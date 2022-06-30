@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView,Dot_Admin,bodbLicenseeNet" viewers="" isFunction="0" isNested="1"></info>*/
-
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@UserID INT,
 		@CustID INT = 0,
@@ -22,6 +21,7 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		- 20110519@Johnson: add new column TrackingValue2
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action
@@ -115,9 +115,10 @@ BEGIN
 			SET @MultiTarget_LogID = SCOPE_IDENTITY()
 
 			INSERT INTO #AffectedDownlines(CustID)
-			SELECT CONVERT(INT, Val)
-			FROM dbo.f_StringSplit(@AffectedDownlines, ',')
-			OPTION(MAXRECURSION 0)
+			SELECT CONVERT(INT, Value)
+			FROM string_split(@AffectedDownlines, ',')
+			WHERE value <> ''
+			
 
 			INSERT INTO dbo.UserLog_RunSP_LogTarget (LogID, CustID, LogDate)
 			SELECT @MultiTarget_LogID, CustID, @LogDate
@@ -125,3 +126,4 @@ BEGIN
 		END												
 	END
 END
+GO
