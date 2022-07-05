@@ -28,6 +28,7 @@ AS
 		- 20150612@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines to DBCUST.CustDB, use Acc_CustomerTotalAmountSel to get total amount)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20220704@Evan: Getting appropriate balance when using bettrans_running - [Redmine: #174755]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -108,7 +109,7 @@ BEGIN
 		
 		DECLARE @TotalAmt money
 
-		EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT
+		EXEC DBTXN.bodb02.dbo.Acc_BalanceMemberSel @CustID = @custid, @Balance = @TotalAmt OUTPUT
 		
 		--select  @TotalAmt = sum(winlost-actual_stake+playercomm)
 	 --   from bodb02.dbo.bettrans with (nolock)

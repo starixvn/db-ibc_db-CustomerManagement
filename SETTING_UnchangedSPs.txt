@@ -1,4 +1,1 @@
-NAP-Accounting\Customer\VirtualRate\VR Engine\NAP_VREngine_Rule_Update.sql
-NAP-Accounting\Customer\VirtualRate\VR Engine\NAP_VREngine_Rule_Insert.sql
-NAP-Accounting\Customer\Status\Danger\Acc_CustomerSelDangerCust.sql
-NAP-Accounting\Customer\Status\Danger\Acc_CustomerUpdDangerCust.sql
+NAP-Accounting\Ex.Rate\Acc_ChangeRate_Main_Upd.sql

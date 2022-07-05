@@ -38,6 +38,7 @@ AS
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
+		- 20220704@Evan: Getting appropriate balance when using bettrans_running - [Redmine: #174755]
 	Param's Explanation:  
 		• @custid: custid that need to be updated   
 		• @CreditAmt: new credit   
@@ -112,7 +113,7 @@ BEGIN
 		END
 	END
 
-	EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT  
+	EXEC DBTXN.bodb02.dbo.Acc_BalanceMemberSel @CustID = @custid, @Balance = @TotalAmt OUTPUT
 	
 	-- 2nd
 	-- Prevent user from decreasing given credit due to processing data
