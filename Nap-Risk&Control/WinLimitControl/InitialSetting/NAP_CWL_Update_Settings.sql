@@ -7,9 +7,7 @@ ALTER PROCEDURE dbo.NAP_CWL_Update_Settings
 	@Level3    MONEY, 
 	@Level101  MONEY, 
 	@Level102  MONEY, 
-	@Currency  VARCHAR(MAX) = '', ---
-	@UserID    INT          = 0, 
-	@IP        VARCHAR(20)  = ''
+	@Currency  VARCHAR(MAX) = '' ---
 AS
 
 /*	
@@ -21,7 +19,6 @@ AS
 				- 20180531@Robert: Update CWL Settings				
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-				- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -49,17 +46,9 @@ AS
 	   DECLARE 
 		   @tblCurrency TABLE
 						  (
-		   Currency VARCHAR(5)
+		   Currency VARCHAR(3)
 						  );
 
-	   DECLARE 
-		   @StartRun       DATETIME
-		 , @EndRun         DATETIME
-		 , @Duration       INT
-		 , @TrackingValue1 VARCHAR(500);
-
-	   SELECT 
-			@StartRun = GETDATE();
 
 	   INSERT INTO @tblCurrency
 		 (
@@ -99,26 +88,22 @@ AS
 
 	   IF(@Currency = '')
 		  BEGIN
-			 UPDATE g
-			   SET 
-				  Level1 = @Level1, 
-				  Level2 = @Level2, 
-				  level3 = @Level3, 
-				  Level101 = @Level101, 
-				  Level102 = @Level102
-			 FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
-			 WHERE 
-				  ProductID = @ProductId
-				  AND GroupID = @GroupId
-				  AND g.Currency NOT IN
-								   (
-									  SELECT 
-										    currency
-									  FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
-									  WHERE ProductID = @ProductId
-										   AND GroupID = @GroupId
-										   AND currency <> 0
-								    );
+			UPDATE g
+			SET 
+				Level1 = @Level1, 
+				Level2 = @Level2, 
+				level3 = @Level3, 
+				Level101 = @Level101, 
+				Level102 = @Level102
+			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
+			WHERE 
+				ProductID = @ProductId
+				AND GroupID = @GroupId
+				AND g.Currency NOT IN (SELECT currency FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
+											WHERE ProductID = @ProductId
+												AND GroupID = @GroupId
+												AND currency <> 0
+											)
 			 UPDATE psd
 			   SET 
 				  psd.MaxWinLimit_RM = l.Level, 
@@ -134,37 +119,30 @@ AS
 				  psd.MaxWinLimit_RM IS NOT NULL
 				  AND psd.ProductID = @ProductId
 				  AND psd.GroupID = @GroupId
-				  AND psd.ExchangeID NOT IN
-									  (
-										 SELECT 
-											   currency
-										 FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
-										 WHERE ProductID = @ProductId
-											  AND GroupID = @GroupId
-											  AND currency <> 0
-									   );
+				  AND psd.ExchangeID NOT IN (SELECT currency FROM Winlimit_ProductGlobalSetting WITH(NOLOCK)
+											WHERE ProductID = @ProductId
+												AND GroupID = @GroupId
+												AND currency <> 0
+											);
 		  END;
 		  ELSE
 		  BEGIN
-			 UPDATE g
-			   SET 
-				  Level1 = @Level1, 
-				  Level2 = @Level2, 
-				  level3 = @Level3, 
-				  Level101 = @Level101, 
-				  Level102 = @Level102
-			 FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
-			 WHERE 
-				  ProductID = @ProductId
-				  AND GroupID = @GroupId
-				  AND g.Currency IN
-							    (
-								   SELECT 
-										ExchangeId
-								   FROM Exchange e WITH(NOLOCK)
-									   INNER JOIN @tblCurrency c ON e.currency = c.Currency
-								);
-
+			UPDATE g
+			SET 
+				Level1 = @Level1, 
+				Level2 = @Level2, 
+				level3 = @Level3, 
+				Level101 = @Level101, 
+				Level102 = @Level102
+			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
+			WHERE 
+				ProductID = @ProductId
+				AND GroupID = @GroupId
+				AND g.Currency IN (SELECT ExchangeId 
+									FROM Exchange e WITH(NOLOCK) 
+									INNER JOIN @tblCurrency c ON e.currency = c.Currency
+									)
+											
 			 UPDATE psd
 			   SET 
 				  psd.MaxWinLimit_RM = l.Level, 
@@ -183,32 +161,6 @@ AS
 				  AND psd.GroupID = @GroupId;
 		  END;
 
-
-	   BEGIN -- Write Log
-		  SELECT 
-			    @EndRun = GETDATE(), 
-			    @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
-		  SET @TrackingValue1 = '<NAP_CWL_Update_Settings ';
-		  SET @TrackingValue1 = @TrackingValue1 + '" @ProductId ="' + CONVERT(VARCHAR(20), @ProductId);
-		  SET @TrackingValue1 = @TrackingValue1 + '" GroupId="' + CONVERT(VARCHAR(20), @GroupId);
-		  SET @TrackingValue1 = @TrackingValue1 + '" @Currency="' + CONVERT(VARCHAR(50), @Currency);
-		  SET @TrackingValue1 = @TrackingValue1 + '" Level101="' + CONVERT(VARCHAR(50), @Level101);
-		  SET @TrackingValue1 = @TrackingValue1 + '" Level102="' + CONVERT(VARCHAR(50), @Level102);
-		  SET @TrackingValue1 = @TrackingValue1 + '" Level1="' + CONVERT(VARCHAR(50), @Level1);
-		  SET @TrackingValue1 = @TrackingValue1 + '" Level2="' + CONVERT(VARCHAR(50), @Level2);
-		  SET @TrackingValue1 = @TrackingValue1 + '" Level3="' + CONVERT(VARCHAR(50), @Level3);
-		  SET @TrackingValue1 = @TrackingValue1 + '" UserId="' + CONVERT(VARCHAR(20), @UserId);
-		  SET @TrackingValue1 = @TrackingValue1 + '" IP="' + COALESCE(CAST(@IP AS VARCHAR(15)), SPACE(1)) + '" />';
-		  BEGIN TRY
-			 EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-				 @UserID = @UserID, 
-				 @ActionID = 31210, 
-				 @TrackingValue = @TrackingValue1, 
-				 @Duration = @Duration;
-		  END TRY
-		  BEGIN CATCH
-		  END CATCH;
-	   END;
     END;
 GO
 

@@ -30,7 +30,7 @@ Parameters Explanation:
 		   @StartRun       DATETIME
 		 , @EndRun         DATETIME
 		 , @Duration       INT
-		 , @TrackingValue1 VARCHAR(500);
+		 , @TrackingValue1 VARCHAR(MAX);
 
 	   SELECT 
 			@StartRun = GETDATE();
@@ -66,7 +66,7 @@ Parameters Explanation:
 		  SELECT 
 			    @EndRun = GETDATE(), 
 			    @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
-		  SET @TrackingValue1 = '<NAP_Winlimit_GameGroupSettingIns ';
+		  SET @TrackingValue1 = '<NAP_Winlimit_GameGroupSettingIns';
 		  SET @TrackingValue1 = @TrackingValue1 + '" @ProductID ="' + CONVERT(VARCHAR(50), @ProductID);
 		  SET @TrackingValue1 = @TrackingValue1 + '" BettypeIDs ="' + CONVERT(VARCHAR(2000), @BettypeIDs);
 		  SET @TrackingValue1 = @TrackingValue1 + '" GroupId="' + CONVERT(VARCHAR(20), @GroupId);
