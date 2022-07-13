@@ -1,4 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX) = ''
@@ -101,14 +102,6 @@ BEGIN
 			, IsGroup		BIT
 			, IsCredit		BIT
 		)	
-
-	DECLARE @History_BetSettingTbl TABLE (	--?????
-			  SportType			SMALLINT
-			, BetType			SMALLINT
-			, MaxBet			MONEY
-			, MaxPerMatch		MONEY
-			, UpdateTime		DATETIME
-		)
 
 	IF @InputData IS NULL OR @InputData = ''
 		RETURN
@@ -540,7 +533,7 @@ BEGIN
 									AND t.SportType NOT IN (161,164,168,202,1))
 			END
 
-			IF EXISTS (	SELECT 1 FROM #NewInputDateTbl)
+			IF EXISTS (	SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
 			BEGIN
 				INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch])
 				SELECT SportType, BetType, ExchangeId, NewMinBet, 0, NewMaxBet, NewMaxPerMatch
@@ -583,7 +576,7 @@ BEGIN
 									AND t.ExchangeId=pbs.Currency)
 			END
 
-			IF EXISTS (	SELECT 1 FROM #NewInputDateTbl)
+			IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=0)
 			BEGIN
 				INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
 				SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, NewMaxPerMatch, 
@@ -607,7 +600,6 @@ BEGIN
 				@ActionID = 6063,
 				@TrackingValue = @LogSPData,
 				@duration = @Duration
-		
 			
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #BetType
