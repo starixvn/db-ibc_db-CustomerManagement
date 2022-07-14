@@ -89,7 +89,7 @@ BEGIN
 	FROM 
 	(
 		SELECT DISTINCT
-			  psd.BetType
+			psd.BetType
 			,b.typenamee 
 			,psd.SportType
 			,s.SportName
@@ -116,6 +116,20 @@ BEGIN
 		WHERE (ps.SettingType IN (2,7,8,10,11,12)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
+		UNION ALL --DEPOSIT: NumberGame, Happy5, Keno, SportsBook
+		SELECT DISTINCT
+			pbs.Bettype
+			,b.typenamee
+			,pbs.Sporttype
+			,s.SportName
+			,NULL
+			,0 AS IsCredit
+		FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
+			INNER JOIN #Sports s WITH(NOLOCK) ON pbs.SportType = s.SportType
+			INNER JOIN #Bettype b WITH(NOLOCK) ON pbs.BetType = b.typeid
+		WHERE (@pMutilSportType = '0' OR pbs.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
+			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
+			AND pbs.Sporttype IN (161,164,168,202,1)
 	) KQ
 	ORDER BY SportType,BetType
 
@@ -169,7 +183,7 @@ BEGIN
 	END
 
 	--SettingType NOT IN (7,8,17)
-	--CREDIT: exclude: NumberGame, Happy5, Keno
+	--CREDIT: 
 	IF EXISTS (SELECT 1 FROM #ProductSettingDetail WHERE SettingType NOT IN (7,8,17))
 	BEGIN
 		INSERT INTO #BetLimit(SportType, SportName, BetType, typenamee
@@ -184,7 +198,7 @@ BEGIN
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
 			INNER JOIN ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
-		WHERE a.SettingType NOT IN (7,8,17) AND pbs.SportType NOT IN (161,164,168,202,1)
+		WHERE a.SettingType NOT IN (7,8,17)
 			AND a.IsCredit = 1 
 			AND (@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
 			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
