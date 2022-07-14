@@ -35,6 +35,7 @@ BEGIN
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 		WHERE (@ProductID = 0 OR psd.ProductID = @ProductID) AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
 			AND (psd.SettingType IN (2,7,8,9,16,17,20))
+			AND (psd.ProductID NOT IN (1,3,8) OR psd.SportType IN (161,164,168,202,1))
 		UNION
 		SELECT DISTINCT
 			 psd.SportType

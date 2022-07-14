@@ -37,6 +37,7 @@ BEGIN
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
+			AND (psd.ProductID NOT IN (1,3,8) OR psd.SportType IN (161,164,168,202,1))
 		UNION
 		SELECT DISTINCT
 			 slg.GameTypeID AS BetType
