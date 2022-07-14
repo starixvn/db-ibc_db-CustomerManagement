@@ -101,6 +101,7 @@ BEGIN
 		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
+			AND psd.ProductID NOT IN  (1,3,8)
 		UNION ALL
 		SELECT DISTINCT
 			  psd.BetType
@@ -116,20 +117,6 @@ BEGIN
 		WHERE (ps.SettingType IN (2,7,8,10,11,12)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-		UNION ALL --DEPOSIT: NumberGame, Happy5, Keno, SportsBook
-		SELECT DISTINCT
-			pbs.Bettype
-			,b.typenamee
-			,pbs.Sporttype
-			,s.SportName
-			,NULL
-			,0 AS IsCredit
-		FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
-			INNER JOIN #Sports s WITH(NOLOCK) ON pbs.SportType = s.SportType
-			INNER JOIN #Bettype b WITH(NOLOCK) ON pbs.BetType = b.typeid
-		WHERE (@pMutilSportType = '0' OR pbs.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
-			AND pbs.Sporttype IN (161,164,168,202,1)
 	) KQ
 	ORDER BY SportType,BetType
 
@@ -191,7 +178,7 @@ BEGIN
 							, NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall
 							, CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall
 							, SiteID)
-		-- Credit
+		-- Credit: exclude: Sportsbook, Number Game, Happy 5, RNG Keno.
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
 			, 0 AS NewMinBet, 0 AS NewMaxBet, 0 AS NewMaxPerMatch, 0 AS NewMaxPerBall
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet, pbs.MaxPerMatch AS CurMaxPerMatch, pbs.MaxPerBall AS CurMaxPerBall
@@ -202,6 +189,7 @@ BEGIN
 			AND a.IsCredit = 1 
 			AND (@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
 			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
+			AND a.SportType NOT IN (161,164,168,202,1) 
 		UNION ALL
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
