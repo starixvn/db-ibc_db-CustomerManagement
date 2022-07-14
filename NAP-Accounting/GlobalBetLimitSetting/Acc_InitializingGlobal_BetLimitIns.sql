@@ -166,14 +166,14 @@ BEGIN
 		WHERE nsl.DepositCurrency <> ''
 		
 		--UPDATE: SettingType
-		UPDATE a	--Credit
+		UPDATE a	--CREDIT
 		SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType	
 		FROM  #NewInputDateTbl a
 			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16,20) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20)
 			
-		UPDATE a	--Deposit 
+		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
 		FROM  #NewInputDateTbl a
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
