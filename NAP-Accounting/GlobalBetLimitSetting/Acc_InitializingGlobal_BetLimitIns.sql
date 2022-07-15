@@ -171,7 +171,7 @@ BEGIN
 		FROM  #NewInputDateTbl a
 			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16,20) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
-		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20)
+		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20) AND ProductID NOT IN (1,3,8)
 			
 		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
@@ -561,7 +561,8 @@ BEGIN
 					)
 			BEGIN
 				UPDATE pbs
-				SET MinBet=NewMinBet, MaxBet=NewMaxBet, MaxPerMatch=NewMaxPerMatch,
+				SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
+					MaxPerMatch=CASE WHEN T.SportType IN (161,164,168,202,1) THEN NewMaxPerMatch ELSE MaxPerMatch END,
 					MaxPerBall=CASE WHEN t.SportType=161 THEN NewMaxPerBall ELSE MaxPerBall END
 				FROM Dep_ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 					INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
@@ -579,7 +580,8 @@ BEGIN
 			IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=0)
 			BEGIN
 				INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
-				SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, NewMaxPerMatch, 
+				SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
+						CASE WHEN SportType IN (164,168,202,1) THEN NewMaxPerMatch END NewMaxPerMatch, 
 						CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall
 				FROM #NewInputDateTbl
 				WHERE SettingType NOT IN (7,8,17) AND IsCredit=0

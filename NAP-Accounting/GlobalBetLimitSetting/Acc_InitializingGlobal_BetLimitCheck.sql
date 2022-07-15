@@ -150,7 +150,7 @@ BEGIN
 								(SportType BETWEEN 190 AND 197))	
 								AND (NewMaxBet > NewMaxPerMatch)										THEN 138	
 						   WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0		THEN 139	
-						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch) AND NewMaxPerBall<>0	THEN 140	
+						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)						THEN 140	
 
 						   WHEN SportType<>161 THEN
 								CASE WHEN NewMinBet=0						THEN 141
@@ -195,7 +195,7 @@ BEGIN
 								(SportType BETWEEN 190 AND 197))	
 								AND (NewMaxBet > NewMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Match.'
 						   WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Ball.'
-						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch) AND NewMaxPerBall<>0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
+						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
 						
 						   WHEN SportType<>161 THEN
 								CASE WHEN NewMinBet=0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
@@ -237,7 +237,7 @@ BEGIN
 			AND
 			(ISNULL(NewMaxPerBall, 0)=0 
 				OR ((NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0) 
-				OR ((NewMaxPerBall > NewMaxPerMatch) AND NewMaxPerBall<>0) 
+				OR  (NewMaxPerBall > NewMaxPerMatch) 
 				OR  (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) 
 				OR	(NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) 
 				OR	(NewMaxPerBall=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerMatch=0)) 
@@ -291,10 +291,10 @@ BEGIN
 	SET a.SettingType= psd.SettingType, a.OrgBetType=psd.BetType, a.ProductID=psd.RealProductId	
 	FROM  #NewInputDateTbl a
 		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType AND (psd.SettingType IN (2, 8, 9, 16, 20) OR (psd.SettingType IN (7, 17) AND a.BetType=psd.BetType))
-	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17, 20)
+	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17, 20) AND psd.ProductID NOT IN  (1,3,8)
 	
 	UPDATE a	--DEPOSIT
-	SET a.SettingType= ps.SettingType	, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
+	SET a.SettingType= ps.SettingType, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
 	FROM  #NewInputDateTbl a
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType 
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID=psd.ProductSettingID

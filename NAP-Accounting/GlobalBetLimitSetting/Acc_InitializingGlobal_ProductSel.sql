@@ -32,7 +32,7 @@ BEGIN
 		FROM ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Products p WITH(NOLOCK) ON psd.ProductID = p.ProductID
 		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) AND (@ProductID = 0 OR psd.ProductID = @ProductID)
-			AND psd.ProductID IN (1,3,8)
+			AND psd.ProductID NOT IN (1,3,8)
 		UNION
 		SELECT DISTINCT
 			 ps.ProductID
