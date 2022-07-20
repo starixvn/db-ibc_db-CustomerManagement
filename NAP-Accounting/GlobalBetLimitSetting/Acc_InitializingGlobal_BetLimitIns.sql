@@ -2,11 +2,11 @@
 
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
-	 @InputData	VARCHAR(MAX) = ''
+	 @InputData	VARCHAR(MAX)	= ''
 	,@UserID	INT
 	,@IP		VARCHAR(50)		= ''
 	,@ErrCode	INT = 0				OUTPUT
-	,@ErrMsg	NVARCHAR(4000) = '' OUTPUT
+	,@ErrMsg	NVARCHAR(4000)	= '' OUTPUT
 AS
 /*
 	Task : NAP -  Flexible Initializing Global Stake Level/Bet Limit
@@ -30,12 +30,12 @@ AS
 					DepositCurrency = "US$, USDT"
 					NewMinBet="1" 
 					NewMaxBet="30000" 
-					NewMaxPerMatch="" 
-					NewMaxPerBall="" 
+					NewMaxPerMatch="0" 
+					NewMaxPerBall="0" 
 					CurMinBet="30000" 
 					CurMaxBet="30000" 
-					CurMaxPerMatch="" 
-					CurMaxPerBall="" 
+					CurMaxPerMatch="0" 
+					CurMaxPerBall="0" 
 					GameGroupID="30000" 
 			/>
 	</ROOT>
@@ -503,7 +503,7 @@ BEGIN
 	END
 
 	--SettingType NOT IN (7,8,17)
-	--CREDIT: exclude: numbergame, Happy5, keno
+	--CREDIT: exclude: numbergame, Happy5, keno, sportbook
 	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
 	BEGIN
 		BEGIN TRY
@@ -517,12 +517,18 @@ BEGIN
 					)
 			BEGIN
 				UPDATE pbs
-				SET MinBet=NewMinBet, MaxBet=NewMaxBet, MaxPerMatch=NewMaxPerMatch
+				SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
+					MaxPerMatch=CASE WHEN (t.SportType IN (199, 220, 222, 169, 175, 217, 218) OR -- Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
+						 				  (t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
+										  (t.SportType BETWEEN 213 AND 215)	OR	--NG2
+										  (t.SportType BETWEEN 190 AND 197))	--Virtual Sports 2 (Betradar) 
+										THEN NewMaxPerMatch ELSE MaxPerMatch END
 				FROM ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 					INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
 												AND t.BetType=pbs.Bettype
 												AND t.ExchangeId=pbs.Currency
 												AND t.SportType NOT IN (161,164,168,202,1)
+												AND t.IsCredit=1
 			
 				DELETE t 
 				FROM #NewInputDateTbl t
@@ -531,12 +537,18 @@ BEGIN
 									AND t.BetType=pbs.Bettype
 									AND t.ExchangeId=pbs.Currency
 									AND t.SportType NOT IN (161,164,168,202,1))
+									AND t.IsCredit=1
 			END
 
 			IF EXISTS (	SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
 			BEGIN
 				INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch])
-				SELECT SportType, BetType, ExchangeId, NewMinBet, 0, NewMaxBet, NewMaxPerMatch
+				SELECT	SportType, BetType, ExchangeId, NewMinBet, 0, NewMaxBet,
+						CASE WHEN (SportType IN (199, 220, 222, 169, 175, 217, 218) OR
+						 		  (SportType BETWEEN 180 AND 186)	OR	
+								  (SportType BETWEEN 213 AND 215)	OR	
+								  (SportType BETWEEN 190 AND 197))		
+								THEN NewMaxPerMatch END NewMaxPerMatch
 				FROM #NewInputDateTbl
 				WHERE SettingType NOT IN (7,8,17) AND IsCredit=1
 					AND SportType NOT IN (161,164,168,202,1)
@@ -562,7 +574,11 @@ BEGIN
 			BEGIN
 				UPDATE pbs
 				SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-					MaxPerMatch=CASE WHEN T.SportType IN (161,164,168,202,1) THEN NewMaxPerMatch ELSE MaxPerMatch END,
+					MaxPerMatch=CASE WHEN (t.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
+						 				  (t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
+										  (t.SportType BETWEEN 213 AND 215)	OR	--NG2
+										  (t.SportType BETWEEN 190 AND 197))	--Virtual Sports 2 (Betradar) 
+										THEN NewMaxPerMatch ELSE MaxPerMatch END,
 					MaxPerBall=CASE WHEN t.SportType=161 THEN NewMaxPerBall ELSE MaxPerBall END
 				FROM Dep_ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 					INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
@@ -575,13 +591,18 @@ BEGIN
 								WHERE t.SportType=pbs.Sporttype
 									AND t.BetType=pbs.Bettype
 									AND t.ExchangeId=pbs.Currency)
+					AND IsCredit=0
 			END
 
 			IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=0)
 			BEGIN
 				INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
 				SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
-						CASE WHEN SportType IN (164,168,202,1) THEN NewMaxPerMatch END NewMaxPerMatch, 
+						CASE WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+						 		  (SportType BETWEEN 180 AND 186)	OR	
+								  (SportType BETWEEN 213 AND 215)	OR	
+								  (SportType BETWEEN 190 AND 197))		
+												THEN NewMaxPerMatch END NewMaxPerMatch, 
 						CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall
 				FROM #NewInputDateTbl
 				WHERE SettingType NOT IN (7,8,17) AND IsCredit=0
