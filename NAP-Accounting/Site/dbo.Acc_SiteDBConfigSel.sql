@@ -1,25 +1,54 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
-CREATE PROC [Acc_SiteSel_Credit]
-	@Mode INT = 0
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE Acc_SiteDBConfigSel
+	@CustID INT = NULL
 AS
-
 /*
-Created by: Scott
-Date: 2012-11-20
-Task : GET active CREDIT sites
-DB: DB053.BODB02
-Original SP: [Acc_SiteSel] 
-Revisions:
-	Parameter's explaination: @Mode  = 0: No sites CN88 and isActive = 1
-									 = 1: All Site
-	 - 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
-	 - 20200629@Winfred: NAP - Get site by cansee RedmineID: #131241
+	Created by: Elodie
+	Date: 20220715
+	Task : Get SiteDBConfig info
+	DB: DBCUST.CustDB
+	Revisions:
+	Example:	EXEC Acc_SiteDBConfigSel @CustID = 791048 
+				EXEC Acc_SiteDBConfigSel @CustID = 180090
 */
+BEGIN
+	SET NOCOUNT ON  
+	DECLARE @SiteID INT,
+			@Site NVARCHAR(50),
+			@SiteDBGroupID SMALLINT,
+			@LinkedServerName  VARCHAR(512),
+			@ClientAccessName VARCHAR(512),
+			@AGIP VARCHAR (50)
 
-SET NOCOUNT ON  
+	IF @CustID IS NULL OR @CustID = 0s
+	BEGIN 
+		SELECT sc.SiteID, sc.Site, sc.SiteDBGroupID, sc.LinkedServerName, sc.ClientAccessName, sc.AGIP
+		FROM SiteDBConfig sc WITH (NOLOCK)
+	END
+	ELSE
+	BEGIN 
+		SELECT @Site = site FROM Customer c WITH (NOLOCK) WHERE CustID = @CustID
 
-select [siteid], [site] 
-from [site]  with(nolock)
-where islicensee = 0  AND (
-(@Mode = 1) OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
+		SELECT	@SiteID = sc.SiteID, 
+				@Site = sc.Site, 
+				@SiteDBGroupID = sc.SiteDBGroupID, 
+				@LinkedServerName = sc.LinkedServerName, 
+				@ClientAccessName = sc.ClientAccessName, 
+				@AGIP = sc.AGIP
+		FROM SiteDBConfig sc WITH (NOLOCK)
+		WHERE site = @Site
+		
+		IF @@ROWCOUNT = 0
+			SELECT	@SiteID = sc.SiteID, 
+					@Site = sc.Site, 
+					@SiteDBGroupID = sc.SiteDBGroupID, 
+					@LinkedServerName = sc.LinkedServerName, 
+					@ClientAccessName = sc.ClientAccessName, 
+					@AGIP = sc.AGIP
+			FROM SiteDBConfig sc WITH (NOLOCK)
+			WHERE siteid = 0
+
+		SELECT @SiteID AS SiteID, @Site AS Site, @SiteDBGroupID AS SiteDBGroupID, @LinkedServerName AS LinkedServerName, @ClientAccessName AS ClientAccessName, @AGIP AS AGIP
+	END
+END
 GO
