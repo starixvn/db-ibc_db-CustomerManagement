@@ -22,7 +22,7 @@ BEGIN
 			@ClientAccessName VARCHAR(512),
 			@AGIP VARCHAR (50)
 
-	IF @CustID IS NULL OR @CustID = 0s
+	IF @CustID IS NULL OR @CustID = 0
 	BEGIN 
 		SELECT sc.SiteID, sc.Site, sc.SiteDBGroupID, sc.LinkedServerName, sc.ClientAccessName, sc.AGIP
 		FROM SiteDBConfig sc WITH (NOLOCK)
