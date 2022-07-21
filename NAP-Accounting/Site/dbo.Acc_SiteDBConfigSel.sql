@@ -8,6 +8,8 @@ AS
 	Task : Get SiteDBConfig info
 	DB: DBCUST.CustDB
 	Revisions:
+		- 20220721@Elodie: Initial SP
+
 	Example:	EXEC Acc_SiteDBConfigSel @CustID = 791048 
 				EXEC Acc_SiteDBConfigSel @CustID = 180090
 */
