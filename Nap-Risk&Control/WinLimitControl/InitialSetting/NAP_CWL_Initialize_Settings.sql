@@ -46,6 +46,7 @@ AS
 				- 20191103@Robert: create new table WinLimit_ProductOffer [#122849]				
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+				- 20220804@Johnson: call sp NAP_CWL_ProductOffer_Initialize_Settings manually to scale out [redmine: #175278]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -314,12 +315,8 @@ BEGIN
 				 AND t.GroupName = setting.GroupName
 				 AND c.Currency = setting.Currency
 		 );
-
-	   EXEC dbtxn.bodb02.dbo.NAP_CWL_ProductOffer_Initialize_Settings 
-		   @ProductID = @ProductID
-		 , @RepresentativeBettype = @RepresentativeBettype;
-
-    WITH CTE_ProductSettingDetail
+		
+    ;WITH CTE_ProductSettingDetail
 	    AS (SELECT p.ProductID
 			   , p.GroupId
 			   , e.exchangeid
