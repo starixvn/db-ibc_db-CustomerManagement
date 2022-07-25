@@ -181,7 +181,7 @@ BEGIN
 		-- Credit: exclude: Sportsbook, Number Game, Happy 5, RNG Keno.
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
 			, 0 AS NewMinBet, 0 AS NewMaxBet, 0 AS NewMaxPerMatch, 0 AS NewMaxPerBall
-			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet, pbs.MaxPerMatch AS CurMaxPerMatch, pbs.MaxPerBall AS CurMaxPerBall
+			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet, NULL AS CurMaxPerMatch, NULL AS CurMaxPerBall
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
 			INNER JOIN ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
