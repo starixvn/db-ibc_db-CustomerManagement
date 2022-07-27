@@ -52,33 +52,47 @@ BEGIN
 	FROM dbo.Sports WITH(NOLOCK)
 
 	;WITH ProductCurrency_credit AS (
-		SELECT p.ProductID, p.ProductName, s.SportType, SportName, eC.Currency AS CurrencyCredit
+		SELECT DISTINCT
+			p.ProductID, p.ProductName, s.SportType, SportName, eC.Currency AS CurrencyCredit
 		FROM ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Products p WITH(NOLOCK) ON p.ProductID=psd.ProductID
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType	
-			INNER JOIN ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType AND pbs.Bettype=psd.BetType
+			INNER JOIN ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType
 			INNER JOIN Exchange eC WITH(NOLOCK) ON eC.ExchangeId=pbs.Currency
-		WHERE psd.SettingType IN (2,7,8,9,16,17,20) AND psd.ProductID NOT IN (1,3,8)
-			AND (@pMutilProductID='0' OR psd.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
+		WHERE psd.SettingType IN (2,7,8,9,16,17,20) AND p.ProductID NOT IN (1,3,8)
+			AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 			AND (@pMutilCurrency='0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
 	),
 	ProductCurrency_dep AS (
-		SELECT p.ProductID, p.ProductName, s.SportType, SportName, eD.Currency AS CurrencyDeposit
+		SELECT DISTINCT
+			p.ProductID, p.ProductName, s.SportType, SportName, eD.Currency AS CurrencyDeposit
 		FROM Dep_ProductSetting ps WITH(NOLOCK)
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 			INNER JOIN #Products p WITH(NOLOCK) ON p.ProductID=ps.ProductID
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType	
-			INNER JOIN Dep_ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType AND pbs.Bettype=psd.BetType
-			INNER JOIN Exchange eD WITH(NOLOCK) ON eD.ExchangeId=eD.Currency
+			INNER JOIN Dep_ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType
+			INNER JOIN Exchange eD WITH(NOLOCK) ON eD.ExchangeId=pbs.Currency
 		WHERE ps.SettingType IN (2,7,8,10,11,12)
-			AND (@pMutilProductID='0' OR ps.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
+			AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 			AND (@pMutilCurrency='0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
+	), 
+	ProductCurrency AS (
+		SELECT DISTINCT
+			cre.ProductID, cre.ProductName, cre.SportType, cre.SportName, cre.CurrencyCredit, dep.CurrencyDeposit
+		FROM ProductCurrency_credit cre
+			INNER JOIN ProductCurrency_dep dep ON dep.ProductID=cre.ProductID AND cre.SportType=dep.SportType
 	)
 	INSERT INTO #ProductCurrency (ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit)
-	SELECT DISTINCT
-		cre.ProductName, cre.SportType, cre.SportName, cre.CurrencyCredit, dep.CurrencyDeposit
+	SELECT ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit
+	FROM ProductCurrency
+	UNION
+	SELECT ProductName, SportType, SportName, CurrencyCredit, NULL AS CurrencyDeposit
 	FROM ProductCurrency_credit cre
-		LEFT JOIN ProductCurrency_dep dep ON dep.ProductID=cre.ProductID
+	WHERE NOT EXISTS (SELECT 1 FROM ProductCurrency pc WHERE pc.ProductID=cre.ProductID AND pc.SportType=cre.SportType)
+	UNION
+	SELECT ProductName, SportType, SportName, NULL AS CurrencyCredit,  CurrencyDeposit
+	FROM ProductCurrency_dep dep
+	WHERE NOT EXISTS (SELECT 1 FROM ProductCurrency pc WHERE pc.ProductID=dep.ProductID AND pc.SportType=dep.SportType)
 
 	--ExportData
 	IF @ExportData = 1
@@ -98,6 +112,7 @@ BEGIN
 			FROM #ProductCurrency
 		   )t
 		WHERE rn BETWEEN @RowStart AND @RowEnd
+		ORDER by ProductName, SportType	
 	END	
 
 
