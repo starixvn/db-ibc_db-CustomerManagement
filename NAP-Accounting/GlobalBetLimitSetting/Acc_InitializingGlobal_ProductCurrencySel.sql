@@ -17,9 +17,9 @@ AS
 			- 20220708@Tacy: Create SP [Redmine: #174509]
 		
 		Param's Explanation:
-			@ProductID		0 : All, <> 0 : ProductID
-			@pMutilCurrency	0 : All, <> 0 : Currency Credit
-			@ExportData		0 : Pages, <> 0 : All data
+			@pMutilProductID 0 : All, <> 0 : ProductID
+			@pMutilCurrency	 0 : All, <> 0 : Currency Credit
+			@ExportData		 0 : Pages, <> 0 : All data
 
 */
 BEGIN
