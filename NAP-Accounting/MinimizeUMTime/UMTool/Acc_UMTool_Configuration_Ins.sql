@@ -25,6 +25,7 @@ BEGIN
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20220727@Eddie: Avoid error 'Invalid Site' [Redmine: #174852] 
 
 	Param's Explanation:   
 		
@@ -62,6 +63,8 @@ SET NOCOUNT ON
 		[Currency] [int],
 		[SuperID] [int]
 	)
+	
+	DECLARE @MarketSpec TABLE ( Marketid INT, Market VARCHAR(200))
 
 	DECLARE @SuperTbl TABLE ( 
 		[UserName] [varchar](30),
@@ -88,7 +91,11 @@ SET NOCOUNT ON
 		GOTO ReturnErrorTbl;
 	END
 
-	IF NOT EXISTS (SELECT 1 FROM Site WITH(NOLOCK) WHERE SiteID = @SiteID ) AND @SiteID <> 0
+	--Avoid error 'Invalid Site' with SP '[Acc_UMTool_MarketSel]'
+	INSERT INTO @MarketSpec(Marketid, Market)
+	EXEC [Acc_UMTool_MarketSel];
+	
+	IF NOT EXISTS (SELECT 1 FROM Site WITH(NOLOCK) WHERE SiteID = @SiteID ) AND @SiteID <> 0 AND @SiteID NOT IN (SELECT Marketid FROM @MarketSpec)
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',13,'Invalid Site' 
