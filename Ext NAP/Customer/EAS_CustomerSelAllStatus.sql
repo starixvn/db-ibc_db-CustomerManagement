@@ -20,6 +20,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220728@Eden: Ext NAP - Error messge is not clear when searching a disabled account [RedmineID: #175938]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -179,11 +180,11 @@ BEGIN
 	SELECT	ci.DisableNumber,
 			@uplineDisabledNumber AS uplineDisabledNumber,
 			ci.HideKeno,
-			MAX(CAST(cg.IsDisabled AS TINYINT)) as DisableKeno
+			ISNULL(MAX(CAST(cg.IsDisabled AS TINYINT)),1) as DisableKeno
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
-		INNER JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
-		INNER JOIN @GameType g ON g.GameTypeID = cg.GameTypeID
+		LEFT JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
+		LEFT JOIN @GameType g ON g.GameTypeID = cg.GameTypeID
     WHERE c.custid = @custid
 	GROUP BY ci.DisableNumber, ci.HideKeno
 
