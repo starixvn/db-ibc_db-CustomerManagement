@@ -42,7 +42,7 @@ BEGIN
 	SET NOCOUNT ON;
 	
 	DECLARE @xml XML, @ErrBetType VARCHAR(10), @ValueError VARCHAR(500)='', @RowError VARCHAR(200)='', @SportType   SMALLINT , @BetType   SMALLINT 
-	DECLARE @NewStakeLevelTbl TABLE (
+	DECLARE @NewGlobalTbl TABLE (
 			  RowID				INT IDENTITY (1, 1)
 			, SportType			SMALLINT
 			, BetType			SMALLINT
@@ -98,7 +98,7 @@ BEGIN
 	EXEC sp_xml_preparedocument @iDoc OUTPUT
 		, @InputData
 
-	INSERT INTO @NewStakeLevelTbl(	SportType, BetType, SiteID, CreditCurrency, DepositCurrency, 
+	INSERT INTO @NewGlobalTbl(	SportType, BetType, SiteID, CreditCurrency, DepositCurrency, 
 									NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, 
 									CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
 									GameGroupID)
@@ -142,32 +142,36 @@ BEGIN
 							AND ISNULL(NewMaxPerMatch, 0)=0					THEN 135	
 						 WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 136
 
-						 WHEN SportType<>161 THEN
-							CASE WHEN NewMinBet=0						THEN 137
-								 WHEN NewMaxBet=0						THEN 138
-								 WHEN (SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-									  (SportType BETWEEN 180 AND 186)	OR	
-									  (SportType BETWEEN 213 AND 215)	OR	
-									  (SportType BETWEEN 190 AND 197))	
-									AND NewMaxPerMatch=0				THEN 139		
-							END
-						 WHEN SportType=161 THEN
-							CASE WHEN NewMinBet=0	
-									AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)	THEN 137
-								 WHEN NewMaxBet=0	
-									AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)	THEN 138
-								 WHEN NewMaxPerMatch=0	
-									AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)		THEN 139
-							END
+						 --------------------------------------------------------------------------------------------------------------
+						 WHEN (SportType<>161 AND NewMinBet=0)
+							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 137
+						 WHEN (SportType<>161 AND NewMaxBet=0)
+							OR (NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 138
+						 WHEN ((SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+							  (SportType BETWEEN 180 AND 186) OR	
+							  (SportType BETWEEN 213 AND 215) OR	
+							  (SportType BETWEEN 190 AND 197)) AND NewMaxPerMatch=0)
+							 OR
+							  (SportType=161 AND NewMaxPerMatch=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)) THEN 139
 
-						 WHEN NewMinBet > NewMaxBet		THEN 153
+						 WHEN NewMinBet > NewMaxBet													THEN 140
 						 WHEN  (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
 							OR (SportType BETWEEN 180 AND 186)		
 							OR (SportType BETWEEN 213 AND 215)		
 							OR (SportType BETWEEN 190 AND 197))	
-							AND (NewMaxBet > NewMaxPerMatch)										THEN 140	
-						 WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0	THEN 141	
-						 WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)					THEN 142	
+							AND (NewMaxBet > NewMaxPerMatch)										THEN 141	
+						 WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0	THEN 142	
+						 WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)					THEN 143
+
+						 WHEN CurMinBet > CurMaxBet													THEN 144
+						 WHEN  (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
+							OR (SportType BETWEEN 180 AND 186)		
+							OR (SportType BETWEEN 213 AND 215)		
+							OR (SportType BETWEEN 190 AND 197))	
+							AND (CurMaxBet > CurMaxPerMatch)										THEN 145	
+						 WHEN SportType=161 AND (CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0	THEN 146	
+						 WHEN SportType=161 AND (CurMaxPerBall > CurMaxPerMatch)					THEN 147
+						 --------------------------------------------------------------------------------------------------------------
 
 						 WHEN ISNULL(CreditCurrency, '')='' AND 
 							  ISNULL(DepositCurrency, '')=''	THEN 122
@@ -181,57 +185,63 @@ BEGIN
 						   WHEN (SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 								(SportType BETWEEN 180 AND 186)	OR	
 								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))	
-								AND ISNULL(NewMaxPerMatch, 0)=0					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
+								(SportType BETWEEN 190 AND 197)) AND	
+								ISNULL(NewMaxPerMatch, 0)=0						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
 						   WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball is a required field.' 
-						 
-						   WHEN SportType<>161 THEN
-								CASE WHEN NewMinBet=0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
-									 WHEN NewMaxBet=0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Bet must be different from 0.' 
-									 WHEN (SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-										  (SportType BETWEEN 180 AND 186)	OR	
-										  (SportType BETWEEN 213 AND 215)	OR	
-										  (SportType BETWEEN 190 AND 197))	
-										AND NewMaxPerMatch=0											THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Per Match must be different from 0.'
-								END
-						   WHEN SportType=161 THEN
-								CASE WHEN NewMinBet=0	
-										AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
-									 WHEN NewMaxBet=0	
-										AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Bet must be different from 0.'
-									 WHEN NewMaxPerMatch=0	
-										AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Per Match must be different from 0.'
-								END
-
-							WHEN NewMinBet > NewMaxBet													THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be greater than or equal to the New Min Bet.' 
-							WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-								(SportType BETWEEN 180 AND 186)	OR	
-								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))	
-								AND (NewMaxBet > NewMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Match.'
-							WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Ball.'
-							WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
+						   
+						   --------------------------------------------------------------------------------------------------------------
+						   WHEN (SportType<>161 AND NewMinBet=0)
+							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
+						   WHEN (SportType<>161 AND NewMaxBet=0)
+							OR (NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Bet must be different from 0.'
+						   WHEN ((SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+								(SportType BETWEEN 180 AND 186) OR	
+								(SportType BETWEEN 213 AND 215) OR	
+								(SportType BETWEEN 190 AND 197)) AND NewMaxPerMatch=0)
+							OR
+								(SportType=161 AND NewMaxPerMatch=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0))	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Per Match must be different from 0.'
 						
+						   WHEN NewMinBet > NewMaxBet												THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be greater than or equal to the New Min Bet.'
+						   WHEN  (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
+							OR (SportType BETWEEN 180 AND 186)		
+							OR (SportType BETWEEN 213 AND 215)		
+							OR (SportType BETWEEN 190 AND 197))	
+							AND (NewMaxBet > NewMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Match.'	
+						   WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Ball.'	
+						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
+
+						   WHEN CurMinBet > CurMaxBet												THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Min Bet must be less than or equal to the Current Max Bet.'
+						   WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
+							OR (SportType BETWEEN 180 AND 186)		
+							OR (SportType BETWEEN 213 AND 215)		
+							OR (SportType BETWEEN 190 AND 197))	
+							AND (CurMaxBet > CurMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Bet must be less than or equal to the New Current Per Match.'	
+						   WHEN SportType=161 AND (CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Bet must be less than or equal to the New Current Per Ball.'	
+						   WHEN SportType=161 AND (CurMaxPerBall > CurMaxPerMatch)					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Per Ball must be less than or equal to the Current Max Per Match.'
+						   --------------------------------------------------------------------------------------------------------------
+
 							WHEN ISNULL(CreditCurrency, '')='' AND 
 								ISNULL(DepositCurrency, '')=''	THEN 'The Currency is required field.' 
 							ELSE '' 
 						END 						   
-	FROM @NewStakeLevelTbl tmp
+	FROM @NewGlobalTbl tmp
 	WHERE ISNULL(SportType, '')='' OR ISNULL(BetType, '')='' OR ISNULL(NewMinBet, 0)=0 OR ISNULL(NewMaxBet, 0)=0
-		OR NewMinBet > NewMaxBet
+		OR NewMinBet > NewMaxBet OR CurMinBet > CurMaxBet
 		OR
 			((SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 			 (SportType BETWEEN 180 AND 186)	OR	
 			 (SportType BETWEEN 213 AND 215)	OR	
 			 (SportType BETWEEN 190 AND 197))
 			AND 
-			 (ISNULL(NewMaxPerMatch, 0)=0 OR  NewMaxBet > NewMaxPerMatch))
+			 (ISNULL(NewMaxPerMatch, 0)=0 OR  NewMaxBet > NewMaxPerMatch OR CurMaxBet > CurMaxPerMatch))
 		OR
 			(SportType=161 
 			AND
 			(ISNULL(NewMaxPerBall, 0)=0 
 				OR ((NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0) 
 				OR  (NewMaxPerBall > NewMaxPerMatch) 
+				OR ((CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0)
+				OR  (CurMaxPerBall > CurMaxPerMatch)
 				OR  (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) 
 				OR	(NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) 
 				OR	(NewMaxPerMatch=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0))))	
@@ -255,7 +265,7 @@ BEGIN
 			NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, 
 			CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
 			GameGroupID, 1 AS IsCredit, SiteID
-	FROM @NewStakeLevelTbl nsl
+	FROM @NewGlobalTbl nsl
 		CROSS APPLY (
 				SELECT DISTINCT RTRIM(LTRIM(value)) AS Currency FROM STRING_SPLIT(nsl.CreditCurrency, ',')
 			) t
@@ -265,7 +275,7 @@ BEGIN
 			NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, 
 			CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
 			GameGroupID, 0 AS IsCredit, SiteID
-	FROM @NewStakeLevelTbl nsl
+	FROM @NewGlobalTbl nsl
 		CROSS APPLY (
 				SELECT DISTINCT RTRIM(LTRIM(value)) AS Currency FROM STRING_SPLIT(nsl.DepositCurrency, ',')
 			) t		
@@ -285,14 +295,16 @@ BEGIN
 	FROM  #NewInputDateTbl a
 		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType AND (psd.SettingType IN (2, 8, 9, 16, 20) OR (psd.SettingType IN (7, 17) AND a.BetType=psd.BetType))
 	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17, 20) AND psd.ProductID NOT IN  (1,3,8)
-	
+		AND psd.SettingStatus=0
+
 	UPDATE a	--DEPOSIT
 	SET a.SettingType= ps.SettingType, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
 	FROM  #NewInputDateTbl a
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType 
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID=psd.ProductSettingID
 	WHERE a.IsCredit=0  AND (ps.SettingType IN (2, 8, 10, 11, 12) OR (ps.SettingType IN (7) AND a.BetType=psd.BetType))
-	
+		AND psd.SettingStatus=0
+
 	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
 	IF 	EXISTS(SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR @BetType<>OrgBetType)	
 	BEGIN
@@ -531,18 +543,22 @@ BEGIN
 	SELECT tmp.Currency
 	FROM #NewInputDateTbl tmp
 	WHERE IsCredit=1 AND NOT EXISTS(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID=tmp.OrgBetType AND ExchangeId=tmp.ExchangeId)
+		AND tmp.SettingType IN (7,8,17)
 	UNION  
 	SELECT tmp.Currency
 	FROM #NewInputDateTbl tmp
 	WHERE IsCredit=0 AND NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) WHERE tmp.OrgBetType=GameTypeID AND ExchangeId=tmp.ExchangeId)
+		AND tmp.SettingType IN (7,8,17)
 	UNION
 	SELECT tmp.Currency
 	FROM #NewInputDateTbl tmp
-	WHERE IsCredit=0 AND NOT EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK) WHERE tmp.Bettype=pbs.Bettype AND tmp.SportType=pbs.Sporttype AND tmp.ExchangeId=pbs.Currency)
+	WHERE IsCredit=1 AND NOT EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK) WHERE tmp.Bettype=pbs.Bettype AND tmp.SportType=pbs.Sporttype AND tmp.ExchangeId=pbs.Currency)
+		AND tmp.SettingType NOT IN (7,8,17)
 	UNION
 	SELECT tmp.Currency
 	FROM #NewInputDateTbl tmp
-	WHERE IsCredit=1 AND NOT EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK) WHERE tmp.Bettype=pbs.Bettype AND tmp.SportType=pbs.Sporttype AND tmp.ExchangeId=pbs.Currency)
+	WHERE IsCredit=0 AND NOT EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK) WHERE tmp.Bettype=pbs.Bettype AND tmp.SportType=pbs.Sporttype AND tmp.ExchangeId=pbs.Currency)
+		AND tmp.SettingType NOT IN (7,8,17)
 
 	IF 	EXISTS(	SELECT TOP 1 1 FROM #Currency )			
 	BEGIN
@@ -627,6 +643,8 @@ BEGIN
 		RETURN
 	END	
 	
+	DROP TABLE #Bettype
+	DROP TABLE #Sports
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #Currency
 	DROP TABLE #RowDuplicate
