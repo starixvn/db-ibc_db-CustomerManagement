@@ -172,6 +172,7 @@ BEGIN
 			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16,20) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20) AND ProductID NOT IN (1,3,8)
+			AND psd.SettingStatus=0
 			
 		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
@@ -179,6 +180,7 @@ BEGIN
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 			INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 		WHERE a.IsCredit = 0 AND (ps.SettingType IN (2,8,10,11,12) OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
+			AND psd.SettingStatus=0
 
 		--Update: ExchangeId
 		UPDATE a 
@@ -262,7 +264,7 @@ BEGIN
 	--SettingType IN (7,8,17)
 	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType IN (7,8,17))
 	BEGIN
-	BEGIN TRY
+		BEGIN TRY
 			-- Credit Group Stake Level
 			INSERT INTO StakeLevel(GameTypeID,ExchangeId,GameGroupID)
 			SELECT DISTINCT a.OrgBetType AS GameTypeID,ExchangeId,GameGroupID

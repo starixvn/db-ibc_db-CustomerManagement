@@ -184,16 +184,7 @@ BEGIN
 								(SportType BETWEEN 190 AND 197))	
 								AND ISNULL(NewMaxPerMatch, 0)=0					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
 						   WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball is a required field.' 
-
-						   WHEN NewMinBet > NewMaxBet													THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be greater than or equal to the New Min Bet.' 
-						   WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-								(SportType BETWEEN 180 AND 186)	OR	
-								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))	
-								AND (NewMaxBet > NewMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Match.'
-						   WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Ball.'
-						   WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
-						
+						 
 						   WHEN SportType<>161 THEN
 								CASE WHEN NewMinBet=0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
 									 WHEN NewMaxBet=0				THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Bet must be different from 0.' 
@@ -212,9 +203,18 @@ BEGIN
 										AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Max Per Match must be different from 0.'
 								END
 
-						   WHEN ISNULL(CreditCurrency, '')='' AND 
+							WHEN NewMinBet > NewMaxBet													THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be greater than or equal to the New Min Bet.' 
+							WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+								(SportType BETWEEN 180 AND 186)	OR	
+								(SportType BETWEEN 213 AND 215)	OR	
+								(SportType BETWEEN 190 AND 197))	
+								AND (NewMaxBet > NewMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Match.'
+							WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet must be less than or equal to the New Max Per Ball.'
+							WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball must be less than or equal to the New Max Per Match.'
+						
+							WHEN ISNULL(CreditCurrency, '')='' AND 
 								ISNULL(DepositCurrency, '')=''	THEN 'The Currency is required field.' 
-						   ELSE '' 
+							ELSE '' 
 						END 						   
 	FROM @NewStakeLevelTbl tmp
 	WHERE ISNULL(SportType, '')='' OR ISNULL(BetType, '')='' OR ISNULL(NewMinBet, 0)=0 OR ISNULL(NewMaxBet, 0)=0
