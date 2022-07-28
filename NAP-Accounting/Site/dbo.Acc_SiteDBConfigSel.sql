@@ -15,8 +15,7 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON  
-	DECLARE @SiteID INT,
-			@Site NVARCHAR(50),
+	DECLARE @Site NVARCHAR(50),
 			@SiteDBGroupID SMALLINT,
 			@LinkedServerName  VARCHAR(512),
 			@ClientAccessName VARCHAR(512),
@@ -24,15 +23,14 @@ BEGIN
 
 	IF @CustID IS NULL OR @CustID = 0
 	BEGIN 
-		SELECT sc.SiteID, sc.Site, sc.SiteDBGroupID, sc.LinkedServerName, sc.ClientAccessName, sc.AGIP
+		SELECT DISTINCT sc.SiteDBGroupID, sc.LinkedServerName, sc.ClientAccessName, sc.AGIP
 		FROM SiteDBConfig sc WITH (NOLOCK)
 	END
 	ELSE
 	BEGIN 
 		SELECT @Site = site FROM Customer c WITH (NOLOCK) WHERE CustID = @CustID
 
-		SELECT	@SiteID = sc.SiteID, 
-				@Site = sc.Site, 
+		SELECT	@Site = sc.Site, 
 				@SiteDBGroupID = sc.SiteDBGroupID, 
 				@LinkedServerName = sc.LinkedServerName, 
 				@ClientAccessName = sc.ClientAccessName, 
@@ -41,8 +39,7 @@ BEGIN
 		WHERE site = @Site
 		
 		IF @@ROWCOUNT = 0
-			SELECT	@SiteID = sc.SiteID, 
-					@Site = sc.Site, 
+			SELECT	@Site = sc.Site, 
 					@SiteDBGroupID = sc.SiteDBGroupID, 
 					@LinkedServerName = sc.LinkedServerName, 
 					@ClientAccessName = sc.ClientAccessName, 
@@ -50,7 +47,7 @@ BEGIN
 			FROM SiteDBConfig sc WITH (NOLOCK)
 			WHERE siteid = 0
 
-		SELECT @SiteID AS SiteID, @Site AS Site, @SiteDBGroupID AS SiteDBGroupID, @LinkedServerName AS LinkedServerName, @ClientAccessName AS ClientAccessName, @AGIP AS AGIP
+		SELECT @SiteDBGroupID AS SiteDBGroupID, @LinkedServerName AS LinkedServerName, @ClientAccessName AS ClientAccessName, @AGIP AS AGIP
 	END
 END
 GO
