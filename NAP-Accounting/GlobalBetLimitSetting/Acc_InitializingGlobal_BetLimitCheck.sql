@@ -189,7 +189,6 @@ BEGIN
 								ISNULL(NewMaxPerMatch, 0)=0						THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
 						   WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball is a required field.' 
 						   
-						   --------------------------------------------------------------------------------------------------------------
 						   WHEN (SportType<>161 AND NewMinBet=0)
 							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
 						   WHEN (SportType<>161 AND NewMaxBet=0)
@@ -218,11 +217,10 @@ BEGIN
 							AND (CurMaxBet > CurMaxPerMatch)										THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Bet must be less than or equal to the New Current Per Match.'	
 						   WHEN SportType=161 AND (CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Bet must be less than or equal to the New Current Per Ball.'	
 						   WHEN SportType=161 AND (CurMaxPerBall > CurMaxPerMatch)					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Current Max Per Ball must be less than or equal to the Current Max Per Match.'
-						   --------------------------------------------------------------------------------------------------------------
 
-							WHEN ISNULL(CreditCurrency, '')='' AND 
+						   WHEN ISNULL(CreditCurrency, '')='' AND 
 								ISNULL(DepositCurrency, '')=''	THEN 'The Currency is required field.' 
-							ELSE '' 
+						   ELSE '' 
 						END 						   
 	FROM @NewGlobalTbl tmp
 	WHERE ISNULL(SportType, '')='' OR ISNULL(BetType, '')='' OR ISNULL(NewMinBet, 0)=0 OR ISNULL(NewMaxBet, 0)=0
@@ -315,21 +313,21 @@ BEGIN
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode=109, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.BetType AS VARCHAR(200)), @RowError=CAST(tmp.RowID  AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE NOT EXISTS(SELECT TOP 1 1 FROM #Bettype WHERE typeid= tmp.BetType) OR OrgBetType IS NULL
-	IF 	@ErrCode=109			
-	BEGIN
-		SELECT @ErrMsg='Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
-
 	SELECT TOP(1) @ErrCode=108, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SportType AS VARCHAR(200)), @RowError=CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.SettingType, 0)=0 OR NOT EXISTS(SELECT TOP 1 1 FROM #Sports WHERE SportType= tmp.SportType)
 	IF 	@ErrCode=108			
 	BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
+		RETURN
+	END	
+
+	SELECT TOP(1) @ErrCode=109, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.BetType AS VARCHAR(200)), @RowError=CAST(tmp.RowID  AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE NOT EXISTS(SELECT TOP 1 1 FROM #Bettype WHERE typeid= tmp.BetType) OR OrgBetType IS NULL
+	IF 	@ErrCode=109			
+	BEGIN
+		SELECT @ErrMsg='Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
@@ -503,9 +501,7 @@ BEGIN
 		RETURN
 	END
 
-	/*--------------------------------
-		MAX PER MATCH
-	--------------------------------*/
+	--MAX PER MATCH
 	SELECT TOP(1) @ErrCode=119, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)),  @ValueError=CAST(tmp.CurMaxPerMatch AS VARCHAR(200)), @RowError=CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE (ISNULL(tmp.CurMinBet, 0)<>0 AND ISNULL(tmp.CurMaxBet, 0)<>0 AND ISNULL(tmp.CurMaxPerMatch, 0)=0
@@ -524,9 +520,7 @@ BEGIN
 		RETURN
 	END
 
-	/*--------------------------------
-		MAX PER BALL
-	--------------------------------*/
+	--MAX PER BALL
 	SELECT TOP(1) @ErrCode=120, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)),  @ValueError=CAST(tmp.CurMaxPerBall AS VARCHAR(200)), @RowError=CAST(tmp.RowID  AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.CurMinBet, 0)<>0 AND ISNULL(tmp.CurMaxBet, 0)<>0 AND ISNULL(tmp.CurMaxPerMatch, 0)=0 AND ISNULL(tmp.CurMaxPerBall, 0)<>0
@@ -537,7 +531,6 @@ BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': You input missing data with the product''s format. Please input data on Current Max Per Ball.'  
 		RETURN
 	END
-
 
 	INSERT INTO #Currency (Currency)
 	SELECT tmp.Currency
@@ -573,9 +566,10 @@ BEGIN
 	FROM #NewInputDateTbl tmp
 	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType=ndt.SportType AND tmp.BetType=ndt.BetType 
 				AND tmp.ExchangeId=ndt.ExchangeId AND tmp.CurMinBet=ndt.CurMinBet AND tmp.CurMaxBet=ndt.CurMaxBet AND tmp.GameGroupID =ndt.GameGroupID
-				AND tmp.NewMaxBet=ndt.NewMaxBet AND tmp.NewMinBet=ndt.NewMinBet AND tmp.IsCredit=ndt.IsCredit AND (tmp.SettingType IN (2, 8, 9, 16, 17, 20, 10, 11, 12) OR (tmp.SettingType=7 AND tmp.SiteID=ndt.SiteID))
+				AND tmp.NewMaxBet=ndt.NewMaxBet AND tmp.NewMinBet=ndt.NewMinBet AND tmp.IsCredit=ndt.IsCredit 
+				AND (tmp.SettingType IN (2, 8, 9, 16, 17, 20, 10, 11, 12) OR (tmp.SettingType=7 AND tmp.SiteID=ndt.SiteID))
 	WHERE tmp.RowID <  ndt.RowID																									
-	UNION ALL
+	UNION
 	SELECT DISTINCT tmp.RowID, ndt.RowID  
 	FROM #NewInputDateTbl tmp  
 		INNER JOIN #NewInputDateTbl ndt ON tmp.SportType=ndt.SportType AND tmp.BetType=ndt.BetType
@@ -648,4 +642,5 @@ BEGIN
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #Currency
 	DROP TABLE #RowDuplicate
-END								
+END			
+GO
