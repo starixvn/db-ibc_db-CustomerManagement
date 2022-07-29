@@ -21,7 +21,7 @@ SET NOCOUNT ON
 	DECLARE @Market_spec TABLE(Marketid INT, Market VARCHAR(300))
 	
 	INSERT INTO @Market_spec(Marketid, Market)
-	EXEC dbo.Acc_UMTool_MarketSel;
+	EXEC [dbo].[Acc_UMTool_MarketSel];
 	
 	SELECT c.configID,
 		c.FunctionType,
