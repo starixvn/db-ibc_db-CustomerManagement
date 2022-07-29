@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
-CREATE PROCEDURE [Acc_UMTool_MarketSel]
+CREATE PROCEDURE [dbo].[Acc_UMTool_MarketSel]
 AS
 
 /*
