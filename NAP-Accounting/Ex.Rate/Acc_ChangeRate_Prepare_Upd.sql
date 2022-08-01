@@ -1,5 +1,6 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ChangeRate_Prepare_Upd] 
+	@IsSiteDB BIT = 0,
 	@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(2000) = '' OUTPUT
 AS
@@ -10,6 +11,7 @@ AS
 
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
+		- 20220801@Sophia: Scale out, call at SiteDB [RedmineID: #175253]
 
 	Param's Explanation:
 	
@@ -21,7 +23,7 @@ BEGIN
 		  
 	--- outright movement
 	BEGIN TRY
-		EXEC dbo.Task_OutrightMovement
+		EXEC dbo.Task_OutrightMovement @IsSiteDB = @IsSiteDB
 	END TRY
 	BEGIN CATCH 
 		SELECT @ErrCode = 101, @ErrMsg = 'Error occurs. update unsucessfully exchange rate for outright tickets.'

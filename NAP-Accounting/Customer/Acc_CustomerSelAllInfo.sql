@@ -114,6 +114,7 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20220801@Sophia: Scale out, remove nested SP Acc_CustomerSelBalanceCashInfo, web will call directly [RedmineID: #175253]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -740,11 +741,6 @@ BEGIN
     where
 	    c.custid = @custid
   
-	 -------------------------------------------------------------------------
-	 /* Balance Info */
-	 EXEC dbo.Acc_CustomerSelBalanceCashInfo @custid = @custid
-	-------------------------------------------------------------------------
-
 
     SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
