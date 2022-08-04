@@ -114,6 +114,7 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20220801@Sophia: Scale out: move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this parent SP [RedmineID: #175253]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -146,6 +147,7 @@ BEGIN
 		  , @srecommend INT
 		  , @SabaClubPlayerID3rd VARCHAR(50) ='-'
 		  , @ProtectionMode BIT
+		  , @DisableAutoMPT BIT 
 
     DECLARE @membersite VARCHAR(10)
     DECLARE @TotalMAgentActive INT,
@@ -304,6 +306,7 @@ BEGIN
     SET @SelectedBetting = 0
     SET @IsInternal = 0
     SET @DownlinesSelectedBetting = 0
+	SET @DisableAutoMPT = 0
 
 	SELECT @Site = site
 	FROM dbo.Customer WITH(NOLOCK)
@@ -428,12 +431,15 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
+		
+	
 				
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
 			 , @IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
+			 , @DisableAutoMPT = ISNULL(DisableAutoMPT,0)
 	      FROM custMaster WITH(NOLOCK)
 	     WHERE custid = @custid
     	
@@ -689,6 +695,7 @@ BEGIN
 		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
 		,ISNULL(cps.Locked,0) Locked
 		,@ProtectionMode AS IsProtectedMode
+		,@DisableAutoMPT
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
