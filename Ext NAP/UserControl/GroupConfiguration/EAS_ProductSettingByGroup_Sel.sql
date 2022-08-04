@@ -11,7 +11,7 @@ AS
 		- 20200923@Eden: First commit [Redmine: #141832]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-
+		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -44,7 +44,7 @@ BEGIN
 		INNER JOIN DBACC.bodb02.dbo.ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
 	WHERE p.ProductId NOT IN (1,3,8,12,16) 
-		AND d.SettingType IN (4,11,13)
+		AND d.SettingType IN (4,11,13,21)
 	ORDER BY ProductId
 
 	DROP TABLE #tmpProducts
