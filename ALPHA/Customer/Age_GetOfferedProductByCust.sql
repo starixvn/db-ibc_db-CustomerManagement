@@ -21,6 +21,7 @@ AS
 		- 20210506@Winfred: Get product AdvantPlay in MaCau Game [Redmine: #154258]
 		- 20210514@Winfred: Get product AdvantPlay Mini in MaCau Game [Redmine: #155133]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -104,6 +105,10 @@ BEGIN
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13,@SettingStatus)
+
+	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
+	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,21,@SettingStatus)
 	
 	SELECT DISTINCT ft.ProductID, 
 			CAST(CASE WHEN @IsIMBC = 0 AND ft.ProductID = 20 THEN 1 

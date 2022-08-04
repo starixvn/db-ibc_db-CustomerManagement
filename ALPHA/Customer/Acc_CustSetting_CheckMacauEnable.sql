@@ -20,6 +20,7 @@ BEGIN
 			- 20210324@Winfred: Check Creative Gaming on site [Redmine: #146016]
 			- 20210506@Winfred: Check AdvantPlay on site [Redmine: #154258]
 			- 20210514@Winfred: Check AdvantPlay Mini on site [Redmine: #155133]
+			- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -31,7 +32,7 @@ BEGIN
 	
 	-- check Product macau game	status
 	SELECT @bitmapIsHidden =  (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder))
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,13,@SettingStatus) ft
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,21,@SettingStatus) ft
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
 		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = @CustID
 	-- all sport bettype on macau 	
