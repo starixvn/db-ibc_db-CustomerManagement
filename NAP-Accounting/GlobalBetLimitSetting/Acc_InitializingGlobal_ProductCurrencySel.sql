@@ -4,10 +4,6 @@ ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_ProductCurrencySel]
 	-- Add the parameters for the stored procedure here
 	 @pMutilProductID	VARCHAR(MAX) = ''
 	,@pMutilCurrency	VARCHAR(MAX) = ''
-	,@ExportData		INT	=	0
-	,@PageSize			INT	=	50
-	,@PageIndex			INT	=	0
-	,@TotalRows 		INT	=	0 OUTPUT
 AS
 /*
 		Task : NAP -  Flexible Initializing Bet Limit
@@ -24,12 +20,6 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-
-	DECLARE @rowstart	INT,
-			@rowend		INT
-
-	SELECT	@RowStart = @PageSize * @PageIndex + 1, 
-			@RowEnd = @RowStart + @PageSize - 1 	
 
 	CREATE TABLE #Sports (SportType TINYINT PRIMARY KEY, SportName NVARCHAR(50))
 
@@ -95,26 +85,9 @@ BEGIN
 	WHERE NOT EXISTS (SELECT 1 FROM ProductCurrency pc WHERE pc.ProductID=dep.ProductID AND pc.SportType=dep.SportType)
 
 	--ExportData
-	IF @ExportData = 1
-	BEGIN
-		SELECT ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit
-		FROM #ProductCurrency t
-		ORDER by ProductName, SportType	
-	END
-	ELSE
-	BEGIN
-		SELECT @TotalRows = COUNT(1)
-		FROM #ProductCurrency
-
-		SELECT ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit
-		FROM (
-			SELECT ROW_NUMBER() OVER(ORDER by ProductName, SportType) rn, *
-			FROM #ProductCurrency
-		   )t
-		WHERE rn BETWEEN @RowStart AND @RowEnd
-		ORDER by ProductName, SportType	
-	END	
-
+	SELECT ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit
+	FROM #ProductCurrency t
+	ORDER by ProductName, SportType	
 
 	DROP TABLE #Sports
 	DROP TABLE #Products
