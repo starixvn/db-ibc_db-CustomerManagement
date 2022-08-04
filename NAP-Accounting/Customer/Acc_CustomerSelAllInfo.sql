@@ -114,8 +114,6 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-	- 20220801@Sophia: . Scale out, remove nested SP Acc_CustomerSelBalanceCashInfo, web will call directly
-					   . Move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this parent SP [RedmineID: #175253]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -430,19 +428,15 @@ BEGIN
     BEGIN
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
-		DECLARE @DisableAutoMPT BIT
-
-		 
+				
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
 	         , @SelectedBetting = ISNULL(SelectedBetting, 0)
 	         , @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0)
 			 , @IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
-			 , @DisableAutoMPT = ISNULL(DisableAutoMPT,0)
 	      FROM custMaster WITH(NOLOCK)
-	     WHERE custid = @custid    	
-		
-		
+	     WHERE custid = @custid
+    	
 	    SELECT TOP 1 @DownlinesSelectedBetting = ISNULL(SelectedBetting, 0)
 	      FROM custAgent WITH(NOLOCK)
 	     WHERE custid IN (SELECT recommend
@@ -746,6 +740,11 @@ BEGIN
     where
 	    c.custid = @custid
   
+	 -------------------------------------------------------------------------
+	 /* Balance Info */
+	 EXEC dbo.Acc_CustomerSelBalanceCashInfo @custid = @custid
+	-------------------------------------------------------------------------
+
 
     SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
