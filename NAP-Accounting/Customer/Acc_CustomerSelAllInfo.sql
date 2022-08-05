@@ -11,7 +11,7 @@ AS
 /*
 Created: 
 Task : Get move bet day, balanceup day
-DB: DBAGE/bodb02
+DB: DBAGE-bodb02,DBSIG-bodb02
 Original:Accounting site
 
 Revisions:
@@ -114,7 +114,9 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20211103@Johnson: add Abnormal Review Field [redmine: #163518]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-	- 20220801@Sophia: Scale out: move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this parent SP [RedmineID: #175253]
+	- 20220801@Sophia: Scale out DBTRANS
+					   Move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this SP
+					   Remove not to call Acc_CustomerSelBalanceCashInfo [RedmineID: #175253]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -695,7 +697,7 @@ BEGIN
 		,CASE WHEN ls.custid IS NULL THEN 0 ELSE 1 END AS LockUnsuspend
 		,ISNULL(cps.Locked,0) Locked
 		,@ProtectionMode AS IsProtectedMode
-		,@DisableAutoMPT
+		,@DisableAutoMPT AS DisableAutoMPT
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
@@ -747,12 +749,7 @@ BEGIN
     where
 	    c.custid = @custid
   
-	 -------------------------------------------------------------------------
-	 /* Balance Info */
-	 EXEC dbo.Acc_CustomerSelBalanceCashInfo @custid = @custid
-	-------------------------------------------------------------------------
-
-
+	 
     SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
 		    @TotalSAgentSuspended SAgentSuspended,
