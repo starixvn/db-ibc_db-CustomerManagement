@@ -15,7 +15,6 @@ AS
 		Param's Explanation:
 			@pMutilProductID 0 : All, <> 0 : ProductID
 			@pMutilCurrency	 0 : All, <> 0 : Currency Credit
-			@ExportData		 0 : Pages, <> 0 : All data
 
 */
 BEGIN

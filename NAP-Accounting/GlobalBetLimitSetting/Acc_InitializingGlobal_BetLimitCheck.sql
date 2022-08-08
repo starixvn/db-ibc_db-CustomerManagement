@@ -103,24 +103,32 @@ BEGIN
 									CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
 									GameGroupID)
 	SELECT	SportType, BetType, Site, CreditCurrency, DepositCurrency, 
-			NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, 
-			CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
-			GameGroupID
+			CASE WHEN ISNUMERIC(NewMinBet)=0 THEN NULL ELSE NewMinBet END NewMinBet,
+			CASE WHEN ISNUMERIC(NewMaxBet)=0 THEN NULL ELSE NewMaxBet END NewMaxBet, 
+			CASE WHEN ISNUMERIC(NewMaxPerMatch)=0 THEN NULL ELSE NewMaxPerMatch END NewMaxPerMatch, 
+			CASE WHEN ISNUMERIC(NewMaxPerBall)=0 THEN NULL ELSE NewMaxPerBall END NewMaxPerBall, 
+			
+			CASE WHEN ISNUMERIC(CurMinBet)=0 THEN NULL ELSE CurMinBet END CurMinBet,
+			CASE WHEN ISNUMERIC(CurMaxBet)=0 THEN NULL ELSE CurMaxBet END CurMaxBet, 
+			CASE WHEN ISNUMERIC(CurMaxPerMatch)=0 THEN NULL ELSE CurMaxPerMatch END CurMaxPerMatch, 
+			CASE WHEN ISNUMERIC(CurMaxPerBall)=0 THEN NULL ELSE CurMaxPerBall END CurMaxPerBall, 
+			
+			CASE WHEN ISNUMERIC(GameGroupID)=0 THEN NULL ELSE GameGroupID END GameGroupID
 	FROM OPENXML(@iDoc, '/ROOT/BetLimit', 1) WITH (
 				 SportType			SMALLINT
 				, BetType			SMALLINT
 				, Site				INT
 				, CreditCurrency	VARCHAR(500)
 				, DepositCurrency	VARCHAR(500)
-				, NewMinBet			DECIMAL(19, 8)
-				, NewMaxBet			DECIMAL(19, 8)
-				, NewMaxPerMatch	DECIMAL(19, 8)
-				, NewMaxPerBall		DECIMAL(19, 8)
-				, CurMinBet			DECIMAL(19, 8)
-				, CurMaxBet			DECIMAL(19, 8)
-				, CurMaxPerMatch	DECIMAL(19, 8)
-				, CurMaxPerBall		DECIMAL(19, 8)
-				, GameGroupID		INT
+				, NewMinBet			VARCHAR(50)
+				, NewMaxBet			VARCHAR(50)
+				, NewMaxPerMatch	VARCHAR(50)
+				, NewMaxPerBall		VARCHAR(50)
+				, CurMinBet			VARCHAR(50)
+				, CurMaxBet			VARCHAR(50)
+				, CurMaxPerMatch	VARCHAR(50)
+				, CurMaxPerBall		VARCHAR(50)
+				, GameGroupID		VARCHAR(50)
 			)
 	EXEC sp_xml_removedocument @iDoc
 
