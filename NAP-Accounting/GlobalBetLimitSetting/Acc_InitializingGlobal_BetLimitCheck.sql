@@ -140,15 +140,16 @@ BEGIN
 	SELECT typeid, typenamee 
 	FROM dbo.Bettype WITH(NOLOCK)
 
-	SELECT @ErrCode=CASE WHEN ISNULL(BetType, '')=''		THEN 132
-						 WHEN ISNULL(NewMinBet, 0)=0		THEN 133
-						 WHEN ISNULL(NewMaxBet, 0)=0		THEN 134
+	SELECT @ErrCode=CASE WHEN ISNULL(SportType, '')=''		THEN 131
+						 WHEN ISNULL(BetType, '')=''		THEN 132
+						 WHEN NewMinBet IS NULL				THEN 133
+						 WHEN NewMaxBet IS NULL				THEN 134
 						 WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
 						 	 (SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
 							 (SportType BETWEEN 213 AND 215)	OR	--NG2
 							 (SportType BETWEEN 190 AND 197))		--Virtual Sports 2 (Betradar)
-							AND ISNULL(NewMaxPerMatch, 0)=0					THEN 135	
-						 WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 136
+							AND NewMaxPerMatch IS NULL					THEN 135	
+						 WHEN SportType=161 AND NewMaxPerBall IS NULL	THEN 136
 
 						 WHEN (SportType<>161 AND NewMinBet=0)
 							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 137
@@ -186,14 +187,14 @@ BEGIN
 
 		 @ErrMsg =	 CASE WHEN ISNULL(SportType, '')=''		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Sport Type is required field.' 
 						  WHEN ISNULL(BetType, '')=''		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Bet Type is required field.' 
-						  WHEN ISNULL(NewMinBet, 0)=0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Min Bet is required field.' 
-						  WHEN ISNULL(NewMaxBet, 0)=0		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet is required field.' 
+						  WHEN NewMinBet IS NULL			THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Min Bet is required field.' 
+						  WHEN NewMaxBet IS NULL			THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Bet is required field.' 
 						  WHEN (SportType IN (1, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 								(SportType BETWEEN 180 AND 186)	 OR	
 								(SportType BETWEEN 213 AND 215)	 OR	
 								(SportType BETWEEN 190 AND 197)) AND	
-								ISNULL(NewMaxPerMatch, 0)=0					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
-						  WHEN SportType=161 AND ISNULL(NewMaxPerBall, 0)=0	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball is a required field.' 
+								NewMaxPerMatch IS NULL					THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Match is required field.' 
+						  WHEN SportType=161 AND NewMaxPerBall IS NULL	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The New Max Per Ball is a required field.' 
 						  
 						  WHEN (SportType<>161 AND NewMinBet=0)
 							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0)) THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': The Min Bet must be different from 0.'
@@ -229,7 +230,7 @@ BEGIN
 						  ELSE '' 
 						END 						  
 	FROM @NewGlobalTbl tmp
-	WHERE ISNULL(SportType, '')='' OR ISNULL(BetType, '')='' OR ISNULL(NewMinBet, 0)=0 OR ISNULL(NewMaxBet, 0)=0
+	WHERE ISNULL(SportType, '')='' OR ISNULL(BetType, '')='' OR NewMinBet IS NULL OR NewMaxBet IS NULL
 		OR NewMinBet > NewMaxBet OR CurMinBet > CurMaxBet
 		OR
 			((SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
@@ -237,11 +238,11 @@ BEGIN
 			 (SportType BETWEEN 213 AND 215)	OR	
 			 (SportType BETWEEN 190 AND 197))
 			AND 
-			 (ISNULL(NewMaxPerMatch, 0)=0 OR NewMaxBet > NewMaxPerMatch OR CurMaxBet > CurMaxPerMatch))
+			 (NewMaxPerMatch IS NULL OR NewMaxBet > NewMaxPerMatch OR CurMaxBet > CurMaxPerMatch))
 		OR
 			(SportType=161 
 			AND
-			(ISNULL(NewMaxPerBall, 0)=0 
+			(NewMaxPerBall IS NULL
 				OR ((NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0) 
 				OR (NewMaxPerBall > NewMaxPerMatch) 
 				OR ((CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0)
