@@ -180,8 +180,18 @@ BEGIN
 							, SiteID)
 		-- Credit: exclude: Sportsbook, Number Game, Happy 5, RNG Keno.
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
-			, 0 AS NewMinBet, 0 AS NewMaxBet, 0 AS NewMaxPerMatch, 0 AS NewMaxPerBall
-			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet, NULL AS CurMaxPerMatch, NULL AS CurMaxPerBall
+			, 0 AS NewMinBet, 0 AS NewMaxBet
+			, CASE WHEN (A.SportType IN (199, 220, 222, 169, 175, 217, 218) OR --Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
+						(A.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
+						(A.SportType BETWEEN 213 AND 215)	OR	--NG2
+						(A.SportType BETWEEN 190 AND 197)) THEN 0 END AS NewMaxPerMatch
+			, NULL AS NewMaxPerBall
+			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
+			, CASE WHEN (A.SportType IN (199, 220, 222, 169, 175, 217, 218) OR 
+						(A.SportType BETWEEN 180 AND 186)	OR	
+						(A.SportType BETWEEN 213 AND 215)	OR	
+						(A.SportType BETWEEN 190 AND 197)) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
+			, NULL AS CurMaxPerBall
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
 			INNER JOIN ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
@@ -193,8 +203,18 @@ BEGIN
 		UNION ALL
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
-			, 0 AS NewMinBet, 0 AS NewMaxBet, 0 AS NewMaxPerMatch, 0 AS NewMaxPerBall
-			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet, pbs.MaxPerMatch AS CurMaxPerMatch, pbs.MaxPerBall AS CurMaxPerBall
+			, 0 AS NewMinBet, 0 AS NewMaxBet
+			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
+						(A.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
+						(A.SportType BETWEEN 213 AND 215)	OR	--NG2
+						(A.SportType BETWEEN 190 AND 197)) THEN 0 END AS NewMaxPerMatch 
+			, CASE WHEN A.SportType=161 THEN 0 END AS NewMaxPerBall
+			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
+			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+						(A.SportType BETWEEN 180 AND 186)	OR	
+						(A.SportType BETWEEN 213 AND 215)	OR	
+						(A.SportType BETWEEN 190 AND 197)) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
+			, CASE WHEN A.SportType=161 THEN pbs.MaxPerBall END AS CurMaxPerBall
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
 			INNER JOIN Dep_ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
