@@ -202,7 +202,7 @@ BEGIN
 			AND a.SportType NOT IN (161,164,168,202,1) 
 		UNION ALL
 		-- Deposit
-		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
+		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, 0 AS ExchangeIdCredit, pbs.Currency
 			, 0 AS NewMinBet, 0 AS NewMaxBet
 			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
 						(A.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
