@@ -143,8 +143,8 @@ BEGIN
 		INNER JOIN #Bettype b WITH(NOLOCK) ON slg.GameTypeID = b.typeid
 		WHERE a.SettingType IN (8) 
 			AND a.IsCredit = 1 
-			AND (@pMutilCurrencyCredit = '0' OR s.ExchangeId IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
-			AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
+			AND ((@pMutilCurrencyCredit = '0' OR s.ExchangeId IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
+				OR (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ','))))
 		UNION ALL -- Deposit Stakelevel
 		SELECT a.SportType,a.SportName,a.BetType,a.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
 			  0 AS NewMinBet, 0 AS NewMaxBet, s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, s.SiteID AS SiteID
@@ -197,8 +197,8 @@ BEGIN
 			INNER JOIN ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
 		WHERE a.SettingType NOT IN (7,8,17)
 			AND a.IsCredit = 1 
-			AND (@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
-			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
+			AND ((@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
+				OR (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ','))))
 			AND a.SportType NOT IN (161,164,168,202,1) 
 		UNION ALL
 		-- Deposit
@@ -220,7 +220,7 @@ BEGIN
 			INNER JOIN Dep_ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
 		WHERE a.SettingType NOT IN (7,8,17)
 			AND a.IsCredit = 0
-			AND (@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
+			AND (@pMutilCurrencyDeposit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
 			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 	END
 	
