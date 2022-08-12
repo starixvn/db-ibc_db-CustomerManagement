@@ -101,7 +101,7 @@ BEGIN
 		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-			AND psd.ProductID NOT IN  (1,3,8) AND psd.SettingStatus=0
+			AND psd.ProductID NOT IN  (1,3,8) AND psd.SettingStatus<>2
 			AND @pMutilCurrencyCredit<>''
 		UNION ALL
 		SELECT DISTINCT
@@ -118,7 +118,7 @@ BEGIN
 		WHERE (ps.SettingType IN (2,7,8,10,11,12)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-			AND @pMutilCurrencyDeposit<>'' AND psd.SettingStatus=0
+			AND @pMutilCurrencyDeposit<>'' AND psd.SettingStatus<>2
 	) KQ
 	ORDER BY SportType,BetType
 
