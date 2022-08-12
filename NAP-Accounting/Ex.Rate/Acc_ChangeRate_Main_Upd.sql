@@ -46,6 +46,18 @@ BEGIN
 	END
 	ELSE  --- Call at SiteDB, clone code from ExecRep_00
 	BEGIN 
+	
+		CREATE TABLE #bettrans (transid BIGINT, actualrate FLOAT, virtualrate FLOAT, old_actualrate FLOAT)
+		CREATE TABLE #translog (transid BIGINT, actualrate FLOAT, virtualrate FLOAT)
+		CREATE TABLE #bettransRnG (transid BIGINT, actualrate FLOAT, virtualrate FLOAT)
+		CREATE TABLE #bettransLC (transid BIGINT, actualrate FLOAT, virtualrate FLOAT)
+		CREATE TABLE #Transfer_Coll (transid BIGINT, actualrate FLOAT)
+		CREATE TABLE #bettransG (transid BIGINT, actualrate FLOAT, virtualrate FLOAT)
+		CREATE TABLE #transfer (transid BIGINT, actualrate FLOAT)
+		CREATE TABLE #CashOutSelling (transid BIGINT, virtualrate FLOAT)
+		CREATE CLUSTERED INDEX ix_bettrans ON #bettrans (transid)
+
+
 		IF @TableName = 'bettrans' --bettrans@dbtrans
 		BEGIN
 			-- update for SB's tickets (using virtualrate)
