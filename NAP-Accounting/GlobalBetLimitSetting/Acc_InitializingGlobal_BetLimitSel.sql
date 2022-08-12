@@ -101,7 +101,8 @@ BEGIN
 		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-			AND psd.ProductID NOT IN  (1,3,8)
+			AND psd.ProductID NOT IN  (1,3,8) AND psd.SettingStatus=0
+			AND @pMutilCurrencyCredit<>''
 		UNION ALL
 		SELECT DISTINCT
 			  psd.BetType
@@ -117,6 +118,7 @@ BEGIN
 		WHERE (ps.SettingType IN (2,7,8,10,11,12)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
+			AND @pMutilCurrencyDeposit<>'' AND psd.SettingStatus=0
 	) KQ
 	ORDER BY SportType,BetType
 
@@ -220,7 +222,7 @@ BEGIN
 			INNER JOIN Dep_ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
 		WHERE a.SettingType NOT IN (7,8,17)
 			AND a.IsCredit = 0
-			AND (@pMutilCurrencyDeposit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
+			AND (@pMutilCurrencyDeposit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyDeposit, ',')))
 			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 	END
 	
