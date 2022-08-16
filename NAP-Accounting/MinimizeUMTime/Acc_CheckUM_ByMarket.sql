@@ -29,6 +29,6 @@ BEGIN
 		INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 	WHERE uc.FunctionType NOT IN (1, 2, 101)
 		AND (uc.SiteID = @MarketId OR @MarketId IS NULL)
-	
+		
 END
 GO
