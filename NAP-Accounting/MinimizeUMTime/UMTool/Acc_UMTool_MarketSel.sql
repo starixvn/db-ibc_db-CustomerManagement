@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02, DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
 CREATE PROCEDURE [dbo].[Acc_UMTool_MarketSel]
 AS
 
@@ -6,7 +6,7 @@ AS
 Created by: Eddie
 Date: 2022-07-26
 Task : get market
-DB: DBACC.bodb02
+DB: DBCUST-CUSTDB
 Revisions:
 	- 20220726@Eddie: Dropdownlist Sites -> IBCBET, 789y and IBCIndo [RedmineID: #174852]
 	
@@ -14,12 +14,15 @@ Revisions:
 
 SET NOCOUNT ON
 
-SELECT 0  AS [Marketid], 'All' 	   AS [Market]
-UNION ALL                        
-SELECT -1 AS [Marketid], 'IBCBET'  AS [Market]
-UNION ALL                        
-SELECT -2 AS [Marketid], '789y'    AS [Market]
-UNION ALL
-SELECT -3 AS [Marketid], 'IBCIndo' AS [Market]
+DECLARE @Market TABLE(MarketId INT, MarketName VARCHAR(300))
+
+INSERT INTO @Market(MarketId, MarketName)
+VALUES (0 , 'All')
+	  ,(-1, 'IBCBET')
+	  ,(-2, '789y')
+	  ,(-3, 'IBCIndo')
+	  
+SELECT MarketId, MarketName
+FROM @Market
 
 GO
