@@ -18,9 +18,9 @@ BEGIN
 */
 SET NOCOUNT ON	
 
-	DECLARE @Market_spec TABLE(Marketid INT, Market VARCHAR(300))
+	DECLARE @Market_spec TABLE(MarketId INT, MarketName VARCHAR(300))
 	
-	INSERT INTO @Market_spec(Marketid, Market)
+	INSERT INTO @Market_spec(MarketId, MarketName)
 	EXEC [dbo].[Acc_UMTool_MarketSel];
 	
 	SELECT c.configID,
@@ -56,7 +56,7 @@ SET NOCOUNT ON
 		ISNULL(sp.SportName,'All') AS SportName,
 		ISNULL(st.SettingName,'All') AS SettingName,
 		CASE WHEN c.SiteID >= 0 THEN ISNULL(s.Site,'All')
-			 WHEN c.SiteID <  0 THEN ISNULL(ms.Market,'All')
+			 WHEN c.SiteID <  0 THEN ISNULL(ms.MarketName,'All')
 		END Site,
 		ISNULL(e.currency,'All') AS CurrencyName,
 		CASE WHEN c.SuperID = 0 THEN 'All'
@@ -71,7 +71,7 @@ SET NOCOUNT ON
 		LEFT JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON c.ProductID = p.ProductID
 		LEFT JOIN DBPRO.bodb02.dbo.Sports sp WITH(NOLOCK) ON c.sporttype = sp.sporttype
 		LEFT JOIN Site s WITH(NOLOCK) ON c.SiteID = s.siteid
-		LEFT JOIN @Market_spec ms ON c.SiteID = ms.Marketid
+		LEFT JOIN @Market_spec ms ON c.SiteID = ms.MarketId
 		LEFT JOIN exchange e WITH(NOLOCK) ON c.Currency = e.ExchangeId
 		LEFT JOIN customer ci WITH(NOLOCK) ON c.SuperID = ci.custid AND ci.roleid = 4
 	ORDER BY FunctionType,ProductName,SportName,SettingName
