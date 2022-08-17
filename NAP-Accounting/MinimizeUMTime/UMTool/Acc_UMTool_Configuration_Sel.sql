@@ -9,6 +9,7 @@ BEGIN
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220728@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
+		- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
 
 	Param's Explanation:   
 		
@@ -33,25 +34,7 @@ SET NOCOUNT ON
 		c.SiteID,
 		c.currency,
 		SuperID,
-		FunctionTypeName = CASE WHEN FunctionType = 1 THEN 'Edit Setting'
-								WHEN FunctionType = 2 THEN 'Add New Customer'
-								WHEN FunctionType = 101 THEN 'Transfer'
-								WHEN FunctionType = 201 THEN 'Group Win Loss Reports'
-								WHEN FunctionType = 202 THEN 'Outstandings'
-								WHEN FunctionType = 203 THEN 'Group Win Los Analysis'
-								WHEN FunctionType = 204 THEN 'Win Loss by Product'
-								WHEN FunctionType = 205 THEN 'Commission by Bettype'
-								WHEN FunctionType = 206 THEN 'Results'
-								WHEN FunctionType = 207 THEN 'Progressive Games Contribution'
-								WHEN FunctionType = 208 THEN 'Statement'
-								WHEN FunctionType = 209 THEN 'Bet Credit Tracking'
-								WHEN FunctionType = 210 THEN 'Risk Analysis'
-								WHEN FunctionType = 211 THEN 'Group Bets & Forecast OST'
-								WHEN FunctionType = 212 THEN 'Group Bets & Forecast BOF'
-								WHEN FunctionType = 213 THEN 'Last Bets'
-								WHEN FunctionType = 214 THEN 'Group Bet List Drilldown'
-								WHEN FunctionType = 215 THEN 'Group Bet List'
-							END,
+		FunctionTypeName = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(FunctionType)),
 		ISNULL(p.ProductName,'All') AS ProductName,
 		ISNULL(sp.SportName,'All') AS SportName,
 		ISNULL(st.SettingName,'All') AS SettingName,
