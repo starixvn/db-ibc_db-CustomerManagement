@@ -192,8 +192,8 @@ BEGIN
 			INNER JOIN ProductBetSetting pbs WITH (NOLOCK) ON pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType
 		WHERE a.SettingType NOT IN (7,8,17)
 			AND a.IsCredit = 1 
-			AND ((@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
-				OR (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ','))))
+			AND (@pMutilCurrencyCredit = '0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
+			AND (@pMutilBetType = '0' OR pbs.Bettype IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 			AND a.SportType NOT IN (161,164,168,202,1) 
 		UNION ALL
 		-- Deposit
