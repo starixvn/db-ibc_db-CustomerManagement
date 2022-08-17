@@ -126,10 +126,10 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #ProductSettingDetail WHERE SettingType IN (7,8,17))
 	BEGIN
 		INSERT INTO #BetLimit(SportType, SportName,BetType, typenamee,ExchangeIdCredit,ExchangeIdDeposit,
-								NewMinBet,NewMaxBet,CurMinBet,CurMaxBet,GameGroupID, SiteID)
+								CurMinBet,CurMaxBet,GameGroupID, SiteID)
 		-- Credit Stakelevel							
 		SELECT a.SportType,a.SportName,a.BetType,a.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-			  0 AS NewMinBet, 0 AS NewMaxBet, s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
+			  s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		WHERE a.SettingType IN ( 7, 17) 
@@ -138,18 +138,18 @@ BEGIN
 			AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 		UNION ALL -- Credit Group Stakelevel	
 		SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-			  0 AS NewMinBet, 0 AS NewMaxBet, slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
+			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		INNER JOIN StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
 		INNER JOIN #Bettype b WITH(NOLOCK) ON slg.GameTypeID = b.typeid
 		WHERE a.SettingType IN (8) 
 			AND a.IsCredit = 1 
-			AND ((@pMutilCurrencyCredit = '0' OR s.ExchangeId IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrencyCredit, ',')))
-				OR (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ','))))
+			AND (@pMutilCurrencyCredit = '0' OR s.ExchangeId IN (SELECT val FROM dbo.strSplit(@pMutilCurrencyCredit, ',')))
+			AND (@pMutilBetType = '0' OR slg.GameTypeID IN (SELECT val FROM dbo.strSplit(@pMutilBetType, ',')))
 		UNION ALL -- Deposit Stakelevel
 		SELECT a.SportType,a.SportName,a.BetType,a.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-			  0 AS NewMinBet, 0 AS NewMaxBet, s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, s.SiteID AS SiteID
+			  s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, s.SiteID AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		WHERE a.SettingType IN ( 7) 
@@ -158,7 +158,7 @@ BEGIN
 			AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 		UNION ALL -- Deposit Group Stakelevel
 		SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-			  0 AS NewMinBet, 0 AS NewMaxBet, slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
+			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		INNER JOIN Dep_StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
@@ -177,17 +177,10 @@ BEGIN
 	BEGIN
 		INSERT INTO #BetLimit(SportType, SportName, BetType, typenamee
 							, ExchangeIdCredit, ExchangeIdDeposit
-							, NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall
 							, CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall
 							, SiteID)
 		-- Credit: exclude: Sportsbook, Number Game, Happy 5, RNG Keno.
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
-			, 0 AS NewMinBet, 0 AS NewMaxBet
-			, CASE WHEN (A.SportType IN (199, 220, 222, 169, 175, 217, 218) OR --Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
-						(A.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
-						(A.SportType BETWEEN 213 AND 215)	OR	--NG2
-						(A.SportType BETWEEN 190 AND 197)) THEN 0 END AS NewMaxPerMatch
-			, NULL AS NewMaxPerBall
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
 			, CASE WHEN (A.SportType IN (199, 220, 222, 169, 175, 217, 218) OR 
 						(A.SportType BETWEEN 180 AND 186)	OR	
@@ -205,12 +198,6 @@ BEGIN
 		UNION ALL
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, 0 AS ExchangeIdCredit, pbs.Currency
-			, 0 AS NewMinBet, 0 AS NewMaxBet
-			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
-						(A.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
-						(A.SportType BETWEEN 213 AND 215)	OR	--NG2
-						(A.SportType BETWEEN 190 AND 197)) THEN 0 END AS NewMaxPerMatch 
-			, CASE WHEN A.SportType=161 THEN 0 END AS NewMaxPerBall
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
 			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 						(A.SportType BETWEEN 180 AND 186)	OR	

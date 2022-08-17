@@ -514,7 +514,19 @@ BEGIN
 
 	--SettingType NOT IN (7,8,17)
 	--CREDIT: exclude: numbergame, Happy5, keno, sportbook
-	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
+	IF EXISTS (SELECT 1 FROM #NewInputDateTbl 
+				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) 
+					AND IsCredit=1 AND SportType IN (161,164,168,202,1))
+	BEGIN
+		SET @ErrCode=100
+		SET @ErrMsg='Bet Limits of Sportsbook, Number Game, Happy 5 and RNG Keno are not allowed to be imported for Credit sites.'
+		RETURN
+	END
+
+
+	IF EXISTS (SELECT 1 FROM #NewInputDateTbl 
+				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) 
+					AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
 	BEGIN
 		BEGIN TRY
 			--update new settings if exists row:
@@ -550,7 +562,7 @@ BEGIN
 								(SportType BETWEEN 190 AND 197))		
 							THEN NewMaxPerMatch END NewMaxPerMatch
 			FROM #NewInputDateTbl
-			WHERE SettingType NOT IN (7,8,17) AND IsCredit=1
+			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=1
 				AND SportType NOT IN (161,164,168,202,1)
 		END TRY
 		BEGIN CATCH
@@ -560,7 +572,7 @@ BEGIN
 	END
 
 	--DEPOSIT
-	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType NOT IN (7,8,17) AND IsCredit=0)
+	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=0)
 	BEGIN
 		BEGIN TRY
 			--update new settings if exists row:
@@ -595,7 +607,7 @@ BEGIN
 											THEN NewMaxPerMatch END NewMaxPerMatch, 
 					CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall
 			FROM #NewInputDateTbl
-			WHERE SettingType NOT IN (7,8,17) AND IsCredit=0
+			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=0
 		END TRY
 		BEGIN CATCH
 			SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
