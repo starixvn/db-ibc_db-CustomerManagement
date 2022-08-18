@@ -21,7 +21,7 @@ VALUES (0 , 'All')
 	  ,(-1, 'IBCBET')
 	  ,(-2, '789y')
 	  ,(-3, 'IBCIndo')
-	  
+
 SELECT MarketId, MarketName
 FROM @Market
 
