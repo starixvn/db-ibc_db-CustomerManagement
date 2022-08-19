@@ -19,7 +19,8 @@ Revisions:
 
 SET NOCOUNT ON  
 
-SELECT siteid, site, SiteDBGroupID
-FROM [site]  WITH (NOLOCK)
-WHERE islicensee = 0  AND (@Mode = 1 OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
+select [siteid], [site] 
+from [site]  with(nolock)
+where islicensee = 0  AND (
+(@Mode = 1) OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
 GO
