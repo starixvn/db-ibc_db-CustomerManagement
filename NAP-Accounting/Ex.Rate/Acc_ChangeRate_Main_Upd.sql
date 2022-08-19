@@ -1,4 +1,4 @@
-/*<info serverAlias="DBTXN-bodb02,DBSIG-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ChangeRate_Main_Upd] 
 	@TableName VARCHAR(200),
 	@IsSiteDB BIT = 0 
