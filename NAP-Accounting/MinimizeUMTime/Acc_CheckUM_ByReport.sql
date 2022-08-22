@@ -38,10 +38,10 @@ BEGIN
 	)
 	
 	DECLARE @Results TABLE(
-		FunctionTypeName VARCHAR,
-		MarketName 	 VARCHAR(300),
-		BeginTime    SMALLDATETIME,
-		EndTime      SMALLDATETIME
+		FunctionTypeName VARCHAR(300),
+		MarketName 	 	 VARCHAR(300),
+		BeginTime    	 SMALLDATETIME,
+		EndTime      	 SMALLDATETIME
 	)
 	
 	IF @CustId <> -1
@@ -54,11 +54,11 @@ BEGIN
 				WHEN c.site = '789y' 	THEN '789y'
 				ELSE 'IBCBET'
 			END AS MarketName,
-			uc.BeginTime,
-			uc.EndTime
+			DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime,
+			DATEADD(HOUR, 12, uc.EndTime)   AS EndTime,
 		FROM dbo.customer c WITH (NOLOCK)
-			LEFT JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID IN (c.custid)
-			LEFT JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
+			INNER JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID = c.custid
+			INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 		WHERE c.custid = @CustId
 		
 		SELECT CustId
@@ -76,8 +76,8 @@ BEGIN
 			INSERT INTO @Results(FunctionTypeName, MarketName, BeginTime, EndTime)
 			SELECT [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
 			, ms.MarketName
-			, uc.BeginTime
-			, uc.EndTime 
+			, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
+			, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
 			FROM dbo.UMConfig uc WITH (NOLOCK)
 				INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 			WHERE ms.MarketName LIKE '%' + @MarketName + '%'
