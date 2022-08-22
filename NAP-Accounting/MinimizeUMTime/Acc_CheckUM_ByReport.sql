@@ -1,49 +1,89 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_CheckUM_ByReport]
-	@MarketId	INT = NULL
+	@CustId 	INT = NULL,
+	@MarketName	VARCHAR(300) = ''
 AS
 	/*
 	Created: 20220816@Eddie
-	Task :  Check UM config by Market
+	Task :  Check UM config by Report
 	DB: DBCUST.CustDB
 	Revisions:	
 		- 20220816@Eddie: Initialize SPs [RedmineID: #174852]
 	
 	Param's Explanation:
-		- @MarketId : 
-			0 : 'All'
-			-1: 'IBCBET'
-			-2: '789y'
-			-3: 'IBCIndo'			
+		- @MarketName : 
+			1. 'All'    (0 )
+			2. 'IBCBET' (-1)
+			3. '789y'   (-2)
+			4. 'IBCIndo'(-3)			
 	*/
 BEGIN
 	SET NOCOUNT ON
+	
+	SELECT @CustId = ISNULL(@CustId, -1), @MarketName = ISNULL(@MarketName, '')
 	
 	DECLARE @Market_spec TABLE(MarketId INT PRIMARY KEY, MarketName VARCHAR(300))
 	
 	INSERT INTO @Market_spec(MarketId, MarketName)
 	EXEC dbo.Acc_UMTool_MarketSel;
 	
-	SELECT [FunctionTypeName] = CASE WHEN uc.FunctionType = 201 THEN 'Group Win Loss Reports'
-								WHEN uc.FunctionType = 202 THEN 'Outstandings'
-								WHEN uc.FunctionType = 203 THEN 'Group Win Los Analysis'
-								WHEN uc.FunctionType = 204 THEN 'Win Loss by Product'
-								WHEN uc.FunctionType = 205 THEN 'Commission by Bettype'
-								WHEN uc.FunctionType = 206 THEN 'Results'
-								WHEN uc.FunctionType = 207 THEN 'Progressive Games Contribution'
-								WHEN uc.FunctionType = 208 THEN 'Statement'
-								WHEN uc.FunctionType = 209 THEN 'Bet Credit Tracking'
-								WHEN uc.FunctionType = 210 THEN 'Risk Analysis'
-								WHEN uc.FunctionType = 211 THEN 'Group Bets & Forecast OST'
-								WHEN uc.FunctionType = 212 THEN 'Group Bets & Forecast BOF'
-								WHEN uc.FunctionType = 213 THEN 'Last Bets'
-								WHEN uc.FunctionType = 214 THEN 'Group Bet List Drilldown'
-								WHEN uc.FunctionType = 215 THEN 'Group Bet List'
-							END
-		, ms.MarketName, uc.BeginTime, uc.EndTime, uc.ShowTime  
-	FROM dbo.UMConfig uc WITH (NOLOCK)
-		INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
-	WHERE uc.FunctionType NOT IN (1, 2, 101)
-		AND (uc.SiteID = @MarketId OR @MarketId IS NULL)
+	DECLARE @UMInfoTmp TABLE(
+		CustId 		 INT, 
+		FunctionType TINYINT,
+		SiteId       INT,
+		SiteName 	 VARCHAR(300),
+		MarketName 	 VARCHAR(300),
+		BeginTime    SMALLDATETIME,
+		EndTime      SMALLDATETIME
+	)
+	
+	DECLARE @Results TABLE(
+		FunctionTypeName VARCHAR,
+		MarketName 	 VARCHAR(300),
+		BeginTime    SMALLDATETIME,
+		EndTime      SMALLDATETIME
+	)
+	
+	IF @CustId <> -1
+	BEGIN
+	
+		INSERT INTO @UMInfoTmp(CustId, FunctionType, SiteId, SiteName, MarketName, BeginTime, EndTime)
+		SELECT	c.custid, uc.FunctionType, uc.SiteID, c.site,
+			CASE	
+				WHEN c.site = 'IBCIndo' THEN 'IBCIndo'
+				WHEN c.site = '789y' 	THEN '789y'
+				ELSE 'IBCBET'
+			END AS MarketName,
+			uc.BeginTime,
+			uc.EndTime
+		FROM dbo.customer c WITH (NOLOCK)
+			LEFT JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID IN (c.custid)
+			LEFT JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
+		WHERE c.custid = @CustId
+		
+		SELECT CustId
+		, [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(FunctionType))
+		, MarketName
+		, BeginTime
+		, EndTime 
+		FROM @UMInfoTmp
+		WHERE (MarketName LIKE '%' + @MarketName + '%') OR (@MarketName = '')
+	END
+	ELSE
+	BEGIN
+		IF @MarketName <> ''
+		BEGIN
+			INSERT INTO @Results(FunctionTypeName, MarketName, BeginTime, EndTime)
+			SELECT [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
+			, ms.MarketName
+			, uc.BeginTime
+			, uc.EndTime 
+			FROM dbo.UMConfig uc WITH (NOLOCK)
+				INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
+			WHERE ms.MarketName LIKE '%' + @MarketName + '%'
+		END
+		
+		SELECT * FROM @Results
+	END
 END
 GO
