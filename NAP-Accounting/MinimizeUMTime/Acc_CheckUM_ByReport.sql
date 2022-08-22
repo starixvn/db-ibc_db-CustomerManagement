@@ -55,7 +55,7 @@ BEGIN
 				ELSE 'IBCBET'
 			END AS MarketName,
 			DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime,
-			DATEADD(HOUR, 12, uc.EndTime)   AS EndTime,
+			DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
 		FROM dbo.customer c WITH (NOLOCK)
 			INNER JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID = c.custid
 			INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
