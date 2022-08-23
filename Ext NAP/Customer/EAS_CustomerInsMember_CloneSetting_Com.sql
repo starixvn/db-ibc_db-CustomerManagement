@@ -44,7 +44,7 @@ AS
 		- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 		- 20220222@Elodie: Default VR for 789y site [Redmine: #168885]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-
+		- 20220823@Johnson: Copy Date Limit range and  Auto Transfer Type for real currency 789y [redmine:#176778] 
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -712,15 +712,39 @@ BEGIN
            )
 	VALUES (@custid,@firstname,@lastname,@phone,@mobilephone,@fax)
 	
+	DECLARE @transferType TINYINT,
+			@MinDate SMALLDATETIME,
+			@LimitDays SMALLINT,
+			@NoLimitText VARCHAR(100) = 'No Limit',
+			@IsLogDateLimit BIT = 0
+			
 	--auto transfer 
+	SELECT @transferType = TransferType
+	FROM Acc_ClearBalanceList WITH(NOLOCK)
+	WHERE custid = @ExistingCustid
+	
 	INSERT INTO [dbo].[Acc_ClearBalanceList]
            ([custid] 
            ,[status]
            ,[LastTransfer]           
            ,[transferType])       
-	SELECT @custid,'', GETDATE()-1, TransferType
-	FROM Acc_ClearBalanceList WITH(NOLOCK)
-	WHERE custid = @ExistingCustid
+	SELECT @custid,'', GETDATE()-1, @TransferType
+			
+	--copy Date limit value
+	IF @Site = '789y' AND @Currency <> 20
+	BEGIN
+		SELECT @MinDate = MinDate,
+			@LimitDays = LimitDays,
+			@IsLogDateLimit = 1
+		FROM Age_CustDateLimit WITH(NOLOCK)
+		WHERE custid = @ExistingCustid
+		
+		INSERT INTO [dbo].[Age_CustDateLimit]
+			   ([CustId]
+			   ,[MinDate]
+			   ,[LimitDays])
+		SELECT @custId, @MinDate, @LimitDays		
+	END
 	
 	SET @endRun=GETDATE()
 	SET @duration=datediff(millisecond,@startRun,@endRun)
@@ -739,6 +763,8 @@ BEGIN
 	'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
 	'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +		
 	'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
+	'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' +
+	CASE WHEN @IsLogDateLimit = 1 THEN 'DataAvailable="'+ COALESCE(CAST(@LimitDays AS VARCHAR(10)), CONVERT(VARCHAR, @MinDate, 101), @NoLimitText) + '" ' ELSE '' END +	
 	'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 	'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
 	'CopiedFrom="'+cast(@ExistingCustid as VARCHAR(10))+'" '+
@@ -770,6 +796,8 @@ BEGIN
 		'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
 		'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +
 		'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
+		'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' +
+		CASE WHEN @IsLogDateLimit = 1 THEN 'DataAvailable="'+ COALESCE(CAST(@LimitDays AS VARCHAR(10)), CONVERT(VARCHAR, @MinDate, 101), @NoLimitText) + '" ' ELSE '' END +	
 		'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 		'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
 		'CopiedFrom="'+cast(@ExistingCustid as VARCHAR(10))+'" '+
