@@ -32,6 +32,7 @@ BEGIN
 			 psd.BetType
 			 ,b.typenamee 
 		FROM ProductSettingDetail psd WITH(NOLOCK)
+			INNER JOIN ProductBetSetting pb WITH (NOLOCK) ON pb.Bettype=psd.BetType AND pb.Sporttype=psd.SportType
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
 		WHERE (psd.SettingType IN (2,7,9,16,17,20)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
@@ -56,6 +57,7 @@ BEGIN
 			 ,b.typenamee 
 		FROM Dep_ProductSetting ps WITH(NOLOCK)
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
+			INNER JOIN Dep_ProductBetSetting pb WITH (NOLOCK) ON pb.Bettype=psd.BetType AND pb.Sporttype=psd.SportType
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
 		WHERE (ps.SettingType IN (2,7,10,11,12)) 
 			AND (@ProductID = 0 OR ps.ProductID = @ProductID) 

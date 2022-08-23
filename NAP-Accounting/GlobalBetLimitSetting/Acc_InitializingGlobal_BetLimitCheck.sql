@@ -319,25 +319,25 @@ BEGIN
 		ORDER BY RowID 
 		RETURN
 	END	
-	
-	SELECT TOP(1) @ErrCode=108, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SportType AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE (ISNULL(tmp.SettingType, 0)=0 AND SportType NOT IN (1, 161, 164, 168, 202)) OR NOT EXISTS(SELECT TOP 1 1 FROM #Sports WHERE SportType= tmp.SportType)
-	IF 	@ErrCode=108			
-	BEGIN
-		SELECT @ErrMsg='Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
 
 	SELECT TOP(1) @ErrCode=109, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.BetType AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE NOT EXISTS(SELECT TOP 1 1 FROM #Bettype WHERE typeid= tmp.BetType) OR (OrgBetType IS NULL AND SportType NOT IN (1, 161, 164, 168, 202))
+	WHERE NOT EXISTS(SELECT TOP 1 1 FROM #Bettype WHERE typeid= tmp.BetType) OR OrgBetType IS NULL
 	IF 	@ErrCode=109			
 	BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
 		RETURN
 	END	
 	
+	SELECT TOP(1) @ErrCode=108, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SportType AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE ISNULL(tmp.SettingType, 0)=0 OR NOT EXISTS(SELECT TOP 1 1 FROM #Sports WHERE SportType= tmp.SportType)
+	IF 	@ErrCode=108			
+	BEGIN
+		SELECT @ErrMsg='Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
+		RETURN
+	END	
+
 	SELECT TOP(1) @ErrCode=110, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.currency AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 	WHERE ISNULL(tmp.Currency, '')<>'' AND tmp.IsCredit=1 AND NOT EXISTS(SELECT TOP 1 1 FROM Exchange WITH(NOLOCK) WHERE currency= tmp.Currency AND IsActive=1 AND OfferSite IN (0, 1))
