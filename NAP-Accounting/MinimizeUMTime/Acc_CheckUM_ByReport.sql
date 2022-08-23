@@ -27,9 +27,14 @@ BEGIN
 	INSERT INTO @Market_spec(MarketId, MarketName)
 	EXEC dbo.Acc_UMTool_MarketSel;
 	
+	DECLARE @Results_CustID TABLE(
+		CustId 		 INT,
+		SiteName 	 VARCHAR(300),
+		MarketName 	 VARCHAR(300)
+	)
 	DECLARE @UMInfoTmp TABLE(
 		CustId 		 INT, 
-		FunctionType TINYINT,
+		FunctionTypeName VARCHAR(300),
 		SiteId       INT,
 		SiteName 	 VARCHAR(300),
 		MarketName 	 VARCHAR(300),
@@ -47,28 +52,32 @@ BEGIN
 	IF @CustId <> -1
 	BEGIN
 	
-		INSERT INTO @UMInfoTmp(CustId, FunctionType, SiteId, SiteName, MarketName, BeginTime, EndTime)
-		SELECT	c.custid, uc.FunctionType, uc.SiteID, c.site,
+		INSERT INTO @Results_CustID(CustId, SiteName, MarketName)
+		SELECT	c.custid, c.site,
 			CASE	
 				WHEN c.site = 'IBCIndo' THEN 'IBCIndo'
 				WHEN c.site = '789y' 	THEN '789y'
 				ELSE 'IBCBET'
-			END AS MarketName,
-			DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime,
-			DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
+			END AS MarketName
 		FROM dbo.customer c WITH (NOLOCK)
-			INNER JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID = c.custid
-			INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 		WHERE c.custid = @CustId
+			
+			
+		INSERT INTO @UMInfoTmp(CustId, FunctionTypeName, SiteId, SiteName, MarketName, BeginTime, EndTime)
+		SELECT	rc.custid
+			, [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
+			, uc.SiteID
+			, rc.SiteName
+			, rc.MarketName
+			, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
+			, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
+		FROM dbo.UMConfig uc WITH (NOLOCK)
+			INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
+			INNER JOIN @Results_CustID rc ON rc.MarketName = ms.MarketName
+		WHERE (rc.MarketName LIKE '%' + @MarketName + '%') OR (@MarketName = '') OR (rc.MarketName = 'All')
 			AND ( CONVERT(SMALLDATETIME,GETDATE()) BETWEEN uc.BeginTime AND uc.EndTime )
 		
-		SELECT CustId
-		, [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(FunctionType))
-		, MarketName
-		, BeginTime
-		, EndTime 
-		FROM @UMInfoTmp
-		WHERE (MarketName LIKE '%' + @MarketName + '%') OR (@MarketName = '') OR (MarketName = 'All')
+		SELECT FunctionTypeName, MarketName, BeginTime, EndTime FROM @UMInfoTmp
 	END
 	ELSE
 	BEGIN
