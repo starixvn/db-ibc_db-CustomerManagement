@@ -68,7 +68,7 @@ BEGIN
 		, BeginTime
 		, EndTime 
 		FROM @UMInfoTmp
-		WHERE (MarketName LIKE '%' + @MarketName + '%') OR (@MarketName = '')
+		WHERE (MarketName LIKE '%' + @MarketName + '%') OR (@MarketName = '') OR (MarketName = 'All')
 	END
 	ELSE
 	BEGIN
@@ -81,7 +81,7 @@ BEGIN
 			, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
 			FROM dbo.UMConfig uc WITH (NOLOCK)
 				INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
-			WHERE ms.MarketName LIKE '%' + @MarketName + '%'
+			WHERE ( ms.MarketName LIKE '%' + @MarketName + '%' OR ms.MarketName = 'All' )
 				AND ( CONVERT(SMALLDATETIME,GETDATE()) BETWEEN uc.BeginTime AND uc.EndTime )
 		END
 		
