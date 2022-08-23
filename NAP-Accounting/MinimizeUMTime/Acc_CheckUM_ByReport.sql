@@ -60,6 +60,7 @@ BEGIN
 			INNER JOIN dbo.UMConfig uc WITH(NOLOCK) ON uc.SuperID = c.custid
 			INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 		WHERE c.custid = @CustId
+			AND ( CONVERT(SMALLDATETIME,GETDATE()) BETWEEN uc.BeginTime AND uc.EndTime )
 		
 		SELECT CustId
 		, [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(FunctionType))
@@ -81,6 +82,7 @@ BEGIN
 			FROM dbo.UMConfig uc WITH (NOLOCK)
 				INNER JOIN @Market_spec ms ON ms.MarketId = uc.SiteID
 			WHERE ms.MarketName LIKE '%' + @MarketName + '%'
+				AND ( CONVERT(SMALLDATETIME,GETDATE()) BETWEEN uc.BeginTime AND uc.EndTime )
 		END
 		
 		SELECT * FROM @Results
