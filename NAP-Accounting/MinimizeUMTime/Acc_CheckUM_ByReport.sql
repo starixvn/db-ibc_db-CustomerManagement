@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet, bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_CheckUM_ByReport]
 	@CustId 	INT = NULL,
 	@MarketName	VARCHAR(300) = ''
