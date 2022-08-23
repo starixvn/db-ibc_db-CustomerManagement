@@ -44,6 +44,8 @@ AS
 		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 		- 20210820@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
 		- 20211021@Johnson: Auto add & remove ABI Danger Level [redmine:#162834]
+		- 20220823@Tacy: update Danger's BA member follow upline [redmine:#176518]
+
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -101,34 +103,6 @@ BEGIN
 	BEGIN 
 		SET @oldvalue=(Select Danger FROM custInfo (NOLOCK) WHERE custid=@CustID)
 		SET @dangerfield='Danger'
-		
-		IF @updateDownline = 1 
-		BEGIN
-			IF @roleid = 2
-			BEGIN
-				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
-				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
-				WHERE lb.Status='Running' 
-					AND ci.recommend=@custid
-			END
-			ELSE IF @roleid = 3
-			BEGIN
-				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
-				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
-				WHERE lb.Status='Running' 
-					AND ci.mrecommend=@custid
-			END
-			ELSE IF @roleid = 4
-			BEGIN
-				SELECT BAMemberAg = CAST(lb.CustID AS VARCHAR(15)) +',' 
-				FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-					INNER JOIN custinfo ci WITH (NOLOCK)  ON lb.CustID=ci.CustID
-				WHERE lb.Status='Running' 
-					AND ci.srecommend=@custid
-			END	
-		END	
 	END
 	ELSE IF (@DangerType=2)
 	BEGIN 
@@ -163,25 +137,12 @@ BEGIN
 			@roleid = @roleid,			
 			@DangerType = @DangerType,		
 			@DangerLevel = @DangerLevel,	
-			@BAMemberAg = @BAMemberAg,		 
 			@mode = 'DangerStatus'
 	END
 	ELSE
 	BEGIN
 		IF (@DangerType=1)
 		BEGIN
-			IF EXISTS (
-				 SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH (NOLOCK)
-				 WHERE custid=@custid AND status='running'
-				)
-				SET @isBA=1
-			ELSE
-				SET @isBA=0
-			IF(@isBA=1 AND @DangerLevel =0)
-				BEGIN
-					SELECT @DangerLevel=100
-				END	
-				
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
 			SET Danger = @DangerLevel 
 			WHERE custid = @custid
