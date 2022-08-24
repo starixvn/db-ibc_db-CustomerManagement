@@ -37,7 +37,7 @@ RETURN
 				WHEN @Functiontype = 101 THEN 'Transfer'
 				WHEN @Functiontype = 201 THEN 'Group Win Loss Reports'
 				WHEN @Functiontype = 202 THEN 'Outstandings'
-				WHEN @Functiontype = 203 THEN 'Group Win Los Analysis'
+				WHEN @Functiontype = 203 THEN 'Group Win Loss Analysis'
 				WHEN @Functiontype = 204 THEN 'Win Loss by Product'
 				WHEN @Functiontype = 205 THEN 'Commission by Bettype'
 				WHEN @Functiontype = 206 THEN 'Results'
