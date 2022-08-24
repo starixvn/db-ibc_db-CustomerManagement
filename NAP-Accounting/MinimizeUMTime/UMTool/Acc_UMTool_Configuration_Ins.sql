@@ -11,7 +11,7 @@ ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Ins]
 	,@UserNames		VARCHAR(MAX) = ''
 	,@BeginTime		SMALLDATETIME
 	,@EndTime		SMALLDATETIME
-	,@ShowTime		SMALLDATETIME
+	,@ShowTime		SMALLDATETIME = NULL
 	,@LockAddingNew BIT = 0
 	,@Bettype		SMALLINT = 0
 	,@IsLive		BIT = 0	
