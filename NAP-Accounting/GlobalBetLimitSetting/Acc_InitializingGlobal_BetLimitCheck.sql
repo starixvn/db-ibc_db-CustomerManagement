@@ -300,7 +300,7 @@ BEGIN
 	FROM #NewInputDateTbl a
 		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType AND (psd.SettingType IN (2, 8, 9, 16, 20) OR (psd.SettingType IN (7, 17) AND a.BetType=psd.BetType))
 	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17, 20) AND psd.ProductID NOT IN (1,3,8)
-		AND psd.SettingStatus=0
+		AND psd.SettingStatus<>0
 
 	UPDATE a	--DEPOSIT
 	SET a.SettingType= ps.SettingType, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
@@ -308,7 +308,7 @@ BEGIN
 		INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType 
 		INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID=psd.ProductSettingID
 	WHERE a.IsCredit=0 AND (ps.SettingType IN (2, 8, 10, 11, 12) OR (ps.SettingType IN (7) AND a.BetType=psd.BetType))
-		AND psd.SettingStatus=0
+		AND psd.SettingStatus<>0
 
 	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
 	IF 	EXISTS(SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR @BetType<>OrgBetType)	
