@@ -516,16 +516,6 @@ BEGIN
 	--CREDIT: exclude: numbergame, Happy5, keno, sportbook
 	IF EXISTS (SELECT 1 FROM #NewInputDateTbl 
 				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) 
-					AND IsCredit=1 AND SportType IN (161,164,168,202,1))
-	BEGIN
-		SET @ErrCode=100
-		SET @ErrMsg='Bet Limits of Sportsbook, Number Game, Happy 5 and RNG Keno are not allowed to be imported for Credit sites.'
-		RETURN
-	END
-
-
-	IF EXISTS (SELECT 1 FROM #NewInputDateTbl 
-				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) 
 					AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
 	BEGIN
 		BEGIN TRY

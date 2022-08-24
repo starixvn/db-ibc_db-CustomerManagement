@@ -311,12 +311,20 @@ BEGIN
 		AND psd.SettingStatus<>0
 
 	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
-	IF 	EXISTS(SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR @BetType<>OrgBetType)	
+	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR @BetType<>OrgBetType)	
 	BEGIN
 		SELECT @ErrCode=121	
 		SELECT TOP(1) @ErrMsg='Row ' + CAST(RowID AS VARCHAR(10)) + ' : You can only upload setting for one product at a time.' 
 		FROM #NewInputDateTbl WHERE SportType<>@SportType OR @BetType<>OrgBetType
 		ORDER BY RowID 
+		RETURN
+	END	
+
+	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl 
+				WHERE (IsCredit=1 AND SportType IN (161,164,168,202,1)))	
+	BEGIN
+		SELECT @ErrCode=126	
+		SELECT @ErrMsg='Bet Limits of Sportsbook, Number Game, Happy 5 and RNG Keno are not allowed to be imported for Credit sites.' 
 		RETURN
 	END	
 
