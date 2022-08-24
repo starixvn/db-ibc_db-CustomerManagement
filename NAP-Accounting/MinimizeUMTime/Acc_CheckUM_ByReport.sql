@@ -60,6 +60,6 @@ BEGIN
 			AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
 	END
 
-	SELECT * FROM @Results
+	SELECT FunctionTypeName, MarketName, BeginTime, EndTime FROM @Results
 END
 GO
