@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Upd]
 	,@ConfigID		INT
 	,@BeginTime		SMALLDATETIME
 	,@EndTime		SMALLDATETIME
-	,@ShowTime		SMALLDATETIME
+	,@ShowTime		SMALLDATETIME = NULL
 	,@LockAddingNew BIT = 0
 	,@ErrCode		INT = 0 OUTPUT
 	,@ErrMsg		VARCHAR(200) = '' OUTPUT
@@ -17,6 +17,7 @@ BEGIN
 	DB: DBCUST.CustDB
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
+		- 20220824@Eddie: Add default for @ShowTime [RedmineID: #174852]
 
 	Param's Explanation:   
 		

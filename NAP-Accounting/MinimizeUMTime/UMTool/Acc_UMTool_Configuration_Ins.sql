@@ -25,7 +25,7 @@ BEGIN
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [Redmine: #174852] 
+		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852] 
 
 	Param's Explanation:   
 		
