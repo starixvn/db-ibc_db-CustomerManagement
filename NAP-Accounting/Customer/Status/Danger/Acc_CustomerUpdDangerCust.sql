@@ -44,7 +44,7 @@ AS
 		- 20200511@Tiara: Enhance validation and error message [Redmine: #129306]
 		- 20210820@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
 		- 20211021@Johnson: Auto add & remove ABI Danger Level [redmine:#162834]
-		- 20220823@Tacy: update Danger's BA member follow upline [redmine:#176518]
+		- 20220823@Tacy: update BA member's Danger follow upline [redmine:#176518]
 
 	Param's Explanation:
 		@CustID: Id of member will be updated,
