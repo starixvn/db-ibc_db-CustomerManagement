@@ -87,7 +87,6 @@ BEGIN
 		,@oldvalue2 AS VARCHAR(10)
 		,@DangerLevel2 INT 
 		,@UpdateDanger2 BIT
-		,@BAMemberAg VARCHAR(MAX) = ''
 		
 	--Auto add & remove ABI Danger Level	
 	IF @DangerType = 2
