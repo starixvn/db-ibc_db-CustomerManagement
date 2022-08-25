@@ -14,7 +14,7 @@ AS
 		101 : 'Transfer'
 		201 : 'Group Win Loss Reports'
 		202 : 'Outstandings'
-		203 : 'Group Win Los Analysis'
+		203 : 'Group Win Loss Analysis'
 		204 : 'Win Loss by Product'
 		205 : 'Commission by Bettype'
 		206 : 'Results'
