@@ -12,6 +12,7 @@ RETURNS TABLE
 		- 20210428@Eden: First commit [Redmine:#136423]
 		- 20220228@Elodie: Add new class 131,132 [Redmine:#169232]
 		- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
+		- 20220815@Eden: Virtual Rate - Initialize new CC IDs for all customers [Redmine:#175976]
 
 	Parameter explanation:	
 
@@ -20,44 +21,46 @@ RETURNS TABLE
 
 	*/
 RETURN
-	SELECT 1 AS CustomerClass , 'VIP' AS Name UNION ALL
-	SELECT 111, 'VIP (111)' UNION ALL
-	SELECT 112, 'VIP (112)' UNION ALL
-	SELECT 113, 'VIP (113)' UNION ALL
-	SELECT 2, 'Normal Member' UNION ALL
-	SELECT 121, 'Normal Member (121)' UNION ALL
-	SELECT 122, 'Normal Member (122)' UNION ALL
-	SELECT 123, 'Normal Member (123)' UNION ALL
-	SELECT 3, 'New Member' UNION ALL
-	SELECT 31, 'New Member (31)' UNION ALL
-	SELECT 32, 'New Member (32)' UNION ALL
-	SELECT 33, 'New Member (33)' UNION ALL
-	SELECT 5, 'Probation' UNION ALL
-	SELECT 51, 'Probation (51)' UNION ALL
-	SELECT 52, 'Probation (52)' UNION ALL
-	SELECT 53, 'Probation (53)' UNION ALL
-	SELECT 6, 'Smart Punter' UNION ALL
-	SELECT 61, 'Smart Punter (61)' UNION ALL
-	SELECT 62, 'Smart Punter (62)' UNION ALL
-	SELECT 63, 'Smart Punter (63)' UNION ALL
-	SELECT 7, 'High Risk Punter' UNION ALL
-	SELECT 71, 'High Risk Punter (71)' UNION ALL
-	SELECT 72, 'High Risk Punter (72)' UNION ALL
-	SELECT 73, 'High Risk Punter (73)' UNION ALL
-	--SELECT 8, 'Group Betting' UNION ALL
-	--SELECT 9, 'Arbitrage' UNION ALL
-	--SELECT 9, 'Irrigation Bet' UNION ALL
-	--SELECT 10, 'Fixed' UNION ALL
-	--SELECT 10, 'Robot Formula Bet' UNION ALL
-	--SELECT 10, 'Hedging' UNION ALL
-	--SELECT 11, 'AB Bet' UNION ALL
-	--SELECT 11, 'Bonus Hunter' UNION ALL
-	--SELECT 12, 'Info Bet' UNION ALL
-	--SELECT 13, 'Robot User' UNION ALL
-	--SELECT 131, 'Bad Robot' UNION ALL
-	--SELECT 132, 'Good Robot' UNION ALL
-	SELECT 100, 'VVIP internal' 	
-	UNION ALL 
-	SELECT CustomerClass,CategoryName 
+	SELECT CustomerClass,CategoryName  AS Name
 	FROM CategoryConfig WITH(NOLOCK)
+	UNION ALL SELECT '200', 'New'
+	UNION ALL SELECT '201', 'Good'
+	UNION ALL SELECT '202', 'Normal'
+	UNION ALL SELECT '203', 'Probation'
+	UNION ALL SELECT '204', 'Smart'
+	UNION ALL SELECT '205', 'Risky'
+	UNION ALL SELECT '400', 'VIP (Problem Member)'
+	UNION ALL SELECT '401', 'BA User'
+	UNION ALL SELECT '901', 'Normal (inactive)'
+	UNION ALL SELECT '902', 'Smart (inactive)'
+	UNION ALL SELECT '999', 'VVIP'
+	UNION ALL SELECT '2000', 'New linked Robot'
+	UNION ALL SELECT '2001', 'Good linked Robot'
+	UNION ALL SELECT '2002', 'Normal linked Robot'
+	UNION ALL SELECT '2003', 'Prob linked Robot'
+	UNION ALL SELECT '2004', 'Smart linked Robot'
+	UNION ALL SELECT '2005', 'Risky linked Robot'
+	UNION ALL SELECT '2100', 'New linked Group'
+	UNION ALL SELECT '2101', 'Good linked Group'
+	UNION ALL SELECT '2102', 'Normal linked Group'
+	UNION ALL SELECT '2103', 'Prob linked Group'
+	UNION ALL SELECT '2104', 'Smart linked Group'
+	UNION ALL SELECT '2105', 'Risky linked Group'
+	UNION ALL SELECT '2200', 'New linked PA'
+	UNION ALL SELECT '2201', 'Good linked PA'
+	UNION ALL SELECT '2202', 'Normal linked PA'
+	UNION ALL SELECT '2203', 'Prob linked PA'
+	UNION ALL SELECT '2204', 'Smart linked PA'
+	UNION ALL SELECT '2205', 'Risky linked PA'
+	UNION ALL SELECT '2303', 'Prob Group Betting'
+	UNION ALL SELECT '2304', 'Smart Group Betting'
+	UNION ALL SELECT '2305', 'Risky Group Betting'
+	UNION ALL SELECT '2403', 'Prob High Rejected'
+	UNION ALL SELECT '2404', 'Smart High Rejected'
+	UNION ALL SELECT '2405', 'Risky High Rejected'
+	UNION ALL SELECT '2500', 'New (Lic Sub)'
+	UNION ALL SELECT '2503', 'Prob (Lic Sub)'
+	UNION ALL SELECT '2504', 'Smart (Lic Sub)'
+	UNION ALL SELECT '2505', 'Risky (Lic Sub)'
+	UNION ALL SELECT '4000', 'VIP (Normal Member)'
 GO
