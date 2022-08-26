@@ -1,13 +1,1 @@
-Ext NAP\Customer\dbo.EAS_CustomerSelByMAg.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelBySAg.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelByCom.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelByAg.sql
-ALPHA\Customer\Age_CustomerSelUserInfo.sql
-NAP-Accounting\Customer\Status\Acc_CustomerSelStatus.sql
-NAP-Accounting\Customer\Status\U3_CustomerSelStatus.sql
-Ext NAP\Customer\EAS_CustomerInsMember_CloneSetting_Com.sql
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-NAP-Accounting\Customer\U3_CustomerSelAllInfo.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_CustomerSelAllInfo.sql 
+NAP-Accounting\Customer\NAP Licensee Management\NAP_SpecialCustSetting_Modify.sql

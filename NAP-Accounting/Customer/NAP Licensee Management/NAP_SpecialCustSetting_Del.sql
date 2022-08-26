@@ -1,8 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/ 
 
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Del]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT,
@@ -20,6 +17,7 @@ AS
 		
 	Revisions:
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+		- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 
 */
 BEGIN
@@ -37,13 +35,10 @@ BEGIN
 	WHERE islicensee=1 AND [site].SiteName = @Licensee
 
 	SELECT @OldLog = '<r>'
-	SELECT @OldLog = @OldLog+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'"/>'
+	SELECT @OldLog = @OldLog+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'" mppm="'+ISNULL(CAST(MaxPayoutPerMatch AS NVARCHAR(20)),'')+'"/>'
 	FROM Dep_CustBetLimit_Special cbs  WITH(NOLOCK)
 	WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR cbs.AgentID = @AgentID )
-
-	SELECT @OldLog = @OldLog+'<st s="202" b="'+ISNULL(CAST(gametypeid AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(maxpergametype AS NVARCHAR(20)),'')+'" mpb=""/>'
-	FROM Dep_CustBetLimitGameType_Special  cbs WITH(NOLOCK)
-	WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND @AgentID IS NULL
+	
 	SELECT @OldLog = @OldLog+'</r>'
 
 	IF(NOT EXISTS(SELECT TOP 1 1 FROM Dep_CustBetLimit_Special cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID = @CurrencyID AND( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )))
@@ -54,7 +49,6 @@ BEGIN
 	ELSE
 	BEGIN
 		DELETE [Dep_CustBetLimit_Special] WITH(ROWLOCK,UPDLOCK) WHERE [Site] = @Licensee AND CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )
-		DELETE Dep_CustBetLimitGameType_Special  WITH(ROWLOCK,UPDLOCK) WHERE [Site] = @Licensee AND CurrencyID = @CurrencyID AND @AgentID IS NULL
 	END
 
 	IF @@Error >0

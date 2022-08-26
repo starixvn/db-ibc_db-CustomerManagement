@@ -43,49 +43,48 @@ Revisions:
 	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-
+	- 20220301@Eden: Deposit - Sportsbook - Revise customer settings [Redmine: #167898] 
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
 	+ 1: View Commission
 */
 
-
 SET NOCOUNT ON
 
-CREATE TABLE #tmp_Sports (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
-CREATE TABLE #tmp_Bettype (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
+CREATE TABLE #tmp_Sports (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)  
+CREATE TABLE #tmp_Bettype (ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)  
 
 ----- 20150610@Kos -------------------
-	BEGIN TRY
-		INSERT INTO #tmp_Sports (ID, Name, IsDisabled, IBCBettypeID)
-		SELECT ID, Name, IsDisabled, IBCBettypeID
-		FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBAGE')	
-	END TRY
-	BEGIN CATCH
-		IF OBJECT_ID(N'tempdb..#tmp_Sports') IS NOT NULL
-		BEGIN
-			TRUNCATE TABLE #tmp_Sports
-			INSERT INTO #tmp_Sports
-			SELECT ID, Name, IsDisabled, IBCBettypeID
-			FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBTXN')	
-		END
-	END CATCH
-
-	BEGIN TRY			
-		INSERT INTO #tmp_Bettype (ID, Name, IsDisabled, IBCBettypeID)
-		SELECT ID, Name, IsDisabled, IBCBettypeID
-		FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBAGE')	
-	END TRY
-	BEGIN CATCH		
-		IF OBJECT_ID(N'tempdb..#tmp_Bettype') IS NOT NULL
-		BEGIN
-			TRUNCATE TABLE #tmp_Bettype
-			INSERT INTO #tmp_Bettype
-			SELECT ID, Name, IsDisabled, IBCBettypeID
-			FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBTXN')	
-		END
-	END CATCH
+BEGIN TRY  
+	INSERT INTO #tmp_Sports (ID, Name, IsDisabled, IBCBettypeID)  
+	SELECT ID, Name, IsDisabled, IBCBettypeID  
+	FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBAGE')   
+END TRY  
+BEGIN CATCH  
+	IF OBJECT_ID(N'tempdb..#tmp_Sports') IS NOT NULL  
+	BEGIN  
+		TRUNCATE TABLE #tmp_Sports  
+		INSERT INTO #tmp_Sports  
+		SELECT ID, Name, IsDisabled, IBCBettypeID  
+		FROM dbo.f_GetSportTypeBetTypeGameType(1,'DBTXN')   
+	END  
+END CATCH  
+  
+BEGIN TRY     
+	INSERT INTO #tmp_Bettype (ID, Name, IsDisabled, IBCBettypeID)  
+	SELECT ID, Name, IsDisabled, IBCBettypeID  
+	FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBAGE')   
+END TRY  
+BEGIN CATCH    
+	IF OBJECT_ID(N'tempdb..#tmp_Bettype') IS NOT NULL  
+	BEGIN  
+		TRUNCATE TABLE #tmp_Bettype  
+		INSERT INTO #tmp_Bettype  
+		SELECT ID, Name, IsDisabled, IBCBettypeID  
+		FROM dbo.f_GetSportTypeBetTypeGameType(2,'DBTXN')   
+	END  
+END CATCH  
 ----- 20150610@Kos -------------------
 
 Begin
@@ -195,333 +194,177 @@ Begin
 		select @ErrCode = 101, @ErrMsg ='Invalid UserName!'
 		return  
 	END  
-	DECLARE @IsLicensee INT SET @IsLicensee = 0 
+	DECLARE @IsLicensee INT = 0
+	 
 	IF(EXISTS(SELECT ci.custid FROM custInfo ci with(NOLOCK) WHERE ci.srecommend IN (SELECT * FROM dbo.f_DepSuper_1('ALL') fds) AND ci.custid = @CustID))
 		SET @IsLicensee  = 1
+
 	IF(@IsLicensee = 0)
-		BEGIN
-			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, sports.Name AS Sportname, bettype.Name AS typenamee
-			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
-					UNION
-					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
-				 ) t
-			inner join #tmp_Sports sports on t.sporttype = sports.ID
-			inner join #tmp_Bettype bettype on t.bettype = bettype.ID
-			WHERE CustID = @CustID and Bettype = case @Bettype when 0 then Bettype else @Bettype end  
-				and t.Sporttype = case @Sporttype when 0 then t.Sporttype else @Sporttype end  
-			ORDER BY t.Sporttype, t.Bettype		
-		END
-	ELSE
-		BEGIN
-			Declare Type_Cursor CURSOR FOR	 
-			SELECT t.Sporttype, Bettype, sports.Name AS Sportname, bettype.Name AS typenamee
-			FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM dep_CustSetting cs WITH (NOLOCK)
-					UNION
-					SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM dep_CustSetting3rd cs3rd WITH (NOLOCK)
-				 ) t
-			inner join #tmp_Sports sports on t.sporttype = sports.ID
-			inner join #tmp_Bettype bettype on t.bettype = bettype.ID
-			WHERE CustID = @CustID and Bettype = case @Bettype when 0 then Bettype else @Bettype end  
-				and t.Sporttype = case @Sporttype when 0 then t.Sporttype else @Sporttype end  
-			ORDER BY t.Sporttype, t.Bettype	
-		END	
-	
-	
-	OPEN Type_Cursor   
-	FETCH NEXT FROM Type_Cursor  
-	INTO @curSporttype, @curBettype, @curSportname, @curtypename 
-	IF(@@FETCH_STATUS = -1)
+	BEGIN
+		Declare Type_Cursor CURSOR FOR	 
+		SELECT t.Sporttype, Bettype, sports.Name AS Sportname, bettype.Name AS typenamee
+		FROM (	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
+				UNION
+				SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
+				) t
+		inner join #tmp_Sports sports on t.sporttype = sports.ID
+		inner join #tmp_Bettype bettype on t.bettype = bettype.ID
+		WHERE CustID = @CustID and Bettype = case @Bettype when 0 then Bettype else @Bettype end  
+			and t.Sporttype = case @Sporttype when 0 then t.Sporttype else @Sporttype end  
+		ORDER BY t.Sporttype, t.Bettype		
+
+		OPEN Type_Cursor   
+		FETCH NEXT FROM Type_Cursor  
+		INTO @curSporttype, @curBettype, @curSportname, @curtypename 
+		IF(@@FETCH_STATUS = -1)
 		BEGIN  
 			CLOSE Type_Cursor
 			DEALLOCATE Type_Cursor
 			select @ErrCode = 101, @ErrMsg ='Invalid Data!'
 			return  
 		END  
-	WHILE @@FETCH_STATUS = 0  
-	BEGIN 
-		if @curSporttype in (201, 161, 180, 181, 182, 183, 184, 185, 186) 
+
+		WHILE @@FETCH_STATUS = 0  
+		BEGIN 
+			if @curSporttype in (201, 161, 180, 181, 182, 183, 184, 185, 186) 
 			BEGIN
-					select @l4 = MaxPositionTaking, @n4 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @l3 = MaxPositionTaking, @n3 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @l2 = MaxPositionTaking, @n2 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					IF(@IsLicensee =0)
-						BEGIN
-							select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = AutoPositionTaking, @i3 = IsAutoPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = autompositiontaking, @im2 = isautompositiontaking from CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = AutoPositionTaking, @i1 = IsAutoPositionTaking, @um1 = AutomPositionTaking, @im1 = IsAutomPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype  
-						END
-					ELSE
-						BEGIN
-							select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from dep_CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = 0, @i3 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = 0, @im2 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-							select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = 0, @i1 = 0, @um1 = 0, @im1 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype  
-						END
+				select @l4 = MaxPositionTaking, @n4 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l3 = MaxPositionTaking, @n3 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l2 = MaxPositionTaking, @n2 = MinPositionTaking from CustOverride3rd with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
+						
+				select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = AutoPositionTaking, @i3 = IsAutoPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = autompositiontaking, @im2 = isautompositiontaking from CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = AutoPositionTaking, @i1 = IsAutoPositionTaking, @um1 = AutomPositionTaking, @im1 = IsAutomPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype  
+						
 					
 			END
-		ELSE
-		BEGIN
+			ELSE
+			BEGIN
 				select @l4 = MaxPositionTaking, @n4 = MinPositionTaking from CustOverride with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
 				select @l3 = MaxPositionTaking, @n3 = MinPositionTaking from CustOverride with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
 				select @l2 = MaxPositionTaking, @n2 = MinPositionTaking from CustOverride with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-				IF(@IsLicensee =0)
-					BEGIN					
-						select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-						select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = AutoPositionTaking, @i3 = IsAutoPositionTaking from CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-						select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = autompositiontaking, @im2 = isautompositiontaking from CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-						select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = AutoPositionTaking, @i1 = IsAutoPositionTaking, @um1 = AutomPositionTaking, @im1 = IsAutomPositionTaking from CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype
-					END
-				ELSE
-				BEGIN
-					select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from dep_CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = 0, @i3 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = 0, @im2 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = 0, @i1 = 0, @um1 = 0, @im1 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype
-				END				
-		END
+				
+				select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = AutoPositionTaking, @i3 = IsAutoPositionTaking from CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = autompositiontaking, @im2 = isautompositiontaking from CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = AutoPositionTaking, @i1 = IsAutoPositionTaking, @um1 = AutomPositionTaking, @im1 = IsAutomPositionTaking from CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype		
+			END
 
 		
-		insert into #tmpresult(sporttype, bettype, sportname, typename,islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2, a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
-		select @curSporttype sporttype, @curBettype bettype, @cursportname, @curtypename, 0 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 
-			 0 as ibc_pt_hr	
-		where @curBettype not in (85,87,89,90) -- exclude number game bettype dead ball 
+			insert into #tmpresult(sporttype, bettype, sportname, typename,islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2, a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
+			select @curSporttype sporttype, @curBettype bettype, @cursportname, @curtypename, 0 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 
+				 0 as ibc_pt_hr	
+			where @curBettype not in (85,87,89,90) -- exclude number game bettype dead ball 
 				
-		IF (@IsLive = 1 and @curSporttype = 1 and @curBettype in (1,3,7,8))
-		BEGIN
-			select @l4 = MaxLivePositionTaking, @n4 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-			select @l3 = MaxLivePositionTaking, @n3 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-			select @l2 = MaxLivePositionTaking, @n2 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  	  
-			IF (@IsLicensee =0)
-				BEGIN
-					select @s4 = SLivePositionTaking, @m4 = MLivePositionTaking, @a4 = ALivePositionTaking from CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s3 = SLivePositionTaking, @m3 = MLivePositionTaking, @u3 = AutolivePositionTaking, @i3 = IsAutolivePositionTaking from CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @m2 = MLivePositionTaking, @a2 = ALivePositionTaking, @um2 = autolivempositiontaking, @im2 = IsAutolivemPositionTaking from CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s1 = SLivePositionTaking, @m1 = MLivePositionTaking, @a1 = ALivePositionTaking, @u1 = AutoLivePositionTaking, @i1 = IsAutoLivePositionTaking, @um1 = AutoLivemPositionTaking, @im1 = IsAutoLivemPositionTaking from CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype   			  
-				END
-			ELSE
-				BEGIN
-					select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from dep_CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype AND islive = @IsLive
-					 select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = 0, @i3 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  AND islive = @IsLive
-					
-					select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = 0, @im2 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  AND islive = @IsLive
-					select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = 0, @i1 = 0, @um1 = 0, @im1 = 0 from dep_CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype  AND islive = @IsLive	 		  
-				END
-			insert into #tmpresult(sporttype, bettype, sportname, typename, islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2,  a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
-			select @curSporttype sporttype,@curBettype bettype, @cursportname, @curtypename,1 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 0 as ibc_hr_pt
-		END  	 
-		ELSE IF (@IsLive = 1 and @curSporttype = 161 and @curBettype in (85,86,87,89,90))
-		BEGIN
-			select @l4 = MaxLivePositionTaking, @n4 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-			select @l3 = MaxLivePositionTaking, @n3 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-			select @l2 = MaxLivePositionTaking, @n2 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  	  
-			IF(@IsLicensee = 0)
-				BEGIN
-					select @s4 = SLivePositionTaking, @m4 = MLivePositionTaking, @a4 = ALivePositionTaking from CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s3 = SLivePositionTaking, @m3 = MLivePositionTaking, @u3 = AutolivePositionTaking, @i3 = IsAutolivePositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @m2 = MLivePositionTaking, @a2 = ALivePositionTaking, @um2 = autolivempositiontaking, @im2 = IsAutolivemPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
-					select @s1 = SLivePositionTaking, @m1 = MLivePositionTaking, @a1 = ALivePositionTaking, @u1 = AutoLivePositionTaking, @i1 = IsAutoLivePositionTaking, @um1 = AutoLivemPositionTaking, @im1 = IsAutoLivemPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype   			  
-				END
-			ELSE
-				BEGIN
-					select @s4 = SPositionTaking, @m4 = MPositionTaking, @a4 = APositionTaking from dep_CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype AND islive = @IsLive 
-					select @s3 = SPositionTaking, @m3 = MPositionTaking, @u3 = 0, @i3 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype   AND islive = @IsLive
-					select @m2 = MPositionTaking, @a2 = APositionTaking, @um2 = 0, @im2 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype   AND islive = @IsLive
-					select @s1 = SPositionTaking, @m1 = MPositionTaking, @a1 = APositionTaking, @u1 = 0, @i1 = 0, @um1 = 0, @im1 = 0 from dep_CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype  AND islive = @IsLive  			  
-				END
-			insert into #tmpresult(sporttype, bettype, sportname, typename, islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2,  a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
-			select @curSporttype sporttype,@curBettype bettype, @cursportname, @curtypename,1 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 0 as ibc_hr_pt
-		END
+			IF (@IsLive = 1 and @curSporttype = 1 and @curBettype in (1,3,7,8))
+			BEGIN
+				select @l4 = MaxLivePositionTaking, @n4 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l3 = MaxLivePositionTaking, @n3 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l2 = MaxLivePositionTaking, @n2 = MinLivePositionTaking from CustOverride with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  	  
+				
+				select @s4 = SLivePositionTaking, @m4 = MLivePositionTaking, @a4 = ALivePositionTaking from CustSetting with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s3 = SLivePositionTaking, @m3 = MLivePositionTaking, @u3 = AutolivePositionTaking, @i3 = IsAutolivePositionTaking from CustSetting with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @m2 = MLivePositionTaking, @a2 = ALivePositionTaking, @um2 = autolivempositiontaking, @im2 = IsAutolivemPositionTaking from CustSetting with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s1 = SLivePositionTaking, @m1 = MLivePositionTaking, @a1 = ALivePositionTaking, @u1 = AutoLivePositionTaking, @i1 = IsAutoLivePositionTaking, @um1 = AutoLivemPositionTaking, @im1 = IsAutoLivemPositionTaking from CustSetting with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype   			  
+
+				insert into #tmpresult(sporttype, bettype, sportname, typename, islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2,  a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
+				select @curSporttype sporttype,@curBettype bettype, @cursportname, @curtypename,1 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 0 as ibc_hr_pt
+			END  	 
+			ELSE IF (@IsLive = 1 and @curSporttype = 161 and @curBettype in (85,86,87,89,90))
+			BEGIN
+				select @l4 = MaxLivePositionTaking, @n4 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l3 = MaxLivePositionTaking, @n3 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @l2 = MaxLivePositionTaking, @n2 = MinLivePositionTaking from CustOverride3rd with (NOLOCK) where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  	  
+				
+				select @s4 = SLivePositionTaking, @m4 = MLivePositionTaking, @a4 = ALivePositionTaking from CustSetting3rd with (NOLOCK) where CustID = @SRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s3 = SLivePositionTaking, @m3 = MLivePositionTaking, @u3 = AutolivePositionTaking, @i3 = IsAutolivePositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @MRecommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @m2 = MLivePositionTaking, @a2 = ALivePositionTaking, @um2 = autolivempositiontaking, @im2 = IsAutolivemPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @Recommend and Bettype=@curBettype and Sporttype=@curSporttype  
+				select @s1 = SLivePositionTaking, @m1 = MLivePositionTaking, @a1 = ALivePositionTaking, @u1 = AutoLivePositionTaking, @i1 = IsAutoLivePositionTaking, @um1 = AutoLivemPositionTaking, @im1 = IsAutoLivemPositionTaking from CustSetting3rd with (NOLOCK)  where CustID = @CustID and Bettype=@curBettype and Sporttype=@curSporttype   			  
+				
+				insert into #tmpresult(sporttype, bettype, sportname, typename, islive, s1,  s3,  s4,  m1,  m2,  m3, m4,  a1,  a2,  a4,  u1, u3,  i1, i3, um1, um2, im1, im2, n2 ,  n3,  n4,  l2,  l3,  l4, ibc_pt_hr) 
+				select @curSporttype sporttype,@curBettype bettype, @cursportname, @curtypename,1 islive, @s1 s1, @s3 s3, @s4 s4, @m1 m1, @m2 m2, @m3 m3, @m4 m4, @a1 a1, @a2 a2, @a4 a4, @u1 u1, @u3 u3, @i1 i1, @i3 i3, @um1 um1, @um2 um2, @im1 im1, @im2 im2, @n2 n2, @n3 n3, @n4 n4, @l2 l2, @l3 l3, @l4 l4, 0 as ibc_hr_pt
+			END
 		
 		
-		FETCH NEXT FROM Type_Cursor  
-		INTO @curSporttype, @curBettype, @curSportname, @curtypename  
-	END  
-	CLOSE Type_Cursor  
+			FETCH NEXT FROM Type_Cursor  
+			INTO @curSporttype, @curBettype, @curSportname, @curtypename  
+		END  
+		CLOSE Type_Cursor  
 	  
-	DEALLOCATE Type_Cursor 
+		DEALLOCATE Type_Cursor 
+	END
 
 	select * from #tmpresult
-	
-	
 	drop table #tmpresult
 
 	-- Get comm
-	IF @hascomm = 1
+	IF @hascomm = 1 
 	BEGIN
-		IF(@IsLicensee = 0)
-			BEGIN
-				SELECT	@ga4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
-					@gb4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
-					@gc4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
-					@gd4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
-					@othercomm4 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.sdiscount else 0 end),
-					@comm_5_4 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.sdiscount else 0 end) --1x2
+		SELECT	@ga4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
+			@gb4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
+			@gc4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
+			@gd4 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
+			@othercomm4 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.sdiscount else 0 end),
+			@comm_5_4 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.sdiscount else 0 end) --1x2
 					
-				FROM custsetting as acs with (NOLOCK)
-				WHERE acs.custid = @srecommend
-			END
-		ELSE
-			BEGIN
-				SELECT @ga4 = MAX(CASE WHEN dcs.bettype = 1 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END ),
-						@gb4 = MAX(CASE WHEN dcs.bettype = 1 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END ),
-						@gc4 = MAX(CASE WHEN dcs.bettype = 1 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END ),
-						@gd4 = MAX(CASE WHEN dcs.bettype = 1 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END ),
-						@othercomm4 = MAX(CASE WHEN dcs.bettype = 4 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END),
-						@comm_5_4 = MAX(CASE WHEN dcs.bettype = 5 AND dcs.sporttype = 1 THEN dcs.sdiscount ELSE 0 END) 
-			
-				FROM Dep_CustSetting dcs WITH (NOLOCK)
-				WHERE dcs.custid = @SRecommend
-				AND dcs.islive = 0
-			END	
-
-		--SELECT 3rd commission's setting from CustSetting3rd at Super level
-		IF(@IsLicensee = 0)
-			BEGIN
-				SELECT	@v201_comm_3_4 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.sdiscount else 0 end),					
-					@v161_comm_81_4 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.sdiscount else 0 end)
-				FROM CustSetting3rd as acs with (NOLOCK)
-				WHERE acs.custid = @srecommend
-			END
-		ELSE
-			BEGIN
-				SELECT	@v201_comm_3_4 = max(case when dcs.bettype = 3 and dcs.sporttype=201 then dcs.sdiscount else 0 end),
-				
-					@v161_comm_81_4 = max(case when dcs.bettype = 81 and dcs.sporttype=161 then dcs.sdiscount else 0 end)
-				FROM dep_CustSetting3rd as dcs with (NOLOCK)
-				WHERE dcs.custid = @srecommend
-				AND dcs.islive = 0
-			END		
-
-		-- 
-		IF(@IsLicensee = 0)
-			BEGIN
-				SELECT	@ga3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
-					@gb3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
-					@gc3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
-					@gd3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
-					@othercomm3 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.adiscount else 0 end),
-					@comm_5_3 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.adiscount else 0 end) --1x2
-					
-				FROM custsetting as acs with (NOLOCK)
-				WHERE acs.custid = @mrecommend
-			END
-		ELSE
-			BEGIN
-				SELECT	@ga3 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.adiscount else 0 end),
-					@gb3 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.adiscount else 0 end),
-					@gc3 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.adiscount else 0 end),
-					@gd3 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.adiscount else 0 end),
-					@othercomm3 = max(case when dcs.bettype = 4 and dcs.sporttype=1 then dcs.adiscount else 0 end),
-					@comm_5_3 = max(case when dcs.bettype = 5 and dcs.sporttype=1 then dcs.adiscount else 0 end) --1x2					
-				FROM dep_custsetting as dcs with (NOLOCK)
-				WHERE dcs.custid = @mrecommend
-				AND dcs.islive = 0
-			END
-
-		--SELECT 3rd commission's setting from CustSetting3rd at Master Level
-		IF(@IsLicensee = 0)
-		BEGIN
-			SELECT	@v201_comm_3_3 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.adiscount else 0 end),			
-				@v161_comm_81_3 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.adiscount else 0 end)
-			FROM CustSetting3rd as acs with (NOLOCK)
-			WHERE acs.custid = @mrecommend
-		END
-		ELSE
-			BEGIN
-				SELECT	@v201_comm_3_3 = max(case when dcs.bettype = 3 and dcs.sporttype=201 then dcs.adiscount else 0 end),				
-					@v161_comm_81_3 = max(case when dcs.bettype = 81 and dcs.sporttype=161 then dcs.adiscount else 0 end)
-				FROM dep_CustSetting3rd as dcs with (NOLOCK)
-				WHERE dcs.custid = @mrecommend
-				AND dcs.islive = 0
-			END
+		FROM custsetting as acs with (NOLOCK)
+		WHERE acs.custid = @srecommend
 		
-	
-		-- 
-		IF(@IsLicensee = 0)
-		BEGIN
-			SELECT	@ga2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
-				@gb2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
-				@gc2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
-				@gd2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
-				@othercomm2 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.discount else 0 end),
-				@comm_5_2 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.discount else 0 end)--1x2
-				
-			FROM custsetting as acs with (NOLOCK)
-			WHERE acs.custid = @recommend
-		END
-		ELSE
-			BEGIN
-				SELECT	@ga2 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.discount else 0 end),
-					@gb2 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.discount else 0 end),
-					@gc2 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.discount else 0 end),
-					@gd2 = max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.discount else 0 end),
-					@othercomm2 = max(case when dcs.bettype = 4 and dcs.sporttype=1 then dcs.discount else 0 end),
-					@comm_5_2 = max(case when dcs.bettype = 5 and dcs.sporttype=1 then dcs.discount else 0 end)--1x2
+		--SELECT 3rd commission's setting from CustSetting3rd at Super level
+		
+		SELECT	@v201_comm_3_4 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.sdiscount else 0 end),					
+			@v161_comm_81_4 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.sdiscount else 0 end)
+		FROM CustSetting3rd as acs with (NOLOCK)
+		WHERE acs.custid = @srecommend
+
+		SELECT	@ga3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
+			@gb3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
+			@gc3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
+			@gd3 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
+			@othercomm3 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.adiscount else 0 end),
+			@comm_5_3 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.adiscount else 0 end) --1x2
 					
-				FROM dep_custsetting as dcs with (NOLOCK)
-				WHERE dcs.custid = @recommend
-				AND dcs.islive = 0
-			END
+		FROM custsetting as acs with (NOLOCK)
+		WHERE acs.custid = @mrecommend
+		
+		--SELECT 3rd commission's setting from CustSetting3rd at Master Level
+		
+		SELECT	@v201_comm_3_3 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.adiscount else 0 end),			
+			@v161_comm_81_3 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.adiscount else 0 end)
+		FROM CustSetting3rd as acs with (NOLOCK)
+		WHERE acs.custid = @mrecommend
+	
+		SELECT	@ga2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupa else 0 end),
+			@gb2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupb else 0 end),
+			@gc2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupc else 0 end),
+			@gd2 = max(case when acs.bettype = 1 and acs.sporttype=1 then acs.groupd else 0 end),
+			@othercomm2 = max(case when acs.bettype = 4 and acs.sporttype=1 then acs.discount else 0 end),
+			@comm_5_2 = max(case when acs.bettype = 5 and acs.sporttype=1 then acs.discount else 0 end)--1x2
+				
+		FROM custsetting as acs with (NOLOCK)
+		WHERE acs.custid = @recommend
 		
 		--SELECT 3rd commission's setting from CustSetting3rd at Agent Level
-		IF(@IsLicensee = 0)
-		BEGIN
-			SELECT	@v201_comm_3_2 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.discount else 0 end),				
-				@v161_comm_81_2 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.discount else 0 end)
-			FROM CustSetting3rd as acs with (NOLOCK)
-			WHERE acs.custid = @recommend
-		END
-		ELSE
-			BEGIN
-				SELECT	@v201_comm_3_2 = max(case when dcs.bettype = 3 and dcs.sporttype=201 then dcs.discount else 0 end),				
-					@v161_comm_81_2 = max(case when dcs.bettype = 81 and dcs.sporttype=161 then dcs.discount else 0 end)
-				FROM dep_CustSetting3rd as dcs with (NOLOCK)
-				WHERE dcs.custid = @recommend
-				AND dcs.islive = 0
-			END
-	
-		 
-		-- 
-		IF(@IsLicensee = 0)
-			BEGIN
-				SELECT	@comm = isnull(max(case when acs.bettype = 1 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0) ,
-					@othercomm = isnull(max(case when acs.bettype = 4 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0), 
-					@comm_5 = isnull(max(case when acs.bettype = 5 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0)--1x2 
-					
-				FROM custsetting as acs with(nolock) 
-				WHERE custid = @custid
-			END	
-		ELSE
-			BEGIN
-				SELECT	@comm = isnull(max(case when dcs.bettype = 1 and dcs.sporttype=1 then dcs.playerdiscount else 0 end), 0) ,
-					@othercomm = isnull(max(case when dcs.bettype = 4 and dcs.sporttype=1 then dcs.playerdiscount else 0 end), 0), 
-					@comm_5 = isnull(max(case when dcs.bettype = 5 and dcs.sporttype=1 then dcs.playerdiscount else 0 end), 0)--1x2
-
-				FROM dep_custsetting as dcs with(nolock) 
-				WHERE custid = @custid
-				AND dcs.islive = 0
-			END
-			
-		--SELECT 3rd commission's setting from CustSetting3rd at Member Level
-		IF(@IsLicensee = 0)
-			BEGIN
-				SELECT	@v201_comm_3 = isnull(max(case when acs.bettype = 3 and acs.sporttype=201 then acs.playerdiscount else 0 end), 0),					
-					@v161_comm_81 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.playerdiscount else 0 end)
-				FROM CustSetting3rd as acs with(nolock) 
-				WHERE custid = @custid
-			END		
-		ELSE
-			BEGIN
-				SELECT	@v201_comm_3 = isnull(max(case when dcs.bettype = 3 and dcs.sporttype=201 then dcs.playerdiscount else 0 end), 0),					
-					@v161_comm_81 = max(case when dcs.bettype = 81 and dcs.sporttype=161 then dcs.playerdiscount else 0 end)
-				FROM dep_CustSetting3rd as dcs with(nolock) 
-				WHERE custid = @custid
-				AND dcs.islive = 0
-			END
-	
 		
+		SELECT	@v201_comm_3_2 = max(case when acs.bettype = 3 and acs.sporttype=201 then acs.discount else 0 end),				
+			@v161_comm_81_2 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.discount else 0 end)
+		FROM CustSetting3rd as acs with (NOLOCK)
+		WHERE acs.custid = @recommend
+		
+		SELECT	@comm = isnull(max(case when acs.bettype = 1 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0) ,
+			@othercomm = isnull(max(case when acs.bettype = 4 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0), 
+			@comm_5 = isnull(max(case when acs.bettype = 5 and acs.sporttype=1 then acs.playerdiscount else 0 end), 0)--1x2 
+					
+		FROM custsetting as acs with(nolock) 
+		WHERE custid = @custid
+			
+		
+		SELECT	@v201_comm_3 = isnull(max(case when acs.bettype = 3 and acs.sporttype=201 then acs.playerdiscount else 0 end), 0),					
+			@v161_comm_81 = max(case when acs.bettype = 81 and acs.sporttype=161 then acs.playerdiscount else 0 end)
+		FROM CustSetting3rd as acs with(nolock) 
+		WHERE custid = @custid
+			
 		SELECT @ugroup = ugroup from customer with(nolock) where custid=@custid
 		
 			-- For Myanmar Odds
@@ -603,11 +446,7 @@ Begin
 				ISNULL(@MyanmarOddsComm_2,0) AS MyanmarOddsComm_2,
 				ISNULL(@MyanmarOddsComm_3,0) AS MyanmarOddsComm_3,
 				ISNULL(@MyanmarOddsComm_4,0) AS MyanmarOddsComm_4
+		WHERE @IsLicensee = 0
 	end
-
 End
-
-DROP TABLE #tmp_Bettype
-DROP TABLE #tmp_Sports
-
 GO
