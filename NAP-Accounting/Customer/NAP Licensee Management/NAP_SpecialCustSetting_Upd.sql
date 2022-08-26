@@ -1,8 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/ 
 
-USE CustDB
-GO
-
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Upd]
 	@Licensee NVARCHAR(100),
 	@CurrencyID INT,
@@ -21,6 +18,7 @@ AS
 		
 	Revisions:
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
+		- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 */
 
 /*<Settings>
@@ -62,49 +60,31 @@ BEGIN
 	select @settings
 	DECLARE @Log NVARCHAR(MAX), @OldLog NVARCHAR(MAX)
 	DECLARE @LicenseeID INT
-	DECLARE @HarcodeSetting TABLE(SportType INT, BetType INT, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY)
-	DECLARE @HarcodeSetting_Keno TABLE(SportType INT, BetType INT, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY)
+	DECLARE @HarcodeSetting TABLE(SportType INT, BetType INT, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
 
 	SELECT @LicenseeID = [site].SiteID 
 	FROM dbo.[Site] ibcsite 
 		LEFT JOIN bodb_Licensee.dbo.Lrf_view_site_list [site] (NOLOCK) ON ibcsite.siteid=[site].IbcSiteID
 	WHERE islicensee=1 AND [site].SiteName = @Licensee
 
-	INSERT INTO @HarcodeSetting(SportType, BetType, MaxBet, MaxPerMatch, MaxPerBall)
+	INSERT INTO @HarcodeSetting(SportType, BetType, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch)
 	SELECT xmlData.Col.value('@sporttype','INT')
 			,xmlData.Col.value('@bettype','INT')
 			,xmlData.Col.value('@maxbet','MONEY')
 			,xmlData.Col.value('@maxpermatch','MONEY')
 			,xmlData.Col.value('@maxperball','MONEY')
+			,xmlData.Col.value('@maxpayoutpermatch','MONEY')
 	FROM @Settings.nodes('//settings/setting') xmlData(Col)
-	WHERE xmlData.Col.value('@sporttype','INT') <> 202
 	
-	INSERT INTO @HarcodeSetting_Keno(SportType, BetType, MaxBet, MaxPerMatch, MaxPerBall)
-	SELECT xmlData.Col.value('@sporttype','INT')
-			,xmlData.Col.value('@bettype','INT')
-			,xmlData.Col.value('@maxbet','MONEY')
-			,xmlData.Col.value('@maxpermatch','MONEY')
-			,xmlData.Col.value('@maxperball','MONEY')
-	FROM @Settings.nodes('//settings/setting') xmlData(Col)
-	WHERE xmlData.Col.value('@sporttype','INT') = 202 
-		AND @AgentID IS NULL
-		--AND xmlData.Col.value('@maxpermatch','MONEY') IS NOT NULL
-		--AND xmlData.Col.value('@maxbet','MONEY') IS NOT NULL
-
 	SELECT @OldLog = '<r>'
-	SELECT @OldLog = @OldLog+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'"/>'
+	SELECT @OldLog = @OldLog+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'" mppm="'+ISNULL(CAST(MaxPayoutPerMatch AS NVARCHAR(20)),'')+'"/>'
 	FROM Dep_CustBetLimit_Special cbs  WITH(NOLOCK)
 	WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR cbs.AgentID = @AgentID )
-
-	SELECT @OldLog = @OldLog+'<st s="202" b="'+ISNULL(CAST(gametypeid AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(maxpergametype AS NVARCHAR(20)),'')+'" mpb=""/>'
-	FROM Dep_CustBetLimitGameType_Special  cbs WITH(NOLOCK)
-	WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND @AgentID IS NULL
 	SELECT @OldLog = @OldLog+'</r>'
 	
 	IF(
-		NOT EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting WHERE MaxBet IS NOT NULL AND MaxPerMatch IS NOT NULL AND SportType <> 161)
-		AND NOT EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting WHERE MaxBet IS NOT NULL AND MaxPerMatch IS NOT NULL AND MaxPerBall IS NOT NULL AND SportType <> 161)
-		AND NOT EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting_Keno WHERE MaxBet IS NOT NULL AND MaxPerMatch IS NOT NULL)
+		NOT EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting WHERE MaxBet IS NOT NULL AND MaxPerMatch IS NOT NULL AND MaxPayoutPerMatch IS NOT NULL AND SportType <> 161)
+		AND NOT EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting WHERE MaxBet IS NOT NULL AND MaxPerMatch IS NOT NULL AND MaxPerBall IS NOT NULL AND SportType = 161)
 	)
 	BEGIN
 		PRINT 'DELETE SETTING'
@@ -133,49 +113,27 @@ BEGIN
 		SET cbs.MaxBet = hs.MaxBet
 			,cbs.MaxPerMatch = hs.MaxPerMatch
 			,cbs.MaxPerBall = hs.MaxPerBall
+			,cbs.MaxPayoutPerMatch = hs.MaxPayoutPerMatch
 		FROM Dep_CustBetLimit_Special cbs WITH(ROWLOCK,UPDLOCK)
 		INNER JOIN @HarcodeSetting hs ON hs.sporttype = cbs.SportType and hs.Bettype=cbs.BetType
 		WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR cbs.AgentID = @AgentID )
 
 		------------Insert Missing sporttype------------------------
-		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID, MaxBet, MaxPerMatch, MaxPerBall, Bettype)
-		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MaxBet, MaxPerMatch, MaxPerBall, Bettype 
+		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype)
+		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype 
 		FROM @HarcodeSetting
 		WHERE sporttype NOT IN (SELECT SportType FROM Dep_CustBetLimit_Special cbs WITH(NOLOCK) 
 								WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )
 								)
 	END
-
-	IF(EXISTS(SELECT TOP 1 1 FROM @HarcodeSetting_Keno))
-	BEGIN
-		IF(NOT EXISTS (SELECT TOP 1 1 FROM Dep_CustBetLimitGameType_Special WITH(NOLOCK) WHERE [Site] = @Licensee AND CurrencyID = @CurrencyID))
-		BEGIN
-			print 'insert keno'
-			INSERT INTO Dep_CustBetLimitGameType_Special([Site], CurrencyID, GameTypeID, MaxBet, maxpergametype)
-			SELECT @Licensee, @CurrencyID,BetType, MaxBet, MaxPerMatch FROM @HarcodeSetting_Keno
-		END
-		ELSE
-		BEGIN
-			
-			UPDATE cbs
-			SET cbs.MaxBet = hs.MaxBet
-				,cbs.maxpergametype = hs.MaxPerMatch
-			FROM Dep_CustBetLimitGameType_Special cbs WITH(ROWLOCK,UPDLOCK)
-			INNER JOIN @HarcodeSetting_Keno hs ON cbs.gametypeid=hs.BetType
-			WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID 
-		END
-	END
-
+	
 	set @endRun = getdate()
 	set @duration  = datediff (millisecond,@startRun,@endRun)
 
 	--------------------------------------------Write Log-------------------------------------------------------------
 	SELECT @Log ='<r>'
-	SELECT @Log = @Log+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'"/>'
+	SELECT @Log = @Log+'<st s="'+ISNULL(CAST(SportType AS NVARCHAR(10)),'')+'" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'" mppm="'+ISNULL(CAST(MaxPayoutPerMatch AS NVARCHAR(20)),'')+'"/>'
 	FROM @HarcodeSetting
-
-	SELECT @Log = @Log+'<st s="202" b="'+ISNULL(CAST(BetType AS NVARCHAR(10)),'')+'" mb="'+ISNULL(CAST(MaxBet AS NVARCHAR(20)),'')+'" mpm="'+ISNULL(CAST(MaxPerMatch AS NVARCHAR(20)),'')+'" mpb="'+ISNULL(CAST(MaxPerBall AS NVARCHAR(20)),'')+'"/>'
-	FROM @HarcodeSetting_Keno
 	SELECT @Log = @Log+'</r>'
 
 	IF(@@Error > 0)
@@ -199,14 +157,3 @@ BEGIN
 END
 GO
 
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-
-GO 
- GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_Upd] TO [vnteam]
-GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_Upd] TO [bodbLicenseeNet]
-GO 

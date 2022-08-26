@@ -19,13 +19,15 @@ Created: Dom
 			- 20191218@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 */
 
 BEGIN
 	SET NOCOUNT ON
 	
 	DECLARE @tmp_Sports TABLE(SportType SMALLINT,SportName NVARCHAR(50))
-	DECLARE @tmp_GameType TABLE (GameTypeID INT, GameTypeName NVARCHAR(50), IsDisabled BIT, IBCBettypeID INT)
+	DECLARE @ProductID TINYINT
+	CREATE TABLE #SportBettypeFilter (ProductID TINYINT, SportType SMALLINT,Bettype SMALLINT,IsLive BIT, SettingType TINYINT)
 
 	BEGIN TRY
 		INSERT INTO @tmp_Sports(SportType, SportName)
@@ -35,45 +37,43 @@ BEGIN
 		INSERT INTO @tmp_Sports(SportType, SportName)
 		SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK) 
 	END CATCH
-	
-	BEGIN TRY		
-		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
-	END TRY
-	BEGIN CATCH		
-		INSERT INTO @tmp_GameType (GameTypeID, GameTypeName, IsDisabled, IBCBettypeID)
-		SELECT GameTypeID, GameTypeName, IsDisabled, IBCBettypeID FROM DBTXN.bodb02.dbo.GameType WITH (NOLOCK) WHERE GameTypeID = 1
-	END CATCH
-	
+	INSERT INTO @tmp_Sports(SportType, SportName)
+	SELECT 9901, 'Saba Soccer' 
+	UNION ALL
+	SELECT 9902, 'Saba BasketBall' 
+
 	DECLARE @Sport TABLE(SportID INT)
 	
 	IF(@ShowSportBook=1)
-		INSERT INTO @Sport 
-		SELECT 1 UNION ALL 
-		SELECT 2 UNION ALL 
-		SELECT 3 UNION ALL 
-		SELECT 5 UNION ALL 
-		SELECT 8 UNION ALL 
-		SELECT 10 UNION ALL 
-		SELECT 11 UNION ALL 
-		SELECT 99 UNION ALL 
-		SELECT 43
-
+	BEGIN 
+		SELECT @ProductID = 1
+		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
+		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+	END
 	IF(@ShowNumberGame=1)
-		INSERT INTO @Sport 
-		SELECT 161
-
+	BEGIN 
+		SELECT @ProductID = 3
+		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
+		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+	END
 	IF(@ShowVirtualSport=1)
-		INSERT INTO @Sport 
-		SELECT 180 UNION ALL 
-		SELECT 181 UNION ALL 
-		SELECT 182 UNION ALL 
-		SELECT 183 UNION ALL 
-		SELECT 184 UNION ALL 
-		SELECT 185 UNION ALL 
-		SELECT 186
-	
-	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY)
+	BEGIN 
+		SELECT @ProductID = 5
+		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
+		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+	END
+	IF(@ShowKeno=1)
+	BEGIN 
+		SELECT @ProductID = 8
+		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
+		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+	END
+
+	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
 
 	INSERT INTO #Data(Licensee,
 					CurrencyID, 
@@ -86,7 +86,8 @@ BEGIN
 					SportGameType, 
 					MaxBet, 
 					MaxPerMatch,
-					MaxPerBall)
+					MaxPerBall,
+					MaxPayoutPerMatch)
 	SELECT [Site] Licensee
 		,CurrencyID
 		,ex.Currency
@@ -95,37 +96,19 @@ BEGIN
 		,cbs.Bettype
 		,ci.UserName AgentName
 		,s.SportName SportName
-		,CASE WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay'
+		,CASE	WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay'
 				WHEN cbs.SportType=1 AND cbs.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportGameType
 		,cbs.MaxBet
 		,cbs.MaxPerMatch
 		,cbs.MaxPerBall
+		,cbs.MaxPayoutPerMatch
 	FROM [dbo].[Dep_CustBetLimit_Special] cbs WITH(NOLOCK)
 	INNER JOIN @tmp_Sports s ON s.SportType = cbs.SportType
 	INNER JOIN Exchange ex WITH(NOLOCK) ON ex.exchangeid = cbs.CurrencyID
 	LEFT JOIN CustInfo ci WITH(NOLOCK) ON ci.CustID = cbs.AgentID and ci.roleid=2
-	WHERE cbs.SportType IN(SELECT SportID FROM @Sport)
+	WHERE cbs.SportType IN(SELECT SportType FROM #SportBettypeFilter WHERE SettingType IN (10, 12, 2))
 		AND CurrencyID IN (SELECT value FROM string_split(@Currency,','))
-		AND [Site] = @Licensee
-	UNION ALL
-	SELECT [Site] Licensee
-		,CurrencyID
-		,ex.Currency
-		,AgentID = NULL
-		,202
-		,cbs.gametypeid
-		,AgentName = NULL
-		,SportName = 'Keno'
-		,'RNG Keno' AS SportGameType
-		,maxbet
-		,maxpergametype MaxPerMatch
-		,MaxPerBall = NULL
-	FROM [dbo].[Dep_CustBetLimitGameType_Special] cbs WITH(NOLOCK)
-	INNER JOIN @tmp_GameType bt ON bt.GameTypeID = cbs.gametypeid
-	INNER JOIN Exchange ex WITH(NOLOCK) ON ex.exchangeid = cbs.CurrencyID
-	WHERE @ShowKeno=1
-		AND CurrencyID IN (SELECT value FROM string_split(@Currency,','))
-		AND [Site] = @Licensee
+		AND [Site] = @Licensee	
 	ORDER BY 1,2,3,4
 
 	DELETE #DATA WHERE MaxBet IS NULL AND 
