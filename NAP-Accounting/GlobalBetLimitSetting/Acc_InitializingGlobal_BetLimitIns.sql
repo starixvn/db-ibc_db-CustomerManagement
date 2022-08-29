@@ -180,7 +180,7 @@ BEGIN
 			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16,20) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20) AND ProductID NOT IN (1,3,8)
-			AND psd.SettingStatus=0
+			AND psd.SettingStatus<>2
 			
 		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
@@ -188,7 +188,7 @@ BEGIN
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType
 			INNER JOIN Dep_ProductSetting ps WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 		WHERE a.IsCredit = 0 AND (ps.SettingType IN (2,8,10,11,12) OR (ps.SettingType IN (7) AND a.BetType = psd.BetType))
-			AND psd.SettingStatus=0
+			AND psd.SettingStatus<>2
 
 		--Update: ExchangeId
 		UPDATE a 
@@ -515,8 +515,7 @@ BEGIN
 	--SettingType NOT IN (7,8,17)
 	--CREDIT: exclude: numbergame, Happy5, keno, sportbook
 	IF EXISTS (SELECT 1 FROM #NewInputDateTbl 
-				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) 
-					AND IsCredit=1 AND SportType NOT IN (161,164,168,202,1))
+				WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=1)
 	BEGIN
 		BEGIN TRY
 			--update new settings if exists row:
@@ -531,7 +530,6 @@ BEGIN
 				INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
 											AND t.BetType=pbs.Bettype
 											AND t.ExchangeId=pbs.Currency
-											AND t.SportType NOT IN (161,164,168,202,1)
 											AND t.IsCredit=1
 			
 			DELETE t 
@@ -540,8 +538,7 @@ BEGIN
 							WHERE t.SportType=pbs.Sporttype
 								AND t.BetType=pbs.Bettype
 								AND t.ExchangeId=pbs.Currency
-								AND t.SportType NOT IN (161,164,168,202,1))
-								AND t.IsCredit=1
+								AND t.IsCredit=1)
 
 			--Insert new settings:
 			INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch])
@@ -553,7 +550,6 @@ BEGIN
 							THEN NewMaxPerMatch END NewMaxPerMatch
 			FROM #NewInputDateTbl
 			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=1
-				AND SportType NOT IN (161,164,168,202,1)
 		END TRY
 		BEGIN CATCH
 			SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
@@ -568,7 +564,8 @@ BEGIN
 			--update new settings if exists row:
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-				MaxPerMatch=CASE WHEN (t.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR --SportsBook, Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
+				MaxPerMatch=CASE WHEN (t.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, --SportsBook
+													   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR -- Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
 						 				(t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
 										(t.SportType BETWEEN 213 AND 215)	OR	--NG2
 										(t.SportType BETWEEN 190 AND 197))	--Virtual Sports 2 (Betradar) 
@@ -590,7 +587,7 @@ BEGIN
 			--Insert new settings:
 			INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
-					CASE WHEN (SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+					CASE WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 						 		(SportType BETWEEN 180 AND 186)	OR	
 								(SportType BETWEEN 213 AND 215)	OR	
 								(SportType BETWEEN 190 AND 197))		

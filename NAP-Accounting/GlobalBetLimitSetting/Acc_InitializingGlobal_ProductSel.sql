@@ -33,6 +33,7 @@ BEGIN
 			INNER JOIN #Products p WITH(NOLOCK) ON psd.ProductID = p.ProductID
 		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) AND (@ProductID = 0 OR psd.ProductID = @ProductID)
 			AND psd.ProductID NOT IN (1,3,8)
+			AND psd.SettingStatus<>2
 		UNION
 		SELECT DISTINCT
 			 ps.ProductID
@@ -40,7 +41,9 @@ BEGIN
 		FROM Dep_ProductSetting ps WITH(NOLOCK)
 			INNER JOIN Dep_ProductSettingDetail psd WITH(NOLOCK) ON ps.ProductSettingID = psd.ProductSettingID
 			INNER JOIN #Products p WITH(NOLOCK) ON ps.ProductID = p.ProductID
-		WHERE (ps.SettingType IN (2,7,8,10,11,12)) AND (@ProductID = 0 OR ps.ProductID = @ProductID)
+		WHERE (ps.SettingType IN (2,7,8,10,11,12)) 
+			AND (@ProductID = 0 OR ps.ProductID = @ProductID)
+			AND psd.SettingStatus<>2
 		) KQ
 	ORDER BY ProductID
    
