@@ -719,33 +719,37 @@ BEGIN
 			@IsLogDateLimit BIT = 0
 			
 	--auto transfer 
-	SELECT @transferType = TransferType
+	SELECT @transferType = TransferType,
+		@IsLogDateLimit = 1
 	FROM Acc_ClearBalanceList WITH(NOLOCK)
 	WHERE custid = @ExistingCustid
 	
-	INSERT INTO [dbo].[Acc_ClearBalanceList]
-           ([custid] 
-           ,[status]
-           ,[LastTransfer]           
-           ,[transferType])       
-	SELECT @custid,'', GETDATE()-1, @TransferType
-			
-	--copy Date limit value
-	IF @Site = '789y' AND @Currency <> 20
+	IF @@ROWCOUNT > 0
 	BEGIN
-		SELECT @MinDate = MinDate,
-			@LimitDays = LimitDays,
-			@IsLogDateLimit = 1
-		FROM Age_CustDateLimit WITH(NOLOCK)
-		WHERE custid = @ExistingCustid
-		
+		INSERT INTO [dbo].[Acc_ClearBalanceList]
+			   ([custid] 
+			   ,[status]
+			   ,[LastTransfer]           
+			   ,[transferType])       
+		SELECT @custid,'', GETDATE()-1, @TransferType
+	END
+	
+	--copy Date limit value
+	SELECT @MinDate = MinDate,
+		@LimitDays = LimitDays,
+		@IsLogDateLimit = 1
+	FROM Age_CustDateLimit WITH(NOLOCK)
+	WHERE custid = @ExistingCustid
+	
+	IF @@ROWCOUNT > 0
+	BEGIN
 		INSERT INTO [dbo].[Age_CustDateLimit]
 			   ([CustId]
 			   ,[MinDate]
 			   ,[LimitDays])
 		SELECT @custId, @MinDate, @LimitDays		
-	END
-	
+	END	
+		
 	SET @endRun=GETDATE()
 	SET @duration=datediff(millisecond,@startRun,@endRun)
 	
@@ -763,7 +767,7 @@ BEGIN
 	'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
 	'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +		
 	'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
-	'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' +
+	CASE WHEN @IsLogDateLimit = 1 THEN 'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' ELSE '' END +
 	CASE WHEN @IsLogDateLimit = 1 THEN 'DataAvailable="'+ COALESCE(CAST(@LimitDays AS VARCHAR(10)), CONVERT(VARCHAR, @MinDate, 101), @NoLimitText) + '" ' ELSE '' END +	
 	'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 	'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
@@ -796,7 +800,7 @@ BEGIN
 		'credit="'+ coalesce(cast(@Credit as VARCHAR(50)),space(1)) + '" ' +	
 		'MaxMember="'+ coalesce(@MaxMemberLog,space(1)) + '" ' +
 		'GroupAdmin="'+ coalesce(@GroupAdmin,space(1)) + '" ' +
-		'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' +
+		CASE WHEN @IsLogDateLimit = 1 THEN 'TransferType="'+ coalesce(CAST(@transferType as VARCHAR(10)) ,space(1)) + '" ' ELSE '' END +
 		CASE WHEN @IsLogDateLimit = 1 THEN 'DataAvailable="'+ COALESCE(CAST(@LimitDays AS VARCHAR(10)), CONVERT(VARCHAR, @MinDate, 101), @NoLimitText) + '" ' ELSE '' END +	
 		'IP="'+ coalesce(cast(@IP as VARCHAR(15)),space(1)) + '" ' +	
 		'Language="'+ coalesce(cast(@Language as VARCHAR(2)),space(1)) + '" ' +	
