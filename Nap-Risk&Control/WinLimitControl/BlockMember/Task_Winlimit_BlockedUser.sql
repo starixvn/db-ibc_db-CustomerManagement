@@ -13,7 +13,7 @@ AS
 		- 20171005@Johnson: Change request-Only notify once time for each level [Redmine:#84141]
 		- 20180530@Johnson: enhance performance [Redmine: #95678]
 		- 20200421@Elodie: Increase length of BettypeIDList
-		
+		- 20220722@Johnson: Scale Out DBTXN - get data on WinLimit_CustWinlostGame instead of Winlimit_CreditGame [Redmine:#175278]
 	Param's Explanation:
 	
 */
@@ -96,20 +96,9 @@ BEGIN
 	SELECT @WinlostDate = CAST(GETDATE() AS DATE)
 	
 	INSERT INTO #DataTmp_pre(CustId, WinlostDate, Bettype, TotalWinAmount)
-	SELECT CustId, WinlostDate, BetType, SUM(Winlost)
-	FROM (
-		SELECT CustId, WinlostDate, BetType, Winlost
-		FROM DBTXN.bodb02.dbo.Winlimit_CreditGame c WITH (NOLOCK)
-		WHERE WinlostDate = @WinlostDate
-
-		UNION ALL
-		
-		SELECT CustId, WinlostDate, BetType, - Winlost
-		FROM DBTXN.bodb02.dbo.Winlimit_DebitGame c WITH (NOLOCK)
-		WHERE WinlostDate = @WinlostDate
-			
-	)t
-	GROUP BY CustId, WinlostDate, BetType
+	SELECT CustId, WinlostDate, BetType, Winlost
+	FROM WinLimit_CustWinlostGame WITH(NOLOCK)
+	WHERE winlostdate = @winlostdate
 	
 	-- Return if there is no data to process
 	IF NOT EXISTS (SELECT TOP 1 1 FROM #DataTmp_pre WITH (NOLOCK))
