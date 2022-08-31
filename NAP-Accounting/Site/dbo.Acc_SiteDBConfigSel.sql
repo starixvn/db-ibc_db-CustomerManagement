@@ -20,7 +20,7 @@ AS
 BEGIN
 	SET NOCOUNT ON  
 	
-	IF @CustID IS NOT NULL AND @CustID <> 0
+	IF @CustID IS NOT NULL
 	BEGIN 
 		SELECT	sc.SiteDBGroupID, 
 				sc.LinkedServerName, 
