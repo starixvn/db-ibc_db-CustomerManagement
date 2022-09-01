@@ -15,6 +15,7 @@ AS
 	Example:	EXEC Acc_SiteDBConfigSel @CustID = 791048 
 				EXEC Acc_SiteDBConfigSel @CustID = 180090
 				EXEC Acc_SiteDBConfigSel @SiteDBGroupID = 1
+				EXEC Acc_SiteDBConfigSel @Username = ''
 				EXEC Acc_SiteDBConfigSel
 */
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
 			INNER JOIN Customer c WITH (NOLOCK) ON s.site = c.site
 		WHERE CustID = @CustID
 	END
-	ELSE IF @username IS NOT NULL AND @username <> ''
+	ELSE IF @username IS NOT NULL
 	BEGIN 
 		SELECT	sc.SiteDBGroupID, 
 				sc.LinkedServerName, 
@@ -55,6 +56,6 @@ BEGIN
 	BEGIN 
 		SELECT sc.SiteDBGroupID, sc.LinkedServerName, sc.ClientAccessName, sc.AGIP
 		FROM SiteDBConfig sc WITH (NOLOCK)
-	END	
+	END		
 END
 GO
