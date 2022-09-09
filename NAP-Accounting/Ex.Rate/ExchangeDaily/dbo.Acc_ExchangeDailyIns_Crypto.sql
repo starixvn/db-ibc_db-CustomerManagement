@@ -68,7 +68,9 @@ BEGIN
 	WHILE (@i <= @max)
 	BEGIN
 		SELECT @ExchangeId = exchangeid
-			, @MultipliedBy = MultipliedBy
+			, @MultipliedBy = CASE WHEN @Code = 'ETH' THEN 0.001 
+									WHEN @Code = 'BTC' THEN 0.0001
+									ELSE MultipliedBy END
 		FROM @exchange
 		WHERE id = @i
 
