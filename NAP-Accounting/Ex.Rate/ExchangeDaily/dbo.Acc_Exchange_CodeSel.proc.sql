@@ -13,14 +13,14 @@ Revisions:
 BEGIN
 	SET NOCOUNT ON  
   
-	SELECT DISTINCT Code, Currency, @Type AS Type  
+	SELECT DISTINCT Code, CASE WHEN Currency = 'USDT3' THEN 'USDT' ELSE Currency END Currency, @Type AS Type  
 	FROM exchange WITH (NOLOCK)  
 	WHERE isnull(Code,'') <> ''   
 	AND Code not in ('C', 'H')  
 	--AND Code in ('GBP', 'TWD')  
 	AND 
-		1 = CASE WHEN  @Type = 0 AND Code NOT IN ('SHI','ELO','TRX','DOG','ETH','BTC') THEN 1
-				WHEN @Type = 1 AND Code  IN ('SHI','ELO','TRX','DOG','ETH','BTC') THEN 1 
+		1 = CASE WHEN  @Type = 0 AND Code NOT IN ('SHI','ELO','TRX','DOG','ETH','BTC','USC','UST') THEN 1
+				WHEN @Type = 1 AND Code  IN ('SHI','ELO','TRX','DOG','ETH','BTC','USC','UST') THEN 1 
 			ELSE 0 END
 END
  
