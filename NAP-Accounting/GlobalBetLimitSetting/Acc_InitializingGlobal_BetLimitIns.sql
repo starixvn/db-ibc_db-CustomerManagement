@@ -17,6 +17,7 @@ AS
 		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
+		- 20220913@Tacy: adjust Buybous for bettype 5805, 5807 [RedmineID: #177448]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -102,7 +103,7 @@ BEGIN
 			, IsCredit		BIT
 		)	
 
-	DECLARE @History_BetSettingTbl TABLE (	--?????
+	DECLARE @History_BetSettingTbl TABLE (	
 			  SportType			SMALLINT
 			, BetType			SMALLINT
 			, MaxBet			MONEY
@@ -252,8 +253,11 @@ BEGIN
 										 (BetType BETWEEN 4101 AND 4300) OR 
 										 (BetType BETWEEN 6701 AND 7000) OR
 										 (BetType BETWEEN 4301 AND 4600) OR
-										 (BetType BETWEEN 5800 AND 5999)
+										 ((BetType BETWEEN 5800 AND 5999) 
+											AND BetType NOT IN (5805, 5807))
 																		THEN 100*a.NewMaxBet	--Macau Games, PP, SG
+									WHEN BetType=5805					THEN 248*a.NewMaxBet	--Macau Games
+									WHEN BetType=5807					THEN 52.2*a.NewMaxBet	--Macau Games
 																		ELSE a.NewMaxBet
 						END
 			FROM  #NewInputDateTbl a
