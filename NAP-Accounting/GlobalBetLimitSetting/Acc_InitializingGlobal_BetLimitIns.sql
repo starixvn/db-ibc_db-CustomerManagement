@@ -17,7 +17,7 @@ AS
 		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
-		- 20220913@Tacy: adjust Buybous for bettype 5805, 5807 [RedmineID: #177448]
+		- 20220913@Tacy: adjust Buybonus for bettype 5805, 5807 [RedmineID: #177448]
 
 	Param's Explanation:
 		• @pInputData : 
