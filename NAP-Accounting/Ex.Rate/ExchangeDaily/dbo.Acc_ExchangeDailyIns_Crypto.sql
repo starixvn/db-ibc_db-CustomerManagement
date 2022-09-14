@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto] 
+ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto] 
 	@Code VARCHAR(5)
 	, @MYR FLOAT
 	, @USD FLOAT
@@ -31,156 +31,167 @@ Original: Acc_ExchangeDailyIns
 Revisions:
 	- 20220908@Evan: Support crypto  [Redmine: #177481]  
 */
-
-SET NOCOUNT ON
-
-DECLARE @exchange TABLE (
-	id INT IDENTITY(1, 1)
-	, exchangeid INT
-	, MultipliedBy FLOAT
-	)
-DECLARE @date DATETIME
-		, @i INT
-		, @max INT
-		, @ExchangeId INT
-		, @MultipliedBy FLOAT
-IF @rundate IS NULL
-	SET @date = convert(DATETIME, convert(NVARCHAR(20), getdate(), 101))
-ELSE
-	SET @date = convert(DATETIME, convert(NVARCHAR(20), @rundate, 101))
-
-INSERT INTO @exchange (
-	exchangeid
-	, MultipliedBy
-	)
-SELECT exchangeid
-	, MultipliedBy
-FROM exchange(NOLOCK)
-WHERE Code = @Code
-
-IF @@ROWCOUNT > 0
 BEGIN
-	SET @i = 1
 
-	SELECT @max = count(1)
-	FROM @exchange
+	SET NOCOUNT ON
 
-	WHILE (@i <= @max)
+	DECLARE @exchange TABLE (
+		id INT IDENTITY(1, 1)
+		, exchangeid INT
+		, MultipliedBy FLOAT
+		)
+	DECLARE @date SMALLDATETIME,@RefExchangeDate SMALLDATETIME
+			, @i INT
+			, @max INT
+			, @ExchangeId INT
+			, @MultipliedBy FLOAT
+
+	IF @rundate IS NULL
+		SET @date = CONVERT(SMALLDATETIME, CONVERT(VARCHAR(20), GETDATE(), 101))
+	ELSE
+		SET @date = CONVERT(SMALLDATETIME, CONVERT(VARCHAR(20), @rundate, 101))
+	
+	SET @RefExchangeDate = DATEADD(dd,-(DAY(@date)-1),@date)
+
+	INSERT INTO @exchange (
+		exchangeid
+		, MultipliedBy
+		)
+	SELECT exchangeid
+		, MultipliedBy
+	FROM exchange WITH(NOLOCK)
+	WHERE Code = @Code
+		AND	currency IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
+	IF @@ROWCOUNT > 0
 	BEGIN
-		SELECT @ExchangeId = exchangeid
-			, @MultipliedBy = CASE WHEN @Code = 'ETH' THEN 0.001 
-									WHEN @Code = 'BTC' THEN 0.0001
-									ELSE MultipliedBy END
-		FROM @exchange
-		WHERE id = @i
+		SET @i = 1
 
-		--Check exist, if false then insert 
-		IF NOT EXISTS (
-				SELECT 1
-				FROM ExchangeDailyOanda(NOLOCK)
+		SELECT @max = count(1)
+		FROM @exchange
+
+		WHILE (@i <= @max)
+		BEGIN
+			SELECT @ExchangeId = exchangeid
+				,@MultipliedBy = CASE	WHEN @Code = 'ETH' THEN 0.001 
+										WHEN @Code = 'BTC' THEN 0.0001
+										ELSE MultipliedBy END
+			FROM @exchange
+			WHERE id = @i
+
+			--Check exist, if false then insert 
+			IF NOT EXISTS (
+					SELECT 1
+					FROM ExchangeDailyOanda WITH(NOLOCK)
+					WHERE ExchangeId = @ExchangeId
+						AND ExchangeDate = @date
+					)
+			BEGIN
+				INSERT INTO ExchangeDailyOanda (
+					ExchangeId
+					, ExchangeDate
+					, Code
+					, MYR
+					, USD
+					, EUR
+					, CNY
+					, IDR
+					, AUD
+					, CHF
+					, GBP
+					, SGD
+					, THB
+					, VND
+					, KRW
+					, JPY
+					, HKD
+					, TWD
+					, PHP
+					, BDT
+					, INR
+					, ActualRate
+					)
+				VALUES (
+					@ExchangeId
+					, @date
+					, @Code
+					, @MYR * @MultipliedBy
+					, @USD * @MultipliedBy
+					, @EUR * @MultipliedBy
+					, @CNY * @MultipliedBy
+					, @IDR * @MultipliedBy
+					, @AUD * @MultipliedBy
+					, @CHF * @MultipliedBy
+					, @GBP * @MultipliedBy
+					, @SGD * @MultipliedBy
+					, @THB * @MultipliedBy
+					, @VND * @MultipliedBy
+					, @KRW * @MultipliedBy
+					, @JPY * @MultipliedBy
+					, @HKD * @MultipliedBy
+					, @TWD * @MultipliedBy
+					, @PHP * @MultipliedBy
+					, @BDT * @MultipliedBy
+					, @INR * @MultipliedBy
+					, @MYR * @MultipliedBy
+					)
+			END
+			ELSE
+			BEGIN
+				UPDATE ExchangeDailyOanda WITH (ROWLOCK, UPDLOCK)
+				SET MYR = @MYR * @MultipliedBy
+					, USD = @USD * @MultipliedBy
+					, EUR = @EUR * @MultipliedBy
+					, CNY = @CNY * @MultipliedBy
+					, IDR = @IDR * @MultipliedBy
+					, AUD = @AUD * @MultipliedBy
+					, CHF = @CHF * @MultipliedBy
+					, GBP = @GBP * @MultipliedBy
+					, SGD = @SGD * @MultipliedBy
+					, THB = @THB * @MultipliedBy
+					, VND = @VND * @MultipliedBy
+					, KRW = @KRW * @MultipliedBy
+					, JPY = @JPY * @MultipliedBy
+					, HKD = @HKD * @MultipliedBy
+					, TWD = @TWD * @MultipliedBy
+					, PHP = @PHP * @MultipliedBy
+					, BDT = @BDT * @MultipliedBy
+					, INR = @INR * @MultipliedBy
+					, ActualRate = @MYR * @MultipliedBy
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
-				)
-		BEGIN
-			INSERT INTO ExchangeDailyOanda (
-				ExchangeId
-				, ExchangeDate
-				, Code
-				, MYR
-				, USD
-				, EUR
-				, CNY
-				, IDR
-				, AUD
-				, CHF
-				, GBP
-				, SGD
-				, THB
-				, VND
-				, KRW
-				, JPY
-				, HKD
-				, TWD
-				, PHP
-				, BDT
-				, INR
-				, ActualRate
-				)
-			VALUES (
-				@ExchangeId
-				, @date
-				, @Code
-				, @MYR * @MultipliedBy
-				, @USD * @MultipliedBy
-				, @EUR * @MultipliedBy
-				, @CNY * @MultipliedBy
-				, @IDR * @MultipliedBy
-				, @AUD * @MultipliedBy
-				, @CHF * @MultipliedBy
-				, @GBP * @MultipliedBy
-				, @SGD * @MultipliedBy
-				, @THB * @MultipliedBy
-				, @VND * @MultipliedBy
-				, @KRW * @MultipliedBy
-				, @JPY * @MultipliedBy
-				, @HKD * @MultipliedBy
-				, @TWD * @MultipliedBy
-				, @PHP * @MultipliedBy
-				, @BDT * @MultipliedBy
-				, @INR * @MultipliedBy
-				, @MYR * @MultipliedBy
-				)
+			END
+
+			IF @@Error <> 0
+			BEGIN
+				SELECT @ErrMsg = 'Exchange rate insert fail.'
+					, @ErrCode = 100
+
+				RETURN
+			END
+			
+			-- Insert into ExchangeDaily_Crypto - base to USDT
+			IF NOT EXISTS (	SELECT 1 
+						FROM ExchangeDaily_Crypto WITH(NOLOCK) 
+						WHERE ExchangeId = @ExchangeId AND ExchangeDate = @date)
+			BEGIN
+				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT)
+				SELECT	TOP 1 @date AS ExchangeDate, ExchangeId, USDT 
+				FROM	ExchangeDaily_Crypto WITH(NOLOCK)
+				WHERE	ExchangeId = @ExchangeId AND ExchangeDate BETWEEN CONVERT(SMALLDATETIME, DATEADD(DAY, -7, @RefExchangeDate)) AND DATEADD(dd,-1,@date)
+				ORDER BY ExchangeDate DESC
+			END
+
+			SET @i = @i + 1
 		END
-		ELSE
-		BEGIN
-			UPDATE ExchangeDailyOanda
-			WITH (
-					ROWLOCK
-					, UPDLOCK
-					)
-
-			SET MYR = @MYR * @MultipliedBy
-				, USD = @USD * @MultipliedBy
-				, EUR = @EUR * @MultipliedBy
-				, CNY = @CNY * @MultipliedBy
-				, IDR = @IDR * @MultipliedBy
-				, AUD = @AUD * @MultipliedBy
-				, CHF = @CHF * @MultipliedBy
-				, GBP = @GBP * @MultipliedBy
-				, SGD = @SGD * @MultipliedBy
-				, THB = @THB * @MultipliedBy
-				, VND = @VND * @MultipliedBy
-				, KRW = @KRW * @MultipliedBy
-				, JPY = @JPY * @MultipliedBy
-				, HKD = @HKD * @MultipliedBy
-				, TWD = @TWD * @MultipliedBy
-				, PHP = @PHP * @MultipliedBy
-				, BDT = @BDT * @MultipliedBy
-				, INR = @INR * @MultipliedBy
-				, ActualRate = @MYR * @MultipliedBy
-			WHERE ExchangeId = @ExchangeId
-				AND ExchangeDate = @date
-				AND Code = @Code
-		END
-
-		IF @@Error <> 0
-		BEGIN
-			SELECT @ErrMsg = 'Exchange rate insert fail.'
-				, @ErrCode = 100
-
-			RETURN
-		END
-
-		SET @i = @i + 1
 	END
+
+	-- Update ExchangeDailyOanda.MYR to Exchange.ActualRate
+	UPDATE	a
+	SET		a.actualrate = b.MYR
+	FROM	exchange a WITH(ROWLOCK) 
+			INNER JOIN ExchangeDailyOanda b WITH(NOLOCK) on a.ExchangeId = b.exchangeid  
+	WHERE	b.ExchangeDate = @date AND a.Code = @Code
+
 END
-
--- Update ExchangeDailyOanda.MYR to Exchange.ActualRate
-UPDATE a
-SET a.actualrate = b.MYR
-FROM exchange a WITH(ROWLOCK) 
-	INNER JOIN ExchangeDailyOanda b WITH(NOLOCK) on a.ExchangeId = b.exchangeid AND b.ExchangeDate = @date
-WHERE a.Code = @Code
-
 GO
