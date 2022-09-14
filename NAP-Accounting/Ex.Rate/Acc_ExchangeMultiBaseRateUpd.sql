@@ -15,6 +15,7 @@ AS
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
 		- 20220301@Malcolm: Fix Logs [RedmineID: #163417]
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
+		- 20220914@Sophia: Update ActualRate of ExchangeDailyOanda [RedmineID: #175253] 
 
 	Param's Explanation:
 		. @Exhange 
@@ -46,6 +47,7 @@ BEGIN
 	FROM dbo.Exchange e WITH(NOLOCK)
 		INNER JOIN #Exchange ex ON ex.ExchangeId = e.ExchangeId
 
+	-- update Exchange 
 	BEGIN TRY
 		UPDATE e WITH(ROWLOCK)
 			SET e.actualrate = ex.Actualrate,
@@ -57,6 +59,19 @@ BEGIN
 		SELECT @ErrCode = 100, @ErrMsg = 'Error occurs. update unsucessfully.'
 		RETURN
 	END CATCH
+
+	-- update ExchangeDailyOanda
+	DECLARE @ExchangeDate SMALLDATETIME
+	SELECT @ExchangeDate = CONVERT(VARCHAR, GETDATE(), 23) 
+
+	BEGIN TRY
+		EXEC dbo.Acc_ExchangeDailyOandaUpd_Actualrate @ExchangeDate = @ExchangeDate
+	END TRY
+	BEGIN CATCH 
+		SELECT @ErrCode = 103, @ErrMsg = 'Error occurs. update unsucessfully OANDA exchange rate.'
+		RETURN
+	END CATCH
+	
 
 	-- Write log
 	DECLARE @ID INT = 1
