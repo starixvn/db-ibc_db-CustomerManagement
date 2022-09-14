@@ -42,6 +42,7 @@ Revisions:
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 	- 20200512@Johnson: check super's prefix for 789y's group [redmine:#133846]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20220722@Eden: Scale Out DBTrans  [redmine: #158293]
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -117,18 +118,6 @@ BEGIN
 				RETURN
 			END
 		COMMIT TRANSACTION
-
-		--update bettrans with (rowlock, updlock) set username = @newname where custid = @custid
-		--update bettrans14 with (rowlock, updlock) set username = @newname where custid = @custid
-		EXEC DBTXN.bodb02.dbo.Acc_CustomerUpdUserName_Bettrans @NewUserName = @newname, @custid = @custid, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
-		if @ErrCode <>0	 
-		BEGIN
-			SET @ErrMsg = 'Update username does not successfully.' + @ErrMsg
-			--- manually rollback
-			UPDATE customer WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
-			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
-			RETURN
-		END	
 		
 		BEGIN TRY	
 			IF (@roleid > 4)
@@ -137,8 +126,6 @@ BEGIN
 		BEGIN CATCH
 			UPDATE customer WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
 			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
-		
-			EXEC DBTXN.bodb02.dbo.Acc_CustomerUpdUserName_Bettrans @NewUserName = @oldname, @custid = @custid, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 				
 			select @ErrMsg = 'Update username does not successfully.' + @ErrMsg
 			RETURN
@@ -166,8 +153,6 @@ BEGIN
 			--- manually rollback
 			UPDATE customer WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
 			UPDATE custinfo WITH (ROWLOCK, UPDLOCK) SET username = @oldname WHERE custid = @custid
-		
-			EXEC DBTXN.bodb02.dbo.Acc_CustomerUpdUserName_Bettrans @NewUserName = @oldname, @custid = @custid, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 
 			RETURN
 		END
@@ -203,6 +188,8 @@ BEGIN
 			@TrackingValue = @LogSPData,
 			@duration = @duration
 	END CATCH
+
+	SELECT @ReturnCustId = @custid
 END
 GO
 
