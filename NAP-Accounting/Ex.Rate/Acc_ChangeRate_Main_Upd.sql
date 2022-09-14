@@ -1,6 +1,7 @@
 /*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ChangeRate_Main_Upd] 
-	@TableName VARCHAR(200)
+	@TableName VARCHAR(200),
+	@IsSiteDB BIT = 0 
 AS
 /*
 	Created: 20211229@Malcolm
@@ -9,6 +10,7 @@ AS
 
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
+		- 20220801@Sophia: Scale out, call at SiteDB [RedmineID: #175253]
 
 	Param's Explanation:
 	
@@ -29,16 +31,19 @@ BEGIN
 		RETURN
 	END
 	 
-	DECLARE @__winlostdate SMALLDATETIME
-	SELECT @__winlostdate = CONVERT(VARCHAR(10), GETDATE(), 23)
+	DECLARE @Winlostdate SMALLDATETIME
+	SELECT @winlostdate = CONVERT(VARCHAR(10), GETDATE(), 23)
+	
+	 
+		EXEC dbo.ExecRep_00 @Winlostdate = @winlostdate
+				, @Target = 'DBTXN' -- DBTXN/REPLICATED
+				, @TableName = @TableName
+				, @IsSiteDB = @IsSiteDB
 
-	EXEC dbo.ExecRep_00 @Winlostdate = @__winlostdate
-			, @Target = 'DBTRANS' -- DBTRANS/REPLICATED
-			, @TableName = @TableName
-
-	EXEC dbo.ExecRep_00 @Winlostdate = @__winlostdate
-			, @Target = 'REPLICATED' -- DBTRANS/REPLICATED
-			, @TableName = @TableName
-
+		EXEC dbo.ExecRep_00 @Winlostdate = @winlostdate
+				, @Target = 'REPLICATED' -- DBTXN/REPLICATED
+				, @TableName = @TableName
+				, @IsSiteDB = @IsSiteDB
+	 	 
 
 END

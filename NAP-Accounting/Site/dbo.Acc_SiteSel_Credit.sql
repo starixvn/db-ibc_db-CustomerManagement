@@ -13,13 +13,13 @@ Revisions:
 	Parameter's explaination: @Mode  = 0: No sites CN88 and isActive = 1
 									 = 1: All Site
 	 - 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
-	 - 20200629@Winfred: NAP - Get site by cansee RedmineID: #131241
+	 - 20200629@Winfred: NAP - Get site by cansee RedmineID: #131241	 
+	 - 20221808@Elodie: Get SiteDBGroupID [RedmineID: #158293]
 */
 
 SET NOCOUNT ON  
 
-select [siteid], [site] 
-from [site]  with(nolock)
-where islicensee = 0  AND (
-(@Mode = 1) OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
+SELECT siteid, site, SiteDBGroupID
+FROM [site]  WITH (NOLOCK)
+WHERE islicensee = 0  AND (@Mode = 1 OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
 GO
