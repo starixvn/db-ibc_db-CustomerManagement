@@ -16,6 +16,7 @@ AS
 		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
 		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20220913@Tacy: adjust Buybonus for bettype 5807 [RedmineID: #177448]
 		- 20220915@Tacy: adjust Buybonus for Microgaming's bettype [RedmineID: #175853]
 		- 20220928@Tacy: adjust Buybonus for PP's bettype [RedmineID: #177397]
 
@@ -201,14 +202,16 @@ BEGIN
 
 		UPDATE a 
 		SET a.MaxGameStake=CASE WHEN  BetType BETWEEN 6401 AND 6700	THEN 98*a.NewMaxBet	--Joker
-								WHEN (BetType BETWEEN 4001 AND 4100) OR
-									 (BetType BETWEEN 4101 AND 4300) OR 
-									 (BetType BETWEEN 6701 AND 7000
-										AND BetType NOT IN (6765,6773,6775,6776,6777)) OR
-									 (BetType BETWEEN 4301 AND 4600) OR
-									 (BetType BETWEEN 5800 AND 5999)
-													THEN 100*a.NewMaxBet	--Macau Games, PP, SG
+									WHEN (BetType BETWEEN 4001 AND 4100) OR
+										 (BetType BETWEEN 4101 AND 4300) OR 
+									 	(BetType BETWEEN 6701 AND 7000
+											AND BetType NOT IN (6765,6773,6775,6776,6777)) OR
+										 (BetType BETWEEN 4301 AND 4600) OR
+										 ((BetType BETWEEN 5800 AND 5999) 
+											AND BetType NOT IN (5807))
+																	THEN 100*a.NewMaxBet	--Macau Games, PP, SG
 								WHEN BetType=6765			THEN 80*a.NewMaxBet
+								WHEN BetType=5807			THEN 52.2*a.NewMaxBet	--Macau Games
 								WHEN BetType IN (8400, 8409)		THEN 40*a.NewMaxBet		--Microgaming
 								WHEN BetType IN (8404, 8411)		THEN 150*a.NewMaxBet
 								WHEN BetType IN (8405, 8430)		THEN 60*a.NewMaxBet
@@ -220,7 +223,7 @@ BEGIN
 								WHEN BetType IN (8431)			THEN 110*a.NewMaxBet
 								WHEN BetType IN (8438)			THEN 90*a.NewMaxBet		--Microgaming
 													ELSE a.NewMaxBet
-					END
+						END
 		FROM  #NewInputDateTbl a
 			INNER JOIN #BetType bt WITH (NOLOCK) ON bt.typeid=a.BetType
 		WHERE typedesc='BuyBonus'
