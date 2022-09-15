@@ -16,7 +16,9 @@ AS
 		- 20220420@Winfred: Fix setting type 7 get bettype original [Redmine: #171750]
 		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20220915@Tacy: adjust Buybonus for bettype 8400 (Microgaming) [RedmineID: #175853]
 		- 20220928@Tacy: adjust Buybonus for PP's bettype [RedmineID: #177397]
+
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -193,6 +195,7 @@ BEGIN
 			WHERE typeid BETWEEN 4001 and 4600
 				OR (typeid BETWEEN 6401 and 7000)
 				OR (typeid BETWEEN 5800 AND 5999)
+				OR (typeid BETWEEN 8400 AND 8449)
 		END CATCH
 
 		UPDATE a 
@@ -205,6 +208,7 @@ BEGIN
 									 (BetType BETWEEN 5800 AND 5999)
 																	THEN 100*a.NewMaxBet	--Macau Games, PP, SG
 								WHEN BetType=6765					THEN 80*a.NewMaxBet
+								WHEN BetType=8400					THEN 40*a.NewMaxBet		--Microgaming
 																	ELSE a.NewMaxBet
 					END
 		FROM  #NewInputDateTbl a
