@@ -40,7 +40,7 @@ BEGIN
 		, exchangeid INT
 		, MultipliedBy FLOAT
 		)
-	DECLARE @date SMALLDATETIME,@RefExchangeDate SMALLDATETIME
+	DECLARE @date SMALLDATETIME
 			, @i INT
 			, @max INT
 			, @ExchangeId INT
@@ -51,8 +51,6 @@ BEGIN
 	ELSE
 		SET @date = CONVERT(SMALLDATETIME, CONVERT(VARCHAR(20), @rundate, 101))
 	
-	SET @RefExchangeDate = DATEADD(dd,-(DAY(@date)-1),@date)
-
 	INSERT INTO @exchange (
 		exchangeid
 		, MultipliedBy
@@ -84,6 +82,7 @@ BEGIN
 					FROM ExchangeDailyOanda WITH(NOLOCK)
 					WHERE ExchangeId = @ExchangeId
 						AND ExchangeDate = @date
+						AND Code = @Code
 					)
 			BEGIN
 				INSERT INTO ExchangeDailyOanda (
@@ -176,12 +175,11 @@ BEGIN
 						WHERE ExchangeId = @ExchangeId AND ExchangeDate = @date)
 			BEGIN
 				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT)
-				SELECT	TOP 1 @date AS ExchangeDate, ExchangeId, USDT 
+				SELECT	@date AS ExchangeDate, ExchangeId, USDT 
 				FROM	ExchangeDaily_Crypto WITH(NOLOCK)
-				WHERE	ExchangeId = @ExchangeId AND ExchangeDate BETWEEN CONVERT(SMALLDATETIME, DATEADD(DAY, -7, @RefExchangeDate)) AND DATEADD(dd,-1,@date)
-				ORDER BY ExchangeDate DESC
+				WHERE	ExchangeId = @ExchangeId AND ExchangeDate = DATEADD(dd,-1,@date)
 			END
-
+			
 			SET @i = @i + 1
 		END
 	END
