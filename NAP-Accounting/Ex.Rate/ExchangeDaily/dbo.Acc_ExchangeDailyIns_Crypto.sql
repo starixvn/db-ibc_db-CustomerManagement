@@ -169,17 +169,6 @@ BEGIN
 				RETURN
 			END
 			
-			-- Insert into ExchangeDaily_Crypto - base to USDT
-			IF NOT EXISTS (	SELECT 1 
-						FROM ExchangeDaily_Crypto WITH(NOLOCK) 
-						WHERE ExchangeId = @ExchangeId AND ExchangeDate = @date)
-			BEGIN
-				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT)
-				SELECT	@date AS ExchangeDate, ExchangeId, USDT 
-				FROM	ExchangeDaily_Crypto WITH(NOLOCK)
-				WHERE	ExchangeId = @ExchangeId AND ExchangeDate = DATEADD(dd,-1,@date)
-			END
-			
 			SET @i = @i + 1
 		END
 	END
