@@ -1,11 +1,4 @@
-﻿USE [CustDB]
-GO
-
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDaily_ActualRateUpd]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT
@@ -19,6 +12,9 @@ Revisions:
 	- 20120516@Henry: raise error when a currency got more than 1 actual rate in bettrans table
 	- 20131108@Elodie: Splitting bodb02 into CustDB (call bettrans by link database)
 	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
+	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
+	- 20220915@Evan: Support crypto  [Redmine: #177481]  
+
 */		
 SET NOCOUNT ON
 DECLARE @exchange TABLE(id int identity(1,1), exchangeid int,MultipliedBy int)
@@ -33,6 +29,7 @@ SET e.actualrate = ex.actualrate
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)
+WHERE ex.currency NOT IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
 
 --2 update ExchangeDaily actualrate from table exchange for today
 UPDATE e
@@ -40,6 +37,7 @@ SET e.actualrate = ex.actualrate
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate = @date
+WHERE ex.currency NOT IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
 
 /* --20140625@jim: no need update old-data, we'll correct it by manually
 
@@ -91,6 +89,3 @@ SET e.actualrate = b.actualrate
 	ON e.ExchangeId = b.currency AND e.ExchangeDate = DATEADD(dd,-2,@date)
 */
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeDaily_ActualRateUpd] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeDaily_ActualRateUpd] TO [vnteam] AS [dbo]
