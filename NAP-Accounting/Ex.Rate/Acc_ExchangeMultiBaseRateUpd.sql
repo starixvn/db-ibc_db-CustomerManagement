@@ -61,11 +61,9 @@ BEGIN
 	END CATCH
 
 	-- update ExchangeDailyOanda
-	DECLARE @ExchangeDate SMALLDATETIME
-	SELECT @ExchangeDate = CONVERT(VARCHAR, GETDATE(), 23) 
 
 	BEGIN TRY
-		EXEC dbo.Acc_ExchangeDailyOandaUpd_Actualrate @ExchangeDate = @ExchangeDate
+		EXEC dbo.Acc_ExchangeDaily_ActualRateUpd  
 	END TRY
 	BEGIN CATCH 
 		SELECT @ErrCode = 103, @ErrMsg = 'Error occurs. update unsucessfully OANDA exchange rate.'
