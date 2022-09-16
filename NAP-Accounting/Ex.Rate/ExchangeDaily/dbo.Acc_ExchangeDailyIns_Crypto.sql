@@ -59,7 +59,7 @@ BEGIN
 		, MultipliedBy
 	FROM exchange WITH(NOLOCK)
 	WHERE Code = @Code
-		AND	currency IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
+		AND	currency IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
 	IF @@ROWCOUNT > 0
 	BEGIN
 		SET @i = 1
@@ -168,7 +168,18 @@ BEGIN
 
 				RETURN
 			END
-			
+
+			-- Insert into ExchangeDaily_Crypto - base to USDT
+			IF NOT EXISTS (	SELECT 1 
+						FROM ExchangeDaily_Crypto WITH(NOLOCK) 
+						WHERE ExchangeId = @ExchangeId AND ExchangeDate = @date)
+			BEGIN
+				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT)
+				SELECT	@date AS ExchangeDate, ExchangeId, USDT 
+				FROM	ExchangeDaily_Crypto WITH(NOLOCK)
+				WHERE	ExchangeId = @ExchangeId AND ExchangeDate = DATEADD(dd,-1,@date)
+			END		
+				
 			SET @i = @i + 1
 		END
 	END

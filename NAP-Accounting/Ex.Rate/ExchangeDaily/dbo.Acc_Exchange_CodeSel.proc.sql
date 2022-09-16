@@ -13,14 +13,14 @@ Revisions:
 BEGIN
 	SET NOCOUNT ON  
   
-	SELECT DISTINCT Code, CASE WHEN Currency = 'USDT3' THEN 'USDT' ELSE Currency END Currency, @Type AS Type  
+	SELECT DISTINCT Code, CASE WHEN currency = 'USDT3' THEN 'USDT' ELSE Currency END Currency, @Type AS Type, stakerate AS CoinMarketCapID
 	FROM exchange WITH (NOLOCK)  
 	WHERE isnull(Code,'') <> ''   
 	AND Code not in ('C', 'H')  
 	--AND Code in ('GBP', 'TWD')  
 	AND 
-		1 = CASE WHEN  @Type = 0 AND Code NOT IN ('SHI','ELO','TRX','DOG','ETH','BTC','USC','UST') THEN 1
-				WHEN @Type = 1 AND Code  IN ('SHI','ELO','TRX','DOG','ETH','BTC','USC','UST') THEN 1 
+		1 = CASE WHEN  @Type = 0 AND currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI') THEN 1
+				WHEN @Type = 1 AND currency  IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI') THEN 1 
 			ELSE 0 END
 END
  

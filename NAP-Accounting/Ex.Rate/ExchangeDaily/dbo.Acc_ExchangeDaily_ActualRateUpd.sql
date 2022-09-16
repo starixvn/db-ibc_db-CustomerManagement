@@ -29,7 +29,7 @@ SET e.actualrate = ex.actualrate
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)
-WHERE ex.currency NOT IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
+WHERE ex.currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
 
 --2 update ExchangeDaily actualrate from table exchange for today
 UPDATE e
@@ -37,55 +37,5 @@ SET e.actualrate = ex.actualrate
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate = @date
-WHERE ex.currency NOT IN ('TRX', 'DOGE', 'ELON', 'SHIB', 'BTC', 'ETH', 'USDT3', 'USDC')
-
-/* --20140625@jim: no need update old-data, we'll correct it by manually
-
---3 update yesterday actualrate  from bettrans
-INSERT INTO @tmpTable(currency,actualrate)
-select distinct currency, actualrate
-		from bodb02.dbo.bettrans with (nolock) where winlostdate = DATEADD(dd,-1,@date) 
-
-IF EXISTS(
-	select currency FROM @tmpTable
-	group by currency
-	having count(currency) > 1
-	)
-BEGIN
-	Select @ErrMsg = 'There are more than 1 actual rate for a currency in bettrans table on date: ' + CONVERT(VARCHAR(50),DATEADD(dd,-1,@date))
-				 ,@ErrCode = 100
-			return
-	RETURN
-END	
-
-UPDATE e
-SET e.actualrate = b.actualrate
-	FROM ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK) INNER JOIN 
-	@tmpTable b
-	ON e.ExchangeId = b.currency AND e.ExchangeDate = DATEADD(dd,-1,@date)
-	
---4 update the day before yesterday actualrate from bettrans    
-DELETE FROM @tmpTable
-INSERT INTO @tmpTable(currency,actualrate)
-select distinct currency, actualrate
-		from bodb02.dbo.bettrans with (nolock) where winlostdate = DATEADD(dd,-2,@date) 
-
-IF EXISTS(
-	select currency FROM @tmpTable
-	group by currency
-	having count(currency) > 1
-	)
-BEGIN
-	Select @ErrMsg = 'There are more than 1 actual rate for a currency in bettrans table on date: ' + CONVERT(VARCHAR(50),DATEADD(dd,-2,@date))
-				 ,@ErrCode = 100
-			return
-	RETURN
-END	
-
-UPDATE e
-SET e.actualrate = b.actualrate
-	FROM ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK) INNER JOIN 
-	@tmpTable b
-	ON e.ExchangeId = b.currency AND e.ExchangeDate = DATEADD(dd,-2,@date)
-*/
+WHERE ex.currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
 GO
