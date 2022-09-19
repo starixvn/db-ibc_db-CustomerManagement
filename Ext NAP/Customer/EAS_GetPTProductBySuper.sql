@@ -24,7 +24,7 @@ AS
 		- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
 		- 20220317@Johnson: add FGG [redmine: #165682]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-		- 20220912@Tacy: Add SEAL Entertainment [RedmineID: #176209]
+		- 20220919@Tacy: Add Microgaming [RedmineID: #175853]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -107,7 +107,7 @@ BEGIN
 		 WHEN c.SportType = 167 THEN  62
 		 WHEN c.SportType = 172 THEN  67
 		 WHEN c.SportType = 174 THEN  68
-		 WHEN c.SportType = 156 THEN  72
+		 WHEN c.SportType = 155 THEN  73
 		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.CustID = b.CustID
