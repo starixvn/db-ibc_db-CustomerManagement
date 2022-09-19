@@ -59,7 +59,7 @@ BEGIN
 		, MultipliedBy
 	FROM exchange WITH(NOLOCK)
 	WHERE Code = @Code
-		AND	currency IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
+		AND	CurrencyType = 1
 	IF @@ROWCOUNT > 0
 	BEGIN
 		SET @i = 1
@@ -70,9 +70,7 @@ BEGIN
 		WHILE (@i <= @max)
 		BEGIN
 			SELECT @ExchangeId = exchangeid
-				,@MultipliedBy = CASE	WHEN @Code = 'ETH' THEN 0.001 
-										WHEN @Code = 'BTC' THEN 0.0001
-										ELSE MultipliedBy END
+				,@MultipliedBy = MultipliedBy
 			FROM @exchange
 			WHERE id = @i
 

@@ -17,11 +17,7 @@ BEGIN
 	FROM exchange WITH (NOLOCK)  
 	WHERE isnull(Code,'') <> ''   
 	AND Code not in ('C', 'H')  
-	--AND Code in ('GBP', 'TWD')  
-	AND 
-		1 = CASE WHEN  @Type = 0 AND currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI') THEN 1
-				WHEN @Type = 1 AND currency  IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI') THEN 1 
-			ELSE 0 END
+	AND CurrencyType = @Type
 END
  
 

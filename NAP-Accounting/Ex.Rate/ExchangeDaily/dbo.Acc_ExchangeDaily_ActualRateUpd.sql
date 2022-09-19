@@ -23,19 +23,19 @@ DECLARE @tmpTable TABLE(currency INT, actualrate FLOAT)
 set @date = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
 
---1 update ExchangeDaily actualrate from table exchange for tomorrow
-UPDATE e
-SET e.actualrate = ex.actualrate
-FROM
-    ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
-    INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)
-WHERE ex.currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
-
---2 update ExchangeDaily actualrate from table exchange for today
+-- update ExchangeDaily actualrate from table exchange for today
 UPDATE e
 SET e.actualrate = ex.actualrate
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate = @date
-WHERE ex.currency NOT IN ('TRX','DOGE','ELON','SHIB','BTC','ETH','USDT3','USDC','HOT','AMP','ZEON','RSR','VET','ZIL','PEOPLE','ADA','XRP','LOOKS','XPRT','CRO','FLOW','SAND','AVAX','APE','CAKE','ENS','UNI')
+WHERE ex.CurrencyType <> 1
+
+-- update ExchangeDaily actualrate from table exchange for tomorrow
+UPDATE e
+SET e.actualrate = ex.actualrate
+FROM
+    ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
+    INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)
+WHERE ex.CurrencyType <> 1
 GO
