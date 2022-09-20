@@ -199,7 +199,8 @@ BEGIN
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, 0 AS ExchangeIdCredit, pbs.Currency
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
-			, CASE WHEN (A.SportType IN (1, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+			, CASE WHEN (A.SportType IN (1, 2, 3, 5, 8, 10, 11, 99,		--SB
+										 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 						(A.SportType BETWEEN 180 AND 186)	OR	
 						(A.SportType BETWEEN 213 AND 215)	OR	
 						(A.SportType BETWEEN 190 AND 197)) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
