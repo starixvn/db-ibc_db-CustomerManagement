@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView"  viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView"  viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustSetting_CheckMacauEnable]
 	-- Add the parameters for the stored procedure here
 	@site   varchar(10),
@@ -20,7 +20,8 @@ BEGIN
 			- 20210324@Winfred: Check Creative Gaming on site [Redmine: #146016]
 			- 20210506@Winfred: Check AdvantPlay on site [Redmine: #154258]
 			- 20210514@Winfred: Check AdvantPlay Mini on site [Redmine: #155133]
-			- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
+			- 20220803@Eden: Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
+			- 20220907@Tacy: Check SEAL on site [Redmine: #176209]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -56,17 +57,19 @@ BEGIN
 	INNER JOIN	SportNonOfferedSiteCurrency b WITH (NOLOCK) on a.SportType = b.SportType AND a.Bettype = b.BetType
 	WHERE b.Currency = @currency  AND (b.SiteID = 0 OR b.SiteID = @SiteID)
 	
-	SELECT   CASE ft.SportType WHEN  212  THEN 22 -- Macau Game
-					   WHEN  165  THEN 34 -- Card Club
-					   WHEN  247  THEN 36 -- SG
-					   WHEN  248  THEN 32 -- PP
-					   WHEN  234  THEN 56 -- Joker
-					   WHEN  237  THEN 60 -- MaxGame
-					   WHEN  238  THEN 61 -- Habanero 
-					   WHEN  167  THEN 62 -- Creative Gaming
-					   WHEN  172  THEN 67 -- AdvantPlay
-					   WHEN  174  THEN 68 -- AdvantPlay Mini
-					   ELSE 55 END as ProductID, -- PGSofft
+	SELECT   CASE ft.SportType 
+						WHEN  212  THEN 22 -- Macau Game
+						WHEN  165  THEN 34 -- Card Club
+						WHEN  247  THEN 36 -- SG
+						WHEN  248  THEN 32 -- PP
+						WHEN  234  THEN 56 -- Joker
+						WHEN  237  THEN 60 -- MaxGame
+						WHEN  238  THEN 61 -- Habanero 
+						WHEN  167  THEN 62 -- Creative Gaming
+						WHEN  172  THEN 67 -- AdvantPlay
+						WHEN  174  THEN 68 -- AdvantPlay Mini
+						WHEN  156  THEN 72 -- SEAL
+						ELSE 55 END as ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	
 	FROM #SportBettypeFilter ft
