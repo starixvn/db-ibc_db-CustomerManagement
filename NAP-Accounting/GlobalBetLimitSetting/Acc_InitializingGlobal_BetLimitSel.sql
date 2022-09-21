@@ -19,7 +19,6 @@ AS
 		Revisions:
 			- 20220210@Winfred: NAP - Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
-			- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 		
 		Param's Explanation:
 			@ProductID				0 : All, <> 0 : ProductID
@@ -69,12 +68,10 @@ BEGIN
 			NewMaxBet			DECIMAL(19,8),
 			NewMaxPerMatch		DECIMAL(19,8),
 			NewMaxPerBall		DECIMAL(19,8),
-			NewMaxGameStake		DECIMAL(19,8),
 			CurMinBet			DECIMAL(19,8),
 			CurMaxBet			DECIMAL(19,8),
 			CurMaxPerMatch		DECIMAL(19,8),
 			CurMaxPerBall		DECIMAL(19,8),
-			CurMaxGameStake		DECIMAL(19,8),
 			GameGroupID			INT, 
 			SiteID				INT
 	)
@@ -129,11 +126,10 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #ProductSettingDetail WHERE SettingType IN (7,8,17))
 	BEGIN
 		INSERT INTO #BetLimit(SportType, SportName,BetType, typenamee,ExchangeIdCredit,ExchangeIdDeposit,
-								CurMinBet,CurMaxBet,CurMaxGameStake,GameGroupID, SiteID)
+								CurMinBet,CurMaxBet,GameGroupID, SiteID)
 		-- Credit Stakelevel							
 		SELECT a.SportType,a.SportName,a.BetType,a.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-			  s.MinStake AS CurMinBet, s.MaxStake AS CurMaxBet, NULL AS CurMaxGameStake, 
-			  s.GameGroupID, 0 AS SiteID
+			  s.MinStake AS CurMinBet, S.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		WHERE a.SettingType IN ( 7, 17) 
@@ -142,8 +138,7 @@ BEGIN
 			AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 		UNION ALL -- Credit Group Stakelevel	
 		SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,s.ExchangeId,0 AS ExchangeIdDeposit, 
-			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, slg.MaxGameStake AS CurMaxGameStake, 
-			  s.GameGroupID, 0 AS SiteID
+			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		INNER JOIN StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
@@ -163,8 +158,7 @@ BEGIN
 			AND (@pMutilBetType = '0' OR s.GameTypeID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilBetType, ',')))
 		UNION ALL -- Deposit Group Stakelevel
 		SELECT a.SportType,a.SportName,slg.GameTypeID AS BetType,b.typenamee,0 AS ExchangeIdCredit,s.ExchangeId AS ExchangeIdDeposit, 
-			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, slg.MaxGameStake AS CurMaxGameStake,
-			  s.GameGroupID, 0 AS SiteID
+			  slg.MinStake AS CurMinBet, slg.MaxStake AS CurMaxBet, S.GameGroupID, 0 AS SiteID
 		FROM #ProductSettingDetail a
 		INNER JOIN Dep_StakeLevel s WITH(NOLOCK) ON s.GameTypeID = a.BetType
 		INNER JOIN Dep_StakeLevelGroupDetail slg WITH(NOLOCK) ON s.StakeLevelID = slg.StakeLevelID
