@@ -18,6 +18,7 @@ AS
 		- 20220520@Tacy: insert history of update global stake level [RedmineID: #170739]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
+		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -32,10 +33,12 @@ AS
 					NewMaxBet="30000" 
 					NewMaxPerMatch="0" 
 					NewMaxPerBall="0" 
+					NewMaxGameStake="0"
 					CurMinBet="30000" 
 					CurMaxBet="30000" 
 					CurMaxPerMatch="0" 
 					CurMaxPerBall="0" 
+					CurMaxGameStake="0"
 					GameGroupID="30000" 
 			/>
 	</ROOT>
@@ -58,10 +61,12 @@ BEGIN
 			, NewMaxBet			DECIMAL(19,8)
 			, NewMaxPerMatch	DECIMAL(19,8)
 			, NewMaxPerBall		DECIMAL(19,8)
+			, NewMaxGameStake	DECIMAL(19,8)
 			, CurMinBet			DECIMAL(19,8)
 			, CurMaxBet			DECIMAL(19,8)
 			, CurMaxPerMatch	DECIMAL(19,8)
 			, CurMaxPerBall		DECIMAL(19,8)
+			, CurMaxGameStake	DECIMAL(19,8)
 			, GameGroupID		INT
 		)
 	
@@ -79,11 +84,12 @@ BEGIN
 			, NewMaxBet			DECIMAL(19,8)
 			, NewMaxPerMatch	DECIMAL(19,8)
 			, NewMaxPerBall		DECIMAL(19,8)
+			, NewMaxGameStake	DECIMAL(19,8)
 			, CurMinBet			DECIMAL(19,8)
 			, CurMaxBet			DECIMAL(19,8)
 			, CurMaxPerMatch	DECIMAL(19,8)
 			, CurMaxPerBall		DECIMAL(19,8)
-			, MaxGameStake		DECIMAL(19,8)
+			, CurMaxGameStake	DECIMAL(19,8)
 			, GameGroupID		INT
 			, IsCredit			BIT DEFAULT((0))
 			, SettingType		SMALLINT
@@ -120,15 +126,17 @@ BEGIN
 										CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall,
 										GameGroupID)
 		SELECT	SportType, BetType, Site, CreditCurrency, DepositCurrency, 
-				CASE WHEN ISNUMERIC(NewMinBet)=0 THEN NULL ELSE NewMinBet END NewMinBet,
-				CASE WHEN ISNUMERIC(NewMaxBet)=0 THEN NULL ELSE NewMaxBet END NewMaxBet, 
-				CASE WHEN ISNUMERIC(NewMaxPerMatch)=0 THEN NULL ELSE NewMaxPerMatch END NewMaxPerMatch, 
-				CASE WHEN ISNUMERIC(NewMaxPerBall)=0 THEN NULL ELSE NewMaxPerBall END NewMaxPerBall, 
+				CASE WHEN ISNUMERIC(NewMinBet)=0		THEN NULL ELSE NewMinBet		END NewMinBet,
+				CASE WHEN ISNUMERIC(NewMaxBet)=0		THEN NULL ELSE NewMaxBet		END NewMaxBet, 
+				CASE WHEN ISNUMERIC(NewMaxPerMatch)=0	THEN NULL ELSE NewMaxPerMatch	END NewMaxPerMatch, 
+				CASE WHEN ISNUMERIC(NewMaxPerBall)=0	THEN NULL ELSE NewMaxPerBall	END NewMaxPerBall, 
+				CASE WHEN ISNUMERIC(NewMaxGameStake)=0	THEN NULL ELSE NewMaxGameStake	END NewMaxGameStake, 
 			
-				CASE WHEN ISNUMERIC(CurMinBet)=0 THEN NULL ELSE CurMinBet END CurMinBet,
-				CASE WHEN ISNUMERIC(CurMaxBet)=0 THEN NULL ELSE CurMaxBet END CurMaxBet, 
-				CASE WHEN ISNUMERIC(CurMaxPerMatch)=0 THEN NULL ELSE CurMaxPerMatch END CurMaxPerMatch, 
-				CASE WHEN ISNUMERIC(CurMaxPerBall)=0 THEN NULL ELSE CurMaxPerBall END CurMaxPerBall, 
+				CASE WHEN ISNUMERIC(CurMinBet)=0		THEN NULL ELSE CurMinBet		END CurMinBet,
+				CASE WHEN ISNUMERIC(CurMaxBet)=0		THEN NULL ELSE CurMaxBet		END CurMaxBet, 
+				CASE WHEN ISNUMERIC(CurMaxPerMatch)=0	THEN NULL ELSE CurMaxPerMatch	END CurMaxPerMatch, 
+				CASE WHEN ISNUMERIC(CurMaxPerBall)=0	THEN NULL ELSE CurMaxPerBall	END CurMaxPerBall, 
+				CASE WHEN ISNUMERIC(CurMaxGameStake)=0	THEN NULL ELSE CurMaxGameStake	END CurMaxGameStake,  
 			
 				CASE WHEN ISNUMERIC(GameGroupID)=0 THEN NULL ELSE GameGroupID END GameGroupID
 		FROM OPENXML(@iDoc, '/ROOT/BetLimit', 1) WITH (
@@ -141,21 +149,23 @@ BEGIN
 					, NewMaxBet			VARCHAR(50)
 					, NewMaxPerMatch	VARCHAR(50)
 					, NewMaxPerBall		VARCHAR(50)
+					, NewMaxGameStake	VARCHAR(50)
 					, CurMinBet			VARCHAR(50)
 					, CurMaxBet			VARCHAR(50)
 					, CurMaxPerMatch	VARCHAR(50)
 					, CurMaxPerBall		VARCHAR(50)
+					, CurMaxGameStake	VARCHAR(50)
 					, GameGroupID		VARCHAR(50)
 				)
 		EXEC sp_xml_removedocument @iDoc
 		
 		INSERT INTO #NewInputDateTbl(RowID, SportType, BetType, Currency, 
-									 NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall,
-									 CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall,
+									 NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake,
+									 CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake,
 									 GameGroupID, IsCredit, SiteID)
 		SELECT	RowID, SportType, BetType, t.Currency, 
-				NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall,
-				CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall,
+				NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake,
+				CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake,
 				GameGroupID, 1 AS IsCredit, SiteID
 		FROM @NewGlobalLimitTbl nsl
 			CROSS APPLY (
@@ -164,8 +174,8 @@ BEGIN
 		WHERE nsl.CreditCurrency <> ''
 		UNION ALL
 		SELECT	RowID, SportType, BetType, t.Currency,
-				NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall,
-				CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall,
+				NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake,
+				CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake,
 				GameGroupID, 0 AS IsCredit, SiteID 
 		FROM @NewGlobalLimitTbl nsl
 			CROSS APPLY (
@@ -230,38 +240,6 @@ BEGIN
 			SET MinLabel = REVERSE(STUFF (REVERSE(t.MinLabel),CHARINDEX('.',REVERSE(t.MinLabel),0) + 8,0,','))
 			FROM #NewInputDateTbl t
 			WHERE NewMinBet > 999999 AND SettingType IN (7, 17, 8)
-
-			--Get bettype - Joker, Macau Games, PP, SG
-			BEGIN TRY
-				INSERT INTO #BetType (TypeID, typedesc)
-				SELECT typeid, typedesc
-				FROM dbage.bodb02.dbo.bettype WITH (NOLOCK)
-				WHERE typeid BETWEEN 4001 and 4600
-					OR (typeid BETWEEN 6401 and 7000)
-					OR (typeid BETWEEN 5800 AND 5999)
-			END TRY
-			BEGIN CATCH
-				INSERT INTO #BetType (TypeID, typedesc)
-				SELECT typeid, typedesc
-				FROM dbtxn.bodb02.dbo.bettype WITH (NOLOCK)
-				WHERE typeid BETWEEN 4001 and 4600
-					OR (typeid BETWEEN 6401 and 7000)
-					OR (typeid BETWEEN 5800 AND 5999)
-			END CATCH
-
-			UPDATE a 
-			SET a.MaxGameStake=CASE WHEN  BetType BETWEEN 6401 AND 6700	THEN 98*a.NewMaxBet	--Joker
-									WHEN (BetType BETWEEN 4001 AND 4100) OR
-										 (BetType BETWEEN 4101 AND 4300) OR 
-										 (BetType BETWEEN 6701 AND 7000) OR
-										 (BetType BETWEEN 4301 AND 4600) OR
-										 (BetType BETWEEN 5800 AND 5999)
-																		THEN 100*a.NewMaxBet	--Macau Games, PP, SG
-																		ELSE a.NewMaxBet
-						END
-			FROM  #NewInputDateTbl a
-				INNER JOIN #BetType bt WITH (NOLOCK) ON bt.typeid=a.BetType
-			WHERE typedesc='BuyBonus' AND SettingType=8 
 		END
 	END TRY
 	BEGIN CATCH
@@ -284,7 +262,12 @@ BEGIN
 			ORDER BY a.OrgBetType
 		
 			;WITH STAKE_TEMP AS (
-				SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake, s.MaxGameStake,s.ExchangeId,s.GameGroupID
+				SELECT t.StakeLevelID,s.BetType AS GameTypeID,
+						s.MinLabel,s.MaxLabel,
+						s.NewMinBet AS MinStake,
+						s.NewMaxBet AS MaxStake, 
+						s.NewMaxGameStake AS MaxGameStake,
+						s.ExchangeId,s.GameGroupID
 				FROM #NewInputDateTbl s 
 				CROSS APPLY (
 					SELECT StakeLevelID  FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
@@ -413,7 +396,12 @@ BEGIN
 			 ) KQ 
 		
 			;WITH STAKE_TEMP AS (
-				SELECT t.StakeLevelID,s.BetType AS GameTypeID,s.MinLabel,s.MaxLabel,s.NewMinBet AS MinStake,s.NewMaxBet AS MaxStake,s.MaxGameStake,s.ExchangeId,s.GameGroupID
+				SELECT t.StakeLevelID,s.BetType AS GameTypeID,
+						s.MinLabel,s.MaxLabel,
+						s.NewMinBet AS MinStake, 
+						s.NewMaxBet AS MaxStake, 
+						s.NewMaxGameStake AS MaxGameStake,
+						s.ExchangeId,s.GameGroupID
 				FROM #NewInputDateTbl s 
 				CROSS APPLY (
 					SELECT StakeLevelID  FROM Dep_StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
