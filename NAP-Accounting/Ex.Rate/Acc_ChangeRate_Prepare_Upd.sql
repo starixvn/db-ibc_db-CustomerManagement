@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
 		- 20220801@Sophia: Scale out, call at SiteDB [RedmineID: #175253]
+		- 20220914@Sophia: remove DBA_ExchangeDailyOandaUpd_Actualrate [RedmineID: #175253] 
 
 	Param's Explanation:
 	
@@ -42,13 +43,5 @@ BEGIN
 		RETURN
 	END CATCH
 	
-	-- update exchange rate oanda
-	BEGIN TRY
-		EXEC DBCUST.CustDB.dbo.DBA_ExchangeDailyOandaUpd_Actualrate @ExchangeDate = @__winlostdate
-	END TRY
-	BEGIN CATCH 
-		SELECT @ErrCode = 103, @ErrMsg = 'Error occurs. update unsucessfully OANDA exchange rate.'
-		RETURN
-	END CATCH
 	 
 END
