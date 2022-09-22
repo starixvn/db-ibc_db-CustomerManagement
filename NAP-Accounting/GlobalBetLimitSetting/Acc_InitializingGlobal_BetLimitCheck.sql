@@ -654,11 +654,12 @@ BEGIN
 	INSERT INTO #RowDuplicate(RowIDF, RowIDT)
 	SELECT DISTINCT tmp.RowID , ndt.RowID
 	FROM #NewInputDateTbl tmp
+	LEFT JOIN #Bettype b ON b.typeid=tmp.BetType 
 	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.BetType = ndt.BetType 
 				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.GameGroupID = ndt.GameGroupID AND tmp.IsCredit = ndt.IsCredit
 				AND ISNULL(tmp.CurMinBet,0) = ISNULL(ndt.CurMinBet,0) AND ISNULL(tmp.CurMaxBet,0)=ISNULL(ndt.CurMaxBet,0) 
 				AND tmp.NewMaxBet = ndt.NewMaxBet AND tmp.NewMinBet = ndt.NewMinBet  
-				AND (tmp.SettingType=8 OR (tmp.SettingType = 7 AND tmp.SiteID = ndt.SiteID))
+				AND ((tmp.SettingType=8 AND ISNULL(b.typedesc,'') <> 'BuyBonus') OR (tmp.SettingType = 7 AND tmp.SiteID = ndt.SiteID))
 	WHERE tmp.RowID < ndt.RowID 
 	UNION --MinBet, MaxBet
 	SELECT DISTINCT tmp.RowID, ndt.RowID
@@ -672,7 +673,17 @@ BEGIN
 						(tmp.SportType BETWEEN 180 AND 186)	OR	
 						(tmp.SportType BETWEEN 213 AND 215)	OR	
 						(tmp.SportType BETWEEN 190 AND 197))
-	WHERE tmp.RowID < ndt.RowID																									
+	WHERE tmp.RowID < ndt.RowID		
+	UNION --MinBet, MaxBet, MaxGameStake
+	SELECT DISTINCT tmp.RowID, ndt.RowID
+	FROM #NewInputDateTbl tmp
+	INNER JOIN #Bettype b ON b.typeid=tmp.BetType 
+	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType = ndt.SportType AND tmp.BetType = ndt.BetType 
+				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.GameGroupID = ndt.GameGroupID AND tmp.IsCredit = ndt.IsCredit
+				AND ISNULL(tmp.CurMinBet,0) = ISNULL(ndt.CurMinBet,0) AND ISNULL(tmp.CurMaxBet,0)=ISNULL(ndt.CurMaxBet,0) AND ISNULL(tmp.CurMaxGameStake,0)=ISNULL(ndt.CurMaxGameStake,0)
+				AND tmp.NewMaxBet = ndt.NewMaxBet AND tmp.NewMinBet = ndt.NewMinBet AND tmp.NewMaxGameStake=ndt.NewMaxGameStake
+				AND (tmp.SettingType=8 AND b.typedesc='BuyBonus')
+	WHERE tmp.RowID < ndt.RowID 		
 	UNION --MinBet, MaxBet, MaxPerMatch
 	SELECT DISTINCT tmp.RowID, ndt.RowID
 	FROM #NewInputDateTbl tmp
