@@ -604,7 +604,8 @@ BEGIN
 			AND NOT (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 					(SportType BETWEEN 180 AND 186)	OR	
 					(SportType BETWEEN 213 AND 215)	OR	
-					(SportType BETWEEN 190 AND 197)))
+					(SportType BETWEEN 190 AND 197))
+			AND NOT (SettingType=8 AND b.typedesc='BuyBonus'))
 	OR (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet AND CurMaxPerMatch=NewMaxPerMatch AND
 		(SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 		(SportType BETWEEN 180 AND 186)	OR	
