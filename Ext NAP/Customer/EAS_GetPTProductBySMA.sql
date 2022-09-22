@@ -14,6 +14,7 @@ AS
 		- 20220509@Winfred: Hotfix miss Get value PT FGG And vitual games [Redmine: #159664]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220922@Tacy: add SEAL Entertainment [RedmineId: #176209]
+		- 20220922@Tacy: add Microgaming [RedmineId: #175853]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -75,7 +76,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
 	FROM #ProductSettingDetail b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,22,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL
+	WHERE (B.ProductID IN (41,22,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -93,7 +94,7 @@ BEGIN
 	INNER JOIN CustPTSetting3rd_Agent b WITH(NOLOCK) ON a.custID = b.CustID 
 						AND a.BetType = b.BetType AND a.SportType = b.SportType
 	
-	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL)
+	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
 	SELECT ss.CustID,c.SportType,c.BetType,
 		CASE 
@@ -108,6 +109,7 @@ BEGIN
 		 WHEN c.SportType = 172 THEN  67
 		 WHEN c.SportType = 174 THEN  68
 		 WHEN c.SportType = 156 THEN  72
+		 WHEN c.SportType = 155 THEN  73
 		ELSE c.ProductID END ProductID, b.ValuePT,ss.roleid
 	FROM #SMATemp ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.CustID = b.CustID
