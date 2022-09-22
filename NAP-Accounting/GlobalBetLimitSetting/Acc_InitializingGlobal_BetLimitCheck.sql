@@ -106,8 +106,8 @@ BEGIN
 		, @InputData
 
 	INSERT INTO @NewGlobalTbl(	SportType, BetType, SiteID, CreditCurrency, DepositCurrency, 
-								NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, 
-								CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, 
+								NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake, 
+								CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake, 
 								GameGroupID)
 	SELECT	SportType, BetType, Site, CreditCurrency, DepositCurrency, 
 			CASE WHEN ISNUMERIC(NewMinBet)=0		THEN NULL ELSE NewMinBet		END NewMinBet,
