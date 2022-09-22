@@ -22,13 +22,14 @@ BEGIN
 			- 20210514@Winfred: Check AdvantPlay Mini on site [Redmine: #155133]
 			- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 			- 20220919@Tacy: Check Microgaming on site [Redmine: #175853]
+			- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
 
 	*/
 	SET NOCOUNT ON;
-	DECLARE @SiteID int  ,@productID int = 22,@bitmapIsHidden	tinyint	= 1
+	DECLARE @SiteID int  ,@productID int = 53 ,@bitmapIsHidden	tinyint	= 1
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	-- check Product macau game	status
@@ -37,12 +38,13 @@ BEGIN
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
 		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = @CustID
 	-- all sport bettype on macau 	
-	CREATE TABLE #SportBettypeFilter(sporttype SMALLINT,bettype SMALLINT)
+	CREATE TABLE #SportBettypeFilter(sporttype SMALLINT,bettype SMALLINT,RealProductId	TINYINT)
 	
-	INSERT INTO #SportBettypeFilter(sporttype,bettype)
+	INSERT INTO #SportBettypeFilter(sporttype,bettype,RealProductId)
 	SELECT
 			ft.SportType,
-			ft.BetType						   
+			ft.BetType	,
+			ft.RealProductId
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@productID,8,@SettingStatus) ft 
 	WHERE @bitmapIsHidden = 0
 	-- delete non offer site
@@ -57,19 +59,7 @@ BEGIN
 	INNER JOIN	SportNonOfferedSiteCurrency b WITH (NOLOCK) on a.SportType = b.SportType AND a.Bettype = b.BetType
 	WHERE b.Currency = @currency  AND (b.SiteID = 0 OR b.SiteID = @SiteID)
 	
-	SELECT   CASE ft.SportType WHEN  212  THEN 22 -- Macau Game
-					   WHEN  165  THEN 34 -- Card Club
-					   WHEN  247  THEN 36 -- SG
-					   WHEN  248  THEN 32 -- PP
-					   WHEN  234  THEN 56 -- Joker
-					   WHEN  237  THEN 60 -- MaxGame
-					   WHEN  238  THEN 61 -- Habanero 
-					   WHEN  167  THEN 62 -- Creative Gaming
-					   WHEN  172  THEN 67 -- AdvantPlay
-					   WHEN  174  THEN 68 -- AdvantPlay Mini
-					   WHEN  156  THEN 72 -- SEAL
-					   WHEN  155  THEN 73 -- Microgaming
-					   ELSE 55 END as ProductID, -- PGSofft
+	SELECT  RealProductId AS ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	
 	FROM #SportBettypeFilter ft
