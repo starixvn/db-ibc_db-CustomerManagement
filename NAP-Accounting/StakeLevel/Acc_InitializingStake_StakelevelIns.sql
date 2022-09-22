@@ -187,6 +187,7 @@ BEGIN
 			WHERE typeid BETWEEN 4001 and 4600
 				OR (typeid BETWEEN 6401 and 7000)
 				OR (typeid BETWEEN 5800 AND 5999)
+				OR (typeid BETWEEN 8400 AND 8449)
 		END TRY
 		BEGIN CATCH
 			INSERT INTO #BetType (TypeID, typedesc)
