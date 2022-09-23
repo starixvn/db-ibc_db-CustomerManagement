@@ -175,33 +175,33 @@ BEGIN
 							AND (NewMaxGameStake IS NOT NULL OR CurMaxGameStake IS NOT NULL)								THEN 139
 
 						 WHEN (SportType<>161 AND NewMinBet=0)
-							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 140 
+							OR (NewMinBet=0 AND NOT (NewMaxBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 141 
 						 WHEN (SportType<>161 AND NewMaxBet=0)
-							OR (NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 141
+							OR (NewMaxBet=0 AND NOT (NewMinBet=0 AND NewMaxPerBall=0 AND NewMaxPerMatch=0))					THEN 142
 						 WHEN ((SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 							   (SportType BETWEEN 180 AND 186)  OR	
 							   (SportType BETWEEN 213 AND 215)  OR	
 							   (SportType BETWEEN 190 AND 197)) AND NewMaxPerMatch=0)
 							 OR
-							 (SportType=161 AND NewMaxPerMatch=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)) THEN 142
+							 (SportType=161 AND NewMaxPerMatch=0 AND NOT (NewMaxBet=0 AND NewMinBet=0 AND NewMaxPerBall=0)) THEN 143
 
-						 WHEN NewMinBet > NewMaxBet													THEN 143
+						 WHEN NewMinBet > NewMaxBet													THEN 144
 						 WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
 							OR (SportType BETWEEN 180 AND 186)		
 							OR (SportType BETWEEN 213 AND 215)		
 							OR (SportType BETWEEN 190 AND 197))	
-							AND (NewMaxBet > NewMaxPerMatch)										THEN 144	
-						 WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0	THEN 145	
-						 WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)					THEN 146
+							AND (NewMaxBet > NewMaxPerMatch)										THEN 145	
+						 WHEN SportType=161 AND (NewMaxBet > NewMaxPerBall) AND NewMaxPerBall<>0	THEN 146	
+						 WHEN SportType=161 AND (NewMaxPerBall > NewMaxPerMatch)					THEN 147
 
-						 WHEN CurMinBet > CurMaxBet													THEN 147
+						 WHEN CurMinBet > CurMaxBet													THEN 148
 						 WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) 
 							OR (SportType BETWEEN 180 AND 186)		
 							OR (SportType BETWEEN 213 AND 215)		
 							OR (SportType BETWEEN 190 AND 197))	
-							AND CurMaxBet > CurMaxPerMatch											THEN 148	
-						 WHEN SportType=161 AND (CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0	THEN 149	
-						 WHEN SportType=161 AND (CurMaxPerBall > CurMaxPerMatch)					THEN 150
+							AND CurMaxBet > CurMaxPerMatch											THEN 149	
+						 WHEN SportType=161 AND (CurMaxBet > CurMaxPerBall) AND CurMaxPerBall<>0	THEN 150	
+						 WHEN SportType=161 AND (CurMaxPerBall > CurMaxPerMatch)					THEN 151
 
 						 WHEN ISNULL(CreditCurrency, '')='' AND 
 							  ISNULL(DepositCurrency, '')=''	THEN 122
@@ -359,12 +359,11 @@ BEGIN
 	WHERE a.IsCredit=0 AND (ps.SettingType = 8 OR (ps.SettingType IN (7, 2, 10, 11, 12) AND a.BetType=psd.BetType))
 		AND psd.SettingStatus<>2
 
-	
 	--
-	SELECT TOP(1) @ErrCode=151, @RowError=CAST(tmp.RowID AS VARCHAR(200))
+	SELECT TOP(1) @ErrCode=140, @RowError=CAST(tmp.RowID AS VARCHAR(200)) 
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType NOT IN (8,7,17) AND GameGroupID IS NOT NULL
-	IF 	@ErrCode=151
+	IF 	@ErrCode=140
 	BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': You input redundant data with the product''s format. Please remove data on Game Group ID column.'
 		RETURN
