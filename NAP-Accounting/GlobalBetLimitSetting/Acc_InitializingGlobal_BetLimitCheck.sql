@@ -359,6 +359,17 @@ BEGIN
 	WHERE a.IsCredit=0 AND (ps.SettingType = 8 OR (ps.SettingType IN (7, 2, 10, 11, 12) AND a.BetType=psd.BetType))
 		AND psd.SettingStatus<>2
 
+	
+	--
+	SELECT TOP(1) @ErrCode=151, @RowError=CAST(tmp.RowID AS VARCHAR(200))
+	FROM #NewInputDateTbl tmp
+	WHERE tmp.SettingType NOT IN (8,7,17) AND GameGroupID IS NOT NULL
+	IF 	@ErrCode=151
+	BEGIN
+		SELECT @ErrMsg='Row ' + @RowError+ ': You input redundant data with the product''s format. Please remove data on Game Group ID column.'
+		RETURN
+	END
+
 	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
 	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR (@BetType<>OrgBetType AND SettingType IN (7, 17, 8)))	
 	BEGIN
@@ -437,6 +448,7 @@ BEGIN
 	--MIN BET
 	SELECT TOP(1) @ErrCode=117, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.CurMinBet AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
+		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
 	WHERE tmp.SettingType IN (7, 17, 2, 9, 16, 20, 10, 11, 12) AND tmp.CurMinBet IS NULL
 		AND (	tmp.CurMaxBet IS NOT NULL
 			OR
@@ -449,6 +461,8 @@ BEGIN
 				)
 			OR
 				(tmp.CurMaxPerBall IS NOT NULL AND SportType=161)
+			OR
+				(tmp.CurMaxGameStake IS NOT NULL AND b.typedesc='BuyBonus')
 			)
 	IF 	@ErrCode=117			
 	BEGIN
@@ -459,6 +473,7 @@ BEGIN
 	--MAX BET
 	SELECT TOP(1) @ErrCode=118, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.CurMaxBet AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
+		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
 	WHERE tmp.SettingType IN (7, 17, 2, 9, 16, 20, 10, 11, 12) AND tmp.CurMaxBet IS NULL
 		AND (	tmp.CurMinBet IS NOT NULL
 			OR
@@ -471,6 +486,8 @@ BEGIN
 				)
 			OR
 				(tmp.CurMaxPerBall IS NOT NULL AND SportType=161)
+			OR
+				(tmp.CurMaxGameStake IS NOT NULL AND b.typedesc='BuyBonus')
 			)
 	
 	IF 	@ErrCode=118			
@@ -526,9 +543,9 @@ BEGIN
 	, @ValueError=CASE	WHEN SettingType=8 AND b.typedesc='BuyBonus' 
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50)) + ' and Current Max Game Stake: ' + CAST(tmp.CurMaxGameStake AS VARCHAR(50))
 						WHEN NOT (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-								(SportType BETWEEN 180 AND 186)	OR	
-								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))
+								 (SportType BETWEEN 180 AND 186)	OR	
+								 (SportType BETWEEN 213 AND 215)	OR	
+								 (SportType BETWEEN 190 AND 197))
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50))
 						WHEN SportType=161 
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50)) + ' and Current Max Per Ball: ' + CAST(tmp.CurMaxPerBall AS VARCHAR(50)) + ' and Current Max Per Match: ' + CAST(tmp.CurMaxPerMatch AS VARCHAR(50))
@@ -542,27 +559,27 @@ BEGIN
 					AND (NOT EXISTS	(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet)
 						OR NOT EXISTS(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
-										WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
-	OR   (IsCredit=0 AND tmp.SettingType IN (7) 
+									  WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
+	OR  (IsCredit=0 AND tmp.SettingType IN (7) 
 					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND (MinStake=CurMinBet ))
 							OR NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-										 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
+										  WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
 	OR  (IsCredit=1 AND tmp.SettingType IN (2, 9, 16, 20) 
 					AND ((NOT EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH (NOLOCK)
 									  WHERE pbs.Sporttype=tmp.SportType AND pbs.Bettype=tmp.BetType AND pbs.Currency=tmp.ExchangeId 
 										AND pbs.MinBet=tmp.CurMinBet AND pbs.MaxBet=tmp.CurMaxBet AND ISNULL(pbs.MaxPerMatch,0)=ISNULL(tmp.CurMaxPerMatch,0)))))
-	OR   (IsCredit=0 AND tmp.SettingType IN (2, 10, 11, 12)
+	OR  (IsCredit=0 AND tmp.SettingType IN (2, 10, 11, 12)
 					 AND ((NOT EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH (NOLOCK)
-											WHERE pbs.Sporttype=tmp.SportType AND pbs.Bettype=tmp.BetType AND pbs.Currency=tmp.ExchangeId 
-												AND pbs.MinBet=tmp.CurMinBet AND pbs.MaxBet=tmp.CurMaxBet 
-												AND ISNULL(pbs.MaxPerMatch,0)=ISNULL(tmp.CurMaxPerMatch,0) 
-												AND ISNULL(pbs.MaxPerBall,0)=ISNULL(tmp.CurMaxPerBall,0)))))
+										WHERE pbs.Sporttype=tmp.SportType AND pbs.Bettype=tmp.BetType AND pbs.Currency=tmp.ExchangeId 
+											AND pbs.MinBet=tmp.CurMinBet AND pbs.MaxBet=tmp.CurMaxBet 
+											AND ISNULL(pbs.MaxPerMatch,0)=ISNULL(tmp.CurMaxPerMatch,0) 
+											AND ISNULL(pbs.MaxPerBall,0)=ISNULL(tmp.CurMaxPerBall,0)))))
 	OR	(IsCredit=1 AND tmp.SettingType=8
 					AND (NOT EXISTS	(SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND b.typedesc='BuyBonus' 
 										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND MaxGameStake=CurMaxGameStake)))
-	OR   (IsCredit=0 AND tmp.SettingType=8 
+	OR  (IsCredit=0 AND tmp.SettingType=8 
 					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND b.typedesc='BuyBonus' 
 										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND MaxGameStake=CurMaxGameStake)))
@@ -576,9 +593,9 @@ BEGIN
 	
 	SELECT TOP(1) @ErrCode=114, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.GameGroupID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SettingType IN (8) AND NOT EXISTS(SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
-												WHERE RefSportType= tmp.SportType AND RefBetType=OrgBetType AND GameGroupID=tmp.GameGroupID
-													AND ((tmp.IsCredit=1 AND IsDeposit=0) OR (tmp.IsCredit=0 AND IsDeposit=1)))
+	WHERE tmp.SettingType IN (8,7,17) AND NOT EXISTS(SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
+													 WHERE RefSportType= tmp.SportType AND RefBetType=OrgBetType AND GameGroupID=tmp.GameGroupID
+														AND ((tmp.IsCredit=1 AND IsDeposit=0) OR (tmp.IsCredit=0 AND IsDeposit=1)))
 	IF 	@ErrCode=114
 	BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': The Game Group ID ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
