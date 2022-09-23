@@ -737,10 +737,13 @@ BEGIN
 	FROM 
 	(	SELECT RowID 
 		FROM #NewInputDateTbl a
-		WHERE a.IsCredit= 1 AND SettingType IN (2, 7, 9, 16, 17, 20) 
+		WHERE a.IsCredit= 1 AND SettingType IN (2, 7, 9, 16, 17, 20, 8) 
 		AND (EXISTS (SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
 					 WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
 						 AND (a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake))
+			OR EXISTS (SELECT TOP 1 1 FROM StakeLevelGroupDetail tmp WITH(NOLOCK) 
+						WHERE tmp.GameTypeID=a.BetType
+						 AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
 			OR EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK)
 						WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
 							AND ((MinBet=NewMinBet AND MaxBet=NewMaxBet
@@ -758,10 +761,13 @@ BEGIN
 		UNION ALL
 		SELECT RowID 
 		FROM #NewInputDateTbl a
-		WHERE a.IsCredit= 0 AND SettingType IN (7, 2, 10, 11, 12) 
+		WHERE a.IsCredit= 0 AND SettingType IN (7, 2, 10, 11, 12, 8) 
 				 AND ( EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
 								 WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
 								 AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND tmp.SiteID=a.SiteID)
+						OR EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail tmp WITH(NOLOCK) 
+									WHERE tmp.GameTypeID=a.BetType
+									 AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
 						OR EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
 									WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
 										AND ((MinBet=NewMinBet AND MaxBet=NewMaxBet
