@@ -41,9 +41,9 @@ BEGIN
 	CREATE TABLE #SMATemp (CustID INT,roleid	TINYINT) 
 
 	INSERT INTO #SMATemp(CustID)
-	SELECT DISTINCT val
-	FROM dbo.f_SplitString(@CustIds, ',') AS ss
-	WHERE ISNULL(val,'') <> ''
+	SELECT DISTINCT value
+	FROM STRING_SPLIT(@CustIds, ',') AS ss
+	WHERE value <> ''
 	OPTION (maxrecursion 0)  
 	
 	UPDATE s
