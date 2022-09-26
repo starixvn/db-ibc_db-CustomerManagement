@@ -15,6 +15,8 @@ Original:Accounting site
 Revisions:
 	- 20200508@Tiara: NAP Enhance Dangerous Grouping function [#Redmine: 129306]
 	- 20210819@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
+	- 20220926@Tacy: Remove isBA column [RedmineID: #176518]
+
 Param's Explanation:
 	@username: username to get danger info
 */	
@@ -38,20 +40,12 @@ BEGIN
 
 	IF @ErrCode <> 0
 		RETURN;
-	    --General info
-    DECLARE @isBA BIT
-    IF EXISTS (
-			     SELECT 1 FROM bodb_Licensee.dbo.LicenseeBAHistory lb WITH(NOLOCK)
-			     WHERE custid=@custid AND status='running'
-			    )
-	    SET @isBA=1
-    ELSE
-	    SET @isBA=0
-
+	
+	--General info
 	SELECT ci.roleid, CI.danger, CI.danger2, CI.danger3,
 	ISNULL(ci.danger4,0) as danger4,
 	ISNULL(ci.danger5,0) as danger5,
-	CI.dangercust, CI.DangerLevel, @isBA AS IsBA
+	CI.dangercust, CI.DangerLevel
 	FROM CUSTINFO CI WITH (NOLOCK)
 	WHERE CI.custid = @custid
 END
