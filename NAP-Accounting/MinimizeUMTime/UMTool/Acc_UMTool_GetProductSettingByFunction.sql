@@ -11,6 +11,7 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220726@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
 	- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
+	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
 
 Param's Explanation:
 	FunctionType = : 
@@ -32,6 +33,7 @@ Param's Explanation:
 		213 : Last Bets
 		214 : Group Bet List Drilldown
 		215 : Group Bet List
+		216 : My Watchlist
 		
 Examples : 
 	EXEC [Acc_UMTool_GetProductSettingByFunction]
@@ -84,7 +86,9 @@ SET NOCOUNT ON
 	-- Group Bet List Drilldown
 	SELECT 214,0,0,0 UNION ALL
 	-- Group Bet List
-	SELECT 215,0,0,0
+	SELECT 215,0,0,0 UNION ALL
+	-- My Watchlist
+	SELECT 216,0,0,0
 
 	--Edit Setting (DCS)
 	INSERT INTO @ProductSportSettingType(FunctionType,ProductID,SportType,SettingType)
