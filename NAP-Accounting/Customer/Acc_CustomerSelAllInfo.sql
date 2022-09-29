@@ -117,6 +117,8 @@ Revisions:
 	- 20220801@Sophia: Scale out DBTRANS
 					   Move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this SP
 					   Remove not to call Acc_CustomerSelBalanceCashInfo [RedmineID: #175253]
+	- 20220929@Tacy: Add Customer Class, show on NAP [RedmineID: #175126]
+
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -698,6 +700,7 @@ BEGIN
 		,ISNULL(cps.Locked,0) Locked
 		,@ProtectionMode AS IsProtectedMode
 		,@DisableAutoMPT AS DisableAutoMPT
+		,ci.CustomerClass
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
