@@ -211,6 +211,7 @@ BEGIN
 											AND BetType NOT IN (5807))
 																	THEN 100*a.NewMaxBet	--Macau Games, PP, SG
 								WHEN BetType=6765			THEN 80*a.NewMaxBet
+								--WHEN BetType=5805					THEN 248*a.NewMaxBet	--Macau Games
 								WHEN BetType=5807			THEN 52.2*a.NewMaxBet	--Macau Games
 								WHEN BetType IN (8400, 8409)		THEN 40*a.NewMaxBet		--Microgaming
 								WHEN BetType IN (8404, 8411)		THEN 150*a.NewMaxBet
