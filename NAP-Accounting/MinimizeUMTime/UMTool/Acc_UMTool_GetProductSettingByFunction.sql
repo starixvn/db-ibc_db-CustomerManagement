@@ -9,12 +9,31 @@ DB: DBCUST.CustDB
 Revisions:	
 	- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20220726@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
+	- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
+	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
 
 Param's Explanation:
 	FunctionType = : 
 		1 : Edit Setting
 		2 : Create New
-		1 : Transfer			   
+		101 : Transfer
+		201 : Group Win Loss Reports
+		202 : Outstandings
+		203 : Group Win Los Analysis
+		204 : Win Loss by Product
+		205 : Commission by Bettype
+		206 : Results
+		207 : Progressive Games Contribution
+		208 : Statement
+		209 : Bet Credit Tracking
+		210 : Risk Analysis
+		211 : Group Bets & Forecast OST
+		212 : Group Bets & Forecast BOF
+		213 : Last Bets
+		214 : Group Bet List Drilldown
+		215 : Group Bet List
+		216 : My Watchlist
 		
 Examples : 
 	EXEC [Acc_UMTool_GetProductSettingByFunction]
@@ -37,7 +56,39 @@ SET NOCOUNT ON
 	SELECT 1,1,0,0 UNION ALL --SB + NG
 	--SELECT 1,6,0,0 UNION ALL --RNG Casino
 	SELECT 1,8,0,0 UNION ALL -- RNG Keno
-	SELECT 1,12,0,0  --GD
+	SELECT 1,12,0,0 UNION ALL  --GD
+	-- Group Win Loss Reports
+	SELECT 201,0,0,0 UNION ALL
+	-- Outstandings
+	SELECT 202,0,0,0 UNION ALL
+	-- Group Win Los Analysis
+	SELECT 203,0,0,0 UNION ALL
+	-- Win Loss by Product
+	SELECT 204,0,0,0 UNION ALL
+	-- Commission by Bettype
+	SELECT 205,0,0,0 UNION ALL
+	-- Results
+	SELECT 206,0,0,0 UNION ALL
+	-- Progressive Games Contribution
+	SELECT 207,0,0,0 UNION ALL
+	-- Statement
+	SELECT 208,0,0,0 UNION ALL
+	-- Bet Credit Tracking
+	SELECT 209,0,0,0 UNION ALL
+	-- Risk Analysis
+	SELECT 210,0,0,0 UNION ALL
+	-- Group Bets & Forecast OST
+	SELECT 211,0,0,0 UNION ALL
+	-- Group Bets & Forecast BOF
+	SELECT 212,0,0,0 UNION ALL
+	-- Last Bets
+	SELECT 213,0,0,0 UNION ALL
+	-- Group Bet List Drilldown
+	SELECT 214,0,0,0 UNION ALL
+	-- Group Bet List
+	SELECT 215,0,0,0 UNION ALL
+	-- My Watchlist
+	SELECT 216,0,0,0
 
 	--Edit Setting (DCS)
 	INSERT INTO @ProductSportSettingType(FunctionType,ProductID,SportType,SettingType)
@@ -63,10 +114,7 @@ SET NOCOUNT ON
 		c.SettingType,
 		0 AS Bettype, 
 		0 as IsLive,
-		FunctionTypeName = CASE WHEN FunctionType = 1 THEN 'Edit Setting'
-								WHEN FunctionType = 2 THEN 'Add New Customer'
-								WHEN FunctionType = 101 THEN 'Transfer'
-							END,
+		FunctionTypeName = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(FunctionType)),
 		ISNULL(p.ProductName,'All') AS ProductName,
 		ISNULL(sp.SportName,'All') AS SportName,
 		ISNULL(st.SettingName,'All') AS SettingName
