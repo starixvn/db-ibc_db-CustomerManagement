@@ -20,6 +20,7 @@ Created: Dom
 			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
+			- 20221010@Johnson: Add Saba cricket [redmine: #175659]
 */
 
 BEGIN
@@ -41,6 +42,8 @@ BEGIN
 	SELECT 9901, 'Saba Soccer' 
 	UNION ALL
 	SELECT 9902, 'Saba BasketBall' 
+	UNION ALL
+	SELECT 9907, 'Saba Cricket' 
 
 	DECLARE @Sport TABLE(SportID INT)
 	
