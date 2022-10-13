@@ -209,21 +209,20 @@ BEGIN
 										 (BetType BETWEEN 4301 AND 4600) OR
 										 ((BetType BETWEEN 5800 AND 5999) 
 											AND BetType NOT IN (5807))
-																	THEN 100*a.NewMaxBet	--Macau Games, PP, SG
-								WHEN BetType=6765			THEN 80*a.NewMaxBet
-								--WHEN BetType=5805					THEN 248*a.NewMaxBet	--Macau Games
-								WHEN BetType=5807			THEN 52.2*a.NewMaxBet	--Macau Games
-								WHEN BetType IN (8400, 8409)		THEN 40*a.NewMaxBet		--Microgaming
-								WHEN BetType IN (8404, 8411)		THEN 150*a.NewMaxBet
-								WHEN BetType IN (8405, 8430)		THEN 60*a.NewMaxBet
-								WHEN BetType IN (8406)			THEN 25*a.NewMaxBet
-								WHEN BetType IN (8410)			THEN 55.02*a.NewMaxBet
-								WHEN BetType IN (8412, 8414, 8441)	THEN 100*a.NewMaxBet
-								WHEN BetType IN (8424)			THEN 80*a.NewMaxBet
-								WHEN BetType IN (8429, 8439)		THEN 50*a.NewMaxBet
-								WHEN BetType IN (8431)			THEN 110*a.NewMaxBet
-								WHEN BetType IN (8438)			THEN 90*a.NewMaxBet		--Microgaming
-													ELSE a.NewMaxBet
+																		THEN 100*a.NewMaxBet	--Macau Games, PP, SG
+								WHEN BetType=6765						THEN 80*a.NewMaxBet
+								WHEN BetType=5807						THEN 52.2*a.NewMaxBet	--Macau Games
+								WHEN BetType IN (8400, 8409)			THEN 40*a.NewMaxBet		--Microgaming
+								WHEN BetType IN (8404, 8411)			THEN 150*a.NewMaxBet
+								WHEN BetType IN (8405, 8430)			THEN 60*a.NewMaxBet
+								WHEN BetType IN (8406)					THEN 25*a.NewMaxBet
+								WHEN BetType IN (8410)					THEN 55.02*a.NewMaxBet
+								WHEN BetType IN (8412, 8414, 8441)		THEN 100*a.NewMaxBet
+								WHEN BetType IN (8424)					THEN 80*a.NewMaxBet
+								WHEN BetType IN (8429, 8439)			THEN 50*a.NewMaxBet
+								WHEN BetType IN (8431)					THEN 110*a.NewMaxBet
+								WHEN BetType IN (8438)					THEN 90*a.NewMaxBet		--Microgaming
+																		ELSE a.NewMaxBet
 						END
 		FROM  #NewInputDateTbl a
 			INNER JOIN #BetType bt WITH (NOLOCK) ON bt.typeid=a.BetType
