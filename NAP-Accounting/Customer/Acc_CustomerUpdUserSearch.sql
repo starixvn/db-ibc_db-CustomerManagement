@@ -1,5 +1,4 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbadminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserSearch]
 	@userid int,
 	@search varchar(30),
@@ -24,7 +23,8 @@ AS
 		- 20111114@Thien: change to refer to DB06.bodb02.dbo.Customer for query condition on username2
 		- 20130916@Jamie: Change DB06 to DBACC
 		- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
-		- 20190508@Elodie: Allow to search nickname [Redmine: #113044
+		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
+		- 20221012@Eden: Enhance searching customer account [Redmine: #178984]
 
 	Param's Explanation:
 		• @userid: userid that currently login.
@@ -32,61 +32,36 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @Currency INT, @GroupName VARCHAR(50)
+	DECLARE @Currency INT
 
 	SELECT @Currency = currency
-	FROM Customer with (Nolock)
+	FROM Customer WITH(NOLOCK)
 	WHERE custid = @userid
 
-	IF NOT EXISTS (SELECT userid FROM custsearch (NOLOCK) WHERE userid = @userid AND username=@search)
+	IF @Currency IS NULL  --invalid userid
+		RETURN
+
+	SET @system = ISNULL(@system,'')
+
+	IF (@system != 'ACCOUNTING')
 	BEGIN
-		-- Check userid EXISTS or NOT in table custinfo.
-		IF EXISTS (SELECT custid FROM custinfo (NOLOCK) WHERE custid = @userid)
-		BEGIN
-			IF (@system='ACCOUNTING')
-			BEGIN
-				--Insert
-				INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2)
-				VALUES (@userid, @search, 0, @firstname, @lastname, @Currency, @username2)	
-			END
-			ELSE
-			BEGIN
-				select @GroupName=groupname from dbo.Acc_CustGroup with (nolock)
-				WHERE roleid = 4 AND CustID = (SELECT srecommend from custinfo (NOLOCK) WHERE username = @search)
-				--Insert
-				INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, groupname)
-				VALUES (@userid, @search, 0, @firstname, @lastname, @Currency, @GroupName)	
-			END
-		END
+		SET @username2 = NULL
+	END
+
+	IF EXISTS (SELECT 1 FROM custsearch (NOLOCK) WHERE userid = @userid AND username=@search)
+	BEGIN
+		--Update count
+		UPDATE custsearch WITH (ROWLOCK)
+		SET [searchcount] = [searchcount] + 1
+			, firstname = CASE WHEN @firstname IS NULL THEN firstname ELSE @firstname END 
+			, lastname = CASE WHEN @lastname IS NULL THEN lastname ELSE @lastname END
+			, currency = @Currency
+			, username2 = CASE WHEN @system = 'ACCOUNTING' THEN @username2 ELSE username2 END
+		WHERE userid = @userid AND username=@search
 	END
 	ELSE
 	BEGIN
-		IF (@system='ACCOUNTING')
-		BEGIN
-			--Update count
-			UPDATE custsearch WITH (ROWLOCK)
-			SET [searchcount] = [searchcount] + 1
-				, firstname = CASE WHEN @firstname IS NULL THEN firstname ELSE @firstname END 
-				, lastname = CASE WHEN @lastname IS NULL THEN lastname ELSE @lastname END
-				, currency = @Currency
-				, username2 = @username2
-			WHERE userid = @userid AND username=@search
-		END
-		ELSE
-		BEGIN
-			select @GroupName=groupname from dbo.Acc_CustGroup with (nolock)
-			WHERE roleid = 4 AND CustID = (SELECT srecommend from custinfo (NOLOCK) WHERE username = @search)
-		
-			--Update count
-			UPDATE custsearch WITH (ROWLOCK)
-			SET [searchcount] = [searchcount] + 1
-				, firstname = CASE WHEN @firstname IS NULL THEN firstname ELSE @firstname END 
-				, lastname = CASE WHEN @lastname IS NULL THEN lastname ELSE @lastname END
-				, currency = @Currency
-				, groupname = @GroupName
-			WHERE userid = @userid AND username=@search
-		END
-		
+		INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2)
+		VALUES (@userid, @search, 0, @firstname, @lastname, @Currency, @username2)	
 	END
-
 END
