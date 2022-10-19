@@ -23,7 +23,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
-		- 20221017@Tacy: Hide Display for Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
+		- 20221017@Tacy: Hide Display for Credit Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
 
 	Parameter's Explanation:
 		@GroupName: ext group
@@ -67,11 +67,15 @@ BEGIN
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
+			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 		WHERE c.srecommend IN (SELECT custId 
 								FROM @tmpSuper
 								WHERE 1 = CASE WHEN (@UplineID IS NOT NULL AND custId= @UplineID) OR @UplineID IS NULL THEN 1 ELSE 0 END
 								)
-			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
+			AND (
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))) --DEPOSIT
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))	--CREDIT
+				)
 			AND c.roleid = 3
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -84,10 +88,14 @@ BEGIN
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
 			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
-						FROM dbo.custInfo ci WITH (NOLOCK) 							
+						FROM dbo.custInfo ci WITH (NOLOCK)
+							LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
-							AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
+							AND (
+									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
+								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+								)
 							--AND pa.ReasonId IS NOT NULL
 						GROUP BY ci.mrecommend) AS pa		
 	END
@@ -100,10 +108,14 @@ BEGIN
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
+			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.mrecommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 2
-			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
+			AND (
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+				)
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			--AND p.ReasonId IS NOT NULL
@@ -131,23 +143,21 @@ BEGIN
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 			LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
+			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.recommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 1
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
-			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
+			AND (
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+				)
 			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
 		
 		SELECT @TotalRows = @@ROWCOUNT
 	END
-	
-	--Delete: Prolem Accounts [Group Betting, Robot User] 
-	DELETE t
-	FROM #tempProblemAccount t
-		INNER JOIN custInfo ci WITH(NOLOCK) ON t.custId=ci.custid
-	WHERE ci.CustomerClass in (301,3000,3001)
 
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
