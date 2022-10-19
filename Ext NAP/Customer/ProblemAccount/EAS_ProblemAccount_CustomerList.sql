@@ -23,6 +23,8 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
+		- 20221017@Tacy: Alpha - Hide Display for Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
+
 	Parameter's Explanation:
 		@GroupName: ext group
 		@UplineUsername: search downlines under @UplineUsername, not required
@@ -141,6 +143,12 @@ BEGIN
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 	
+	--Delete: Prolem Accounts [Group Betting, Robot User] 
+	DELETE t
+	FROM #tempProblemAccount t
+		INNER JOIN custInfo ci WITH(NOLOCK) ON t.custId=ci.custid
+	WHERE ci.CustomerClass in (301,3000,3001)
+
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked
