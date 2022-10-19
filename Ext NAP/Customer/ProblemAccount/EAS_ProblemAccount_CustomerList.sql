@@ -23,7 +23,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
-		- 20221017@Tacy: Alpha - Hide Display for Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
+		- 20221017@Tacy: Hide Display for Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
 
 	Parameter's Explanation:
 		@GroupName: ext group
