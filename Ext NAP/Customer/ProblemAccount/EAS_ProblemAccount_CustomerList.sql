@@ -127,13 +127,17 @@ BEGIN
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
 			CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
-						FROM dbo.custInfo ci WITH (NOLOCK) 							
+						FROM dbo.custInfo ci WITH (NOLOCK) 	
+						LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 						WHERE ci.recommend = t.custid 
 							AND ci.roleid = 1
-							AND (ci.CustomerClass BETWEEN 8 AND 13 OR ci.CustomerClass IN (131,132))
-							--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
+							AND (
+									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
+								)
 						GROUP BY ci.recommend) AS pa	
 	END
+
 	ELSE IF @SearchRoleId = 1
 	BEGIN		
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason, Locked)
