@@ -73,8 +73,8 @@ BEGIN
 								WHERE 1 = CASE WHEN (@UplineID IS NOT NULL AND custId= @UplineID) OR @UplineID IS NULL THEN 1 ELSE 0 END
 								)
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))) --DEPOSIT
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))	--CREDIT
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))	--DEPOSIT
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))	--CREDIT
 				)
 			AND c.roleid = 3
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
@@ -93,8 +93,8 @@ BEGIN
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
 							AND (
-									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
-								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
 								)
 							--AND pa.ReasonId IS NOT NULL
 						GROUP BY ci.mrecommend) AS pa		
@@ -113,8 +113,8 @@ BEGIN
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 2
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
 				)
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -150,8 +150,8 @@ BEGIN
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK)))		
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE CustomerClass NOT IN (301,3000,3001)))
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
 				)
 			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
