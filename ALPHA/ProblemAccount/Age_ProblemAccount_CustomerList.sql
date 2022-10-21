@@ -61,13 +61,9 @@ BEGIN
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON ci.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
-			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 		WHERE c.srecommend = @CustId
 			AND c.roleid = 3
-			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))	--DEPOSIT
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))	--CREDIT
-				)
+			AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			--AND p.ReasonId IS NOT NULL
@@ -80,13 +76,9 @@ BEGIN
 		FROM #tempProblemAccount t 			
 			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
 						FROM dbo.custInfo ci WITH (NOLOCK) 		
-						LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 						WHERE ci.mrecommend = t.custid 
 							AND ci.roleid = 2
-							AND (
-									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))	--DEPOSIT
-								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))	--CREDIT
-								)
+							AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 						GROUP BY ci.mrecommend) AS pa		
 	END
 	ELSE
@@ -113,13 +105,9 @@ BEGIN
 					INNER JOIN dbo.Customer c WITH (NOLOCK) ON ci.CustId = c.CustId
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
-					LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 				WHERE c.mrecommend = @CustId
 					AND c.roleid = 2
-					AND (
-							(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-						OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-						)
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND p.ReasonId IS NOT NULL
@@ -135,12 +123,8 @@ BEGIN
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.mrecommend) AS u
-					LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 				WHERE c.roleid = 2
-					AND (
-							(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-						OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-						)
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 					AND ((@UplineId IS NULL AND c.srecommend = @CustId) OR (@UplineId IS NOT NULL AND c.mrecommend = @UplineId))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -155,14 +139,10 @@ BEGIN
 			FROM #tempProblemAccount t 			
 				CROSS APPLY (SELECT ci.recommend, COUNT(1) AS numberOfDownline
 							FROM dbo.custInfo ci WITH (NOLOCK) 		
-							LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 							WHERE ci.recommend = t.custid 
 								AND ci.roleid = 1
 								--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
-								AND (
-										(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-									OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-									)
+								AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 							GROUP BY ci.recommend) AS pa	
 		END
 		ELSE IF @SearchRoleId = 1
@@ -176,13 +156,9 @@ BEGIN
 					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
-					LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 				WHERE c.recommend = @CustId
 					AND c.roleid = 1
-					AND (
-							(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-						OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-						)
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND p.ReasonId IS NOT NULL
@@ -198,15 +174,11 @@ BEGIN
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 					CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
-					LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
 				WHERE c.roleid = 1
 					AND ((@UplineId IS NULL AND CASE WHEN @RoleId = 4 THEN c.srecommend WHEN @RoleId = 3 THEN c.mrecommend END = @CustId) 
 						OR (@UplineId IS NOT NULL AND c.recommend = @UplineId))
 					AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
-					AND (
-							(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-						OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-						)
+					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
 					AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 					--AND (p.ReasonId IS NOT NULL OR p.IsAbnormalMember = 1)
 					AND  c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
