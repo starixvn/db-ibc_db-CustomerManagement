@@ -51,7 +51,7 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM custsearch (NOLOCK) WHERE userid = @userid AND username=@search)
 	BEGIN
 		--Update count
-		UPDATE custsearch WITH (ROWLOCK)
+		UPDATE custsearch WITH (ROWLOCK,UPDLOCK)
 		SET [searchcount] = [searchcount] + 1
 			, firstname = CASE WHEN @firstname IS NULL THEN firstname ELSE @firstname END 
 			, lastname = CASE WHEN @lastname IS NULL THEN lastname ELSE @lastname END
@@ -62,6 +62,7 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2)
-		VALUES (@userid, @search, 0, @firstname, @lastname, @Currency, @username2)	
+		SELECT @userid, @search, 0, @firstname, @lastname, @Currency, @username2	
+		WHERE NOT EXISTS (SELECT TOP 1 1 FROM custsearch WITH(ROWLOCK,UPDLOCK)  WHERE userid = @userid AND username=@search)
 	END
 END
