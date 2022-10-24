@@ -63,6 +63,6 @@ BEGIN
 	BEGIN
 		INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2)
 		SELECT @userid, @search, 0, @firstname, @lastname, @Currency, @username2	
-		WHERE NOT EXISTS (SELECT TOP 1 1 FROM custsearch WITH(ROWLOCK,UPDLOCK)  WHERE userid = @userid AND username=@search)
+		WHERE NOT EXISTS (SELECT TOP 1 1 FROM custsearch WITH(UPDLOCK,HOLDLOCK)  WHERE userid = @userid AND username=@search)
 	END
 END
