@@ -21,6 +21,7 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -31,7 +32,7 @@ BEGIN
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
-	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
+	CROSS JOIN	(SELECT BetType, CASE WHEN SportType = 9906 THEN 212 ELSE Sporttype END Sporttype, bitmapOrder FROM  dbo.ProductStatusProfile WITH (NOLOCK)) AS psp
 	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
