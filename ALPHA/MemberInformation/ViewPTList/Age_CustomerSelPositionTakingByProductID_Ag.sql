@@ -21,7 +21,7 @@ AS
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
+		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 
 	Param's Explanation:
 	• @Recommend: Agent ID

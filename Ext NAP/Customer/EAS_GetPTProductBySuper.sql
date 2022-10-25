@@ -55,10 +55,10 @@ BEGIN
 	OPTION (maxrecursion 0)    
 
 	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
-	SELECT ProductID,SportType,BetType,RealProductID
+	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 	UNION ALL
-	SELECT ProductID,SportType,BetType,RealProductID
+	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
 
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
@@ -101,7 +101,7 @@ BEGIN
 	FROM #Supers ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 53 and b.SportType = 212 and ss.CustID = b.CustID
 	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	
-		ON  c.SettingType = 8 AND c.ProductID = b.ProductID AND c.SportType <> 212
+		ON  c.SettingType = 8 AND c.ProductID = b.ProductID --AND c.SportType <> 212
 	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
 
 	-- Non DCS Setting

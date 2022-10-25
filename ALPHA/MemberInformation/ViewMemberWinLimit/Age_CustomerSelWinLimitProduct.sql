@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
+ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct
 	@CustId INT
 	, @SettingStatus TINYINT = 0
 AS
@@ -37,7 +37,7 @@ BEGIN
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
-			ON	p.ProductID = sbss.RealProductId
+			ON	p.ProductID = CASE WHEN sbss.RealProductId = 22 THEN sbss.ProductID ELSE sbss.RealProductId END
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
 			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)

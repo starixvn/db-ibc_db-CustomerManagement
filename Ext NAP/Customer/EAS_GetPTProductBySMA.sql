@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
+ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),
 	@SettingStatus TINYINT = 0 
@@ -52,10 +52,10 @@ BEGIN
 		INNER JOIN custInfo ci WITH(NOLOCK) ON s.CustID = ci.custid
 	
 	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
-	SELECT ProductID,SportType,BetType,RealProductID
+	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 	UNION ALL
-	SELECT ProductID,SportType,BetType,RealProductID
+	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
 
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
@@ -71,7 +71,7 @@ BEGIN
 			AND t.SportType = tmp.SportType
 			AND t.BetType = tmp.BetType
 	WHERE tmp.RowNum > 1
-
+	
 	-- DCS Setting
 	INSERT INTO #tblCustomer (CustID,SportType,BetType,ProductID,roleid)
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
@@ -101,7 +101,7 @@ BEGIN
 	FROM #SMATemp ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 53 and b.SportType = 212 and ss.CustID = b.CustID
 	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	
-		ON  c.SettingType = 8 AND c.ProductID = b.ProductID AND c.SportType <> 212
+		ON  c.SettingType = 8 AND c.ProductID = b.ProductID --AND c.SportType <> 212
 	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
 
 	-- Non DCS Setting
