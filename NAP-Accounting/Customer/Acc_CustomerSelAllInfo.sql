@@ -700,7 +700,7 @@ BEGIN
 		,ISNULL(cps.Locked,0) Locked
 		,@ProtectionMode AS IsProtectedMode
 		,@DisableAutoMPT AS DisableAutoMPT
-		,ISNULL(ci.CustomerClass,'-') AS CustomerClass
+		,ISNULL(CAST(ci.CustomerClass AS VARCHAR),'-') AS CustomerClass
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
