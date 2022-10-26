@@ -85,7 +85,7 @@ BEGIN
 		SELECT 4 AS roleid
 	) r
 	CROSS APPLY (
-		SELECT		cptgs3.SportType,
+		SELECT		CASE WHEN cptgs3.SportType = 212 THEN 9906 ELSE cptgs3.SportType END AS SportType,
 					cptgs3.BetType,
 					cptgs3.IsLive,
 					CASE WHEN roleid = 2 THEN cptgs3.AgentPT
@@ -105,7 +105,7 @@ BEGIN
 		
 		UNION ALL
 		
-		SELECT	sbt.SportType
+		SELECT	CASE WHEN sbt.SportType = 212 THEN 9906 ELSE sbt.SportType END AS SportType
 			,	sbt.BetType
 			,	sbt.IsLive
 			,	CASE	WHEN roleid = 2 THEN cpts3.AgentPT
