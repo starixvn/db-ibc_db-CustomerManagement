@@ -31,6 +31,7 @@ AS
 		- 20190910@Winnie: Other Sports - Add New "Others" PT Setting for Badminton [redmine: #119713]
 		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20221101@Elodie: Enhance SP [Redmine: #179269]
 
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
@@ -202,14 +203,14 @@ BEGIN
 			ISNULL(ps.Locked,0)	AS Locked			
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
-			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid
-			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid			
+			CROSS APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 							, Locked
 						FROM dbo.CustProductStatus  WITH(NOLOCK)
 						WHERE CustID = ci.custid
 					) AS ps
-			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
+			OUTER APPLY (SELECT TOP 1 ClosedReason FROM CustLoginInfo WITH(NOLOCK) WHERE custid=ci.CustID) cl
 		WHERE ci.MRecommend = @MRecommend AND ci.roleid=2 
 		GROUP BY
 			ci.enabled,
