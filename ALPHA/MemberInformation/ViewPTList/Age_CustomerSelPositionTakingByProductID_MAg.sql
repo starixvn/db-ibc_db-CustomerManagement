@@ -21,6 +21,7 @@ AS
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
 
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
@@ -40,6 +41,7 @@ BEGIN
 	FROM	ProductSettingDetail WITH(NOLOCK)
 	WHERE	RealProductId = @ProductID
 		AND	SettingType IN (1,18)	-- PT
+		AND SettingStatus < 2
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
