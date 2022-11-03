@@ -24,6 +24,7 @@ AS
 		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 		- 20220922@Tacy: Add SEAL Entertainment [RedmineID: #176209]
 		- 20220922@Tacy: Add Microgaming [RedmineID: #175853]
+		- 20221102@Winfred: Get PP, SG, Arcadia Gaming in Macau Games Product Status [RedmineID: #180032] 
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -45,8 +46,7 @@ BEGIN
     WHERE c.custid = @custid
 	
 	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 ,@AdvantPlayMiniDisable BIT  = 1,
-			@SEALDisable BIT  = 1,
-			@MicrogamingDisable BIT  = 1
+			@SEALDisable BIT  = 1,@MicrogamingDisable BIT  = 1 ,@PPDisable BIT  = 1,@SGDisable BIT  = 1,@ArcadiaGamingDisable BIT 
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
@@ -99,6 +99,24 @@ BEGIN
 		SET @MicrogamingDisable = 0 
 	END
 
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 248 AND BetType = 4101 )
+	BEGIN
+		SET @PPDisable = 0 
+	END
+
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 247 AND BetType = 4301 )
+	BEGIN
+		SET @SGDisable = 0 
+	END
+
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 165 AND BetType = 1901 )
+	BEGIN
+		SET @ArcadiaGamingDisable = 0 
+	END
+
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
 	SELECT @SuperID = ci.srecommend
@@ -145,11 +163,11 @@ BEGIN
 		UNION ALL
 		SELECT 3, 0 --NumberGame always offer for all customer
 		UNION ALL
-		SELECT 34, isHidden FROM #OfferProduct WHERE ProductID = 22	-- Card Club
+		SELECT 34, CASE WHEN  isHidden = 0 THEN  @ArcadiaGamingDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Arcadia Gaming
 		UNION ALL
-		SELECT 36, isHidden FROM #OfferProduct WHERE ProductID = 22	-- SG
+		SELECT 36, CASE WHEN  isHidden = 0 THEN  @SGDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22 -- SG
 		UNION ALL
-		SELECT 32, isHidden FROM #OfferProduct WHERE ProductID = 22	-- PP
+		SELECT 32, CASE WHEN  isHidden = 0 THEN  @PPDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- PP
 		UNION ALL
 		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
 		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
