@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
 		- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
+		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -72,8 +73,10 @@ BEGIN
 				ORDER BY edo.ActualRate ASC
 			) AS RowNum
 		FROM dbo.ExchangeDailyOanda edo WITH (NOLOCK)
+			INNER JOIN Exchange ex WITH(NOLOCK) ON ex.ExchangeId = edo.ExchangeId
 		WHERE 
 			edo.ExchangeDate >= @fromdate AND edo.ExchangeDate <= @todate 
+			AND ex.CurrencyType = 0
 			AND edo.exchangeid <> 20
 			AND edo.Code <> 'YNG'
 	) AS A

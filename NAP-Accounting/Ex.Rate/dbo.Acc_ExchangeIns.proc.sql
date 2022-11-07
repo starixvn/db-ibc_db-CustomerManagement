@@ -9,13 +9,15 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeIns]
 	@US$Rate  FLOAT  = NULL,
 	@currency NVARCHAR(50),
 	@Description NVARCHAR(100) = '',
-	@MultipliedBy int = 1,
+	@MultipliedBy DECIMAL(19,8) = 1,
 	@Code	nvarchar(3) = '',
 	@UserID INT,
-	@ErrCode INT = 0 OUTPUT,
-	@ErrMsg NVARCHAR(200) = '' OUTPUT,
 	@IP VARCHAR(15) = '',
-	@OfferSite	TINYINT
+	@OfferSite	TINYINT,
+	@CurrencyType	TINYINT,
+	@CoinMarketCapID	FLOAT = NULL,
+	@ErrCode INT = 0			OUTPUT,
+	@ErrMsg NVARCHAR(200) = ''	OUTPUT
 AS
 /*
 Created: 
@@ -32,7 +34,7 @@ Revisions:
 	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
-	
+	- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 Param's Explanation:
 	• @actualrate: specIFy exchange-rate of the currency
 	• @minbet: specIFy minbet of the currency
@@ -41,7 +43,7 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON
 	DECLARE @IDTemp TABLE (ID TINYINT)
-	DECLARE @id TINYINT
+	DECLARE @id TINYINT, @USDT FLOAT = 1E-20, @Today DATE = GETDATE();
 
 	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	IF @ErrCode <> 0
@@ -93,8 +95,14 @@ BEGIN
 		END
 	END
 
-	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, IsActive)
-	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, 1)
+	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, CurrencyType, stakerate, IsActive)
+	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, @CurrencyType,@CoinMarketCapID, 1)
+
+	IF @CurrencyType = 1
+	BEGIN 
+		INSERT INTO ExchangeDaily_Crypto (ExchangeDate,ExchangeId,USDT)
+		SELECT CONVERT(SMALLDATETIME,@Today),@exchangeid,@USDT
+	END
 
 	DECLARE @LogData NVARCHAR(200)
 	SELECT @LogData = 'Add exchange rate:'
@@ -106,9 +114,11 @@ BEGIN
 		+  ' ,EURORate='+ ISNULL(convert(VARCHAR(10), @EURORate),'') 
 		+  ' ,US$Rate='+ ISNULL(convert(VARCHAR(10), @US$Rate),'')
 		+  ' ,Description='+ ISNULL(@Description,'')
-		+  ' ,MultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')
+		+  ' ,MultipliedBy='+ ISNULL(convert(VARCHAR(50),@MultipliedBy),'')
 		+  ' ,Code='+ ISNULL(@code,'') 
-		+  ' ,OfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')
+		+  ' ,OfferSite='+ ISNULL(convert(VARCHAR(10),@OfferSite),'')
+		+  ' ,CurrencyType='+ ISNULL(convert(VARCHAR(10),@CurrencyType),'')
+		+  ' ,stakerate='+ ISNULL(convert(VARCHAR(10),@CoinMarketCapID),'')
 
 	EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 		@UserID = @UserID, 

@@ -14,6 +14,7 @@ Revisions:
 	- 20110605@Johnson: get description, multipliedBy, code
 	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 	- 20200802@Elodie: Get IsActive, OfferSite column [RedmineID: #136023]
+	- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 
 Param's Explanation:
 	• @ExchangeID: specIFy exchange-rate of the currency
@@ -22,9 +23,8 @@ Param's Explanation:
 
 SET NOCOUNT ON
 BEGIN
-	SELECT exchangeid, currency, actualrate, creator, minbet, minbetlive, GBPRate, EURORate, US$Rate , Description, MultipliedBy, Code, OfferSite, IsActive
+	SELECT exchangeid, currency, actualrate, creator, minbet, minbetlive, GBPRate, EURORate, US$Rate , Description, MultipliedBy, Code, OfferSite, CurrencyType, stakerate AS CoinMarketCapID, IsActive
 	FROM exchange WITH(NOLOCK)
 	WHERE exchangeid = @ExchangeID
 END
 GO
-
