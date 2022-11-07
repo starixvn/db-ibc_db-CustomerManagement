@@ -1,2 +1,4 @@
 NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplierByUsername_Sel.sql
 NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplier_Upd.sql
+NAP-Accounting\Customer\MoveSite\Acc_CustomerUpdMoveSite.sql
+NAP-Accounting\Customer\VirtualRate\Upload Virtual Rate\Acc_VR_AutoUpdateVirtualRate_ByExcel.sql
