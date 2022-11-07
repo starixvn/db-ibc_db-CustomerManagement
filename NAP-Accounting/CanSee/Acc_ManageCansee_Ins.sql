@@ -67,13 +67,9 @@ BEGIN
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
 	CREATE TABLE #Sports (SportType INT )
+	
 	INSERT INTO #Sports  (SportType)	
-	SELECT SportType 
-	FROM DBACC.bodb02.dbo.Sports WITH(NOLOCK)
-	UNION ALL
-	SELECT CAST(ResourceId AS INT) AS SportType
-	FROM DBACC.bodb02.dbo.RefResource WITH (NOLOCK)
-	WHERE RefId='DummySport'
+	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
 
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @FileSetting
