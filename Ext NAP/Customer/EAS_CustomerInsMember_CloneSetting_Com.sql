@@ -45,6 +45,7 @@ AS
 		- 20220222@Elodie: Default VR for 789y site [Redmine: #168885]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220823@Johnson: Copy Date Limit range and  Auto Transfer Type for real currency 789y [redmine:#176778] 
+		- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -335,33 +336,15 @@ BEGIN
 				,recommend
 				,dangercust
 				,autosuspend
-				
 				,credit
-			
 				,MatchLimit
 				,VirtualMultiplier
-				,maxpermatch
-				,maxpermatch2
-				,maxpermatch3
-				,maxpermatch5
-				,maxpermatch8
-				,maxpermatch10
-				,maxpermatch11
-				
-				,maxpermatch99
-				,Enabled   							
-				          
+				,Enabled   							       
 				,DisableOutright				
-				,MaxPerMatch99MP
-				,DisableNumber
-				,maxpermatch161
-				
-				,MaxPerBall161							
+				,DisableNumber						
 				,DoubleCommLosing	
 				,HideKeno
-				
 				,DisableSuperLive
-				,MaxPerMatch1MP
 				)
 		 SELECT
 				@CustID
@@ -373,34 +356,15 @@ BEGIN
 				,0 as recommend
 				,dangercust
 				,0 AS autosuspend
-			
 				,@Credit AS Credit
-			
 				,MatchLimit
 				,@EnableVR AS VirtualMultiplier
-				,0
-				,0
-				,0
-				,0
-				,0
-				,0
-				,0
-				
-				,0
 				,Enabled  						
-				        
 				,DisableOutright				
-				,0
-				,DisableNumber
-				
-				,0
-				
-				,0							
+				,DisableNumber				
 				,doubleCommLosing		
 				,HideKeno
-			
 				,DisableSuperLive
-				,0
 		FROM dbo.custinfo WITH(NOLOCK)
 		WHERE custid=@ExistingCustid  
 		
