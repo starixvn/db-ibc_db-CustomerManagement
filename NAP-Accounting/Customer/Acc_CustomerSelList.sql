@@ -20,6 +20,8 @@ AS
 		- 20190520@Johnson: support customer list for headline cn88 [redmine: #112225]	
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220620@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20221101@Elodie: Enhance SP [RedmineID: #179269]
+
 	Explanation: 
 			
 	Example: EXEC Acc_CustomerSelList @CustID=24471545
@@ -49,7 +51,7 @@ BEGIN
 		INSERT INTO @CustList(username,Custid,[Enabled],Closed,Reject)
 		SELECT c.username,c.Custid,c.Enabled, cps.closed, cps.reject
 		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+			CROSS APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
@@ -64,7 +66,7 @@ BEGIN
 		INSERT INTO @CustList(username,Custid,[Enabled],Closed,Reject)
 		SELECT c.username,c.Custid, c.Enabled, ISNULL(cps.closed, c.closed), ISNULL(cps.reject,c.reject)
 		FROM custinfo c WITH (NOLOCK)
-			OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+			OUTER APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
@@ -76,7 +78,7 @@ BEGIN
 		INSERT INTO @CustList(username,Custid,[Enabled],Closed,Reject)	
 		SELECT c.username,c.Custid, c.Enabled, ISNULL(cps.closed, c.closed), ISNULL(cps.reject,c.reject)
 		FROM custinfo c WITH (NOLOCK)
-			OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+			OUTER APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
@@ -88,7 +90,7 @@ BEGIN
 		INSERT INTO @CustList(username,Custid,[Enabled],Closed,Reject)	
 		SELECT c.username,c.Custid, c.Enabled, ISNULL(cps.closed, c.closed), ISNULL(cps.reject,c.reject)
 		FROM custinfo  c WITH (NOLOCK)
-			OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+			OUTER APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
