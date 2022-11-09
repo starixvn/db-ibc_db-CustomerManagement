@@ -21,7 +21,7 @@ AS
 		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
+		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
@@ -85,7 +85,7 @@ BEGIN
 		SELECT 4 AS roleid
 	) r
 	CROSS APPLY (
-		SELECT		CASE WHEN cptgs3.SportType = 212 THEN 9906 ELSE cptgs3.SportType END AS SportType,
+		SELECT		cptgs3.SportType,
 					cptgs3.BetType,
 					cptgs3.IsLive,
 					CASE WHEN roleid = 2 THEN cptgs3.AgentPT
@@ -105,7 +105,7 @@ BEGIN
 		
 		UNION ALL
 		
-		SELECT	CASE WHEN sbt.SportType = 212 THEN 9906 ELSE sbt.SportType END AS SportType
+		SELECT	sbt.SportType
 			,	sbt.BetType
 			,	sbt.IsLive
 			,	CASE	WHEN roleid = 2 THEN cpts3.AgentPT

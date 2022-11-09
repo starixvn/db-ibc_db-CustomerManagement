@@ -49,16 +49,16 @@ BEGIN
 	CREATE TABLE #Supers (CustID INT) 
 
 	INSERT INTO #Supers(CustID)
-	SELECT value
+	SELECT DISTINCT value
 	FROM STRING_SPLIT(@Supers, ',') AS ss
 	WHERE value <> ''
 	OPTION (maxrecursion 0)    
 
 	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
-	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
+	SELECT ProductID,SportType,BetType,RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 	UNION ALL
-	SELECT ProductID,SportType,BetType,CASE WHEN ProductID = 53 THEN ProductID ELSE RealProductId END AS RealProductID
+	SELECT ProductID,SportType,BetType,RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
 
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
@@ -80,7 +80,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #ProductSettingDetail b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,53,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -97,11 +97,25 @@ BEGIN
 	
 	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.CustID,c.SportType,c.BetType, c.RealProductId AS ProductID, b.SuperPT
+	SELECT ss.CustID,c.SportType,c.BetType,
+		CASE 
+		 WHEN c.SportType = 232 THEN  55
+		 WHEN c.SportType = 234 THEN  56
+		 WHEN c.SportType = 247 THEN  36
+		 WHEN c.SportType = 165 THEN  34
+		 WHEN c.SportType = 248 THEN  32
+		 WHEN c.SportType = 237 THEN  60
+		 WHEN c.SportType = 238 THEN  61
+		 WHEN c.SportType = 167 THEN  62
+		 WHEN c.SportType = 172 THEN  67
+		 WHEN c.SportType = 174 THEN  68
+		 WHEN c.SportType = 156 THEN  72
+		 WHEN c.SportType = 155 THEN  73
+		 WHEN c.SportType = 212 THEN  22
+		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
-	INNER JOIN #tblCustomer b ON  b.ProductID = 53 and b.SportType = 212 and ss.CustID = b.CustID
-	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	
-		ON  c.SettingType = 8 AND c.ProductID = b.ProductID --AND c.SportType <> 212
+	INNER JOIN #tblCustomer b ON  b.ProductID = 18 and b.SportType = 9906 and ss.CustID = b.CustID
+	INNER JOIN ProductSettingDetail c WITH(NOLOCK) ON  c.SettingType = 8 AND c.ProductID = b.ProductID 
 	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
 
 	-- Non DCS Setting

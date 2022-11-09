@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct
+ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
 	@CustId INT
 	, @SettingStatus TINYINT = 0
 AS
@@ -21,7 +21,6 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -32,12 +31,12 @@ BEGIN
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
-	CROSS JOIN	(SELECT BetType, CASE WHEN SportType = 9906 THEN 212 ELSE Sporttype END Sporttype, bitmapOrder FROM  dbo.ProductStatusProfile WITH (NOLOCK)) AS psp
+	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
 	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
-			ON	p.ProductID = CASE WHEN sbss.RealProductId = 22 THEN sbss.ProductID ELSE sbss.RealProductId END
+			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
 			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)

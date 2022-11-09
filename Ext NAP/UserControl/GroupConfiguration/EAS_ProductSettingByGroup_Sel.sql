@@ -40,7 +40,7 @@ BEGIN
 	FROM @products
 	WHERE ProductId IN(3,8,12) --Non-DCS products
 	UNION ALL --DCS products
-	SELECT DISTINCT CASE WHEN d.ProductId = 22 THEN 53 ELSE d.ProductId END AS ProductId
+	SELECT DISTINCT CASE WHEN d.ProductId = 22 THEN 18 ELSE d.ProductId END AS ProductId
 	FROM @products p
 		INNER JOIN DBACC.bodb02.dbo.ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId

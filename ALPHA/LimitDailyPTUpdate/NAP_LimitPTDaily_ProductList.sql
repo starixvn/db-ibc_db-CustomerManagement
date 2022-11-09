@@ -17,12 +17,12 @@ BEGIN
 	SELECT DISTINCT fil.ProductID,  P.ProductName
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus) fil 
 	INNER JOIN  DBACC.bodb02.dbo.Products AS p WITH(NOLOCK) ON p.ProductID = fil.ProductID
-	WHERE fil.ProductID = 53
+	WHERE fil.ProductID = 18
 	UNION 
 	SELECT DISTINCT fil.ProductID,  P.ProductName
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus) fil 
 	INNER JOIN  DBACC.bodb02.dbo.Products AS p WITH(NOLOCK) ON p.ProductID = fil.ProductID
-	WHERE fil.ProductID = 53
+	WHERE fil.ProductID = 18
 	
 END
 GO
