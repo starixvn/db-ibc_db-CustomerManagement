@@ -38,7 +38,7 @@ AS
 		- 20190627@Elodie: Apply currency min bet constrain for Bet Setting [Redmine:#115126]
 		- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
-		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #177844]
+		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
