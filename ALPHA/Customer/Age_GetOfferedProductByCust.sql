@@ -170,8 +170,7 @@ BEGIN
 		UNION ALL
 		SELECT 32, CASE WHEN  isHidden = 0 THEN  @PPDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- PP
 		UNION ALL
-		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
-		FROM #OfferProduct WHERE ProductID = 18 -- PGSofft
+		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18 -- PGSofft
 		UNION ALL
 		SELECT 56, CASE WHEN  isHidden = 0 THEN  @JokerDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Joker
 		UNION ALL
