@@ -138,7 +138,7 @@ BEGIN
 		+  ' ,oldDescription='+ ISNULL(@old_Description,'')
 		+  ' ,newDescription='+ ISNULL(@Description,'')
 		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(10),@old_MultipliedBy),'')
-		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')	
+		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(50),@MultipliedBy),'')	
 		+  ' ,oldOfferSite='+ ISNULL(convert(varchar(10),@old_OfferSite),'')
 		+  ' ,newOfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')	
 		+  ' ,oldIsActive='+ ISNULL(convert(varchar(10),@old_IsActive),'')
