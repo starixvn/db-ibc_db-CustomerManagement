@@ -7,14 +7,15 @@ ALTER PROCEDURE [dbo].[Acc_ManageCansee_Ins]
 	, @ErrCode		INT				= 0		OUTPUT
 	, @ErrMsg		NVARCHAR(200)	= ''	OUTPUT
 AS
+/*
+	Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
+	DB: DBCUST/CustDB
+	Original: 
+	Revisions:
+		- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
+		- 20221021@Tacy: NAP - Manage Product Setting - Enhance Can See function [Redmine: #178092]
+*/
 BEGIN
-	/*
-		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
-		DB: DBCUST/CustDB
-		Original: 
-		Revisions:
-			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
-	*/
 	SET NOCOUNT ON;
 	
 	--Check if XML is null or empty
@@ -66,10 +67,10 @@ BEGIN
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
 	CREATE TABLE #Sports (SportType INT )
-	INSERT INTO #Sports  (SportType)	
-	SELECT SportType 
-	FROM DBACC.bodb02.dbo.Sports WITH(NOLOCK)
 	
+	INSERT INTO #Sports  (SportType)	
+	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
+
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @FileSetting
 		INSERT #File_Temp(SportType,Currency,BetType,SiteID,IsLaunched,IsTest,LaunchedLevel)
