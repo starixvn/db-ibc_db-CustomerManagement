@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@US$Rate  FLOAT = NULL,
 	@currency NVARCHAR(50),
 	@Description Nvarchar(100) = '',
-	@MultipliedBy int = 1,	
+	@MultipliedBy DECIMAL(19,8) = 1,	
 	@UserID INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT,
@@ -38,6 +38,7 @@ AS
 		- 20190627@Elodie: Apply currency min bet constrain for Bet Setting [Redmine:#115126]
 		- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
+		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -62,7 +63,7 @@ BEGIN
 		@old_US$Rate FLOAT ,	
 		@old_currency NVARCHAR(50),
 		@old_Description nvarchar(100),
-		@old_MultipliedBy INT,
+		@old_MultipliedBy DECIMAL(19,8),
 		@old_OfferSite	TINYINT,
 		@old_IsActive BIT
 
@@ -136,8 +137,8 @@ BEGIN
 		+  ' ,oldUS$Rate='+ ISNULL(convert(VARCHAR(10), @old_US$Rate),'') 
 		+  ' ,oldDescription='+ ISNULL(@old_Description,'')
 		+  ' ,newDescription='+ ISNULL(@Description,'')
-		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(10),@old_MultipliedBy),'')
-		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(10),@MultipliedBy),'')	
+		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(50),@old_MultipliedBy),'')
+		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(50),@MultipliedBy),'')	
 		+  ' ,oldOfferSite='+ ISNULL(convert(varchar(10),@old_OfferSite),'')
 		+  ' ,newOfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')	
 		+  ' ,oldIsActive='+ ISNULL(convert(varchar(10),@old_IsActive),'')
