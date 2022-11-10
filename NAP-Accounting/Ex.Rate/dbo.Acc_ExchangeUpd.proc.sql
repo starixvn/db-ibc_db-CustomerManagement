@@ -63,7 +63,7 @@ BEGIN
 		@old_US$Rate FLOAT ,	
 		@old_currency NVARCHAR(50),
 		@old_Description nvarchar(100),
-		@old_MultipliedBy INT,
+		@old_MultipliedBy DECIMAL(19,8),
 		@old_OfferSite	TINYINT,
 		@old_IsActive BIT
 
