@@ -9,6 +9,7 @@ AS
 	Created:	20221103@Johnson
 	DB:	DBCust/CustDB
 	Task: Get VR status
+	Orig: f_CustSetting_ProductStatusSel
 	
 	Revision:
 		- 20221103@Johnson : Initial SP [Redmine: #179782]

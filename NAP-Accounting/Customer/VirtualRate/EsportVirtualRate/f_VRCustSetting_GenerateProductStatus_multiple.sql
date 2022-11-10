@@ -10,6 +10,7 @@ AS
   Created: 20221103@Johnson 
   DB: DBCust.custDB  
   Task: generate VR status 
+  Orig: f_GenerateProductStatus_multiple
   
   Revision:     
 		- 20221103@Johnson : Initial SP [Redmine: #179782]
