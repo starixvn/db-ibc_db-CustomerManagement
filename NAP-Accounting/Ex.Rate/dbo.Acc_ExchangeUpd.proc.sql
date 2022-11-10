@@ -137,7 +137,7 @@ BEGIN
 		+  ' ,oldUS$Rate='+ ISNULL(convert(VARCHAR(10), @old_US$Rate),'') 
 		+  ' ,oldDescription='+ ISNULL(@old_Description,'')
 		+  ' ,newDescription='+ ISNULL(@Description,'')
-		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(10),@old_MultipliedBy),'')
+		+  ' ,oldMultipliedBy='+ ISNULL(convert(varchar(50),@old_MultipliedBy),'')
 		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(50),@MultipliedBy),'')	
 		+  ' ,oldOfferSite='+ ISNULL(convert(varchar(10),@old_OfferSite),'')
 		+  ' ,newOfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')	
