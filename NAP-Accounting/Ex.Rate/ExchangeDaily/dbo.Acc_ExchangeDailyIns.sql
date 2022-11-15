@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] 
-	@Code VARCHAR(5)
+	@Code VARCHAR(12)
 	, @MYR FLOAT
 	, @USD FLOAT
 	, @EUR FLOAT
@@ -36,7 +36,7 @@ Revisions:
 	- 20160920@Jim:  Add YNG currency [RedmineID : #64385]
 	- 20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
 	- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
-		
+	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  	
 */
 /*
 declare @p3 nvarchar(200)
