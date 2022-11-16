@@ -18,6 +18,7 @@ AS
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221103@Johnson: Change data type of CustSettingAutoSuspend [Redmine: #179782]
+		- 20221028@Johnson: order by LeagueGroup [redmine: #177594]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -81,7 +82,7 @@ BEGIN
 	
 	CREATE TABLE #tempVR(SportType SMALLINT, LeagueGroupID INT, LeagueGroup nvarchar(400), BettypeGroupID SMALLINT, BettypeGroup NVARCHAR(400),BetTypeID SMALLINT,LevelID INT,
 					ValueIDLIVE TINYINT, ValueLIVE smallmoney, ValueIDNonLIVE TINYINT,ValueNonLIVE smallmoney,IsLiveAutoSuspend BIT,IsNonLiveAutoSuspend BIT,
-					ParentLevelID INT,SortOrder INT,VRAutoSuspendThresholdNonLive INT,VRAutoSuspendThresholdLive INT,
+					ParentLevelID INT,LeagueGroupOrder SMALLINT,SortOrder INT,VRAutoSuspendThresholdNonLive INT,VRAutoSuspendThresholdLive INT,
 					IsOverrideASLive BIT,IsOverrideASNonLive BIT)
 					
 	SELECT @AutoSuspendLive = AutoSuspendLive, 
@@ -94,7 +95,7 @@ BEGIN
 	--2nd Dataset: Virtual Rate
 	INSERT INTO #tempVR(SportType,LeagueGroupID,LeagueGroup,BettypeGroupID,BettypeGroup,BetTypeID,LevelID,
 					ValueIDLIVE,ValueLIVE,ValueIDNonLIVE,ValueNonLIVE,IsLiveAutoSuspend,IsNonLiveAutoSuspend,
-					ParentLevelID,SortOrder,VRAutoSuspendThresholdNonLive,VRAutoSuspendThresholdLive,
+					ParentLevelID,LeagueGroupOrder,SortOrder,VRAutoSuspendThresholdNonLive,VRAutoSuspendThresholdLive,
 					IsOverrideASLive,IsOverrideASNonLive)
 	SELECT h.SportType
 		,lg.GroupID LeagueGroupID, lg.GroupName LeagueGroup
@@ -106,6 +107,7 @@ BEGIN
 		,Live.value as IsLiveAutoSuspend
 		,NonLive.value IsNonLiveAutoSuspend
 		,h.ParentLevelID
+		,lg.LeagueGroupOrder
 		,h.SortOrder
 		,h.VRAutoSuspendThresholdNonLive
 		,h.VRAutoSuspendThresholdLive
@@ -161,7 +163,7 @@ BEGIN
 			ON pr1.ParentLevelID = pr2.LevelID 
 		LEFT JOIN #tempVR pr3 WITH(NOLOCK)
 			ON pr2.ParentLevelID = pr3.LevelID 
-	ORDER BY h.SortOrder
+	ORDER BY h.LeagueGroupOrder, h.SortOrder
 
 	DROP TABLE #tempVR
 END
