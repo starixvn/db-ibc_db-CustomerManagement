@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 		- 20221021@Tacy: NAP - Manage Product Setting - Enhance Can See function [Redmine: #178092]
+		- 20221117@Tacy: HotFix - NAP - Manage Product Setting - CANSEE - Error when uploaded excel file [RedmineID: #180627]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -66,9 +67,9 @@ BEGIN
 	SELECT typeid,typenamee 
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
-	CREATE TABLE #Sports (SportType INT )
+	CREATE TABLE #Sports (SportType INT, SportName VARCHAR(50))
 	
-	INSERT INTO #Sports  (SportType)	
+	INSERT INTO #Sports  (SportType, SportName)	
 	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
 
 	BEGIN TRY
