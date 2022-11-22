@@ -171,7 +171,7 @@ BEGIN
 	IF (@ErrMsg = '') AND (@LogData = '')
 	BEGIN
 		SELECT @closed = closed FROM dbo.custinfo with (nolock) WHERE custid = @CustID
-		SELECT @ExpiredDate=ExpirdDate FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid = @CustID
+		SELECT @ExpiredDate=ExpiredDate FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid = @CustID
 
 		IF @closed = 1
 			SELECT  @ErrMsg = 'Your Account was Closed, Please contact your supervisor.',
