@@ -18,6 +18,7 @@ AS
 		- 20121129@Johnson: hard code to hide some ABS's users
 		- 20140109@Lukas: exclude user admin in external group
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20221104@Tacy: NAP - Set Expired Time For Permission [RedmineID: #179323]
 		
 	Explain @Param
 		--Search username: '%username%'
@@ -69,6 +70,7 @@ BEGIN
 					 c.lastname,
 					 ci.closed,
 					 ac.createdate,
+					 DATEADD(HH,11,ac.expireddate)  AS expireddate,	--(time zone GMT +7)
 					 ct.username AS creator
 			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
@@ -113,6 +115,7 @@ BEGIN
 					 c.lastname,
 					 ci.closed,
 					 ac.createdate,
+					 ac.expireddate,
 					 ct.username AS creator
 			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
@@ -122,7 +125,8 @@ BEGIN
 					 (SELECT custid,
 							groupid,
 							creator,
-							 createdate
+							 createdate,
+							 DATEADD(HH,11,expireddate)  AS expireddate	--(time zone GMT +7)
 					  FROM   acccustomer WITH (NOLOCK)
 					  WHERE  groupid = @groupid
 							AND custid NOT IN (SELECT custid FROM @ABS)
@@ -155,6 +159,3 @@ BEGIN
 		END
 END		
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminSelByGroupID] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminSelByGroupID] TO [vnteam] AS [dbo]

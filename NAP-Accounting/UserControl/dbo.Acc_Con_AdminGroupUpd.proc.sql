@@ -1,8 +1,9 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminGroupUpd]
 	@CustID INT, 
 	@UserID INT, 
 	@GroupID INT, 
+	@ExpiredDate DATETIME = NULL,
 	@Language VARCHAR (2)='E', 
 	@ErrCode INT=0 OUTPUT, 
 	@ErrMsg NVARCHAR (200)='' OUTPUT, 
@@ -18,6 +19,7 @@ AS
 		- 20120604@Sophia: Edit @LogData. Get group permission old and new 
 		- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20221104@Tacy: NAP - Set Expired Time For Permission + add param @ExpiredDate [RedmineID: #179323]
 		
 */
 BEGIN
@@ -27,6 +29,7 @@ BEGIN
 	@End AS DATETIME, 
 	@Duration AS INT, 
 	@Groupid_Old AS INT,
+	@ExpiredDate_Old AS DATETIME,
 	@Permission_Old AS VARCHAR(MAX),
 	@Permission_New AS VARCHAR(MAX)
 	SET @Begin = GETDATE()
@@ -36,11 +39,16 @@ BEGIN
 			   WHERE  groupid = @groupid)
 	BEGIN
 			--IF EXISTS(SELECT 1 FROM AccCustomer_1 ac with(nolock) WHERE custid=@custid and groupid <> @groupID)   
-			SELECT @Groupid_Old = GroupID
+			SELECT	@Groupid_Old = GroupID,
+					@ExpiredDate_Old = ExpiredDate
 			FROM   AccCustomer AS ac WITH (NOLOCK)
 			WHERE  custid = @custid
-				   AND groupid <> @groupID
+				   AND (groupid <> @groupID
+					OR ExpiredDate <> @ExpiredDate)
+
 			IF (@groupid_old IS NOT NULL)
+			BEGIN
+				IF @GroupID <> @Groupid_Old
 				BEGIN
 					BEGIN TRANSACTION
 					UPDATE  accCustomer WITH (ROWLOCK, UPDLOCK)
@@ -56,13 +64,25 @@ BEGIN
 							ON	O.FuncID = N.FuncID
 					WHERE	O.GroupID= @Groupid_Old 
 							AND N.GroupID= @groupid
-							AND O.Policy <> N.Policy			
-	                
-				END
+							AND O.Policy <> N.Policy	
+				END	
+				
+				IF @ExpiredDate <> @ExpiredDate_Old
+				BEGIN
+					BEGIN TRANSACTION
+					UPDATE  accCustomer WITH (ROWLOCK, UPDLOCK)
+						SET ExpiredDate = @ExpiredDate
+					WHERE   custid = @custid
+					COMMIT TRANSACTION
+	            END
+			END
 		END
 	ELSE
 		BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' WHEN 'CS' THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' WHEN 'J' THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' ELSE N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' END,
+			SELECT @ErrMsg = CASE @Language WHEN 'E'	THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' 
+											WHEN 'CS'	THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' 
+											WHEN 'J'	THEN N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' 
+														ELSE N'This groupid ' + CONVERT (VARCHAR (20), @groupid) + ' is invalid.' END,
 				   @ErrCode = 103
 			RETURN
 		END
@@ -84,6 +104,10 @@ BEGIN
 										'<Old>' + ISNULL(@Permission_Old,'') + '</Old>'+
 										'<New>'+ ISNULL(@Permission_New,'') + '</New>'+
 									'</Permission>'+
+									'<ExpiredDate>'+
+										'<Old>' + ISNULL(@ExpiredDate_Old,'') + '</Old>'+
+										'<New>'+ ISNULL(@ExpiredDate,'') + '</New>'+
+									'</ExpiredDate>'+
 							  '</Acc_Con_AdminGroupUpd>'    					
 							
 			SET @End = GETDATE()
@@ -93,15 +117,8 @@ BEGIN
 				EXEC DBLOG.bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] @custID = @custID, @Doing = @LogData, @userid = @UserID, @TypeID = 1, @actionid = 1700, @duration = @Duration
 			END TRY
 			BEGIN CATCH
-				
+				EXEC bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] @custID = @custID, @Doing = @LogData, @userid = @UserID, @TypeID = 1, @actionid = 1700, @duration = @Duration
 			END CATCH
 		END
 END
-
-GO 
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminGroupUpd] TO [vnteam]
-
 GO
-GRANT EXECUTE ON [dbo].Acc_Con_AdminGroupUpd TO [bodbAdminNet]
-
-
