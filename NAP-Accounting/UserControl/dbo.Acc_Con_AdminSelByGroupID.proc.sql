@@ -70,7 +70,7 @@ BEGIN
 					 c.lastname,
 					 ci.closed,
 					 ac.createdate,
-					 DATEADD(HH,11,ac.expireddate)  AS expireddate,	--(time zone GMT +7)
+					 ac.expireddate,	
 					 ct.username AS creator
 			FROM     CUSTDB.dbo.customer AS c WITH (NOLOCK)
 					 INNER JOIN
@@ -126,7 +126,7 @@ BEGIN
 							groupid,
 							creator,
 							 createdate,
-							 DATEADD(HH,11,expireddate)  AS expireddate	--(time zone GMT +7)
+							 expireddate
 					  FROM   acccustomer WITH (NOLOCK)
 					  WHERE  groupid = @groupid
 							AND custid NOT IN (SELECT custid FROM @ABS)

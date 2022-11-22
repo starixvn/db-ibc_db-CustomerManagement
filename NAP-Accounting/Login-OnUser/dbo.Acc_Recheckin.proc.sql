@@ -14,6 +14,9 @@ AS
 	Revisions:
 			- 20221118@Tacy: NAP - Set expired time for permission [RedmineID: #179323]
 	Param's Explanation:
+		@IsKickedOut = 0
+					 = 1 : "Another session has been logged in or your session is expired. Forced to logout!"
+					 = 2 : "Your Account was Expired, Please contact your supervisor"
 */
 BEGIN
 	SET NOCOUNT ON
@@ -26,8 +29,11 @@ BEGIN
 	FROM on_user_admin WITH (NOLOCK) 
 	WHERE On_UserID = @On_UserID
 
+	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@curDate)
+	BEGIN
+		SELECT @IsKickedOut=2
+	END
 	IF EXISTS (SELECT 1 FROM on_user_admin WITH (NOLOCK) WHERE On_UserID = @On_UserID AND isKickedOut=1)
-		OR EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@curDate)
 	BEGIN
 		SELECT @IsKickedOut=1
 	END

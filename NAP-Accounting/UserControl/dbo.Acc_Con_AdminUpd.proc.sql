@@ -54,12 +54,6 @@ BEGIN
 	SELECT @db_GroupID = groupid, @db_ExpiredDate = ExpiredDate from NAP_UserControl.dbo.accCustomer with (NOLOCK) where custid = @CustID
 	SELECT @db_FirstName = firstname, @db_LastName = lastname from customer with (NOLOCK) where custid = @CustID
 
-	--CONVERT: GMT +7 --> GMT -4 
-	IF @ExpiredDate IS NOT NULL
-	BEGIN
-		SELECT @ExpiredDate=DATEADD(HH,-11,@ExpiredDate)
-	END
-
 	IF(@db_GroupID <> @GroupID OR @db_ExpiredDate <> @ExpiredDate)
 	Begin
 		EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @ExpiredDate = @ExpiredDate, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
