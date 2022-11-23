@@ -39,7 +39,7 @@ BEGIN CATCH
 END CATCH
 ----- 20150610@Kos -------------------
 
-SELECT DISTINCT t.sporttype, CASE WHEN t.sporttype = 212 THEN N'RNG Slot' ELSE s.sportname   END AS sportname
+SELECT DISTINCT t.sporttype, CASE WHEN t.sporttype = 9906 THEN N'RNG Slot' ELSE s.sportname   END AS sportname
 FROM 
 	(	SELECT cs.custid, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 		UNION 
