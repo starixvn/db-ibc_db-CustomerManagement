@@ -38,6 +38,7 @@ Revisions:
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 	- 20200602@Johnson: set max sub-acc = 30 for IBCIndo site [redmine:#135198]
+	- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -150,20 +151,20 @@ BEGIN
 	RETURN	
 END
 
-EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @subaccid, 0, @ErrCode, @ErrMsg
+--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @subaccid, 0, @ErrCode, @ErrMsg
 	
-IF @ErrCode <>0
-BEGIN
-		SELECT @ErrMsg = CASE @Language 
-							WHEN 'E' THEN 'Create sub-account failed. Please try again.'
-							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
-						END
-			, @ErrCode = 106
-	 -- ROLLBACK MANUALLY
-		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
+--IF @ErrCode <>0
+--BEGIN
+--		SELECT @ErrMsg = CASE @Language 
+--							WHEN 'E' THEN 'Create sub-account failed. Please try again.'
+--							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
+--						END
+--			, @ErrCode = 106
+--	 -- ROLLBACK MANUALLY
+--		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
 		
-		RETURN
-END
+--		RETURN
+--END
 	
 DECLARE	@UplineSecurityCode			VARCHAR(50)
 	  , @isForcedChangeSecurityCode	BIT
@@ -194,7 +195,7 @@ if @@ERROR <> 0
 BEGIN
 	DELETE FROM custsub WITH(ROWLOCK)
 	      WHERE subaccid = @subaccid
-	EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid,@subaccid
+	--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid,@subaccid
 	
 	SELECT @ErrMsg = CASE @Language 
 					   WHEN 'E' THEN 'Create sub-account failed. Please try again.'
