@@ -5,73 +5,74 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelUserInfo]
 AS
 BEGIN
 /*
-Created: 20090211@nqminh
-Updated: 20090227@Shifu
-	-- get more customer information from custinfo
-Task : Select customer information
-DB: DBCUST/CustDB
-Original:
+	Created: 20090211@nqminh
+	Updated: 20090227@Shifu
+		-- get more customer information from custinfo
+	Task : Select customer information
+	DB: DBCUST/CustDB
+	Original:
 
-Revisions:
-	- 20090122@[Reviewer]: [Description of revision]    
-	- 20090603@[Lee]: Add given credit info   
-	- 20100901@[Henry]: Add SyncBingo
-	- 20120202@Johnson: Add live casino
-	- 20120726@Johnson: add bingo
-	- 20140520@Logan:   1.Retrieve remark for SAg, MAg, Ag from CustSuper, CustMaster & CustAgent
-						2.Code aligning
-	- 20150420@Elodie: Add Gold Deluxe Product
-	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-	- 20150825@Helen: Colossus Bet - [Redmine: #41264]
-	- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
-	- 20151209@Helen: Member information for Cockfighting [Redmine: #48133]
-	- 20160114@Helen: Cricket - [Redmine: #50027]
-	- 20160127@Billy: Member information for AllBet - [Redmine: #51698]
-	- 20160421@Elodie: Modidy code to get info for deposit account - [Redmine: #56438]
-	- 20160413@Winnie: VoidBridge - [Redmine: #55531]
-	- 20160801@Elodie: NG2 Product - [Redmine: #60809]
-	- 20161031@Winnie: FishingWorld - [Redmine: #65474]
-	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
-	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct - [Redmine #72336]	
-	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
-	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
-	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
-	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
-	- 20180510@Elodie: Enhance performance [RedmineID: #95012]
-	- 20180118@Johnson: remove Downline casino status for new direction [Redmine:#87328]
-	- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
-	- 20180919@Winnie: Esports Product - [Redmine: #101526]
-	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
-	- 20200318@Elodie: Add Saba.club [Redmine: #130636]
-	- 20200303@Tiara: Add SA Gaming Product [Redmine: #128058]
-	- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
-	- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
-	- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
-	- 20200421@Elodie: Add GTCasino Product [Redmine: #130689]
-	- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]	
-	- 20200504@Eden: ION Live casino [Redmine: #132323]
-	- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
-	- 20201026@Eden: Adjust new pt for 789y [Redmine: #143764]
-	- 20201130@Tina: Add GDG (Gold Diamond Gaming) Live casino [Redmine: #144105]
-	- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
-	- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
-	- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
-	- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
-	- 20210426@Tina: Add VGaming [Redmine: #153938]
-	- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
-	- 20210728@Tina: NAP - Cannot setting Casino for Licensee account [Redmine: #159140]
-	- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
-	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	Revisions:
+		- 20090122@[Reviewer]: [Description of revision]    
+		- 20090603@[Lee]: Add given credit info   
+		- 20100901@[Henry]: Add SyncBingo
+		- 20120202@Johnson: Add live casino
+		- 20120726@Johnson: add bingo
+		- 20140520@Logan:   1.Retrieve remark for SAg, MAg, Ag from CustSuper, CustMaster & CustAgent
+							2.Code aligning
+		- 20150420@Elodie: Add Gold Deluxe Product
+		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+		- 20150825@Helen: Colossus Bet - [Redmine: #41264]
+		- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
+		- 20151209@Helen: Member information for Cockfighting [Redmine: #48133]
+		- 20160114@Helen: Cricket - [Redmine: #50027]
+		- 20160127@Billy: Member information for AllBet - [Redmine: #51698]
+		- 20160421@Elodie: Modidy code to get info for deposit account - [Redmine: #56438]
+		- 20160413@Winnie: VoidBridge - [Redmine: #55531]
+		- 20160801@Elodie: NG2 Product - [Redmine: #60809]
+		- 20161031@Winnie: FishingWorld - [Redmine: #65474]
+		- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
+		- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct - [Redmine #72336]	
+		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+		- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
+		- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
+		- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
+		- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
+		- 20180510@Elodie: Enhance performance [RedmineID: #95012]
+		- 20180118@Johnson: remove Downline casino status for new direction [Redmine:#87328]
+		- 20180703@Elodie: Poker Games Product - [Redmine: #97675]
+		- 20180919@Winnie: Esports Product - [Redmine: #101526]
+		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20191206@Eden: Add Virtual Games [Redmine: #122743]
+		- 20200318@Elodie: Add Saba.club [Redmine: #130636]
+		- 20200303@Tiara: Add SA Gaming Product [Redmine: #128058]
+		- 20200321@Tiara: Add Sexy Gaming Product [Redmine: #130678]
+		- 20200406@Elodie: Add BBIN Product [Redmine: #131363]
+		- 20200403@Elodie: Add Table Games Product [Redmine: #129440]
+		- 20200421@Elodie: Add GTCasino Product [Redmine: #130689]
+		- 20200428@Eden: HotFix_-_The_status_Virtual_game_show_grey_color [Redmine: #133328]	
+		- 20200504@Eden: ION Live casino [Redmine: #132323]
+		- 20200506@Tiara: Add RNG War Product [Redmine: 132018]
+		- 20201026@Eden: Adjust new pt for 789y [Redmine: #143764]
+		- 20201130@Tina: Add GDG (Gold Diamond Gaming) Live casino [Redmine: #144105]
+		- 20201012@Tina: Add new parameter @SettingStatus [Redmine: #143077]
+		- 20201204@Tina: add BG (Big Gaming) [RedmineID: #142458]
+		- 20210229@Winfred: add Sports Lottery [RedmineID: #147361]
+		- 20210315@Tina: add PP Live Casino [RedmineID: #134041]
+		- 20210426@Tina: Add VGaming [Redmine: #153938]
+		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20210728@Tina: NAP - Cannot setting Casino for Licensee account [Redmine: #159140]
+		- 20210809@Winfred: add Bitcoin Betting [RedmineID: #159039]
+		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+	- 20221123@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
 	- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
-Param's Explanation:
-	@custid: custid that need to be viewed.   
-	- @SettingStatus: 0: Pro, 1: UAT
+	Param's Explanation:
+		@custid: custid that need to be viewed.   
+		- @SettingStatus: 0: Pro, 1: UAT
 */
-
+BEGIN
 	SET NOCOUNT ON
 
 	declare @roleid tinyint
@@ -159,7 +160,6 @@ Param's Explanation:
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
-		,	@bitmapOrder_FishingWorld	INT	
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_VG				INT
 		,	@bitmapOrder_SabaClub		INT
@@ -170,8 +170,6 @@ Param's Explanation:
 		,	@bitmapOrder_TableGames		INT 
 		,	@bitmapOrder_GTCasino		INT
 		,	@bitmapOrder_RNGWar			INT 
-		--GDG
-		,	@bitmapOrder_GDG			INT
 		--BG
 		,	@bitmapOrder_BG				INT 
 		,	@bitmapOrder_SportsLottery	INT 
@@ -190,7 +188,6 @@ Param's Explanation:
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9906 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1024)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
-	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
 	SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9908 AND Bettype = 1201)
 	SET @bitmapOrder_VG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 245 AND Bettype = 4601)
 	SET @bitmapOrder_SabaClub = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 200 AND Bettype = 1611)
@@ -201,7 +198,6 @@ Param's Explanation:
 	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 	SET @bitmapOrder_GTCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 242 AND Bettype = 3201)
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
-	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)	
 	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
@@ -218,7 +214,6 @@ Param's Explanation:
 		,	@IsHidden_VoidBridge	INT = 1	
 		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1
-		,	@IsHidden_FishingWorld	INT = 1	
 		,	@IsHidden_VS			INT = 1
 		,	@IsHidden_VG			INT = 1
 		,	@IsHidden_SabaClub		INT = 1
@@ -229,7 +224,6 @@ Param's Explanation:
 		,	@IsHidden_TableGames	INT = 1
 		,	@IsHidden_GTCasino		INT = 1
 		,	@IsHidden_RNGWar		INT = 1
-		,	@IsHidden_GDG			INT = 1--GDG
 		,	@IsHidden_BG			INT = 1
 		,	@IsHidden_SportsLottery	INT = 1
 		,	@IsHidden_PPLive		INT = 1
@@ -243,7 +237,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 53, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 220, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_NG2 OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 24, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @SettingStatus = @SettingStatus,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Esports OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 38, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VG OUTPUT
@@ -255,7 +248,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 241, @IsHide = @IsHidden_BBIN OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 222, @IsHide = @IsHidden_TableGames OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 224, @IsHide = @IsHidden_RNGWar OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
@@ -383,31 +375,9 @@ Param's Explanation:
 			-- For RNG War
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_RNGWar)) AS DisableRNGWar,			
 			CAST(CASE WHEN @IsHidden_RNGWar = 0 AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_RNGWar)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideRNGWar,
-			--FishingWorld
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)),1) AS DisableFishingWorld,
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_FishingWorld)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
 			--For BG
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BG)),1) AS DisableBG,
 			CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BG)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBG,
-			--For FishingWorld
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_FishingWorld)), 0) AS SyncedFishingWorld,
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_FishingWorld)), 0) AS SyncedFishingWorldUpline,
-			CASE	WHEN Customer.roleid = 1 THEN 1
-					WHEN EXISTS	(	SELECT 1
-									FROM #ciDownline AS ciDownline
-										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_FishingWorld) s
-									WHERE s.value = 0)
-						THEN 0
-					ELSE 1
-			END AS SyncedFishingWorldDownline,
-			-- For GDG (Gold Diamond Gaming)
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_GDG)), 1) AS DisableGDGGaming,
-			CAST(	CASE	WHEN	@IsHidden_GDG = 0 
-								AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_GDG)), 1) = 0 
-								THEN 0
-							ELSE 1 
-					END AS BIT) AS HideGDG,		
-			--end GDG
 			-- For Sports Lottery
 			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SportsLottery)) AS DisableSportsLottery,			
 			CAST(CASE WHEN @IsHidden_SportsLottery = 0 AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SportsLottery)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSportsLottery,
@@ -466,5 +436,6 @@ Param's Explanation:
 	 WHERE Customer.custid = @custid
 
 	 DROP TABLE #ciDownline
+	END
 END
 GO
