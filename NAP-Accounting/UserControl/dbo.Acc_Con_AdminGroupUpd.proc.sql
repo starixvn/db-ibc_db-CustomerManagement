@@ -44,7 +44,7 @@ BEGIN
 			FROM   AccCustomer AS ac WITH (NOLOCK)
 			WHERE  custid = @custid
 				   AND (groupid <> @groupID
-					OR ExpiredDate <> @ExpiredDate)
+					OR ISNULL(ExpiredDate,'') <> ISNULL(@ExpiredDate,''))
 
 			IF (@groupid_old IS NOT NULL)
 			BEGIN
@@ -66,16 +66,16 @@ BEGIN
 							AND N.GroupID= @groupid
 							AND O.Policy <> N.Policy	
 				END	
-				
-				IF @ExpiredDate <> @ExpiredDate_Old
-				BEGIN
-					BEGIN TRANSACTION
-					UPDATE  accCustomer WITH (ROWLOCK, UPDLOCK)
-						SET ExpiredDate = @ExpiredDate
-					WHERE   custid = @custid
-					COMMIT TRANSACTION
-	            END
 			END
+
+			IF ISNULL(@ExpiredDate_Old,'') <> ISNULL(@ExpiredDate,'')
+			BEGIN
+				BEGIN TRANSACTION
+				UPDATE  accCustomer WITH (ROWLOCK, UPDLOCK)
+					SET ExpiredDate = @ExpiredDate
+				WHERE   custid = @custid
+				COMMIT TRANSACTION
+	        END
 		END
 	ELSE
 		BEGIN
@@ -105,8 +105,8 @@ BEGIN
 										'<New>'+ ISNULL(@Permission_New,'') + '</New>'+
 									'</Permission>'+
 									'<ExpiredDate>'+
-										'<Old>' + ISNULL(@ExpiredDate_Old,'') + '</Old>'+
-										'<New>'+ ISNULL(@ExpiredDate,'') + '</New>'+
+										'<Old>' + ISNULL(CAST(@ExpiredDate_Old AS varchar),'') + '</Old>'+
+										'<New>'+ ISNULL(CAST(@ExpiredDate AS varchar),'') + '</New>'+
 									'</ExpiredDate>'+
 							  '</Acc_Con_AdminGroupUpd>'    					
 							

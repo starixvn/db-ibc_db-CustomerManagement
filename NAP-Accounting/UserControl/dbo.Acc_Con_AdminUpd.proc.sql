@@ -54,9 +54,17 @@ BEGIN
 	SELECT @db_GroupID = groupid, @db_ExpiredDate = ExpiredDate from NAP_UserControl.dbo.accCustomer with (NOLOCK) where custid = @CustID
 	SELECT @db_FirstName = firstname, @db_LastName = lastname from customer with (NOLOCK) where custid = @CustID
 
-	IF(@db_GroupID <> @GroupID OR @db_ExpiredDate <> @ExpiredDate)
+	IF(@db_GroupID <> @GroupID OR ISNULL(@db_ExpiredDate,'') <> ISNULL(@ExpiredDate,''))
 	Begin
-		EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @ExpiredDate = @ExpiredDate, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		IF @ExpiredDate IS NOT NULL
+		BEGIN
+			EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @ExpiredDate = @ExpiredDate, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		END
+		ELSE 
+		BEGIN
+			EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		END
+
 		IF @ErrCode <> 0
 			RETURN;
 	End
