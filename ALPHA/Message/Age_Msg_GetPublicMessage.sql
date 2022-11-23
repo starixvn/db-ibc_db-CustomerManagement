@@ -17,6 +17,7 @@ AS
 
     Revisions:
 			- 20221121@Tacy: Create SP
+			- 20221123@Tacy: TW enhance performance's sp [Dot_Msg_GetPublicMessage]
 
     Param's Explanation:
  */
