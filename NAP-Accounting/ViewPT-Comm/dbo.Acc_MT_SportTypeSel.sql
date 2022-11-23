@@ -39,7 +39,11 @@ BEGIN CATCH
 END CATCH
 ----- 20150610@Kos -------------------
 
-SELECT DISTINCT t.sporttype, CASE WHEN t.sporttype = 9906 THEN N'RNG Slot' ELSE s.sportname   END AS sportname
+INSERT INTO @tmp_Sports (SportType, SportName)
+SELECT 9906 AS sporttype , N'RNG Slot' AS SportName
+WHERE NOT EXISTS( SELECT TOP 1 1 FROM @tmp_Sports WHERE sporttype = 9906)
+
+SELECT DISTINCT t.sporttype, s.sportname
 FROM 
 	(	SELECT cs.custid, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 		UNION 
