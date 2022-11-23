@@ -1,5 +1,5 @@
 /*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
-ALTER PROCEDURE [dbo].[Age_Msg_SetMessage2]
+CREATE PROCEDURE [dbo].[Age_Msg_SetMessage2]
 	@MessageId int = NULL OUTPUT,
 	@Content_en	nvarchar(4000) = NULL,
 	@Content_ch	nvarchar(4000) = NULL,
