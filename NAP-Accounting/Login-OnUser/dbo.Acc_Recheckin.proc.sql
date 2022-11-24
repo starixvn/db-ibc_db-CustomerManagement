@@ -21,15 +21,15 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @CurDate DATETIME, @CustID INT
+	DECLARE @Next_GetDate DATETIME, @CustID INT
 	
-	SET @CurDate = DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),1)
+	SET @Next_GetDate = DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),1)
 
 	SELECT @CustID=custid
 	FROM on_user_admin WITH (NOLOCK) 
 	WHERE On_UserID = @On_UserID
 
-	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@curDate)
+	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@Next_GetDate)
 	BEGIN
 		SELECT @IsKickedOut=2
 	END
