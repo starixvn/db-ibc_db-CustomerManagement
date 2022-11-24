@@ -1,7 +1,7 @@
 ﻿/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet,bodbExtAccNet" viewers="VNTeam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ReCheckIn] 
 	@On_UserID	 int,
-	@IsKickedOut bit=0 OUTPUT
+	@IsKickedOut tinyint=0 OUTPUT
 AS
 /*
 	Created: 20110912@Sophia
@@ -33,7 +33,7 @@ BEGIN
 	BEGIN
 		SELECT @IsKickedOut=2
 	END
-	IF EXISTS (SELECT 1 FROM on_user_admin WITH (NOLOCK) WHERE On_UserID = @On_UserID AND isKickedOut=1)
+	ELSE IF EXISTS (SELECT 1 FROM on_user_admin WITH (NOLOCK) WHERE On_UserID = @On_UserID AND isKickedOut=1)
 	BEGIN
 		SELECT @IsKickedOut=1
 	END
