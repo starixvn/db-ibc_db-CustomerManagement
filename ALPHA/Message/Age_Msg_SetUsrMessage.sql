@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetUsrMessage]
 	@MessageId int,
 	@TargetId int,
