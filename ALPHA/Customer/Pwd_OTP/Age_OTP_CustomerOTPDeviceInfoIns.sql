@@ -1,6 +1,4 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" selecters=""></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerOTPDeviceInfoIns]
 	@CustID				INT,
 	@SubAccID			INT = 0,
@@ -19,7 +17,7 @@ AS
 	Task: Insert device info
 
 	Revisions:
-
+		- 20221129@Johnson: dont check CustOTP for OTP telegram chatbot [redmine:#178790]
 	Param's Explanation:
 */
 BEGIN
@@ -27,13 +25,13 @@ BEGIN
 
 	SELECT @ErrCode = 0, @ErrMsg = N''
 
-	IF NOT EXISTS (SELECT TOP 1 1 FROM dbo.CustOTP WITH(NOLOCK) WHERE CustID = @CustID AND SubAccId = @SubAccID AND IsDelete = 0)
-	BEGIN
-		SELECT	@ErrCode = 100,
-				@ErrMsg = N'This account don''t use OTP!'
+	--IF NOT EXISTS (SELECT TOP 1 1 FROM dbo.CustOTP WITH(NOLOCK) WHERE CustID = @CustID AND SubAccId = @SubAccID AND IsDelete = 0)
+--	BEGIN
+--		SELECT	@ErrCode = 100,
+--				@ErrMsg = N'This account don''t use OTP!'
 		
-		RETURN
-	END
+--		RETURN
+--	END
 
 	BEGIN TRY
 		INSERT INTO dbo.CustOTPDetail (CustID, SubAccId, DeviceId, DeviceInfo, LastVerifiedDate)
@@ -51,8 +49,4 @@ BEGIN
 	IF @ErrMsg IS NULL
 		SELECT @ErrMsg = N''
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoIns] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoIns] TO [bodbDownlineNetView] AS [dbo]
 GO

@@ -1,6 +1,4 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" selecters=""></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerOTPDeviceInfoSel]
 	@CustID			INT,
 	@SubAccID		INT = 0,
@@ -13,7 +11,7 @@ AS
 	Task: Select secret key
 
 	Revisions:
-
+		- 20221129@Johnson: dont check CustOTP for OTP telegram chatbot [redmine:#178790]
 	Param's Explanation:
 */
 BEGIN
@@ -23,11 +21,9 @@ BEGIN
 		SELECT @ExpiredMins = 129600 -- default 3 months
 
 	;WITH CTE_Info AS (
-		SELECT c.CustID, c.SubAccId, cd.DeviceId, ROW_NUMBER() OVER(PARTITION BY cd.DeviceId ORDER BY LastVerifiedDate DESC) AS rownum
-		FROM dbo.CustOTP c WITH(NOLOCK)
-			INNER JOIN dbo.CustOTPDetail cd WITH(NOLOCK) ON c.CustID = cd.CustID AND c.SubAccId = cd.SubAccId
-		WHERE c.CustID = @CustID AND c.SubAccId = @SubAccID
-			AND c.IsDelete = 0
+		SELECT cd.CustID, cd.SubAccId, cd.DeviceId, ROW_NUMBER() OVER(PARTITION BY cd.DeviceId ORDER BY LastVerifiedDate DESC) AS rownum
+		FROM dbo.CustOTPDetail cd WITH(NOLOCK)
+		WHERE cd.CustID = @CustID AND cd.SubAccId = @SubAccID			
 			AND DATEADD(MINUTE, @ExpiredMins, cd.LastVerifiedDate) > GETDATE()
 	)
 	SELECT CustID, SubAccId, DeviceId
@@ -35,8 +31,4 @@ BEGIN
 	WHERE rownum = 1
 
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNet] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNetView] AS [dbo]
 GO
