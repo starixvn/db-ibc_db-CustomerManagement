@@ -9,7 +9,7 @@ AS
 	
 	Revisions:
 		- 20220721@Johnson: Initial sp [Redmine: 175278]
-		
+		- 20221201@Johnson: Put HOLDLOCK for merge statement [redmine: #181183]
 	Param's Explanation:
 		- @xmlData = '<Root>
 						<r id="1" d="2020-07-01" b="2001" wl="1000" />
@@ -37,7 +37,7 @@ BEGIN
 		t.c.value('@wl[1]','money')
 	FROM @xmlData.nodes('Root/r')as t(c)
 
-	MERGE WinLimit_CustWinlostGame as Target
+	MERGE WinLimit_CustWinlostGame WITH(HOLDLOCK) as Target 
 	USING #DataTmp as Source ON source.custid = target.custid
 								AND source.Bettype = target.Bettype
 								AND source.WinlostDate = target.WinlostDate
