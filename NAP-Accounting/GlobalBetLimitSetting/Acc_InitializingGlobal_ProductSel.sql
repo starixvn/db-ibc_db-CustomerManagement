@@ -11,7 +11,8 @@ AS
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
 			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
-		
+			- 20221130@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
+
 		Param's Explanation:
 			@ProductID  0 : All, <> 0 : ProductID
 	*/
@@ -41,7 +42,8 @@ BEGIN
 	INSERT INTO #Products  (ProductID,ProductName)	
 	SELECT ProductID,ProductName 
 	FROM dbo.products WITH(NOLOCK)
-	
+	WHERE Enabled=1
+
 	SELECT ProductID , ProductName
 	FROM (			
 		SELECT DISTINCT
