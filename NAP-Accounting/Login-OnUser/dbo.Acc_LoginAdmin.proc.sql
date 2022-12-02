@@ -167,10 +167,6 @@ BEGIN
 	--ELSE 
 	--	SET @System = 'ACCOUNTING'
 
-	DECLARE @Next_GetDate DATETIME
-	
-	SET @Next_GetDate = DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),1)
-
 	IF (@ErrMsg = '') AND (@LogData = '')
 	BEGIN
 		SELECT @closed = closed FROM dbo.custinfo with (nolock) WHERE custid = @CustID
@@ -180,7 +176,7 @@ BEGIN
 			SELECT  @ErrMsg = 'Your Account was Closed, Please contact your supervisor.',
 				@ErrCode = 104,
 				@LogData = 'Admin:' + @username + ' Logged in to ACCOUNT SITE' + ' - ' + 'Result:Failed(A/C_Closed) From:' + @From	
-		ELSE IF @ExpiredDate<@Next_GetDate
+		ELSE IF @ExpiredDate<GETDATE() AND @ExpiredDate IS NOT NULL
 			SELECT  @ErrMsg = 'Your Account was Expired, Please contact your supervisor.',
 				@ErrCode = 104,
 				@LogData = 'Admin:' + @username + ' Logged in to ACCOUNT SITE' + ' - ' + 'Result:Failed(A/C_Closed) From:' + @From	
