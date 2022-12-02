@@ -3,7 +3,6 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelUserInfo]
 	@custid int
 	, @SettingStatus TINYINT = 0
 AS
-BEGIN
 /*
 Created: 20090211@nqminh
 Updated: 20090227@Shifu
