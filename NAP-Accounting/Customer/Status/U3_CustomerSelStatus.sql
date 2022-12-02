@@ -5,7 +5,6 @@ ALTER PROCEDURE [dbo].[U3_CustomerSelStatus]
 	@system		VARCHAR(30)	='NAP',
 	@username	VARCHAR(50)	= ''
 AS 
-BEGIN
 /*
 	Created: 20090125@nqminh
 	Task : Select customer's status
@@ -366,6 +365,5 @@ BEGIN
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
 			ci.DisableSuperLive	
-	END
 END
 GO

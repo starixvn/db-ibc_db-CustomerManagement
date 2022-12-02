@@ -6,7 +6,6 @@ ALTER PROCEDURE [dbo].[Acc_CustomerSelStatus]
 	@username	VARCHAR(50)	= '',
 	@SettingStatus TINYINT = 0
 AS 
-BEGIN
 /*
 	Created: 20090125@nqminh
 	Task : Select customer's status
@@ -667,6 +666,5 @@ BEGIN
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
 			ci.DisableSuperLive
-	END
 END
 GO
