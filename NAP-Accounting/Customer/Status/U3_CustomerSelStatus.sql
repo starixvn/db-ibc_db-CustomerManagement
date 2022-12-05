@@ -5,73 +5,73 @@ ALTER PROCEDURE [dbo].[U3_CustomerSelStatus]
 	@system		VARCHAR(30)	='NAP',
 	@username	VARCHAR(50)	= ''
 AS 
-/*
-	Created: 20090125@nqminh
-	Task : Select customer's status
-	DB: DBACC.bodb02
-	Original: 
-
-	Revisions:
-		- 20090411@PhuongDoan: Add casino status    
-		- 20090731@nqminh: Add outright status    
-		- 20090806@huynguyen: Add closed, autosuspend, isautopositiontaking
-		- 20090829@[Shifu]: Add IsInternal
-		- 20100223@[Ryan]: Add IsAdminCanViewVNIP
-		- 20100227@Jamie: Change the way to check permission 
-		- 20100402@Lee: Add mrecommend, arecommend 
-		- 20100504@Huynguyen: Add DisableOpenTote
-		- 20100828@SonPhan: Add DisableBingo, DisableNumber, SyncBingo
-		- 20101015@Ethan: Get Limited Per IP value @LimitPerIP + SelectedBetting
-		- 20110914@Tom: Add column DisableP2P
-		- 20120131@Johnson: - Add Parameter @username support get by username
-							- Add DisableLiveCasino, SyncLiveCasino
-		- 20120808@Sophia: Add DisableVirtualSports, HideVirtualSports	
-		- 20120927@Sophia: Get DoubleCommLosing	
-		- 20130723@Jamie: Change Alias DB03 to DBPOLICY
-		- 20131011@Elodie: Add HR Fixed Odds [Redmine:#6505]
-		- 20140303@Kathy: Get HideKeno [Redmine:#12691]
-		- 20140407@Elodie: Get DisableKeno [Redmine:#13156]
-		- 20140825@Logan:   Get status of E-Sports [Redmine: #20531]
-		- 20150210@Johnson: use param @system to check permission on ViewIPVN function from NAP or NAP EXT internal login [Redmine: #30860]
-		- 20150422@Elodie: Add Gold Deluxe product [Redmine:#34486]
-		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
-		- 20150717@Kiwi: Move SP to DB06.bodb02 to solve the performance issue for temporary	
-		- 20150707@Elodie: Add Super Live product [Redmine: #35776]
-		- 20150721@Winnie: Add Microgaming product 
-		- 20150825@Helen: Colossus Bet - [Redmine: #41264]
-		- 20150904@Helen: commission setting for MO [Redmine #41470]
-		- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
-		- 20151106@Patrick: Support RnG Game & rename field named DisableMicroGame to DisableMicroGameLC
-		- 20151209@Helen: Member information for Cockfighting [Redmine: #48133]
-		- 20160114@Helen: Cricket - [Redmine: #50027]
-		- 20160127@Billy: Member information for AllBet - [Redmine: #51591]
-		- 20160407@Winnie: VoidBridge - [Redmine: #55259 ]
-		- 20160801@Elodie: NG2 product - [Redmine: #60809]
-		- 20160815@Winnie: AllBet add more status for Bettype VIP Barcarat - [Redmine: #61733 ]
-		- 20161028@Winnie: Fishing world [Redmine's Ids: #65474]
-		- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
-		- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
-		- 20170517@Winnie: Apply color for closed accounts - [Redmine #74494]	
-		- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
-		- 20170612@Winnie: New agent cash balance - [Redmine:74291]
-		- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
-		- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
-		- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
-		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
-		- 20190917@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
-		- 20191206@Eden: Add Virtual Games [Redmine: #122743]
-		- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
-		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-		- 20221123@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
-		
-	Param's Explanation:
-	� @system: = NAP : internal login from NAP
-				NAPEXT:internal login from NAP EXT
-	� @CustID: customer id.   
-*/
 BEGIN
+/*
+Created: 20090125@nqminh
+Task : Select customer's status
+DB: DBACC.bodb02
+Original: 
+
+Revisions:
+    - 20090411@PhuongDoan: Add casino status    
+    - 20090731@nqminh: Add outright status    
+	- 20090806@huynguyen: Add closed, autosuspend, isautopositiontaking
+	- 20090829@[Shifu]: Add IsInternal
+	- 20100223@[Ryan]: Add IsAdminCanViewVNIP
+	- 20100227@Jamie: Change the way to check permission 
+	- 20100402@Lee: Add mrecommend, arecommend 
+	- 20100504@Huynguyen: Add DisableOpenTote
+	- 20100828@SonPhan: Add DisableBingo, DisableNumber, SyncBingo
+	- 20101015@Ethan: Get Limited Per IP value @LimitPerIP + SelectedBetting
+	- 20110914@Tom: Add column DisableP2P
+	- 20120131@Johnson: - Add Parameter @username support get by username
+						- Add DisableLiveCasino, SyncLiveCasino
+	- 20120808@Sophia: Add DisableVirtualSports, HideVirtualSports	
+	- 20120927@Sophia: Get DoubleCommLosing	
+	- 20130723@Jamie: Change Alias DB03 to DBPOLICY
+	- 20131011@Elodie: Add HR Fixed Odds [Redmine:#6505]
+	- 20140303@Kathy: Get HideKeno [Redmine:#12691]
+	- 20140407@Elodie: Get DisableKeno [Redmine:#13156]
+	- 20140825@Logan:   Get status of E-Sports [Redmine: #20531]
+	- 20150210@Johnson: use param @system to check permission on ViewIPVN function from NAP or NAP EXT internal login [Redmine: #30860]
+	- 20150422@Elodie: Add Gold Deluxe product [Redmine:#34486]
+	- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
+	- 20150717@Kiwi: Move SP to DB06.bodb02 to solve the performance issue for temporary	
+	- 20150707@Elodie: Add Super Live product [Redmine: #35776]
+	- 20150721@Winnie: Add Microgaming product 
+	- 20150825@Helen: Colossus Bet - [Redmine: #41264]
+	- 20150904@Helen: commission setting for MO [Redmine #41470]
+	- 20151028@Helen: Member Information to support Muay Thai  [Redmine: #45496]
+	- 20151106@Patrick: Support RnG Game & rename field named DisableMicroGame to DisableMicroGameLC
+	- 20151209@Helen: Member information for Cockfighting [Redmine: #48133]
+	- 20160114@Helen: Cricket - [Redmine: #50027]
+	- 20160127@Billy: Member information for AllBet - [Redmine: #51591]
+	- 20160407@Winnie: VoidBridge - [Redmine: #55259 ]
+	- 20160801@Elodie: NG2 product - [Redmine: #60809]
+	- 20160815@Winnie: AllBet add more status for Bettype VIP Barcarat - [Redmine: #61733 ]
+	- 20161028@Winnie: Fishing world [Redmine's Ids: #65474]
+	- 20160801@Elodie: Implementing NewProductStatus Plugin - [Redmine #70722]	
+	- 20170417@Winnie: Change to call the sp Acc_CheckShowProduct- [Redmine #72336]	
+	- 20170517@Winnie: Apply color for closed accounts - [Redmine #74494]	
+	- 20170801@Elodie: Add Keno Lottery Product - [Redmine #74313]
+	- 20170612@Winnie: New agent cash balance - [Redmine:74291]
+	- 20170601@Elodie: Migrate Inspired VS to DCS structure, add BetRadar VS product [Redmine: #77274]
+	- 20170808@Elodie: Lucky3 Product - [Redmine: #75521]
+	- 20171001@Elodie: BullFighting Product - [Redmine: #81664]
+	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+	- 20190917@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+	- 20191206@Eden: Add Virtual Games [Redmine: #122743]
+	- 20201209@winfred: get Disable Keno for customer list smartphone [redmine: #137130]
+	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		
+Param's Explanation:
+� @system: = NAP : internal login from NAP
+			NAPEXT:internal login from NAP EXT
+� @CustID: customer id.   
+*/
+
 	SET NOCOUNT ON
 
 	----- 20150610@Kos -------------------
@@ -186,6 +186,7 @@ BEGIN
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
+		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_VG				INT
 
@@ -206,6 +207,7 @@ BEGIN
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 212 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1021)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
+	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
     SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 180 AND Bettype = 1201)
 	SET @bitmapOrder_VG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 245 AND Bettype = 4601)
     
@@ -214,6 +216,7 @@ BEGIN
 		,	@IsHidden_VoidBridge		INT = 1
 		,	@IsHidden_Lottery			INT = 1
 		,	@IsHidden_NG2				INT = 1 
+		,	@IsHidden_FishingWorld		INT = 1
 		,	@IsHidden_VS				INT = 1
 		,	@IsHidden_VG			INT = 1
 
@@ -222,6 +225,7 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 22, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 28, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @IsHide = @IsHidden_NG2 OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 24, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 38, @IsHide = @IsHidden_VG OUTPUT
 
@@ -297,6 +301,11 @@ BEGIN
 			-- For Lucky3
 			CAST (1 AS BIT) AS DisableLucky3,		
 			CAST (1 AS BIT) AS HideLucky3,
+
+			-- For FishingWorld
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld), 1) AS DisableFishingWorld,		
+			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL(dbo.f_GetProductStatus(cps.bitmapIsHidden, @bitmapOrder_FishingWorld), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
+			ISNULL(dbo.f_GetProductStatus(cps.bitmapHasSynced, @bitmapOrder_FishingWorld), 0) AS SyncedFishingWorld,
 
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
 			CAST (0 AS BIT) AS IsMyanmarOdds,
