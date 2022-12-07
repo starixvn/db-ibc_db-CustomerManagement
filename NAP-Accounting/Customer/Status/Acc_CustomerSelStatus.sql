@@ -98,7 +98,9 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20221123@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
+		- 20221207@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
 		- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
+
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT
@@ -495,8 +497,6 @@ BEGIN
 			@IsInternal AS IsInternal,
 
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,		
-			ISNULL(DisableColossusBet,1) as DisableColossusBet,
-			ISNULL(HideColossusBet,1) as HideColossusBet,
 			-- For MuayThai
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)),1) AS DisableMuayThai,
 			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
@@ -660,8 +660,6 @@ BEGIN
 			ci.recommend, 
 			ci.DoubleCommLosing,
 			
-			ci.DisableColossusBet,
-			ci.HideColossusBet,
 			cps.bitmapIsDisabled,
 			cps.bitmapIsHidden,
 			cps.bitmapHasSynced,
