@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto] 
-	@Code VARCHAR(5)
+	@Code VARCHAR(12)
 	, @MYR FLOAT
 	, @USD FLOAT
 	, @EUR FLOAT
@@ -30,6 +30,7 @@ DB: DBCUST.CustDB
 Original: Acc_ExchangeDailyIns
 Revisions:
 	- 20220908@Evan: Support crypto  [Redmine: #177481]  
+	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  
 */
 BEGIN
 
