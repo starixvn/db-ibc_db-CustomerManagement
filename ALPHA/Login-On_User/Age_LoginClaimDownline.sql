@@ -59,6 +59,7 @@ AS
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20220110@Eden: HotFix - Alpha login_After login success log of sub account is not shown if sub's password <> main's password [RedmineID: #181370]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -186,7 +187,8 @@ BEGIN
 		SELECT 
 			@SubUserName = username, 
 			@CustID = cs.custid,			 
-			@SubPageAccess = PageAccess
+			@SubPageAccess = PageAccess,
+			@db_userpwd = cs.userpwd
 		FROM custSub cs WITH (NOLOCK)
 			INNER JOIN CustLoginInfoSub cl WITH (NOLOCK) ON cs.custid = cl.CustID AND cs.subaccid = cl.SubAccID
 		WHERE cs.subaccid = @SubAccID AND (userpwd = @UserPwd OR cl.ProtectionCode = @UserPwd)
