@@ -125,6 +125,11 @@ BEGIN
 			AND ActionID = @ActionID 
 			AND CustID = @CustID
 	END
+	
+	SELECT *
+	INTO #VRLeagueGroup
+	FROM
+	OPENQUERY(DBACC,'SELECT * FROM bodb02.dbo.VRLeagueGroup lg (NOLOCK)') 
 
 	WHILE(1=1)
 	BEGIN
@@ -269,7 +274,8 @@ BEGIN
 		   AND d1.LogID = d2.LogID
 		 LEFT JOIN bodb02.dbo.Customer c WITH(NOLOCK)
 			ON c.custid = d1.UserID
-	ORDER BY D1.LogID DESC, d1.SortOrder
+		LEFT JOIN #VRLeagueGroup lg ON d1.LeagueGroup = lg.GroupName	
+	ORDER BY D1.LogID DESC, lg.LeagueGroupOrder, d1.SortOrder
 
 	DROP TABLE #VRCustLogAutoSuspend
 	DROP TABLE #VRLineCustID

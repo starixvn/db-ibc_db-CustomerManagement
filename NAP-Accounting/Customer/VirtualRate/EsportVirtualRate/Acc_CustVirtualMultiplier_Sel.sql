@@ -82,7 +82,7 @@ BEGIN
 	
 	CREATE TABLE #tempVR(SportType SMALLINT, LeagueGroupID INT, LeagueGroup nvarchar(400), BettypeGroupID SMALLINT, BettypeGroup NVARCHAR(400),BetTypeID SMALLINT,LevelID INT,
 					ValueIDLIVE TINYINT, ValueLIVE smallmoney, ValueIDNonLIVE TINYINT,ValueNonLIVE smallmoney,IsLiveAutoSuspend BIT,IsNonLiveAutoSuspend BIT,
-					ParentLevelID INT,LeagueGroupOrder SMALLINT,SortOrder INT,VRAutoSuspendThresholdNonLive INT,VRAutoSuspendThresholdLive INT,
+					ParentLevelID INT,LeagueGroupOrder SMALLINT,SortOrder INT,VRAutoSuspendThresholdNonLive smallmoney,VRAutoSuspendThresholdLive smallmoney,
 					IsOverrideASLive BIT,IsOverrideASNonLive BIT)
 					
 	SELECT @AutoSuspendLive = AutoSuspendLive, 
