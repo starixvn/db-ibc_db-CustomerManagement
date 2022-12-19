@@ -10,7 +10,7 @@ AS
 	DB: DBLOG/bodb_CustomerLog
 	Revisions:
 		- 20200305@Eden : First commit [Redmind: #128749]
-
+		- 20221219@Johnson: sort by LeagueGroupOrder [Redmine:#177594]
 	Parameter:
 	Example :
 		EXEC Acc_VR_ViewLog_AutoSuspendThreshold
@@ -239,7 +239,12 @@ BEGIN
 		EXEC sp_xml_removedocument @LogDocHandler1
 		EXEC sp_xml_removedocument @LogDocHandler2
 	END
-
+	
+	SELECT *
+	INTO #VRLeagueGroup
+	FROM
+	OPENQUERY(DBACC,'SELECT * FROM bodb02.dbo.VRLeagueGroup lg (NOLOCK)') 
+	
 	SELECT d1.LogID, 
 		   d1.Logtime,
 		   d1.LevelID,
@@ -261,9 +266,11 @@ BEGIN
 		   AND d1.LogID = d2.LogID
 		INNER JOIN bodb02.dbo.Customer c WITH(NOLOCK)
 			ON d1.UserID = c.custid
-	ORDER BY D1.LogID DESC, d1.SortOrder
+		LEFT JOIN #VRLeagueGroup lg WITH(NOLOCK) ON d1.VRLeagueGroupID = lg.GroupID	
+	ORDER BY D1.LogID DESC, lg.LeagueGroupOrder, d1.SortOrder
 
 	DROP TABLE #VRCustLogAutoSuspendThreshold
 	DROP TABLE #DataOld
 	DROP TABLE #DataNew	
+	DROP TABLE #VRLeagueGroup
 END

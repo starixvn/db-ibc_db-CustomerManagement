@@ -14,6 +14,7 @@ AS
 	Revisions:    
 		- 20190722@Dominic : First commit
 		- 20220422@Eden: SQL Server Upgrade to 2019 Phase 5 [Redmine: #171831]
+		- 20221219@Johnson: sort by LeagueGroupOrder [Redmine:#177594]
   
 */ 
 BEGIN
@@ -135,6 +136,7 @@ BEGIN
 			, lg.GroupName VRLeagueGroupName
 			, h.SportType
 			, SortOrder
+			, LeagueGroupOrder
 		FROM VRSettingHierarchy h (NOLOCK)
 		LEFT JOIN VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
@@ -185,6 +187,6 @@ BEGIN
 		LEFT JOIN Customer cl (NOLOCK) ON cl.custid = vrl.FollowingCustID
 		LEFT JOIN Customer cnl (NOLOCK) ON cnl.custid = vrnl.FollowingCustID
 	WHERE h.SportType = @SportType 
-	ORDER BY h.SortOrder
+	ORDER BY h.LeagueGroupOrder, h.SortOrder
 
 END

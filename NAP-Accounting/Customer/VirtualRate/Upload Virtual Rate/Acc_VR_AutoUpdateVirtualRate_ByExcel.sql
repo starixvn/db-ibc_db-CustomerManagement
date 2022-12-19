@@ -98,8 +98,8 @@ BEGIN
 		SELECT CustID,LevelID,ValueIDLive,ValueIDNonLive FROM #TMP1 
 		UNION ALL
 		SELECT vr.CustID,vr.LevelID,
-			CASE WHEN @sporttype = 43 THEN 0 ELSE vr.ValueIDLive END,
-			CASE WHEN @sporttype = 43 THEN 0 ELSE vr.ValueIDNonLive END
+			CASE WHEN @sporttype = 43 AND VRLeagueGroupID <> 5 THEN 0 ELSE vr.ValueIDLive END,--other games for esport dont need to follow parent
+			CASE WHEN @sporttype = 43 AND VRLeagueGroupID <> 5 THEN 0 ELSE vr.ValueIDNonLive END
 		FROM VRCustSetting vr WITH(NOLOCK)
 			INNER JOIN VRSettingHierarchy h ON h.LevelID = vr.LevelID AND h.SportType = @SportType
 		WHERE EXISTS (SELECT 1 FROM  #TMP1 t WHERE t.CustID = vr.CustID)
