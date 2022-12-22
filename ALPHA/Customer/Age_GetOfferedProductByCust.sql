@@ -25,6 +25,7 @@ AS
 		- 20220922@Tacy: Add SEAL Entertainment [RedmineID: #176209]
 		- 20220922@Tacy: Add Microgaming [RedmineID: #175853]
 		- 20221102@Winfred: Get PP, SG, Arcadia Gaming in Macau Games Product Status [RedmineID: #180032] 
+		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -163,30 +164,29 @@ BEGIN
 		UNION ALL
 		SELECT 3, 0 --NumberGame always offer for all customer
 		UNION ALL
-		SELECT 34, CASE WHEN  isHidden = 0 THEN  @ArcadiaGamingDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Arcadia Gaming
+		SELECT 34, CASE WHEN  isHidden = 0 THEN  @ArcadiaGamingDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Arcadia Gaming
 		UNION ALL
-		SELECT 36, CASE WHEN  isHidden = 0 THEN  @SGDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22 -- SG
+		SELECT 36, CASE WHEN  isHidden = 0 THEN  @SGDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18 -- SG
 		UNION ALL
-		SELECT 32, CASE WHEN  isHidden = 0 THEN  @PPDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- PP
+		SELECT 32, CASE WHEN  isHidden = 0 THEN  @PPDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- PP
 		UNION ALL
-		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END 
-		FROM #OfferProduct WHERE ProductID = 22 -- PGSofft
+		SELECT 55, CASE WHEN  isHidden = 0 THEN  @PGDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18 -- PGSofft
 		UNION ALL
-		SELECT 56, CASE WHEN  isHidden = 0 THEN  @JokerDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Joker
+		SELECT 56, CASE WHEN  isHidden = 0 THEN  @JokerDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Joker
 		UNION ALL
-		SELECT 60, CASE WHEN  isHidden = 0 THEN  @MaxGameDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Max Game
+		SELECT 60, CASE WHEN  isHidden = 0 THEN  @MaxGameDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Max Game
 		UNION ALL
-		SELECT 61, CASE WHEN  isHidden = 0 THEN  @HabaneroDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 22	-- Habanero
+		SELECT 61, CASE WHEN  isHidden = 0 THEN  @HabaneroDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Habanero
 		UNION ALL
-		SELECT 62, CASE WHEN  isHidden = 0 THEN  @CGDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- Creative Gaming
+		SELECT 62, CASE WHEN  isHidden = 0 THEN  @CGDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Creative Gaming
 		UNION ALL
-		SELECT 67, CASE WHEN  isHidden = 0 THEN  @AdvantPlayDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- AdvantPlay	
+		SELECT 67, CASE WHEN  isHidden = 0 THEN  @AdvantPlayDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- AdvantPlay	
 		UNION ALL
-		SELECT 68, CASE WHEN  isHidden = 0 THEN  @AdvantPlayMiniDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- AdvantPlay Mini	
+		SELECT 68, CASE WHEN  isHidden = 0 THEN  @AdvantPlayMiniDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- AdvantPlay Mini	
 		UNION ALL
-		SELECT 72, CASE WHEN  isHidden = 0 THEN  @SEALDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- SEAL	
+		SELECT 72, CASE WHEN  isHidden = 0 THEN  @SEALDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- SEAL	
 		UNION ALL
-		SELECT 73, CASE WHEN  isHidden = 0 THEN  @MicrogamingDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 22	-- Microgaming	
+		SELECT 73, CASE WHEN  isHidden = 0 THEN  @MicrogamingDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Microgaming	
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0

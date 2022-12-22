@@ -19,7 +19,7 @@ AS
 		- 20190726@Eden: Exclude Poker Games, Bullfighting,Colosus Bet, Lucky 3 [Redmine: #117439]
 		- 20191101@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
-		- 20221026@Elodie: Hide setting in case of SettingStatus = 2 [Redmine: #179335]
+		- 20221006@Winfred: Don't show setting of products which are not offered to a credit site [Redmine: #174744] 
 */
 
 SET NOCOUNT ON
@@ -39,7 +39,11 @@ BEGIN CATCH
 END CATCH
 ----- 20150610@Kos -------------------
 
-SELECT DISTINCT t.sporttype, s.sportname 
+INSERT INTO @tmp_Sports (SportType, SportName)
+SELECT 9906 AS sporttype , N'RNG Slot' AS SportName
+WHERE NOT EXISTS( SELECT TOP 1 1 FROM @tmp_Sports WHERE sporttype = 9906)
+
+SELECT DISTINCT t.sporttype, s.sportname
 FROM 
 	(	SELECT cs.custid, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 		UNION 

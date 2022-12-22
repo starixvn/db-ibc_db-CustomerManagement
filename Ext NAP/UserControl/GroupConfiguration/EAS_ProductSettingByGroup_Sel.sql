@@ -12,6 +12,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
+		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -29,7 +30,7 @@ BEGIN
 		)
 
 	INSERT INTO @products(ProductId)
-	SELECT DISTINCT c.ProductId
+	SELECT DISTINCT CASE WHEN c.ProductId = 22 THEN 18 ELSE c.ProductId END AS ProductId
 	FROM #tmpProducts p
 		INNER JOIN dbo.eaGroupConfiguration c WITH (NOLOCK) ON p.ProductId = c.ProductId
 	WHERE (c.GroupId = @groupId OR @groupId IS NULL)

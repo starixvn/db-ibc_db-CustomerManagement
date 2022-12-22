@@ -28,7 +28,7 @@ BEGIN
 
 	*/
 	SET NOCOUNT ON;
-	DECLARE @SiteID int  ,@productID int = 22,@bitmapIsHidden	tinyint	= 1
+	DECLARE @SiteID int  ,@productID int = 18,@bitmapIsHidden	tinyint	= 1
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	-- check Product macau game	status

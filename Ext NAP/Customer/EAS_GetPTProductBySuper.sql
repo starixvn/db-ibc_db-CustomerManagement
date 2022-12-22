@@ -26,6 +26,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220912@Tacy: Add SEAL Entertainment [RedmineID: #176209]
 		- 20220919@Tacy: Add Microgaming [RedmineID: #175853]
+		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -48,9 +49,9 @@ BEGIN
 	CREATE TABLE #Supers (CustID INT) 
 
 	INSERT INTO #Supers(CustID)
-	SELECT val
-	FROM dbo.f_SplitString(@Supers, ',') AS ss
-	WHERE ISNULL(val,'') <> ''
+	SELECT DISTINCT value
+	FROM STRING_SPLIT(@Supers, ',') AS ss
+	WHERE value <> ''
 	OPTION (maxrecursion 0)    
 
 	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
@@ -79,7 +80,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #ProductSettingDetail b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,22,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -110,13 +111,11 @@ BEGIN
 		 WHEN c.SportType = 174 THEN  68
 		 WHEN c.SportType = 156 THEN  72
 		 WHEN c.SportType = 155 THEN  73
+		 WHEN c.SportType = 212 THEN  22
 		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
-	INNER JOIN #tblCustomer b ON  b.ProductID = 22 and b.SportType = 212 and ss.CustID = b.CustID
-	INNER JOIN ProductSettingDetail c WITH(NOLOCK)	
-		ON  c.SettingType = 8
-		AND c.ProductID = b.ProductID 
-		AND c.SportType <> 212
+	INNER JOIN #tblCustomer b ON  b.ProductID = 18 and b.SportType = 9906 and ss.CustID = b.CustID
+	INNER JOIN ProductSettingDetail c WITH(NOLOCK) ON  c.SettingType = 8 AND c.ProductID = b.ProductID 
 	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
 
 	-- Non DCS Setting
