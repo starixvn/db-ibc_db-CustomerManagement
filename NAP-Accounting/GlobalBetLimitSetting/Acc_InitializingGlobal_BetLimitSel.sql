@@ -20,6 +20,7 @@ AS
 			- 20220210@Winfred: NAP - Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
 			- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
+			- 22021227@Tacy: Add sabasport - 9901, 9902 [Redmine: #174509] 
 		
 		Param's Explanation:
 			@ProductID				0 : All, <> 0 : ProductID
@@ -205,7 +206,7 @@ BEGIN
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, 0 AS ExchangeIdCredit, pbs.Currency
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
-			, CASE WHEN (A.SportType IN (1, 2, 3, 5, 8, 10, 11, 99,		--SB
+			, CASE WHEN (A.SportType IN (1, 2, 3, 5, 8, 10, 11, 99,	9001, 9002,	--SB
 										 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 						(A.SportType BETWEEN 180 AND 186)	OR	
 						(A.SportType BETWEEN 213 AND 215)	OR	

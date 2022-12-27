@@ -19,6 +19,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
+		- 22021227@Tacy: Add sabasport - 9901, 9902 [Redmine: #174509] 
 
 	Param's Explanation:
 		• @pInputData : 
@@ -552,7 +553,7 @@ BEGIN
 			--update new settings if exists row:
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-				MaxPerMatch=CASE WHEN (t.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, --SportsBook
+				MaxPerMatch=CASE WHEN (t.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902, --SportsBook
 													   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR -- Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
 						 				(t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
 										(t.SportType BETWEEN 213 AND 215)	OR	--NG2
@@ -575,7 +576,8 @@ BEGIN
 			--Insert new settings:
 			INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
-					CASE WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
+					CASE WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
+											 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
 						 		(SportType BETWEEN 180 AND 186)	OR	
 								(SportType BETWEEN 213 AND 215)	OR	
 								(SportType BETWEEN 190 AND 197))		
