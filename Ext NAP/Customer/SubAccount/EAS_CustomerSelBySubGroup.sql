@@ -18,7 +18,7 @@ AS
 		- 20201222@Johnson: Exclude disabled accounts [redmine:#147578]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-
+		- 20221227@Johnson: Adjust search suggestion of subgroup [redmine: #182045]
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -55,7 +55,7 @@ BEGIN
 	WHERE c.GroupName = @GroupName
 		AND ci.roleid = 4
 		AND ci.enabled = 1
-		AND ci.username LIKE '%'+@username+'%'
+		AND ci.username LIKE @username+'%'
 	
 	SELECT @TotalRows = @@ROWCOUNT
 	
