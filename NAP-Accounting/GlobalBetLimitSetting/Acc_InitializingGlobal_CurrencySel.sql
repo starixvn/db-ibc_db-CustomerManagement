@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_InitializingStake_CurrencySel] 
+CREATE PROCEDURE [dbo].[Acc_InitializingGlobal_CurrencySel] 
 	-- Add the parameters for the stored procedure here
 	  @Mode	tinyint = 0	 -- 0: All, 1 : Credit, 2 :Deposit
 AS

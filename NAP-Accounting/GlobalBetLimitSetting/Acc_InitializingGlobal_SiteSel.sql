@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_InitializingStake_SiteSel] 
+ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_SiteSel] 
 	-- Add the parameters for the stored procedure here
 	  @pMutilSite	VARCHAR(Max) = ''
 AS
@@ -20,7 +20,7 @@ BEGIN
 	SELECT 
 		 siteid, site
 	FROM Site  WITH(NOLOCK)
-	WHERE IsActive = 1 AND (@pMutilSite = '0' OR siteid IN (SELECT val FROM dbo.strSplit(@pMutilSite, ',')))
+	WHERE IsActive = 1 AND (@pMutilSite = '0' OR siteid IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSite, ',')))
 	ORDER BY siteid, site
 END
 GO
