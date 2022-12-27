@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_LoginAdmin]
 	@UserName varchar(50) OUTPUT,
 	@UserPwd varchar(50),
@@ -44,16 +44,17 @@ Revisions:
 	- 20150630@Kathy: Remove linked server DBTXNIP
 	- 20160105@Lukas: remove IP '202.78.231.x' in blocking section
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
-	
+	- 20221104@Tacy: NAP - Set Expired Time For Permission [RedmineID: #179323]
 Param's Explanation:
 */
 BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @Begin		DATETIME
-	DECLARE @End		DATETIME
-	DECLARE @Duration	INT
+	DECLARE @Begin			DATETIME
+	DECLARE @End			DATETIME
+	DECLARE @Duration		INT
+	DECLARE @ExpiredDate	DATETIME
 
 	SET @Begin = GETDATE()
 
@@ -166,13 +167,17 @@ BEGIN
 	--ELSE 
 	--	SET @System = 'ACCOUNTING'
 
-
 	IF (@ErrMsg = '') AND (@LogData = '')
 	BEGIN
 		SELECT @closed = closed FROM dbo.custinfo with (nolock) WHERE custid = @CustID
+		SELECT @ExpiredDate=ExpiredDate FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid = @CustID
 
 		IF @closed = 1
-			SELECT  @ErrMsg = 'Your A/C was Closed, Please contact your supervisor.',
+			SELECT  @ErrMsg = 'Your Account was Closed, Please contact your supervisor.',
+				@ErrCode = 104,
+				@LogData = 'Admin:' + @username + ' Logged in to ACCOUNT SITE' + ' - ' + 'Result:Failed(A/C_Closed) From:' + @From	
+		ELSE IF @ExpiredDate<GETDATE() AND @ExpiredDate IS NOT NULL
+			SELECT  @ErrMsg = 'Your Account was Expired, Please contact your supervisor.',
 				@ErrCode = 104,
 				@LogData = 'Admin:' + @username + ' Logged in to ACCOUNT SITE' + ' - ' + 'Result:Failed(A/C_Closed) From:' + @From	
 		ELSE
@@ -222,9 +227,5 @@ BEGIN
 				 @Duration = @Duration
 		END CATCH				 
 	END
-
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_LoginAdmin] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_LoginAdmin] TO [vnteam] AS [dbo]

@@ -1,37 +1,51 @@
-﻿ALTER PROCEDURE [dbo].[Acc_ReCheckIn] 
-	@On_UserID int,
-	@IsKickedOut bit = 0 OUTPUT
+﻿/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet,bodbExtAccNet" viewers="VNTeam" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_ReCheckIn] 
+	@On_UserID	 int,
+	@IsKickedOut tinyint=0 OUTPUT
 AS
 /*
-Created: 20110912@Sophia
-Task :	- Accounting Re check in
-		- Move the content of Acc_ReCheckIn to Age_ReCheckIn
-		- And then move the content of Acc_On_UserUpd to Acc_ReCheckIn
-DB: DB03.ON_USER
-Original SP: Acc_On_UserUpd
+	Created: 20110912@Sophia
+	Task :	- Accounting Re check in
+			- Move the content of Acc_ReCheckIn to Age_ReCheckIn
+			- And then move the content of Acc_On_UserUpd to Acc_ReCheckIn
+	DB: DB03.ON_USER
+	Original SP: Acc_On_UserUpd
 
-Revisions:
-Param's Explanation:
-
+	Revisions:
+			- 20221118@Tacy: NAP - Set expired time for permission [RedmineID: #179323]
+	Param's Explanation:
+		@IsKickedOut = 0
+					 = 1 : "Another session has been logged in or your session is expired. Forced to logout!"
+					 = 2 : "Your Account was Expired, Please contact your supervisor"
 */
-SET NOCOUNT ON
-if exists (select 1 from on_user_admin with (NOLOCK) where On_UserID = @On_UserID and isKickedOut=1)
 BEGIN
-	Select @IsKickedOut=1
-END
-else
-BEGIN
-	Select @IsKickedOut = 0
-	update on_user_admin with (ROWLOCK, UPDLOCK) set reload_time = getdate() 
-	where on_userid = @On_UserID
+	SET NOCOUNT ON
+
+	DECLARE @Next_GetDate DATETIME, @CustID INT
 	
-	IF @@ROWCOUNT = 0
-		Select @IsKickedOut=1
+	SET @Next_GetDate = DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),1)
+
+	SELECT @CustID=custid
+	FROM on_user_admin WITH (NOLOCK) 
+	WHERE On_UserID = @On_UserID
+
+	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@Next_GetDate)
+	BEGIN
+		SELECT @IsKickedOut=2
+	END
+	ELSE IF EXISTS (SELECT 1 FROM on_user_admin WITH (NOLOCK) WHERE On_UserID = @On_UserID AND isKickedOut=1)
+	BEGIN
+		SELECT @IsKickedOut=1
+	END
+	ELSE
+	BEGIN
+		SELECT @IsKickedOut = 0
+
+		UPDATE on_user_admin WITH (ROWLOCK, UPDLOCK) SET reload_time = getdate() 
+		WHERE on_userid = @On_UserID
+	
+		IF @@ROWCOUNT = 0
+			SELECT @IsKickedOut=1
+	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_ReCheckIn] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_ReCheckIn] TO [bodbExtAccNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_ReCheckIn] TO [VNTeam]
-GO 

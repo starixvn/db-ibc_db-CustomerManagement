@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Acc_Con_AdminUpd]
 	@isABS BIT = 0,
 	@UserID INT, 
 	@GroupID INT, 
+	@ExpiredDate DATETIME = NULL,
 	@Language VARCHAR (2)='E', 
 	@ErrCode INT=0 OUTPUT, 
 	@ErrMsg NVARCHAR (200)='' OUTPUT, 
@@ -25,6 +26,7 @@ AS
 		- 20130118@Elodie: Change link server DB03 to DBPOLICY	
 						   Write more log on DBTXN server in case of DBLOG server failure					
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
+		- 20221104@Tacy: NAP - Set Expired Time For Permission + add param @ExpiredDate [RedmineID: #179323]
 		
 */
 BEGIN
@@ -34,6 +36,7 @@ BEGIN
 	@Begin AS DATETIME, 
 	@End AS DATETIME, 
 	@Duration AS INT;
+
 	SET @Begin = GETDATE();
 
 	IF @isABS = 1
@@ -47,13 +50,21 @@ BEGIN
 		RETURN;
 	--end
 
-	Declare @db_FirstName NVARCHAR (50), @db_LastName NVARCHAR (50), @db_GroupID int
-	select @db_GroupID = groupid from NAP_UserControl.dbo.accCustomer with (NOLOCK) where custid = @CustID
-	select @db_FirstName = firstname, @db_LastName = lastname from customer with (NOLOCK) where custid = @CustID
+	DECLARE @db_FirstName NVARCHAR (50), @db_LastName NVARCHAR (50), @db_GroupID INT, @db_ExpiredDate DATETIME
+	SELECT @db_GroupID = groupid, @db_ExpiredDate = ExpiredDate from NAP_UserControl.dbo.accCustomer with (NOLOCK) where custid = @CustID
+	SELECT @db_FirstName = firstname, @db_LastName = lastname from customer with (NOLOCK) where custid = @CustID
 
-	if(@db_GroupID <> @GroupID)
+	IF(@db_GroupID <> @GroupID OR ISNULL(@db_ExpiredDate,'') <> ISNULL(@ExpiredDate,''))
 	Begin
-		EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		IF @ExpiredDate IS NOT NULL
+		BEGIN
+			EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @ExpiredDate = @ExpiredDate, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		END
+		ELSE 
+		BEGIN
+			EXEC NAP_UserControl.dbo.Acc_Con_AdminGroupUpd @CustID = @CustID, @UserID = @UserID, @GroupID = @GroupID, @Language = @Language, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
+		END
+
 		IF @ErrCode <> 0
 			RETURN;
 	End
@@ -76,6 +87,8 @@ BEGIN
 														 '<New>' + ISNULL([dbo].[f_EncodeXMLValue](@FirstName),'')		+ '</New></FirstName>' +
 											  '<LastName><Old>'  + ISNULL([dbo].[f_EncodeXMLValue](@db_LastName),'')	+ '</Old>' +
 														'<New>'  + ISNULL([dbo].[f_EncodeXMLValue](@LastName),'')		+ '</New></LastName>' +
+											  '<ExpiredDate><Old>'  + ISNULL([dbo].[f_EncodeXMLValue](@db_ExpiredDate),'')	+ '</Old>' +
+														'<New>'  + ISNULL([dbo].[f_EncodeXMLValue](@ExpiredDate),'')		+ '</New></ExpiredDate>' +
 							'</Acc_Con_AdminUpd>'
 
 		SET @End = GETDATE();
@@ -95,6 +108,8 @@ BEGIN
 										   '<New>' + ISNULL([dbo].[f_EncodeXMLValue](@FirstName),'')    + '</New></FirstName>' +
 								'<LastName><Old>'  + ISNULL([dbo].[f_EncodeXMLValue](@db_LastName),'')	+ '</Old>' +
 										  '<New>'  + ISNULL([dbo].[f_EncodeXMLValue](@LastName),'')		+ '</New></LastName>' +
+								'<ExpiredDate><Old>'  + ISNULL([dbo].[f_EncodeXMLValue](@db_ExpiredDate),'')	+ '</Old>' +
+											'<New>'  + ISNULL([dbo].[f_EncodeXMLValue](@ExpiredDate),'')		+ '</New></ExpiredDate>' +
 							'</Acc_Con_AdminUpd>'
 			EXEC bodb_CustomerLog.[dbo].[WriteLog_UserLog_UserControl] 
 					@custID = @custid, 
@@ -106,8 +121,4 @@ BEGIN
 		END CATCH				
 	End
 END
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminUpd] TO [vnteam];
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminUpd] TO [bodbAdminNet];
 GO
