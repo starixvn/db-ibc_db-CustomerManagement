@@ -234,9 +234,9 @@ BEGIN
 						 WHEN SportType=161 AND NewMaxPerBall IS NULL					THEN 136
 						 WHEN typedesc='BuyBonus' AND NewMaxGameStake IS NULL			THEN 137
 
-						 WHEN SettingType IN (7,8,17,11) AND 
-							 (NewMaxPerMatch IS NOT NULL OR CurMaxPerMatch IS NOT NULL
-							OR NewMaxPerBall IS NOT NULL OR CurMaxPerBall IS NOT NULL)	THEN 138
+						 WHEN (SettingType IN (7,8,17,11) AND 
+							 (NewMaxPerMatch IS NOT NULL OR CurMaxPerMatch IS NOT NULL))
+							OR SportType<>161 AND (NewMaxPerBall IS NOT NULL OR CurMaxPerBall IS NOT NULL)	THEN 138
 						 WHEN ISNULL(typedesc,'')<>'BuyBonus' 
 							AND (NewMaxGameStake IS NOT NULL OR CurMaxGameStake IS NOT NULL)				THEN 139
 
@@ -272,7 +272,7 @@ BEGIN
 								OR (CurMaxPerMatch IS NOT NULL AND CurMaxPerBall IS NOT NULL))	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': You input redundant data with the product''s format. Please remove data on Max Per Match and Max Per Ball columns.'
 						  WHEN SettingType IN (7,8,17,11)
 							AND (NewMaxPerMatch IS NOT NULL	OR CurMaxPerMatch IS NOT NULL)		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': You input redundant data with the product''s format. Please remove data on Max Per Match column.'
-						  WHEN SettingType IN (7,8,17,11)  
+						  WHEN SportType<>161 
 							AND (NewMaxPerBall IS NOT NULL OR CurMaxPerBall IS NOT NULL)		THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': You input redundant data with the product''s format. Please remove data on Max Per Ball column.'
 						  WHEN ISNULL(typedesc,'')<>'BuyBonus' 
 							AND (NewMaxGameStake IS NOT NULL OR CurMaxGameStake IS NOT NULL)	THEN 'Row ' + CAST(RowID AS NVARCHAR(50))+ ': You input redundant data with the product''s format. Please remove data on Max Game Stake column.'
@@ -323,14 +323,16 @@ BEGIN
 			(NewMinBet=0 OR NewMaxBet=0 
 				OR (SettingType NOT IN (7,8,17,11) AND NewMaxPerMatch=0)))	
 		OR (SettingType IN (7,8,17,11)  
-			AND	(NewMaxPerMatch IS NOT NULL OR CurMaxPerMatch IS NOT NULL
-				OR NewMaxPerBall IS NOT NULL OR CurMaxPerBall IS NOT NULL))
+			AND	(NewMaxPerMatch IS NOT NULL OR CurMaxPerMatch IS NOT NULL))
+		OR (SportType<>161 AND (NewMaxPerBall IS NOT NULL OR CurMaxPerBall IS NOT NULL))
 		OR (typedesc='BuyBonus' AND NewMaxGameStake IS NULL)
 		OR (ISNULL(typedesc,'')<>'BuyBonus' AND (NewMaxGameStake IS NOT NULL OR CurMaxGameStake IS NOT NULL))
 	
 	IF @ErrCode<>0 RETURN
 	
 	-------------------------------------------------------------------------------------------------------------------------------------------------
+	
+	
 	SELECT TOP(1) @ErrCode=140, @RowError=CAST(tmp.RowID AS VARCHAR(200)) 
 	FROM #NewInputDateTbl tmp
 	WHERE tmp.SettingType NOT IN (8,7,17) AND GameGroupID IS NOT NULL
@@ -567,7 +569,7 @@ BEGIN
 	
 	SELECT TOP(1) @ErrCode=114, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.GameGroupID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SettingType IN (8,7,17) AND NOT EXISTS(SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
+	WHERE tmp.SettingType IN (8) AND NOT EXISTS(SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
 													 WHERE RefSportType= tmp.SportType AND RefBetType=OrgBetType AND GameGroupID=tmp.GameGroupID
 														AND ((tmp.IsCredit=1 AND IsDeposit=0) OR (tmp.IsCredit=0 AND IsDeposit=1)))
 	IF 	@ErrCode=114
