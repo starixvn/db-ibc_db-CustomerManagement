@@ -17,6 +17,7 @@ AS
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20221103@Johnson: Change data type of CustSettingAutoSuspend [Redmine: #179782]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -71,12 +72,12 @@ BEGIN
 	--1st Dataset: Cust/currency info
 	SELECT @CustID CustID,@Username Username, @Currency Currency,@ActualRate ActualRate, @UplineCustID UplineCustID, @UplineUsername UplineUsername , @RoleID AS RoleID
 
-	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	DECLARE @InitialBitMap_0 VARBINARY(30) = 0x000000000000000000000000000000000000000000000000000000000000
-	DECLARE @AutoSuspendLive    VARBINARY(30) = @InitialBitMap, 
-			@AutoSuspendNonLive VARBINARY(30) = @InitialBitMap,
-			@OverrideASLive		VARBINARY(30) = @InitialBitMap_0,
-			@OverrideASNonLive	VARBINARY(30) = @InitialBitMap_0
+	DECLARE @InitialBitMap VARBINARY(128) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @InitialBitMap_0 VARBINARY(128) = 0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+	DECLARE @AutoSuspendLive    VARBINARY(128) = @InitialBitMap, 
+			@AutoSuspendNonLive VARBINARY(128) = @InitialBitMap,
+			@OverrideASLive		VARBINARY(128) = @InitialBitMap_0,
+			@OverrideASNonLive	VARBINARY(128) = @InitialBitMap_0
 	
 	CREATE TABLE #tempVR(SportType SMALLINT, LeagueGroupID INT, LeagueGroup nvarchar(400), BettypeGroupID SMALLINT, BettypeGroup NVARCHAR(400),BetTypeID SMALLINT,LevelID INT,
 					ValueIDLIVE TINYINT, ValueLIVE smallmoney, ValueIDNonLIVE TINYINT,ValueNonLIVE smallmoney,IsLiveAutoSuspend BIT,IsNonLiveAutoSuspend BIT,
@@ -118,10 +119,10 @@ BEGIN
 				AND vr.LevelID = h.LevelID
 		LEFT JOIN VRValueMapping vlive WITH(NOLOCK) ON vr.ValueIDLIVE = vlive.ValueID
 		LEFT JOIN VRValueMapping vnonlive WITH(NOLOCK) ON vr.ValueIDNonLIVE = vnonlive.ValueID
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@OverrideASLive,h.BitmapOrderAutoSuspend) O_Live
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (@OverrideASNonLive,h.BitmapOrderAutoSuspend) O_NonLive
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (@AutoSuspendLive,h.BitmapOrderAutoSuspend) Live
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (@AutoSuspendNonLive,h.BitmapOrderAutoSuspend) NonLive
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (@OverrideASLive,h.BitmapOrderAutoSuspend) O_Live
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (@OverrideASNonLive,h.BitmapOrderAutoSuspend) O_NonLive
 	WHERE h.SportType = @SportType
 
 	CREATE CLUSTERED INDEX PK_tempVR_LevelID ON #tempVR(LevelID)

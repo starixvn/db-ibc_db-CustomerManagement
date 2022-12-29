@@ -18,6 +18,7 @@ AS
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20221103@Johnson: Change data type of CustSettingAutoSuspend [Redmine: #179782]
 	Param's Explanation:
 	• @AutoSuspendXML
 		<Root>
@@ -53,8 +54,8 @@ BEGIN
 	DECLARE @ActionID INT = 809
 	DECLARE @TrackingValue1 VARCHAR(MAX) = '' -- New values
 			,@TrackingValue2 VARCHAR(MAX)= '' -- Old values
-	DECLARE @InitialBitMap_0 VARBINARY(30) = 0x000000000000000000000000000000000000000000000000000000000000
-	DECLARE @InitialBitMap VARBINARY(30) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	DECLARE @InitialBitMap_0 VARBINARY(128) =  0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+	DECLARE @InitialBitMap VARBINARY(128) = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
 	SELECT @ErrCode = 0, @ErrMsg = ''
 	
@@ -125,10 +126,10 @@ BEGIN
 						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
 						WHERE custid = @CustID AND SportType = @SportType
 					) at
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
-		OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+		OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 
 	CREATE CLUSTERED INDEX PK_temp_LevelID ON #temp(LevelID)
 
@@ -236,10 +237,10 @@ BEGIN
 						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
 						WHERE custid = @CustID AND SportType = @SportType
 					) at
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 	FOR XML  RAW('r')
 	)
 
@@ -248,10 +249,10 @@ BEGIN
 	IF EXISTS ( SELECT TOP 1 1 FROM CustSettingAutoSuspend WITH(NOLOCK) WHERE CustID = @CustID AND SportType = @SportType)
 	BEGIN
 		UPDATE CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
-		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(AutoSuspendLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
-			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(AutoSuspendNonLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive))),
-			OverrideASLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(OverrideASLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive))),
-			OverrideASNonLive = (SELECT bitmap FROM dbo.f_GenerateProductStatus_multiple (ISNULL(OverrideASNonLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)))	
+		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(AutoSuspendLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
+			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(AutoSuspendNonLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive))),
+			OverrideASLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(OverrideASLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive))),
+			OverrideASNonLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(OverrideASNonLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)))	
 		WHERE CustID = @CustID AND SportType = @SportType
 	END
 	ELSE
@@ -263,10 +264,10 @@ BEGIN
 			,@SportType
 			,a3.bitmap
 			,a4.bitmap
-		FROM dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive)) a1
-			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)) a2
-			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive)) a3
-			,dbo.f_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)) a4
+		FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive)) a1
+			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)) a2
+			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive)) a3
+			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)) a4
 	END
 	
 	DELETE 
@@ -301,10 +302,10 @@ BEGIN
 						FROM dbo.CustSettingAutoSuspend WITH(NOLOCK) 
 						WHERE custid = @CustID AND SportType = @SportType
 					) at
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
-			OUTER APPLY dbo.f_CustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendLive,@InitialBitMap),h.BitmapOrderAutoSuspend) Live
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.AutoSuspendNonLive,@InitialBitMap),h.BitmapOrderAutoSuspend) NonLive
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_Live
+			OUTER APPLY dbo.f_VRCustSetting_ProductStatusSel (ISNULL(at.OverrideASNonLive,@InitialBitMap_0),h.BitmapOrderAutoSuspend) O_NonLive
 	FOR XML  RAW('r')
 	)
 

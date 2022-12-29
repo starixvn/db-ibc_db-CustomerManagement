@@ -1,0 +1,24 @@
+/*<info serverAlias="DBCust-CustDB,DBCTS-bodb02" selecters="" viewers="" isFunction="1"></info>*/
+ALTER FUNCTION	dbo.f_VRCustSetting_ProductStatusSel (
+					@bitmap			BINARY(128)
+				,	@bitmapOrder	SMALLINT
+				)  
+RETURNS TABLE
+AS
+/*
+	Created:	20221103@Johnson
+	DB:	DBCust/CustDB
+	Task: Get VR status
+	Orig: f_CustSetting_ProductStatusSel
+	
+	Revision:
+		- 20221103@Johnson : Initial SP [Redmine: #179782]
+
+	Param's Explanation:
+*/
+RETURN
+	SELECT	CAST(	CASE SUBSTRING(@bitmap, 1 + ((@bitmapOrder - 1) / 8), 1) & POWER(2, (@bitmapOrder - 1) % 8)
+						WHEN 0 THEN 0
+						ELSE 1
+					END AS BIT
+			) value
