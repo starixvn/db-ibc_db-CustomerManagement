@@ -9,11 +9,11 @@ AS
 	    
 	Revisions:    
 		- 20200305@Eden : First commit [Redmind: #128749]
+		- 20221214@Johnson: sort by LeagueGroupOrder for Esports [redmine:#177594]
   
 */ 
 BEGIN
-	DECLARE @CustID INT
-
+	
 	SELECT h.SportType 
 		,lg.GroupID LeagueGroupID
 		,lg.GroupName LeagueGroup
@@ -27,5 +27,5 @@ BEGIN
 		LEFT JOIN VRLeagueGroup lg WITH(NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN VRBettypeGroup bg WITH(NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
 	WHERE h.SportType = @SportType
-	ORDER BY h.SortOrder
+	ORDER BY lg.LeagueGroupOrder,h.SortOrder
 END

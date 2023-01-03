@@ -19,7 +19,7 @@ AS
 		- 20200207@Tiara: New VR structure for Soccer [Redmind: #126243]
 		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
 		- 20210624@Elodie: Aplly VRCustLog archive [Redmine: #157434]
-
+		- 20221215@Johnson: sort by LeagueGroupOrder [Redmine:#177594]
 	Parameter:
 	Mapping log columns:
 		, IsNew							AS C1
@@ -318,13 +318,15 @@ BEGIN
 			, VRBetTypeGroupName VARCHAR(200)--VRBetTypeGroupName
 			, VRLeagueGroupName VARCHAR(200)--VRLeagueGroupName
 			, SortOrder SMALLINT
+			, LeagueGroupOrder SMALLINT
 	)	
 
-		INSERT INTO #Hierarchy (LevelID, VRLeagueGroupID, VRBetTypeGroupID, BetType, VRBetTypeGroupName, VRLeagueGroupName, SortOrder)
+		INSERT INTO #Hierarchy (LevelID, VRLeagueGroupID, VRBetTypeGroupID, BetType, VRBetTypeGroupName, VRLeagueGroupName, SortOrder, LeagueGroupOrder)
 		SELECT h.LevelID,h.VRLeagueGroupID, h.VRBetTypeGroupID,CASE WHEN h.BetType = -1 THEN NULL ELSE h.BetType END BetType
 				, bg.GroupName VRBetTypeGroupName
 				, lg.GroupName VRLeagueGroupName
 				, SortOrder
+				, lg.LeagueGroupOrder
 		FROM (
 			SELECT DISTINCT VRLeagueGroupID, VRBetTypeGroupID, LevelID, CASE WHEN BetType = -1 THEN NULL ELSE BetType END BetType, SortOrder 
 			FROM #Data 
@@ -332,7 +334,7 @@ BEGIN
 		LEFT JOIN #VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN #VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
 
-		CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
+		CREATE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
 
 		SELECT m.LogID
 			, CASE WHEN m.custid = 0 THEN 'Global Setting' ELSE c.username END username
@@ -379,7 +381,7 @@ BEGIN
 			LEFT JOIN bodb02..Customer cnl (NOLOCK) ON cnl.custid = d.FollowingCustIDNonLive
 			INNER JOIN #Hierarchy hl (NOLOCK) ON hl.LevelID = d.FollowingLevelIDLive
 			INNER JOIN #Hierarchy hnl (NOLOCK) ON hnl.LevelID = d.FollowingLevelIDNonLive
-		ORDER BY m.LogID DESC, d.SortOrder, IsNew
+		ORDER BY m.LogID DESC, h.LeagueGroupOrder, d.SortOrder, IsNew
 	
 
 	DROP TABLE #VRCustLog

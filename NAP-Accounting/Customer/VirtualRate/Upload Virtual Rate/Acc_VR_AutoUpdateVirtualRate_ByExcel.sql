@@ -15,7 +15,7 @@ AS
 		- 20200310@Eden: Initial version [Redmine:#128749]
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-		
+		- 20221207@Johnson: update setting for sub-bettype for Esport is 'Follow parent' [redmine: #177594]
 	Param's Explanation:
 	
 */
@@ -83,7 +83,7 @@ BEGIN
 	SELECT ISNULL(a1.CustID,a2.CustID) AS CustID
 		,ISNULL(a1.LevelID,a2.LevelID) AS LevelID
 		,COALESCE(a1.ValueID,vr.ValueIDLIVE,0) AS ValueIDLive
-		,COALESCE(a2.ValueID,vr.ValueIDNonLIVE,0) AS ValueIDNonLive
+		,COALESCE(a2.ValueID,vr.ValueIDNonLIVE,0) AS ValueIDNonLive		
 	FROM VRlive a1
 		FULL OUTER JOIN VRNonlive a2
 			ON a1.CustID = a2.CustID
@@ -91,13 +91,15 @@ BEGIN
 	LEFT JOIN VRCustSetting vr WITH(NOLOCK)
 		ON vr.CustID = ISNULL(a1.CustID,a2.CustID)
 			AND vr.LevelID = ISNULL(a1.LevelID,a2.LevelID)
-
+		
 	CREATE CLUSTERED INDEX PK_Tmp1_LevelID ON #Tmp1(CustID,LevelID)
 
 	;WITH TMP AS(
 		SELECT CustID,LevelID,ValueIDLive,ValueIDNonLive FROM #TMP1 
 		UNION ALL
-		SELECT vr.CustID,vr.LevelID,vr.ValueIDLive,vr.ValueIDNonLive
+		SELECT vr.CustID,vr.LevelID,
+			CASE WHEN @sporttype = 43 AND VRLeagueGroupID <> 5 THEN 0 ELSE vr.ValueIDLive END,--other games for esport dont need to follow parent
+			CASE WHEN @sporttype = 43 AND VRLeagueGroupID <> 5 THEN 0 ELSE vr.ValueIDNonLive END
 		FROM VRCustSetting vr WITH(NOLOCK)
 			INNER JOIN VRSettingHierarchy h ON h.LevelID = vr.LevelID AND h.SportType = @SportType
 		WHERE EXISTS (SELECT 1 FROM  #TMP1 t WHERE t.CustID = vr.CustID)
