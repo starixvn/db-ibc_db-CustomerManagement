@@ -9,6 +9,7 @@ AS
 	Revisions:	
 		- 20220817@Eddie: Initialize Function [Redmine: #174852]
 		- 20220929@Eddie: Add 'My Watchlist' into option list [Redmine: #174852]
+		- 20230103@Eddie: Change name 'My Watchlist' to 'Watchlist & Thresholds' [Redmine: #179067]
 	Param's Explanation:
 		1   : 'Edit Setting'
 		2   : 'Add New Customer'
@@ -28,7 +29,7 @@ AS
 		213 : 'Last Bets'
 		214 : 'Group Bet List Drilldown'
 		215 : 'Group Bet List'
-		216 : 'My Watchlist'
+		216 : 'Watchlist & Thresholds'
 	Examples : 
 		SELECT * FROM [dbo].[f_CustReport_UM_ProductsSel](1)
 	*/
@@ -52,6 +53,6 @@ RETURN
 				WHEN @Functiontype = 213 THEN 'Last Bets'
 				WHEN @Functiontype = 214 THEN 'Group Bet List Drilldown'
 				WHEN @Functiontype = 215 THEN 'Group Bet List'
-				WHEN @Functiontype = 216 THEN 'My Watchlist'
+				WHEN @Functiontype = 216 THEN 'Watchlist & Thresholds'
 	END [FunctionTypeName]
 GO
