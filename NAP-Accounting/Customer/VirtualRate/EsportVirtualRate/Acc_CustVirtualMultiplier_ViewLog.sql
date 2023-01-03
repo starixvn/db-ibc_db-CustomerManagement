@@ -334,7 +334,7 @@ BEGIN
 		LEFT JOIN #VRLeagueGroup lg (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN #VRBettypeGroup bg (NOLOCK) ON h.VRBetTypeGroupID = bg.GroupID
 
-		CREATE UNIQUE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
+		CREATE CLUSTERED INDEX PK_LevelID ON #Hierarchy(LevelID)
 
 		SELECT m.LogID
 			, CASE WHEN m.custid = 0 THEN 'Global Setting' ELSE c.username END username
