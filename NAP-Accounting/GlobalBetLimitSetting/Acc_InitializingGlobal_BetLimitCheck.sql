@@ -421,17 +421,10 @@ BEGIN
 	SELECT TOP(1) @ErrCode=117, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.CurMinBet AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
-	WHERE tmp.SettingType IN (7, 17, 2, 9, 16, 20, 10, 11, 12) AND tmp.CurMinBet IS NULL
+	WHERE tmp.CurMinBet IS NULL
 		AND (	tmp.CurMaxBet IS NOT NULL
 			OR
-				(tmp.CurMaxPerMatch IS NOT NULL
-				AND
-				(SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-							   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-				(SportType BETWEEN 180 AND 186)	OR	
-				(SportType BETWEEN 213 AND 215)	OR	
-				(SportType BETWEEN 190 AND 197))
-				)
+				(tmp.CurMaxPerMatch IS NOT NULL AND SettingType NOT IN (7,8,17,11))
 			OR
 				(tmp.CurMaxPerBall IS NOT NULL AND SportType=161)
 			OR
@@ -447,17 +440,10 @@ BEGIN
 	SELECT TOP(1) @ErrCode=118, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.CurMaxBet AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
 		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
-	WHERE tmp.SettingType IN (7, 17, 2, 9, 16, 20, 10, 11, 12) AND tmp.CurMaxBet IS NULL
+	WHERE tmp.CurMaxBet IS NULL
 		AND (	tmp.CurMinBet IS NOT NULL
 			OR
-				(tmp.CurMaxPerMatch IS NOT NULL
-				AND
-				(SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-							   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-				(SportType BETWEEN 180 AND 186)	OR	
-				(SportType BETWEEN 213 AND 215)	OR	
-				(SportType BETWEEN 190 AND 197))
-				)
+				(tmp.CurMaxPerMatch IS NOT NULL AND SettingType NOT IN (7,8,17,11))
 			OR
 				(tmp.CurMaxPerBall IS NOT NULL AND SportType=161)
 			OR
@@ -473,13 +459,8 @@ BEGIN
 	--MAX PER MATCH
 	SELECT TOP(1) @ErrCode=119, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.CurMaxPerMatch AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SettingType IN (2, 9, 16, 20, 10, 11, 12) AND tmp.CurMaxPerMatch IS NULL
-		AND
-			(SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-						   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-			(SportType BETWEEN 180 AND 186)	OR	
-			(SportType BETWEEN 213 AND 215)	OR	
-			(SportType BETWEEN 190 AND 197))
+	WHERE tmp.SettingType NOT IN (7,8,17,11) 
+		AND tmp.CurMaxPerMatch IS NULL
 		AND (tmp.CurMinBet IS NOT NULL OR tmp.CurMaxBet IS NOT NULL)
 
 	IF 	@ErrCode=119			
@@ -517,11 +498,7 @@ BEGIN
 	SELECT TOP(1) @ErrCode=112, @ErrBetType=CAST(BetType AS VARCHAR(10))
 	, @ValueError=CASE	WHEN SettingType=8 AND b.typedesc='BuyBonus' 
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50)) + ' and Current Max Game Stake: ' + CAST(tmp.CurMaxGameStake AS VARCHAR(50))
-						WHEN NOT (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 
-											    161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-								 (SportType BETWEEN 180 AND 186)	OR	
-								 (SportType BETWEEN 213 AND 215)	OR	
-								 (SportType BETWEEN 190 AND 197))
+						WHEN SettingType IN (7,17,8,11)
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50))
 						WHEN SportType=161 
 							THEN CAST(tmp.CurMinBet AS VARCHAR(50)) + ' and Current Max Bet: ' + CAST(tmp.CurMaxBet AS VARCHAR(50)) + ' and Current Max Per Ball: ' + CAST(tmp.CurMaxPerBall AS VARCHAR(50)) + ' and Current Max Per Match: ' + CAST(tmp.CurMaxPerMatch AS VARCHAR(50))
@@ -554,11 +531,11 @@ BEGIN
 	OR	(IsCredit=1 AND tmp.SettingType=8
 					AND (NOT EXISTS (SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0)))))
+										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
 	OR  (IsCredit=0 AND tmp.SettingType=8 
 					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail WITH(NOLOCK) 
 									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0)))
+										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
 	)
 
 	IF 	@ErrCode=112			
@@ -581,11 +558,7 @@ BEGIN
 	SELECT TOP(1) @ErrCode=115, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10))
 				, @ValueError=CASE	WHEN SettingType=8 AND b.typedesc='BuyBonus'
 										THEN ': The New Min Bet, New Max Bet, New Max Game Stake are the same as The Current Min Bet, the Current Max Bet, and the Current Max Game Stake. Please input another value for the New values again.'
-									WHEN NOT (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-														    161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-											(SportType BETWEEN 180 AND 186)	OR	
-											(SportType BETWEEN 213 AND 215)	OR	
-											(SportType BETWEEN 190 AND 197))
+									WHEN SettingType IN (7,8,17,11)
 										THEN ': The New Min Bet, New Max Bet are the same as The Current Min Bet, and the Current Max Bet. Please input another value for the New values again.'
 									WHEN SportType=161 
 										THEN ': The New Min Bet, New Max Bet, New Max Per Match, New Max Per Ball are the same as The Current Min Bet, the Current Max Bet, the Current Max Per Match, and the Current Max Per Ball. Please input another value for the New values again.'
@@ -595,18 +568,9 @@ BEGIN
 	FROM #NewInputDateTbl tmp
 		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
 	WHERE (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet
-			AND NOT (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-								   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-					(SportType BETWEEN 180 AND 186)	OR	
-					(SportType BETWEEN 213 AND 215)	OR	
-					(SportType BETWEEN 190 AND 197))
+			AND SettingType IN (7,8,17,11)
 			AND NOT (SettingType=8 AND b.typedesc='BuyBonus'))
-	OR (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet AND CurMaxPerMatch=NewMaxPerMatch AND
-		(SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-					   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-		(SportType BETWEEN 180 AND 186)	OR	
-		(SportType BETWEEN 213 AND 215)	OR	
-		(SportType BETWEEN 190 AND 197)))
+	OR (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet AND CurMaxPerMatch=NewMaxPerMatch AND SettingType NOT IN (7,8,17,11))
 	OR (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet AND CurMaxPerMatch=NewMaxPerMatch AND tmp.CurMaxPerBall=NewMaxPerBall AND SportType=161)
 	OR (tmp.CurMinBet=NewMinBet AND CurMaxBet=NewMaxBet AND CurMaxGameStake=NewMaxGameStake AND SettingType=8 AND b.typedesc='BuyBonus')
 
@@ -648,6 +612,7 @@ BEGIN
 	
 	--RowDuplicate
 	INSERT INTO #RowDuplicate(RowIDF, RowIDT)
+	--MinBet, MaxBet
 	SELECT DISTINCT tmp.RowID , ndt.RowID
 	FROM #NewInputDateTbl tmp
 	LEFT JOIN #Bettype b ON b.typeid=tmp.BetType 
@@ -655,22 +620,8 @@ BEGIN
 				AND tmp.ExchangeId = ndt.ExchangeId AND tmp.GameGroupID = ndt.GameGroupID AND tmp.IsCredit = ndt.IsCredit
 				AND ISNULL(tmp.CurMinBet,0) = ISNULL(ndt.CurMinBet,0) AND ISNULL(tmp.CurMaxBet,0)=ISNULL(ndt.CurMaxBet,0) 
 				AND tmp.NewMaxBet = ndt.NewMaxBet AND tmp.NewMinBet = ndt.NewMinBet  
-				AND ((tmp.SettingType=8 AND ISNULL(b.typedesc,'') <> 'BuyBonus') OR (tmp.SettingType = 7 AND tmp.SiteID = ndt.SiteID))
-	WHERE tmp.RowID < ndt.RowID 
-	UNION --MinBet, MaxBet
-	SELECT DISTINCT tmp.RowID, ndt.RowID
-	FROM #NewInputDateTbl tmp
-	INNER JOIN #NewInputDateTbl ndt ON tmp.SportType=ndt.SportType AND tmp.BetType=ndt.BetType 
-				AND tmp.ExchangeId=ndt.ExchangeId AND tmp.IsCredit=ndt.IsCredit
-				AND ISNULL(tmp.CurMinBet,0)=ISNULL(ndt.CurMinBet,0) AND ISNULL(tmp.CurMaxBet,0)=ISNULL(ndt.CurMaxBet,0)
-				AND tmp.NewMaxBet=ndt.NewMaxBet AND tmp.NewMinBet=ndt.NewMinBet  
-				AND tmp.SettingType IN (2, 9, 16, 20, 10, 11, 12)
-				AND NOT (tmp.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-										   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-						(tmp.SportType BETWEEN 180 AND 186)	OR	
-						(tmp.SportType BETWEEN 213 AND 215)	OR	
-						(tmp.SportType BETWEEN 190 AND 197))
-	WHERE tmp.RowID < ndt.RowID		
+				AND ((tmp.SettingType=8 AND ISNULL(b.typedesc,'') <> 'BuyBonus') OR (tmp.SettingType = 7 AND tmp.SiteID = ndt.SiteID) OR (tmp.SettingType=11))
+	WHERE tmp.RowID < ndt.RowID 	
 	UNION --MinBet, MaxBet, MaxGameStake
 	SELECT DISTINCT tmp.RowID, ndt.RowID
 	FROM #NewInputDateTbl tmp
@@ -688,12 +639,7 @@ BEGIN
 				AND tmp.ExchangeId=ndt.ExchangeId AND tmp.IsCredit=ndt.IsCredit
 				AND ISNULL(tmp.CurMinBet,0)=ISNULL(ndt.CurMinBet,0) AND ISNULL(tmp.CurMaxBet,0)=ISNULL(ndt.CurMaxBet,0) AND ISNULL(tmp.CurMaxPerMatch,0)=ISNULL(ndt.CurMaxPerMatch,0)
 				AND tmp.NewMaxBet=ndt.NewMaxBet AND tmp.NewMinBet=ndt.NewMinBet AND tmp.NewMaxPerMatch=ndt.NewMaxPerMatch
-				AND tmp.SettingType IN (2, 9, 16, 20, 10, 11, 12)
-				AND (tmp.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 9901, 9902,
-									   164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-					(tmp.SportType BETWEEN 180 AND 186)	OR	
-					(tmp.SportType BETWEEN 213 AND 215)	OR	
-					(tmp.SportType BETWEEN 190 AND 197))
+				AND tmp.SettingType NOT IN (7,8,17,11)
 	WHERE tmp.RowID < ndt.RowID										
 	UNION --MinBet, MaxBet, MaxPerMatch, MaxPerBall
 	SELECT DISTINCT tmp.RowID, ndt.RowID
@@ -719,41 +665,38 @@ BEGIN
 	FROM 
 	(	SELECT RowID 
 		FROM #NewInputDateTbl a
-		WHERE a.IsCredit= 1 AND SettingType IN (2, 7, 9, 16, 17, 20, 8) 
-		AND (EXISTS (SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
-					 WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
-						 AND (a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake)
-						 AND A.GameGroupID=0)
-			OR EXISTS (SELECT TOP 1 1 
-						FROM StakeLevelGroupDetail tmp WITH(NOLOCK) 
-							INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
-						WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
-						 AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
-			OR EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK)
-						WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
-							AND (MinBet=NewMinBet AND MaxBet=NewMaxBet AND MaxPerMatch=NewMaxPerMatch))
+		WHERE a.IsCredit= 1 
+			AND (EXISTS (SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
+						 WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
+							 AND (a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake)
+							 AND A.GameGroupID=0)
+				OR EXISTS (SELECT TOP 1 1 
+							FROM StakeLevelGroupDetail tmp WITH(NOLOCK) 
+								INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
+							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
+							 AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
+				OR EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK)
+							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
+								AND (MinBet=NewMinBet AND MaxBet=NewMaxBet AND MaxPerMatch=NewMaxPerMatch))
 			)
 		UNION ALL
 		SELECT RowID 
 		FROM #NewInputDateTbl a
-		WHERE a.IsCredit= 0 AND SettingType IN (7, 2, 10, 11, 12, 8) 
-				 AND ( EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
-								 WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
-								 AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND tmp.SiteID=a.SiteID
-								 AND A.GameGroupID=0)
-						OR EXISTS (SELECT TOP 1 1 
-									FROM Dep_StakeLevelGroupDetail tmp WITH(NOLOCK) 
-									INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
-									WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
-									 AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
-						OR EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
-									WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
-										AND ((MinBet=NewMinBet AND MaxBet=NewMaxBet
-												AND SettingType=11)
-											OR (MinBet=NewMinBet AND MaxBet=NewMaxBet AND MaxPerMatch=NewMaxPerMatch AND Sporttype<>161)
-											OR (MinBet=NewMinBet AND MaxBet=NewMaxBet AND MaxPerMatch=NewMaxPerMatch AND MaxPerBall=NewMaxPerBall AND Sporttype=161)
-									))
-					)
+		WHERE a.IsCredit= 0  
+			AND ( EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
+							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
+							AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND tmp.SiteID=a.SiteID
+							AND A.GameGroupID=0)
+				OR EXISTS (SELECT TOP 1 1 
+							FROM Dep_StakeLevelGroupDetail tmp WITH(NOLOCK) 
+							INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
+							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
+								AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
+				OR EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
+							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
+								AND (MinBet=NewMinBet AND MaxBet=NewMaxBet AND ISNULL(MaxPerMatch,0)=ISNULL(NewMaxPerMatch,0) AND ISNULL(MaxPerBall,0)=ISNULL(MaxPerBall,0)
+							))
+			)
 	) KQ
 	
 	IF 	@ErrCode=123			
