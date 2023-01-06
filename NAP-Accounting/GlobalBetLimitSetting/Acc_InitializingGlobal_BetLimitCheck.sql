@@ -552,13 +552,13 @@ BEGIN
 											AND ISNULL(pbs.MaxPerMatch,0)=ISNULL(tmp.CurMaxPerMatch,0) 
 											AND ISNULL(pbs.MaxPerBall,0)=ISNULL(tmp.CurMaxPerBall,0)))))
 	OR	(IsCredit=1 AND tmp.SettingType=8
-					AND (NOT EXISTS	(SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND b.typedesc='BuyBonus' 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND MaxGameStake=CurMaxGameStake)))
+					AND (NOT EXISTS (SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH(NOLOCK) 
+									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
+										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0)))))
 	OR  (IsCredit=0 AND tmp.SettingType=8 
 					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND b.typedesc='BuyBonus' 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND MaxGameStake=CurMaxGameStake)))
+									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
+										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0)))
 	)
 
 	IF 	@ErrCode=112			
