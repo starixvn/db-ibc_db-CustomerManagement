@@ -19,7 +19,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
-
+		- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -188,8 +188,8 @@ BEGIN
 		SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType	
 		FROM  #NewInputDateTbl a
 			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
-															AND ( psd.SettingType IN (2,8,9,16,20) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
-		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17,20) AND ProductID NOT IN (1,3,8)
+															AND ( psd.SettingType IN (2,8,9,16) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
+		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17) AND ProductID NOT IN (1,3,8)
 			AND psd.SettingStatus<>2
 			
 		UPDATE a	--DEPOSIT 
@@ -509,11 +509,7 @@ BEGIN
 			--update new settings if exists row:
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-				MaxPerMatch=CASE WHEN (t.SportType IN (199, 220, 222, 169, 175, 217, 218) OR -- Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
-						 				(t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
-										(t.SportType BETWEEN 213 AND 215)	OR	--NG2
-										(t.SportType BETWEEN 190 AND 197))	--Virtual Sports 2 (Betradar) 
-									THEN NewMaxPerMatch ELSE MaxPerMatch END
+				MaxPerMatch=CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch ELSE MaxPerMatch END
 			FROM ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 				INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
 											AND t.BetType=pbs.Bettype
@@ -531,11 +527,7 @@ BEGIN
 			--Insert new settings:
 			INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch])
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, 0, NewMaxBet,
-					CASE WHEN (SportType IN (199, 220, 222, 169, 175, 217, 218) OR
-						 		(SportType BETWEEN 180 AND 186)	OR	
-								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))		
-							THEN NewMaxPerMatch END NewMaxPerMatch
+					CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch END NewMaxPerMatch
 			FROM #NewInputDateTbl
 			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=1
 		END TRY
@@ -552,12 +544,7 @@ BEGIN
 			--update new settings if exists row:
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-				MaxPerMatch=CASE WHEN (t.SportType IN (1, 2, 3, 5, 8, 10, 11, 99, --SportsBook
-													   161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR -- Number Game, Happy 5, RNG Keno, Virtual Sports 2, Lottery, Table Game, Sports Lottery, Bitcoin, NG2
-						 				(t.SportType BETWEEN 180 AND 186)	OR	--Virtual Sports (Inspired)
-										(t.SportType BETWEEN 213 AND 215)	OR	--NG2
-										(t.SportType BETWEEN 190 AND 197))	--Virtual Sports 2 (Betradar) 
-									THEN NewMaxPerMatch ELSE MaxPerMatch END,
+				MaxPerMatch=CASE WHEN SettingType NOT IN (7,8,17,11) THEN NewMaxPerMatch ELSE MaxPerMatch END,
 				MaxPerBall=CASE WHEN t.SportType=161 THEN NewMaxPerBall ELSE MaxPerBall END
 			FROM Dep_ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 				INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
@@ -575,11 +562,7 @@ BEGIN
 			--Insert new settings:
 			INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
-					CASE WHEN (SportType IN (1, 2, 3, 5, 8, 10, 11, 99, 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-						 		(SportType BETWEEN 180 AND 186)	OR	
-								(SportType BETWEEN 213 AND 215)	OR	
-								(SportType BETWEEN 190 AND 197))		
-											THEN NewMaxPerMatch END NewMaxPerMatch, 
+					CASE WHEN SettingType NOT IN (7,8,17,11) THEN NewMaxPerMatch END NewMaxPerMatch, 
 					CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall
 			FROM #NewInputDateTbl
 			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=0

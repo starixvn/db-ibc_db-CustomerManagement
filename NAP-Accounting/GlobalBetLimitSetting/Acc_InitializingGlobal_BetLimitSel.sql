@@ -20,6 +20,7 @@ AS
 			- 20220210@Winfred: NAP - Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
 			- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
+			- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 		
 		Param's Explanation:
 			@ProductID				0 : All, <> 0 : ProductID
@@ -101,7 +102,7 @@ BEGIN
 		FROM ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
-		WHERE (psd.SettingType IN (2,7,8,9,16,17,20)) 
+		WHERE (psd.SettingType IN (2,7,8,9,16,17)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
 			AND psd.ProductID NOT IN  (1,3,8) AND psd.SettingStatus<>2
@@ -188,10 +189,7 @@ BEGIN
 		-- Credit: exclude: Sportsbook, Number Game, Happy 5, RNG Keno.
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, pbs.Currency, 0 AS ExchangeIdDeposit
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
-			, CASE WHEN (A.SportType IN (199, 220, 222, 169, 175, 217, 218) OR 
-						(A.SportType BETWEEN 180 AND 186)	OR	
-						(A.SportType BETWEEN 213 AND 215)	OR	
-						(A.SportType BETWEEN 190 AND 197)) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
+			, CASE WHEN A.SettingType NOT IN (7,8,17) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
 			, NULL AS CurMaxPerBall
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
@@ -205,11 +203,7 @@ BEGIN
 		-- Deposit
 		SELECT a.SportType, a.SportName, a.BetType, a.typenamee, 0 AS ExchangeIdCredit, pbs.Currency
 			, pbs.MinBet AS CurMinBet, pbs.MaxBet AS CurMaxBet
-			, CASE WHEN (A.SportType IN (1, 2, 3, 5, 8, 10, 11, 99,		--SB
-										 161, 164, 168, 202, 199, 220, 222, 169, 175, 217, 218) OR 
-						(A.SportType BETWEEN 180 AND 186)	OR	
-						(A.SportType BETWEEN 213 AND 215)	OR	
-						(A.SportType BETWEEN 190 AND 197)) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
+			, CASE WHEN A.SettingType NOT IN (7,8,17,11) THEN pbs.MaxPerMatch END AS CurMaxPerMatch
 			, CASE WHEN A.SportType=161 THEN pbs.MaxPerBall END AS CurMaxPerBall
 			, 0 AS SiteID
 		FROM #ProductSettingDetail a
