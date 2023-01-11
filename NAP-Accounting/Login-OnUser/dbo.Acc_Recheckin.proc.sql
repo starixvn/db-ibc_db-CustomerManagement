@@ -13,6 +13,7 @@ AS
 
 	Revisions:
 			- 20221118@Tacy: NAP - Set expired time for permission [RedmineID: #179323]
+			- 20221228@Tacy: NAP Accounting - Expired date error - kick-out before expire time [RedmineID:#182093]
 	Param's Explanation:
 		@IsKickedOut = 0
 					 = 1 : "Another session has been logged in or your session is expired. Forced to logout!"
@@ -21,15 +22,13 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @Next_GetDate DATETIME, @CustID INT
+	DECLARE @CustID INT
 	
-	SET @Next_GetDate = DATEADD(DAY,DATEDIFF(DAY,0,GETDATE()),1)
-
 	SELECT @CustID=custid
 	FROM on_user_admin WITH (NOLOCK) 
 	WHERE On_UserID = @On_UserID
 
-	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<@Next_GetDate)
+	IF EXISTS (SELECT 1 FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid=@CustID AND ExpiredDate<GETDATE())
 	BEGIN
 		SELECT @IsKickedOut=2
 	END
