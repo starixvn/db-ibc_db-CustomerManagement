@@ -17,7 +17,7 @@ Revisions:
     - 20221108@Evan: Create new SP [Redmine: #177844]    
 Param's Explanation:            
  - @Fie:              
-  <ROOT><File CurrencyCode = "ADA" USDT = "0.468612343423212" /></ROOT>          
+  <ROOT><File Currency = "ADA" USDT = "0.468612343423212" /></ROOT>          
 */
 
 BEGIN
@@ -46,8 +46,10 @@ BEGIN
     CREATE TABLE #inputTmp
     (
         ID INT IDENTITY(1, 1),
-        CurrencyCode NVARCHAR(MAX),
+        Currency NVARCHAR(MAX),
         USDT NVARCHAR(MAX),
+        MultipliedBy DECIMAL(19,8),
+        USDT_After FLOAT,
         ExchangeId INT
     );
     
@@ -55,16 +57,16 @@ BEGIN
         EXEC sp_xml_preparedocument @iDoc OUTPUT, @File;
         INSERT INTO #inputTmp
         (
-            CurrencyCode,
+            Currency,
             USDT
         )
-        SELECT  CurrencyCode,
+        SELECT  Currency,
                 USDT
         FROM
             OPENXML(@iDoc, '/ROOT/File', 1)
             WITH
             (
-                CurrencyCode NVARCHAR(MAX),
+                Currency NVARCHAR(MAX),
                 USDT NVARCHAR(MAX)
             );
         EXEC sp_xml_removedocument @iDoc;
@@ -74,23 +76,25 @@ BEGIN
                @ErrMsg = ERROR_MESSAGE();
         RETURN;
     END CATCH;
-
+    
     -- remove empty row          
     DELETE #inputTmp
-    WHERE LEN(CurrencyCode) = 0
+    WHERE LEN(Currency) = 0
           AND LEN(USDT) = 0
    
     -- update exchangeId
     UPDATE a
-    SET a.ExchangeId = e.ExchangeId
-    FROM #inputTmp a INNER JOIN exchange e WITH(NOLOCK) ON e.Code = a.CurrencyCode
-    WHERE e.CurrencyType = 1 
-
+    SET a.ExchangeId = e.ExchangeId, 
+        a.MultipliedBy = e.MultipliedBy, 
+        a.USDT_After = e.MultipliedBy * CASE WHEN ISNUMERIC(USDT) = 1 THEN USDT ELSE NULL END
+    FROM #inputTmp a INNER JOIN exchange e WITH(NOLOCK) ON e.currency = a.Currency
+    WHERE e.CurrencyType = 1
+    
     IF @IsCheck = 1
     BEGIN
-        SELECT CurrencyCode, USDT FROM #inputTmp WHERE ExchangeId IS NULL
+        SELECT Currency, USDT, MultipliedBy, USDT_After, ExchangeId  FROM #inputTmp
 
-        IF @@ROWCOUNT > 0
+        IF EXISTS(SELECT TOP 1 1 FROM #inputTmp WHERE ExchangeId IS NULL)
             SELECT @ErrCode = 1001, @ErrMsg = 'Invalid currency';
     END
 
@@ -146,7 +150,7 @@ BEGIN
             BEGIN TRY
                 
                 UPDATE a
-                SET a.USDT = b.USDT
+                SET a.USDT = b.USDT_After
                 FROM ExchangeDaily_Crypto a WITH(ROWLOCK) 
                     INNER JOIN #inputTmp b ON a.ExchangeId = b.ExchangeId
                 WHERE   a.ExchangeDate >= @EffectiveDate
@@ -186,7 +190,6 @@ BEGIN
                                                         @TrackingValue = @LogSPData,
                                                         @TrackingValue2 = @LogSPData_Old,
                                                         @Duration = @Duration;
-                                                        
         END;
 
     END
@@ -194,5 +197,3 @@ BEGIN
     DROP TABLE #inputTmp
 
 END
-    
-GO
