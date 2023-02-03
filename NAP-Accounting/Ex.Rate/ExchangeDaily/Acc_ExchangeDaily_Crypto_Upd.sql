@@ -47,6 +47,7 @@ BEGIN
     (
         ID INT IDENTITY(1, 1),
         Currency NVARCHAR(MAX),
+        SCurrency NVARCHAR(MAX),
         USDT NVARCHAR(MAX),
         MultipliedBy DECIMAL(19,8),
         USDT_After FLOAT,
@@ -58,9 +59,12 @@ BEGIN
         INSERT INTO #inputTmp
         (
             Currency,
+            SCurrency,
             USDT
         )
         SELECT  Currency,
+                CASE WHEN Currency = 'USDT' THEN 'USDT3'
+                    WHEN Currency = 'PKR' THEN 'PKR3' ELSE Currency END,
                 USDT
         FROM
             OPENXML(@iDoc, '/ROOT/File', 1)
@@ -81,13 +85,13 @@ BEGIN
     DELETE #inputTmp
     WHERE LEN(Currency) = 0
           AND LEN(USDT) = 0
-   
+
     -- update exchangeId
     UPDATE a
     SET a.ExchangeId = e.ExchangeId, 
         a.MultipliedBy = e.MultipliedBy, 
         a.USDT_After = e.MultipliedBy * CASE WHEN ISNUMERIC(USDT) = 1 THEN USDT ELSE NULL END
-    FROM #inputTmp a INNER JOIN exchange e WITH(NOLOCK) ON e.currency = a.Currency
+    FROM #inputTmp a INNER JOIN exchange e WITH(NOLOCK) ON e.currency = a.SCurrency
     WHERE e.CurrencyType = 1
     
     IF @IsCheck = 1
@@ -107,7 +111,7 @@ BEGIN
             RETURN
         END
 
-        IF @EffectiveDate IS NULL
+        IF @EffectiveDate IS NULL OR DAY(@EffectiveDate) > 1
         BEGIN
             SELECT @ErrCode = 1002, @ErrMsg = 'Invalid EffectiveDate';
             RETURN
@@ -197,3 +201,4 @@ BEGIN
     DROP TABLE #inputTmp
 
 END
+GO

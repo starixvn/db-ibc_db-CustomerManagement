@@ -55,7 +55,7 @@ BEGIN
 				e.RepUpdateTime = SYSDATETIME()
 		FROM dbo.Exchange e 
 			INNER JOIN #Exchange ex ON e.ExchangeId = ex.ExchangeId
-		WHERE e.ExchangeId = 0
+		WHERE e.CurrencyType = 0
 
 	END TRY
 	BEGIN CATCH
