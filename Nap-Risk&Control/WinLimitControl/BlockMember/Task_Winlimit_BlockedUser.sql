@@ -14,6 +14,7 @@ AS
 		- 20180530@Johnson: enhance performance [Redmine: #95678]
 		- 20200421@Elodie: Increase length of BettypeIDList
 		- 20220722@Johnson: Scale Out DBTXN - get data on WinLimit_CustWinlostGame instead of Winlimit_CreditGame [Redmine:#175278]
+		- 20230207@Johnson: get distinct data source to ignore duplicated game type in CWL notification service [redmine:#183536]
 	Param's Explanation:
 	
 */
@@ -96,7 +97,7 @@ BEGIN
 	SELECT @WinlostDate = CAST(GETDATE() AS DATE)
 	
 	INSERT INTO #DataTmp_pre(CustId, WinlostDate, Bettype, TotalWinAmount)
-	SELECT CustId, WinlostDate, BetType, Winlost
+	SELECT DISTINCT CustId, WinlostDate, BetType, Winlost
 	FROM WinLimit_CustWinlostGame WITH(NOLOCK)
 	WHERE winlostdate = @winlostdate
 	
