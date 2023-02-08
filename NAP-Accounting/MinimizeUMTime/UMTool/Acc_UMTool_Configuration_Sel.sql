@@ -10,7 +10,7 @@ BEGIN
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220728@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
 		- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
-		- 20230116@Eddie:  Remove SP: "Acc_UMTool_MarketSel" [RedmineID: #181596]
+		- 20230116@Eddie:  Remove SP: "Acc_UMTool_MarketSel" [RedmineID: #182841]
 
 	Param's Explanation:   
 		

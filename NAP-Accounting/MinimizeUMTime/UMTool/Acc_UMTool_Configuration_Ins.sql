@@ -26,7 +26,7 @@ BEGIN
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852]
-		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #181596]
+		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #182841]
 
 	Param's Explanation:   
 		
