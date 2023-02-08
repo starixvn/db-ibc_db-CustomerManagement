@@ -48,6 +48,6 @@ BEGIN
 		WHERE uc.SiteID = @SiteID AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
 	END
 
-	SELECT FunctionTypeName, SiteLable, BeginTime, EndTime FROM @Results
+	SELECT FunctionTypeName, BeginTime, EndTime FROM @Results
 END
 GO
