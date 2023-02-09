@@ -26,12 +26,12 @@ BEGIN
 
 	SELECT @FunctionType = ISNULL(@FunctionType, 0)
 	
-	IF ISNULL(@BeginTime, '') <> ''
+	IF @BeginTime IS NOT NULL
 	BEGIN
 		SELECT @BeginTime = DATEADD(hh,-12,@BeginTime)
 	END
 	
-	IF ISNULL(@EndTime, '') <> ''
+	IF @EndTime IS NOT NULL
 	BEGIN
 		SELECT @EndTime = DATEADD(hh,-12,@EndTime)
 	END
