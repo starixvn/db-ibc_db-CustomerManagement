@@ -1,3 +1,5 @@
+/*<info serverAlias="DBBOT-SITDB052" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
 USE [bodb_ChatBot]
 GO
 /****** Object:  StoredProcedure [dbo].[Age_CustFeedbackIns]    Script Date: 2/8/2023 1:03:18 PM ******/
@@ -5,7 +7,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON 
 GO
-/*<info serverAlias="DBBOT-SITDB052" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+
 CREATE PROCEDURE [dbo].[Age_CustFeedbackIns] 
 	-- Add the parameters for the stored procedure here
   @custID int
