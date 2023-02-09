@@ -39,25 +39,13 @@ BEGIN
 
 	IF( @SiteID <> 0 OR @SiteName <> '' )
 	BEGIN
-		IF @SiteID <> 0
-		BEGIN
-			INSERT INTO @Results(FunctionTypeName, BeginTime, EndTime)
-			SELECT [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
-				, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
-				, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
-			FROM dbo.UMConfig uc WITH (NOLOCK)
-			WHERE uc.SiteID = @SiteID AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
-		END
-		ELSE
-		BEGIN
-			INSERT INTO @Results(FunctionTypeName, BeginTime, EndTime)
-			SELECT [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
-				, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
-				, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
-			FROM dbo.UMConfig uc WITH (NOLOCK)
-				INNER JOIN Site s WITH (NOLOCK) ON s.siteid = uc.SiteID
-			WHERE s.site = @SiteName AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )			
-		END
+		INSERT INTO @Results(FunctionTypeName, BeginTime, EndTime)
+		SELECT [FunctionTypeName] = (SELECT FunctionTypeName FROM dbo.f_CustReport_UM_ProductsSel(uc.FunctionType))
+			, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
+			, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
+		FROM dbo.UMConfig uc WITH (NOLOCK)
+			INNER JOIN Site s WITH (NOLOCK) ON s.siteid = uc.SiteID
+		WHERE (uc.SiteID = @SiteID OR s.site = @SiteName ) AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
 	END
 
 	SELECT FunctionTypeName, BeginTime, EndTime FROM @Results
