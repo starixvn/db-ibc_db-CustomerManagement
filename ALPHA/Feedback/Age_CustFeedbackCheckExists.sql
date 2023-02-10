@@ -8,18 +8,18 @@ GO
 SET QUOTED_IDENTIFIER ON 
 GO
 
-ALTER PROCEDURE [dbo].[Age_CustFeedbackCheckExists] 
+CREATE PROCEDURE [dbo].[Age_CustFeedbackFloatingCheckExists] 
 	-- Add the parameters for the stored procedure here
 
   @custID int
-, @IsExists BIT = 0
+, @IsExists BIT = 0 OUTPUT
  -- Input @custID to check exists
  -- EXEC Age_CustFeedbackCheckExists 123 
 AS  
 /*  
  Created: Helios  
  Date: 2023-02-12  
- Task: Check existing feedback or not in Day 
+ Task: Check existing feedback or not in Current Month 
 --	DB DEV  : DBBOT/DB-61\DevDB053
 --	DB LOCAL: DBBOT/TESTDB053
 --	DB SIT  : DBBOT/SITDB052
@@ -27,19 +27,15 @@ AS
 --  Database: bodb_Chatbot
    
  Revisions:  
-  - 20230210@Helios: Check existing feedback or not in Day
+  - 20230210@Helios: Check existing feedback or not in Current Month
  Parameter's Explanation:
  
 */ 
 BEGIN  
  SET NOCOUNT ON  
  
- DECLARE @CurrentDay date = CAST(GETDATE() As date)
- 
- IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID AND CAST(CreatedDate AS date) = @CurrentDay )  
+ IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID)  
    SELECT @IsExists = 1  
  ELSE   
    SELECT @IsExists = 0  
 END  
-
- SELECT @IsExists
