@@ -11,6 +11,7 @@ GO
 CREATE PROCEDURE [dbo].[Age_CustFeedbackIns] 
 	-- Add the parameters for the stored procedure here
   @custID int
+, @Subaccid int
 , @comment Nvarchar(4000)
 , @Rate tinyint
 
@@ -31,7 +32,7 @@ Task : Insert Feedback by SMA in AlphaSite
 
 BEGIN
  
- INSERT INTO  [dbo].[CustFeedback] ([CustID],[Comment],[Rate],[CreatedDate])
-    select    @custID , ISNULL(@comment , '') , ISNULL (@Rate , 0) , Getdate()
+ INSERT INTO  [dbo].[CustFeedback] ([CustID],[Subaccid],[Comment],[Rate],[CreatedDate])
+    select    @custID , @Subaccid , ISNULL(@comment , '') , ISNULL (@Rate , 0) , Getdate()
 
 END
