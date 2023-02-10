@@ -8,11 +8,13 @@ GO
 SET QUOTED_IDENTIFIER ON 
 GO
 
-CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists] 
+ALTER PROCEDURE [dbo].[Age_CustFeedbackCheckExists] 
 	-- Add the parameters for the stored procedure here
 
   @custID int
 , @IsExists BIT = 0
+ -- Input @custID to check exists
+ -- EXEC Age_CustFeedbackCheckExists 123 
 AS  
 /*  
  Created: Helios  
