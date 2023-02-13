@@ -12,7 +12,7 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
-
+20230213@Tacy: CWL - Split 789y site [RedmineID: #182387]
 Parameters Explanation:
 	   @ProductId: Product ID
 Example:
@@ -91,6 +91,7 @@ EXEC [NAP_WinLimit_SiteByProductSel]
      BEGIN -- Query Data
          SELECT s.siteid AS SiteId,
                 s.site AS SiteName,
+				s.SiteLabel,
                 'Credit Sites' AS GroupName
          FROM dbo.Site s WITH (NOLOCK)
          WHERE s.isLicensee = 0
@@ -99,6 +100,7 @@ EXEC [NAP_WinLimit_SiteByProductSel]
          SELECT DISTINCT
                 s.siteid,
                 s.site,
+				s.SiteLabel,
                 pg.PartyGroupName
          FROM #DepositLicenseeProduct dlp
               INNER JOIN #Party p ON dlp.PartyId = p.PartyId
@@ -106,7 +108,8 @@ EXEC [NAP_WinLimit_SiteByProductSel]
               INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = dlp.LicenseeName
                                                      AND S.isActive = 1
                                                      AND S.isLicensee = 1
-         ORDER BY GroupName,
+         ORDER BY SiteLabel,
+				  GroupName,
                   SiteName;
      END;
      DROP TABLE #Party;
