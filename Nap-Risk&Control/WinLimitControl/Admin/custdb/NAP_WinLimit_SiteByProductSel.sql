@@ -3,23 +3,24 @@
 CREATE PROCEDURE [dbo].[NAP_WinLimit_SiteByProductSel] @ProductId INT = 0
 AS
 /*
-Created: Franklin	
-Date: 2016-06-22
-Task: #57722 - Implement Game Win Limit Control phase2
+	Created: Franklin	
+	Date: 2016-06-22
+	Task: #57722 - Implement Game Win Limit Control phase2
 
-DB: DBCUST/CustDB
+	DB: DBCUST/CustDB
 
-Revisions:
-20160923@Jacob: Risk & Control - Phase 3 [#61220].
-20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
-20230213@Tacy: CWL - Split 789y site [RedmineID: #182387]
-Parameters Explanation:
-	   @ProductId: Product ID
-Example:
-EXEC [NAP_WinLimit_SiteByProductSel]
+	Revisions:
+		20160923@Jacob: Risk & Control - Phase 3 [#61220].
+		20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
+		20230213@Tacy: CWL - Split 789y site [RedmineID: #182387]
+
+	Parameters Explanation:
+		   @ProductId: Product ID
+
+	Example:
+		EXEC [NAP_WinLimit_SiteByProductSel]
 */
-
-
+BEGIN
      SET NOCOUNT ON;
     
      BEGIN -- Deposit Licensee
@@ -115,4 +116,5 @@ EXEC [NAP_WinLimit_SiteByProductSel]
      DROP TABLE #Party;
      DROP TABLE #PartyGroup;
      DROP TABLE #DepositLicenseeProduct;
+END
 GO
