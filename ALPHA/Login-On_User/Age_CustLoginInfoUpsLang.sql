@@ -3,7 +3,7 @@ CREATE PROC [dbo].[Age_CustLoginInfoUpsLang]
 
 @CustID INT = 0,
 @SubAccID INT = 0,
-@LanguageUsage varchar(2)= NULL
+@LanguageUsage varchar(4)= NULL
 AS
 /*
 	Created: 20230214@Helios
