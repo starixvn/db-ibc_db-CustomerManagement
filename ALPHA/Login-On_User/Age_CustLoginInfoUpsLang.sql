@@ -3,7 +3,7 @@ CREATE PROC [dbo].[Age_CustLoginInfoUpsLang]
 
 @CustID INT = 0,
 @SubAccID INT = 0,
-@Lang varchar(2)= NULL
+@LanguageUsage varchar(2)= NULL
 AS
 /*
 	Created: 20230214@Helios
@@ -12,27 +12,23 @@ AS
 
 	Revisions:
 	- 20230214@Helios: Enhance language part [RedmineID: #183700]
--- EXEC  [dbo].[Age_CustLoginInfoUpsLang] 1176083, 91726 , 'EN'
+EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 0 , 'EN'
+EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 1722384 , 'TH'
+EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 1722385 , 'CN'
 */
 BEGIN
 
 IF @SubAccID > 0
 	BEGIN
-		Update custSub Set Lang = @Lang
+		Update custSub Set LanguageUsage = @LanguageUsage
 		from CustLoginInfoSub custsub WITH (ROWLOCK ,UPDLOCK)
 		where CustID = @CustID and SubAccID = @SubAccID
-
-		Update cust Set Lang = @Lang
-		from CustLoginInfo cust WITH (ROWLOCK ,UPDLOCK)
-		where CustID = @CustID
 	END
 ELSE
 	BEGIN
-		Update cust Set Lang = @Lang
-		from CustLoginInfo cust
+		Update cust Set LanguageUsage = @LanguageUsage
+		from CustLoginInfo cust WITH (ROWLOCK ,UPDLOCK)
 		where CustID = @CustID
 	END
 
 END
-
-
