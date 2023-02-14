@@ -10,6 +10,8 @@ AS
 	Task : Update language change by SMA in Alpha Site
 	DB: DBTXN/BODB02
 
+	Revisions:
+	- 20230214@Helios: Enhance language part [RedmineID: #183700]
 -- EXEC  [dbo].[Age_CustLoginInfoUpsLang] 1176083, 91726 , 'EN'
 */
 BEGIN
