@@ -29,7 +29,9 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
-	@IsProtectedMode BIT = 0 OUTPUT
+	@IsProtectedMode BIT = 0 OUTPUT ,
+
+	@IsChangeLang BIT = 0 OUTPUT
 AS
 /*
 	Created: 20090903@Don
@@ -60,6 +62,7 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220110@Eden: HotFix - Alpha login_After login success log of sub account is not shown if sub's password <> main's password [RedmineID: #181370]
+		- 20230214@Helios: Enhance language part [RedmineID: #183700]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -339,6 +342,7 @@ BEGIN
 				,@PwdExpiry		= PwdExpiry
 				,@securitycode	= ISNULL(SecurityCode,'')
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+				,@IsChangeLang = ISNULL(Lang , 0) -- Check Is Change Language on Alpha Login / Alpha BF Login
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 
@@ -351,7 +355,8 @@ BEGIN
 		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
-				@IsProtectedMode = ISNULL(IsProtectedMode, 0)
+				@IsProtectedMode = ISNULL(IsProtectedMode, 0),
+				@IsChangeLang = ISNULL(Lang , 0)  -- Check Is Change Language on Alpha Login / Alpha BF Login
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
