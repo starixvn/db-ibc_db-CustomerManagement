@@ -356,7 +356,7 @@ BEGIN
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
 				@IsProtectedMode = ISNULL(IsProtectedMode, 0),
-				@IsLanguage = CASE WHEN ISNULL(Lang , '') = '' THEN 0 ELSE 1 END -- Language in CustLoginInfoSub Is Exists or Not
+				@IsLanguage = CASE WHEN ISNULL(Lang , '') = '' THEN 0 ELSE 1 END -- Language in CustLoginInfo Is Exists or Not
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		

@@ -4,13 +4,13 @@ CREATE PROC [dbo].[Age_CustLoginInfoUpsLang]
 @CustID INT = 0,
 @SubAccID INT = 0,
 @Lang varchar(2)= NULL
-
-
 AS
 /*
 	Created: 20230214@Helios
 	Task : Update language change by SMA in Alpha Site
 	DB: DBTXN/BODB02
+
+-- EXEC  [dbo].[Age_CustLoginInfoUpsLang] 1176083, 91726 , 'EN'
 */
 BEGIN
 
@@ -32,3 +32,5 @@ ELSE
 	END
 
 END
+
+
