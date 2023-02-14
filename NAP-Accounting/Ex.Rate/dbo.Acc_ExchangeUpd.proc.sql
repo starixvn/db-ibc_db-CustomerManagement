@@ -12,11 +12,13 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@Description Nvarchar(100) = '',
 	@MultipliedBy DECIMAL(19,8) = 1,	
 	@UserID INT,
-	@ErrCode INT = 0 OUTPUT,
-	@ErrMsg NVARCHAR(200) = '' OUTPUT,
 	@IP VARCHAR(15) = '',
 	@OfferSite	TINYINT,
-	@IsActive BIT
+	@CurrencyType	TINYINT,
+	@CoinMarketCapID	FLOAT = NULL,
+	@IsActive BIT,
+	@ErrCode INT = 0			OUTPUT,
+	@ErrMsg NVARCHAR(200) = ''	OUTPUT
 AS
 /*
 	Created: ?
@@ -39,6 +41,7 @@ AS
 		- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
+		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -65,6 +68,8 @@ BEGIN
 		@old_Description nvarchar(100),
 		@old_MultipliedBy DECIMAL(19,8),
 		@old_OfferSite	TINYINT,
+		@old_CurrencyType	TINYINT,
+		@old_CoinMarketCapID	FLOAT,
 		@old_IsActive BIT
 
 	SELECT 
@@ -78,6 +83,8 @@ BEGIN
 		@old_Description = Description,
 		@old_MultipliedBy = MultipliedBy,
 		@old_OfferSite = OfferSite,
+		@old_CurrencyType = CurrencyType,
+		@old_CoinMarketCapID = stakerate,
 		@old_IsActive = IsActive
 	FROM exchange WITH (NOLOCK) 
 	WHERE exchangeid=@exchangeid
@@ -98,6 +105,11 @@ BEGIN
 		RETURN
 	END
 
+	IF @CurrencyType = 0
+	BEGIN
+		SET @CoinMarketCapID = NULL
+	END
+
 	UPDATE exchange 
 	SET 
 		actualrate=@actualrate, 
@@ -109,6 +121,8 @@ BEGIN
 		Description = @Description,
 		MultipliedBy = @MultipliedBy,
 		OfferSite = @OfferSite,
+		CurrencyType = @CurrencyType,
+		stakerate = @CoinMarketCapID,
 		IsActive = @IsActive,
 		RepUpdateTime = SYSDATETIME()
 	WHERE exchangeid=@exchangeid
@@ -141,6 +155,10 @@ BEGIN
 		+  ' ,newMultipliedBy='+ ISNULL(convert(varchar(50),@MultipliedBy),'')	
 		+  ' ,oldOfferSite='+ ISNULL(convert(varchar(10),@old_OfferSite),'')
 		+  ' ,newOfferSite='+ ISNULL(convert(varchar(10),@OfferSite),'')	
+		+  ' ,oldCurrencyType='+ ISNULL(convert(varchar(10),@old_CurrencyType),'')
+		+  ' ,newCurrencyType='+ ISNULL(convert(varchar(10),@CurrencyType),'')	
+		+  ' ,oldstakerate='+ ISNULL(convert(varchar(10),@old_CoinMarketCapID),'')
+		+  ' ,newstakerate='+ ISNULL(convert(varchar(10),@CoinMarketCapID),'')	
 		+  ' ,oldIsActive='+ ISNULL(convert(varchar(10),@old_IsActive),'')
 		+  ' ,newIsActive='+ ISNULL(convert(varchar(10),@IsActive),'')	
 		

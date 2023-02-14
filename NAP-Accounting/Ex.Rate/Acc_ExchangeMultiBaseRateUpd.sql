@@ -16,6 +16,7 @@ AS
 		- 20220301@Malcolm: Fix Logs [RedmineID: #163417]
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 		- 20220914@Sophia: Update ActualRate of ExchangeDailyOanda [RedmineID: #175253] 
+		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 
 	Param's Explanation:
 		. @Exhange 
@@ -46,7 +47,7 @@ BEGIN
 	SELECT e.ExchangeId, e.actualrate AS OldActualrate, ex.Actualrate AS NewActualrate
 	FROM dbo.Exchange e WITH(NOLOCK)
 		INNER JOIN #Exchange ex ON ex.ExchangeId = e.ExchangeId
-
+	
 	-- update Exchange 
 	BEGIN TRY
 		UPDATE e WITH(ROWLOCK)
@@ -54,6 +55,8 @@ BEGIN
 				e.RepUpdateTime = SYSDATETIME()
 		FROM dbo.Exchange e 
 			INNER JOIN #Exchange ex ON e.ExchangeId = ex.ExchangeId
+		WHERE e.CurrencyType = 0
+
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrCode = 100, @ErrMsg = 'Error occurs. update unsucessfully.'
