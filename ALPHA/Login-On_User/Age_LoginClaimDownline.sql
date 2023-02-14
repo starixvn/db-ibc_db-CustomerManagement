@@ -31,7 +31,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT ,
 
-	@IsChangeLang BIT = 0 OUTPUT
+	@IsLanguage BIT = 0 OUTPUT
 AS
 /*
 	Created: 20090903@Don
@@ -342,7 +342,7 @@ BEGIN
 				,@PwdExpiry		= PwdExpiry
 				,@securitycode	= ISNULL(SecurityCode,'')
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-				,@IsChangeLang = ISNULL(Lang , 0) -- Check Is Change Language on Alpha Login / Alpha BF Login
+				,@IsLanguage = CASE WHEN ISNULL(Lang , 0) = 0 THEN 0 ELSE 1 END -- Language in CustLoginInfoSub Is Exists or Not 
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 
@@ -356,7 +356,7 @@ BEGIN
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
 				@IsProtectedMode = ISNULL(IsProtectedMode, 0),
-				@IsChangeLang = ISNULL(Lang , 0)  -- Check Is Change Language on Alpha Login / Alpha BF Login
+				@IsLanguage = CASE WHEN ISNULL(Lang , 0) = 0 THEN 0 ELSE 1 END -- Language in CustLoginInfoSub Is Exists or Not
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
