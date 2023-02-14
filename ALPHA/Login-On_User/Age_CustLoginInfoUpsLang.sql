@@ -1,9 +1,9 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 CREATE PROC [dbo].[Age_CustLoginInfoUpsLang]  
 
-@CustID INT = 0,
-@SubAccID INT = 0,
-@LanguageUsage varchar(2)= NULL
+@CustID INT , 
+@SubAccID INT = 0 ,
+@LanguageUsage varchar(2)
 AS
 /*
 	Created: 20230214@Helios
@@ -20,15 +20,15 @@ BEGIN
 
 IF @SubAccID > 0
 	BEGIN
-		Update custSub Set LanguageUsage = @LanguageUsage
-		from CustLoginInfoSub custsub WITH (ROWLOCK ,UPDLOCK)
-		where CustID = @CustID and SubAccID = @SubAccID
+		UPDATE custSub Set LanguageUsage = @LanguageUsage
+		FROM CustLoginInfoSub custsub WITH (ROWLOCK ,UPDLOCK)
+		WHERE CustID = @CustID and SubAccID = @SubAccID
 	END
 ELSE
 	BEGIN
-		Update cust Set LanguageUsage = @LanguageUsage
-		from CustLoginInfo cust WITH (ROWLOCK ,UPDLOCK)
-		where CustID = @CustID
+		UPDATE cust Set LanguageUsage = @LanguageUsage
+		FROM CustLoginInfo cust WITH (ROWLOCK ,UPDLOCK)
+		WHERE CustID = @CustID
 	END
 
 END
