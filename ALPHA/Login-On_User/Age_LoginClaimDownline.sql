@@ -31,7 +31,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT ,
 
-	@IsLanguageUsage varchar(2) = '' OUTPUT
+	@LanguageUsage VARCHAR(2) = '' OUTPUT
 AS
 /*
 	Created: 20090903@Don
@@ -342,7 +342,7 @@ BEGIN
 				,@PwdExpiry		= PwdExpiry
 				,@securitycode	= ISNULL(SecurityCode,'')
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-				,@IsLanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfoSub Is Exists or Not 
+				,@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfoSub Is Exists or Not 
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 
@@ -356,7 +356,7 @@ BEGIN
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
 				@IsProtectedMode = ISNULL(IsProtectedMode, 0),
-				@IsLanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfo Is Exists or Not
+				@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfo Is Exists or Not
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
