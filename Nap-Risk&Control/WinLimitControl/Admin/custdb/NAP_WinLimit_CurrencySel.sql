@@ -100,7 +100,7 @@ BEGIN
             FROM [dbo].[f_Nap_WinLimit_CreditCurrencySel]()
             WHERE(@ExcludeTestCurrency = 0
                 OR Name NOT IN('(UUS)'))
-			UNION ALL
+			UNION
 			SELECT DISTINCT
                 ex.exchangeid AS Id,
                 ex.Code+' ('+ex.currency+')' AS Name
