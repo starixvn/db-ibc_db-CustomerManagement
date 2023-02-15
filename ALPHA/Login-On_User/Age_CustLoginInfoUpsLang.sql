@@ -18,7 +18,7 @@ EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 1722385 , 'CN'
 */
 BEGIN
 
-IF @SubAccID > 0
+IF  @SubAccID > 0
 	BEGIN
 		UPDATE custSub Set LanguageUsage = @LanguageUsage
 		FROM CustLoginInfoSub custsub WITH (ROWLOCK ,UPDLOCK)

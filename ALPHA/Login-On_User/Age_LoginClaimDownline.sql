@@ -31,7 +31,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT ,
 
-	@LanguageUsage VARCHAR(2) = '' OUTPUT
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT
 AS
 /*
 	Created: 20090903@Don
