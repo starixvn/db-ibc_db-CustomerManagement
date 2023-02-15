@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-CREATE PROC [dbo].[Age_CustLoginInfoUpsLang]  
+CREATE PROC [dbo].[Age_CustLanguageUsageUpd]  
 
 @CustID INT , 
 @SubAccID INT = 0 ,
@@ -12,9 +12,9 @@ AS
 
 	Revisions:
 	- 20230214@Helios: Enhance language part [RedmineID: #183700]
-EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 0 , 'EN'
-EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 1722384 , 'TH'
-EXEC  [dbo].[Age_CustLoginInfoUpsLang] 2000003763, 1722385 , 'CN'
+EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 0 , 'EN'
+EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 1722384 , 'TH'
+EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 1722385 , 'CN'
 */
 BEGIN
 
