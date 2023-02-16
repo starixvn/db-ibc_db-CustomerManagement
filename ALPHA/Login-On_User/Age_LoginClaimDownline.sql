@@ -30,6 +30,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT
+	 
 AS
 /*
 	Created: 20090903@Don
