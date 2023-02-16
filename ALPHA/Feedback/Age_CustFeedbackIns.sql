@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackIns]
 , @Subaccid int
 , @comment Nvarchar(4000)
 , @Rate tinyint
-
+ 
 AS
 --- EXEC Age_CustFeedbackIns 340942 , 123 , N'Hoa hồng luôn có mặt trong các ngày lễ hội, liên hoan, sinh nhật, đám cưới. Ngoài ra, tinh dầu hoa hồng còn dùng để làm dầu thơm rất được ưa chuộng. Riêng đối với em, hoa hồng đã tô điểm cho vườn kiểng nhà em thêm xinh tươi. Em rất quý hoa vì những bông hoa có được là do ba em trồng..' , '5'
 
