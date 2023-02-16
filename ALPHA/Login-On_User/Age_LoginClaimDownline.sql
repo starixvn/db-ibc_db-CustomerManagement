@@ -29,10 +29,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
-
-	@IsProtectedMode BIT = 0 OUTPUT ,
-
-	@LanguageUsage  VARCHAR(2) = '' OUTPUT
+	@IsProtectedMode BIT = 0 OUTPUT
 AS
 /*
 	Created: 20090903@Don
@@ -63,7 +60,6 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220110@Eden: HotFix - Alpha login_After login success log of sub account is not shown if sub's password <> main's password [RedmineID: #181370]
-		- 20230214@Helios: Enhance language part [RedmineID: #183700]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -343,7 +339,6 @@ BEGIN
 				,@PwdExpiry		= PwdExpiry
 				,@securitycode	= ISNULL(SecurityCode,'')
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
-				,@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfoSub Is Exists or Not 
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 
@@ -357,7 +352,6 @@ BEGIN
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
 				@IsProtectedMode = ISNULL(IsProtectedMode, 0)
-				@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfo Is Exists or Not
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
