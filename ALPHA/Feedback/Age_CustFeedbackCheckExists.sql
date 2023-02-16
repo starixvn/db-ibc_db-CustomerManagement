@@ -17,14 +17,9 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists]
  -- EXEC Age_CustFeedbackCheckExists 123 
 AS  
 /*  
- Created: Helios  
- Date: 2023-02-12  
- Task: Check existing feedback or not in Current Month 
---	DB DEV  : DBBOT/DB-61\DevDB053
---	DB LOCAL: DBBOT/TESTDB053
---	DB SIT  : DBBOT/SITDB052
---	DB LOCAL: DBBOT/DB052
---  Database: bodb_Chatbot
+ Created: 20230210@Helios
+ Task : Check existing feedback or not in Current Month   
+ DB: DBBOT.bodb_ChatBot  
    
  Revisions:  
   - 20230210@Helios: Check existing feedback or not in Current Month
