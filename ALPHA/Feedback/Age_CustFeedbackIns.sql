@@ -22,8 +22,7 @@ AS
  Created: 20230210@Helios
  Task : Insert Feedback by SMA in AlphaSite   
  DB: DBBOT.bodb_ChatBot  
-
- 
+  
  Revisions:  
    - 20230210@Helios: Insert Feedback by SMA in AlphaSite  [Redmine: #183412]  
 */
