@@ -22,7 +22,7 @@ AS
  DB: DBBOT.bodb_ChatBot  
    
  
- Revisions:  
+ Revisions:   
   - 20230210@Helios: Check existing feedback or not in Current Month
  Parameter's Explanation:
  
