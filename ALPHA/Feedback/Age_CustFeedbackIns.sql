@@ -19,13 +19,10 @@ AS
 --- EXEC Age_CustFeedbackIns 340942 , 123 , N'Hoa hồng luôn có mặt trong các ngày lễ hội, liên hoan, sinh nhật, đám cưới. Ngoài ra, tinh dầu hoa hồng còn dùng để làm dầu thơm rất được ưa chuộng. Riêng đối với em, hoa hồng đã tô điểm cho vườn kiểng nhà em thêm xinh tươi. Em rất quý hoa vì những bông hoa có được là do ba em trồng..' , '5'
 
 /*
-Created : 2/8/2023 1:03:18 PM
---	DB DEV  : DBBOT/DB-61\DevDB053
---	DB LOCAL: DBBOT/TESTDB053
---	DB SIT  : DBBOT/SITDB052
---	DB LOCAL: DBBOT/DB052
---  Database: bodb_Chatbot
-Task : Insert Feedback by SMA in AlphaSite
+ Created: 20230210@Helios
+ Task : Insert Feedback by SMA in AlphaSite   
+ DB: DBBOT.bodb_ChatBot  
+
  Revisions:  
    - 20230208@Helios: Insert Feedback by SMA in AlphaSite  [Redmine: #183412]  
 */
