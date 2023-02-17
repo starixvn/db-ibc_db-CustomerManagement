@@ -31,13 +31,19 @@ BEGIN
 
 	CREATE TABLE #tempAllCurrencies(Id INT, Name VARCHAR(50));
 
-	DECLARE @Site TABLE (siteID INT)
+	DECLARE @Site TABLE (siteID INT, IsLicensee BIT)
 
 	IF @MultiSite<>'0'
 		BEGIN
-			INSERT INTO @Site(siteID)
-			SELECT RTRIM(LTRIM(value)) SiteID
-			FROM STRING_SPLIT(@MultiSite, ',')
+			;WITH CTE AS (
+				SELECT RTRIM(LTRIM(value)) SiteID
+				FROM STRING_SPLIT(@MultiSite, ',')
+			)
+			INSERT INTO @Site(siteID, IsLicensee)
+			SELECT t.SiteID, s.isLicensee
+			FROM CTE t
+			INNER JOIN Site s WITH (NOLOCK) ON s.siteid=t.SiteID
+			WHERE s.isActive=1
 		END
 
     IF @MultiSite = '0' -- All Currencies
@@ -87,7 +93,7 @@ BEGIN
                 INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
                 INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName
                                                         AND S.isActive = 1
-				CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss
+				CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid AND ss.IsLicensee=1) ss
             WHERE (@ExcludeTestCurrency = 0 OR ex.currency NOT IN('UUS'))
                 AND ex.currency NOT IN('H', 'C')
 				AND ex.IsActive = 1
@@ -109,7 +115,7 @@ BEGIN
                 INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
                 INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = l.LicenseeName
                                                         AND S.isActive = 1
-				CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss
+				CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid AND ss.IsLicensee=1) ss
             WHERE (@ExcludeTestCurrency = 0 OR ex.currency NOT IN('UUS'))
                 AND ex.currency NOT IN('H', 'C')
 				AND ex.IsActive = 1

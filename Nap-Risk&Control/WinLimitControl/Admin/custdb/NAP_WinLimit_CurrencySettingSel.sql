@@ -36,20 +36,26 @@ BEGIN
 	SET NOCOUNT ON;
 
 	BEGIN --Site
-		DECLARE @Site TABLE (siteID INT)
+		DECLARE @Site TABLE (siteID INT, IsLicensee BIT)
 		
 		IF @MultiSite='0'
 		BEGIN
-			INSERT INTO @Site(siteID)
-			SELECT siteid
+			INSERT INTO @Site(siteID, IsLicensee)
+			SELECT siteid, isLicensee
 			FROM Site WITH (NOLOCK)
 			WHERE isActive=1
 		END
 		ELSE
 		BEGIN
-			INSERT INTO @Site(siteID)
-			SELECT RTRIM(LTRIM(value)) SiteID
-			FROM STRING_SPLIT(@MultiSite, ',')
+			;WITH CTE AS (
+				SELECT RTRIM(LTRIM(value)) SiteID
+				FROM STRING_SPLIT(@MultiSite, ',')
+			)
+			INSERT INTO @Site(siteID, IsLicensee)
+			SELECT t.SiteID, s.isLicensee
+			FROM CTE t
+			INNER JOIN Site s WITH (NOLOCK) ON s.siteid=t.SiteID
+			WHERE s.isActive=1
 		END
 	END;
 	BEGIN -- @Products
@@ -97,7 +103,7 @@ BEGIN
 					INNER JOIN exchange ex WITH(NOLOCK) ON ex.exchangeid = lc.Currency
 					INNER JOIN dbo.site s ON s.site = l.LicenseeName
 										AND s.isActive = 1
-					CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss
+					CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid AND ss.IsLicensee=1) ss
 				WHERE (@CurrencyId = 0 OR lc.Currency = @CurrencyId)
 					AND lc.CurrencyName NOT IN('H', 'C');
 			END;
@@ -111,7 +117,7 @@ BEGIN
 					@IsCreditSite
 				FROM dbo.exchange ex WITH(NOLOCK)
 					INNER JOIN [dbo].[f_Nap_WinLimit_CreditCurrencySel]() c ON c.Id = ex.exchangeid
-					CROSS APPLY (SELECT siteID FROM @Site) ss
+					CROSS APPLY (SELECT siteID FROM @Site WHERE IsLicensee=0) ss
 				WHERE(@CurrencyId = 0
 					OR ex.exchangeid = @CurrencyId)
 					AND ex.currency NOT IN('H', 'C');
@@ -129,7 +135,7 @@ BEGIN
 					INNER JOIN exchange ex WITH(NOLOCK) ON ex.exchangeid = lc.Currency
 					INNER JOIN dbo.site s ON s.site = l.LicenseeName
 										AND s.isActive = 1
-					CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss
+					CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid AND ss.IsLicensee=1) ss
 				WHERE (@CurrencyId = 0 OR lc.Currency = @CurrencyId)
 					AND lc.CurrencyName NOT IN('H', 'C')
 				UNION ALL
@@ -140,7 +146,7 @@ BEGIN
 					1 AS IsCreditSite
 				FROM dbo.exchange ex WITH(NOLOCK)
 					INNER JOIN [dbo].[f_Nap_WinLimit_CreditCurrencySel]() c ON c.Id = ex.exchangeid
-					CROSS APPLY (SELECT siteID FROM @Site) ss
+					CROSS APPLY (SELECT siteID FROM @Site WHERE IsLicensee=0) ss
 				WHERE(@CurrencyId = 0
 					OR ex.exchangeid = @CurrencyId)
 					AND ex.currency NOT IN('H', 'C');
