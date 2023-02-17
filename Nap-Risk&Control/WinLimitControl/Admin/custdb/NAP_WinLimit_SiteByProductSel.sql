@@ -85,7 +85,7 @@ BEGIN
                                    THEN 14
                                    ELSE ProductId
                                END
-                        FROM dbo.f_Nap_WinLimit_ProductSettingSel(67)
+                        FROM dbo.f_Nap_WinLimit_ProductSettingSel(@ProductId)
                     )
                 ) AS lp3rd
                 INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp3rd.licenseeId
