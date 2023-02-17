@@ -40,14 +40,16 @@ BEGIN
           LicenseeName VARCHAR(50),
           PartyId      INT
          );
-         INSERT INTO #Party
+        
+		INSERT INTO #Party
          (PartyId,
           PartyName,
           BranchName,
           ParentId
          )
          EXEC DBLIC.bodb_licensee.dbo.LA_PartyListSel;
-         INSERT INTO #PartyGroup
+       
+	   INSERT INTO #PartyGroup
          (PartyGroupId,
           PartyGroupName
          )
@@ -55,7 +57,8 @@ BEGIN
                        p.PartyName
                 FROM #Party p
                 WHERE p.ParentId = 0;
-         INSERT INTO #DepositLicenseeProduct
+        
+		INSERT INTO #DepositLicenseeProduct
          (ProductId,
           LicenseeId,
           LicenseeName,
@@ -82,7 +85,7 @@ BEGIN
                                    THEN 14
                                    ELSE ProductId
                                END
-                        FROM dbo.f_Nap_WinLimit_ProductSettingSel(@ProductId)
+                        FROM dbo.f_Nap_WinLimit_ProductSettingSel(67)
                     )
                 ) AS lp3rd
                 INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp3rd.licenseeId
@@ -95,7 +98,7 @@ BEGIN
 				s.SiteLabel,
                 'Credit Sites' AS GroupName
          FROM dbo.Site s WITH (NOLOCK)
-         WHERE s.isLicensee = 0
+         WHERE (s.isLicensee = 0 OR s.site='Saba789')
                AND S.isActive = 1
          UNION ALL
          SELECT DISTINCT
@@ -109,8 +112,10 @@ BEGIN
               INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = dlp.LicenseeName
                                                      AND S.isActive = 1
                                                      AND S.isLicensee = 1
-         ORDER BY SiteLabel,
+		 WHERE s.site<>'Saba789'
+         ORDER BY 
 				  GroupName,
+				  SiteLabel DESC,
                   SiteName;
      END;
      DROP TABLE #Party;
