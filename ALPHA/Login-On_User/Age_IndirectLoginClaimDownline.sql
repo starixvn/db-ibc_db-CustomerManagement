@@ -36,7 +36,7 @@ AS
 	Created: 20200529@Johnson
 	Task : verify login for indirect login account
 	DB: DBCUST/CustDB
-	 
+
 	Revisions:
 		- 20200529@Johnson: initial sp [redmine: #132782]
 		- 20210510@Eden: Enhancement for not relying on DB On_User [redmine: #154507]
