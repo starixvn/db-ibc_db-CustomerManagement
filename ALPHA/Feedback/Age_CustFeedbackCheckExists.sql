@@ -18,12 +18,12 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists]
 AS  
 /*    
  Created: 20230210@Helios
- Task : Check existing feedback or not in Current Month   
+ Task : Check existing feedback or not  
  DB: DBBOT.bodb_ChatBot   
    
  
  Revisions:   
-  - 20230210@Helios: Check existing feedback or not in Current Month [Redmine: #183412]  
+  - 20230210@Helios: Check existing feedback or not [Redmine: #183412]  
  Parameter's Explanation:
  
 */ 
@@ -37,7 +37,7 @@ BEGIN
 	SELECT @IsExists = 0
  END
  ELSE
- IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID AND SubAccId = @SubAccId)  
+ IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE SubAccId = @SubAccId)  
    SELECT @IsExists = 1  
  ELSE   
    SELECT @IsExists = 0  
