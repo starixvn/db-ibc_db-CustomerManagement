@@ -24,7 +24,7 @@ AS
    
  
  Revisions:   
-  - 20230210@Helios: Check existing feedback or not in Current Month[#183412]
+  - 20230210@Helios: Check existing feedback or not in Current Month [#183412]
  Parameter's Explanation:
  
 */ 
