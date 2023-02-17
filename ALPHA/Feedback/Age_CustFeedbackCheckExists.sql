@@ -31,7 +31,7 @@ BEGIN
  SET NOCOUNT ON  
  IF (@SubAccId  = 0)
  BEGIN 
-	IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID)
+	IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID and Subaccid = @SubAccId)
 	SELECT @IsExists = 1  
 	ELSE   
 	SELECT @IsExists = 0
