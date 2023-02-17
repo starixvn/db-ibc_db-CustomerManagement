@@ -12,6 +12,7 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists]
 	-- Add the parameters for the stored procedure here
 
   @custID int
+, @SubAccId int
 , @IsExists BIT = 0 OUTPUT 
  -- Input @custID to check exists
  -- EXEC Age_CustFeedbackCheckExists 123 
@@ -30,7 +31,7 @@ AS
 BEGIN  
  SET NOCOUNT ON  
  
- IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID)  
+ IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID Or SubAccId@SubAccId)  
    SELECT @IsExists = 1  
  ELSE   
    SELECT @IsExists = 0  
