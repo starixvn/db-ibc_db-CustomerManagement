@@ -12,7 +12,7 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists]
 	-- Add the parameters for the stored procedure here
   @custID int 
 , @SubAccId int 
-, @IsExists BIT = 0  
+, @IsExists BIT = 0 OUTPUT 
  -- Input @custID to check exists
  -- EXEC Age_CustFeedbackCheckExists 123 
 AS  
