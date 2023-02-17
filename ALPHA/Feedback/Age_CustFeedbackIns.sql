@@ -25,7 +25,7 @@ AS
 
  
  Revisions:  
-   - 20230210@Helios: Insert Feedback by SMA in AlphaSite  [Redmine: #183412]  
+   - 20230210@Helios: Insert Feedback by SMA in AlphaSite [Redmine: #183412]  
 */
 
 BEGIN
