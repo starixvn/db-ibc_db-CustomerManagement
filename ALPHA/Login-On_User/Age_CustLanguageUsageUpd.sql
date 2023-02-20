@@ -8,7 +8,7 @@ AS
 /*
 	Created: 20230214@Helios
 	Task : Update language change by SMA in Alpha Site
-	DB: DBTXN/BODB02
+	DB: DBCUST/CustDB
 
 	Revisions:
 	- 20230214@Helios: Enhance language part [RedmineID: #183700]
