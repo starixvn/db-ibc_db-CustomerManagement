@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet,bodbDownlineNetView"  viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet"  viewers="" isFunction="0" isNested="1"></info>*/
 
 USE [bodb_ChatBot]
 GO
