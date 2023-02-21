@@ -1,7 +1,8 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+ï»¿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
-ALTER PROCEDURE dbo.NAP_WinLimit_Notification_MemSel
-	@ProductId    TINYINT = 0
+ALTER PROCEDURE [dbo].[NAP_WinLimit_Notification_MemSel]
+	@ProductId    TINYINT     = 0
+   , @Username     VARCHAR(50) = ''
 AS
 /*
 Created: 20150702@bobby.nguyen
@@ -22,12 +23,13 @@ Revisions:
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
 	- 20170808@Robert: CWL Phase 4 - Support Loosing Limit notification, email template and enhancement requests from NSD team [Redmine: 72870]
 	- 20180816@Robert: Poker Games - CWL Integration 
+	- 20180918@Robert: Macau Games - CWL Integration [Redmine: 101546]
 	
 Param's Explanation:
-	• @ErrCode:
+	ï¿½ @ErrCode:
 		= 0: Transaction recorded successfully.
 		> 0: Specific Error.
-	• @ErrMsg: Error description.
+	ï¿½ @ErrMsg: Error description.
 */
 
 BEGIN
@@ -84,12 +86,11 @@ BEGIN
 			   THEN wl.ProductID
 			   ELSE @ProductId
 		    END = @ProductId
+		AND CASE
+			   WHEN @ProductId > 0
+				   AND LEN(@Username) > 0
+			   THEN c.username
+			   ELSE @Username
+		    END = @Username
 		AND S.isActive = 1;
-END;
-GO
-
-GRANT VIEW DEFINITION ON dbo.NAP_WinLimit_Notification_MemSel TO [vnteam];
-GO
-
-GRANT EXECUTE ON dbo.NAP_WinLimit_Notification_MemSel TO [bodbAdminNet];
-GO
+END
