@@ -11,6 +11,8 @@ AS
 		- 20190425@Johnson: initial sp [redmine: 105338]
 		- 20190527@Paul: Apply new status [RedmineID: #113198]
 		- 20190910@Bobby: Implement headline - balance info [Redmine:119961]
+		- 20230222@Sophia: Rebuild CN88, not return balance info of HL [Redmine: #184187]
+	
 
 	Param's Explanation:		
 */
@@ -118,6 +120,8 @@ BEGIN
 	FROM custinfo (NOLOCK)
 	WHERE custid = @custid
 	
+	
+	/*
 	--Implement headline - account page - balance info [Redmine:119961]
 	-- Get Balance Information --
 	DECLARE @balanceInfo TABLE (CustId INT, totalBalance MONEY, TotalBalance_RM MONEY, YesterdayTotalBalance MONEY, YesterdayTotalBalance_RM MONEY)
@@ -138,6 +142,7 @@ BEGIN
 			AND b.winlostdate <= @today
 
 	) AS cash
+	*/
 	
 	SELECT  @TotalSAgentActive SAgentActive,
 		    @TotalSAgentViewOnly SAgentViewOnly,
