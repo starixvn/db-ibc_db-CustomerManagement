@@ -30,7 +30,9 @@ ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
-	@IsProtectedMode BIT = 0 OUTPUT
+	@IsProtectedMode BIT = 0 OUTPUT,
+
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT
 AS
 	/*
 	Created: 20200529@Johnson
@@ -43,6 +45,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20230214@Helios: Enhance language part [RedmineID: #183700]
 
 	Param's Explanation:		
 	*/
@@ -318,6 +321,7 @@ BEGIN
 				,@PwdExpiry		= PwdExpiry
 				,@securitycode	= ISNULL(SecurityCode,'')
 				,@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0)
+				,@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfoSub Is Exists or Not
 		FROM	CustLoginInfoSub WITH (NOLOCK)
 		WHERE	SubAccID = @SubAccID AND CustID = @CustID
 		
@@ -336,7 +340,8 @@ BEGIN
 		SELECT	@isFirstLogin	= ISNULL(isFirstLogin,0),
 				@securityCode	= ISNULL(SecurityCode,''),
 				@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
-				@IsProtectedMode = ISNULL(IsProtectedMode,0)
+				@IsProtectedMode = ISNULL(IsProtectedMode,0),
+				@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfoSub Is Exists or Not
 		FROM	CustLoginInfo WITH (NOLOCK)
 		WHERE	CustID = @CustID
 		
