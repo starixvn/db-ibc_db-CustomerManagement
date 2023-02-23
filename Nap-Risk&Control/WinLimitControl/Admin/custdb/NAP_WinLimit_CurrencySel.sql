@@ -109,7 +109,11 @@ BEGIN
 			UNION
 			SELECT DISTINCT
                 ex.exchangeid AS Id,
-                ex.Code+' ('+ex.currency+')' AS Name
+                CASE
+					WHEN ex.exchangeid = 20
+						THEN 'UUS'
+						ELSE ex.Code
+						END +' ('+ex.currency+')' AS Name
             FROM bodb_licensee.dbo.LicenseeCust lc WITH (NOLOCK)
                 INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lc.LicenseeID
                 INNER JOIN dbo.exchange ex WITH (NOLOCK) ON lc.Currency = ex.exchangeid
