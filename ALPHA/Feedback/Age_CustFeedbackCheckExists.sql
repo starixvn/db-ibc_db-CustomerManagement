@@ -13,8 +13,8 @@ CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists]
   @custID int 
 , @SubAccId int 
 , @IsExists BIT = 0 OUTPUT 
- -- Input @custID to check exists
- -- EXEC Age_CustFeedbackCheckExists 123 
+ -- ReleaseNote: Next Step Enhance ADD Index CustID ,Subaccid in table and Remove Check IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE SubAccId = @SubAccId)
+ 
 AS  
 /*    
  Created: 20230210@Helios
