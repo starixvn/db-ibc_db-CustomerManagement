@@ -36,7 +36,7 @@ BEGIN
  
 IF @@ERROR <> 0  
    BEGIN  
-    SELECT @ErrMsg = N'Delete Domain failed.', 
+    SELECT @ErrMsg = N'Delete domain failed.', 
         @ErrCode = 102;  
     RETURN;  
    END  

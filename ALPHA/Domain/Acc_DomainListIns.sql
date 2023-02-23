@@ -14,7 +14,7 @@ CREATE PROCEDURE [dbo].[Acc_DomainListIns]
   @SiteLabel varchar(50)  ,
   @Domain varchar(50),
   @ErrCode INT    = 0   OUTPUT,  
-  @ErrMsg  NVARCHAR(25) = ''  OUTPUT 
+  @ErrMsg  NVARCHAR(20) = ''  OUTPUT 
  
 AS
 
@@ -32,7 +32,7 @@ BEGIN
 
 IF EXISTS (Select 1 From Age_DomainList (NOLOCK) Where SiteLabel = @SiteLabel AND Domain = @Domain)
 BEGIN  
-	 SELECT @ErrMsg = N'Insert new Domain failed.',  
+	 SELECT @ErrMsg = N'This domain existed',  
 	        @ErrCode = 100  
 	RETURN  
 END 
@@ -46,5 +46,7 @@ END
  
 
 END
+
+
 
 
