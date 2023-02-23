@@ -31,7 +31,7 @@ AS
 BEGIN
  
  DELETE 
- FROM [dbo].[Age_DomainList]
+ FROM [dbo].[Age_DomainList] WITH (ROWLOCK , UPDLOCK)
  WHERE SiteLabel = @SiteLabel AND Domain = @Domain;
  
 IF @@ERROR <> 0  

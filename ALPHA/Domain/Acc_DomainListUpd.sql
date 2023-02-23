@@ -31,7 +31,7 @@ AS
 
 BEGIN
  
- UPDATE [dbo].[Age_DomainList]
+ UPDATE [dbo].[Age_DomainList] WITH (ROWLOCK , UPDLOCK)
  SET Domain = @DomainNew
  WHERE SiteLabel = @SiteLabel AND Domain = @DomainOld;
  
