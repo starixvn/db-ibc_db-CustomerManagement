@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers=""  viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers=""  viewers="" isFunction="0" isNested="0"></info>*/
 
 
 USE CustDB
