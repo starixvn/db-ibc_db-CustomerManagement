@@ -29,7 +29,7 @@ ALTER PROCEDURE [dbo].[Age_LoginClaimDownline]
 	@Nickname VARCHAR(50) = '' OUTPUT,
 	@SecurityCode VARCHAR(50) = '' OUTPUT,
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
-	@IsProtectedMode BIT = 0 OUTPUT
+	@IsProtectedMode BIT = 0 OUTPUT,
 
 	@LanguageUsage  VARCHAR(2) = '' OUTPUT
 AS
