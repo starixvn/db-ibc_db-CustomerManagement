@@ -36,7 +36,7 @@ AS
 /*
 	Created: 20090903@Don
 	Task : check if customer's ID existed or not
-	DB: DBTXN/BODB02
+	DB: DBCUST/CustDB
 
 	Revisions:
 		- 20100101@Kiwi: Modify Log.
