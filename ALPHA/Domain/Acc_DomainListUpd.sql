@@ -38,7 +38,7 @@ BEGIN
 IF @@ERROR <> 0  
    BEGIN  
     SELECT @ErrMsg = N'Update Domain failed.', 
-        @ErrCode = 102;  
+        @ErrCode = 101;  
     RETURN;  
    END  
 
