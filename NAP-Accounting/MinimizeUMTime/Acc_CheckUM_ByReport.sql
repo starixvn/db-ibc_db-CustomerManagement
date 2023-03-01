@@ -10,8 +10,7 @@ AS
 	DB: DBCUST.CustDB
 	Revisions:	
 		- 20220816@Eddie: Initialize SPs [RedmineID: #174852]
-		- 20230113@Eddie: Remove @MarketName and use sitelable [RedmineID: #182841]
-		- 20230208@Eddie: add parameter @SiteName and remove sitelable [RedmineID: #182841]
+		- 20230208@Eddie: add parameter @SiteName and remove @MarketName [RedmineID: #182841]
 	
 	Param's Explanation:
 
