@@ -3,7 +3,7 @@ ALTER PROCEDURE [dbo].[CS_Age_CustomerUpdPwd]
     @CustID INT ,
     @UserPwd NVARCHAR(50) ,
     @UserID INT ,
-    @DisCasino BIT = 0 ,
+    --@DisCasino BIT = 0 ,
     @Language VARCHAR(2) = 'E' ,
     @SubAccID INT = 0 , --Sub-AccountID
     @LoginIP VARCHAR(20) = '' ,
@@ -19,6 +19,7 @@ Original: Age_CustomerUpdPwd
 Revisions:
     - 20190326@Johnson: clone new sp for cn88 alpha [redmine: #105660]
 	- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+	- 20230302@Tacy: Demo - CN88 Site
 
 Param's Explanation:
 • @ErrCode:
@@ -46,20 +47,20 @@ BEGIN
 			,@OldPwd	VARCHAR(40)
 			,@roleid 	TINYINT
     
-    IF ( @DisCasino = 1
-         AND EXISTS ( SELECT    1
-                      FROM      CustInfo WITH ( NOLOCK )
-                      WHERE     SyncCasino = 1
-                                AND Custid = @CustID )
-       ) 
-        BEGIN
-            SELECT  @ErrMsg = CASE @Language
-                                WHEN 'E' THEN 'This CHANGED PASSWORD function is temporarily unavailable, please update later.'
-                                ELSE [dbo].[f_Get_MsgNamebyMsgID](40022,@Language)
-                              END ,
-                    @ErrCode = 100
-            RETURN
-        END
+    --IF ( @DisCasino = 1
+    --     AND EXISTS ( SELECT    1
+    --                  FROM      CustInfo WITH ( NOLOCK )
+    --                  WHERE     SyncCasino = 1
+    --                            AND Custid = @CustID )
+    --   ) 
+    --    BEGIN
+    --        SELECT  @ErrMsg = CASE @Language
+    --                            WHEN 'E' THEN 'This CHANGED PASSWORD function is temporarily unavailable, please update later.'
+    --                            ELSE [dbo].[f_Get_MsgNamebyMsgID](40022,@Language)
+    --                          END ,
+    --                @ErrCode = 100
+    --        RETURN
+    --    END
     
     IF EXISTS (SELECT 1 FROM custSub WITH(NOLOCK) WHERE custid = @custid AND subaccID = @SubAccID)
 	 BEGIN

@@ -18,8 +18,6 @@ ALTER PROCEDURE [dbo].[CS_LoginClaimDownline]
 	@SubPageAccess VARCHAR(50) = '' OUTPUT,   
 	@SubUserName VARCHAR(30) = '' OUTPUT,   
 	@site VARCHAR(20) = '' OUTPUT,  
-	@isCasinoDisabled BIT = FALSE OUTPUT,
-	@IsCasinoSync BIT = FALSE OUTPUT,
 	@LoginTime DATETIME = null, --VARCHAR(50) = NULL,
 	@Language VARCHAR(2) = 'E',  
 	@isFirstLogin	BIT = 0 OUTPUT,
@@ -45,6 +43,7 @@ AS
 		- 20190715@Elodie: Support Chinese log [Redmine:#116317]
 		- 20190717@Elodie: Sub account management [Redmine:#116825] 
 		- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
+		- 20230302@Tacy: Demo - CN88 Site
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -273,10 +272,10 @@ BEGIN
 		RETURN  
 	END 
 
-	SELECT 
-		@IsCasinoSync = SyncCasino, 
-		@isCasinoDisabled = DisableCasino
-	FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
+	--SELECT 
+	--	@IsCasinoSync = SyncCasino, 
+	--	@isCasinoDisabled = DisableCasino
+	--FROM custinfo WITH (NOLOCK) WHERE custid = @CustID
 	  
 	-- Successful  
 	SELECT 
@@ -288,9 +287,6 @@ BEGIN
 
 	SELECT @Status = CustStatus FROM dbo.f_CS_GetCustomerStatus (@CustID)
      
-	SELECT @isCasinoDisabled = ISNULL(@isCasinoDisabled,1)
-	SELECT @IsCasinoSync = ISNULL(@IsCasinoSync,0)
-
 	IF @RoleID = 2  
 		SELECT @MasterUsername = LOWER(username) FROM customer (NOLOCK) WHERE custid = (SELECT mrecommend FROM customer (NOLOCK) WHERE custid = @CustID)  
 	ELSE IF @RoleID = 3  
