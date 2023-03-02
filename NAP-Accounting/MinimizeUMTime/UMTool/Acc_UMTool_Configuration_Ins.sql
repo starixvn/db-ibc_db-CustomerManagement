@@ -25,7 +25,8 @@ BEGIN
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852] 
+		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852]
+		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #182841]
 
 	Param's Explanation:   
 		
@@ -89,7 +90,7 @@ SET NOCOUNT ON
 		GOTO ReturnErrorTbl;
 	END
 	
-	IF NOT EXISTS (SELECT 1 FROM Site WITH(NOLOCK) WHERE SiteID = @SiteID ) AND @SiteID <> 0 AND @FunctionType IN (1, 2, 101)
+	IF NOT EXISTS (SELECT 1 FROM Site WITH(NOLOCK) WHERE SiteID = @SiteID ) AND @SiteID <> 0
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',13,'Invalid Site' 
