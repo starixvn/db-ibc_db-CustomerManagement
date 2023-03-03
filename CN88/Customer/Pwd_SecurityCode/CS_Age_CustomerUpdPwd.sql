@@ -3,7 +3,7 @@ ALTER PROCEDURE [dbo].[CS_Age_CustomerUpdPwd]
     @CustID INT ,
     @UserPwd NVARCHAR(50) ,
     @UserID INT ,
-    --@DisCasino BIT = 0 ,
+    @DisCasino BIT = 0 ,
     @Language VARCHAR(2) = 'E' ,
     @SubAccID INT = 0 , --Sub-AccountID
     @LoginIP VARCHAR(20) = '' ,
