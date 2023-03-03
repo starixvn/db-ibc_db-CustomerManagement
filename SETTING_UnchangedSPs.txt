@@ -1,3 +1,4 @@
-NAP-Accounting\MinimizeUMTime\Acc_CheckUM_ByReport.sql
-NAP-Accounting\MinimizeUMTime\UMTool\Acc_UMTool_Configuration_Sel.sql
-NAP-Accounting\MinimizeUMTime\UMTool\Acc_UMTool_GetProductSettingByFunction.sql
+NAP-Accounting\Ex.Rate\Acc_ExchangeMultiBaseRateUpd.sql
+NAP-Accounting\Ex.Rate\Acc_ExchangeUpdateOpenToteRate.sql
+NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeIns.proc.sql
+NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeUpd.proc.sql
