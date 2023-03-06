@@ -15,6 +15,7 @@ DB:   DBCUST-CustDB
 
 Revisions:     
     - 20221108@Evan: Create new SP [Redmine: #177844]    
+    - 20230306@Evan: Fix bug code write log (overflow error) [Redmine: #184723]    
 Param's Explanation:            
  - @Fie:              
   <ROOT><File Currency = "ADA" USDT = "0.468612343423212" /></ROOT>          
@@ -90,8 +91,9 @@ BEGIN
     UPDATE a
     SET a.ExchangeId = e.ExchangeId, 
         a.MultipliedBy = e.MultipliedBy, 
-        a.USDT_After = e.MultipliedBy * CASE WHEN ISNUMERIC(USDT) = 1 THEN USDT ELSE NULL END
-    FROM #inputTmp a INNER JOIN exchange e WITH(NOLOCK) ON e.currency = a.SCurrency
+        a.USDT_After = e.MultipliedBy * CASE WHEN ISNUMERIC(USDT) = 1 THEN CAST(USDT AS FLOAT) ELSE NULL END
+    FROM #inputTmp a 
+        INNER JOIN exchange e WITH(NOLOCK) ON e.currency = a.SCurrency
     WHERE e.CurrencyType = 1
     
     IF @IsCheck = 1
@@ -127,34 +129,20 @@ BEGIN
         SELECT @RowTotal = COUNT(*)
         FROM #inputTmp;
 
-        DECLARE @ExchangeDaily_Crypto TABLE (ExchangeId INT, USDT FLOAT)
+        DECLARE @ExchangeDaily_Crypto TABLE (ExchangeId INT, USDT FLOAT, ExchangeDate SMALLDATETIME)
+        DECLARE @FDate SMALLDATETIME, @Tdate SMALLDATETIME, @USDT_old FLOAT, @ExchangeId INT;
 
         WHILE @CurrentRow <> @RowTotal
         BEGIN
 
-            SELECT @CurrentRow = @CurrentRow + 1,
+           SELECT @CurrentRow = @CurrentRow + 1,
                    @StartRun = GETDATE();
-            SELECT @LogSPData_Old = N'<R ExchangeId="' + COALESCE(CAST(e.ExchangeId AS VARCHAR(10)), SPACE(1)) + N'" ' + N'USDT="'
-                  + COALESCE(CAST(MAX(e.USDT) AS VARCHAR(10)), SPACE(1))  + N'" ' + N'ExchangeDateFrom="'
-                  + COALESCE(CAST(MIN(CONVERT(DATE,e.ExchangeDate,101)) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'ExchangeDateTo="'
-                  + COALESCE(CAST(MAX(CONVERT(DATE,e.ExchangeDate,101)) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'LoginIP="'
-                  + COALESCE(CAST(@LoginIP AS VARCHAR(20)), SPACE(1)) + N'" />'
-            FROM dbo.ExchangeDaily_Crypto e WITH (NOLOCK)
-                INNER JOIN #inputTmp i
-                    ON i.ExchangeId = e.ExchangeId
-            WHERE i.ID = @CurrentRow AND e.ExchangeDate >= @EffectiveDate
-            GROUP BY e.ExchangeId
-            
-            INSERT INTO @ExchangeDaily_Crypto (ExchangeId, USDT)
-            SELECT a.ExchangeId, a.USDT 
-            FROM ExchangeDaily_Crypto a WITH(NOLOCK) 
-                INNER JOIN #inputTmp b ON a.ExchangeId = b.ExchangeId
-            WHERE a.ExchangeDate = @Today AND b.ID = @CurrentRow
 
             BEGIN TRY
                 
                 UPDATE a
                 SET a.USDT = b.USDT_After
+                OUTPUT DELETED.ExchangeId, DELETED.USDT, DELETED.ExchangeDate INTO @ExchangeDaily_Crypto
                 FROM ExchangeDaily_Crypto a WITH(ROWLOCK) 
                     INNER JOIN #inputTmp b ON a.ExchangeId = b.ExchangeId
                 WHERE   a.ExchangeDate >= @EffectiveDate
@@ -162,29 +150,37 @@ BEGIN
         
             END TRY
             BEGIN CATCH
+
                 SELECT @ErrCode = ERROR_NUMBER(),
-                       @ErrMsg = ERROR_MESSAGE();
-                
+                        @ErrMsg = ERROR_MESSAGE();
                 --Manually rollback
                 UPDATE a
                 SET a.USDT = b.USDT
                 FROM ExchangeDaily_Crypto a WITH(ROWLOCK) 
-                    INNER JOIN @ExchangeDaily_Crypto b ON a.ExchangeId = b.ExchangeId
-                WHERE   a.ExchangeDate >= @EffectiveDate
-
+                    INNER JOIN @ExchangeDaily_Crypto b ON a.ExchangeId = b.ExchangeId AND a.ExchangeDate = b.ExchangeDate  
                 RETURN;
+
             END CATCH;
+
+            SELECT @FDate = MIN(ExchangeDate), @TDate = MAX(ExchangeDate), @USDT_old = MAX(USDT), @ExchangeId = ExchangeId 
+            FROM @ExchangeDaily_Crypto
+            GROUP BY ExchangeId
+
+            DELETE FROM @ExchangeDaily_Crypto;
             
-             SELECT @LogSPData = N'<R ExchangeId="' + COALESCE(CAST(e.ExchangeId AS VARCHAR(10)), SPACE(1)) + N'" ' + N'USDT="'
-                  + COALESCE(CAST(MAX(e.USDT) AS VARCHAR(10)), SPACE(1))  + N'" ' + N'ExchangeDateFrom="'
-                  + COALESCE(CAST(MIN(CONVERT(DATE,e.ExchangeDate,101)) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'ExchangeDateTo="'
-                  + COALESCE(CAST(MAX(CONVERT(DATE,e.ExchangeDate,101)) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'LoginIP="'
+            SELECT @LogSPData_Old = N'<R ExchangeId="' + COALESCE(CAST(@ExchangeId AS VARCHAR(10)), SPACE(1)) + N'" ' + N'USDT="'
+                  + COALESCE(CONVERT(VARCHAR(50),@USDT_old,2), SPACE(1))  + N'" ' + N'ExchangeDateFrom="'
+                  + COALESCE(CAST(CONVERT(DATE,@FDate,101) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'ExchangeDateTo="'
+                  + COALESCE(CAST(CONVERT(DATE,@TDate,101) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'LoginIP="'
                   + COALESCE(CAST(@LoginIP AS VARCHAR(20)), SPACE(1)) + N'" />'
-            FROM dbo.ExchangeDaily_Crypto e WITH (NOLOCK)
-                INNER JOIN #inputTmp i
-                    ON i.ExchangeId = e.ExchangeId
-            WHERE i.ID = @CurrentRow AND e.ExchangeDate >= @EffectiveDate
-            GROUP BY e.ExchangeId 
+            
+             SELECT @LogSPData = N'<R ExchangeId="' + COALESCE(CAST(@ExchangeId AS VARCHAR(10)), SPACE(1)) + N'" ' + N'USDT="'
+                  + COALESCE(CONVERT(VARCHAR(50),i.USDT_After,2), SPACE(1))  + N'" ' + N'ExchangeDateFrom="'
+                  + COALESCE(CAST(CONVERT(DATE,@FDate,101) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'ExchangeDateTo="'
+                  + COALESCE(CAST(CONVERT(DATE,@TDate,101) AS VARCHAR(10)), SPACE(1)) + N'" ' + N'LoginIP="'
+                  + COALESCE(CAST(@LoginIP AS VARCHAR(20)), SPACE(1)) + N'" />'
+            FROM #inputTmp i
+            WHERE i.ID = @CurrentRow
 
             SET @EndRun = GETDATE();
             SET @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun);
