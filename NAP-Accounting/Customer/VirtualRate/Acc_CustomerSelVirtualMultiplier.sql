@@ -19,6 +19,7 @@ AS
 			- 20190702@Dominic: Not show E-Sports [RedmineID:#114830]
 			- 20200608@Cherry: Not show Basketball (#134978)
 			- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
+			- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -60,7 +61,7 @@ BEGIN
             ON  cvs.seqNo = pvs.seqNo
     WHERE       cvs.custid = @CustID
 			AND ((@IsTest=0 AND pvs.isActive = 1) OR (@IsTest=1))
-			AND pvs.sporttype NOT IN (43, 2)
+			AND pvs.sporttype NOT IN (43)
 	ORDER BY sporttype, isLive DESC, bettype
 
     SELECT custid, sporttype, bettype, islive, virtualMultiplier

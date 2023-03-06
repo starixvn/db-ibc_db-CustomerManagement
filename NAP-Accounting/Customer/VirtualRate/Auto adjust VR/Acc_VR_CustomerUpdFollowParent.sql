@@ -16,7 +16,7 @@ AS
 		- 20200826@Eden: Adjust VR setting for Soccer of Haifa, IBO [redmine: #140368]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
-
+		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
 	Param's Explanation:  
 	Examples:
 		EXEC Acc_VR_CustomerUpdFollowParent 
@@ -81,17 +81,10 @@ BEGIN
 		WHERE ci.currency <> 20
 	END
 
-	DECLARE @CustID INT
-		, @BasketBallLevelID INT
+	DECLARE @CustID INT		
 		, @WL DECIMAL (19, 4)
 		, @TotalTO DECIMAL (19, 4)
 		, @AIOTO DECIMAL (19, 4)
-
-	SELECT @BasketBallLevelID = levelID
-	FROM VRSettingHierarchy  WITH(NOLOCK)
-	WHERE SportType = 2
-		AND VRLeagueGroupID = -1
-		AND BetType = -1
 
 	--> Scan all members with Status = 2
 	INSERT INTO @Update_CustTbl(CustID,AgentID,WL,TotalTO,AIOTO)
@@ -106,12 +99,6 @@ BEGIN
 
 	IF @Sporttype IN (99,100)
 	BEGIN
-		--SET basketball VR = follow upline (at basketball level) - VR2
-		DELETE vr
-		FROM VRCustSetting vr WITH(ROWLOCK)
-			INNER JOIN @Update_CustTbl t ON vr.CustID = t.CustID 
-		WHERE vr.LevelID = @BasketBallLevelID
-
 		--SET Other sport VR = follow upline ( their agent VR ) - VR1
 		DECLARE	@tblVirtualrate		TABLE (
 									CustID				INT
@@ -132,7 +119,7 @@ BEGIN
 				ON cvs.custid = t.AgentID
 			 INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 			   ON cvs.seqNo = pvs.seqNo
-		WHERE pvs.sporttype NOT IN (1, 2, 43);
+		WHERE pvs.sporttype NOT IN (1, 43);
 
 		IF @Sporttype = 100 -- SET Soccer VR = follow upline ( their agent VR ) - VR1
 		BEGIN

@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoSuspend]
 	@CustID			INT,
 	@AutoSuspend	BIT = NULL, -- Auto-suspend Soccer
 	@AutoSuspendOther BIT = NULL, -- Auto-suspend non-soccer sports
+	@AutoSuspend3	BIT = NULL, -- Auto-suspend Basketball
 	@UserID			INT,
 	@Language		nvarchar(5)='E',
 	@IP				varchar(15),
@@ -34,7 +35,7 @@ AS
 		- 20141125@Jamie: Change DB location & Acc_CustomerInfo_Execrep_04 instead of Acc_ExecRep_Cust_04 [Redmine:#26497]
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines, Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
-		
+		- 20230308@Johnson: Add auto-suspend for Basketball [redmine:#184339]
 	Param's Explanation:
 		@IsUpdDownline: auto-suspended all downlines
 
@@ -57,15 +58,19 @@ AS
 	DECLARE	@roleID	TINYINT,
 			@old_AutoSuspend BIT,
 			@old_AutoSuspendOther BIT,
+			@old_AutoSuspend3 BIT,
 			@old_AutoSuspendDownlines BIT,
 			@old_AutoSuspendDownlinesOther BIT,
+			@old_AutoSuspendDownlines3 BIT,
 			@uplineAutoSuspend BIT,
-			@uplineAutoSuspendOther BIT 
+			@uplineAutoSuspendOther BIT,
+			@uplineAutoSuspend3 BIT
 			
 	
 	SELECT	@roleID = roleID, 
 			@old_AutoSuspend = isnull(autosuspend,0),
-			@old_AutoSuspendOther = ISNULL(autosuspend2, 0)
+			@old_AutoSuspendOther = ISNULL(autosuspend2, 0),
+			@old_AutoSuspend3 = isnull(autosuspend3,0)
 	FROM	custinfo WITH (NOLOCK) 
 	WHERE	custID = @custid 
 
@@ -85,9 +90,10 @@ AS
 	END
 
 	select @AutoSuspend = ISNULL(@AutoSuspend, @old_AutoSuspend),
-			@AutoSuspendOther = ISNULL(@AutoSuspendOther, @old_AutoSuspendOther)
+			@AutoSuspendOther = ISNULL(@AutoSuspendOther, @old_AutoSuspendOther),
+			@AutoSuspend3 = ISNULL(@AutoSuspend3, @old_AutoSuspend3)
 
-	IF @old_AutoSuspend = @AutoSuspend and @old_AutoSuspendOther = @AutoSuspendOther
+	IF @old_AutoSuspend = @AutoSuspend and @old_AutoSuspendOther = @AutoSuspendOther and @old_AutoSuspend3 = @AutoSuspend3
 		RETURN
 
 	-- Check Allowed downlines during peak hour at weekend 
@@ -101,30 +107,33 @@ AS
 	--End 
 
 
-	IF @AutoSuspend = 0 or @AutoSuspendOther = 0 -- need to check upline when enable Auto-suspend
+	IF @AutoSuspend = 0 or @AutoSuspendOther = 0 or @AutoSuspend3 = 0-- need to check upline when enable Auto-suspend
 	BEGIN
 		IF @roleID = 1	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0)	
+								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)
 						FROM	custinfo WITH (NOLOCK)
 						WHERE	custid = (SELECT recommend 
 											FROM custinfo WITH (NOLOCK) 
 											WHERE custid = @custID)
 
 		IF @roleID = 2	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0)	
+								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
 						FROM	custinfo WITH (NOLOCK)
 						WHERE	custid = (SELECT mrecommend 
 											FROM custinfo WITH (NOLOCK) 
 											WHERE custid = @custID) 
 
 		IF @roleID = 3	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0)	
+								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
 						FROM	custinfo WITH (NOLOCK)
 						WHERE	custid = (SELECT srecommend 
 											FROM custinfo WITH (NOLOCK) 
 											WHERE custid = @custID) 
 
-		IF @roleID = 4	SELECT	@uplineAutoSuspend = 0, @uplineAutoSuspendOther = 0  
+		IF @roleID = 4	SELECT	@uplineAutoSuspend = 0, @uplineAutoSuspendOther = 0, @uplineAutoSuspend3 = 0  
 		
 		IF @uplineAutoSuspendOther = 1 and @old_AutoSuspendOther <> @AutoSuspendOther
 		begin
@@ -155,11 +164,27 @@ AS
 					@ErrCode = 102
 			RETURN			
 		END
+		
+		IF @uplineAutoSuspend3 = 1 and @old_AutoSuspend3 <> @AutoSuspend3
+		BEGIN
+			SELECT	@ErrMsg =  CASE @Language 
+									WHEN 'E' THEN 'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									WHEN 'CS' THEN N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									WHEN 'CT' THEN N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									WHEN 'TH' THEN N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'			
+									WHEN 'J' THEN N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									WHEN 'KO' THEN N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									ELSE N'Upline has been auto-suspended for Basketball sport. Cannot edit customer.'
+									END, 
+					@ErrCode = 103
+			RETURN			
+		END
 	END	
 
 	UPDATE	custinfo WITH (ROWLOCK, UPDLOCK)	
 	SET	autosuspend = @Autosuspend	,
-		autosuspend2 = @AutoSuspendOther
+		autosuspend2 = @AutoSuspendOther,
+		autosuspend3 = @Autosuspend3
 	WHERE	custid = @custID 
 
 	IF @@ERROR <> 0
@@ -178,7 +203,7 @@ AS
 		RETURN			
 	END
 	-- check condition for update all downline for Soccer
-	if @old_AutoSuspend <> @AutoSuspend and @old_AutoSuspendOther <> @AutoSuspendOther
+	if @old_AutoSuspend <> @AutoSuspend and @old_AutoSuspendOther <> @AutoSuspendOther and @old_AutoSuspend3 <> @AutoSuspend3
 	begin
 		-- apply exec rep for all: Soccer and Other sports
 		EXEC [Acc_CustomerInfo_Execrep_04]
@@ -186,7 +211,8 @@ AS
 		@RoleID		= @RoleID,
 		@Action		= 'AutoSuspend',
 		@AutoSuspendSoccer = @AutoSuspend,
-		@AutoSuspendOtherSports = @AutoSuspendOther
+		@AutoSuspendOtherSports = @AutoSuspendOther,
+		@AutoSuspendBasketball = @AutoSuspend3
 	end
 	else if @old_AutoSuspend <> @AutoSuspend
 	begin
@@ -206,6 +232,15 @@ AS
 		@Action		= 'AutoSuspendOther',
 		@AutoSuspendOtherSports = @AutoSuspendOther
 	end
+	else if @old_AutoSuspend3 <> @AutoSuspend3
+	begin
+		-- apply exec rep for Soccer
+		EXEC [Acc_CustomerInfo_Execrep_04]
+		@CustID		= @CustID,
+		@RoleID		= @RoleID,
+		@Action		= 'AutoSuspendBasketball',
+		@AutoSuspendBasketball = @AutoSuspend3
+	end
 
 	Declare @LogSPData varchar(MAX),
 		@TrackingValueDB varchar(max)
@@ -213,6 +248,7 @@ AS
 	SELECT	@LogSPData =  '<Acc_CustomerUpdAutoSuspend CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+
 						  'AutoSuspend="'+ coalesce(cast(@AutoSuspend as varchar(2)),space(1)) + '" '+
 						  'AutoSuspendOtherSports="'+ coalesce(cast(@AutoSuspendOther as varchar(2)),space(1)) + '" '+
+						  'AutoSuspendBasketball="'+ coalesce(cast(@AutoSuspend3 as varchar(2)),space(1)) + '" '+
 						  'UserID="'+ coalesce(cast(@UserID as varchar(50)),space(1)) + '" '+
 						  'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1))+'" '+
 						  'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+
@@ -222,6 +258,7 @@ AS
 	SELECT	@TrackingValueDB =  '<Acc_CustomerUpdAutoSuspend CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+
 						  'AutoSuspend="'+ coalesce(cast(@old_AutoSuspend as varchar(2)),space(1)) + '" '+
 						  'AutoSuspendOtherSports="'+ coalesce(cast(@old_AutoSuspendOther as varchar(2)),space(1)) + '" '+
+						  'AutoSuspendBasketball="'+ coalesce(cast(@old_AutoSuspend3 as varchar(2)),space(1)) + '" '+
 						  'UserID="'+ coalesce(cast(@UserID as varchar(50)),space(1)) + '" '+
 						  'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1))+'" '+
 						  'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+
@@ -245,6 +282,7 @@ AS
 		SELECT	@LogSPData =   '<Acc_CustomerUpdAutoSuspend CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" '+
 						  'AutoSuspend="'+ coalesce(cast(@AutoSuspend as varchar(2)),space(1)) + '" '+
 						  'AutoSuspendOtherSports="'+ coalesce(cast(@AutoSuspendOther as varchar(2)),space(1)) + '" '+
+						  'AutoSuspend3="'+ coalesce(cast(@AutoSuspend3 as varchar(2)),space(1)) + '" '+
 						  'UserID="'+ coalesce(cast(@UserID as varchar(50)),space(1)) + '" '+
 						  'Language="'+ COALESCE(CAST(@Language AS VARCHAR(2)),SPACE(1))+'" '+
 						  'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+
@@ -261,6 +299,3 @@ AS
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdAutoSuspend] TO [bodbAdminNet] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdAutoSuspend] TO [vnteam] AS [dbo]
