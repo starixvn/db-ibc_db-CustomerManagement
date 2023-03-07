@@ -1,6 +1,7 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_MT_BetTypeSel]
 	@Sporttype	INT = NULL
+	,@SettingStatus TINYINT = 0
 AS
 
 /*
@@ -19,6 +20,7 @@ Revisions:
 	- 20180823@Winnie: Hot fix view PT. [RedmineID: #100417]
 	- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 Parameters Explanation:  
 	
@@ -27,12 +29,23 @@ BEGIN
 	SET NOCOUNT ON
 
 	CREATE TABLE #tmp_Bettype(ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit], 
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
 
-	IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM ProductSettingDetail(NOLOCK) where SportType=@Sporttype AND SettingType IN (1,18)) =1)
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive)
+	SELECT SportType,BetType,SettingType,IsLive
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+
+	IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM #ProductSettingDetail(NOLOCK) where SportType=@Sporttype AND SettingType IN (1,18)) =1)
 	BEGIN
-	SELECT NULL AS bettype, NULL AS typenamee 
-	WHERE 1=0
-	RETURN
+		SELECT NULL AS bettype, NULL AS typenamee 
+		WHERE 1=0
+		RETURN
 	END
 	----- 20150610@Kos -------------------
 		BEGIN TRY	
@@ -53,17 +66,20 @@ BEGIN
 
 	SELECT DISTINCT t.bettype, b.Name AS typenamee
 	FROM 
-		(	SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
+		(	
+			SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 			UNION 
 			SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
 			UNION
-			SELECT 73104, psd.BetType, psd.SportType FROM ProductSettingDetail psd WITH(NOLOCK)
-			WHERE psd.SettingType IN (1,18)
+			SELECT 73104,Bettype,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+			UNION
+			SELECT 73104,Bettype,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
 		 ) t
 		INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
 	WHERE t.custid IN( 73104) AND t.sporttype = ISNULL(@sporttype, t.sporttype)
 	ORDER BY t.bettype
 
 	DROP TABLE #tmp_Bettype
+	DROP TABLE #ProductSettingDetail
 END
 GO

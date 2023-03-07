@@ -11,6 +11,7 @@ AS
 		Original: 
 		Revisions:
 			- 20220708@Tacy: Create SP [Redmine: #174509]
+			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		
 		Param's Explanation:
 			@pMutilProductID 0 : All, <> 0 : ProductID
@@ -20,12 +21,12 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	CREATE TABLE #Sports (SportType TINYINT PRIMARY KEY, SportName NVARCHAR(50))
+	CREATE TABLE #Sports (SportType SMALLINT PRIMARY KEY, SportName NVARCHAR(50))
 	CREATE TABLE #Products (ProductID TINYINT PRIMARY KEY, ProductName VARCHAR(50))
 
 	CREATE TABLE #ProductCurrency (
 			ProductName		VARCHAR(50),
-			SportType		TINYINT,
+			SportType		SMALLINT,
 			SportName		NVARCHAR(50),
 			CurrencyCredit	NVARCHAR(50),
 			CurrencyDeposit	NVARCHAR(50),
@@ -35,7 +36,7 @@ BEGIN
 	CREATE TABLE #Credit_ProductCurrency (
 			ProductID		TINYINT,
 			ProductName		VARCHAR(50),
-			SportType		TINYINT,
+			SportType		SMALLINT,
 			SportName		NVARCHAR(50),
 			CurrencyCredit	NVARCHAR(50)
 	)
@@ -43,7 +44,7 @@ BEGIN
 	CREATE TABLE #Dep_ProductCurrency (
 			ProductID		TINYINT,
 			ProductName		VARCHAR(50),
-			SportType		TINYINT,
+			SportType		SMALLINT,
 			SportName		NVARCHAR(50),
 			CurrencyDeposit	NVARCHAR(50)
 	)
@@ -52,14 +53,29 @@ BEGIN
 	FROM dbo.products WITH(NOLOCK)
 
 	INSERT INTO #Sports (SportType, SportName)	
-	SELECT SportType,SportName 
-	FROM dbo.Sports WITH(NOLOCK)
+	EXEC Acc_SporttypeSel @Mode=1
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
+	UNION 
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
 
 	--CREDIT
 	INSERT INTO #Credit_ProductCurrency (ProductID, ProductName, SportType, SportName, CurrencyCredit)
 	SELECT DISTINCT
 		p.ProductID, p.ProductName, s.SportType, SportName, eC.Currency AS CurrencyCredit
-	FROM ProductSettingDetail psd WITH(NOLOCK)
+	FROM #ProductSettingDetail psd WITH(NOLOCK)
 		INNER JOIN #Products p WITH(NOLOCK) ON p.ProductID=psd.ProductID
 		INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 		INNER JOIN ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType AND pbs.Bettype=psd.BetType
@@ -67,11 +83,10 @@ BEGIN
 	WHERE psd.SettingType IN (2,9,16,20) AND p.ProductID NOT IN (1,3,8)
 		AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 		AND (@pMutilCurrency='0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
-		AND psd.SettingStatus<>2
 	UNION
 	SELECT DISTINCT
 		p.ProductID, p.ProductName, s.SportType, SportName, eC.Currency AS CurrencyCredit
-	FROM ProductSettingDetail psd WITH(NOLOCK)
+	FROM #ProductSettingDetail psd WITH(NOLOCK)
 		INNER JOIN #Products p WITH(NOLOCK) ON p.ProductID=psd.ProductID
 		INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType	
 		INNER JOIN StakeLevel sl WITH(NOLOCK) ON sl.GameTypeID=psd.BetType
@@ -79,7 +94,6 @@ BEGIN
 	WHERE psd.SettingType IN (7,8,17)
 		AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 		AND (@pMutilCurrency='0' OR sl.ExchangeId IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
-		AND psd.SettingStatus<>2
 
 	--DEPOSIT
 	INSERT INTO #Dep_ProductCurrency (ProductID, ProductName, SportType, SportName, CurrencyDeposit)
@@ -149,5 +163,6 @@ BEGIN
 	DROP TABLE #Credit_ProductCurrency
 	DROP TABLE #Dep_ProductCurrency
 	DROP TABLE #ProductCurrency
+	DROP TABLE #ProductSettingDetail
 END
 GO

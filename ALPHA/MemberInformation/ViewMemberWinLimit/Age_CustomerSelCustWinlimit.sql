@@ -26,6 +26,7 @@ AS
 		- 20200511@Elodie: Change format of PlayerID [Redmine: #133755]
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -40,6 +41,14 @@ BEGIN
 		, @RowEnd = @RowStart + @PageSize - 1
 
 	CREATE TABLE #MemberBalance (CustId INT)
+
+	--> Get Representative sporttype, bettype of this sport( use for settingtype 22 storeing way)
+	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
+			@BetType = ISNULL(BettypeRefWinlossLimit,@BetType)
+	FROM SportBettypeSettingMatrix st WITH(NOLOCK) 
+	WHERE st.SportType = @SportType
+		AND st.bettype = @BetType
+		AND st.isLicensee = 0 AND st.Site = 'ALL'
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
 	FROM dbo.CustInfo c WITH(NOLOCK)

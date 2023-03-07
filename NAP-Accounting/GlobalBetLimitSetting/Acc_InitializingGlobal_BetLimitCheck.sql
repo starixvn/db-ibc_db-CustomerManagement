@@ -18,6 +18,7 @@ AS
 		- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 		- 22021227@Tacy: Apply SettingType  [Redmine: #174509] 
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -92,7 +93,7 @@ BEGIN
 		)
 	
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128), typedesc NVARCHAR(128))
-	CREATE TABLE #Sports(SportType TINYINT PRIMARY KEY, SportName NVARCHAR(50))
+	CREATE TABLE #Sports(SportType SMALLINT PRIMARY KEY, SportName NVARCHAR(50))
 	CREATE TABLE #Currency(Currency	VARCHAR(50))
 	CREATE TABLE #RowDuplicate(RowIDF INT, RowIDT INT)
 	
@@ -146,12 +147,28 @@ BEGIN
 	EXEC sp_xml_removedocument @iDoc
 
 	INSERT INTO #Sports	(SportType, SportName)	
-	SELECT SportType, SportName 
-	FROM dbo.Sports WITH(NOLOCK)
+	EXEC Acc_SporttypeSel @Mode=1
 
 	INSERT INTO #Bettype (typeid, typenamee, typedesc)	
 	SELECT typeid, typenamee, typedesc
 	FROM dbo.Bettype WITH(NOLOCK)
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+		[RealProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
+	UNION 
+	SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
 
 	SELECT TOP (1)
 			@ErrCode=CASE WHEN ISNULL(SportType, '')=''			THEN 131
@@ -213,10 +230,9 @@ BEGIN
 	UPDATE a	--CREDIT
 	SET a.SettingType= psd.SettingType, a.OrgBetType=psd.BetType, a.ProductID=psd.RealProductId	
 	FROM #NewInputDateTbl a
-		INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType
+		INNER JOIN #ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType
 														AND (psd.SettingType=8 OR (psd.SettingType IN (2, 8, 9, 16, 7, 17) AND a.BetType=psd.BetType))
 	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17) AND psd.ProductID NOT IN (1,3,8)
-		AND psd.SettingStatus<>2
 
 	UPDATE a	--DEPOSIT
 	SET a.SettingType= ps.SettingType, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
@@ -710,5 +726,6 @@ BEGIN
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #Currency
 	DROP TABLE #RowDuplicate
+	DROP TABLE #ProductSettingDetail
 END			
 GO

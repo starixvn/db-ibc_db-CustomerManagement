@@ -27,6 +27,7 @@ AS
 		- 20220912@Tacy: Add SEAL Entertainment [RedmineID: #176209]
 		- 20220919@Tacy: Add Microgaming [RedmineID: #175853]
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -41,12 +42,25 @@ BEGIN
 								ProductID TINYINT DEFAULT(0),
 								SuperPT SMALLMONEY DEFAULT(0))
 
-	CREATE TABLE #ProductSettingDetail(	SportType SMALLINT,
+	CREATE TABLE #Tmp_ProductProfile(	SportType SMALLINT,
 								BetType SMALLINT ,
 								ProductID TINYINT,
 								RealProductID TINYINT)
 
 	CREATE TABLE #Supers (CustID INT) 
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID 
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
 
 	INSERT INTO #Supers(CustID)
 	SELECT DISTINCT value
@@ -54,7 +68,7 @@ BEGIN
 	WHERE value <> ''
 	OPTION (maxrecursion 0)    
 
-	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
+	INSERT INTO #Tmp_ProductProfile( ProductID,SportType,BetType,RealProductID)
 	SELECT ProductID,SportType,BetType,RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 	UNION ALL
@@ -65,11 +79,11 @@ BEGIN
 	;WITH tmp AS(
 		SELECT  ProductID,SportType,BetType,RealProductID
 			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype)
-		FROM #ProductSettingDetail 
+		FROM #Tmp_ProductProfile 
 		WHERE ProductID IN (41,44)
 	)
 	DELETE t
-	FROM #ProductSettingDetail t 
+	FROM #Tmp_ProductProfile t 
 		INNER JOIN tmp ON t.ProductID = tmp.ProductID
 			AND t.SportType = tmp.SportType
 			AND t.BetType = tmp.BetType
@@ -78,11 +92,11 @@ BEGIN
 	-- DCS Setting
 	INSERT INTO #tblCustomer (CustID,SportType,BetType,ProductID)
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
-	FROM #ProductSettingDetail b
+	FROM #Tmp_ProductProfile b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
-			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
+			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
 			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
 			or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2			
@@ -115,8 +129,9 @@ BEGIN
 		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 18 and b.SportType = 9906 and ss.CustID = b.CustID
-	INNER JOIN ProductSettingDetail c WITH(NOLOCK) ON  c.SettingType = 8 AND c.ProductID = b.ProductID 
-	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
+	INNER JOIN #ProductSettingDetail c WITH(NOLOCK)	
+		ON  c.SettingType = 8
+		AND c.ProductID = b.ProductID 
 
 	-- Non DCS Setting
 	
@@ -146,6 +161,9 @@ BEGIN
 		INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
 	ORDER BY a.CustID,a.ProductID
 	
-	DROP TABLE #tblCustomer							
+	DROP TABLE #tblCustomer		
+	DROP TABLE #ProductSettingDetail
+	DROP TABLE #Supers
+	DROP TABLE #Tmp_ProductProfile
 END
 GO

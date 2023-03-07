@@ -16,6 +16,7 @@ AS
 		- 20220922@Tacy: add SEAL Entertainment [RedmineId: #176209]
 		- 20220922@Tacy: add Microgaming [RedmineId: #175853]
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -33,12 +34,25 @@ BEGIN
 								ValuePT SMALLMONEY DEFAULT(0),
 								roleid TINYINT)
 
-	CREATE TABLE #ProductSettingDetail(	SportType SMALLINT,
+	CREATE TABLE #Tmp_ProductProfile(	SportType SMALLINT,
 								BetType SMALLINT ,
 								ProductID TINYINT,
 								RealProductID TINYINT)
 
 	CREATE TABLE #SMATemp (CustID INT,roleid	TINYINT) 
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+ 
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID 
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
 
 	INSERT INTO #SMATemp(CustID)
 	SELECT DISTINCT value
@@ -51,7 +65,7 @@ BEGIN
 	FROM #SMATemp s
 		INNER JOIN custInfo ci WITH(NOLOCK) ON s.CustID = ci.custid
 	
-	INSERT INTO #ProductSettingDetail( ProductID,SportType,BetType,RealProductID)
+	INSERT INTO #Tmp_ProductProfile( ProductID,SportType,BetType,RealProductID)
 	SELECT ProductID,SportType,BetType,RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 	UNION ALL
@@ -62,11 +76,11 @@ BEGIN
 	;WITH tmp AS(
 		SELECT  ProductID,SportType,BetType,RealProductID
 			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype)
-		FROM #ProductSettingDetail 
+		FROM #Tmp_ProductProfile 
 		WHERE ProductID IN (41,44)
 	)
 	DELETE t
-	FROM #ProductSettingDetail t 
+	FROM #Tmp_ProductProfile t 
 		INNER JOIN tmp ON t.ProductID = tmp.ProductID
 			AND t.SportType = tmp.SportType
 			AND t.BetType = tmp.BetType
@@ -75,11 +89,11 @@ BEGIN
 	-- DCS Setting
 	INSERT INTO #tblCustomer (CustID,SportType,BetType,ProductID,roleid)
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
-	FROM #ProductSettingDetail b
+	FROM #Tmp_ProductProfile b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
-			or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
+			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
 			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
 			or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2			
@@ -115,8 +129,9 @@ BEGIN
 		ELSE c.ProductID END ProductID, b.ValuePT,ss.roleid
 	FROM #SMATemp ss 
 	INNER JOIN #tblCustomer b ON  b.ProductID = 18 and b.SportType = 9906 and ss.CustID = b.CustID
-	INNER JOIN ProductSettingDetail c WITH(NOLOCK) ON c.SettingType = 8 AND c.ProductID = b.ProductID 
-	WHERE c.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END
+	INNER JOIN #ProductSettingDetail c WITH(NOLOCK)	
+		ON  c.SettingType = 8
+		AND c.ProductID = b.ProductID 
 
 	-- Non DCS Setting
 	
@@ -153,21 +168,13 @@ BEGIN
 		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.CustID = cs.CustID 
 	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
 	
-	-- Gold Deluxe
-	--INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	--SELECT ss.CustID, cs.Sporttype, cs.Bettype, 12 AS ProductID,   
-	--			   CASE WHEN ss.roleid = 4 THEN cs.spositiontaking 
-	--					WHEN ss.roleid = 3 THEN cs.mpositiontaking
-	--					WHEN ss.roleid = 2 THEN cs.apositiontaking
-	--					ELSE cs.spositiontaking END AS ValuePT,ss.roleid
-	--FROM #SMATemp ss
-	--INNER JOIN dbo.CustSettingGame cs WITH(NOLOCK) ON ss.CustID = cs.CustID 
-	--WHERE  cs.sporttype = 255 AND cs.bettype = 1701
-	
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a
 	ORDER BY a.CustID,a.ProductID
 	
-	DROP TABLE #tblCustomer							
+	DROP TABLE #tblCustomer			
+	DROP TABLE #ProductSettingDetail
+	DROP TABLE #Tmp_ProductProfile
+	DROP TABLE #SMATemp
 END
 GO

@@ -1,7 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
-USE CustDB
-GO
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelCommByProductID_Ag]
 	@ProductID INT,
 	@Recommend INT,
@@ -20,6 +17,7 @@ AS
 		- 20200615@Elodie: Implement new setting type 19 [Redmine: #135363]
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT 
@@ -27,21 +25,17 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @DummyProductID INT, @SportType INT
+	DECLARE  @SportType INT
 	CREATE TABLE #SportBettypeFilter ( ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, IsLive BIT, SettingType SMALLINT)
-	
-	SELECT DISTINCT @DummyProductID = s.ProductID
-	FROM ProductSettingDetail S WITH(NOLOCK)
-	WHERE ProductID = @ProductID
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,3,@SettingStatus)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,3,@SettingStatus)
 	WHERE RealProductId = @ProductID
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(@DummyProductID,19,@SettingStatus)
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,19,@SettingStatus)
 	WHERE RealProductId = @ProductID
 		
 	SELECT 

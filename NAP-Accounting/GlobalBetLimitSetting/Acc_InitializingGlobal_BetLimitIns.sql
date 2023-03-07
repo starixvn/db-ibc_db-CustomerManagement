@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
@@ -20,6 +19,7 @@ AS
 		- 20220707@Tacy: NAP - Flexible Initializing insert Global Bet Limit [Redmine: #174509]
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 		- 22021227@Tacy: apply settingtype [Redmine: #174509] 
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -115,6 +115,22 @@ BEGIN
 	SELECT	@ErrCode = 0 , @ErrMsg = '' 
 	
 	SET @StartRun = GETDATE()	
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
+	UNION 
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
 	--Parse XML data
 	DECLARE @iDoc INT
 	BEGIN TRY
@@ -187,10 +203,9 @@ BEGIN
 		UPDATE a	--CREDIT
 		SET a.SettingType =  psd.SettingType , a.OrgBetType = psd.BetType	
 		FROM  #NewInputDateTbl a
-			INNER JOIN ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
+			INNER JOIN #ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
 		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17) AND ProductID NOT IN (1,3,8)
-			AND psd.SettingStatus<>2
 			
 		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
@@ -585,5 +600,6 @@ BEGIN
 			
 	DROP TABLE #NewInputDateTbl
 	DROP TABLE #BetType
+	DROP TABLE #ProductSettingDetail
 END						
 GO

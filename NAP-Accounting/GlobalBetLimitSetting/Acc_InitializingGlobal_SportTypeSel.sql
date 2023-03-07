@@ -11,6 +11,7 @@ AS
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
+			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		
 		Param's Explanation:
 			@ProductID  0 : All, <> 0 : ProductID
@@ -20,23 +21,37 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	CREATE TABLE #Sports(SportType TINYINT PRIMARY KEY, SportName NVARCHAR(50))
+	CREATE TABLE #Sports(SportType SMALLINT PRIMARY KEY, SportName NVARCHAR(50))
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
+	UNION 
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
 
 	INSERT INTO #Sports  (SportType,SportName)	
-	SELECT SportType,SportName 
-	FROM dbo.Sports WITH(NOLOCK)
+	EXEC Acc_SporttypeSel @Mode=1
 	
 	SELECT SportType , SportName
 	FROM (			
 		SELECT DISTINCT
 			 psd.SportType
 			 ,s.SportName
-		FROM ProductSettingDetail psd WITH(NOLOCK)
+		FROM #ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 		WHERE (@ProductID = 0 OR psd.ProductID = @ProductID) AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
 			AND (psd.SettingType IN (2,7,8,9,16,17,20))
 			AND psd.ProductID NOT IN (1,3,8)
-			AND psd.SettingStatus<>2
 		UNION
 		SELECT DISTINCT
 			 psd.SportType
@@ -51,5 +66,6 @@ BEGIN
 	ORDER BY SportType, SportName
    
    DROP TABLE #Sports
+   DROP TABLE #ProductSettingDetail
 END
 GO

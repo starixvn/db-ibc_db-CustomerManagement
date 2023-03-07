@@ -1,6 +1,7 @@
 /*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_ProductSettingByGroup_Sel]
-	@GroupId	INT = NULL
+	@GroupId	INT = NULL, 
+	@SettingStatus TINYINT = 0
 AS
 /*  
 	Created by: 20200923@Eden
@@ -13,11 +14,35 @@ AS
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 */
 BEGIN
 	SET NOCOUNT ON
 
 	CREATE TABLE #tmpProducts (ProductId TINYINT)
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+		[RealProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	IF @SettingStatus = 3
+	BEGIN 
+		INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID)
+		SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
+		FROM DBACC.bodb02.dbo.ProductSettingDetail_UAT WITH(NOLOCK)
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID)
+		SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
+		FROM DBACC.bodb02.dbo.ProductSettingDetail WITH(NOLOCK)
+	END
 
 	-- Get all enabled products
 	INSERT INTO #tmpProducts (ProductId)
@@ -42,12 +67,13 @@ BEGIN
 	UNION ALL --DCS products
 	SELECT DISTINCT d.ProductId
 	FROM @products p
-		INNER JOIN DBACC.bodb02.dbo.ProductSettingDetail d WITH(NOLOCK)
+		INNER JOIN #ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
 	WHERE p.ProductId NOT IN (1,3,8,12,16) 
 		AND d.SettingType IN (4,11,13,21)
 	ORDER BY ProductId
 
 	DROP TABLE #tmpProducts
+	DROP TABLE #ProductSettingDetail
 END
 GO

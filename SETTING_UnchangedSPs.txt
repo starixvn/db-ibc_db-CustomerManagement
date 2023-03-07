@@ -1,4 +1,8 @@
-NAP-Accounting\Ex.Rate\Acc_ExchangeMultiBaseRateUpd.sql
-NAP-Accounting\Ex.Rate\Acc_ExchangeUpdateOpenToteRate.sql
-NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeIns.proc.sql
-NAP-Accounting\Ex.Rate\dbo.Acc_ExchangeUpd.proc.sql
+ALPHA\Customer\Acc_CustSetting_CheckMacauEnable.sql
+Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
+ALPHA\Customer\Age_CustomerSelAllStatus.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
+ALPHA\LimitDailyPTUpdate\NAP_LimitPTDaily_ProductList.sql
+ALPHA\Customer\Acc_CustSetting_CheckMacauEnable.sql
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
+Ext NAP\Customer\EAS_CustomerInsMember_CloneSetting_Com.sql

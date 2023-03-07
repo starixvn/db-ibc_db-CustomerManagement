@@ -21,6 +21,7 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -63,6 +64,40 @@ BEGIN
 		AND	ps.isSynced = 1
 		AND	ps.isHidden = 0
 
+	--> Add for settingtype 22 
+	CREATE TABLE #SportBetype(
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[RealProductId] [tinyint]
+	)
+
+	INSERT INTO #SportBetype(SportType,BetType,RealProductId)
+	SELECT st.SportType
+		,st.BetType
+		,st.RealProductId 
+	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
+		INNER JOIN DBACC.bodb02.dbo.SportBettypeSettingMatrix st WITH(NOLOCK) 
+			ON st.SporttypeRefWinlossLimit = s.SportType 
+			AND st.BettypeRefWinlossLimit = s.Bettype
+			AND st.isLicensee = 0 AND st.Site = 'ALL'
+
+	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
+	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
+	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
+	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
+	INNER JOIN	#SportBetype AS sbss
+			ON	sbss.SportType = psp.Sporttype
+			AND	CASE WHEN sbss.BetType = 1021 THEN 1024 ELSE sbss.BetType END = psp.Bettype
+	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+			ON	p.ProductID = sbss.RealProductId
+	CROSS APPLY	(
+		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
+			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
+	) ps(isSynced, isHidden)
+	WHERE	cps.CustID = @CustId
+		AND	ps.isSynced = 1
+		AND	ps.isHidden = 0
+
 	SELECT p.BetType, 
 		   p.SportType, 
 		   p.ProductName, 
@@ -74,6 +109,8 @@ BEGIN
 	FROM @Products p 
 		INNER JOIN dbo.Products d WITH(NOLOCK) ON p.ProductID = d.ProductID
 	ORDER BY d.OrderNo
+
+	DROP TABLE #SportBetype
 END
 GO
 
