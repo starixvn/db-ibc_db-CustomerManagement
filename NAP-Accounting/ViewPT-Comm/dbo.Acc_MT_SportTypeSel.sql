@@ -1,5 +1,6 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_MT_SportTypeSel]
+ @SettingStatus TINYINT = 0
 AS 
 
 /*
@@ -20,41 +21,32 @@ AS
 		- 20191101@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20221006@Winfred: Don't show setting of products which are not offered to a credit site [Redmine: #174744] 
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 */
 
 SET NOCOUNT ON
 
 ----- 20150610@Kos -------------------
 DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
-	
-BEGIN TRY
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBAGE.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164,160,163,207,204,50,206)
-END TRY
-BEGIN CATCH
-	INSERT INTO @tmp_Sports (SportType, SportName)
-	SELECT SportType, SportName FROM DBTXN.bodb02.dbo.Sports WITH (NOLOCK)
-	WHERE Sporttype NOT IN(151,152,153,154,206,252,253,164,160,163,207,204,50,206)
-END CATCH
------ 20150610@Kos -------------------
 
 INSERT INTO @tmp_Sports (SportType, SportName)
-SELECT 9906 AS sporttype , N'RNG Slot' AS SportName
-WHERE NOT EXISTS( SELECT TOP 1 1 FROM @tmp_Sports WHERE sporttype = 9906)
+EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
+
+DELETE t 
+FROM @tmp_Sports t
+WHERE Sporttype IN (151,152,153,154,206,252,253,164,160,163,207,204,50,206)
 
 SELECT DISTINCT t.sporttype, s.sportname
 FROM 
 	(	SELECT cs.custid, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
 		UNION 
 		SELECT cs3rd.custid, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
-        UNION
-        SELECT 73104, psd.SportType FROM ProductSettingDetail psd WITH(NOLOCK)
-        WHERE psd.SettingType IN (1,18) AND SettingStatus < 2
+		UNION
+		SELECT 73104,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+		UNION
+		SELECT 73104,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
 	 ) t
 	INNER JOIN @tmp_Sports s ON t.sporttype = s.sporttype
 WHERE t.custid = 73104 
 ORDER BY t.sporttype
-
-
 GO

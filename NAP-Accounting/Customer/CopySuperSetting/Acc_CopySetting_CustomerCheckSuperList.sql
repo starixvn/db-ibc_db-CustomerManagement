@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_CopySetting_CustomerCheckSuperList] 
 	@username VARCHAR(50),
 	@SuperList VARCHAR(MAX) = '',
@@ -19,6 +18,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -117,10 +117,11 @@ BEGIN
 	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT)
 	
 	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype)
-	SELECT DISTINCT ProductID, SportType, Bettype	
-	FROM dbo.ProductSettingDetail WITH(NOLOCK)
-	WHERE SettingType IN (6,12)--win/loss limit settingtype
-		AND SettingStatus = 0
+	SELECT DISTINCT p.ProductID, p.SportType, p.Bettype	
+	FROM dbo.ProductSettingDetail p WITH(NOLOCK)
+		INNER JOIN ProductSettingType t WITH(NOLOCK) ON p.SettingType = t.SettingType
+	WHERE t.SettingName = 'Win Loss Limit'
+		AND p.SettingStatus = 0
 
 	INSERT INTO @tblProduct(ProductID,SportType)
 	SELECT DISTINCT ft.ProductID, ft.SportType		

@@ -12,6 +12,7 @@ AS
 		Revisions:
 			- 20220210@Winfred: NAP -  Flexible Initializing Stake Level [Redmine: #167128]
 			- 20220705@Tacy: NAP - Flexible Initializing Global Bet Limit [Redmine: #174509]
+			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		
 		Param's Explanation:
 			@ProductID  0 : All, <> 0 : ProductID
@@ -25,24 +26,40 @@ BEGIN
 	INSERT INTO #Bettype  (typeid,typenamee)	
 	SELECT typeid,typenamee 
 	FROM dbo.Bettype WITH(NOLOCK)
+
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[IsLive] [bit] ,
+		[ProductID] [tinyint],
+	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+	)
+
+	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
+	UNION 
+	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
 	
 	SELECT BetType , typenamee
 	FROM (				
 		SELECT DISTINCT
 			 psd.BetType
 			 ,b.typenamee 
-		FROM ProductSettingDetail psd WITH(NOLOCK)
+		FROM #ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
 		WHERE (psd.SettingType IN (2,7,9,16,17,20)) 
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
-			AND psd.ProductID NOT IN (1,3,8) AND psd.SettingStatus<>2
+			AND psd.ProductID NOT IN (1,3,8)
 		UNION
 		SELECT DISTINCT
 			 slg.GameTypeID AS BetType
 			 ,b.typenamee 
-		FROM ProductSettingDetail psd WITH(NOLOCK)
+		FROM #ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN StakeLevel sl WITH(NOLOCK) ON psd.BetType = sl.GameTypeID
 			INNER JOIN StakeLevelGroupDetail slg WITH(NOLOCK) ON sl.StakeLevelID = slg.StakeLevelID
 			INNER JOIN #Bettype b WITH(NOLOCK) ON slg.GameTypeID = b.typeid
@@ -50,7 +67,6 @@ BEGIN
 			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT val FROM dbo.strSplit(@pMutilSportType, ',')))
 			AND (@pMutilBettypeType = '0' OR psd.BetType IN (SELECT val FROM dbo.strSplit(@pMutilBettypeType, ',')))
-			AND psd.SettingStatus<>2
 		UNION
 		SELECT DISTINCT
 			 psd.BetType
@@ -81,5 +97,6 @@ BEGIN
 	ORDER BY BetType
    
    DROP TABLE #Bettype
+   DROP TABLE #ProductSettingDetail
 END
 GO

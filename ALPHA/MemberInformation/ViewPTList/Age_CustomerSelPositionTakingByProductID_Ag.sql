@@ -5,7 +5,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_Ag]
 	@Recommend	INT,
 	@PageIndex	INT = 1,
 	@PageSize	INT = 100,
-	@TotalPages	INT = 0 OUTPUT
+	@TotalPages	INT = 0 OUTPUT,
+	@SettingStatus TINYINT = 0
 )
 AS
 /*
@@ -22,6 +23,7 @@ AS
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
+		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
@@ -37,11 +39,13 @@ BEGIN
 
 
 	INSERT INTO #SportBettype (SportType, BetType, IsLive)
-	SELECT	SportType, BetType, IsLive
-	FROM	ProductSettingDetail WITH(NOLOCK)
-	WHERE	RealProductId = @ProductID
-		AND	SettingType IN (1,18)	-- PT
-		AND SettingStatus < 2
+	SELECT SportType, BetType, IsLive 
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+	WHERE RealProductId = @ProductID
+	UNION ALL 
+	SELECT SportType, BetType, IsLive 
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+	WHERE RealProductId = @ProductID
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
