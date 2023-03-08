@@ -14,6 +14,7 @@ CREATE PROCEDURE [dbo].[Acc_DomainListUpd]
   @SiteLabel VARCHAR(50)  ,
   @DomainOld VARCHAR(50) ,
   @DomainNew VARCHAR(50) ,
+  @Alias VARCHAR(20) ,
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(21) = ''  OUTPUT 
  
@@ -32,7 +33,7 @@ AS
 BEGIN
  
  UPDATE [dbo].[Age_DomainList] WITH (ROWLOCK , UPDLOCK)
- SET Domain = @DomainNew
+ SET Domain = @DomainNew , Alias = @Alias
  WHERE SiteLabel = @SiteLabel AND Domain = @DomainOld;
  
 IF @@ERROR <> 0  

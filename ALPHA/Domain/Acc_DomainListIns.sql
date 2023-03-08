@@ -13,6 +13,7 @@ CREATE PROCEDURE [dbo].[Acc_DomainListIns]
 	-- Add the parameters for the stored procedure here
   @SiteLabel VARCHAR(50)  ,
   @Domain VARCHAR(50),
+  @Alias VARCHAR(20),
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(20) = ''  OUTPUT 
  
@@ -40,8 +41,8 @@ END
 ELSE
 BEGIN
 	INSERT INTO [dbo].[Age_DomainList]
-			([SiteLabel] ,[Domain])
-	SELECT @SiteLabel  ,  @Domain
+			([SiteLabel] ,[Domain] , [Alias])
+	SELECT @SiteLabel  ,  @Domain , @Alias
 END
  
 
