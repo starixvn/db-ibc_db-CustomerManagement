@@ -10,7 +10,8 @@ GO
  
 CREATE PROCEDURE [dbo].[Age_DomainListSel] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel varchar(50)  
+  @SiteLabel VARCHAR(50)  ,
+  @Environment VARCHAR(3)
 
 AS
 
@@ -27,6 +28,6 @@ AS
 BEGIN
  
  SELECT SiteLabel , Domain FROM dbo.Age_DomainList WITH (NOLOCK)
- WHERE SiteLabel = @SiteLabel
+ WHERE SiteLabel = @SiteLabel AND Environment = @Environment
 
 END
