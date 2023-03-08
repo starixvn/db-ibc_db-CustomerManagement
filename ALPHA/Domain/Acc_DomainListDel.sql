@@ -11,9 +11,8 @@ GO
  
 CREATE PROCEDURE [dbo].[Acc_DomainListDel] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel VARCHAR(50)  ,
-  @Domain VARCHAR(50) ,
-  @Environment VARCHAR(3),
+  @SiteLabel varchar(50)  ,
+  @Domain varchar(50) ,
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(21) = ''  OUTPUT 
  
@@ -33,7 +32,7 @@ BEGIN
  
  DELETE 
  FROM [dbo].[Age_DomainList] WITH (ROWLOCK , UPDLOCK)
- WHERE SiteLabel = @SiteLabel AND Domain = @Domain AND Environment = @Environment;
+ WHERE SiteLabel = @SiteLabel AND Domain = @Domain;
  
 IF @@ERROR <> 0  
    BEGIN  

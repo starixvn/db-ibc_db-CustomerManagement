@@ -11,10 +11,9 @@ GO
  
 CREATE PROCEDURE [dbo].[Acc_DomainListUpd] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel VARCHAR(50)  ,
-  @DomainOld VARCHAR(50) ,
-  @DomainNew VARCHAR(50) ,
-  @Environment VARCHAR(3),
+  @SiteLabel varchar(50)  ,
+  @DomainOld varchar(50) ,
+  @DomainNew varchar(50) ,
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(21) = ''  OUTPUT 
  
@@ -34,7 +33,7 @@ BEGIN
  
  UPDATE [dbo].[Age_DomainList] WITH (ROWLOCK , UPDLOCK)
  SET Domain = @DomainNew
- WHERE SiteLabel = @SiteLabel AND Domain = @DomainOld AND Environment = @Environment;
+ WHERE SiteLabel = @SiteLabel AND Domain = @DomainOld;
  
 IF @@ERROR <> 0  
    BEGIN  
