@@ -26,6 +26,7 @@ AS
 		- 20220922@Tacy: Add Microgaming [RedmineID: #175853]
 		- 20221102@Winfred: Get PP, SG, Arcadia Gaming in Macau Games Product Status [RedmineID: #180032] 
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
+		- 20230307@Winfred:  Hotfix - Telegram Chatbot: Report Today Win Loss not include data of product Macau games [Redmine: #184766]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -47,7 +48,7 @@ BEGIN
     WHERE c.custid = @custid
 	
 	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 ,@AdvantPlayMiniDisable BIT  = 1,
-			@SEALDisable BIT  = 1,@MicrogamingDisable BIT  = 1 ,@PPDisable BIT  = 1,@SGDisable BIT  = 1,@ArcadiaGamingDisable BIT 
+			@SEALDisable BIT  = 1,@MicrogamingDisable BIT  = 1 ,@PPDisable BIT  = 1,@SGDisable BIT  = 1,@ArcadiaGamingDisable BIT = 1, @MacauGamesDisable BIT  = 1
 	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
@@ -117,7 +118,12 @@ BEGIN
 	BEGIN
 		SET @ArcadiaGamingDisable = 0 
 	END
-
+	
+	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 212 AND BetType = 4001 )
+	BEGIN
+		SET @MacauGamesDisable = 0 
+	END
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
 	SELECT @SuperID = ci.srecommend
@@ -187,6 +193,8 @@ BEGIN
 		SELECT 72, CASE WHEN  isHidden = 0 THEN  @SEALDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- SEAL	
 		UNION ALL
 		SELECT 73, CASE WHEN  isHidden = 0 THEN  @MicrogamingDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Microgaming	
+		UNION ALL
+		SELECT 22, CASE WHEN  isHidden = 0 THEN  @MacauGamesDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Macau Games	
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
