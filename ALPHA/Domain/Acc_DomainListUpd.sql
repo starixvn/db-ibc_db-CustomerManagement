@@ -11,9 +11,9 @@ GO
  
 CREATE PROCEDURE [dbo].[Acc_DomainListUpd] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel varchar(50)  ,
-  @DomainOld varchar(50) ,
-  @DomainNew varchar(50) ,
+  @SiteLabel VARCHAR(50)  ,
+  @DomainOld VARCHAR(50) ,
+  @DomainNew VARCHAR(50) ,
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(21) = ''  OUTPUT 
  

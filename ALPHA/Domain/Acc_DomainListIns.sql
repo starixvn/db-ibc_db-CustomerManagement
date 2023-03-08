@@ -11,8 +11,8 @@ GO
  
 CREATE PROCEDURE [dbo].[Acc_DomainListIns] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel varchar(50)  ,
-  @Domain varchar(50),
+  @SiteLabel VARCHAR(50)  ,
+  @Domain VARCHAR(50),
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(20) = ''  OUTPUT 
  

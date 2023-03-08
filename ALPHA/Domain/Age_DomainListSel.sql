@@ -10,7 +10,7 @@ GO
  
 CREATE PROCEDURE [dbo].[Age_DomainListSel] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel varchar(50)  
+  @SiteLabel VARCHAR(50)  
 
 AS
 
