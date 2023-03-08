@@ -11,9 +11,8 @@ GO
  
 CREATE PROCEDURE [dbo].[Acc_DomainListIns] 
 	-- Add the parameters for the stored procedure here
-  @SiteLabel VARCHAR(50)  ,
-  @Domain VARCHAR(50),
-  @Environment VARCHAR(3) ,
+  @SiteLabel varchar(50)  ,
+  @Domain varchar(50),
   @ErrCode INT    = 0   OUTPUT,  
   @ErrMsg  NVARCHAR(20) = ''  OUTPUT 
  
@@ -31,7 +30,7 @@ AS
 
 BEGIN
 
-IF EXISTS (Select 1 From Age_DomainList (NOLOCK) Where SiteLabel = @SiteLabel AND Domain = @Domain AND Environment = @Environment)
+IF EXISTS (Select 1 From Age_DomainList (NOLOCK) Where SiteLabel = @SiteLabel AND Domain = @Domain)
 BEGIN  
 	 SELECT @ErrMsg = N'This domain existed',  
 	        @ErrCode = 100  
@@ -41,8 +40,8 @@ END
 ELSE
 BEGIN
 	INSERT INTO [dbo].[Age_DomainList]
-			([SiteLabel] ,[Domain] , [Environment])
-	SELECT @SiteLabel  ,  @Domain , @Environment
+			([SiteLabel] ,[Domain])
+	SELECT @SiteLabel  ,  @Domain
 END
  
 
