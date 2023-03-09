@@ -19,6 +19,7 @@ AS
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 		- 22021227@Tacy: Apply SettingType  [Redmine: #174509] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230308@Tacy: NAP - Enhance function - Support dummy sport [RedmineID: #183826]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -369,7 +370,7 @@ BEGIN
 	END	
 
 	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl 
-				WHERE (IsCredit=1 AND SportType IN (161,164,168,202,1,2,3,5,8,10,11,99)))	
+				WHERE (IsCredit=1 AND (ProductID IN (1,3,8) OR ((SportType <=99 OR SportType>=9901) AND ProductID IS NULL))))	
 	BEGIN
 		SELECT @ErrCode=126	
 		SELECT @ErrMsg='Bet Limits of Sportsbook, Number Game, Happy 5 and RNG Keno are not allowed to be imported for Credit sites.' 
