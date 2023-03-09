@@ -31,9 +31,10 @@ BEGIN
 			@site VARCHAR(50),
 			@currency INT
 			
-	DECLARE @tblCust TABLE(custid INT, username VARCHAR(50))
+	CREATE TABLE #tblCust(custid INT, username VARCHAR(50),bitmapIsHidden BINARY(32) )
+	CREATE NONCLUSTERED INDEX IX_tblCust_custid ON #tblCust(custid ASC)
 	
-	INSERT INTO @tblCust(username)
+	INSERT INTO #tblCust(username)
 	SELECT value
 	FROM STRING_SPLIT(@SuperList,',')
 	WHERE value <> ''
@@ -54,7 +55,7 @@ BEGIN
 	SELECT @strUsername = ''
 	;WITH t AS(
 		SELECT t.username, c.custid, c.roleid, c.enabled
-		FROM @tblCust t 
+		FROM #tblCust t 
 			LEFT JOIN custinfo c WITH(NOLOCK) ON c.username = t.username
 	)
 	SELECT @strUsername = @strUsername +','+ username
@@ -73,7 +74,7 @@ BEGIN
 		RETURN;		
 	END
 	
-	IF EXISTS (SELECT 1 FROM @tblCust WHERE username = @username)
+	IF EXISTS (SELECT 1 FROM #tblCust WHERE username = @username)
 	BEGIN
 		SELECT @strUsername = STUFF(@strUsername,1,1,'')
 		SELECT @ErrCode = 102,
@@ -81,7 +82,7 @@ BEGIN
 		RETURN;	
 	END
 	
-	IF (SELECT COUNT(1) FROM @tblCust) > 500
+	IF (SELECT COUNT(1) FROM #tblCust) > 500
 	BEGIN		
 		SELECT @ErrCode = 103,
 				@ErrMsg = 'The function can only copy up to 500 accounts per request.'
@@ -97,7 +98,7 @@ BEGIN
 	SELECT @strUsername = ''
 	SELECT @strUsername = @strUsername +','+ username
 	FROM customer WITH(NOLOCK)
-	WHERE username IN (SELECT username FROM @tblCust)
+	WHERE username IN (SELECT username FROM #tblCust)
 		AND (site <> @site OR currency <> @currency)
 		
 	IF @strUsername <> ''
@@ -110,38 +111,96 @@ BEGIN
 		
 	UPDATE t
 	SET t.custid = c.custid
-	FROM @tblCust t
+	FROM #tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
 		
-	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT)	
-	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT)
+	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT)
+	DECLARE @tblProduct_hidden TABLE (productID TINYINT, SportType SMALLINT)	
+	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, BitmapOrder TINYINT)
+	CREATE TABLE #MatrixRefWL(SportType SMALLINT, Bettype SMALLINT, SporttypeRefWinlossLimit SMALLINT, BettypeRefWinlossLimit SMALLINT)
+
+	INSERT INTO #MatrixRefWL(SportType,Bettype,SporttypeRefWinlossLimit,BettypeRefWinlossLimit)
+	SELECT SportType
+			,CASE WHEN mt.BetType = 1021 THEN 1024  ELSE mt.BetType END
+			,SporttypeRefWinlossLimit
+			,BettypeRefWinlossLimit
+	FROM SportBettypeSettingMatrix mt WITH(NOLOCK) 
+	WHERE mt.SporttypeRefWinlossLimit  IS NOT NULL
+		AND mt.BettypeRefWinlossLimit  IS NOT NULL
+		AND mt.isLicensee = 0
+		AND mt.site = 'ALL'
 	
-	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype)
-	SELECT DISTINCT p.ProductID, p.SportType, p.Bettype	
+	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder)
+	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder
 	FROM dbo.ProductSettingDetail p WITH(NOLOCK)
 		INNER JOIN ProductSettingType t WITH(NOLOCK) ON p.SettingType = t.SettingType
+		INNER JOIN #MatrixRefWL mt
+			ON p.SportType = mt.SporttypeRefWinlossLimit 
+			AND p.Bettype = mt.BettypeRefWinlossLimit
+		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) 
+			ON PSP.Bettype = mt.BetType
+				AND PSP.Sporttype = mt.SportType		
+	WHERE t.SettingName = 'Win Loss Limit'
+		AND p.SettingStatus = 0
+	UNION ALL
+	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder	
+	FROM dbo.ProductSettingDetail p WITH(NOLOCK)
+		INNER JOIN ProductSettingType t WITH(NOLOCK) ON p.SettingType = t.SettingType
+		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) 
+			ON PSP.Bettype = p.BetType
+				AND PSP.Sporttype = p.SportType		
 	WHERE t.SettingName = 'Win Loss Limit'
 		AND p.SettingStatus = 0
 
 	INSERT INTO @tblProduct(ProductID,SportType)
 	SELECT DISTINCT ft.ProductID, ft.SportType		
-	FROM #SportBettypeFilter ft 
-		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
-		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK)	ON stt.CustID = @custid
-	WHERE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 0
-	EXCEPT 
-	SELECT DISTINCT ft.ProductID, ft.SportType		
-	FROM #SportBettypeFilter ft 
-		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) ON PSP.Bettype = ft.BetType AND PSP.Sporttype = ft.SportType															
-		CROSS APPLY (SELECT * FROM dbo.CustProductStatus stt WITH (NOLOCK)	
-					WHERE stt.CustID IN (SELECT custid FROM @tblCust)
-					) stt
-	WHERE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, PSP.bitmapOrder)) = 1
+	FROM #SportBettypeFilter ft 												
+		CROSS JOIN dbo.CustProductStatus stt WITH (NOLOCK)
+		CROSS APPLY dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, ft.bitmapOrder) hid
+	WHERE hid.value = 0
+		AND stt.CustID = @custid
 	
+	--> GEt bitmapIsHidden of destination supers 
+	UPDATE t 
+	SET t.bitmapIsHidden = stt.bitmapIsHidden
+	FROM #tblCust t
+		INNER JOIN dbo.CustProductStatus stt WITH (NOLOCK) ON t.custid = stt.CustID
+	
+	INSERT INTO @tblProduct_hidden(ProductID,SportType)
+	SELECT ft.ProductID, ft.SportType
+	FROM #SportBettypeFilter ft 															
+		CROSS JOIN #tblCust stt
+		CROSS APPLY dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, ft.bitmapOrder) hid
+	GROUP BY stt.custid,ft.ProductID, ft.SportType
+	HAVING MIN (CONVERT(INT,hid.value)) = 1 -- All sport use common settig are set hidden --> hidden
+
+	DELETE t
+	FROM @tblProduct t
+		INNER JOIN @tblProduct_hidden hid
+			ON t.productID = hid.productID
+			AND t.SportType = hid.SportType
+
 	--check UM if apply on any super for list product
 	IF @ProductList <> ''
 	BEGIN
 		IF EXISTS(
+		SELECT TOP (1) 1 AS Ex
+			FROM customer cu WITH(NOLOCK)
+			INNER JOIN site s WITH(NOLOCK) ON s.site = cu.site		
+			INNER JOIN [dbo].UMConfig c WITH(NOLOCK) ON c.SuperID IN (cu.custid,0)
+		WHERE CONVERT(SMALLDATETIME,GETDATE()) BETWEEN c.BeginTime AND c.EndTime
+			AND c.SiteID IN (s.siteid,0)
+			AND c.Currency IN (cu.currency,0)
+			AND (cu.custid IN (SELECT custid FROM #tblCust WHERE custid > 0))
+			AND (SportType IN (SELECT sporttype FROM @tblProduct)
+				OR c.Sporttype = 0)
+			AND c.SettingType IN(6,12,0,22)--settingtype win/loss limit		
+			AND (c.ProductID IN(SELECT ProductID FROM @tblProduct 
+								WHERE ProductID IN (SELECT value FROM STRING_SPLIT(@ProductList,','))
+								)	
+				OR c.ProductID = 0)
+			AND c.FunctionType = 1	
+		UNION ALL
 		SELECT TOP (1) 1
 			FROM customer cu WITH(NOLOCK)
 			INNER JOIN site s WITH(NOLOCK) ON s.site = cu.site		
@@ -149,16 +208,15 @@ BEGIN
 		WHERE CONVERT(SMALLDATETIME,GETDATE()) BETWEEN c.BeginTime AND c.EndTime
 			AND c.SiteID IN (s.siteid,0)
 			AND c.Currency IN (cu.currency,0)
-			AND (cu.custid IN (SELECT custid FROM @tblCust WHERE custid > 0)
-				OR cu.custid = @custid)
+			AND cu.custid = @custid
 			AND (SportType IN (SELECT sporttype FROM @tblProduct)
 				OR c.Sporttype = 0)
-			AND c.SettingType IN(6,12,0)--settingtype win/loss limit		
+			AND c.SettingType IN(6,12,0,22)--settingtype win/loss limit		
 			AND (c.ProductID IN(SELECT ProductID FROM @tblProduct 
 								WHERE ProductID IN (SELECT value FROM STRING_SPLIT(@ProductList,','))
 								)	
 				OR c.ProductID = 0)
-			AND c.FunctionType = 1			
+			AND c.FunctionType = 1
 		)
 		BEGIN	
 			SELECT @ErrCode = 105,
@@ -167,7 +225,11 @@ BEGIN
 		END
 	END
 	
-	SELECT * FROM @tblProduct	
+	SELECT productID,SportType FROM @tblProduct	
 	
-	SELECT * FROM @tblCust 
+	SELECT distinct custid,username FROM #tblCust 
+
+	DROP TABLE #MatrixRefWL
+	DROP TABLE #SportBettypeFilter
+	DROP TABLE #tblCust
 END
