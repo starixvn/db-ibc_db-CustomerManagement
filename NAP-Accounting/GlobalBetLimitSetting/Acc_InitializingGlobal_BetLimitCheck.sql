@@ -377,23 +377,14 @@ BEGIN
 		RETURN
 	END	
 	
-	SELECT TOP(1) @ErrCode=108, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SportType AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE ISNULL(tmp.SettingType, 0)=0 OR NOT EXISTS(SELECT TOP 1 1 FROM #Sports WHERE SportType= tmp.SportType)
-	IF 	@ErrCode=108			
+	IF EXISTS (SELECT TOP(1) 1 FROM #NewInputDateTbl tmp
+				WHERE ISNULL(tmp.SettingType, 0)=0)
 	BEGIN
-		SELECT @ErrMsg='Row ' + @RowError+ ': The Sport Type ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
-
-	SELECT TOP(1) @ErrCode=109, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.BetType AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE NOT EXISTS(SELECT TOP 1 1 FROM #Bettype WHERE typeid= tmp.BetType) OR OrgBetType IS NULL
-	IF 	@ErrCode=109			
-	BEGIN
-		SELECT @ErrMsg='Row ' + @RowError+ ': The Bet Type ' + @ValueError + ' does not exist.' 
-		RETURN
-	END	
+		SELECT	@ErrCode=109, 
+				@ErrMsg='Row ' + CAST(tmp.RowID AS VARCHAR(200)) + ': The Sport Type ' + CAST (tmp.SportType AS varchar) + ' - Bet Type ' + CAST(tmp.BetType AS varchar) + ' combination does not exist.'				
+		FROM #NewInputDateTbl tmp
+		WHERE ISNULL(tmp.SettingType, 0)=0
+	END
 
 	SELECT TOP(1) @ErrCode=110, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.currency AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
