@@ -21,7 +21,22 @@ EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 1722385 , 'CN'
 BEGIN
 	
 	SET NOCOUNT ON
-	DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT, @ActionID INT = 95085
+	DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT, @ActionID INT = 95085 , @LanguageUsage_Old VARCHAR(2)
+
+
+IF  @SubAccID > 0
+	BEGIN
+		SELECT @LanguageUsage_Old = LanguageUsage
+		FROM CustLoginInfoSub WITH(NOLOCK)
+		WHERE CustID = @CustID and SubAccID = @SubAccID
+	END
+ELSE
+	BEGIN
+		SELECT @LanguageUsage_Old = LanguageUsage
+		FROM CustLoginInfo WITH(NOLOCK)
+		WHERE CustID = @CustID
+	END
+	
 
 IF  @SubAccID > 0
 	BEGIN
@@ -40,11 +55,18 @@ SET @StartRun = GETDATE()
 SET @EndRun = GETDATE()
 SET @Duration = DATEDIFF (MILLISECOND, @StartRun, @EndRun)
 
-DECLARE @LogData VARCHAR(500)
+DECLARE @LogData VARCHAR(500) , @LogDataOld VARCHAR(500)
 SELECT  @LogData = '<R '
 					+ 'CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" ' 
 					+ 'SubAccName="'+ coalesce(cast(dbo.f_GetSubUsername(@SubAccID) as varchar(50)),space(1)) + '" ' +  
 					+ 'LanguageUsage="'+ coalesce(cast(@LanguageUsage as varchar(50)),space(1)) + '" ' 
+					+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
+					+ ' />'
+		,
+		@LogDataOld = '<R '
+					+ 'CustID="'+ coalesce(cast(@CustID as varchar(50)),space(1)) + '" ' 
+					+ 'SubAccName="'+ coalesce(cast(dbo.f_GetSubUsername(@SubAccID) as varchar(50)),space(1)) + '" ' +  
+					+ 'LanguageUsage="'+ coalesce(cast(@LanguageUsage_Old as varchar(50)),space(1)) + '" ' 
 					+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 					+ ' />'
  
@@ -53,6 +75,7 @@ EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustId				= @CustId,
 			@ActionId			= @ActionID,
 			@TrackingValue		= @LogData,
+			@TrackingValue2		= @LogDataOld,
 			@Duration			= @Duration
 
 END
