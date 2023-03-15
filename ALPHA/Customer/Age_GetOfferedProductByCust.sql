@@ -103,7 +103,7 @@ BEGIN
 	END
 
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
-				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 158 AND BetType = 5100 )   -- ADD Jili
+				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 158 AND BetType = 5299 )   -- Changed BetType Jili
 	BEGIN
 		SET @JiliGame = 0 
 	END
