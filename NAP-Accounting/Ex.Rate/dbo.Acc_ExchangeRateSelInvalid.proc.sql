@@ -14,17 +14,19 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - - move to DBTRANS for exchangeRate [Redmine:99462]
 		- 20190114@Sophia: Move table transfer_fi from DBSUM.bodb_summary to DBARC.bodb_archive[Redmine: #105415]
 		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
+		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 
-
-		
 */
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @BalanceUpDay DATETIME, @tmpFromDate DATETIME, @tmpToDate DATETIME
-	SELECT TOP 1 @BalanceUpDay = winlostdate
-	FROM dbo.transfer WITH(NOLOCK)
-	WHERE bettype = 20000 AND custid = 3
+	DECLARE @tblMoveBetBalanceUp AS TABLE (BalanceUpDay SMALLDATETIME, MoveBetsDay SMALLDATETIME)
+
+	INSERT INTO @tblMoveBetBalanceUp(BalanceUpDay,MoveBetsDay)
+	EXEC dbo.Age_SelBalanceUpDay
+	
+	SELECT @BalanceUpDay = BalanceUpDay FROM @tblMoveBetBalanceUp
 
 	IF @FromDate IS NULL OR @ToDate IS NULL
 		SELECT	@ToDate = CONVERT(DATETIME, CONVERT(VARCHAR(10), GETDATE(), 120)),
