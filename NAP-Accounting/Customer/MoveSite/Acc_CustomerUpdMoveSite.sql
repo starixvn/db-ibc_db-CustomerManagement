@@ -28,6 +28,7 @@ AS
 		- 20201103@Tina: move site for members level [Redmine: #144323]
 		- 20210202@Winfred : Virtual Rate for Basketball - New 611111 site super must have VR setting = 0%   [Redmine: #149369]	
 		- 20220419@Eden: Turn off VR Basketball & E-sports for 611111 site [Redmine: #171609]
+		- 20230317@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -119,36 +120,9 @@ BEGIN
 	    RETURN
     END	 
 
-	--New 611111 super must have VR setting = 0% (Basketball level)
+	--New 611111 super must have VR setting = 0% (ESport level)
 	 IF @site = '611111' AND (@RoleId = 4 OR EXISTS(SELECT 1 FROM dbo.CustDirectAccount (NOLOCK) WHERE custid = @CustId))
-	 BEGIN
-		DECLARE @VirtualMultiplier VARCHAR(MAX) = ''
-
-		SELECT @VirtualMultiplier = CONVERT(VARCHAR(MAX),(  SELECT b.LevelID,vr.ValueID AS ValueIDLive,vr.ValueID AS ValueIDNonLive 
-															FROM VRSettingHierarchy b WITH(NOLOCK) 
-																CROSS APPLY VRValueMapping vr (NOLOCK)
-															WHERE b.SportType = 2 
-																AND b.VRLeagueGroupID = -1 
-																AND b.BetType = -1 
-																AND vr.Value = 1
-															FOR XML RAW('Row'), ROOT ('Root'))
-											)
-
-		EXEC [Acc_CustVirtualMultiplier_Upd]
-			  @CustID = @CustID
-			, @SportType = 2
-			, @VirtualMultiplier = @VirtualMultiplier
-			, @UserID  = @UserId
-			, @IP  = @IP
-			, @ErrCode = @ErrCode OUTPUT 
-			, @ErrMsg = @ErrMsg OUTPUT
-		
-		IF @ErrCode > 0
-		BEGIN
-			SELECT @ErrMsg = 'Update VRCustSetting fail. Please try again'
-			RETURN
-		END	
-		
+	 BEGIN		
 		DECLARE @VirtualRateMultiplier2 VARCHAR(MAX) = '' --Esports
 		SELECT @VirtualRateMultiplier2 = CONVERT(VARCHAR(MAX),(  SELECT b.LevelID,vr.ValueID AS ValueIDLive,vr.ValueID AS ValueIDNonLive 
 															FROM VRSettingHierarchy b WITH(NOLOCK) 
@@ -176,10 +150,7 @@ BEGIN
 		END	
 
 		--Add to [VRSettingManualUpdAcc]
-		INSERT INTO [VRSettingManualUpdAcc](CustID,SportType)
-		SELECT @CustID,2 AS SportType
-		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 2)
-		UNION ALL
+		INSERT INTO [VRSettingManualUpdAcc](CustID,SportType)		
 		SELECT @CustID,43 AS SportType
 		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 43)	
 
