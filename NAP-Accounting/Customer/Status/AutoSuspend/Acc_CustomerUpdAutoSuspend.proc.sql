@@ -64,7 +64,10 @@ AS
 			@old_AutoSuspendDownlines3 BIT,
 			@uplineAutoSuspend BIT,
 			@uplineAutoSuspendOther BIT,
-			@uplineAutoSuspend3 BIT
+			@uplineAutoSuspend3 BIT,
+			@IsUpdateAutoSuspendSoccer 		BIT = 0,
+			@IsUpdateAutoSuspendOtherSports BIT = 0,
+			@IsUpdateAutoSuspendBasketball 	BIT = 0
 			
 	
 	SELECT	@roleID = roleID, 
@@ -202,46 +205,28 @@ AS
 				@ErrCode = 103
 		RETURN			
 	END
-	-- check condition for update all downline for Soccer
-	if @old_AutoSuspend <> @AutoSuspend and @old_AutoSuspendOther <> @AutoSuspendOther and @old_AutoSuspend3 <> @AutoSuspend3
-	begin
-		-- apply exec rep for all: Soccer and Other sports
+	
+	IF @roleID > 1
+	BEGIN
+		IF @old_AutoSuspend <> @AutoSuspend
+			SELECT @IsUpdateAutoSuspendSoccer = 1
+		IF @old_AutoSuspendOther <> @AutoSuspendOther
+			SELECT @IsUpdateAutoSuspendOtherSports = 1
+		IF @old_AutoSuspend3 <> @AutoSuspend3
+			SELECT @IsUpdateAutoSuspendBasketball = 1
+				
 		EXEC [Acc_CustomerInfo_Execrep_04]
-		@CustID		= @CustID,
-		@RoleID		= @RoleID,
-		@Action		= 'AutoSuspend',
-		@AutoSuspendSoccer = @AutoSuspend,
-		@AutoSuspendOtherSports = @AutoSuspendOther,
-		@AutoSuspendBasketball = @AutoSuspend3
-	end
-	else if @old_AutoSuspend <> @AutoSuspend
-	begin
-		-- apply exec rep for Soccer
-		EXEC [Acc_CustomerInfo_Execrep_04]
-		@CustID		= @CustID,
-		@RoleID		= @RoleID,
-		@Action		= 'AutoSuspendSoccer',
-		@AutoSuspendSoccer = @AutoSuspend
-	end
-	else if @old_AutoSuspendOther <> @AutoSuspendOther
-	begin
-		-- apply exec rep for other sports
-		EXEC [Acc_CustomerInfo_Execrep_04]
-		@CustID		= @CustID,
-		@RoleID		= @RoleID,
-		@Action		= 'AutoSuspendOther',
-		@AutoSuspendOtherSports = @AutoSuspendOther
-	end
-	else if @old_AutoSuspend3 <> @AutoSuspend3
-	begin
-		-- apply exec rep for Soccer
-		EXEC [Acc_CustomerInfo_Execrep_04]
-		@CustID		= @CustID,
-		@RoleID		= @RoleID,
-		@Action		= 'AutoSuspendBasketball',
-		@AutoSuspendBasketball = @AutoSuspend3
-	end
-
+			@CustID		= @CustID,
+			@RoleID		= @RoleID,
+			@Action		= 'AutoSuspend',
+			@AutoSuspendSoccer = @AutoSuspend,
+			@AutoSuspendOtherSports = @AutoSuspendOther,
+			@AutoSuspendBasketball = @AutoSuspend3,
+			@IsUpdateAutoSuspendSoccer = @IsUpdateAutoSuspendSoccer,
+			@IsUpdateAutoSuspendOtherSports = @IsUpdateAutoSuspendOtherSports,
+			@IsUpdateAutoSuspendBasketball = @IsUpdateAutoSuspendBasketball
+	END
+	
 	Declare @LogSPData varchar(MAX),
 		@TrackingValueDB varchar(max)
 
