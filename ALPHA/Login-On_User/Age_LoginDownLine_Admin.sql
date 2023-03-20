@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@UserName varchar(50),
 	@LoginIP varchar(20),
@@ -24,7 +24,7 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(4000) = '' OUTPUT,
 
-	@LanguageUsage  VARCHAR(2) = '' OUTPUT
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT 
 AS
 /*
 Created: 
