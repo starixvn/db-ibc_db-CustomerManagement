@@ -32,7 +32,7 @@ ALTER PROCEDURE [dbo].[Age_IndirectLoginClaimDownline]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT,
 
-	@LanguageUsage  VARCHAR(2) = '' OUTPUT
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT 
 AS
 	/*
 	Created: 20200529@Johnson
