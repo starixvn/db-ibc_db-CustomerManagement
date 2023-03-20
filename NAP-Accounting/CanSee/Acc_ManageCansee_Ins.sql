@@ -242,7 +242,7 @@ BEGIN
 
     IF @ErrCode <> 0
     BEGIN
-            SELECT @ErrMsg = 'Row <' + @MatrixError +'> : The value of SiteID/ Currency must be different from 0.'
+            SELECT @ErrMsg = 'Row <' + @MatrixError +'> : The value of SiteID and Currency must be different from 0.'
             RETURN
     END
 
