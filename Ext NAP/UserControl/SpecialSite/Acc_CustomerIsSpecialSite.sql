@@ -22,7 +22,8 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181227@Phillip: Add new Credit Site [Redmine: #105338]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-		
+		- 20230320@Tacy: Hotfix - [NAP] Cannot search headline 789y [RedmineID: #185352]
+
 	Param's Explanation:
 		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
 		2. Alpha: Consolidation report -> bet list -> show NG2 ticket if @IsSpecialHeadline of login SMA = 1 (only check on link i1; i7 & i9 default show NG2 ticket)
@@ -86,17 +87,11 @@ BEGIN
 		FROM dbo.custAccount WITH(NOLOCK) 
 		WHERE groupID = @GroupID
 
-		IF EXISTS ( SELECT 1
+		IF EXISTS ( SELECT TOP (1) 1
 					FROM #tmpCustGroup cg
 						INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
 						INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = c.site
-					WHERE SpecialGroup = 1 AND c.roleid BETWEEN 2 AND 4)
-			OR EXISTS (	SELECT 1
-						FROM #tmpCustGroup cg
-							INNER JOIN dbo.customer c WITH (NOLOCK) ON cg.custid = c.custid
-							INNER JOIN dbo.customer ag WITH (NOLOCK) ON c.recommend = ag.custid
-							INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = ag.site
-						WHERE SpecialGroup = 1 AND c.roleid = 1)
+					WHERE SpecialGroup = 1)
 			SELECT @IsSpecialHeadline = 1
 
 		DROP TABLE #tmpCustGroup
