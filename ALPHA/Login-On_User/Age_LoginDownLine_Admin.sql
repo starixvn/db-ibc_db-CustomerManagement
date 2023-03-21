@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@UserName varchar(50),
 	@LoginIP varchar(20),
@@ -22,7 +22,9 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@isForcedChangeSecurityCode BIT = 0 OUTPUT,
 	@IsProtectedMode BIT = 0 OUTPUT,
 	@ErrCode int = 0 OUTPUT,
-	@ErrMsg nvarchar(4000) = '' OUTPUT
+	@ErrMsg nvarchar(4000) = '' OUTPUT,
+
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT   
 AS
 /*
 Created: 
@@ -58,6 +60,7 @@ Revisions:
 	- 20190906@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20230320@Helios: Alpha - Allowing SMA to configure Display Language [RedmineID: #184858]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -106,7 +109,8 @@ BEGIN
 		
 		SELECT @SecurityCode = ISNULL(SecurityCode,''),
 			@isForcedChangeSecurityCode = ISNULL(isForcedChangeSecurityCode,0),
-			@IsProtectedMode = ISNULL(IsProtectedMode,0)
+			@IsProtectedMode = ISNULL(IsProtectedMode,0),
+			@LanguageUsage = CASE WHEN ISNULL(LanguageUsage , '') = '' THEN '' ELSE LanguageUsage END -- LanguageUsage in CustLoginInfo Is Exists or Not
 		FROM dbo.CustLoginInfo WITH(NOLOCK)
 		WHERE custid = @custid
 		------------------------
