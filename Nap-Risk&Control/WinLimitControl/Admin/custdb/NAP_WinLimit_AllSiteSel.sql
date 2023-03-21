@@ -22,7 +22,7 @@ BEGIN
      SET NOCOUNT ON;
 
      SELECT siteid AS Id,
-            CASE WHEN isLicensee=0 THEN site + ' (' + SiteLabel + ')' ELSE site END AS Name
+            CASE WHEN isLicensee=0 AND SiteLabel IS NOT NULL THEN site + ' (' + SiteLabel + ')' ELSE site END AS Name
      FROM dbo.Site WITH (NOLOCK)
      WHERE isActive = 1;
 END

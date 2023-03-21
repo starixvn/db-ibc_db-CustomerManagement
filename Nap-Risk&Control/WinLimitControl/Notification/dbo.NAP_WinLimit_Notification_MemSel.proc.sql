@@ -41,7 +41,7 @@ BEGIN
 			THEN 'UUS'
 			ELSE e.currency
 		 END AS               code
-	    , CASE WHEN s.isLicensee=0
+	    , CASE WHEN s.isLicensee=0 AND SiteLabel IS NOT NULL
 				THEN ag.site + ' (' + s.SiteLabel + ')' 
 				ELSE ag.site
 		END AS site

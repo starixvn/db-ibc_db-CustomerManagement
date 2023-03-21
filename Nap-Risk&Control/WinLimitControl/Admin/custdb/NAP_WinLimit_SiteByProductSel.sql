@@ -115,7 +115,7 @@ BEGIN
 		WHERE s.site<>'Saba789'
         ORDER BY 
 				GroupName,
-				SiteLabel DESC,
+				SiteLabel,
                 SiteName;
      END;
      DROP TABLE #Party;

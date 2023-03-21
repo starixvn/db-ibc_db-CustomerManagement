@@ -37,7 +37,7 @@ BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO @Site(siteID)
-			SELECT RTRIM(LTRIM(value)) SiteID
+			SELECT TRIM(value) SiteID
 			FROM STRING_SPLIT(@MultiSite, ',')
 		END
 	END;

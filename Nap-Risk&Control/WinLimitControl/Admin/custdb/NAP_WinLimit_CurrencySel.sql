@@ -36,7 +36,7 @@ BEGIN
 	IF @MultiSite<>'0'
 		BEGIN
 			;WITH CTE AS (
-				SELECT RTRIM(LTRIM(value)) SiteID
+				SELECT TRIM(value) SiteID
 				FROM STRING_SPLIT(@MultiSite, ',')
 			)
 			INSERT INTO @Site(siteID, IsLicensee)
