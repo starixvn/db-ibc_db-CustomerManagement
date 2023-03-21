@@ -23,8 +23,8 @@ BEGIN
 			ci.recommend, ci.mrecommend, ci.srecommend,  
 		CASE 
 			WHEN m.custid IS NOT NULL 
-			THEN m.IsAllDayBalTransfer 
-			ELSE s.IsAllDayBalTransfer 
+			THEN ISNULL(m.IsAllDayBalTransfer,0)
+			ELSE ISNULL(s.IsAllDayBalTransfer,0)
 		END AS IsAllDayBalTransfer			
 	FROM dbo.custInfo ci
 		INNER JOIN dbo.CustSuper s WITH (NOLOCK) ON ci.srecommend = s.custid
