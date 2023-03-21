@@ -24,7 +24,7 @@ ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(4000) = '' OUTPUT,
 
-	@LanguageUsage  VARCHAR(2) = '' OUTPUT  
+	@LanguageUsage  VARCHAR(2) = '' OUTPUT   
 AS
 /*
 Created: 
