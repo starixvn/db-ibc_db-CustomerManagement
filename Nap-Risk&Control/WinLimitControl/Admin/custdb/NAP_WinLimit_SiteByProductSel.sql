@@ -93,30 +93,30 @@ BEGIN
                                                                                  AND pt.PartyType = 1;
      END;
      BEGIN -- Query Data
-         SELECT s.siteid AS SiteId,
-                s.site AS SiteName,
-				s.SiteLabel,
-                'Credit Sites' AS GroupName
-         FROM dbo.Site s WITH (NOLOCK)
-         WHERE (s.isLicensee = 0 OR s.site='Saba789')
-               AND S.isActive = 1
-         UNION ALL
-         SELECT DISTINCT
-                s.siteid,
-                s.site,
-				s.SiteLabel,
-                pg.PartyGroupName
-         FROM #DepositLicenseeProduct dlp
-              INNER JOIN #Party p ON dlp.PartyId = p.PartyId
-              INNER JOIN #PartyGroup pg ON p.ParentId = pg.PartyGroupId
-              INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = dlp.LicenseeName
-                                                     AND S.isActive = 1
-                                                     AND S.isLicensee = 1
-		 WHERE s.site<>'Saba789'
-         ORDER BY 
-				  GroupName,
-				  SiteLabel DESC,
-                  SiteName;
+		SELECT s.siteid AS SiteId,
+			s.site AS SiteName,
+			CASE WHEN s.SiteLabel IS NULL THEN 'Others' ELSE s.SiteLabel END AS SiteLabel,
+			'Credit Sites' AS GroupName
+		FROM dbo.Site s WITH (NOLOCK)
+		WHERE (s.isLicensee = 0 OR s.site='Saba789')
+			AND S.isActive = 1
+		UNION ALL
+		SELECT DISTINCT
+			s.siteid,
+			s.site,
+			s.SiteLabel,
+			pg.PartyGroupName
+		FROM #DepositLicenseeProduct dlp
+			INNER JOIN #Party p ON dlp.PartyId = p.PartyId
+			INNER JOIN #PartyGroup pg ON p.ParentId = pg.PartyGroupId
+			INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = dlp.LicenseeName
+													AND S.isActive = 1
+													AND S.isLicensee = 1
+		WHERE s.site<>'Saba789'
+        ORDER BY 
+				GroupName,
+				SiteLabel DESC,
+                SiteName;
      END;
      DROP TABLE #Party;
      DROP TABLE #PartyGroup;
