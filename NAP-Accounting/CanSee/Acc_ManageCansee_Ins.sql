@@ -15,6 +15,7 @@ AS
 		- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 		- 20221021@Tacy: NAP - Manage Product Setting - Enhance Can See function [Redmine: #178092]
 		- 20221117@Tacy: HotFix - NAP - Manage Product Setting - CANSEE - Error when uploaded excel file [RedmineID: #180627]
+		- 20230308@Tacy: NAP - Enhance CanSee (not allow: both site=0 and currency=0) [RedmineID: #183826]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -226,13 +227,25 @@ BEGIN
 	IF ISNULL(@MatrixError,'') <> ''
 		SET  @ErrCode     = 1011
 	
-	 SET @MatrixError =  REPLACE(@MatrixError, ',', '>,<');
+	SET @MatrixError =  REPLACE(@MatrixError, ',', '>,<');
 	IF @ErrCode <> 0
-	   BEGIN 
-		 SELECT @ErrMsg = 'Row <' + @MatrixError +'> : SiteID - Currency  - SportType  - BetType of rows cannot be same.'	
-	     RETURN
-	   END  
+	BEGIN 
+		SELECT @ErrMsg = 'Row <' + @MatrixError +'> : SiteID - Currency  - SportType  - BetType of rows cannot be same.'	
+	    RETURN
+	END  
 	   
+	--Check if: both currency=0 and siteID=0:
+    SELECT TOP(1) @MatrixError = CONVERT(VARCHAR(5),I.ID),
+                  @ErrCode = 1012
+    FROM #Data_Input i
+    WHERE i.Currency=0 and i.SiteID=0
+
+    IF @ErrCode <> 0
+    BEGIN
+            SELECT @ErrMsg = 'Row <' + @MatrixError +'> : The value of SiteID and Currency must be different from 0.'
+            RETURN
+    END
+
 	SELECT  @RowTotal = COUNT(*) FROM #Data_Input	
 	WHILE @CurrentRow <> @RowTotal
 	BEGIN
