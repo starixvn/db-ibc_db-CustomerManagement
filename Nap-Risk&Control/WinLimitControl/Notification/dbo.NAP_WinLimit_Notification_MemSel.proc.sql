@@ -24,7 +24,8 @@ Revisions:
 	- 20170808@Robert: CWL Phase 4 - Support Loosing Limit notification, email template and enhancement requests from NSD team [Redmine: 72870]
 	- 20180816@Robert: Poker Games - CWL Integration 
 	- 20180918@Robert: Macau Games - CWL Integration [Redmine: 101546]
-	
+	- 20230104@Tacy: CWL - Split 789y Site [RedmineID: #182390]
+
 Param's Explanation:
 	� @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -40,7 +41,10 @@ BEGIN
 			THEN 'UUS'
 			ELSE e.currency
 		 END AS               code
-	    , ag.site
+	    , CASE WHEN s.isLicensee=0 AND SiteLabel IS NOT NULL
+				THEN ag.site + ' (' + s.SiteLabel + ')' 
+				ELSE ag.site
+		END AS site
 	    , s.isLicensee AS      IsDeposit
 	    , p.ProductName
 	    , p.ProductId
