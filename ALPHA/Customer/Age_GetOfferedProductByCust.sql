@@ -27,7 +27,7 @@ AS
 		- 20221102@Winfred: Get PP, SG, Arcadia Gaming in Macau Games Product Status [RedmineID: #180032] 
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20230307@Winfred:  Hotfix - Telegram Chatbot: Report Today Win Loss not include data of product Macau games [Redmine: #184766]
-		- 20230118@Helios: add JiliGame [RedmineId: #182869]
+		- 20230118@Helios: add JiliGame [RedmineId: #182869] 
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
