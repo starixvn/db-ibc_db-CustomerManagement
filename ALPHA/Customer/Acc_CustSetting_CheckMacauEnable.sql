@@ -22,6 +22,7 @@ BEGIN
 			- 20210514@Winfred: Check AdvantPlay Mini on site [Redmine: #155133]
 			- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 			- 20220919@Tacy: Check Microgaming on site [Redmine: #175853]
+			- 20230118@Helios: add JiliGame [RedmineId: #182869]
 
 		Param's Explanation: 
 			- @SettingStatus: 0: Pro, 1: UAT 
@@ -69,11 +70,14 @@ BEGIN
 					   WHEN  174  THEN 68 -- AdvantPlay Mini
 					   WHEN  156  THEN 72 -- SEAL
 					   WHEN  155  THEN 73 -- Microgaming
+					   WHEN  158  THEN 75 -- JiliGame
 					   ELSE 55 END as ProductID, -- PGSofft
 			ft.SportType,
 			ft.BetType	
 	FROM #SportBettypeFilter ft
-	
+	ORDER BY ProductID DESC
+
+
 	DROP TABLE #SportBettypeFilter			
 	
 END

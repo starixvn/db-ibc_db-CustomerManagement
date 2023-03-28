@@ -17,6 +17,7 @@ AS
 		- 20220922@Tacy: add Microgaming [RedmineId: #175853]
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230118@Helios: add JiliGame [RedmineId: #182869]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -91,7 +92,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
 	FROM #Tmp_ProductProfile b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming,JiliGame
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -125,6 +126,7 @@ BEGIN
 		 WHEN c.SportType = 174 THEN  68
 		 WHEN c.SportType = 156 THEN  72
 		 WHEN c.SportType = 155 THEN  73
+		 WHEN c.SportType = 158 THEN  75 --Add Jili
 		 WHEN c.SportType = 212 THEN  22
 		ELSE c.ProductID END ProductID, b.ValuePT,ss.roleid
 	FROM #SMATemp ss 

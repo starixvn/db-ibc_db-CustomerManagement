@@ -28,6 +28,7 @@ AS
 		- 20220919@Tacy: Add Microgaming [RedmineID: #175853]
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230118@Helios: add JiliGame [RedmineId: #182869]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -94,7 +95,7 @@ BEGIN
 	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId
 	FROM #Tmp_ProductProfile b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming, JiliGame
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
@@ -125,6 +126,7 @@ BEGIN
 		 WHEN c.SportType = 174 THEN  68
 		 WHEN c.SportType = 156 THEN  72
 		 WHEN c.SportType = 155 THEN  73
+		 WHEN c.SportType = 158 THEN  75  --ADD Jili
 		 WHEN c.SportType = 212 THEN  22
 		ELSE c.ProductID END ProductID, b.SuperPT
 	FROM #Supers ss 
