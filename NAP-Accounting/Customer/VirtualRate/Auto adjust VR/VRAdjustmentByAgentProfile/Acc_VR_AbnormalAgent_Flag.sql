@@ -16,7 +16,7 @@ AS
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20210830@Eden: Max Payout Per Match [redmine: #158073]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
-
+		- 20230307@VN-Johnson: Return Basketball VR to its original state [redmine:#184339]
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -148,7 +148,6 @@ BEGIN
 					)
 	SELECT	sporttype,bettype,islive,1.00
 	FROM ProfileVirtualSetting 	WITH (NOLOCK)	
-	WHERE sporttype <> 2
 
 	DECLARE	@virtualXML	TABLE (
 									seqNo		TINYINT PRIMARY KEY
@@ -244,7 +243,7 @@ BEGIN
 
 		SELECT @NewLogData = '<R '
 							+ 'Type="'
-									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 											ELSE space(1) 
 										END+ '" '
 							+ ' />'

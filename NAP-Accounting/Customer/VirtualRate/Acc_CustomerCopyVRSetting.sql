@@ -16,7 +16,7 @@ AS
 	Revisions:  
 	    - 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-
+		- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 	Param's Explanation:  	
 
 	EXEC Acc_CustomerCopyVRSetting 
@@ -113,7 +113,7 @@ BEGIN
 					INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 					ON cvs.seqNo = pvs.seqNo
 			WHERE cvs.custid = @Source_CustID 
-				AND pvs.sporttype NOT IN (2, 43)
+				AND pvs.sporttype NOT IN (43)
 			FOR XML RAW('Rate'), ROOT ('ROOT')
 		)
 	)

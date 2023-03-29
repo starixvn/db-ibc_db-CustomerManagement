@@ -15,7 +15,8 @@ AS
 		- 20200918@Eden: Apply small changes to the Agent profiling and VR updating auto job [#141927]
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
-
+		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
+		
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -78,7 +79,7 @@ BEGIN
 			ON cvs.custid = t.CustID
 		INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 			ON cvs.seqNo = pvs.seqNo
-	WHERE pvs.sporttype NOT IN( 2, 43)
+	WHERE pvs.sporttype NOT IN(43)
 		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) <> 1
 
 	DELETE FROM @AgentTbl WHERE CustID  IN (SELECT custID FROM @temp)
@@ -125,7 +126,7 @@ BEGIN
 			ON cvs.custid = t.srecommend
 			INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 			ON cvs.seqNo = pvs.seqNo
-	WHERE pvs.sporttype NOT IN( 2, 43);
+	WHERE pvs.sporttype NOT IN(43);
 
 	DECLARE	@virtualXML	TABLE (
 							seqNo		TINYINT
@@ -224,7 +225,7 @@ BEGIN
 
 		SELECT @NewLogData = '<R '
 							+ 'Type="'
-									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 											ELSE space(1) 
 										END+ '" '
 							+ ISNULL('TotalMemberWL="' + cast(@TotalWL as varchar(50)) + '" ', '') 
