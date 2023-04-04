@@ -1,1 +1,2 @@
-NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
+ALPHA\Customer\Age_CustomerSelAllStatus.sql
+Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
