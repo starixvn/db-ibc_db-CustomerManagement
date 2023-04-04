@@ -15,12 +15,14 @@ Revisions:
 	 - 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 	 - 20200629@Winfred: NAP - Get site by cansee RedmineID: #131241	 
 	 - 20221808@Elodie: Get SiteDBGroupID [RedmineID: #158293]
+	 - 20230110@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 */
+BEGIN
+	SET NOCOUNT ON  
 
-SET NOCOUNT ON  
-
-select [siteid], [site] 
-from [site]  with(nolock)
-where islicensee = 0  AND (
-(@Mode = 1) OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
+	select SiteLabel, [siteid], [site] 
+	from [site]  with(nolock)
+	where islicensee = 0  AND (
+	(@Mode = 1 AND isactive=1) OR (@Mode = 0 AND isactive=1 AND [siteid]<>329))
+END
 GO
