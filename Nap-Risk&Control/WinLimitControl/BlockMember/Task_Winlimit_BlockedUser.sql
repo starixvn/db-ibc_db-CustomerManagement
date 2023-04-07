@@ -15,6 +15,7 @@ AS
 		- 20200421@Elodie: Increase length of BettypeIDList
 		- 20220722@Johnson: Scale Out DBTXN - get data on WinLimit_CustWinlostGame instead of Winlimit_CreditGame [Redmine:#175278]
 		- 20230207@Johnson: get distinct data source to ignore duplicated game type in CWL notification service [redmine:#183536]
+		- 20230407@Johnson: fix the case to show duplicate game name [redmine:#186608]
 	Param's Explanation:
 	
 */
@@ -32,13 +33,20 @@ BEGIN
 	SET @LosslimitLevel_min = 101
 	SET @LosslimitLevel_max = 200
 	
-	CREATE TABLE #DataTmp_pre (CustId INT
+	CREATE TABLE #DataTmp_pre1 (CustId INT
 							, ProductId TINYINT
 							, Bettype SMALLINT
 							, GroupID SMALLINT
 							, TotalWinAmount MONEY
 							, WinlostDate SMALLDATETIME)
 	
+	CREATE TABLE #DataTmp_pre (CustId INT
+							, ProductId TINYINT
+							, Bettype SMALLINT
+							, GroupID SMALLINT
+							, TotalWinAmount MONEY
+							, WinlostDate SMALLDATETIME)
+							
 	CREATE TABLE #DataTmp (CustId INT
 							, ExchangeID TINYINT
 							, SiteID INT
@@ -96,11 +104,16 @@ BEGIN
 						 
 	SELECT @WinlostDate = CAST(GETDATE() AS DATE)
 	
-	INSERT INTO #DataTmp_pre(CustId, WinlostDate, Bettype, TotalWinAmount)
+	INSERT INTO #DataTmp_pre1(CustId, WinlostDate, Bettype, TotalWinAmount)
 	SELECT DISTINCT CustId, WinlostDate, BetType, Winlost
 	FROM WinLimit_CustWinlostGame WITH(NOLOCK)
 	WHERE winlostdate = @winlostdate
 	
+	-- 20230407@Johnson: fix the case to show duplicate game name [redmine:#186608]
+	INSERT INTO #DataTmp_pre(CustId, WinlostDate, Bettype, TotalWinAmount)
+	SELECT DISTINCT CustId, WinlostDate, BetType, Winlost
+	FROM #DataTmp_pre1
+		
 	-- Return if there is no data to process
 	IF NOT EXISTS (SELECT TOP 1 1 FROM #DataTmp_pre WITH (NOLOCK))
 	BEGIN
@@ -548,6 +561,6 @@ BEGIN
 	DROP TABLE #DataTmp
 	DROP TABLE #CustReachCWLList
 	DROP TABLE #DataTmp_pre
-		
+	DROP TABLE #DataTmp_pre1	
 END
 GO
