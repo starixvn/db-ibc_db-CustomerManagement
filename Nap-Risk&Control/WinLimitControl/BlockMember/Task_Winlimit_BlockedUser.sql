@@ -111,7 +111,7 @@ BEGIN
 	
 	-- 20230407@Johnson: fix the case to show duplicate game name [redmine:#186608]
 	INSERT INTO #DataTmp_pre(CustId, WinlostDate, Bettype, TotalWinAmount)
-	SELECT DISTINCT CustId, WinlostDate, BetType, Winlost
+	SELECT DISTINCT CustId, WinlostDate, BetType, TotalWinAmount
 	FROM #DataTmp_pre1
 		
 	-- Return if there is no data to process
