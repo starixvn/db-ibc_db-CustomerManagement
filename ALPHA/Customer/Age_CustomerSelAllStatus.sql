@@ -19,6 +19,8 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20230410@Bobby: AutoJob clear balance downlines IsAllowAutoTransfer [RedmineID: #182071]
+
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -42,6 +44,7 @@ BEGIN
 		  , @isDirectClosed 		BIT = 0
 		  , @Locked					TINYINT
 		  , @IsProtectedMode		BIT
+		  , @IsAllowAutoTransfer	BIT = 0
 
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
 	FROM custinfo WITH(NOLOCK)
@@ -63,6 +66,13 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cs
 	     WHERE ci.custID = @recommend	
+
+		-- TODO: IsAllowAutoTransfer
+		SET @ExecuteSQL = CONCAT(N'
+			SELECT @IsAllowAutoTransfer = IsAllowAutoTransfer
+			FROM OPENQUERY(DBCUST,''SELECT 1 AS IsAllowAutoTransfer FROM CustDB.dbo.Age_ClearBalanceCust_Setting WITH(NOLOCK) WHERE FromCustId = ', @recommend,' AND ToCustID= ',@custid, ''')')
+		;
+		EXEC sys.sp_executesql @ExecuteSQL, N'@IsAllowAutoTransfer BIT OUT', @IsAllowAutoTransfer OUT;
     END 
     ELSE IF @roleID = 2 --for agent
     BEGIN
@@ -82,7 +92,14 @@ BEGIN
 								) AS cs
 	     WHERE ci.custID = @mrecommend		
 
-		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1
+		 SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE recommend = @custid AND roleid = 1;
+
+		 -- TODO: IsAllowAutoTransfer
+		SET @ExecuteSQL = CONCAT(N'
+			SELECT @IsAllowAutoTransfer = IsAllowAutoTransfer
+			FROM OPENQUERY(DBCUST,''SELECT 1 AS IsAllowAutoTransfer FROM CustDB.dbo.Age_ClearBalanceCust_Setting WITH(NOLOCK) WHERE FromCustId = ', @mrecommend,' AND ToCustID= ',@custid, ''')')
+		;
+		EXEC sys.sp_executesql @ExecuteSQL, N'@IsAllowAutoTransfer BIT OUT', @IsAllowAutoTransfer OUT;
     END
     ELSE IF @roleID = 3 --for master
     BEGIN
@@ -103,7 +120,14 @@ BEGIN
 	     WHERE ci.custID = @srecommend		
 		 
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
-	    SELECT @DisableAutoMPT = DisableAutoMPT, @IsAllDayBalTransfer = IsAllDayBalTransfer FROM CustMaster (NOLOCK) WHERE CustID = @custID
+	    SELECT @DisableAutoMPT = DisableAutoMPT, @IsAllDayBalTransfer = IsAllDayBalTransfer FROM CustMaster (NOLOCK) WHERE CustID = @custID;
+
+		-- TODO: IsAllowAutoTransfer
+		SET @ExecuteSQL = CONCAT(N'
+			SELECT @IsAllowAutoTransfer = IsAllowAutoTransfer
+			FROM OPENQUERY(DBCUST,''SELECT 1 AS IsAllowAutoTransfer FROM CustDB.dbo.Age_ClearBalanceCust_Setting WITH(NOLOCK) WHERE FromCustId = ', @srecommend,' AND ToCustID= ',@custid, ''')')
+		;
+		EXEC sys.sp_executesql @ExecuteSQL, N'@IsAllowAutoTransfer BIT OUT', @IsAllowAutoTransfer OUT;
     END
     
 	--check suspend status is direct or not
@@ -136,7 +160,8 @@ BEGIN
 			@upLineDisableOutright AS upLineDisableOutright,
 			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer,
 			@Locked AS Locked,
-			@IsProtectedMode AS IsProtectedMode
+			@IsProtectedMode AS IsProtectedMode,
+			@IsAllowAutoTransfer AS IsAllowAutoTransfer
 	FROM custinfo ci WITH (NOLOCK)
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
