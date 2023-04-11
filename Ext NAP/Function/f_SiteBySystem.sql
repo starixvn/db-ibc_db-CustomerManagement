@@ -51,6 +51,7 @@ Revisions:
 	- 20210309@Tina: add more group ACCAthena000
 	- 20210812@Percy: Add back ACCTHAI2, ACCTHAI56, ACCTHAI99 as normal group [RedmineID: #146710]
 	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
+	- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
@@ -88,7 +89,9 @@ BEGIN
 	ELSE IF (@System IN ('ACCYEN','ACCYEN789','ACCYEN889','ACCYEN668','ACCNTD','ACCIRR','ACCUSD','ACCUT','ACCYEN888','ACCUT2','ACCUSDOTH'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
-		SELECT 3 --789y
+		SELECT siteid
+		FROM Site s WITH (NOLOCK)
+		WHERE SiteLabel='789y' AND isActive=1
 	END
 	ELSE IF (@System IN ('ACCUUS'))
 	BEGIN

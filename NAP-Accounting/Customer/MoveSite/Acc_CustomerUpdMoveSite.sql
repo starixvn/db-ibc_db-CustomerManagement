@@ -28,12 +28,11 @@ AS
 		- 20201103@Tina: move site for members level [Redmine: #144323]
 		- 20210202@Winfred : Virtual Rate for Basketball - New 611111 site super must have VR setting = 0%   [Redmine: #149369]	
 		- 20220419@Eden: Turn off VR Basketball & E-sports for 611111 site [Redmine: #171609]
+		- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230317@Johnson: Return Basketball VR to its original state [redmine:#184339]
-		
+
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
-		
-
 */
 
 BEGIN
@@ -42,8 +41,14 @@ BEGIN
 	declare @startRun datetime
 	declare @endRun datetime
 	declare @duration int
+	declare @SiteLabel VARCHAR(50)
+
 	set @startRun = getdate()
-	
+
+	select @SiteLabel=SiteLabel
+	from site with (nolock)
+	where site=@Site
+
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
 	
@@ -86,9 +91,13 @@ BEGIN
 		RETURN
 	END
 	
-	DECLARE @OldSite varchar(50), @LogSPData varchar(8000)
+	DECLARE @OldSite varchar(50), @OldSiteLabel varchar(50), @LogSPData varchar(8000)
 	DECLARE @userName VARCHAR(50),@currency TINYINT
-	SELECT @OldSite =  site from customer (nolock) where custid = @CustId	
+
+	SELECT @OldSite =  c.site, @OldSiteLabel = s.SiteLabel
+	from customer c with(nolock) 
+	inner join site s with (nolock) on s.site=c.site
+	where custid = @CustId	
 
 	SELECT @userName = username,@currency = currency FROM custInfo WITH (NOLOCK) WHERE custid = @CustId
 	--IF @OldSite = '766666' OR @Site = '766666'
@@ -108,6 +117,16 @@ BEGIN
 		RETURN
 	END
 	
+	--
+	IF  (@OldSiteLabel = '789y' AND @SiteLabel <> '789y')
+	BEGIN
+		SELECT @ErrCode = 103, @ErrMsg = 'Cannot move site for ' + @OldSite + ' (' + SiteLabel + ')'
+		FROM Site WITH (NOLOCK)
+		WHERE site=@OldSite
+		RETURN
+	END
+
+
 	EXEC dbo.Acc_CustomerInfo_Execrep_06
 	    @custid = @custid,
 	    @roleid = @roleid,

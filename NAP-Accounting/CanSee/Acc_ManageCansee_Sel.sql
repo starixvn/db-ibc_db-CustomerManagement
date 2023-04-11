@@ -19,18 +19,21 @@ BEGIN
 			- 20201118@Tina: Add 1 more value is 0 which use to get all sports [Redmine: #131241]
 			- 20201207@Tina: multiple selection for @SportType, @SiteID
 			- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+			- 20230113@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	*/
 	SET NOCOUNT ON;
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128))
-	CREATE TABLE #Site (siteid INT PRIMARY KEY, [SiteName] NVARCHAR(50))
+	CREATE TABLE #Site (siteid INT PRIMARY KEY, [SiteName] NVARCHAR(50), isActive BIT)
 	CREATE TABLE #Exchange (exchangeid INT PRIMARY KEY, currency NVARCHAR(50))
 
 	INSERT INTO #Bettype  (typeid,typenamee)	
 	SELECT typeid,typenamee 
 	FROM DBACC.bodb02.dbo.Bettype WITH(NOLOCK)
 	
-	INSERT INTO #Site  (siteid, [SiteName])	
-	SELECT S.value, CASE WHEN S.value = 0 THEN 'All Sites' ELSE Si.[site] END SiteName
+	INSERT INTO #Site  (siteid, [SiteName], isActive)	
+	SELECT	S.value, 
+			CASE WHEN S.value = 0 THEN 'All Sites' ELSE Si.[site] END SiteName,
+			CASE WHEN S.value = 0 THEN 1 ELSE Si.isActive END isActive
 	FROM STRING_SPLIT(@pMutilSite, ',') S
 		LEFT JOIN [Site] Si WITH (NOLOCK) ON Si.siteid = S.value
 	
@@ -57,6 +60,7 @@ BEGIN
 		INNER JOIN STRING_SPLIT(@pMutilSportType, ',') SP ON SP.value = plsc.SportType
 	WHERE bt.typenamee LIKE N'%' + @BettypeName + '%'
 		AND (@BetType IS NULL OR plsc.BetType = @BetType )
+		AND s.isActive=1
 	ORDER BY Plsc.SiteID,plsc.SportType,plsc.BetType
    
    DROP TABLE #Bettype,#Exchange,#Site
