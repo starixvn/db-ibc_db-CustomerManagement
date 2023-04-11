@@ -15,6 +15,7 @@ AS
 		- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 		- 20221021@Tacy: NAP - Manage Product Setting - Enhance Can See function [Redmine: #178092]
 		- 20221117@Tacy: HotFix - NAP - Manage Product Setting - CANSEE - Error when uploaded excel file [RedmineID: #180627]
+		- 20230113@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230308@Tacy: NAP - Enhance CanSee (not allow: both site=0 and currency=0) [RedmineID: #183826]
 */
 BEGIN
@@ -192,6 +193,21 @@ BEGIN
 		RETURN
 	END
 	
+	--Check SiteID: isActive???
+	SELECT TOP(1) @MatrixError 	= CONVERT(VARCHAR(5),I.ID),
+			@ErrCode = 1006,
+			@ValueError = s.siteid,
+			@ColumnName = 'SiteID'
+	FROM #Data_Input i
+		 INNER JOIN [Site] s WITH(NOLOCK) ON s.SiteID = i.SiteID
+	WHERE s.isActive=0
+
+	IF @ErrCode <> 0
+	BEGIN
+		SELECT @ErrMsg = 'Row "' + ISNULL(@MatrixError,'') + '" - ' + @ColumnName + ' = "' + ISNULL(@ValueError,'') + '" is inactivated.'
+		RETURN
+	END
+
 	SELECT TOP(1) @MatrixError 	= CONVERT(VARCHAR(5),I.ID), 
 	              @ValueError 	= CASE  WHEN i.BetType >= 19999 THEN i.BetType
 										ELSE i.IsLaunched END ,

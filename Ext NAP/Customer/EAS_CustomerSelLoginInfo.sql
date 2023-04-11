@@ -11,6 +11,7 @@ AS
 	Revisions:  
 		- 20181030@Elodie: Search Customer on left panel of EXT NAP (Login Info) [Redmine:#95978]
 		- 20191227@Johnson: change to get max transdate from sp EAS_CustomerSelBalanceInfo [redmine: #125894]
+		- 20230208@Tacy: Alpha/NAP - Split 789y site [Redmine:#181596]
 	Example:	
 		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070, @GroupName = 'ACCUUS'
 */
@@ -21,12 +22,14 @@ BEGIN
 			@recommend						INT,
 			@srecommend						INT,
 			@Site							NVARCHAR(50),
+			@SiteLabel						VARCHAR(50),
 			@NicknameLoginOnly				BIT = 0,
 			@LastChangedSecurityCodeDate	DATETIME,
 			@OTPCreateDate					DATETIME			
 
-	SELECT  @RoleId = roleID, @Site = site, @recommend = recommend, @srecommend = srecommend
-	FROM dbo.customer WITH (NOLOCK) 
+	SELECT  @RoleId = roleID, @Site = c.site, @recommend = recommend, @srecommend = srecommend, @SiteLabel=s.SiteLabel
+	FROM dbo.customer c WITH (NOLOCK) 
+	INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 	WHERE custid = @CustId
 
 	-- check belong to group 
@@ -63,7 +66,7 @@ BEGIN
 	    FROM dbo.CustLoginInfo WITH(NOLOCK)
 	    WHERE custid = @CustId
 
-	SELECT	c.CustId, c.RoleId, @Site AS site,			
+	SELECT	c.CustId, c.RoleId, @Site AS site, @SiteLabel AS sitelabel,			
 			c.creatdate, c.lastlogged, ISNULL(c.iplogin, '') AS lastloginip, pwdexpiry, 
 			@LastChangedSecurityCodeDate AS LastChangedSecurityCodeDate, @NicknameLoginOnly AS NicknameLoginOnly, @OTPCreateDate AS OTPCreateDate
 	FROM dbo.customer c WITH (NOLOCK) 

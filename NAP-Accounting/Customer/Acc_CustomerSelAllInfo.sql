@@ -118,6 +118,7 @@ Revisions:
 					   Move this item DisableAutoMPT from Acc_CustomerSelBalanceCashInfo to this SP
 					   Remove not to call Acc_CustomerSelBalanceCashInfo [RedmineID: #175253]
 	- 20220929@Tacy: Add Customer Class, show on NAP [RedmineID: #175126]
+	- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -675,12 +676,13 @@ BEGIN
 	    ci.Enabled,
 	    @IsDeposit IsDeposit, 
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
-	    c.site,
+		s.sitelabel,
+	    c.site AS site,
 	    @IsInternal as IsInternal,
 	    @LimitPerIP as LimitPerIP,
 	    @SelectedBetting as SelectedBetting,
 	    @NicknameLoginOnly as NicknameLoginOnly,
-	    @membersite as membersite,
+		@membersite as membersite,
 	    @LastChangedSecurityCodeDate as LastChangedSecurityCodeDate,
 	    @IsHideDirectStatus IsHideDirectStatus,
 	    @IsCheckedDirectStatus IsCheckDirectStatus,
@@ -704,6 +706,7 @@ BEGIN
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
+		inner join Site s WITH(NOLOCK) on s.site=c.site
 	    LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 AND @IsDeposit = 0
 		LEFT JOIN CustSuspendLockUpd AS ls WITH (NOLOCK) ON ci.custid = ls.custid
 		OUTER APPLY (SELECT C.username

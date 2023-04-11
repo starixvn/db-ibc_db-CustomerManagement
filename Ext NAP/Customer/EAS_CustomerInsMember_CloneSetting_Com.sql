@@ -47,6 +47,7 @@ AS
 		- 20220823@Johnson: Copy Date Limit range and  Auto Transfer Type for real currency 789y [redmine:#176778] 
 		- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 		- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
+		- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -100,7 +101,8 @@ BEGIN
 			,@roleid tinyint
 			,@Enabled BIT
 			,@currency INT
-			,@site VARCHAR(10)			
+			,@site VARCHAR(10)
+			,@SiteLabel VARCHAR(50)			
 			,@EnableVR BIT
 
 	SELECT @existingUsername =  ISNULL(username,''), 
@@ -110,8 +112,9 @@ BEGIN
 	FROM dbo.CustInfo WITH(NOLOCK) 
 	WHERE custid = @ExistingCustid
 	
-	SELECT @Site = site
-	FROM dbo.Customer WITH(NOLOCK)
+	SELECT @Site = c.site, @SiteLabel=s.SiteLabel
+	FROM Customer C WITH (NOLOCK)
+	INNER JOIN Site s WITH (NOLOCK) ON s.site=s.site
 	WHERE CustID = @ExistingCustid	
 	
 	IF @roleid <> 4
@@ -298,8 +301,8 @@ BEGIN
 	BEGIN TRY
 		-- insert CustSuper info
 		DECLARE @MaxMember INT, @MaxMemberLog VARCHAR(50)
-		SELECT @MaxMember = CASE WHEN @Site = '789y' THEN 20000 ELSE -1 END
-		SELECT @MaxMemberLog = CASE WHEN @Site = '789y' THEN '20000' ELSE 'Unlimited' END
+		SELECT @MaxMember = CASE WHEN @SiteLabel = '789y' THEN 20000 ELSE -1 END
+		SELECT @MaxMemberLog = CASE WHEN @SiteLabel = '789y' THEN '20000' ELSE 'Unlimited' END
 
 		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer)  
 		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer
@@ -324,7 +327,7 @@ BEGIN
 	FROM dbo.exchange WITH (NOLOCK) 
 	WHERE exchangeid = @currency
 	
-	SELECT @EnableVR = EnableVR FROM f_GenerateVirtualStatusBySite (@site)
+	SELECT @EnableVR = EnableVR FROM f_GenerateVirtualStatusBySite (@Site)
 
 	BEGIN TRY
 		-- insert CustInfo info
@@ -490,7 +493,7 @@ BEGIN
 	BEGIN TRY
 		
 		INSERT INTO [dbo].[CustVirtualSetting] (custid, seqNo, bitmapVirtual)
-		SELECT custid, seqNo, bitmapVirtual FROM f_GenerateVirtualSettingBySite (@site,@CustID)
+		SELECT custid, seqNo, bitmapVirtual FROM f_GenerateVirtualSettingBySite (@Site,@CustID)
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrMsg = CASE @Language 

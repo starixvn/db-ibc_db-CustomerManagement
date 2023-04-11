@@ -13,7 +13,7 @@ AS
 	Revision:
 		- 20210928@Johnson: initial sp [redmine:#160980]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-	
+		- 20230314@Tacy: NAP/Alpha - Split 789y site [redmineId: #181596]
 	Parameter's Explanation:
 		@SuperList: super list		
 */
@@ -71,10 +71,11 @@ BEGIN
 			@ErrMsg = @strUsername + N' are not valid Super Accounts.'		
 	END
 	
-	SELECT t.custid, t.username, c.site, t.closed, t.suspended, ISNULL(ci.IsProtectedMode,0) IsProtectedMode
+	SELECT t.custid, t.username, c.site, s.SiteLabel, t.closed, t.suspended, ISNULL(ci.IsProtectedMode,0) IsProtectedMode
 	FROM @tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.custid = c.custid		
 		INNER JOIN CustLoginInfo ci WITH(NOLOCK) ON t.custid = ci.custid
+		INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 	WHERE t.roleid = 4
 		AND t.custid > 100 --dummy account		
 		AND t.custid NOT IN (SELECT custid FROM Dep_CustSuper WITH(NOLOCK))					

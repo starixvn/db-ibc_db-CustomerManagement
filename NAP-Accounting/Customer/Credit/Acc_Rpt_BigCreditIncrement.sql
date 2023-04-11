@@ -1,6 +1,6 @@
 /*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
 GO
-CREATE PROCEDURE [dbo].[Acc_Rpt_BigCreditIncrement]
+ALTER PROCEDURE [dbo].[Acc_Rpt_BigCreditIncrement]
 	@FromDate	DATETIME,  
 	@ToDate		DATETIME,
 	@IsTest		BIT = 0
@@ -11,6 +11,7 @@ AS
    
     Revisions: 
 		- 20201020@Tina: add new
+		- 20230103@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 
 	Param's Explanation:
 
@@ -30,7 +31,9 @@ BEGIN
 	CREATE TABLE #site (SiteID INT, SiteName VARCHAR(30), Amount INT)
 
 	INSERT INTO #site(SiteName, Amount)
-	SELECT '789y' SiteName, 331910 Amount
+	SELECT site SiteName, 331910 Amount
+	FROM DBCUST.CustDB.dbo.Site s WITH (NOLOCK)
+	WHERE SiteLabel = '789y'
 
 	--get movement data in date range
 	INSERT INTO #CreditIncrement (CustId, Amount, BeginLogID, EndLogID)

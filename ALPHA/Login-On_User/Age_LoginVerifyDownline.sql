@@ -19,6 +19,7 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@NickName VARCHAR(50) = '' OUTPUT,
 	@SuperID INT = 0 OUTPUT,
 	@Site 	VARCHAR(10) = '' OUTPUT,
+	@SiteID INT = 0 OUTPUT,
 	@RoleID TINYINT = 0 OUTPUT,
 	@SubUserName VARCHAR(50) ='' OUTPUT,
 	@IsKickOut BIT = 0 OUTPUT, 
@@ -67,7 +68,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20211019@Winfred: Add log Alpha Support Dark Mode [Redmine: #151816]
-
+		- 20230207@Tacy: Alpha/NAP - Split 789y site [RedmineID:#181596]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -154,7 +155,11 @@ BEGIN
 			FROM custSub c WITH (NOLOCK)
 			WHERE username2 = @db_Username2	
 
-			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID
+			SELECT @RoleID = roleid, @Site = c.site, @db_currency = currency, @SiteID=s.siteid
+			FROM customer c WITH (NOLOCK)
+			INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
+			WHERE custid = @CustID
+
 			SET @rowcount = @@ROWCOUNT	
 		END
 		ELSE
@@ -165,7 +170,11 @@ BEGIN
 			FROM custsub with (nolock) 				
 			WHERE username = @UserName				
 
-			SELECT @RoleID = roleid, @Site = site, @db_currency = currency FROM customer WITH (NOLOCK) WHERE custid = @CustID
+			SELECT @RoleID = roleid, @Site = c.site, @db_currency = currency, @SiteID=s.siteid
+			FROM customer c WITH (NOLOCK)
+			INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site 
+			WHERE custid = @CustID
+
 			SET @rowcount = @@ROWCOUNT
 
 			IF @SubNicknameLoginOnly = 1 
@@ -533,9 +542,10 @@ BEGIN
 		UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = 0 WHERE subaccid = @subaccid 
 		
 		--Get username, password from customer table to login in the context of agent    
-		SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @Site = site, @UserName = username, @UserPwd = userpwd,
-			@failedcount = ISNULL(logincount,0), @db_loginip= ISNULL(iplogin, '')
-		FROM customer WITH (NOLOCK) 
+		SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @Site = c.site, @UserName = username, @UserPwd = userpwd,
+			@failedcount = ISNULL(logincount,0), @db_loginip= ISNULL(iplogin, ''), @SiteID=s.siteid
+		FROM customer c WITH (NOLOCK) 
+		INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 		WHERE custid = @CustID    
 			AND mrecommend <> 927780
 
@@ -555,8 +565,9 @@ BEGIN
 		BEGIN
 			----use nickname
 			SELECT	@db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @db_currency = currency, @failedcount = isnull(logincount,0),  
-					@site = site , @db_loginip= isnull(iplogin, ''), @Nickname = UserName2, @UserName = Username, @IsNickname = 1
-			FROM customer c WITH (NOLOCK)
+					@site = c.site , @db_loginip= isnull(iplogin, ''), @Nickname = UserName2, @UserName = Username, @IsNickname = 1, @SiteID=s.siteid
+			FROM customer c WITH (NOLOCK) 
+			INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 			WHERE username2 = @UserName
 					and mrecommend <> 927780
 
@@ -607,8 +618,9 @@ BEGIN
 		END  
 			----use username
 			SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @db_currency = currency, @failedcount = isnull(logincount,0),  
-					@site = site , @db_loginip= isnull(iplogin, ''),  @IsNickname = 0, @Nickname = UserName2
-			FROM customer WITH (NOLOCK)
+					@site = c.site , @db_loginip= isnull(iplogin, ''),  @IsNickname = 0, @Nickname = UserName2, @SiteID=s.siteid
+			FROM customer c WITH (NOLOCK) 
+			INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 			WHERE username = @UserName
 					and mrecommend <> 927780
 
