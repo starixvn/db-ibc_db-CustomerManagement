@@ -19,6 +19,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 
 	Param's Explanation:  	
 		- @LimitType : 
@@ -41,6 +42,7 @@ AS
 			7: LastReachWinningThreshold
 			8: LastReachLosingThreshold
 			9: NoOfReach
+			10:first/lastname
 
 	DECLARE @TotalItems INT
 	EXEC Acc_WLMonitored_Player_ReachList_Sel 
@@ -83,6 +85,7 @@ BEGIN
 		CustID				INT,
 		recommend			INT,
 		username			VARCHAR(30),
+		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
 		LastReachedDate		DATETIME,
@@ -100,6 +103,7 @@ BEGIN
 		CustID				INT,
 		recommend			INT,
 		username			VARCHAR(30),
+		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
 		LastReachedDate		DATETIME,
@@ -144,7 +148,8 @@ BEGIN
 	INSERT INTO #Temp(
 		 CustID				
 		,recommend			
-		,username			
+		,username	
+		,firstlastname
 		,lastlogged			
 		,Status				
 		,LastReachedDate		
@@ -161,6 +166,11 @@ BEGIN
 	SELECT ci.custid,
 		ci.recommend,
 		ci.username,
+		CASE WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN firstname + '/ ' + lastname
+			 WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND (c.lastname IS NULL	OR c.lastname IN ('NULL',''))		THEN firstname
+			 WHEN (c.firstname IS NULL	  OR c.firstname IN ('NULL',''))	 AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN lastname
+			 ELSE ''
+		END firstlastname,
 		c.lastlogged,
 		CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 			 WHEN cs.closed = 1 THEN 'Closed'
@@ -205,7 +215,8 @@ BEGIN
 	INSERT INTO #Temp2(
 		 CustID				
 		,recommend			
-		,username			
+		,username	
+		,firstlastname
 		,lastlogged			
 		,Status				
 		,LastReachedDate		
@@ -221,7 +232,8 @@ BEGIN
 	)
 	SELECT CustID				
 		,recommend			
-		,username			
+		,username	
+		, firstlastname
 		,lastlogged			
 		,Status				
 		,LastReachedDate		
@@ -244,6 +256,7 @@ BEGIN
 				CASE WHEN @SortType = 7 AND @IsDesc = 0 THEN WinningThreshold END ASC,
 				CASE WHEN @SortType = 8 AND @IsDesc = 0 THEN LosingThreshold END ASC,
 				CASE WHEN @SortType = 9 AND @IsDesc = 0 THEN ReachedCnt END ASC,
+				CASE WHEN @SortType = 10 AND @IsDesc = 0 THEN firstlastname END ASC,
 				-----------
 				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN username END DESC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 1 THEN lastlogged END DESC,
@@ -254,6 +267,7 @@ BEGIN
 				CASE WHEN @SortType = 7 AND @IsDesc = 1 THEN WinningThreshold END DESC,
 				CASE WHEN @SortType = 8 AND @IsDesc = 1 THEN LosingThreshold END DESC,
 				CASE WHEN @SortType = 9 AND @IsDesc = 1 THEN ReachedCnt END DESC,
+				CASE WHEN @SortType = 10 AND @IsDesc = 1 THEN firstlastname END DESC,
 				Username ASC, LastReachedDate DESC
 
 	SELECT @TotalItems = COUNT(1) 
@@ -261,7 +275,8 @@ BEGIN
 
 	SELECT CustID				
 		,recommend			
-		,username			
+		,username
+		,firstlastname
 		,lastlogged			
 		,Status				
 		,LastReachedDate		

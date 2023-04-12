@@ -24,6 +24,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
@@ -67,10 +68,13 @@ BEGIN
                 ci.enabled, 
 			    ISNULL(ps.reject,0) AS suspended,
 			    ci.username, 
+				c.firstname,
+				c.lastname,
 			    ci.custid,
 				ISNULL(cl.ClosedReason,0) AS ClosedReason,
 				ISNULL(ps.Locked,0) Locked
 		FROM custInfo AS ci WITH(NOLOCK)
+			INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
 							, Locked
@@ -80,7 +84,8 @@ BEGIN
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE   ci.SRecommend = @SRecommend 
           AND   ci.roleid = 3
-		GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason,ps.Locked
+		GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname,
+			c.lastname, ci.custid,cl.ClosedReason,ps.Locked
 	) info
 	CROSS APPLY (
 		SELECT 4 AS roleid

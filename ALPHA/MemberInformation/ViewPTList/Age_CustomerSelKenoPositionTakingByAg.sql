@@ -22,6 +22,8 @@ AS
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20200826@Eden: Keno - Hide un-used bettype (country) of Keno [Redmine: #138657]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
+
 	Param's Explanation: 
 	• @Recommend: Agent ID
 */
@@ -62,6 +64,8 @@ BEGIN
 			ci.enabled,
 			ISNULL(ps.reject, 0) AS suspended,
 			ci.username,
+			c.firstname,
+			c.lastname,
 			ci.custid,
 			MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.apositiontaking ELSE 0 END) AS apositiontaking_1501,
 			MAX(CASE WHEN cg.bettype = 1501 AND cg.sporttype = 202 THEN cg.mpositiontaking ELSE 0 END) AS mpositiontaking_1501,
@@ -69,6 +73,7 @@ BEGIN
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,
 			ISNULL(ps.Locked,0) Locked
 		FROM custinfo ci WITH(NOLOCK)
+			INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 			INNER JOIN CustSettingGame cg WITH(NOLOCK) ON ci.custid = cg.custid
 			INNER JOIN CustGameType ct WITH(NOLOCK) ON ci.custid = ct.CustID
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
@@ -83,7 +88,7 @@ BEGIN
 			and ci.recommend = @Recommend
 			AND ci.roleid = 1
 			AND cg.sporttype = 202
-		GROUP BY ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason, ps.Locked
+		GROUP BY ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason, ps.Locked
 	) t
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 
