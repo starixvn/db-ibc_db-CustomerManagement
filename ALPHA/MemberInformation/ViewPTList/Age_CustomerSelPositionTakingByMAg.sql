@@ -32,6 +32,7 @@ AS
 		- 20191031@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20221101@Elodie: Enhance SP [Redmine: #179269]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 
 	Param's Explanation:
 	• @MRecommend: Master Agent ID
@@ -59,6 +60,8 @@ BEGIN
 			ps.closed, ci.enabled, 
 			ISNULL(ps.reject,0) suspended,
 			ci.username, 
+			c.firstname,
+			c.lastname,
 			ci.custid, 
 			
 			MAX(CASE WHEN cs.bettype = 1 AND cs.sporttype=1 THEN cs.apositiontaking ELSE 0 END) AS apositiontaking_1,
@@ -203,6 +206,7 @@ BEGIN
 			ISNULL(ps.Locked,0)	AS Locked			
 		FROM 
 			custinfo AS ci WITH (NOLOCK)
+			INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 			INNER JOIN CustSetting AS cs WITH (NOLOCK) ON ci.custid = cs.custid			
 			CROSS APPLY  (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -216,7 +220,9 @@ BEGIN
 			ci.enabled,
 			ps.closed,
 			ps.reject, 	
-			ci.username, 
+			ci.username,
+			c.firstname,
+			c.lastname,
 			ci.custid,
 			cl.ClosedReason,
 			ps.Locked

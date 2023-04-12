@@ -18,6 +18,8 @@ AS
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20170622@Winnie: Color for closed accounts  [RedmineID: #74494]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
+
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
 */
@@ -42,6 +44,8 @@ BEGIN
 			ps.closed, ci.enabled, 
 			ISNULL(ps.reject,0) AS suspended,
 			ci.username, 
+			c.firstname,
+			c.lastname,
 			ci.custid, 
 			
 			-- Deadball NumberGame
@@ -61,6 +65,7 @@ BEGIN
 			ISNULL(ps.Locked,0)	Locked
 		FROM
 			custinfo AS ci WITH (NOLOCK)
+			INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 			INNER JOIN CustSetting3rd AS cs3rd WITH (NOLOCK) ON ci.custid = cs3rd.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -71,7 +76,7 @@ BEGIN
 			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON ci.custid=cl.CustID
 		WHERE ci.SRecommend = @SRecommend AND ci.roleid=3
 		GROUP BY
-			ci.enabled, ps.closed, ps.reject, ci.username, ci.custid,cl.ClosedReason,ps.Locked		
+			ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked		
 	) t
 	WHERE RowNumber >= (@PageIndex-1)*@PageSize + 1 AND RowNumber <= @PageIndex*@PageSize
 

@@ -17,6 +17,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 
 	Param's Explanation:  	
 		- @SortType : ( order by)
@@ -25,6 +26,7 @@ AS
 			3: Status
 			4: WinningThreshold
 			5: LosingThreshold
+			6: firstname/lastname
 
 	DECLARE @TotalItems INT
 	EXEC Acc_WLMonitored_Player_WatchList_Sel 
@@ -45,6 +47,7 @@ BEGIN
 	CREATE TABLE #Temp(
 		CustID				INT,
 		username			VARCHAR(30),
+		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
 		WinningThreshold	MONEY,
@@ -57,7 +60,8 @@ BEGIN
 
 	CREATE TABLE #Temp2(
 		CustID				INT,
-		username			VARCHAR(30),
+		username			VARCHAR(30),		
+		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
 		WinningThreshold	MONEY,
@@ -70,7 +74,8 @@ BEGIN
 
 	INSERT INTO #Temp(
 		 CustID			
-		,username		
+		,username	
+		,firstlastname
 		,lastlogged		
 		,Status			
 		,WinningThreshold
@@ -81,6 +86,11 @@ BEGIN
 	)
 	SELECT ci.custid,
 		ci.username,
+		CASE WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN firstname + '/ ' + lastname
+			 WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND (c.lastname IS NULL	OR c.lastname IN ('NULL',''))		THEN firstname
+			 WHEN (c.firstname IS NULL	  OR c.firstname IN ('NULL',''))	 AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN lastname
+			 ELSE ''
+		END firstlastname,
 		c.lastlogged,
 		CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 			 WHEN cs.closed = 1 THEN 'Closed'
@@ -110,7 +120,8 @@ BEGIN
 	INSERT INTO #Temp2(
 		 CustID				
 		,recommend			
-		,username			
+		,username	
+		,firstlastname			
 		,lastlogged			
 		,Status				
 		,WinningThreshold	
@@ -120,7 +131,8 @@ BEGIN
 	)
 	SELECT CustID				
 		,recommend			
-		,username			
+		,username
+		,firstlastname
 		,lastlogged			
 		,Status				
 		,WinningThreshold	
@@ -133,12 +145,14 @@ BEGIN
 				CASE WHEN @SortType = 3 AND @IsDesc = 0 THEN Status END ASC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 0 THEN WinningThreshold END ASC,
 				CASE WHEN @SortType = 5 AND @IsDesc = 0 THEN LosingThreshold END ASC,
+				CASE WHEN @SortType = 6 AND @IsDesc = 0 THEN firstlastname END ASC,
 				-----------
 				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN username END DESC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 1 THEN lastlogged END DESC,
 				CASE WHEN @SortType = 3 AND @IsDesc = 1 THEN Status END DESC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 1 THEN WinningThreshold END DESC,
 				CASE WHEN @SortType = 5 AND @IsDesc = 1 THEN LosingThreshold END DESC,
+				CASE WHEN @SortType = 6 AND @IsDesc = 1 THEN firstlastname END DESC,
 				Username ASC
 
 	SELECT @TotalItems = COUNT(1) 
@@ -146,7 +160,8 @@ BEGIN
 
 	SELECT CustID				
 		,recommend			
-		,username			
+		,username		
+		,firstlastname
 		,lastlogged			
 		,Status						
 		,WinningThreshold	
@@ -154,7 +169,7 @@ BEGIN
 		,Locked
 		,ClosedReason
 		,RowNumber
-	FROM  #Temp2
+	FROM  #Temp2 
 	WHERE RowNumber BETWEEN @rowstart AND @rowend
 	ORDER BY RowNumber
 
