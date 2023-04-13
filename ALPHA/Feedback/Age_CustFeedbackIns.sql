@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet"  viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet"  viewers="" isFunction="0" isNested="0"></info>*/
 
 USE [bodb_ChatBot]
 GO
@@ -10,27 +10,40 @@ GO
  
 CREATE PROCEDURE [dbo].[Age_CustFeedbackIns] 
 	-- Add the parameters for the stored procedure here
-  @custID int
-, @Subaccid int
-, @comment Nvarchar(4000)
-, @Rate tinyint 
- 
+	  @custID	INT
+	, @Subaccid	INT
+	, @comment	NVARCHAR(4000)
+	, @Rate		TINYINT 
+	, @FuncID	INT=NULL
+	, @XMLfb	NVARCHAR(MAX)=NULL
 AS
---- EXEC Age_CustFeedbackIns 340942 , 123 , N'Hoa hồng luôn có mặt trong các ngày lễ hội, liên hoan, sinh nhật, đám cưới. Ngoài ra, tinh dầu hoa hồng còn dùng để làm dầu thơm rất được ưa chuộng. Riêng đối với em, hoa hồng đã tô điểm cho vườn kiểng nhà em thêm xinh tươi. Em rất quý hoa vì những bông hoa có được là do ba em trồng..' , '5'
- 
 /*
- Created: 20230210@Helios 
- Task : Insert Feedback by SMA in AlphaSite   
- DB: DBBOT.bodb_ChatBot   
-
+	Created: 20230210@Helios 
+	Task : Insert Feedback by SMA in AlphaSite   
+	DB: DBBOT.bodb_ChatBot   
  
- Revisions:  
-   - 20230210@Helios: Insert Feedback by SMA in AlphaSite [Redmine: #183412]  
+	Revisions:  
+	- 20230210@Helios: Insert Feedback by SMA in AlphaSite [Redmine: #183412] 
+	- 20230328@Tacy: Alpha - Get user's feedback on specific function
+
+	Parameter's Explanation:
+		• @FuncId :	 = NULL ~ current feedback [#183412]
+					<> NULL ~ feedback by control 1|2
+
+		• @XMLfb : = NULL ~ current feedback [#183412] & feedback by control 2
+				  <> NULL ~ feedback by control 1
+
+	Example:
+		EXEC Age_CustFeedbackIns 340942 , 123 , N'Hoa hồng luôn có mặt trong các ngày lễ hội, liên hoan, sinh nhật, đám cưới. Ngoài ra, tinh dầu hoa hồng còn dùng để làm dầu thơm rất được ưa chuộng. Riêng đối với em, hoa hồng đã tô điểm cho vườn kiểng nhà em thêm xinh tươi. Em rất quý hoa vì những bông hoa có được là do ba em trồng..' , '5'
 */
-
 BEGIN
- 
- INSERT INTO  [dbo].[CustFeedback] ([CustID],[Subaccid],[Comment],[Rate],[CreatedDate])
-    select    @custID , @Subaccid , ISNULL(@comment , '') , ISNULL (@Rate , 0) , Getdate()
+	SET NOCOUNT ON;
 
+	INSERT INTO  [dbo].[CustFeedback] ([CustID],[Subaccid],[Comment],[Rate],[FuncID],[CreatedDate])
+	SELECT    @custID, @Subaccid, ISNULL(@comment , ''), ISNULL (@Rate , 0), @FuncID, Getdate()
+
+	IF @XMLfb IS NOT NULL
+	BEGIN
+		EXEC [Age_CustFeedbackArea_Ins] @XMLfb=@XMLfb
+	END
 END
