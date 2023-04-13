@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet,bodbDownlineNetView"  viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet,bodbDownlineNetView"  viewers="" isFunction="0" isNested="0"></info>*/
 
 USE [bodb_ChatBot]
 GO
@@ -9,36 +9,33 @@ SET QUOTED_IDENTIFIER ON
 GO
  
 CREATE PROCEDURE [dbo].[Age_CustFeedbackCheckExists] 
-	-- Add the parameters for the stored procedure here
-  @custID int 
-, @SubAccId int 
-, @IsExists BIT = 0 OUTPUT 
- -- ReleaseNote: Next Step Enhance ADD Index CustID ,Subaccid in table and Remove Check IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE SubAccId = @SubAccId)
+-- Add the parameters for the stored procedure here
+	  @custID	INT 
+	, @SubAccId INT = 0
+	, @FuncId	INT = NULL
+	, @IsExists BIT = 0 OUTPUT 
+-- ReleaseNote: Next Step Enhance ADD Index CustID ,Subaccid in table and Remove Check IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE SubAccId = @SubAccId)
  
 AS  
 /*    
- Created: 20230210@Helios
- Task : Check existing feedback or not  
- DB: DBBOT.bodb_ChatBot   
+	Created: 20230210@Helios
+	Task : Check existing feedback or not  
+	DB: DBBOT.bodb_ChatBot   
    
  
- Revisions:   
-  - 20230210@Helios: Check existing feedback or not [Redmine: #183412]  
- Parameter's Explanation:
- 
+	Revisions:   
+		- 20230210@Helios: Check existing feedback or not [Redmine: #183412]  
+		- 20230328@Tacy: Alpha - Get user's feedback on specific function [RedmineID: #185515]
+
+	Parameter's Explanation:
+		• @FuncId :	 = NULL ~ current feedback [#183412]
+					<> NULL ~ feedback by control 1|2
 */ 
 BEGIN  
- SET NOCOUNT ON  
- IF (@SubAccId  = 0)
- BEGIN 
-	IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID and Subaccid = @SubAccId)
-	SELECT @IsExists = 1  
+	SET NOCOUNT ON  
+
+	IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE CustID = @custID and Subaccid = @SubAccId and @FuncId=FuncID)
+		SELECT @IsExists = 1  
 	ELSE   
-	SELECT @IsExists = 0
- END
- ELSE
- IF EXISTS(SELECT 1 FROM CustFeedback WITH(NOLOCK) WHERE SubAccId = @SubAccId)  
-   SELECT @IsExists = 1  
- ELSE   
-   SELECT @IsExists = 0  
+		SELECT @IsExists = 0
 END  
