@@ -31,6 +31,7 @@ AS
 		- 20181101@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
+		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -69,26 +70,6 @@ BEGIN
 		RETURN	
 	END
 	
-	-- Prevent user from decreasing given credit due to processing data
-	IF ISNULL(@OldCredit, 0) > ISNULL(@CreditAmt, 0)
-	BEGIN
-		EXEC DBTXN.bodb02.dbo.Acc_Core_IsMainProcessRunning
-			@CustId = @CustID,
-			@UplineId = @MAgID,
-			@IsDepositMember = 0,
-			@ErrCode = @ErrCode OUTPUT,
-			@ErrMsg = @ErrMsg OUTPUT
-
-		IF @ErrCode <> 0
-		BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Data processing is in progress, thus Given Credit cannot be reduced. Please try again in a few minutes.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](70022, @Language) END
-			
-			SELECT @CreditProblem = 1
-			
-			RETURN
-		END
-	END
 
 	SELECT @Credit_AllOtherAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 	FROM dbo.custInfo WITH (NOLOCK)

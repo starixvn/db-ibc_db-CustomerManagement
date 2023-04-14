@@ -79,6 +79,7 @@ BEGIN
 		WHERE b.winlostdate BETWEEN @tmpFromDate AND @tmpToDate
 			AND EXISTS (SELECT 1 FROM #RefNo r WHERE r.RefNo = b.RefNo)
 			AND b.bettype = 21003
+			AND b.winlostdate >= @BalanceUpDay
 			AND b.custid IN (7214120, 7213887, 7214025) -- PHL-Forex G/(L), VNM-Forex G/(L), MYS-Forex G/(L)
 			AND b.currency = 2
 	END
