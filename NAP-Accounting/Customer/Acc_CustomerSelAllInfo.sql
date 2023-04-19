@@ -119,6 +119,7 @@ Revisions:
 					   Remove not to call Acc_CustomerSelBalanceCashInfo [RedmineID: #175253]
 	- 20220929@Tacy: Add Customer Class, show on NAP [RedmineID: #175126]
 	- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
+	- 20230418@Tacy: NAP - get @membersite = member's site [RedmineID: #181596]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -279,10 +280,9 @@ BEGIN
     --Get member site
     IF @roleid = 1
     BEGIN
-	    SELECT	@membersite = c.site, @uplineid = c.custid
-	    FROM	customer c WITH(NOLOCK)
-		    INNER JOIN custinfo ci WITH(NOLOCK) ON c.custid = ci.recommend
-	    WHERE ci.custid = @custid
+		SELECT @membersite=site, @uplineid=recommend
+		FROM Customer WITH (NOLOCK)
+		WHERE custid=@custid
     	
 	    IF EXISTS (SELECT 1 FROM dbo.Customer c WITH(NOLOCK)
 							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 

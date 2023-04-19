@@ -30,6 +30,7 @@ AS
 		- 20220419@Eden: Turn off VR Basketball & E-sports for 611111 site [Redmine: #171609]
 		- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230317@Johnson: Return Basketball VR to its original state [redmine:#184339]
+		- 20230418@Tacy: allow Member move site [RedmineID: 181596]
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -42,12 +43,15 @@ BEGIN
 	declare @endRun datetime
 	declare @duration int
 	declare @SiteLabel VARCHAR(50)
+	DECLARE @RoleId int	
 
 	set @startRun = getdate()
 
 	select @SiteLabel=SiteLabel
 	from site with (nolock)
 	where site=@Site
+
+	SELECT @RoleId = ISNULL(roleid,0) FROM custinfo (NOLOCK) WHERE custid=@CustId
 
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpUserid VARCHAR(50)
@@ -68,13 +72,6 @@ BEGIN
 	If @ErrCode <> 0
 		RETURN
 	--end
-	DECLARE @IsAllow bit, @RoleId int	
-	EXEC DBAGE.bodb02.dbo.Acc_CustomerSelCheckMoveSite @CustId= @CustId, @UserId = @UserId, @IsAllow = @IsAllow output, @RoleId = @RoleId output
-	IF @IsAllow = 0
-	BEGIN
-		SELECT @ErrCode = 100, @ErrMsg = 'Cannot move site for this customer. We do not allow Member move site.'
-		RETURN
-	END
 
 	IF NOT EXISTS(SELECT 1 FROM Site (NOLOCK) WHERE SITE = @Site)
 	BEGIN
@@ -118,7 +115,7 @@ BEGIN
 	END
 	
 	--
-	IF  (@OldSiteLabel = '789y' AND @SiteLabel <> '789y')
+	IF  (@OldSiteLabel = '789y' AND @SiteLabel <> '789y' AND @currency<>20)
 	BEGIN
 		SELECT @ErrCode = 103, @ErrMsg = 'Cannot move site for ' + @OldSite + ' (' + SiteLabel + ')'
 		FROM Site WITH (NOLOCK)
