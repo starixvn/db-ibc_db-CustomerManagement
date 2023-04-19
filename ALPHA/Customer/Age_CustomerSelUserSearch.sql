@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[Age_CustomerSelUserSearch]
 	@UserID INT,
 	@custid INT,  -- roleid1
-	@username VARCHAR(50),
+	@username NVARCHAR(50),
 	@issubaccount BIT = 0,
 	@excludemember BIT = 0,
 	@directdownline BIT = 0,
@@ -26,7 +26,7 @@ AS
 		- 20140708@Dom: Do not allow Super search Super name from Account Info section [Redmine: #18125]
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190512@Elodie: Allow to search nickname on customer list[Redmine: #113044]
-
+		- 20230407@Helios: Changed datatype parameter @username [Redmine: #183697]
 	Param's Explanation:
 		• @custid: User who are logging in.
 		• @username: part of downline's username.
