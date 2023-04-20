@@ -12,6 +12,7 @@ AS
 		
 		Revisions:
 			- 20230414@Johnson: initial sp [redmine:#183697] 
+			- 20230420@Johnson: check username2 [redmine:#187266]
 		Parameter's Explanation:			
 			- @prefix: prefix's name of new member
 			- @roleid: roleid of upline
@@ -28,7 +29,17 @@ BEGIN
 	AND NOT exists (
 		SELECT top 1 1
 		FROM dbo.customer WITH(NOLOCK)			
-		WHERE @prefix + SeqName  = username
+		WHERE @prefix + SeqName  = username OR @prefix + SeqName  = username2
+		)
+	AND NOT exists (
+		SELECT top 1 1
+		FROM dbo.custsub WITH(NOLOCK)			
+		WHERE @prefix + SeqName  = username OR @prefix + SeqName = username2
+		)
+	AND NOT exists (
+		SELECT top 1 1
+		FROM dbo.Dep_Customer_Archived WITH(NOLOCK)			
+		WHERE @prefix + SeqName  = username OR @prefix + SeqName  = username2
 		)
 	ORDER BY SeqName ASC
 END
