@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB, DBAGE-bodb02" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
 (
 	@Username varchar(30),
@@ -17,6 +17,7 @@ Original:Accounting site
 		- 20191119@Tiara: Replacing ISNUMERIC function by PATINDEX to check numeric (#123972)
 		- 20200525@Malcolm: Add metadata [Redmine : #128128]
 		- 20210616@Winfred: NAP -Left Panel -Allow to search sub account nickname [Redmine: #155713]
+		- 20230421@Elodie: Deploy on DBAGE-bodb02 [Redmine: #169643]
 */
 BEGIN
 	DECLARE @custID INT
