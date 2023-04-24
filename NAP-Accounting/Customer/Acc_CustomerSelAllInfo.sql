@@ -120,7 +120,7 @@ Revisions:
 	- 20220929@Tacy: Add Customer Class, show on NAP [RedmineID: #175126]
 	- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	- 20230418@Tacy: NAP - get @membersite = member's site [RedmineID: #181596]
-
+	- 20230421@Elodie: Remove linked-server DBACC [RedmineID: #169643]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -189,9 +189,8 @@ BEGIN
     SET @NegativeBetEffectiveDate='2011-09-01'
 
 	DECLARE @netPosition MONEY = 0 -- for member
-	
-    --Get CustID FROM DB06, WHERE got index on Username AND Username2 or CustID
-    EXEC @custid = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
+	   
+    EXEC @custid = dbo.f_GetCustIDFromUsernameOrCustId @username, @CheckCustId
 
 	SELECT @ErrCode = 0, @ErrMsg = ''
 
