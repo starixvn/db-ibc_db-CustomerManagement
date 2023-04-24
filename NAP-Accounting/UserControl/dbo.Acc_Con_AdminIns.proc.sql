@@ -37,7 +37,7 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220517@Winfred: Insert new OTP Login requried for VPN's users [redmine:170994]
 	- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
-
+	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -83,8 +83,8 @@ BEGIN
 	INSERT  INTO customer (username, userpwd, roleid, firstname, lastname, creator, pwdexpiry)
 	VALUES               (@username, @userpwd, @roleid, @firstname, @lastname, @UserID, @pwdexpiry);
 	SELECT @CustID = @@IDENTITY;
-	INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [DisableNumber], [danger], [danger2], [danger3], [Enabled], [closed])
-	VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
+	INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed])
+	VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
 	IF @@ERROR <> 0
 		BEGIN
 			ROLLBACK;

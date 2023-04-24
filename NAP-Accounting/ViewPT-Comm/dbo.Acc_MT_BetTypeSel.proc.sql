@@ -21,7 +21,7 @@ Revisions:
 	- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
-
+	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 Parameters Explanation:  
 	
 */
@@ -30,18 +30,19 @@ BEGIN
 
 	CREATE TABLE #tmp_Bettype(ID INT, Name NVARCHAR(500),IsDisabled BIT,IBCBettypeID INT)
 	CREATE TABLE #ProductSettingDetail(
-		[SettingType] [smallint],
 		[SportType] [smallint],
-		[BetType] [smallint],
-		[IsLive] [bit], 
-	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+		[BetType] [smallint]
 	)
 
-	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive)
-	SELECT SportType,BetType,SettingType,IsLive
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	INSERT INTO #ProductSettingDetail(SportType,BetType)
+	SELECT SportType,BetType
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) t
+		INNER JOIN ProductSettingType p WITH(NOLOCK)
+		ON t.SettingType = p.SettingType
+	WHERE p.SettingName = 'Position Taking'
+		AND t.SportType = ISNULL(@sporttype, t.sporttype)
 
-	IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM #ProductSettingDetail(NOLOCK) where SportType=@Sporttype AND SettingType IN (1,18)) =1)
+	IF (@Sporttype IS NOT NULL) AND ((SELECT COUNT( DISTINCT BetType) FROM #ProductSettingDetail(NOLOCK)) =1)
 	BEGIN
 		SELECT NULL AS bettype, NULL AS typenamee 
 		WHERE 1=0
@@ -68,12 +69,8 @@ BEGIN
 	FROM 
 		(	
 			SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
-			UNION 
-			SELECT cs3rd.custid, cs3rd.bettype, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
 			UNION
-			SELECT 73104,Bettype,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
-			UNION
-			SELECT 73104,Bettype,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+			SELECT 73104,Bettype,SportType FROM #ProductSettingDetail
 		 ) t
 		INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
 	WHERE t.custid IN( 73104) AND t.sporttype = ISNULL(@sporttype, t.sporttype)

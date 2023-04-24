@@ -22,6 +22,7 @@ AS
 		- 20200615@Elodie: Implement new setting type 18 [Redmine: #135363]
 		- 20221006@Winfred: Don't show setting of products which are not offered to a credit site [Redmine: #174744] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 */
 
 SET NOCOUNT ON
@@ -39,9 +40,7 @@ WHERE Sporttype IN (151,152,153,154,206,252,253,164,160,163,207,204,50,206)
 SELECT DISTINCT t.sporttype, s.sportname
 FROM 
 	(	SELECT cs.custid, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
-		UNION 
-		SELECT cs3rd.custid, cs3rd.sporttype FROM CustSetting3rd cs3rd WITH (NOLOCK)
-		UNION
+		UNION 		
 		SELECT 73104,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
 		UNION
 		SELECT 73104,SportType FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)

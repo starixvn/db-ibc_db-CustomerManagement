@@ -48,7 +48,8 @@ AS
 		- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 		- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
 		- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
-		
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -346,9 +347,7 @@ BEGIN
 				,VirtualMultiplier
 				,Enabled   							       
 				,DisableOutright				
-				,DisableNumber						
 				,DoubleCommLosing	
-				,HideKeno
 				,DisableSuperLive
 				)
 		 SELECT
@@ -366,9 +365,7 @@ BEGIN
 				,@EnableVR AS VirtualMultiplier
 				,Enabled  						
 				,DisableOutright				
-				,DisableNumber				
 				,doubleCommLosing		
-				,HideKeno
 				,DisableSuperLive
 		FROM dbo.custinfo WITH(NOLOCK)
 		WHERE custid=@ExistingCustid  
@@ -479,14 +476,7 @@ BEGIN
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
 		
 		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custsetting3rd WITH (ROWLOCK) WHERE custid =  @CustID		
 		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
-		DELETE FROM custoverride3rd WITH (ROWLOCK) WHERE custid =  @CustID
-		
-		DELETE FROM custsettingGame with (ROWLOCK) where custid = @CustID
-		DELETE FROM Custoverridegame WITH (ROWLOCK) WHERE CustID = @CustID									 
-		DELETE FROM CustGameType WITH (ROWLOCK) WHERE CustID = @CustID
-							
 		RETURN	
 	END CATCH
 	
@@ -509,13 +499,7 @@ BEGIN
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
 		
 		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custsetting3rd WITH (ROWLOCK) WHERE custid =  @CustID		
 		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
-		DELETE FROM custoverride3rd WITH (ROWLOCK) WHERE custid =  @CustID
-		
-		DELETE FROM custsettingGame with (ROWLOCK) where custid = @CustID
-		DELETE FROM Custoverridegame WITH (ROWLOCK) WHERE CustID = @CustID									 
-		DELETE FROM CustGameType WITH (ROWLOCK) WHERE CustID = @CustID
 		DELETE FROM CustLoginInfo WITH(ROWLOCK) WHERE custid = @Custid
 		RETURN	
 	END CATCH	
@@ -579,13 +563,7 @@ BEGIN
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
 		
 		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custsetting3rd WITH (ROWLOCK) WHERE custid =  @CustID		
 		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
-		DELETE FROM custoverride3rd WITH (ROWLOCK) WHERE custid =  @CustID
-		
-		DELETE FROM custsettingGame with (ROWLOCK) where custid = @CustID
-		DELETE FROM Custoverridegame WITH (ROWLOCK) WHERE CustID = @CustID									   
-		DELETE FROM CustGameType WITH (ROWLOCK) WHERE CustID = @CustID
 		DELETE FROM CustLoginInfo WITH(ROWLOCK) WHERE custid = @Custid
 		DELETE FROM CustVirtualSetting WITH(ROWLOCK) WHERE custid = @Custid
 		

@@ -18,7 +18,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -31,8 +31,7 @@ BEGIN
 	DECLARE @IsAllDayBalTransfer BIT,@ExecuteSQL NVARCHAR(MAX) = '',@query NVARCHAR(MAX) = '',@Param NVARCHAR(MAX) 	
     
 	--Downline/Upline status 
-    DECLARE @uplineDisabledNumber			BIT	
-          , @uplineDisableEsports			BIT 
+    DECLARE @uplineDisableEsports			BIT 
 		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
@@ -41,7 +40,6 @@ BEGIN
           , @DisableAutoMPT			BIT  
 		  , @isDirectSuspend 		BIT = 0
 		  , @isDirectClosed 		BIT = 0
-		  , @DisableKeno			BIT
 		  , @Locked					TINYINT
 		  , @IsProtectedMode		BIT
 
@@ -56,7 +54,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineid = custid
 	     FROM custinfo ci WITH(NOLOCK)
@@ -74,7 +71,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
@@ -95,7 +91,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				
 				,	@uplineid = custid
@@ -121,19 +116,6 @@ BEGIN
 	SELECT	@IsProtectedMode = ISNULL(IsProtectedMode,0) 
 	FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH (NOLOCK) 
 	WHERE custid = @custid
-	------------------------Keno-----------------------
-	SELECT  @query = N''		
-	SELECT	@query = @query + N'
-	SET @DisableKeno = ISNULL((SELECT TOP 1 cg.IsDisabled AS DisableKeno
-	FROM dbo.CustGameType cg WITH (NOLOCK)  
-		INNER JOIN dbo.GameType g WITH (NOLOCK) ON g.GameTypeID = cg.GameTypeID
-	WHERE cg.custid = @custid AND g.IBCBetTypeID BETWEEN 1501 AND 1599 AND g.IsDisabled = 0 AND cg.IsDisabled = 1),0)
-	'
-	SELECT	@ExecuteSQL = N'
-	EXECUTE DBACC.bodb02.dbo.sp_executesql @query, N''@custid INT, @DisableKeno BIT OUTPUT'',@custid,@DisableKeno OUTPUT'
-
-	-- Result
-	EXECUTE	sys.sp_executesql @ExecuteSQL, N'@query NVARCHAR(MAX), @custid INT,@DisableKeno BIT OUTPUT', @query, @custid,@DisableKeno OUTPUT
 	-------------------------------------------------------------------------
 	DECLARE @TransferOption VARCHAR(8)
     EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
@@ -164,12 +146,8 @@ BEGIN
     WHERE ci.custid = @custid
 	
 	--Product Status
-	SELECT	ci.DisableNumber,
-			@uplineDisabledNumber AS uplineDisabledNumber,
-			ci.DisableEsports, 
-			@uplineDisableEsports AS uplineDisableEsports,
-			@DisableKeno AS DisableKeno,
-			ci.HideKeno
+	SELECT	ci.DisableEsports, 
+			@uplineDisableEsports AS uplineDisableEsports			
 	FROM custinfo ci WITH (NOLOCK)
     WHERE ci.custid = @custid
 

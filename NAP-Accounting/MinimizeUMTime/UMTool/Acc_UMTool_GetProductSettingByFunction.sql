@@ -12,6 +12,7 @@ Revisions:
 	- 20220726@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
 	- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
 	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
+	- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 
 Param's Explanation:
 	FunctionType = : 
@@ -55,8 +56,8 @@ SET NOCOUNT ON
 	SELECT 1,0,0,0 UNION ALL --All Sport
 	SELECT 1,1,0,0 UNION ALL --SB + NG
 	--SELECT 1,6,0,0 UNION ALL --RNG Casino
-	SELECT 1,8,0,0 UNION ALL -- RNG Keno
-	SELECT 1,12,0,0 UNION ALL  --GD
+	--SELECT 1,8,0,0 UNION ALL -- RNG Keno
+	--SELECT 1,12,0,0 UNION ALL  --GD
 	-- Group Win Loss Reports
 	SELECT 201,0,0,0 UNION ALL
 	-- Outstandings

@@ -21,18 +21,15 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220728@Eden: Ext NAP - Error messge is not clear when searching a disabled account [RedmineID: #175938]
-
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
 */
 BEGIN
     SET NOCOUNT ON
-	DECLARE @GameType TABLE (GameTypeID INT, IBCBetTypeID INT)
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1, @Locked TINYINT
 		    	
-	--Downline/Upline status 
-    DECLARE @uplineDisabledNumber			BIT  
 		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
@@ -54,8 +51,7 @@ BEGIN
 		SELECT		@upLineSuspend = ISNULL(ps.reject, 0)
 				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
-				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)		
+				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)	
 				,	@uplineid = custid
 		FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -76,8 +72,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineid = custid
 		FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -104,8 +98,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(ps.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				
-				,	@uplineDisabledNumber = ISNULL(DisableNumber, 0)
 				,	@uplineid = custid
 	    FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -131,8 +123,7 @@ BEGIN
 				,	@upLineClosed = 0
 				,	@upLineDisableOutright = 0
 				,	@uplineDoubleCommLosing = 1
-				
-				,	@uplineDisabledNumber = 0
+
 				
 		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
 	    SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
@@ -172,21 +163,6 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS ps	
     WHERE c.custid = @custid	
-
-	INSERT INTO @GameType (GameTypeID, IBCBetTypeID)
-	SELECT GameTypeID, IBCBetTypeID FROM DBAGE.bodb02.dbo.GameType WITH (NOLOCK) WHERE IBCBetTypeID BETWEEN 1501 AND 1599 AND IsDisabled = 0
-
-	--Product Status
-	SELECT	ci.DisableNumber,
-			@uplineDisabledNumber AS uplineDisabledNumber,
-			ci.HideKeno,
-			ISNULL(MAX(CAST(cg.IsDisabled AS TINYINT)),1) as DisableKeno
-	FROM customer c WITH (NOLOCK)
-	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
-		LEFT JOIN dbo.CustGameType cg WITH (NOLOCK) ON c.custid = cg.custid	
-		LEFT JOIN @GameType g ON g.GameTypeID = cg.GameTypeID
-    WHERE c.custid = @custid
-	GROUP BY ci.DisableNumber, ci.HideKeno
 
 	-- For Product DCS
 	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
