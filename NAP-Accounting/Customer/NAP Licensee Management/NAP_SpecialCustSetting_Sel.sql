@@ -19,6 +19,7 @@ AS
 			- 20191225@Eden: NAP LM - Remove Inactive products [RedmineID: #119443]
 			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
+			- 20221013@Johnson: Add cricket & Saba cricket [redmine:#175659]
 			
 */
 BEGIN
@@ -52,6 +53,8 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=11, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=50, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9907, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='NG' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
@@ -74,6 +77,7 @@ BEGIN
 			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' 
 					WHEN sp.SportType=9901 AND sp.bettype=1 THEN 'Saba Soccer' 
 					WHEN sp.SportType=9902 AND sp.bettype=1 THEN 'Saba BasketBall' 
+					WHEN sp.SportType=9907 AND sp.bettype=1 THEN 'Saba Cricket' 
 					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
 			,sp.MaxBet
 			,sp.MaxPerMatch
@@ -94,6 +98,7 @@ BEGIN
 			,CASE WHEN sp.SportType=99 AND sp.bettype=9 THEN 'Mix Sports Parlay' 
 					WHEN sp.SportType=9901 AND sp.bettype=1 THEN 'Saba Soccer' 
 					WHEN sp.SportType=9902 AND sp.bettype=1 THEN 'Saba BasketBall' 
+					WHEN sp.SportType=9907 AND sp.bettype=1 THEN 'Saba Cricket' 
 					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
 			,tmp.MaxBet
 			,tmp.MaxPerMatch
