@@ -1,1 +1,18 @@
-NAP-Accounting\Customer\NAP Licensee Management\NAP_SpecialCustSetting_Modify.sql
+NAP-Accounting\Customer\Status\AutoSuspend\Acc_CustomerUpdAutoSuspend.proc.sql
+NAP-Accounting\Customer\MoveSite\Acc_CustomerUpdMoveSite.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerCopyVRSetting.sql
+NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplier_Upd.sql
+NAP-Accounting\Customer\VirtualRate\Acc_VRCustLockStatusUpd.sql
+NAP-Accounting\Customer\VirtualRate\Upload Virtual Rate\Acc_VR_AutoUpdateVirtualRate_ByExcel.sql
+NAP-Accounting\Customer\VirtualRate\VirtualRateAutoUpdate\Task_VRSettingAutoUpdate_UpdateVRSetting.sql
+NAP-Accounting\Customer\VirtualRate\Auto adjust VR\VRAdjustmentByAgentProfile\Acc_VR_AbnormalAgent_Flag.sql
+NAP-Accounting\Customer\VirtualRate\Auto adjust VR\VRAdjustmentByAgentProfile\Acc_VR_AbnormalAgent_Unflag.sql
+NAP-Accounting\Customer\VirtualRate\Auto adjust VR\Acc_VR_CustomerUpdFollowParent.sql
+NAP-Accounting\CanSee\Acc_ManageCansee_Ins.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitCheck.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitSel.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_ProductCurrencySel.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_SportTypeSel.sql
+NAP-Accounting\ViewPT-Comm\dbo.Acc_MT_SportTypeSel.sql
