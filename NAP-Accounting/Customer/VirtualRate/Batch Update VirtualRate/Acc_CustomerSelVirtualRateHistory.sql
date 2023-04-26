@@ -1,6 +1,7 @@
 ﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelVirtualRateHistory]	
-	@CustID INT
+	@CustID INT,
+	@ViewType TINYINT = 0
 AS
 /*
 Created: 
@@ -16,6 +17,7 @@ Revisions:
 	- 20190814@Winnie: NAP - UI did not show history of Virtual Rate with CN88 account. [Redmine: #118631]
 	- 20200115@Johnson: add new logaction for auto update VR [redmine:#126998]
 	- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
+	- 20230418@Luke: Separate log for Lock function & increase log data to top 50 [Redmine: #186897]
 Explanations:
 ActionID: 801, SPName: Acc_CustomerUpdVirtualMultiplier
 ActionID: 802, SPName: Acc_VirtualRateMulUpd
@@ -24,84 +26,155 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Site VARCHAR(10)
-	SELECT @Site=Site FROM bodb02.dbo.Customer c WITH(NOLOCK) WHERE custid=@CustID
+	SELECT @Site= Site FROM bodb02.dbo.Customer c WITH(NOLOCK) WHERE custid = @CustID
 	DECLARE @__archiveDate DATETIME
 	SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate())
 
+	DECLARE @actionID AS TABLE
+	(
+		ActionID INT
+		)
+
+	CREATE TABLE #__tempDataCN88
+	(
+		logdate DATETIME,
+		ActionID INT,
+		TrackingValue NVARCHAR(MAX),
+		Username NVARCHAR(50)
+		)
+	CREATE TABLE #__tempData_ArchiveCN88
+	(
+		logdate DATETIME,
+		ActionID INT,
+		TrackingValue NVARCHAR(MAX),
+		Username NVARCHAR(50)
+		)
+	CREATE TABLE #__tempData
+	(
+		logdate DATETIME,
+		ActionID INT,
+		TrackingValue NVARCHAR(MAX),
+		Username NVARCHAR(50)
+		)
+	CREATE TABLE #__tempData_Archive
+	(
+		logdate DATETIME,
+		ActionID INT,
+		TrackingValue NVARCHAR(MAX),
+		Username NVARCHAR(50)
+		)
+
+	IF (@ViewType = 1)	--View Lock Status log
+	BEGIN
+		INSERT INTO @actionID(actionID) 
+		VALUES
+			(829)
+			,(830)
+			,(837)
+	END
+	ELSE IF (@ViewType = 2) --View VR log, VR status (except Lock Status log)
+	BEGIN
+		INSERT INTO @actionID(actionID) 
+		VALUES
+			(801)
+			,(802)
+			,(806)
+			,(807)
+			,(810)
+			,(2800)
+			,(2802)
+	END
+	ELSE --View all log
+	BEGIN
+		INSERT INTO @actionID(actionID) 
+		VALUES
+			(801)
+			,(802)
+			,(806)
+			,(807)
+			,(810)
+			,(829)
+			,(830)
+			,(837)
+			,(2800)
+			,(2802)
+	END
 	IF @Site='CN88'
 	BEGIN
-		
-		SELECT TOP 10 logdate,	
-			ActionID,	
+		INSERT INTO #__tempDataCN88 (logdate, ActionID, TrackingValue, Username)
+		SELECT TOP 50 logdate,	
+			u.ActionID,	
 			TrackingValue,
-			Username =	CASE 
-							when (ActionID IN (2800,2802)) then 'LRF Admin'
+			Username =	
+			CASE 
+							when (u.ActionID IN (2800,2802)) then 'LRF Admin'
 							ELSE c.Username
 						END
-		INTO #__tempDataCN88
 		FROM dbo.CS_UserLog_RunSP u WITH(NOLOCK)
 			LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+			INNER JOIN @actionID a ON a.ActionID = u.ActionID
 		WHERE u.custid = @CustID
-			AND ActionID IN (801,802,806,807,2800,2802,829,830)
 			AND logdate >= @__archiveDate
 		ORDER BY logdate DESC
 
-		IF @@ROWCOUNT >= 10
+		IF @@ROWCOUNT >= 50
 		BEGIN
-			SELECT *
+			SELECT logdate, ActionID, TrackingValue, Username
 			FROM #__tempDataCN88
 			ORDER BY logdate DESC
-		
+				
 			RETURN
 		END
 		ELSE
 		BEGIN
-			SELECT TOP 10 logdate,	
-				ActionID,	
+			INSERT INTO #__tempData_ArchiveCN88 (logdate, ActionID, TrackingValue, Username)
+			SELECT TOP 50 logdate,	
+				u.ActionID,	
 				TrackingValue,
-				Username =	CASE 
-								when (ActionID IN (2800,2802)) then 'LRF Admin'
+				Username =	
+				CASE 
+								when (u.ActionID IN (2800,2802)) then 'LRF Admin'
 								ELSE c.Username
 							END
-			INTO #__tempData_ArchiveCN88
 			FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP u WITH(NOLOCK)
 				LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+				INNER JOIN @actionID a ON a.ActionID = u.ActionID
 			WHERE u.custid = @CustID
-				AND ActionID IN (801,802,806,807,2800,2802,829,830)
 				AND u.logdate < @__archiveDate
 			ORDER BY logdate DESC
 
-			SELECT TOP 10 *
+			SELECT TOP 50 logdate, ActionID, TrackingValue, Username
 			FROM (
-				SELECT *
+				SELECT logdate, ActionID, TrackingValue, Username
 				FROM #__tempDataCN88
 
 				UNION ALL
-				SELECT *
+				SELECT logdate, ActionID, TrackingValue, Username
 				FROM #__tempData_ArchiveCN88
 			)t ORDER BY logdate DESC
 		END
 	END
 	ELSE
 	BEGIN
-		SELECT TOP 10 logdate,	
-			ActionID,	
+		INSERT INTO #__tempData (logdate, ActionID, TrackingValue, Username)
+		SELECT TOP 50 logdate,	
+			u.ActionID,	
 			TrackingValue,
-			Username =	CASE 
-							when (ActionID IN (2800,2802)) then 'LRF Admin'
+			Username =	
+			CASE 
+							when (u.ActionID IN (2800,2802)) then 'LRF Admin'
 							ELSE c.Username
 						END
-		INTO #__tempData
 		FROM dbo.UserLog_RunSP u WITH(NOLOCK)
 			LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+			INNER JOIN @actionID a ON a.ActionID = u.ActionID
 		WHERE u.custid = @CustID
-			AND ActionID IN (801,802,806,807,810,2800,2802,829,830)
 			AND logdate >= @__archiveDate
 		ORDER BY logdate DESC
 
-		IF @@ROWCOUNT >= 10
+		IF @@ROWCOUNT >= 50
 		BEGIN
-			SELECT *
+			SELECT logdate, ActionID, TrackingValue, Username
 			FROM #__tempData
 			ORDER BY logdate DESC
 		
@@ -109,33 +182,36 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			SELECT TOP 10 logdate,	
-				ActionID,	
+			INSERT INTO #__tempData_Archive (logdate, ActionID, TrackingValue, Username)
+			SELECT TOP 50 logdate,	
+				u.ActionID,	
 				TrackingValue,
-				Username =	CASE 
-								when (ActionID IN (2800,2802)) then 'LRF Admin'
+				Username =	
+				CASE 
+								when (u.ActionID IN (2800,2802)) then 'LRF Admin'
 								ELSE c.Username
 							END
-			INTO #__tempData_Archive
 			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP u WITH(NOLOCK)
 				LEFT JOIN bodb02.dbo.CustInfo c WITH(NOLOCK) ON c.custid = u.userid
+				INNER JOIN @actionID a ON a.ActionID = u.ActionID
 			WHERE u.custid = @CustID
-				AND ActionID IN (801,802,806,807,810,2800,2802,829,830)
 				AND u.logdate < @__archiveDate
 			ORDER BY logdate DESC
 
-			SELECT TOP 10 *
+			SELECT TOP 50 logdate, ActionID, TrackingValue, Username
 			FROM (
-				SELECT *
+				SELECT logdate, ActionID, TrackingValue, Username
 				FROM #__tempData
 
 				UNION ALL
-				SELECT *
+				SELECT logdate, ActionID, TrackingValue, Username
 				FROM #__tempData_Archive
 			)t ORDER BY logdate DESC
 		END
 	END
-
-	
+	DROP TABLE #__tempDataCN88
+	DROP TABLE #__tempData_ArchiveCN88
+	DROP TABLE #__tempData
+	DROP TABLE #__tempData_Archive
 END
 GO
