@@ -50,7 +50,7 @@ BEGIN
 	IF @FromDate < @BalanceUpDay
 	BEGIN
 		IF @ToDate >= @BalanceUpDay
-			SELECT @tmpToDate = @BalanceUpDay
+			SELECT @tmpToDate = DATEADD(DAY, -1, @BalanceUpDay)
 		ELSE
 			SELECT @tmpToDate = DATEADD(DAY, -1, @ToDate)
 
