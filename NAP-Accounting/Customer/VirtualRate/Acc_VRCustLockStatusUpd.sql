@@ -1,13 +1,14 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	dbo.Acc_VRCustLockStatusUpd   
-					@custid					INT
-				,	@UserID					INT
-				,   @VRLockedStatus_Soccer	BIT = NULL
-				,   @VRLockedStatus_OS		BIT = NULL
-				,   @UpdateBy				VARCHAR(100)	= 'Manual'
-				,	@IP						VARCHAR(15)		= ''
-				,	@ErrCode				INT				= 0		OUTPUT
-				,	@ErrMsg					NVARCHAR(4000)	= ''	OUTPUT  
+ALTER PROCEDURE	[dbo].[Acc_VRCustLockStatusUpd]   
+					@custid							INT
+				,	@UserID							INT
+				,   @VRLockedStatus_Soccer			BIT = NULL
+				,   @VRLockedStatus_OS				BIT = NULL
+				,	@VRLockedStatus_Basketball		BIT = NULL		
+				,   @UpdateBy						VARCHAR(100)	= 'Manual'
+				,	@IP								VARCHAR(15)		= ''
+				,	@ErrCode						INT				= 0		OUTPUT
+				,	@ErrMsg							NVARCHAR(4000)	= ''	OUTPUT  
 AS  
 /*  
 	Created:	20210224@Eden
@@ -17,6 +18,7 @@ AS
   
 	Revisions:  
 	    - 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 
 	Param's Explanation:  	
 	-@ErrCode:  
@@ -53,12 +55,16 @@ BEGIN
 	DECLARE @RoleID TINYINT
 	DECLARE @LogSPData_SC VARCHAR(1000)
 	DECLARE @LogSPData_OS VARCHAR(1000)
-	DECLARE @Old_VRLockedStatus_Soccer BIT = 0
+	DECLARE @LogSPData_BB VARCHAR(1000)					
+	DECLARE @Old_VRLockedStatus_Soccer BIT = 0		
 	DECLARE @Old_VRLockedStatus_OS BIT = 0
+	DECLARE @Old_VRLockedStatus_Basketball BIT = 0		
 	DECLARE @IsUpdateVRLockedStatus_Soccer BIT = 0
 	DECLARE @IsUpdateVRLockedStatus_OS BIT = 0
+	DECLARE @IsUpdateVRLockedStatus_Basketball BIT = 0	
 	DECLARE @IsCallExecrep_Soccer BIT = 0
 	DECLARE @IsCallExecrep_OS BIT = 0
+	DECLARE @IsCallExecrep_Basketball BIT = 0			
 
 	set @startRun = getdate() 
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -69,8 +75,12 @@ BEGIN
 	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 2)
 		SET @Old_VRLockedStatus_OS = 1
 
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 3)			
+		SET @Old_VRLockedStatus_Basketball = 1																
+
 	SELECT  @IsUpdateVRLockedStatus_Soccer = CASE WHEN @VRLockedStatus_Soccer = @Old_VRLockedStatus_Soccer OR @VRLockedStatus_Soccer IS NULL THEN 0 ELSE 1 END,
-			@IsUpdateVRLockedStatus_OS = CASE WHEN @VRLockedStatus_OS = @Old_VRLockedStatus_OS OR @VRLockedStatus_OS IS NULL THEN 0 ELSE 1 END
+			@IsUpdateVRLockedStatus_OS = CASE WHEN @VRLockedStatus_OS = @Old_VRLockedStatus_OS OR @VRLockedStatus_OS IS NULL THEN 0 ELSE 1 END,
+			@IsUpdateVRLockedStatus_Basketball = CASE WHEN @VRLockedStatus_Basketball = @Old_VRLockedStatus_Basketball OR @VRLockedStatus_Basketball IS NULL THEN 0 ELSE 1 END	
 
 	SELECT @RoleID = roleid FROM custInfo WITH(NOLOCK) WHERE custid = @custid
 
@@ -121,9 +131,32 @@ BEGIN
 						+ ' />'	
 
 	END
-	
+
+	IF @IsUpdateVRLockedStatus_Basketball = 1																			
+	BEGIN																												
+		IF @VRLockedStatus_Basketball = 0																				
+		BEGIN																											
+			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 3 						
+		END																											
+		ELSE IF @RoleID = 1 -- insert directly for Member															
+		BEGIN																											
+			INSERT INTO VRCustLockStatus(CustID,Type)																	
+			SELECT @custid,3																							
+			WHERE NOT EXISTS (SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 3 )			
+		END																												
+		ELSE --use execrep SP for SMA																					
+		BEGIN 																											
+			SET @IsCallExecrep_Basketball = 1																			
+		END																												
+
+		SELECT @LogSPData_BB = '<R VRLock="'+ coalesce(cast(@VRLockedStatus_Basketball as varchar(1)),space(1)) + '" '	
+						+ 'IP="' + coalesce(cast(@IP as varchar(15)),space(1)) + '" '									
+						+ 'UpdatedBy="'+ coalesce(cast(@UpdateBy as varchar(100)),space(1)) + + '" ' 					
+						+ ' />'																							
+
+	END	
 	--Call SP execrep 
-	IF @IsCallExecrep_Soccer = 1 AND @IsCallExecrep_OS = 1
+	IF @IsCallExecrep_Soccer = 1 AND @IsCallExecrep_OS = 1 AND @IsCallExecrep_Basketball = 1		
 	BEGIN
 		EXEC [Acc_CustomerInfo_Execrep_04]
 						@custid = @custid
@@ -147,6 +180,14 @@ BEGIN
 					,	@action = 'EnableVRLockStatus'
 					,   @VRlockStatusType = 2 --Other sport
 	END
+	ELSE IF @IsCallExecrep_Basketball = 1						
+	BEGIN														
+		EXEC [Acc_CustomerInfo_Execrep_04]						
+						@custid = @custid						
+					,	@roleid = @roleid						
+					,	@action = 'EnableVRLockStatus'			
+					,   @VRlockStatusType = 3 --Basketball 		
+	END															
 		  
 	set @endRun = getdate()  
 	set @duration  = datediff (millisecond,@startRun,@endRun) 		
@@ -171,6 +212,15 @@ BEGIN
 				@Duration			= @Duration
 	END
 
+	IF @IsUpdateVRLockedStatus_Basketball = 1					
+	BEGIN														
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper				
+				@UserId				= @UserId,					
+				@CustId				= @CustId,					
+				@ActionId			= 837,						
+				@TrackingValue		= @LogSPData_BB,			
+				@Duration			= @Duration					
+	END															
 END
 
 

@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier   
+ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier]   
 					@custid				INT
 				,	@EnableVirtualrate	BIT				= 0
 				,	@virtualmultiplier	VARCHAR(MAX)	= ''
@@ -7,9 +7,10 @@ ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier
 				,	@IP					VARCHAR(15)		= ''
 				,	@IsLicenseeUser		BIT				= 0
 				,	@ErrCode			INT				= 0		OUTPUT
-				,	@ErrMsg				NVARCHAR(4000)	= ''	OUTPUT  
+				,	@ErrMsg				NVARCHAR(4000)	= ''	OUTPUT
 				,   @VRLockedStatus_Soccer		BIT = NULL
 				,   @VRLockedStatus_OS			BIT = NULL
+				,	@VRLockedStatus_BasketBall	BIT = NULL		
 				,   @CopyFrom					INT = NULL --Source CustID of Copy VR function
 				,   @AdditionalActions VARCHAR(MAX) = ''
 AS  
@@ -47,6 +48,7 @@ AS
 		- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
 		- 20210325@Eden: Implement option to override Lock VR status and values for Master/Agent and even unlocked status of members [Redmine:#152094]
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -184,6 +186,8 @@ BEGIN
 			, @IsUpdate_VRLockedStatus_Soccer BIT = 0
 			, @Old_VRLockedStatus_OS BIT = 0
 			, @IsUpdate_VRLockedStatus_OS BIT = 0
+			, @Old_VRLockedStatus_Basketball BIT = 0			
+			, @IsUpdate_VRLockedStatus_Basketball BIT = 0		
 
 	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 1)
 		SET @Old_VRLockedStatus_Soccer = 1
@@ -205,7 +209,17 @@ BEGIN
 		SET @IsUpdate_VRLockedStatus_OS = 1
 	END
 
-	IF @IsUpdate_VRLockedStatus_OS = 1 OR @IsUpdate_VRLockedStatus_Soccer = 1
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 3)			
+		SET @Old_VRLockedStatus_BasketBall = 1																
+	
+	SET @VRLockedStatus_BasketBall = ISNULL(@VRLockedStatus_Basketball,@Old_VRLockedStatus_Basketball)		
+
+	IF @VRLockedStatus_BasketBall <> @Old_VRLockedStatus_Basketball										
+	BEGIN																									
+		SET @IsUpdate_VRLockedStatus_Basketball = 1															
+	END																										
+
+	IF @IsUpdate_VRLockedStatus_OS = 1 OR @IsUpdate_VRLockedStatus_Soccer = 1 OR @IsUpdate_VRLockedStatus_Basketball = 1	
 	BEGIN
 		--Update VR lock status
 		EXEC Acc_VRCustLockStatusUpd 
@@ -213,6 +227,7 @@ BEGIN
 			,@UserID = @UserID
 			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
 			,@VRLockedStatus_OS = @VRLockedStatus_OS
+			,@VRLockedStatus_BasketBall = @VRLockedStatus_BasketBall		
 			,@IP = @IP
 			,@UpdateBy = 'Manual'
 			,@ErrCode = @ErrCode OUTPUT
@@ -425,6 +440,4 @@ BEGIN
 				@Duration			= @Duration	
 	END
 END
-
-
 GO
