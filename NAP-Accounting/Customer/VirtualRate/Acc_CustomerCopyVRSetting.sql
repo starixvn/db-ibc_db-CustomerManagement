@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	[dbo].[Acc_CustomerCopyVRSetting]   
+ALTER PROCEDURE	dbo.Acc_CustomerCopyVRSetting   
 					@Source_Username		VARCHAR(30)
 				,	@Dest_Usernames			VARCHAR(MAX)
 				,	@UserID					INT
@@ -89,9 +89,9 @@ BEGIN
 	END
 
 	DECLARE @Source_EnableVirtualrate BIT = 0
-	DECLARE @Source_VRLockedStatus_Soccer BIT
+	DECLARE @Source_VRLockedStatus_Soccer BIT 
 	DECLARE @Source_VRLockedStatus_OS BIT
-	DECLARE @Source_VRLockedStatus_Basketball BIT				
+	DECLARE @Source_VRLockedStatus_Basketball BIT
 	DECLARE @Source_Virtualmultiplier VARCHAR(MAX)
 
 	SELECT @Source_EnableVirtualrate = VirtualMultiplier FROM custInfo c WITH(NOLOCK) WHERE custid = @Source_CustID
@@ -109,7 +109,7 @@ BEGIN
 	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @Source_CustID AND Type = 3)			
 		SET @Source_VRLockedStatus_Basketball = 1																
 	ELSE																										
-		SET @Source_VRLockedStatus_Basketball = 0																
+		SET @Source_VRLockedStatus_Basketball = 0	
 
 	SELECT @Source_Virtualmultiplier = CONVERT (VARCHAR(MAX),
 		(	
@@ -154,7 +154,7 @@ BEGIN
 			 @ErrMsg = @ErrMsg OUTPUT, 
 			 @VRLockedStatus_Soccer = @Source_VRLockedStatus_Soccer, 
 			 @VRLockedStatus_OS = @Source_VRLockedStatus_OS,
-			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,				
+			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,	
 			 @CopyFrom = @Source_CustID
 
 		IF @ErrCode <> 0

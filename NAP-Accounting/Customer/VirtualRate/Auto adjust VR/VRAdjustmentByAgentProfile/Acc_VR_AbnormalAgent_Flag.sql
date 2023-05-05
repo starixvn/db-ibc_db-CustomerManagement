@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[Acc_VR_AbnormalAgent_Flag]   
+ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Flag   
 	@Type TINYINT
 	,@IsTest BIT = 0
 AS  
@@ -240,7 +240,7 @@ BEGIN
 			,@UserID = 0
 			,@VRLockedStatus_Soccer = 1
 			,@VRLockedStatus_OS = 1
-			,@VRLockedStatus_Basketball = 1				
+			,@VRLockedStatus_Basketball = 1	
 			,@IP = ''
 			,@UpdateBy = 'Agent profile check'
 

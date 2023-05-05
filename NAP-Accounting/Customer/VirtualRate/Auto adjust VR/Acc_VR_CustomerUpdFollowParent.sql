@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE	[dbo].[Acc_VR_CustomerUpdFollowParent]
+ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFollowParent
 	 @CustIDList VARCHAR(max)
 	,@Sporttype INT
 	,@IsTest BIT = 0
