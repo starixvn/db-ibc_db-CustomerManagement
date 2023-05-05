@@ -154,7 +154,7 @@ BEGIN
 			 @ErrMsg = @ErrMsg OUTPUT, 
 			 @VRLockedStatus_Soccer = @Source_VRLockedStatus_Soccer, 
 			 @VRLockedStatus_OS = @Source_VRLockedStatus_OS,
-			 @VRLockedStatus_Basketball = @Source_VRLockStatus_Basketball,				
+			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,				
 			 @CopyFrom = @Source_CustID
 
 		IF @ErrCode <> 0
