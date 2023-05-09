@@ -15,6 +15,7 @@ AS
 		- 20220803@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 		- 20221006@Winfred: Macau Game - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230320@Eden: Migrate Number games to DCS structure [Redmine: #179711]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -61,15 +62,11 @@ BEGIN
 	WHERE (c.GroupId = @groupId OR @groupId IS NULL)
 		AND c.IsShow = 1
 
-	SELECT ProductId
-	FROM @products
-	WHERE ProductId IN(3,8,12) --Non-DCS products
-	UNION ALL --DCS products
 	SELECT DISTINCT d.ProductId
 	FROM @products p
 		INNER JOIN #ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
-	WHERE p.ProductId NOT IN (1,3,8,12,16) 
+	WHERE p.ProductId NOT IN (1,16) 
 		AND d.SettingType IN (4,11,13,21)
 	ORDER BY ProductId
 

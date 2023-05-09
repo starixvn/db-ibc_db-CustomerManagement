@@ -18,6 +18,7 @@ AS
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230118@Helios: add JiliGame [RedmineId: #182869]
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -146,29 +147,7 @@ BEGIN
 						ELSE b.spositiontaking END AS ValuePT,ss.roleid
 	FROM #SMATemp ss
 		INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	WHERE b.BetType = 1 AND b.SportType = 1
-	
-	-- Number Game
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID, b.BetType, b.SportType, 3 AS ProductID, 
-				   CASE WHEN ss.roleid = 4 THEN b.spositiontaking 
-						WHEN ss.roleid = 3 THEN b.mpositiontaking
-						WHEN ss.roleid = 2 THEN b.apositiontaking
-						ELSE b.spositiontaking END AS ValuePT,ss.roleid
-	FROM #SMATemp ss
-	INNER JOIN CustSetting3rd b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	WHERE b.BetType = 81 AND b.SportType = 161
-	
-	-- RNG Keno
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID ,cs.Sporttype, cs.Bettype, 8 AS ProductID,  
-				   CASE WHEN ss.roleid = 4 THEN cs.spositiontaking 
-						WHEN ss.roleid = 3 THEN cs.mpositiontaking
-						WHEN ss.roleid = 2 THEN cs.apositiontaking
-						ELSE cs.spositiontaking END AS ValuePT,ss.roleid
-	FROM #SMATemp ss
-		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.CustID = cs.CustID 
-	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
+	WHERE b.BetType = 1 AND b.SportType = 1	
 	
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a

@@ -1,3 +1,7 @@
-ALPHA\Login-On_User\Age_LoginDownline.sql
-ALPHA\Login-On_User\Age_LoginDownline_Sub.sql
-NAP-Accounting\ExternalSite\Group\dbo.Acc_CustGroupAddByUsername.sql
+NAP-Accounting\Customer\Status\AutoSuspend\Acc_CustomerUpdAutoSuspend.proc.sql
+NAP-Accounting\Customer\VirtualRate\Acc_VRCustLockStatusUpd.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
+NAP-Accounting\Customer\VirtualRate\EsportVirtualRate\Acc_CustVirtualMultiplier_Upd.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql

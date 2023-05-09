@@ -19,7 +19,7 @@ Revisions:
 	- 20180125@Winnie: Hide inactive products [RedmineID: #86086]
 	- 20190905@Eden: 3rd party products - Remove InActive Products Phase 2 [Redmine: #118699]
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
-	
+	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 */
@@ -59,15 +59,12 @@ Param's Explanation:
 			
 			ISNULL(MAX(CASE WHEN cs.bettype = 5 AND cs.sporttype=1 THEN cs.discount ELSE 0 END), 0) AS discount1x2,
 			ISNULL(MAX(CASE WHEN cs.bettype = 5 AND cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END), 0) AS playerdiscount1x2,
-			
-			
+						
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(@playerdiscountMyanmarOdds,0) AS playerdiscountMyanmarOdds,
 			ISNULL(@discountMyanmarOdds,0) AS discountMyanmarOdds
-
 		FROM 	
 			CustSetting AS cs WITH (NOLOCK)
-			Inner join CustSetting3rd as cs3 WITH (NOLOCK) on cs.custid = cs3.custid
 		WHERE cs.custid=@custid
 	END
 	ELSE 
@@ -81,8 +78,7 @@ Param's Explanation:
 			SET @discountMyanmarOdds = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @custid AND Sporttype = 1 AND Bettype = 1)
 			SET @adiscountMyanmarOdds = (SELECT CommRate FROM AgentCommRate WITH (NOLOCK) WHERE CustId = @mrecommend AND Sporttype = 1 AND Bettype = 1)
 		END
-		
-		
+				
 		SELECT 
 			@ga = MAX(CASE WHEN acs.bettype = 1 AND acs.sporttype=1 THEN acs.groupa ELSE 0 END),
 			@gb = MAX(CASE WHEN acs.bettype = 1 AND acs.sporttype=1 THEN acs.groupb ELSE 0 END),
@@ -91,7 +87,6 @@ Param's Explanation:
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.adiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.adiscount ELSE 0 END) --other comm			
 		FROM custsetting as acs WITH (NOLOCK)
-		INNER JOIN Custsetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
 		WHERE acs.custid = @mrecommend
 
 		SELECT
@@ -117,7 +112,6 @@ Param's Explanation:
 			
 		FROM 
 			custsetting AS cs WITH (NOLOCK)
-			INNER JOIN custsetting3rd as cs3 WITH (NOLOCK) ON cs.custid = cs3.custid
 		WHERE 
 			cs.custid=@CustID
 	END
@@ -141,7 +135,6 @@ Param's Explanation:
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END) --other comm		
 		FROM custsetting as acs WITH (NOLOCK)
-		INNER JOIN CustSetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
 		WHERE acs.custid = @SRecommend
 		
 		SELECT
@@ -164,7 +157,6 @@ Param's Explanation:
 			ISNULL(@sdiscountMyanmarOdds,0.00) AS discountMyanmarOdds_Max 
 		FROM 
 			custsetting AS cs WITH (NOLOCK)
-			INNER JOIN CustSetting3rd as cs3 WITH (NOLOCK) ON cs.custid = cs3.custid
 		WHERE cs.custid=@CustID
 	END
 	ELSE IF @RoleId = 4
@@ -185,7 +177,6 @@ Param's Explanation:
 			@dis1x2 = MAX(CASE WHEN acs.bettype = 5 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END), --1x2 comm
 			@dis = MAX(CASE WHEN acs.bettype = 4 AND acs.sporttype=1 THEN acs.sdiscount ELSE 0 END) --other comm		
 		FROM custsetting as acs WITH (NOLOCK)
-		INNER JOIN CustSetting3rd as acs3 WITH (NOLOCK) ON acs.custid = acs3.custid
 		WHERE acs.custid = @custid
 		
 		SELECT
@@ -208,7 +199,6 @@ Param's Explanation:
 			ISNULL(@sdiscountMyanmarOdds,0.00) AS discountMyanmarOdds_Max 
 		FROM 
 			custsetting AS cs WITH (NOLOCK)
-			INNER JOIN CustSetting3rd as cs3 WITH (NOLOCK) ON cs.custid = cs3.custid
 		WHERE cs.custid=@CustID
 	
 	END

@@ -29,7 +29,7 @@ AS
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230118@Helios: add JiliGame [RedmineId: #182869]
-
+		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
 		
@@ -142,21 +142,7 @@ BEGIN
 	SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, b.spositiontaking
 	FROM #Supers ss
 		INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	WHERE b.BetType = 1 AND b.SportType = 1
-	
-	-- Number Game
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.CustID, b.BetType, b.SportType, 3 AS ProductID, b.spositiontaking
-	FROM #Supers ss
-	INNER JOIN CustSetting3rd b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	WHERE b.BetType = 81 AND b.SportType = 161
-	
-	-- RNG Keno
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	SELECT ss.CustID ,cs.Sporttype, cs.Bettype, 8 AS ProductID, cs.spositiontaking AS SuperPT
-	FROM #Supers ss
-		INNER JOIN dbo.CustSettingGame cs WITH (NOLOCK) ON ss.CustID = cs.CustID 
-	WHERE cs.Bettype = 1501 AND cs.Sporttype = 202
+	WHERE b.BetType = 1 AND b.SportType = 1	
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 

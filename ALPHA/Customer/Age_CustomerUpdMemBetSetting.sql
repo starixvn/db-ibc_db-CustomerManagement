@@ -10,10 +10,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
 	@UpdateMinMaxBetv11 BIT = 1,	
 	@UpdateMinMaxBetv99 BIT = 1,
 	@UpdateMinMaxBetv99MP BIT = 1,
-	@UpdateMinMaxBetMP BIT = 1,
-
-	@UpdateMinMaxBetv161 BIT = 1,
-	@UpdateMinMaxBetv164 BIT = 1,
+	@UpdateMinMaxBetMP BIT = 1,	
 	 
 	@MinBet MONEY,
 	@MaxBet MONEY,
@@ -53,17 +50,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
 	
 	@MinBetv1MP MONEY,
 	@MaxBetv1MP MONEY,
-	@MaxPerMatchv1MP MONEY,
-	
-
-	@MinBetv161 MONEY,
-	@MaxBetv161 MONEY,
-	@MaxPerBallv161 MONEY = 0.00,
-	@MaxPerMatchv161 MONEY,
-	
-	@MinBetv164 MONEY =0 ,
-	@MaxBetv164 MONEY = 0,	
-	@MaxPerMatchv164 MONEY = 0,
+	@MaxPerMatchv1MP MONEY,	
 
 	@maxPOpermatch      MONEY = NULL, 
     @maxPOpermatchv2    MONEY = NULL, 
@@ -137,6 +124,8 @@ Revisions:
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 	- 20211005@Johnson: change param @UpdateMinMaxBetv1MP to @UpdateMinMaxBetMP [redmine:#161425]
 	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
+	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+
 Param's Explanation:
 • @custid: custid that need to be viewed.   
 • @UpdateMinMaxBet: is update min max bet?
@@ -211,17 +200,7 @@ BEGIN
 		@minbetv1mp = @minbetv1mp,
 		@maxbetv1mp = @maxbetv1mp,
 		@maxpermatchv1mp = @maxpermatchv1mp,			
-		
-		--number game
-		@minbetv161 = @minbetv161,
-		@maxbetv161 = @maxbetv161,
-		@maxpermatchv161 = @maxpermatchv161,
-		
-		@MaxPerBallv161 = @MaxPerBallv161,
-			
-		@minbetv164 = @minbetv164,
-		@maxbetv164 = @maxbetv164,
-		@maxpermatchv164 = @maxpermatchv164,
+				
 		--MaxPayOutPerMatch
 		@maxPOpermatch      = @maxPOpermatch,
 		@maxPOpermatchv2    = @maxPOpermatchv2,    
@@ -243,9 +222,7 @@ BEGIN
 		@UpdateMinMaxBetv11 = @UpdateMinMaxBetv11,
 		@UpdateMinMaxBetv99 = @UpdateMinMaxBetv99,
 		@UpdateMinMaxBetv99MP = @UpdateMinMaxBetv99MP,
-		@UpdateMinMaxBetMP = @UpdateMinMaxBetMP,			
-		@UpdateMinMaxBetv161 = @UpdateMinMaxBetv161,
-		@UpdateMinMaxBetv164 = @UpdateMinMaxBetv164,
+		@UpdateMinMaxBetMP = @UpdateMinMaxBetMP,				
 		--Saba
 		@minbetv1saba              	= @minbetv1saba,
 		@maxbetv1saba              	= @maxbetv1saba,

@@ -13,8 +13,6 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelMinMaxLimit]
 	@MinBetv99_Max money = 0 output, @MaxBetv99_Min money = 0 output, @MaxPerMatchv99_Min money = 0 output, @MaxPerMatchv99_Max money = 0 output,	
 	@MinBetv99MP_Max money = 0 output, @MaxBetv99MP_Min money = 0 output, @MaxPerMatchv99MP_Min money = 0 output, @MaxPerMatchv99MP_Max money = 0 output,
 	@MinBetv1MP_Max money = 0 output, @MaxBetv1MP_Min money = 0 output, @MaxPerMatchv1MP_Min money = 0 output, @MaxPerMatchv1MP_Max money = 0 output,
-	@MinBetv161_Max money = 0 output, @MaxBetv161_Min money = 0 output, @MaxPerMatchv161_Min money = 0 output, @MaxPerMatchv161_Max money = 0 output, @MaxPerBallv161_Min money = 0 output, @MaxPerBallv161_Max money = 0 output,
-	@MinBetv164_Max money = 0 output, @MaxBetv164_Min money = 0 output, @MaxPerMatchv164_Min money = 0 output, @MaxPerMatchv164_Max money = 0 output,
 	--Max Payout Per Match
 	@MaxPayoutPerMatch_max money = 0 output,
 	@MaxPayoutPerMatchv2_max money = 0 output,
@@ -48,6 +46,7 @@ Revisions:
 	- 20181218@Johnson: Add Happy 5 [Redmine: #104006]
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
+	- 20230301@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 Param's Explanation:
 	- @custid: custid that need to be viewed. 
 	-@IsCreatedDowline = :
@@ -95,9 +94,6 @@ BEGIN
 		@MaxPerMatchv99_Min = 0,
 		@MaxPerMatchv99MP_Min = 0,
 		@MaxPerMatchv1MP_Min = 0,
-		@MaxPerBallv161_Min = 0,
-		@MaxPerMatchv161_Min = 0,
-		@MaxPerMatchv164_Min = 0,
 		@MaxPerMatchv1saba_Min =0,
 		@MaxPerMatchv2saba_Min =0
 
@@ -193,23 +189,6 @@ BEGIN
 	from CustBetSetting_Agent as cs WITH (NOLOCK)
 	where cs.custid IN (@recommend,@MRecommend,@srecommend)
 		and cs.bettype = 9 and cs.sporttype=1
-
-	Select 
-		@MinBetv161_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv161_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
-		@MaxperMatchv161_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end),
-		@MaxPerBallv161_Max = Min(case when cs.MaxPerNumber = 0 then NULL else cs.MaxPerNumber end)
-	from CustBetSetting_Agent as cs WITH (NOLOCK)
-	where cs.custid IN (@recommend,@MRecommend,@srecommend)
-		and cs.bettype = 81 and cs.sporttype=161
-
-	Select 
-		@MinBetv164_Max = Max(case when MinBet = 0 then NULL else MinBet end), 
-		@MaxBetv164_Min = Min(case when MaxBet = 0 then NULL else MaxBet end),
-		@MaxperMatchv164_Max = Min(case when cs.MaxPerMatch = 0 then NULL else cs.MaxPerMatch end)
-	from CustBetSetting_Agent as cs WITH (NOLOCK)
-	where cs.custid IN (@recommend,@MRecommend,@srecommend)
-		and cs.bettype = 8101 and cs.sporttype=164
 
 	Select 
 		@MinBetv1saba_Max = Max(case when MinBet = 0 then NULL else MinBet end), 

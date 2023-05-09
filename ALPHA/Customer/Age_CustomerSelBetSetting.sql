@@ -19,6 +19,7 @@ Revisions:
 	- 20181218@Johnson: add Happy 5 [Redmine: #104006]
 	- 20210802@Eden: Max Payout Per Match [redmine: #158073]
 	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
+	- 20230227@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 
 Param's Explanation:
 • @custid: custid that need to be viewed.   
@@ -33,10 +34,7 @@ BEGIN
 			@MinBetv8_Max money, @MaxBetv8_Min money, @MaxPerMatchv8_Min money, @MaxPerMatchv8_Max money,
 			@MinBetv10_Max money, @MaxBetv10_Min money, @MaxPerMatchv10_Min money, @MaxPerMatchv10_Max money,
 			@MinBetv11_Max money, @MaxBetv11_Min money, @MaxPerMatchv11_Min money, @MaxPerMatchv11_Max money,
-			@MinBetv99_Max money, @MaxBetv99_Min money, @MaxPerMatchv99_Min money, @MaxPerMatchv99_Max money,	
-			@MinBetv161_Max money, @MaxBetv161_Min money, @MaxPerMatchv161_Min money, @MaxPerMatchv161_Max money, 
-			@MaxPerBallv161_Min MONEY, @MaxPerBallv161_Max MONEY,
-			@MinBetv164_Max money, @MaxBetv164_Min money, @MaxPerMatchv164_Min money, @MaxPerMatchv164_Max money, 
+			@MinBetv99_Max money, @MaxBetv99_Min money, @MaxPerMatchv99_Min money, @MaxPerMatchv99_Max money,				
 			@MinBetv99MP_Max money, @MaxBetv99MP_Min money, @MaxPerMatchv99MP_Min money, @MaxPerMatchv99MP_Max money,
 			@MinBetv1MP_Max money, @MaxBetv1MP_Min money, @MaxPerMatchv1MP_Min money, @MaxPerMatchv1MP_Max money,
 			@MaxPayoutPerMatch_max money = 0,
@@ -79,14 +77,7 @@ BEGIN
 			@maxpermatchv99mp       MONEY = 0, 
 			@minbetv1mp             MONEY = 0, 
 			@maxbetv1mp             MONEY = 0, 
-			@maxpermatchv1mp        MONEY = 0, 
-			@minbetv161             MONEY = 0, 
-			@maxbetv161             MONEY = 0, 
-			@maxpermatchv161        MONEY = 0, 
-			@MaxPerBallv161         MONEY = 0, 
-			@minbetv164             MONEY = 0, 
-			@maxbetv164             MONEY = 0, 
-			@maxpermatchv164        MONEY = 0, 
+			@maxpermatchv1mp        MONEY = 0, 			
 			@MaxPayoutPerMatch      MONEY = 0, 
 			@MaxPayoutPerMatchv2    MONEY = 0, 
 			@MaxPayoutPerMatchv3    MONEY = 0, 
@@ -139,8 +130,6 @@ BEGIN
 				@MinBetv99_Max = @MinBetv99_Max output, @MaxBetv99_Min = @MaxBetv99_Min output, @MaxPerMatchv99_Min = @MaxPerMatchv99_Min output, @MaxPerMatchv99_Max = @MaxPerMatchv99_Max output,		
 				@MinBetv99MP_Max = @MinBetv99MP_Max output, @MaxBetv99MP_Min = @MaxBetv99MP_Min output, @MaxPerMatchv99MP_Min = @MaxPerMatchv99MP_Min output, @MaxPerMatchv99MP_Max = @MaxPerMatchv99MP_Max output,
 				@MinBetv1MP_Max = @MinBetv1MP_Max output, @MaxBetv1MP_Min = @MaxBetv1MP_Min output, @MaxPerMatchv1MP_Min = @MaxPerMatchv1MP_Min output, @MaxPerMatchv1MP_Max = @MaxPerMatchv1MP_Max output,
-				@MinBetv161_Max = @MinBetv161_Max output, @MaxBetv161_Min = @MaxBetv161_Min output, @MaxPerMatchv161_Min = @MaxPerMatchv161_Min output, @MaxPerMatchv161_Max = @MaxPerMatchv161_Max output, @MaxPerBallv161_Min = @MaxPerBallv161_Min output, @MaxPerBallv161_Max = @MaxPerBallv161_Max output,
-				@MinBetv164_Max = @MinBetv164_Max output, @MaxBetv164_Min = @MaxBetv164_Min output, @MaxPerMatchv164_Min = @MaxPerMatchv164_Min output, @MaxPerMatchv164_Max = @MaxPerMatchv164_Max output,
 				@MaxPayoutPerMatch_max      = @MaxPayoutPerMatch_max      OUTPUT,
 				@MaxPayoutPerMatchv2_max    = @MaxPayoutPerMatchv2_max    OUTPUT,
 				@MaxPayoutPerMatchv3_max    = @MaxPayoutPerMatchv3_max    OUTPUT,
@@ -189,14 +178,7 @@ BEGIN
 			@maxpermatchv99mp      		= @maxpermatchv99mp      	OUTPUT,
 			@minbetv1mp            		= @minbetv1mp            	OUTPUT,
 			@maxbetv1mp            		= @maxbetv1mp            	OUTPUT,
-			@maxpermatchv1mp       		= @maxpermatchv1mp       	OUTPUT,
-			@minbetv161            		= @minbetv161            	OUTPUT,
-			@maxbetv161            		= @maxbetv161            	OUTPUT,
-			@maxpermatchv161       		= @maxpermatchv161       	OUTPUT,
-			@MaxPerBallv161        		= @MaxPerBallv161        	OUTPUT,
-			@minbetv164            		= @minbetv164            	OUTPUT,
-			@maxbetv164            		= @maxbetv164            	OUTPUT,
-			@maxpermatchv164       		= @maxpermatchv164       	OUTPUT,
+			@maxpermatchv1mp       		= @maxpermatchv1mp       	OUTPUT,		
 			@MaxPayoutPerMatch     		= @MaxPayoutPerMatch     	OUTPUT,
 			@MaxPayoutPerMatchv2   		= @MaxPayoutPerMatchv2   	OUTPUT,
 			@MaxPayoutPerMatchv3   		= @MaxPayoutPerMatchv3   	OUTPUT,
@@ -269,19 +251,7 @@ BEGIN
 		ISNULL(@MaxBetv1MP_Min, 0) as MaxBetv1MP_Min,	
 		ISNULL(@MaxPerMatchv1MP_Min, 0) as MaxPerMatchv1MP_Min,	
 		ISNULL(@MaxPerMatchv1MP_Max, 0) as MaxPerMatchv1MP_Max,
-	
-		ISNULL(@MinBetv161_Max, 0) as MinBetv161_Max,	
-		ISNULL(@MaxBetv161_Min, 0) as MaxBetv161_Min,	
-		ISNULL(@MaxPerBallv161_Min,0) AS MaxPerBallv161_Min,
-		ISNULL(@MaxPerBallv161_Max,0) AS MaxPerBallv161_Max,
-		ISNULL(@MaxPerMatchv161_Min, 0) as MaxPerMatchv161_Min,	
-		ISNULL(@MaxPerMatchv161_Max, 0) as MaxPerMatchv161_Max,
-	
-		ISNULL(@MinBetv164_Max, 0) as MinBetv164_Max,	
-		ISNULL(@MaxBetv164_Min, 0) as MaxBetv164_Min,	
-		ISNULL(@MaxPerMatchv164_Min, 0) as MaxPerMatchv164_Min,	
-		ISNULL(@MaxPerMatchv164_Max, 0) as MaxPerMatchv164_Max,
-	
+			
 		--> MaxMaxPayoutPerMatch
 		@MaxPayoutPerMatch_max AS MaxPayoutPerMatch_max, 
 		@MaxPayoutPerMatchv2_max AS MaxPayoutPerMatchv2_max, 
@@ -323,14 +293,7 @@ BEGIN
 		@maxpermatchv99mp AS maxpermatchv99mp, 
 		@minbetv1mp AS minbetv1mp, 
 		@maxbetv1mp AS maxbetv1mp, 
-		@maxpermatchv1mp AS maxpermatchv1mp, 
-		@minbetv161 AS minbetv161, 
-		@maxbetv161 AS maxbetv161, 
-		@maxpermatchv161 AS maxpermatchv161, 
-		@MaxPerBallv161 AS MaxPerBallv161, 
-		@minbetv164 AS minbetv164, 
-		@maxbetv164 AS maxbetv164, 
-		@maxpermatchv164 AS maxpermatchv164, 
+		@maxpermatchv1mp AS maxpermatchv1mp, 		
 		@MaxPayoutPerMatch AS MaxPayoutPerMatch, 
 		@MaxPayoutPerMatchv2 AS MaxPayoutPerMatchv2, 
 		@MaxPayoutPerMatchv3 AS MaxPayoutPerMatchv3, 

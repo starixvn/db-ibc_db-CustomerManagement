@@ -28,6 +28,7 @@ AS
 		- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 		- 20230307@Winfred:  Hotfix - Telegram Chatbot: Report Today Win Loss not include data of product Macau games [Redmine: #184766]
 		- 20230118@Helios: add JiliGame [RedmineId: #182869] 
+		- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -38,11 +39,10 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-	DECLARE @HideKeno BIT, @Currency INT,@Site varchar(10)
+	DECLARE @Currency INT,@Site varchar(10)
 
 	--Product Status
-	SELECT	@HideKeno = ci.HideKeno,
-			@Site = site,
+	SELECT	@Site = site,
 			@Currency = c.currency
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
@@ -141,23 +141,21 @@ BEGIN
 		SET @IsIMBC = 1  
     
 	CREATE TABLE #SportBettypeFilter (ProductID TINYINT, SportType SMALLINT,Bettype SMALLINT,IsLive BIT, SettingType TINYINT)
+	CREATE TABLE #ProductSettingType(
+		SettingType	tinyint,
+		SettingName	varchar(30)
+	)
+
+	INSERT INTO #ProductSettingType(SettingType,SettingName)
+	SELECT SettingType,SettingName 
+	FROM DBCUST.CUSTDB.dbo.ProductSettingType WITH(NOLOCK) 
+	WHERE SettingName IN('Product Status')
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,4,@SettingStatus)	
+	SELECT p.RealProductId,p.SportType,p.Bettype,p.IsLive, p.SettingType   
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
+		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
 
-	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,11,@SettingStatus)	
-
-	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,13,@SettingStatus)
-
-	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-	SELECT RealProductId,SportType,Bettype,IsLive, SettingType   
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,21,@SettingStatus)
-	
 	SELECT DISTINCT ft.ProductID, 
 			CAST(CASE WHEN @IsIMBC = 0 AND ft.ProductID = 20 THEN 1 
 				ELSE (SELECT value FROM dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, psp.bitmapOrder)) END AS BIT) AS isHidden
@@ -171,11 +169,7 @@ BEGIN
 	FROM (
 		SELECT ProductID, isHidden FROM #OfferProduct
 		UNION ALL
-		SELECT 8, @HideKeno
-		UNION ALL
 		SELECT 1, 0 --Sportbook always offer for all customer
-		UNION ALL
-		SELECT 3, 0 --NumberGame always offer for all customer
 		UNION ALL
 		SELECT 34, CASE WHEN  isHidden = 0 THEN  @ArcadiaGamingDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Arcadia Gaming
 		UNION ALL
@@ -208,5 +202,9 @@ BEGIN
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
 	ORDER BY r.ProductID
+
+	DROP TABLE #OfferProduct
+	DROP TABLE #ProductSettingType
+	DROP TABLE #SportBettypeFilter
 END
 GO

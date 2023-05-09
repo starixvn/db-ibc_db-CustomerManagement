@@ -120,6 +120,7 @@ Revisions:
 	- 20220929@Tacy: Add Customer Class, show on NAP [RedmineID: #175126]
 	- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	- 20230418@Tacy: NAP - get @membersite = member's site [RedmineID: #181596]
+	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230421@Elodie: Remove linked-server DBACC [RedmineID: #169643]
 Param's Explanation:
 	@username: username want to get all info related
@@ -133,7 +134,7 @@ BEGIN
           , @uplineid INT		  
           , @roleid TINYINT
           , @UsedCredit MONEY     
-          , @DisableDownlinesNumber BIT
+          --, @DisableDownlinesNumber BIT
 
           , @DownlinesSelectedBetting BIT		  
 	  
@@ -236,23 +237,6 @@ BEGIN
     IF @roleid > 4
 	    RETURN
     -----------------------------	
-
-	SELECT @DisableDownlinesNumber = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableNumber = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableNumber = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableNumber,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableNumber = 1) 											 
-										      ELSE 0 END
-											  
- 
-    										  
-    --SELECT @DisableDownlinesVirtualSports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableVirtualSports = 1)
-				--						     WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid AND DisableVirtualSports = 1) 											 
-				--						     WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableVirtualSports,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid AND DisableVirtualSports = 1) 											 
-				--						     ELSE 0 END
-
-    --SELECT @DisableDownlinesEsports = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableEsports = 1)
-				--							WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableEsports = 1)
-				--							WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableEsports, 0) FROM custInfo WITH(NOLOCK) WHERE recommend = @custid  AND DisableEsports = 1)
-				--							ELSE 0 END
 										      
 	SELECT @DisableDownlinesSuperLive = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableSuperLive = 1)
 										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableSuperLive = 1) 											 
@@ -659,13 +643,11 @@ BEGIN
 		ISNULL((SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.SuspendInfo)),0) as isDirectSuspend,
 		ISNULL((SELECT suspendInfo FROM dbo.f_GetSuspendInfoStatus(@roleid,cps.CloseInfo)),0) as isDirectClosed,
 		ci.autosuspend,		 
-		ISNULL(@DisableDownlinesNumber,0) DisableDownlinesNumber,
-	    --ISNULL(@DisableDownlinesVirtualSports,0) DisableDownlinesVirtualSports,
+
 	    ISNULL(@DownlinesSelectedBetting,0) DownlinesSelectedBetting,
-		--ISNULL(@DisableDownlinesEsports, 0) DisableDownlinesEsports,		
+	
 		ISNULL(@DisableDownlinesSuperLive,0) DisableDownlinesSuperLive,
 	 
-	    ci.DisableNumber,
 	    ci.DisableOutRight,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
