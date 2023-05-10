@@ -1,1 +1,6 @@
-NAP-Accounting\Customer\NAP Licensee Management\NAP_SpecialCustSetting_Modify.sql
+NAP-Accounting\CanSee\Acc_ManageCansee_Ins.sql
+NAP-Accounting\ViewPT-Comm\dbo.Acc_MT_SportTypeSel.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitCheck.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_SportTypeSel.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitSel.sql
+NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_ProductCurrencySel.sql
