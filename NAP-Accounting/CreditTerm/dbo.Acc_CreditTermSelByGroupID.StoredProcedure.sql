@@ -53,7 +53,7 @@ BEGIN
 	SELECT @balanceUpDay = BalanceUpDay, @moveBetDay = MoveBetsDay FROM @tblMoveBetBalanceUp
 
 	INSERT INTO #CustBalance_tmp (CustID, TotalBalance, TotalBalance_RM, YesterdayTotalBalance, YesterdayTotalBalance_RM)							
-	EXEC dbo.Acc_CustomerSelBalanceInfo @CustIdList =@CustIDList, @MoveBetDay = @moveBetDay
+	EXEC dbo.Acc_CustomerSelBalanceInfo @CustIdList =@CustIDList, @MoveBetDay = @moveBetDay, @BalanceUpDay = @balanceUpDay
 	
 	SELECT 	c.CustID,c.username,c.isgroupheadline,c.Currency,c.MaxLoss AS MaxLoss, 
 			ISNULL(cb.TotalBalance,0) AS TotalBalance,  
