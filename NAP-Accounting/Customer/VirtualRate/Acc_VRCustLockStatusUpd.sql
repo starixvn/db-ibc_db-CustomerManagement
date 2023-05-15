@@ -166,29 +166,32 @@ BEGIN
 					,	@action = 'EnableVRLockStatus'
 					,   @VRlockStatusType = 0 --ALL
 	END
-	ELSE IF @IsCallExecrep_Soccer = 1
+	ELSE
 	BEGIN
-		EXEC [Acc_CustomerInfo_Execrep_04]
-						@custid = @custid
-					,	@roleid = @roleid
-					,	@action = 'EnableVRLockStatus'
-					,   @VRlockStatusType = 1 --Soccer
-	END
-	ELSE IF @IsCallExecrep_OS = 1
-	BEGIN
-		EXEC [Acc_CustomerInfo_Execrep_04]
-						@custid = @custid
-					,	@roleid = @roleid
-					,	@action = 'EnableVRLockStatus'
-					,   @VRlockStatusType = 2 --Other sport
-	END
-	ELSE IF @IsCallExecrep_Basketball = 1
-	BEGIN
-		EXEC [Acc_CustomerInfo_Execrep_04]
-						@custid = @custid
-					,	@roleid = @roleid
-					,	@action = 'EnableVRLockStatus'
-					,   @VRlockStatusType = 3 --Basketball
+		IF @IsCallExecrep_Soccer = 1
+		BEGIN
+			EXEC [Acc_CustomerInfo_Execrep_04]
+							@custid = @custid
+						,	@roleid = @roleid
+						,	@action = 'EnableVRLockStatus'
+						,   @VRlockStatusType = 1 --Soccer
+		END
+		IF @IsCallExecrep_OS = 1
+		BEGIN
+			EXEC [Acc_CustomerInfo_Execrep_04]
+							@custid = @custid
+						,	@roleid = @roleid
+						,	@action = 'EnableVRLockStatus'
+						,   @VRlockStatusType = 2 --Other sport
+		END
+		IF @IsCallExecrep_Basketball = 1
+		BEGIN
+			EXEC [Acc_CustomerInfo_Execrep_04]
+							@custid = @custid
+						,	@roleid = @roleid
+						,	@action = 'EnableVRLockStatus'
+						,   @VRlockStatusType = 3 --Basketball
+		END
 	END
 		  
 	set @endRun = getdate()  
