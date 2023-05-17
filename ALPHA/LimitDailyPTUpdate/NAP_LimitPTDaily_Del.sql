@@ -17,6 +17,8 @@ AS
 		Original: 
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
+			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
+
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -27,6 +29,7 @@ BEGIN
 		, @ProductName	VARCHAR(50)
 		, @logSpData		 NVARCHAR(MAX)
 		, @site			NVARCHAR(50)
+		, @currencyName NVARCHAR(50)
 		, @SettingStatus	 TINYINT = 0
 		, @TypeName			NVARCHAR(50)
 	SET @startRun = GETDATE()
@@ -44,6 +47,15 @@ BEGIN
 	ELSE
 	BEGIN
 		SELECT @site = site FROM Site WITH(NOLOCK) WHERE siteid = @SiteID
+	END	
+
+	If 	@Currency = 0
+	BEGIN
+		SET @currencyName = 'All currencies'
+	END
+	ELSE
+	BEGIN
+		SELECT @currencyName = currency FROM exchange WITH(NOLOCK) WHERE ExchangeId = @Currency
 	END	
 		
 	IF NOT EXISTS( SELECT TOP 1 1 FROM LimitPTDailySetting t WITH(NOLOCK) 
@@ -73,7 +85,7 @@ BEGIN
 	
 	SELECT @LogSPData = '<NAP_LimitPTDaily_Del Product="'+ COALESCE(CAST(@ProductName AS VARCHAR(50)), SPACE(1)) + '" ' +
 	                    'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" ' +
-	                    CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" '  ELSE '' END +
+	                    CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@currencyName as VARCHAR(50)),SPACE(1)) + '" '  ELSE '' END +
 						CASE WHEN @Type <> 1 THEN 'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" '   ELSE '' END +
 						'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
 						'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
@@ -87,7 +99,7 @@ BEGIN
 		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustID  = @CustID,
 			@UserID = @UserID,
-			@ActionID = 471,
+			@ActionID = 471,					--delete by line
 			@TrackingValue = @LogSPData,
 			@duration = @Duration
 
@@ -97,7 +109,7 @@ BEGIN
 		EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 			@CustID  = @UserID,
 			@UserID = @UserID,
-			@ActionID = 471,
+			@ActionID = 474,					--delete by site/currency
 			@TrackingValue = @LogSPData,
 			@duration = @Duration
 
