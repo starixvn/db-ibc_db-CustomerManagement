@@ -20,6 +20,7 @@ AS
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
 			- 20211126@Winfred: Limit to update PT one time per day [Redmine: #165249]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 
 	*/
 BEGIN
@@ -32,6 +33,7 @@ BEGIN
 		, @logSpData		 NVARCHAR(MAX)
 		, @CustID INT
 		, @site		NVARCHAR(50)
+		, @currencyName	NVARCHAR(50)
 		, @TypeName			NVARCHAR(50)
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
@@ -55,6 +57,15 @@ BEGIN
 	ELSE
 	BEGIN
 		SELECT @site = site FROM Site WITH(NOLOCK) WHERE siteid = @SiteID
+	END
+
+	If 	@Currency = 0
+	BEGIN
+		SET @currencyName = 'All currencies'
+	END
+	ELSE
+	BEGIN
+		SELECT @currencyName = currency FROM exchange WITH(NOLOCK) WHERE ExchangeId = @Currency
 	END
 		
 	IF @SMAName <> ''
@@ -164,7 +175,7 @@ BEGIN
 			
 		SELECT @LogSPData = '<NAP_LimitPTDaily_Ins Product="'+ COALESCE(CAST(@ProductName AS VARCHAR(50)), SPACE(1)) + '" ' +
 							'IP="'+ COALESCE(CAST(@IP as VARCHAR(20)),SPACE(1)) + '" ' +
-							CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@Currency as VARCHAR(5)),SPACE(1)) + '" '  ELSE '' END +
+							CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@currencyName as VARCHAR(50)),SPACE(1)) + '" '  ELSE '' END +
 							CASE WHEN @Type <> 1 THEN 'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" '   ELSE '' END +
 							'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
 							'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
@@ -187,7 +198,7 @@ BEGIN
 				EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 						@CustID  = @CustID,
 						@UserID = @UserID,
-						@ActionID = 470,
+						@ActionID = 470,		--create by line	
 						@TrackingValue = @LogSPData,
 						@duration = @Duration
 			END
@@ -198,7 +209,7 @@ BEGIN
 			EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 				@CustID  = @UserID,
 				@UserID = @UserID,
-				@ActionID = 470,
+				@ActionID = 473,				--create by site/currency		
 				@TrackingValue = @LogSPData,
 				@duration = @Duration
 		END

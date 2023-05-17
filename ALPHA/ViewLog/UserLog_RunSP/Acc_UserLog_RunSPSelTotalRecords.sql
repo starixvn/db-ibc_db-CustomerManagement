@@ -39,6 +39,8 @@ AS
 		- 20210518@Winfred: Show log for Parlay Max Payout [RedmineID:#154104]
 		- 20210804@Elodie: Show log betsetting for downlines [RedmineID:#158073]
 		- 20230303@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
+
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -80,6 +82,136 @@ BEGIN
 	DECLARE @__cnt INT, @__cntTemp INT
 	SELECT @__cnt = 0, @__cntTemp = 0
 
+	IF (@ActionTypeId = 1 OR @ActionTypeId = -1)	--include limit PT update log
+	BEGIN
+		DECLARE @tcustid			INT,
+				@tuserid			INT,
+				@tlogdate			DATETIME,
+				@tActionID			INT,
+				@tsite				NVARCHAR(50),
+				@tcurrency			NVARCHAR(50),
+				@tType				NVARCHAR(50),
+				@tLogID				BIGINT,
+				@tTrackingValue		NVARCHAR(MAX),
+				@tTrackingValue2	NVARCHAR(MAX),
+				@XMLPath			NVARCHAR(50),
+				@DocHandler			INT,
+				@custSite			NVARCHAR(50),
+				@custCurrency		NVARCHAR(50)
+
+		SELECT	@custSite		=	c.site, 
+				@custCurrency	=	e.currency
+		FROM		bodb02.dbo.Customer c WITH (NOLOCK)
+		INNER JOIN	bodb02.dbo.Exchange e WITH (NOLOCK) ON c.currency = e.ExchangeID
+		WHERE c.custid = @custid
+
+		DECLARE @tempLog AS TABLE(	--store all limit PT update log between @fromdate and @todate
+			logid			BIGINT,
+			userid			INT,
+			logdate			DATETIME,
+			custid			INT,
+			ActionID		INT,
+			TrackingValue	NVARCHAR(MAX),
+			TrackingValue2	NVARCHAR(MAX)
+		)
+
+		DECLARE @allLog AS TABLE(	--add site, currency, type information for all log
+			LogId			BIGINT,
+			userid			INT,
+			logdate			DATETIME,
+			custid			INT,
+			actionid		INT,
+			TrackingValue	NVARCHAR(MAX),
+			TrackingValue2	NVARCHAR(MAX),
+			Currency		NVARCHAR(50),
+			Site			NVARCHAR(50),
+			Type			NVARCHAR(50)
+		)
+		IF (@FromDate >= @__archiveDate)
+		BEGIN
+			INSERT INTO @tempLog(logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2)
+			SELECT logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2
+			FROM dbo.UserLog_RunSP WITH (NOLOCK)
+			WHERE ActionID IN (470, 471, 473, 474)
+			AND logdate BETWEEN @FromDate AND @ToDate
+		END
+		ELSE IF (@Todate < @__archiveDate)
+		BEGIN
+			INSERT INTO @tempLog(logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2)
+			SELECT logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2
+			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP WITH (NOLOCK)
+			WHERE ActionID IN (470, 471, 473, 474)
+			AND logdate BETWEEN @FromDate AND @ToDate		
+		END
+		ELSE
+		BEGIN
+			INSERT INTO @tempLog(logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2)
+			SELECT logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2
+			FROM dbo.UserLog_RunSP WITH (NOLOCK)
+			WHERE ActionID IN (470, 471, 473, 474)
+			AND logdate BETWEEN @__archiveDate AND @ToDate	
+
+			INSERT INTO @tempLog(logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2)
+			SELECT logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2
+			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP WITH (NOLOCK)
+			WHERE ActionID IN (470, 471, 473, 474)
+			AND logdate >= @FromDate AND logdate < @__archiveDate
+		END
+
+		WHILE (1=1)
+		BEGIN
+			SELECT	@tLogID				=	logID, 
+					@tuserid			=	userid,
+					@tlogdate			=	logdate,
+					@tcustid			=	custid,
+					@tActionID			=	actionid,
+					@tTrackingValue		=	TrackingValue,
+					@tTrackingValue2	=	TrackingValue2
+			FROM (
+				SELECT TOP 1 logid, userid, logdate, custid, ActionID, TrackingValue, TrackingValue2
+				FROM @tempLog 
+				ORDER BY logdate DESC
+			) t
+	
+			IF @@ROWCOUNT = 0
+				BREAK
+
+			IF @tActionID IN (470, 473)	--Create 
+			BEGIN
+				SELECT @XMLPath = 'NAP_LimitPTDaily_Ins'
+			END
+			ELSE						--Delete (471, 474)
+			BEGIN
+				SELECT @XMLPath = 'NAP_LimitPTDaily_Del'
+			END
+
+			EXEC sp_xml_preparedocument @DocHandler OUTPUT, @tTrackingValue
+			INSERT INTO @allLog(LogId, userid, logdate, custid, actionid, TrackingValue, TrackingValue2, Currency, Site, Type)
+			SELECT 
+				@tLogID,
+				@tuserid,
+				@tlogdate,
+				@tcustid,
+				@tActionID,
+				@tTrackingValue,
+				@tTrackingValue2,
+				Data.Currency,
+				Data.Site,
+				Data.Type
+			FROM OPENXML (@DocHandler, @XMLPath, 1) 
+			WITH (
+				Currency	NVARCHAR(50),
+				Site		NVARCHAR(50),
+				Type		NVARCHAR(50)
+			) AS Data
+
+			EXEC sp_xml_removedocument @DocHandler
+
+			DELETE 
+			FROM @tempLog 
+			WHERE logid = @tLogID
+		END
+	END
 	IF  (@LowerActionId IS NULL OR @UpperActionId IS NULL)  
 	BEGIN
 		select @LowerActionId=1100, @UpperActionId=1199	 --exclude to select Customer Status
@@ -285,6 +417,24 @@ BEGIN
 			END--@ActionTypeID = 5
 			ELSE
 			BEGIN
+				IF @ActionTypeId = 1 --Limit PT Update
+				BEGIN
+					SELECT  @__cntTemp = count(al.LogId)
+					FROM	@allLog al 
+							INNER JOIN dbo.LogAction la WITH (NOLOCK) ON al.actionid = la.ActionID
+							LEFT JOIN bodb02.dbo.CustInfo ci WITH (NOLOCK) ON al.userid = ci.custid
+					WHERE		al.actionid IN (470, 471)
+							AND	al.custid = @custid
+							OR(
+									al.actionid	IN (473, 474)
+								AND	al.Site		=	CASE	WHEN al.type IN ('Site', 'Site - Currency')		THEN @custSite
+													ELSE al.site END
+								AND	al.Currency =	CASE	WHEN al.type IN ('Currency', 'Site - Currency')	THEN @custCurrency
+													ELSE al.Currency END
+							)
+					SET @__cnt = @__cnt + @__cntTemp
+					SET @__cntTemp = 0
+				END
 				IF @FromDate >= @__archiveDate
 				BEGIN
 					SELECT @__cntTemp = COUNT(ul.LogID)
@@ -300,7 +450,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
-
+							--exclude log for limit PT update
+							AND ul.ActionID NOT IN (470,471,473,474)
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 					-- Count  Parlay Max Payout Indirectly
@@ -351,6 +502,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
+							--exclude log for limit PT update
+							AND ul.ActionID NOT IN (470,471,473,474)
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -402,6 +555,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
+							--exclude log for limit PT update
+							AND ul.ActionID NOT IN (470,471,473,474)
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -419,6 +574,8 @@ BEGIN
 							AND ul.ActionId <> 1050 --Message Customer Read Status Update
 							AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
+							--exclude log for limit PT update
+							AND ul.ActionID NOT IN (470,471,473,474)
 					
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -494,6 +651,23 @@ BEGIN
 		END--@ActionTypeId > 0			
 		ELSE
 		BEGIN
+		--Count Limit PT Update log
+			SELECT  @__cntTemp = count(al.LogId)
+			FROM	@allLog al 
+					INNER JOIN dbo.LogAction la WITH (NOLOCK) ON al.actionid = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo ci WITH (NOLOCK) ON al.userid = ci.custid
+			WHERE		al.actionid IN (470, 471)
+					AND	al.custid = @custid
+					OR(
+							al.actionid	IN (473, 474)
+						AND	al.Site		=	CASE	WHEN al.type IN ('Site', 'Site - Currency')		THEN @custSite
+											ELSE al.site END
+						AND	al.Currency =	CASE	WHEN al.type IN ('Currency', 'Site - Currency')	THEN @custCurrency
+											ELSE al.Currency END
+					)
+			SET @__cnt = @__cnt + @__cntTemp
+			SET @__cntTemp = 0--end Count Limit PT Update log
+
 			IF @FromDate >= @__archiveDate
 			BEGIN
 				SELECT  @__cntTemp = COUNT(LogID)                            
@@ -515,6 +689,8 @@ BEGIN
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
+						--exclude log for limit PT update
+						AND ul.ActionID NOT IN (470,471,473,474)
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -575,6 +751,8 @@ BEGIN
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
+						--exclude log for limit PT update
+						AND ul.ActionID NOT IN (470,471,473,474)
 
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -645,6 +823,8 @@ BEGIN
 							OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019 
+						--exclude log for limit PT update
+						AND ul.ActionID NOT IN (470,471,473,474)
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
@@ -668,6 +848,8 @@ BEGIN
 						OR ( ul.ActionId BETWEEN 31620 AND 31622 AND (@LoginUserRoleId NOT IN (2,3) OR @LoginUserId = 0)))
 						AND ul.ActionID NOT IN (220001,220003,220005,220021,220023,220025,220027,220028,220029,220031,220032,220033,220040,220042,220044) 
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019  
+						--exclude log for limit PT update
+						AND ul.ActionID NOT IN (470,471,473,474)
 						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
