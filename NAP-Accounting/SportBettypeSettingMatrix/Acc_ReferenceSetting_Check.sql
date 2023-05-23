@@ -15,7 +15,8 @@ AS
 	Original: 
 
 	Revisions:
-		- 20230301@Tacy: Create SP Redmine: #184255 
+		- 20230301@Tacy: Create SP [Redmine: #184255]
+		- 20230522@Tacy: Enhance function - Do not validate Bettype value [Redmine: #184255] 
 		
 	Param's Explanation:
 		* @IsNew : 1 ~ Insert new reference setting
@@ -486,24 +487,24 @@ BEGIN
 		RETURN
 	END
 
-	--check: exists Bettype.
+	--check: exists BettypeRef (exclude Bettype, allow to add full range new Product's bettype without validating Bettype). 
 	SELECT TOP (1)
 			@MatrixError = CONVERT(VARCHAR(5),RowID),
-			@ErrCode=CASE WHEN b.typeid IS NULL													THEN 109
+			@ErrCode=CASE --WHEN b.typeid IS NULL													THEN 109
 							 WHEN bpt.typeid IS NULL AND t.BetTypeRefPT IS NOT NULL				THEN 110
 							 WHEN bcomm.typeid IS NULL AND t.BetTypeRefComm IS NOT NULL			THEN 111
 							 WHEN bbs.typeid IS NULL AND t.BetTypeRefBetSetting IS NOT NULL		THEN 112
 							 WHEN bwl.typeid IS NULL AND t.BettypeRefWinlossLimit IS NOT NULL	THEN 113 
 							 ELSE 100
 						END,
-			@ValueError=CASE WHEN b.typeid IS NULL												THEN t.BetType
+			@ValueError=CASE --WHEN b.typeid IS NULL												THEN t.BetType
 							 WHEN bpt.typeid IS NULL AND t.BetTypeRefPT IS NOT NULL				THEN t.BetTypeRefPT
 							 WHEN bcomm.typeid IS NULL AND t.BetTypeRefComm IS NOT NULL			THEN t.BetTypeRefComm
 							 WHEN bbs.typeid IS NULL AND t.BetTypeRefBetSetting IS NOT NULL		THEN t.BetTypeRefBetSetting
 							 WHEN bwl.typeid IS NULL AND t.BettypeRefWinlossLimit IS NOT NULL	THEN t.BettypeRefWinlossLimit 
 							 ELSE ''
 						END,
-			@ColumnName=CASE WHEN b.typeid IS NULL												THEN 'BetType'
+			@ColumnName=CASE --WHEN b.typeid IS NULL												THEN 'BetType'
 							 WHEN bpt.typeid IS NULL AND t.BetTypeRefPT IS NOT NULL				THEN 'BetTypeRefPT'
 							 WHEN bcomm.typeid IS NULL AND t.BetTypeRefComm IS NOT NULL			THEN 'BetTypeRefComm'
 							 WHEN bbs.typeid IS NULL AND t.BetTypeRefBetSetting IS NOT NULL		THEN 'BetTypeRefBetSetting'
@@ -511,13 +512,12 @@ BEGIN
 							 ELSE ''
 						END
 	FROM #NewReferenceSettingTbl t
-	LEFT JOIN #Bettype b ON b.typeid=t.BetType
+--	LEFT JOIN #Bettype b ON b.typeid=t.BetType
 	LEFT JOIN #Bettype bpt ON bpt.typeid=t.BetTypeRefPT
 	LEFT JOIN #Bettype bcomm ON bcomm.typeid=t.BetTypeRefComm
 	LEFT JOIN #Bettype bbs ON bbs.typeid=t.BetTypeRefBetSetting
 	LEFT JOIN #Bettype bwl ON bwl.typeid=t.BettypeRefWinlossLimit
-	WHERE b.typeid IS NULL
-		OR bpt.typeid IS NULL AND t.BetTypeRefPT IS NOT NULL
+	WHERE bpt.typeid IS NULL AND t.BetTypeRefPT IS NOT NULL
 		OR bcomm.typeid IS NULL AND t.BetTypeRefComm IS NOT NULL
 		OR bbs.typeid IS NULL AND t.BetTypeRefBetSetting IS NOT NULL
 		OR bwl.typeid IS NULL AND t.BettypeRefWinlossLimit IS NOT NULL
