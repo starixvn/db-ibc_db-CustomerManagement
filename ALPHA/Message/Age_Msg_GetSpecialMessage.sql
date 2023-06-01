@@ -8,7 +8,8 @@ ALTER PROCEDURE [dbo].[Age_Msg_GetSpecialMessage]
 	@sdate datetime = NULL,
 	@edate datetime = NULL,
 	@IsTest bit = 0,
-	@MatchId int = 0
+	@MatchId int = 0,
+	@Site varchar(50)
 AS
 /*
     Created: Elodie
@@ -16,7 +17,8 @@ AS
     DB: DBMSG/bodb_Message
     Original: Dot_Msg_GetSpecialMessage
     Revisions:
-		20220323@Elodie: Initial SP [RedmineID #170363]
+		- 20220323@Elodie: Initial SP [RedmineID #170363]
+		- 20230517@Tacy: Alpha - Special Announcement - Exclude a message sending to 755555 & 76666B [RedmineID: #188246]
     Param's Explanation:
     
 */
@@ -68,6 +70,9 @@ BEGIN
 	WHERE CASE
 			WHEN (@record <> 0 AND new_table.rownum <= @record) THEN 1
 			WHEN (@record = 0) THEN 1
+		ELSE 0 END = 1
+	AND CASE WHEN @Site IN ('755555', '76666B') AND new_table.MessageId<>1732314 THEN 1 
+			 WHEN @Site NOT IN ('755555', '76666B') THEN 1
 		ELSE 0 END = 1
 	ORDER BY TopLevel, PostTime DESC
 END
