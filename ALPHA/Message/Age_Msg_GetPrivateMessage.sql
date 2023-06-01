@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[Age_Msg_GetPrivateMessage]
 	@sdate datetime = NULL,
 	@edate datetime = NULL,
 	@IsTest bit = 0,
-	@MatchId int = 0
+	@MatchId int = 0,
+	@Site varchar(50)=''
 AS
 /*
 	Created: 20221121@Tacy
@@ -16,8 +17,8 @@ AS
     Original: Dot_Msg_GetPrivateMessage
 
     Revisions:
-			- 20221121@Tacy: Create SP
-
+		- 20221121@Tacy: Create SP
+		- 20230517@Tacy: Add @Site [RedmineID: #188246]
     Param's Explanation:
 */
 BEGIN
