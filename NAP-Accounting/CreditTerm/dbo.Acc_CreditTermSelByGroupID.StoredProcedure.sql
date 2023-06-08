@@ -14,6 +14,7 @@ Revisions:
 	- 20190531@Sophia: Add YesterdayTotalBalance [Redmine: #113650]
 	- 20190724@Winnie: CN88 Headline Acc [Redmine: #117533]
 	- 20210505@Sol: NAP - Alpha - Allow more time for transfer - [Redmine: #149927]
+	- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 Parameters Explanation:
 
 */
