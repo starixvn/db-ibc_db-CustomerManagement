@@ -14,6 +14,7 @@ Revisions:
 	- 20190531@Sophia: Add YesterdayTotalBalance [Redmine: #113650]
 	- 20190724@Winnie: CN88 Headline Acc [Redmine: #117533]
 	- 20210505@Sol: NAP - Alpha - Allow more time for transfer - [Redmine: #149927]
+	- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 Parameters Explanation:
 
 */
@@ -53,7 +54,7 @@ BEGIN
 	SELECT @balanceUpDay = BalanceUpDay, @moveBetDay = MoveBetsDay FROM @tblMoveBetBalanceUp
 
 	INSERT INTO #CustBalance_tmp (CustID, TotalBalance, TotalBalance_RM, YesterdayTotalBalance, YesterdayTotalBalance_RM)							
-	EXEC dbo.Acc_CustomerSelBalanceInfo @CustIdList =@CustIDList, @MoveBetDay = @moveBetDay
+	EXEC dbo.Acc_CustomerSelBalanceInfo @CustIdList =@CustIDList, @MoveBetDay = @moveBetDay, @BalanceUpDay = @balanceUpDay
 	
 	SELECT 	c.CustID,c.username,c.isgroupheadline,c.Currency,c.MaxLoss AS MaxLoss, 
 			ISNULL(cb.TotalBalance,0) AS TotalBalance,  

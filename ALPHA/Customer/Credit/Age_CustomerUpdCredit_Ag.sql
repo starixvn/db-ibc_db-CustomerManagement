@@ -38,6 +38,7 @@ AS
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
+		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 	Param's Explanation:  
 		• @custid: custid that need to be updated   
 		• @CreditAmt: new credit   
@@ -90,52 +91,8 @@ BEGIN
 	FROM dbo.CustAgent WITH (NOLOCK)
 	WHERE custid = @AgID
 	
-	-- 1st
-	-- Prevent user from decreasing given credit due to processing data
-	IF ISNULL(@OldCredit, 0) > ISNULL(@CreditAmt, 0)
-	BEGIN
-		EXEC DBTXN.bodb02.dbo.Acc_Core_IsMainProcessRunning
-			@CustId = @CustID,
-			@UplineId = @AgID,
-			@IsDepositMember = 0,
-			@ErrCode = @ErrCode OUTPUT,
-			@ErrMsg = @ErrMsg OUTPUT
-
-		IF @ErrCode <> 0
-		BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Data processing is in progress, thus Given Credit cannot be reduced. Please try again in a few minutes.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](70022, @Language) END
-			
-			SELECT @CreditProblem = 1
-
-			RETURN
-		END
-	END
-
 	EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT  
 	
-	-- 2nd
-	-- Prevent user from decreasing given credit due to processing data
-	IF ISNULL(@OldCredit, 0) > ISNULL(@CreditAmt, 0)
-	BEGIN
-		EXEC DBTXN.bodb02.dbo.Acc_Core_IsMainProcessRunning
-			@CustId = @CustID,
-			@UplineId = @AgID,
-			@IsDepositMember = 0,
-			@ErrCode = @ErrCode OUTPUT,
-			@ErrMsg = @ErrMsg OUTPUT
-
-		IF @ErrCode <> 0
-		BEGIN
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Data processing is in progress, thus Given Credit cannot be reduced. Please try again in a few minutes.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](70022, @Language) END
-			
-			SELECT @CreditProblem = 1
-			
-			RETURN
-		END
-	END
-
 	SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 
 	IF @CreditAmt + @TotalAmt < 0
