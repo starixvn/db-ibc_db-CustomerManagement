@@ -77,6 +77,10 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdMemBetSetting]
 
 	@UpdateMinMaxBetv1saba bit = 1,
 	@UpdateMinMaxBetv2saba bit = 1,
+
+	-- Update Multiple
+	@UpdateMultiple bit = 0,	
+	@UpdateMultipleSuper bit = 0,
 	
 	@systemID TINYINT = NULL,
 	@userid int, --updater Id	
@@ -125,6 +129,7 @@ Revisions:
 	- 20211005@Johnson: change param @UpdateMinMaxBetv1MP to @UpdateMinMaxBetMP [redmine:#161425]
 	- 20210831@Eden: Break setting for Saba Soccer/Basketball [redmine: #159626]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [RedmineID: #186773]
 
 Param's Explanation:
 • @custid: custid that need to be viewed.   
@@ -236,6 +241,9 @@ BEGIN
 
 		@UpdateMinMaxBetv1saba		= @UpdateMinMaxBetv1saba,
 		@UpdateMinMaxBetv2saba		= @UpdateMinMaxBetv2saba,
+
+		@UpdateMultiple = @UpdateMultiple,	
+		@UpdateMultipleSuper = @UpdateMultipleSuper,
 
 		@SubAccID = @SubAccID,
 		@UserID = @UserID,
