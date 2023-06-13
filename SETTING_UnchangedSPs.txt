@@ -1,5 +1,2 @@
-NAP-Accounting\Customer\Credit\Acc_CustomerUpdClearCredit.sql
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
-NAP-Accounting\DormantAccountList\Acc_DormantAccountList_Sel.sql
-NAP-Accounting\DormantAccountList\Acc_DormantAccountListByHeadline_Sel.sql
-NAP-Accounting\DormantAccountList\Acc_DormantDownlineListByHeadline_Sel.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
