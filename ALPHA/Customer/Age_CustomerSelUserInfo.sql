@@ -66,7 +66,7 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
-
+	- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 	- @SettingStatus: 0: Pro, 1: UAT
@@ -181,7 +181,9 @@ Param's Explanation:
 		,	@bitmapOrder_VGaming		INT
 		--Bitcoin
 		,	@bitmapOrder_Bitcoin		INT 
-		,   @bitmapOrder_SabaCasino		INT  
+		,   @bitmapOrder_SabaCasino		INT 
+		--YeeBet
+		,	@bitmapOrder_YeeBet			INT
 		 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)
@@ -206,6 +208,7 @@ Param's Explanation:
 	SET @bitmapOrder_VGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 171 AND Bettype = 3801)
 	SET @bitmapOrder_Bitcoin = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
 	SET @bitmapOrder_SabaCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 208 AND Bettype = 2101)
+	SET @bitmapOrder_YeeBet = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 159 AND Bettype = 3151)
 
 	SELECT	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     
@@ -233,6 +236,7 @@ Param's Explanation:
 		,	@IsHidden_VGaming		INT = 1
 		,	@IsHidden_Bitcoin		INT = 1
 		,	@IsHidden_SabaCasino	INT = 1
+		,	@IsHidden_YeeBet		INT = 1
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 211, @IsHide = @IsHidden_AllBet OUTPUT
@@ -258,7 +262,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 66, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VGaming OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
-
+	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 159, @IsHide = @IsHidden_YeeBet OUTPUT
 
 	SELECT Customer.custid,
 		   Customer.userpwd,
@@ -425,7 +429,13 @@ Param's Explanation:
 			-- For SabaCasino
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaCasino)), 1) AS DisableSabaCasino,		
 			CAST(CASE WHEN @IsHidden_SabaCasino = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaCasino)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaCasino,
-			
+			-- For YeeBet
+			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_YeeBet)), 1) AS DisableYeeBet,
+			CAST(	CASE	WHEN	@IsHidden_YeeBet = 0 
+								AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_YeeBet)), 1) = 0 
+								THEN 0
+							ELSE 1 
+					END AS BIT) AS HideYeeBet,			
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,
