@@ -98,6 +98,7 @@ Revisions:
 	- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
 				NAPEXT:internal login from NAP EXT
@@ -236,6 +237,7 @@ Param's Explanation:
 		,   @bitmapOrder_SabaCasino		INT  
 		,   @bitmapOrder_Keno		INT 
 		,   @bitmapOrder_NG		INT 
+		,   @bitmapOrder_YeeBet			INT
 
     SET @bitmapOrder_MuayThai = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 44 AND Bettype = 3)    
 	SET @bitmapOrder_Esports = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 43 AND Bettype = 1)    
@@ -268,6 +270,7 @@ Param's Explanation:
 	SET @bitmapOrder_SabaCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 208 AND Bettype = 2101)
 	SET @bitmapOrder_Keno = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 202 AND Bettype = 1501)
 	SET @bitmapOrder_NG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 161 AND Bettype = 81)
+	SET @bitmapOrder_YeeBet = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 159 AND Bettype = 3151)
 
     DECLARE	@IsHidden_MuayThai		INT = 1
 		,	@IsHidden_Esports		INT = 1
@@ -299,6 +302,7 @@ Param's Explanation:
 		,	@IsHidden_SabaCasino	INT = 1
 		,	@IsHidden_Keno	INT = 1
 		,	@IsHidden_NG	INT = 1
+		,	@IsHidden_YeeBet		INT = 1
 
 
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_MuayThai OUTPUT	
@@ -331,6 +335,7 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 202, @IsHide = @IsHidden_Keno OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 161, @IsHide = @IsHidden_NG OUTPUT
+	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 159, @IsHide = @IsHidden_YeeBet OUTPUT
 	
 	--Handle dummy product 41: LiveCasino (Allbet + SAGaming + SexyGaming + BBIN + ION)
 	DECLARE	@DisableAllbet			BIT,
@@ -345,48 +350,53 @@ Param's Explanation:
 			@DisableGTCasino		BIT,
 			@HideGTCasino     		BIT,
 			@SyncedGTCasino			BIT = 1, --always sync
-			@DisableION	BIT,
-			@HideION    	BIT,
-			@SyncedION 	BIT = 1, --always sync
+			@DisableION				BIT,
+			@HideION    			BIT,
+			@SyncedION 				BIT = 1, --always sync
 			@DisableBBIN			BIT,
 			@HideBBIN				BIT,
 			@SyncedBBIN				BIT = 1, --always sync
-			@DisableWM	BIT,
-			@HideWM    	BIT,
-			@SyncedWM 	BIT = 1, --always sync
-			@DisableGDG	BIT,
-			@HideGDG   	BIT,
-			@SyncedGDG 	BIT = 1, --always sync
+			@DisableWM				BIT,
+			@HideWM    				BIT,
+			@SyncedWM 				BIT = 1, --always sync
+			@DisableGDG				BIT,
+			@HideGDG   				BIT,
+			@SyncedGDG 				BIT = 1, --always sync
 			--BG
-			@DisableBG	BIT,
-			@HideBG    	BIT,
-			@SyncedBG 	BIT = 1, --always sync
+			@DisableBG				BIT,
+			@HideBG    				BIT,
+			@SyncedBG 				BIT = 1, --always sync
 			
 			--PPLive
-			@DisablePPLive	BIT,
-			@HidePPLive    	BIT,
-			@SyncedPPLive 	BIT = 1 --always sync
+			@DisablePPLive			BIT,
+			@HidePPLive    			BIT,
+			@SyncedPPLive 			BIT = 1, --always sync
+
+			--YeeBet
+			@DisableYeeBet			BIT,
+			@HideYeeBet    			BIT,
+			@SyncedYeeBet 			BIT = 1	--always sync
 			
 	--Handle dummy product 44: RNG Lottery (Lottery + TableGame + RNGWar)
-	DECLARE	@DisableLottery		BIT,
-			@HideLottery        BIT,
-			@SyncedLottery      BIT = 1, --always sync
-			@DisableTableGames	BIT,
-			@HideTableGames     BIT,
-			@SyncedTableGames   BIT = 1, --always sync
-			@DisableRNGWar	BIT,
-			@HideRNGWar    BIT,
-			@SyncedRNGWar   BIT = 1, --always sync
+	DECLARE	@DisableLottery			BIT,
+			@HideLottery			BIT,
+			@SyncedLottery			BIT = 1, --always sync
+			@DisableTableGames		BIT,
+			@HideTableGames			BIT,
+			@SyncedTableGames		BIT = 1, --always sync
+			@DisableRNGWar			BIT,
+			@HideRNGWar				BIT,
+			@SyncedRNGWar			BIT = 1, --always sync
 			--Sports Lottery
 			@DisableSportsLottery	BIT,
 			@HideSportsLottery    	BIT,
 			@SyncedSportsLottery 	BIT = 1, --always sync,
-			@DisableKeno	BIT,
-			@HideKeno	BIT,
-			@SyncKeno BIT = 1,
-			@DisableNG	BIT,
-			@HideNG	BIT,
-			@SyncNG BIT = 1
+			@DisableKeno			BIT,
+			@HideKeno				BIT,
+			@SyncKeno				BIT = 1,
+			@DisableNG				BIT,
+			@HideNG					BIT,
+			@SyncNG					BIT = 1
 
 	
 	--Handle dummy product 64: Virtual Games (Virtual Games + FGG)	
@@ -439,6 +449,9 @@ Param's Explanation:
 	-- For PPLive
 		@DisablePPLive = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_PPLive)), 1),	
 		@HidePPLive  = CAST(CASE WHEN @IsHidden_PPLive = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_PPLive)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
+	-- For YeeBet
+		@DisableYeeBet = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_YeeBet)), 1),	
+		@HideYeeBet  = CAST(CASE WHEN @IsHidden_YeeBet = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_YeeBet)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 		
 	-- For VG
 		@DisableVirtualGames = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VG)), 1),		
@@ -507,9 +520,9 @@ Param's Explanation:
 		
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION + GDG)
-			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 OR @DisableWM = 0 OR @DisableGDG = 0 OR @DisableBG = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
-			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 OR @HideION = 0 OR @HideWM = 0 OR @HideGDG = 0 OR @HideBG = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
-			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 OR @SyncedWM = 1 OR @SyncedGDG = 1 OR @SyncedBG = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
+			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 OR @DisableWM = 0 OR @DisableGDG = 0 OR @DisableBG = 0 OR @DisableYeeBet = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
+			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 OR @HideION = 0 OR @HideWM = 0 OR @HideGDG = 0 OR @HideBG = 0 OR @HideYeeBet = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
+			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 OR @SyncedWM = 1 OR @SyncedGDG = 1 OR @SyncedBG = 1 OR @SyncedYeeBet = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
 			-- For Allbet
 			@DisableAllbet AS DisableAllbet,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)), 1) AS DisableAllBetVIP,
@@ -535,6 +548,10 @@ Param's Explanation:
 			@DisableBBIN AS DisableBBIN,
 			@HideBBIN AS HideBBIN,
 			@SyncedBBIN AS SyncedBBIN,
+			--For YeeBet
+			@DisableYeeBet AS DisableYeeBet,
+			@HideYeeBet AS HideYeeBet,
+			@SyncedYeeBet AS SyncedYeeBet,
 
 			-- For FishingWorld
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)), 1) AS DisableFishingWorld,		
