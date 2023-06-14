@@ -17,6 +17,8 @@ AS
 		- 20210830@Eden: Max Payout Per Match [redmine: #158073]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20230307@VN-Johnson: Return Basketball VR to its original state [redmine:#184339]
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -238,6 +240,7 @@ BEGIN
 			,@UserID = 0
 			,@VRLockedStatus_Soccer = 1
 			,@VRLockedStatus_OS = 1
+			,@VRLockedStatus_Basketball = 1	
 			,@IP = ''
 			,@UpdateBy = 'Agent profile check'
 
