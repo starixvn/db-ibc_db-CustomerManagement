@@ -1,12 +1,13 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitCheck] 
 	-- Add the parameters for the stored procedure here
-	 @InputData				VARCHAR(MAX)=''
-	, @ProductID			TINYINT=0			OUTPUT
-	, @NotiCode				INT=0				OUTPUT
-	, @NotiMsg				NVARCHAR(4000)=''	OUTPUT
-	, @ErrCode				INT=0				OUTPUT
-	, @ErrMsg				NVARCHAR(4000)=''	OUTPUT
+	 @InputData		VARCHAR(MAX)=''
+	, @IsCheck		BIT = 0		
+	, @ProductID	TINYINT=0			OUTPUT
+	, @NotiCode		INT=0				OUTPUT
+	, @NotiMsg		NVARCHAR(4000)=''	OUTPUT
+	, @ErrCode		INT=0				OUTPUT
+	, @ErrMsg		NVARCHAR(4000)=''	OUTPUT
 AS
 /*
 	Task : NAP - Flexible Initializing Stake Level/Bet Limit
@@ -20,8 +21,11 @@ AS
 		- 22021227@Tacy: Apply SettingType  [Redmine: #174509] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230308@Tacy: NAP - Enhance function - Support dummy sport [RedmineID: #183826]
+		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
 
 	Param's Explanation:
+		• @IsCheck : 0 ~ not allow insert deposit's single stakelevel with SiteID=NULL
+					 1 ~ allow insert deposit's single stakelevel with SiteID=NULL
 		• @pInputData : 
 		<ROOT>
 			<BetLimit 
@@ -90,12 +94,14 @@ BEGIN
 			, GameGroupID		INT
 			, IsCredit			BIT Default((0))
 			, SettingType		SMALLINT
-			, ProductID		TINYINT
+			, ProductID			TINYINT
+			, StakeLevelID		INT
 		)
 	
 	CREATE TABLE #Bettype (typeid INT PRIMARY KEY, typenamee NVARCHAR(128), typedesc NVARCHAR(128))
 	CREATE TABLE #Sports(SportType SMALLINT PRIMARY KEY, SportName NVARCHAR(50))
 	CREATE TABLE #Currency(Currency	VARCHAR(50))
+	CREATE TABLE #SettingDuplicate(SettingRows VARCHAR(50))
 	CREATE TABLE #RowDuplicate(RowIDF INT, RowIDT INT)
 	
 	IF @InputData IS NULL OR @InputData=''
@@ -243,6 +249,43 @@ BEGIN
 	WHERE a.IsCredit=0 AND (ps.SettingType = 8 OR (ps.SettingType IN (7, 2, 10, 11, 12) AND a.BetType=psd.BetType))
 		AND psd.SettingStatus<>2
 
+	--UPDATE: StakeLevelID (SettingType IN (7,8,17))
+	UPDATE a	--CREDIT
+	SET a.StakeLevelID=sl.StakeLevelID
+	FROM #NewInputDateTbl a
+		INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.GameTypeID = a.OrgBetType 
+												AND a.ExchangeId = sl.ExchangeId 
+												AND a.GameGroupID = sl.GameGroupID
+												AND a.CurMinBet = sl.MinStake
+												AND a.CurMaxBet = sl.MaxStake
+	WHERE a.IsCredit = 1 AND SettingType IN (7,17) 
+
+	UPDATE a	--CREDIT
+	SET a.StakeLevelID=sl.StakeLevelID
+	FROM #NewInputDateTbl a
+		INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.GameTypeID = a.OrgBetType 
+												AND a.ExchangeId = sl.ExchangeId 
+												AND a.GameGroupID = sl.GameGroupID
+	WHERE a.IsCredit = 1 AND SettingType IN (8) 
+
+	UPDATE a	--DEPOSIT
+	SET a.StakeLevelID=sl.StakeLevelID
+	FROM #NewInputDateTbl a
+		INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.GameTypeID = a.OrgBetType 
+												AND a.ExchangeId = sl.ExchangeId 
+												AND a.GameGroupID = sl.GameGroupID
+												AND ISNULL(sl.SiteID,0) = a.SiteID
+												AND a.CurMinBet = sl.MinStake
+												AND a.CurMaxBet = sl.MaxStake
+	WHERE a.IsCredit = 1 AND SettingType IN (7) 
+
+	UPDATE a	--DEPOSIT
+	SET a.StakeLevelID=sl.StakeLevelID
+	FROM #NewInputDateTbl a
+		INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.GameTypeID = a.OrgBetType 
+												AND a.ExchangeId = sl.ExchangeId 
+												AND a.GameGroupID = sl.GameGroupID
+	WHERE a.IsCredit = 0 AND SettingType IN (8) 
 	-------------------------------------------------------------------------------------------------------------------------------------------------
 	SELECT TOP (1)
 			@ErrCode=CASE WHEN NewMinBet IS NULL										THEN 133
@@ -360,11 +403,11 @@ BEGIN
 	END
 
 	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
-	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl WHERE SportType<>@SportType OR (@BetType<>OrgBetType AND SettingType IN (7, 17, 8)))	
+	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl WHERE ProductID<>@ProductID)	
 	BEGIN
 		SELECT @ErrCode=121	
 		SELECT TOP(1) @ErrMsg='Row ' + CAST(RowID AS VARCHAR(10)) + ' : You can only upload setting for one product at a time.' 
-		FROM #NewInputDateTbl WHERE SportType<>@SportType OR (@BetType<>OrgBetType AND SettingType IN (7, 17, 8))
+		FROM #NewInputDateTbl WHERE ProductID<>@ProductID
 		ORDER BY RowID 
 		RETURN
 	END	
@@ -404,20 +447,35 @@ BEGIN
 		RETURN
 	END
 	
-	SELECT TOP(1) @ErrCode=124, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SiteID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
-	FROM #NewInputDateTbl tmp
-	WHERE tmp.SettingType=7 AND tmp.IsCredit=0 AND (tmp.SiteID=0 OR (tmp.SiteID<>0 
-		AND NOT EXISTS(SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid= tmp.SiteID AND IsActive=1 AND isLicensee =1 AND isDeposit=1)))
-	IF 	@ErrCode=124			
+	IF @IsCheck=0
 	BEGIN
-		SELECT @ErrMsg='Row ' + @RowError+ ': The Site ' + @ValueError + ' does not exist.' 
-		RETURN
+		SELECT TOP(1) @ErrCode=124, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SiteID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
+		FROM #NewInputDateTbl tmp
+		WHERE tmp.SettingType=7 AND tmp.IsCredit=0 AND (tmp.SiteID=0 OR (tmp.SiteID<>0 
+			AND NOT EXISTS(SELECT TOP 1 1 FROM Site WITH(NOLOCK) WHERE siteid= tmp.SiteID AND IsActive=1 AND isLicensee =1 AND isDeposit=1)))
+		IF 	@ErrCode=124			
+		BEGIN
+			SELECT @ErrMsg='Row ' + @RowError+ ': The Site ' + @ValueError + ' does not exist.' 
+			RETURN
+		END
+	END
+	ELSE
+	BEGIN
+		SELECT TOP(1) @ErrCode=128, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.SiteID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
+		FROM #NewInputDateTbl tmp
+		WHERE tmp.SettingType=7 AND tmp.IsCredit=0 AND tmp.SiteID<>0
+		IF 	@ErrCode=128			
+		BEGIN
+			SELECT @ErrMsg='Row ' + @RowError+ ': Can not import Global Settings for specific Deposit site.' 
+			RETURN
+		END
 	END
 	
 	--Game Group ID
 	SELECT TOP(1) @ErrCode=116, @ErrBetType=CAST(tmp.BetType AS VARCHAR(10)), @ValueError=CAST(tmp.GameGroupID AS VARCHAR(200)), @RowError=CAST(tmp.RowID AS VARCHAR(200))
 	FROM #NewInputDateTbl tmp
-	WHERE tmp.SettingType IN (8) AND ISNULL(tmp.GameGroupID, 0)=0
+	WHERE (tmp.SettingType IN (8) AND ISNULL(tmp.GameGroupID, 0)=0)
+		OR (tmp.SettingType IN (7) AND tmp.GameGroupID IS NULL)
 
 	IF 	@ErrCode=116			
 	BEGIN
@@ -517,15 +575,11 @@ BEGIN
 		LEFT JOIN #Bettype b ON b.typeid=tmp.BetType
 	WHERE CurMinBet IS NOT NULL AND 
 	(   (IsCredit=1 AND tmp.SettingType IN (7, 17) 
-					AND (NOT EXISTS	(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet)
-						OR NOT EXISTS(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
+					AND (NOT EXISTS(SELECT TOP 1 1 FROM StakeLevel WITH(NOLOCK) 
 									  WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
 	OR  (IsCredit=0 AND tmp.SettingType IN (7) 
-					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND (MinStake=CurMinBet ))
-							OR NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel WITH(NOLOCK) 
-										  WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
+					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevel sl WITH(NOLOCK) 
+										  WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId AND tmp.SiteID=ISNULL(sl.SiteID,0) AND MinStake=CurMinBet AND MaxStake=CurMaxBet)))
 	OR  (IsCredit=1 AND tmp.SettingType IN (2, 9, 16, 20) 
 					AND ((NOT EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH (NOLOCK)
 									  WHERE pbs.Sporttype=tmp.SportType AND pbs.Bettype=tmp.BetType AND pbs.Currency=tmp.ExchangeId 
@@ -538,12 +592,14 @@ BEGIN
 											AND ISNULL(pbs.MaxPerBall,0)=ISNULL(tmp.CurMaxPerBall,0)))))
 	OR	(IsCredit=1 AND tmp.SettingType=8
 					AND (NOT EXISTS (SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
+									 INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=slg.StakeLevelID
+									 WHERE BetType=slg.GameTypeID AND sl.ExchangeId=tmp.ExchangeId AND tmp.GameGroupID=sl.GameGroupID
+										AND slg.MinStake=CurMinBet AND slg.MaxStake=CurMaxBet AND ISNULL(slg.MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
 	OR  (IsCredit=0 AND tmp.SettingType=8 
-					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail WITH(NOLOCK) 
-									 WHERE BetType=GameTypeID AND ExchangeId=tmp.ExchangeId 
-										AND MinStake=CurMinBet AND MaxStake=CurMaxBet AND ISNULL(MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
+					 AND (NOT EXISTS(SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail slg WITH(NOLOCK)
+									 INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=slg.StakeLevelID
+									 WHERE BetType=slg.GameTypeID AND sl.ExchangeId=tmp.ExchangeId AND tmp.GameGroupID=sl.GameGroupID
+										AND slg.MinStake=CurMinBet AND slg.MaxStake=CurMaxBet AND ISNULL(slg.MaxGameStake,0)=ISNULL(CurMaxGameStake,0))))
 	)
 
 	IF 	@ErrCode=112			
@@ -557,6 +613,7 @@ BEGIN
 	WHERE tmp.SettingType IN (8) AND NOT EXISTS(SELECT TOP 1 1 FROM GameGroup WITH(NOLOCK) 
 													 WHERE RefSportType= tmp.SportType AND RefBetType=OrgBetType AND GameGroupID=tmp.GameGroupID
 														AND ((tmp.IsCredit=1 AND IsDeposit=0) OR (tmp.IsCredit=0 AND IsDeposit=1)))
+		OR (tmp.SettingType IN (7) AND GameGroupID<>0)
 	IF 	@ErrCode=114
 	BEGIN
 		SELECT @ErrMsg='Row ' + @RowError+ ': The Game Group ID ' + @ValueError + ' of bet type ' + @ErrBetType + ' does not exist.' 
@@ -617,7 +674,45 @@ BEGIN
 		FROM #Currency
 		FOR XML PATH('')), 1, 1, '')
 	END
+
+	--Already setting
+	SELECT TOP(1) @ErrCode=129, @ValueError=CAST(KQ.RowID AS VARCHAR(200))
+	FROM 
+	(	SELECT RowID 
+		FROM #NewInputDateTbl a
+			LEFT JOIN #Bettype b ON b.typeid=a.BetType
+		WHERE a.IsCredit= 1 
+			AND (EXISTS (SELECT TOP 1 1 FROM StakeLevelGroupDetail slg WITH (NOLOCK)
+						 WHERE a.StakeLevelID=slg.StakeLevelID AND a.BetType=slg.GameTypeID
+							AND (a.CurMinBet IS NULL OR a.CurMaxBet IS NULL OR 
+								(a.CurMaxGameStake IS NULL AND b.typedesc='BuyBonus')))
+				OR EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK)
+							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
+								AND (a.CurMinBet IS NULL OR a.CurMaxBet IS NULL OR a.CurMaxPerMatch IS NULL))
+			)
+		UNION ALL
+		SELECT RowID 
+		FROM #NewInputDateTbl a
+			LEFT JOIN #Bettype b ON b.typeid=a.BetType
+		WHERE a.IsCredit= 0  
+			AND (EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevelGroupDetail slg WITH (NOLOCK)
+						 WHERE a.StakeLevelID=slg.StakeLevelID AND a.BetType=slg.GameTypeID
+							AND (a.CurMinBet IS NULL OR a.CurMaxBet IS NULL OR 
+								(a.CurMaxGameStake IS NULL AND b.typedesc='BuyBonus')))
+				OR EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
+							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
+								AND (a.CurMinBet IS NULL OR a.CurMaxBet IS NULL OR 
+									(a.CurMaxPerMatch IS NULL AND a.SettingType<>11) OR 
+									(a.CurMaxPerBall IS NULL AND a.ProductID=3))
+							))
+	) KQ
 	
+	IF 	@ErrCode=129			
+	BEGIN
+		SELECT @ErrMsg='Row ' + @ValueError + ': This row had the current setting already. Please input data on the Current columns for updating purposes.' 
+		RETURN
+	END	
+
 	--RowDuplicate
 	INSERT INTO #RowDuplicate(RowIDF, RowIDT)
 	--MinBet, MaxBet
@@ -668,6 +763,40 @@ BEGIN
 		RETURN
 	END	
 	
+	--Upload more than 1 setting line with the same primary keys
+	--Duplicate setting
+	INSERT INTO #SettingDuplicate (SettingRows)
+	SELECT STUFF((STUFF((SELECT ' - row ' + CAST(RowID AS varchar(10))
+						 FROM #NewInputDateTbl b
+						 WHERE a.SportType=b.SportType
+						 AND a.bettype=b.bettype
+						 AND a.Currency=b.Currency 
+						 FOR XML PATH('')), 1, 1, '')),1,2,'') AS t
+	FROM #NewInputDateTbl a
+	WHERE a.StakeLevelID IS NULL AND a.SettingType NOT IN (7,17)
+	GROUP BY SportType, bettype, Currency
+	HAVING COUNT(1)>1
+	UNION 
+	SELECT STUFF((STUFF((SELECT ' - row ' + CAST(RowID AS varchar(10))
+						 FROM #NewInputDateTbl b
+						 WHERE a.StakeLevelID=b.StakeLevelID
+						 AND a.bettype=b.bettype
+						 FOR XML PATH('')), 1, 1, '')),1,2,'') AS t
+	FROM #NewInputDateTbl a
+	WHERE a.StakeLevelID IS NOT NULL
+	GROUP BY StakeLevelID, bettype
+	HAVING COUNT(1)>1
+
+	IF 	EXISTS(	SELECT TOP 1 1 FROM #SettingDuplicate )			
+	BEGIN
+		SELECT @ErrCode=130
+		SELECT @ErrMsg=STUFF((SELECT ', ' + SettingRows 
+								FROM #SettingDuplicate tmp
+								FOR XML PATH('')), 1, 1, '') + ': You can only upload 1 set of setting values. Please remove redundant data row(s).' 
+
+		RETURN
+	END	
+
 	--EXISTED
 	SELECT TOP(1) @ErrCode=123, @ValueError=CAST(KQ.RowID AS VARCHAR(200))
 	FROM 
@@ -681,7 +810,7 @@ BEGIN
 				OR EXISTS (SELECT TOP 1 1 
 							FROM StakeLevelGroupDetail tmp WITH(NOLOCK) 
 								INNER JOIN StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
-							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
+							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND a.GameGroupID=sl.GameGroupID
 							 AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
 				OR EXISTS (SELECT TOP 1 1 FROM ProductBetSetting pbs WITH(NOLOCK)
 							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId
@@ -693,12 +822,12 @@ BEGIN
 		WHERE a.IsCredit= 0  
 			AND ( EXISTS (SELECT TOP 1 1 FROM Dep_StakeLevel tmp WITH(NOLOCK) 
 							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=tmp.ExchangeId 
-							AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND tmp.SiteID=a.SiteID
+							AND a.NewMinBet=MinStake AND a.NewMaxBet=MaxStake AND ISNULL(tmp.SiteID,0)=a.SiteID
 							AND A.GameGroupID=0)
 				OR EXISTS (SELECT TOP 1 1 
 							FROM Dep_StakeLevelGroupDetail tmp WITH(NOLOCK) 
 							INNER JOIN Dep_StakeLevel sl WITH (NOLOCK) ON sl.StakeLevelID=tmp.StakeLevelID
-							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND A.GameGroupID<>0
+							WHERE tmp.GameTypeID=a.BetType AND a.ExchangeId=sl.ExchangeId AND a.GameGroupID=sl.GameGroupID
 								AND a.NewMinBet=tmp.MinStake AND a.NewMaxBet=tmp.MaxStake AND ISNULL(a.NewMaxGameStake,0)=ISNULL(MaxGameStake,0))
 				OR EXISTS (SELECT TOP 1 1 FROM Dep_ProductBetSetting pbs WITH(NOLOCK)
 							WHERE pbs.Sporttype=a.SportType AND pbs.Bettype=a.BetType AND pbs.Currency=a.ExchangeId

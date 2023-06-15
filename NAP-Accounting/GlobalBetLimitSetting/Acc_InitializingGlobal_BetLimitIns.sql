@@ -20,6 +20,8 @@ AS
 		- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 		- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
+
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -141,7 +143,9 @@ BEGIN
 										NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake,
 										CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake,
 										GameGroupID)
-		SELECT	SportType, BetType, Site, CreditCurrency, DepositCurrency, 
+		SELECT	SportType, BetType, 
+				CASE WHEN Site=0						THEN NULL ELSE Site		END Site,
+				CreditCurrency, DepositCurrency, 
 				CASE WHEN ISNUMERIC(NewMinBet)=0		THEN NULL ELSE NewMinBet		END NewMinBet,
 				CASE WHEN ISNUMERIC(NewMaxBet)=0		THEN NULL ELSE NewMaxBet		END NewMaxBet, 
 				CASE WHEN ISNUMERIC(NewMaxPerMatch)=0	THEN NULL ELSE NewMaxPerMatch	END NewMaxPerMatch, 
