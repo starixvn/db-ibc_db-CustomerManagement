@@ -18,6 +18,7 @@ AS
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
+		- 20230420@Tacy: Alpha - Enhance My Watchlist & Problem Accounts to allow SMA control risk effectively [RedmineID: 185312]
 
 	Param's Explanation:  	
 		- @SortType : ( order by)
@@ -27,6 +28,7 @@ AS
 			4: WinningThreshold
 			5: LosingThreshold
 			6: firstname/lastname
+			7: Problem Account
 
 	DECLARE @TotalItems INT
 	EXEC Acc_WLMonitored_Player_WatchList_Sel 
@@ -55,6 +57,7 @@ BEGIN
 		recommend			INT,
 		Locked				TINYINT,
 		ClosedReason		TINYINT,
+		IsPA				BIT,
 		RowNumber			INT IDENTITY(1,1)
 	)
 
@@ -69,6 +72,7 @@ BEGIN
 		recommend			INT,
 		Locked				TINYINT,
 		ClosedReason		TINYINT,
+		IsPA				BIT,
 		RowNumber			INT IDENTITY(1,1)
 	)
 
@@ -83,8 +87,10 @@ BEGIN
 		,recommend	
 		,Locked
 		,ClosedReason
+		,IsPA
 	)
-	SELECT ci.custid,
+	SELECT  
+		ci.custid,
 		ci.username,
 		CASE WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN firstname + '/ ' + lastname
 			 WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND (c.lastname IS NULL	OR c.lastname IN ('NULL',''))		THEN firstname
@@ -102,17 +108,22 @@ BEGIN
 		per.LosingThreshold,
 		ci.recommend,
 		ISNULL(cs.Locked,0),
-		ISNULL(lg.ClosedReason,0)
+		ISNULL(lg.ClosedReason,0),
+		CASE WHEN p.custid IS NOT NULL AND cc.CustomerClass IS NOT NULL
+			 THEN 1 ELSE 0
+		END IsPA
 	FROM WLMonitored_Player per WITH(NOLOCK) 
 		INNER JOIN custInfo ci WITH(NOLOCK) ON per.custid = ci.custid AND ci.roleid = 1
 		INNER JOIN customer c WITH(NOLOCK) ON ci.custid = c.custid
+		LEFT JOIN ProblemAccountClassification p WITH(NOLOCK) ON per.custid = p.custid	--Problem Account
+		OUTER APPLY (SELECT TOP 1 cc.CustomerClass FROM CategoryConfig cc WITH (NOLOCK) WHERE cc.CustomerClass=ci.CustomerClass AND HiddenSite NOT IN (1,3)) cc
 		LEFT JOIN CustLoginInfo_Member lg WITH(NOLOCK) ON lg.CustID = ci.custid
 		CROSS APPLY  (	SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 							, Locked
 						FROM dbo.CustProductStatus WITH(NOLOCK)
 						WHERE CustID = ci.custid
-					) AS cs	
+					) AS cs
 	WHERE per.agentID = @AgentID
 		AND per.Sporttype = @Sporttype
 		AND ci.username LIKE  '%' + ISNULL(@Username,'') + '%'
@@ -128,10 +139,11 @@ BEGIN
 		,LosingThreshold
 		,Locked
 		,ClosedReason
+		,IsPA
 	)
-	SELECT CustID				
-		,recommend			
-		,username
+	SELECT t.CustID				
+		,t.recommend			
+		,t.username
 		,firstlastname
 		,lastlogged			
 		,Status				
@@ -139,26 +151,30 @@ BEGIN
 		,LosingThreshold	
 		,Locked
 		,ClosedReason
-	FROM #Temp
-	ORDER BY	CASE WHEN @SortType = 1 AND @IsDesc = 0 THEN username END ASC,
+		,IsPA
+	FROM #Temp t
+	ORDER BY	CASE WHEN @SortType = 1 AND @IsDesc = 0 THEN t.username END ASC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 0 THEN lastlogged END ASC,
 				CASE WHEN @SortType = 3 AND @IsDesc = 0 THEN Status END ASC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 0 THEN WinningThreshold END ASC,
 				CASE WHEN @SortType = 5 AND @IsDesc = 0 THEN LosingThreshold END ASC,
 				CASE WHEN @SortType = 6 AND @IsDesc = 0 THEN firstlastname END ASC,
+				CASE WHEN @SortType = 7 AND @IsDesc = 0 THEN IsPA END ASC,
+
 				-----------
-				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN username END DESC,
+				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN t.username END DESC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 1 THEN lastlogged END DESC,
 				CASE WHEN @SortType = 3 AND @IsDesc = 1 THEN Status END DESC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 1 THEN WinningThreshold END DESC,
 				CASE WHEN @SortType = 5 AND @IsDesc = 1 THEN LosingThreshold END DESC,
 				CASE WHEN @SortType = 6 AND @IsDesc = 1 THEN firstlastname END DESC,
-				Username ASC
+				CASE WHEN @SortType = 7 AND @IsDesc = 1 THEN IsPA END DESC,
+				t.Username ASC
 
 	SELECT @TotalItems = COUNT(1) 
 	FROM #Temp2
 
-	SELECT CustID				
+	SELECT t.CustID				
 		,recommend			
 		,username		
 		,firstlastname
@@ -168,8 +184,9 @@ BEGIN
 		,LosingThreshold
 		,Locked
 		,ClosedReason
+		,IsPA
 		,RowNumber
-	FROM  #Temp2 
+	FROM  #Temp2 t
 	WHERE RowNumber BETWEEN @rowstart AND @rowend
 	ORDER BY RowNumber
 
