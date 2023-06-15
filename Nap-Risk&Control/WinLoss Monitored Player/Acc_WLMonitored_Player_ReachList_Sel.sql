@@ -20,6 +20,7 @@ AS
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
+		- 20230420@Tacy: Alpha - Enhance My Watchlist & Problem Accounts to allow SMA control risk effectively [RedmineID: 185312]
 
 	Param's Explanation:  	
 		- @LimitType : 
@@ -30,7 +31,6 @@ AS
 				Disabled
 				Closed
 				Suspended
-				Locked
 				Open
 		- @SortType : ( order by)
 			1: Username (default)
@@ -43,6 +43,7 @@ AS
 			8: LastReachLosingThreshold
 			9: NoOfReach
 			10:first/lastname
+			11: Problem Account
 
 	DECLARE @TotalItems INT
 	EXEC Acc_WLMonitored_Player_ReachList_Sel 
@@ -97,7 +98,8 @@ BEGIN
 		ClosedReason		TINYINT,
 		ReachedCnt			INT,
 		[WinningReachedCnt] [int],
-		[LosingReachedCnt]  [int]
+		[LosingReachedCnt]  [int],
+		IsPA				BIT
 	)
 	CREATE TABLE #Temp2(
 		CustID				INT,
@@ -116,7 +118,8 @@ BEGIN
 		ReachedCnt			INT,
 		RowNumber			INT IDENTITY(1,1),
 		[WinningReachedCnt] [int],
-		[LosingReachedCnt]  [int]
+		[LosingReachedCnt]  [int],
+		IsPA				BIT
 	)
 
 	DECLARE @DocHandler INT	
@@ -162,6 +165,7 @@ BEGIN
 		,ClosedReason
 		,WinningReachedCnt
 		,LosingReachedCnt
+		,IsPA
 	)
 	SELECT ci.custid,
 		ci.recommend,
@@ -175,7 +179,6 @@ BEGIN
 		CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 			 WHEN cs.closed = 1 THEN 'Closed'
 			 WHEN cs.reject = 1 THEN 'Suspended'
-			 WHEN cs.Locked > 0 THEN 'Locked'
 			 ELSE 'Open'
 			END AS Status,
 		his.CreatedDate AS LastReachedDate,
@@ -187,10 +190,15 @@ BEGIN
 		ISNULL(cs.Locked,0),		
 		ISNULL(lg.ClosedReason,0),
 		his.WinningReachedCnt,
-		his.LosingReachedCnt
+		his.LosingReachedCnt,
+		CASE WHEN p.custid IS NOT NULL AND cc.CustomerClass IS NOT NULL
+			 THEN 1 ELSE 0
+		END IsPA
 	FROM custInfo ci WITH(NOLOCK)
 		INNER JOIN customer c WITH(NOLOCK) ON ci.custid = c.custid
 		LEFT JOIN CustLoginInfo_Member lg WITH(NOLOCK) ON lg.CustID = ci.custid
+		LEFT JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid	--Problem Account
+		OUTER APPLY (SELECT TOP 1 cc.CustomerClass FROM CategoryConfig cc WITH (NOLOCK) WHERE cc.CustomerClass=ci.CustomerClass AND HiddenSite NOT IN (1,3)) cc
 		CROSS APPLY  (	SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 							, Locked
@@ -206,7 +214,6 @@ BEGIN
 		AND (	CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 					 WHEN cs.closed = 1 THEN 'Closed'
 					 WHEN cs.reject = 1 THEN 'Suspended'
-					 WHEN cs.Locked > 0 THEN 'Locked'
 					 ELSE 'Open'
 					 END = @Status
 				OR ISNULL(@Status,'') = ''	
@@ -229,10 +236,11 @@ BEGIN
 		,ClosedReason
 		,WinningReachedCnt
 		,LosingReachedCnt
+		,IsPA
 	)
-	SELECT CustID				
-		,recommend			
-		,username	
+	SELECT t.CustID				
+		,t.recommend			
+		,t.username	
 		, firstlastname
 		,lastlogged			
 		,Status				
@@ -246,8 +254,9 @@ BEGIN
 		,ClosedReason
 		,WinningReachedCnt
 		,LosingReachedCnt
-	FROM #Temp
-	ORDER BY	CASE WHEN @SortType = 1 AND @IsDesc = 0 THEN username END ASC,
+		,IsPA 
+	FROM #Temp t
+	ORDER BY	CASE WHEN @SortType = 1 AND @IsDesc = 0 THEN t.username END ASC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 0 THEN lastlogged END ASC,
 				CASE WHEN @SortType = 3 AND @IsDesc = 0 THEN Status END ASC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 0 THEN LastReachedDate END ASC,
@@ -257,8 +266,10 @@ BEGIN
 				CASE WHEN @SortType = 8 AND @IsDesc = 0 THEN LosingThreshold END ASC,
 				CASE WHEN @SortType = 9 AND @IsDesc = 0 THEN ReachedCnt END ASC,
 				CASE WHEN @SortType = 10 AND @IsDesc = 0 THEN firstlastname END ASC,
+				CASE WHEN @SortType = 11 AND @IsDesc = 0 THEN IsPA END ASC,
+
 				-----------
-				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN username END DESC,
+				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN t.username END DESC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 1 THEN lastlogged END DESC,
 				CASE WHEN @SortType = 3 AND @IsDesc = 1 THEN Status END DESC,
 				CASE WHEN @SortType = 4 AND @IsDesc = 1 THEN LastReachedDate END DESC,
@@ -268,7 +279,8 @@ BEGIN
 				CASE WHEN @SortType = 8 AND @IsDesc = 1 THEN LosingThreshold END DESC,
 				CASE WHEN @SortType = 9 AND @IsDesc = 1 THEN ReachedCnt END DESC,
 				CASE WHEN @SortType = 10 AND @IsDesc = 1 THEN firstlastname END DESC,
-				Username ASC, LastReachedDate DESC
+				CASE WHEN @SortType = 11 AND @IsDesc = 1 THEN IsPA END DESC,
+				t.Username ASC, LastReachedDate DESC
 
 	SELECT @TotalItems = COUNT(1) 
 	FROM #Temp2
@@ -290,6 +302,7 @@ BEGIN
 		,RowNumber
 		,WinningReachedCnt
 		,LosingReachedCnt
+		,IsPA
 	FROM  #Temp2
 	WHERE RowNumber BETWEEN @rowstart AND @rowend
 	ORDER BY RowNumber
