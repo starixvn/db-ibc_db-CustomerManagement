@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230613@Luke: Option to apply Seize Bet if reach risk balance [Redmine: #187771]
 
 	Param's Explanation:
 	* @Rules:
@@ -35,6 +36,7 @@ AS
 				MaxPerMatch =11 
 				RepeatedBets =5  
 				SeizeBetTicket = 9  
+				SeizeBetAccumulateBal = 0
 				EnableParlay = 1  
 				PeakHourSpreadAdjustment = 5 
 				AgentBetInterval = 6
@@ -61,12 +63,12 @@ BEGIN
 	CREATE TABLE #CustomerClassRule( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
-			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
+			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT, SeizeBetAccumulateBal BIT,
 			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
 	CREATE TABLE #CustomerClassRule_History( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
-			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
+			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT, SeizeBetAccumulateBal BIT,
 			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
 	CREATE TABLE #CustomerClassRuleLeagueGroup_History( RuleID INT, LeagueGroupID SMALLINT)
 
@@ -87,7 +89,8 @@ BEGIN
 					 ,	MaxBet 					
 					 ,	MaxPerMatch 				
 					 ,	RepeatedBets 				
-					 ,	SeizeBetTicket 			
+					 ,	SeizeBetTicket
+					 ,	SeizeBetAccumulateBal
 					 ,	EnableParlay 			  
 					 ,	PeakHourSpreadAdjustment 
 					 ,	AgentBetInterval
@@ -107,7 +110,8 @@ BEGIN
 			,	CASE WHEN Data.MaxBet = '' THEN null ELSE  CAST(Data.MaxBet AS INT) END AS MaxBet 					
 			,	CASE WHEN Data.MaxPerMatch = '' THEN null ELSE  CAST(Data.MaxPerMatch AS INT) END AS MaxPerMatch 				
 			,	CASE WHEN Data.RepeatedBets = '' THEN null ELSE  CAST(Data.RepeatedBets AS TINYINT) END AS RepeatedBets 				
-			,	CASE WHEN Data.SeizeBetTicket = '' THEN null ELSE  CAST(Data.SeizeBetTicket AS TINYINT) END AS SeizeBetTicket 			
+			,	CASE WHEN Data.SeizeBetTicket = '' THEN null ELSE  CAST(Data.SeizeBetTicket AS TINYINT) END AS SeizeBetTicket 
+			,	CASE WHEN Data.SeizeBetAccumulateBal = '' THEN 0 ELSE CAST(Data.SeizeBetAccumulateBal AS BIT) END AS SeizeBetAccumulateBal	
 			,	CASE WHEN Data.EnableParlay = '' THEN null ELSE  CAST(Data.EnableParlay AS BIT) END AS EnableParlay 			 
 			,	CASE WHEN Data.PeakHourSpreadAdjustment = '' THEN null ELSE  CAST(Data.PeakHourSpreadAdjustment 	AS SMALLINT)		END AS PeakHourSpreadAdjustment 
 			,	CASE WHEN Data.AgentBetInterval = '' THEN null ELse  CAST(Data.AgentBetInterval AS SMALLINT) END AS AgentBetInterval			  
@@ -129,7 +133,8 @@ BEGIN
 			 MaxBet 					VARCHAR(20),       
 			 MaxPerMatch 				VARCHAR(20),       
 			 RepeatedBets 				VARCHAR(20),       
-			 SeizeBetTicket 			VARCHAR(20),       
+			 SeizeBetTicket 			VARCHAR(20),
+			 SeizeBetAccumulateBal		CHAR(1),
 			 EnableParlay 				VARCHAR(1),        
 			 PeakHourSpreadAdjustment 	VARCHAR(20),    
 			 AgentBetInterval		 	VARCHAR(20), 
@@ -211,7 +216,8 @@ BEGIN
 		,a.MaxBet 					=   b.MaxBet 					
 		,a.MaxPerMatch 				=   b.MaxPerMatch 				
 		,a.RepeatedBets 			=   b.RepeatedBets 			
-		,a.SeizeBetTicket 			=   b.SeizeBetTicket 			
+		,a.SeizeBetTicket 			=   b.SeizeBetTicket 
+		,a.SeizeBetAccumulateBal	=	b.SeizeBetAccumulateBal
 		,a.EnableParlay 			=   b.EnableParlay 			 
 		,a.PeakHourSpreadAdjustment =   b.PeakHourSpreadAdjustment
 		,a.AgentBetInterval			=   b.AgentBetInterval
@@ -229,7 +235,8 @@ BEGIN
 		,	deleted.MaxBet 					
 		,	deleted.MaxPerMatch 				
 		,	deleted.RepeatedBets 				
-		,	deleted.SeizeBetTicket 			
+		,	deleted.SeizeBetTicket 
+		,	deleted.SeizeBetAccumulateBal
 		,	deleted.EnableParlay 		
 		,	deleted.PeakHourSpreadAdjustment 
 		,	deleted.AgentBetInterval 			  
@@ -248,7 +255,8 @@ BEGIN
 			 ,	MaxBet 					
 			 ,	MaxPerMatch 				
 			 ,	RepeatedBets 				
-			 ,	SeizeBetTicket 			
+			 ,	SeizeBetTicket 
+			 ,	SeizeBetAccumulateBal
 			 ,	EnableParlay 			  
 			 ,	PeakHourSpreadAdjustment 	
 			 ,	AgentBetInterval
@@ -296,6 +304,7 @@ BEGIN
 							cs.MaxPerMatch						AS '@MaxPerMatch',
 							cs.RepeatedBets						AS '@RepeatedBets',
 							cs.SeizeBetTicket					AS '@SeizeBetTicket',
+							cs.SeizeBetAccumulateBal			AS '@SeizeBetAccumulateBal',
 							cs.EnableParlay						AS '@EnableParlay',
 							cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
 							cs.AgentBetInterval					AS '@AgentBetInterval',
@@ -330,6 +339,7 @@ BEGIN
 								cs.MaxPerMatch						AS '@MaxPerMatch',
 								cs.RepeatedBets						AS '@RepeatedBets',
 								cs.SeizeBetTicket					AS '@SeizeBetTicket',
+								cs.SeizeBetAccumulateBal			AS '@SeizeBetAccumulateBal',
 								cs.EnableParlay						AS '@EnableParlay',
 								cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
 								cs.AgentBetInterval					AS '@AgentBetInterval',

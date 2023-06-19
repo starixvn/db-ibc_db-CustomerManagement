@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230613@Luke: Option to apply Seize Bet if reach risk balance [Redmine: #187771]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSitePolicySel @CustId=1315, @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -45,6 +46,7 @@ BEGIN
 		  @ReturnedMaxPerMatch INT, 
 		  @ReturnedRepeatedBets TINYINT, 
 		  @ReturnedSeizeBetTicket TINYINT,
+		  @ReturnedSeizeBetAccumulatebal BIT,
 		  @ReturnedEnableParlay BIT, 
 		  @ReturnedPeakHourSpreadAdjustment SMALLINT, 
 		  @ReturnedAgentBetInterval SMALLINT, 
@@ -52,7 +54,7 @@ BEGIN
 	
 	CREATE TABLE #CustomerClass( Custid INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT, CustomerClass SMALLINT,SportType SMALLINT, 
 			IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2), NextBetInterval SMALLINT, SuperBetInterval SMALLINT, 
-			SiteBetInterval SMALLINT, MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
+			SiteBetInterval SMALLINT, MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT, SeizeBetAccumulateBal BIT,
 			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupID SMALLINT)
 	CREATE CLUSTERED INDEX CIX_CustomerClass ON #CustomerClass(Site, Currency, Platform)
 	
@@ -66,10 +68,10 @@ BEGIN
 	 IF @ModeTest = 1 
 	 BEGIN
 		INSERT INTO #CustomerClass(Custid, Site, Currency, Platform, CustomerClass ,SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval,
-			SuperBetInterval, SiteBetInterval, MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, EnableParlay, 
+			SuperBetInterval, SiteBetInterval, MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, SeizeBetAccumulateBal, EnableParlay, 
 			PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupID)
 		SELECT @CustId AS CustId , @site AS site, @Currency AS currency, cm.Platform, cc.CustomerClass, cc.SportType, cc.IsLive, cc.DiffBalanceRatio, cc.BetDelay, cc.NextBetInterval,
-			cc.SuperBetInterval, cc.SiteBetInterval, cc.MinBet, cc.MaxBet, cc.MaxPerMatch, cc.RepeatedBets, cc.SeizeBetTicket, cc.EnableParlay,
+			cc.SuperBetInterval, cc.SiteBetInterval, cc.MinBet, cc.MaxBet, cc.MaxPerMatch, cc.RepeatedBets, cc.SeizeBetTicket, cc.SeizeBetAccumulateBal, cc.EnableParlay,
 			cc.PeakHourSpreadAdjustment, cc.AgentBetInterval, clg.LeagueGroupID
 		FROM [dbo].[CustomerClassSiteManagement_UAT] cm WITH(NOLOCK)
 			INNER JOIN CustomerClassPolicyManagement_UAT cpm WITH(NOLOCK) ON cm.PolicyID = cpm.PolicyID
@@ -89,7 +91,7 @@ BEGIN
 		INSERT INTO #CustomerClass(Custid, Site, Currency, Platform, CustomerClass ,SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval,
 			SuperBetInterval, SiteBetInterval, MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, EnableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupID)
 		SELECT @CustId AS CustId , @site AS site, @Currency AS currency, cm.Platform, cc.CustomerClass, cc.SportType, cc.IsLive, cc.DiffBalanceRatio, cc.BetDelay, cc.NextBetInterval,
-			cc.SuperBetInterval, cc.SiteBetInterval, cc.MinBet, cc.MaxBet, cc.MaxPerMatch, cc.RepeatedBets, cc.SeizeBetTicket, cc.EnableParlay, cc.PeakHourSpreadAdjustment, cc.AgentBetInterval, clg.LeagueGroupID
+			cc.SuperBetInterval, cc.SiteBetInterval, cc.MinBet, cc.MaxBet, cc.MaxPerMatch, cc.RepeatedBets, cc.SeizeBetTicket, cc.SeizeBetAccumulateBal, cc.EnableParlay, cc.PeakHourSpreadAdjustment, cc.AgentBetInterval, clg.LeagueGroupID
 		FROM [dbo].[CustomerClassSiteManagement] cm WITH(NOLOCK)
 			INNER JOIN CustomerClassPolicyManagement cpm WITH(NOLOCK) ON cm.PolicyID = cpm.PolicyID
 			INNER JOIN CustomerClassPolicyRule cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
@@ -118,6 +120,7 @@ BEGIN
 			@ReturnedMaxPerMatch = Min(MaxPerMatch), 
 			@ReturnedRepeatedBets = Min(RepeatedBets), 
 			@ReturnedSeizeBetTicket = Max(SeizeBetTicket), 
+			@ReturnedSeizeBetAccumulatebal = MIN(CASE WHEN ISNULL(SeizeBetAccumulateBal,0) = 0 THEN 0 ELSE 1 END),
 			@ReturnedEnableParlay = MIN( CASE WHEN EnableParlay  = 0 THEN 0 ELSE 1 END), 
 			@ReturnedPeakHourSpreadAdjustment = MAX(PeakHourSpreadAdjustment) ,
 			@ReturnedLeagueGroupID = LeagueGroupID,
@@ -139,6 +142,7 @@ BEGIN
 		  @ReturnedEnableParlay AS ReturnedEnableParlay, 
 		  @ReturnedPeakHourSpreadAdjustment AS ReturnedPeakHourSpreadAdjustment, 
 		  @ReturnedSeizeBetTicket AS ReturnedSeizeBetTicket,
+		  @ReturnedSeizeBetAccumulateBal AS ReturnedSeizeBetAccumulateBal,
 		  @ReturnedMinBet AS ReturnedMinBet, 
 		  @ReturnedMaxBet AS ReturnedMaxBet, 
 		  @ReturnedMaxPerMatch AS ReturnedMaxPerMatch,  

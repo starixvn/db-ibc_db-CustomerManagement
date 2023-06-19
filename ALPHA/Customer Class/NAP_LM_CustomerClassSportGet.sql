@@ -12,6 +12,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230613@Luke: Option to apply Seize Bet if reach risk balance [Redmine: #187771]
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSportGet @SportType = 1, @IsTest = 1	
@@ -34,6 +35,7 @@ BEGIN
 			a.MaxPerMatch,
 			a.RepeatedBets,
 			a.SeizeBetTicket,
+			CASE WHEN ISNULL(a.SeizeBetAccumulateBal,0) = 0 THEN 0 ELSE 1 END AS SeizeBetAccumulateBal,
 			a.EnableParlay,
 			a.PeakHourSpreadAdjustment,
 			a.Enable,
