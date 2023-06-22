@@ -89,7 +89,7 @@ BEGIN
 	 BEGIN
 		
 		INSERT INTO #CustomerClass(Custid, Site, Currency, Platform, CustomerClass ,SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval,
-			SuperBetInterval, SiteBetInterval, MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, EnableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupID)
+			SuperBetInterval, SiteBetInterval, MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, SeizeBetAccumulateBal, EnableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupID)
 		SELECT @CustId AS CustId , @site AS site, @Currency AS currency, cm.Platform, cc.CustomerClass, cc.SportType, cc.IsLive, cc.DiffBalanceRatio, cc.BetDelay, cc.NextBetInterval,
 			cc.SuperBetInterval, cc.SiteBetInterval, cc.MinBet, cc.MaxBet, cc.MaxPerMatch, cc.RepeatedBets, cc.SeizeBetTicket, cc.SeizeBetAccumulateBal, cc.EnableParlay, cc.PeakHourSpreadAdjustment, cc.AgentBetInterval, clg.LeagueGroupID
 		FROM [dbo].[CustomerClassSiteManagement] cm WITH(NOLOCK)
