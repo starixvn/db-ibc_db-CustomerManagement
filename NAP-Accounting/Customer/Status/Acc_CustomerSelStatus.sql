@@ -97,6 +97,7 @@ Revisions:
 	- 20220921@Winfred:  Macau Game Setting Page - Rename the setting page into RNG Slot and hide all bet limit setting [Redmine: #174513]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20221123@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
 	- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
 Param's Explanation:
 	- @system: = NAP : internal login from NAP
@@ -104,7 +105,7 @@ Param's Explanation:
 	- @CustID: customer id.  
 	- @SettingStatus: 0: Pro, 1: UAT
 */
-
+BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
@@ -212,7 +213,6 @@ Param's Explanation:
 		,	@bitmapOrder_VoidBridge		INT
 		,	@bitmapOrder_Lottery		INT
 		,	@bitmapOrder_NG2			INT
-		,	@bitmapOrder_FishingWorld	INT
 		,	@bitmapOrder_VS				INT
 		,	@bitmapOrder_VG				INT
 		,	@bitmapOrder_SabaClub		INT
@@ -225,7 +225,6 @@ Param's Explanation:
 		,	@bitmapOrder_GTCasino		INT
 		,	@bitmapOrder_SabaVirtualSport INT
 		,	@bitmapOrder_WM				INT
-		,	@bitmapOrder_GDG			INT
 		,	@bitmapOrder_BG				INT 
 		,	@bitmapOrder_SportsLottery	INT
 		,	@bitmapOrder_PPLive			INT
@@ -243,7 +242,6 @@ Param's Explanation:
 	SET @bitmapOrder_VoidBridge = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9906 AND Bettype = 4001)
 	SET @bitmapOrder_Lottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 220 AND Bettype = 1024)
 	SET @bitmapOrder_NG2 = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 213 AND Bettype = 2501)
-	SET @bitmapOrder_FishingWorld = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 219 AND Bettype = 1011)
     SET @bitmapOrder_VS = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9908 AND Bettype = 1201)
     SET	@bitmapOrder_AllBet =	(SELECT	psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE	psp.Sporttype = 211 AND	psp.Bettype = 2401)
     SET	@bitmapOrder_AllBetVIP = (SELECT psp.bitmapOrder FROM dbo.ProductStatusProfile AS psp WITH(NOLOCK) WHERE psp.Sporttype = 211 AND	psp.Bettype = 2402)
@@ -257,7 +255,6 @@ Param's Explanation:
 	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
 	SET @bitmapOrder_WM = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 233 AND Bettype = 3401)
-	SET @bitmapOrder_GDG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 236 AND Bettype = 5701)
 	SET @bitmapOrder_BG = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 239 AND Bettype = 3501)
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)		
 	SET @bitmapOrder_PPLive = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 170 AND Bettype = 3701)
@@ -277,7 +274,6 @@ Param's Explanation:
 		,	@IsHidden_VoidBridge	INT = 1
 		,	@IsHidden_Lottery		INT = 1
 		,	@IsHidden_NG2			INT = 1  
-		,	@IsHidden_FishingWorld	INT = 1
 		,	@IsHidden_VS			INT = 1
 		,	@IsHidden_VG			INT = 1
 		,	@IsHidden_SabaClub		INT = 1
@@ -290,7 +286,6 @@ Param's Explanation:
 		,	@IsHidden_GTCasino		INT = 1
 		,	@IsHidden_SabaVirtualSport	INT = 1
 		,	@IsHidden_WM			INT = 1
-		,	@IsHidden_GDG			INT = 1
 		,	@IsHidden_BG			INT = 1
 		,	@IsHidden_SportsLottery		INT = 1
 		,	@IsHidden_PPLive		INT = 1
@@ -309,7 +304,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 18, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VoidBridge OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 220, @IsHide = @IsHidden_Lottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 23, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_NG2 OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 24, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_FishingWorld OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 5, @SettingStatus = @SettingStatus,  @IsHide = @IsHidden_VS OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 16, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Esports OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 64, @SettingStatus = @SettingStatus, @Sporttype = 245, @IsHide = @IsHidden_VG OUTPUT
@@ -323,7 +317,6 @@ Param's Explanation:
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 241, @IsHide = @IsHidden_BBIN OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 54, @SettingStatus = @SettingStatus, @Sporttype = 98, @IsHide = @IsHidden_SabaVirtualSport OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 233, @IsHide = @IsHidden_WM OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 236, @IsHide = @IsHidden_GDG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 239, @IsHide = @IsHidden_BG OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @Sporttype = 170, @IsHide = @IsHidden_PPLive OUTPUT
@@ -358,9 +351,6 @@ Param's Explanation:
 			@DisableWM				BIT,
 			@HideWM    				BIT,
 			@SyncedWM 				BIT = 1, --always sync
-			@DisableGDG				BIT,
-			@HideGDG   				BIT,
-			@SyncedGDG 				BIT = 1, --always sync
 			--BG
 			@DisableBG				BIT,
 			@HideBG    				BIT,
@@ -436,9 +426,6 @@ Param's Explanation:
 	-- For WM
 		@DisableWM = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_WM)), 1),	
 		@HideWM  = CAST(CASE WHEN @IsHidden_WM = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_WM)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
-	-- For GDG
-		@DisableGDG = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_GDG)), 1),	
-		@HideGDG  = CAST(CASE WHEN @IsHidden_GDG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_GDG)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
 	-- For BG
 		@DisableBG = ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_BG)), 1),	
 		@HideBG  = CAST(CASE WHEN @IsHidden_BG = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_BG)), 1) = 0 THEN 0 ELSE 1 END AS BIT),
@@ -518,10 +505,9 @@ Param's Explanation:
 			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
-			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION + GDG)
-			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 OR @DisableWM = 0 OR @DisableGDG = 0 OR @DisableBG = 0 OR @DisableYeeBet = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
-			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 OR @HideION = 0 OR @HideWM = 0 OR @HideGDG = 0 OR @HideBG = 0 OR @HideYeeBet = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
-			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 OR @SyncedWM = 1 OR @SyncedGDG = 1 OR @SyncedBG = 1 OR @SyncedYeeBet = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
+			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 OR @DisableWM = 0 OR @DisableBG = 0 OR @DisableYeeBet = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		
+			CAST(CASE WHEN @HideAllbet = 0 OR @HideSAGaming= 0 OR @HideSexyGaming = 0 OR @HideBBIN = 0 Or @HideGTCasino = 0 OR @HideION = 0 OR @HideWM = 0 OR @HideBG = 0 OR @HideYeeBet = 0 THEN 0 ELSE 1 END AS BIT) AS HideLiveCasino,	
+			CAST( CASE WHEN @SyncedAllbet = 1 OR @SyncedSAGaming = 1 OR @SyncedSexyGaming = 1 OR @SyncedBBIN = 1 OR @SyncedGTCasino = 1 OR @SyncedION = 1 OR @SyncedWM = 1 OR @SyncedBG = 1 OR @SyncedYeeBet = 1 THEN 1 ELSE 0 END AS BIT) AS SyncedLiveCasino,
 			-- For Allbet
 			@DisableAllbet AS DisableAllbet,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_AllBetVIP)), 1) AS DisableAllBetVIP,
@@ -552,10 +538,6 @@ Param's Explanation:
 			@HideYeeBet AS HideYeeBet,
 			@SyncedYeeBet AS SyncedYeeBet,
 
-			-- For FishingWorld
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_FishingWorld)), 1) AS DisableFishingWorld,		
-			CAST(CASE WHEN @IsHidden_FishingWorld = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_FishingWorld)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideFishingWorld,
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_FishingWorld)), 0) AS SyncedFishingWorld,
 			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
 			ISNULL(DisableSuperLive,1) as DisableSuperLive,
 			-- For VoidBridge
@@ -617,10 +599,6 @@ Param's Explanation:
 			@DisableWM AS DisableWM,
 			@HideWM AS HideWM,
 			@SyncedWM AS SyncedWM,
-			--For GDG
-			@DisableGDG AS DisableGDG,
-			@HideGDG AS HideGDG,
-			@SyncedGDG AS SyncedGDG,
 			--For BG
 			@DisableBG AS DisableBG,
 			@HideBG AS HideBG,
