@@ -20,6 +20,7 @@ AS
 			- 20200616@Johnson: add soccer parlay [redmine:#135261]
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 			- 20221013@Johnson: Add cricket & Saba cricket [redmine:#175659]
+			- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
 			
 */
 BEGIN
@@ -38,32 +39,32 @@ BEGIN
 	SELECT @AgentName = username FROM CustInfo WITH(NOLOCK) WHERE custid = @AgentID
 	SELECT @CurrencyName = Currency FROM Exchange ex WITH(NOLOCK) WHERE exchangeid = @CurrencyID
 
-	DECLARE @SportTable TABLE([site] VARCHAR(100), CurrencyID INT, sporttype INT, bettype INT, maxbet MONEY,maxpermatch MONEY,maxperball MONEY,maxpayoutpermatch MONEY,[group] VARCHAR(5))
+	DECLARE @SportTable TABLE([site] VARCHAR(100), CurrencyID INT, sporttype INT, bettype INT, MinBet MONEY, maxbet MONEY,maxpermatch MONEY,maxperball MONEY,maxpayoutpermatch MONEY,[group] VARCHAR(5))
 	INSERT INTO @SportTable
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9901, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=43, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=2, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9902, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=3, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=5, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=8, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=10, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=11, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=9, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=50, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9907, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='NG' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=182, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=183, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=184, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=185, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=186, bettype=1, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1501, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='KN' 
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9901, bettype=1,MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=1, bettype=9, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=43, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=2, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9902, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=3, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=5, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=8, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=10, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=11, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=99, bettype=9, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=50, bettype=1, MinBet=NULL,maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9907, bettype=1, MinBet=NULL,maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='NG' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=182, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=183, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=184, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=185, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=186, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
+	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1501, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='KN' 
 
 	IF NOT EXISTS(SELECT TOP 1 1 FROM [Dep_CustBetLimit_Special] cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID=@CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR (AgentID = @AgentID)) )	
 	BEGIN
@@ -79,6 +80,7 @@ BEGIN
 					WHEN sp.SportType=9902 AND sp.bettype=1 THEN 'Saba BasketBall' 
 					WHEN sp.SportType=9907 AND sp.bettype=1 THEN 'Saba Cricket' 
 					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
+			,sp.MinBet
 			,sp.MaxBet
 			,sp.MaxPerMatch
 			,sp.MaxPerBall
@@ -100,6 +102,7 @@ BEGIN
 					WHEN sp.SportType=9902 AND sp.bettype=1 THEN 'Saba BasketBall' 
 					WHEN sp.SportType=9907 AND sp.bettype=1 THEN 'Saba Cricket' 
 					WHEN sp.SportType=1 AND sp.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportName
+			,tmp.MinBet
 			,tmp.MaxBet
 			,tmp.MaxPerMatch
 			,tmp.MaxPerBall
@@ -107,7 +110,7 @@ BEGIN
 		FROM @SportTable sp
 		LEFT JOIN @tmp_Sports s ON s.SportType = sp.SportType
 		LEFT JOIN (
-			SELECT cbs.Site,cbs.SportType, cbs.bettype,cbs.AgentID,cbs.CurrencyID,cbs.MaxBet,cbs.MaxPerMatch,cbs.MaxPerBall, cbs.MaxPayoutPerMatch
+			SELECT cbs.Site,cbs.SportType, cbs.bettype,cbs.AgentID,cbs.CurrencyID,cbs.MinBet,cbs.MaxBet,cbs.MaxPerMatch,cbs.MaxPerBall, cbs.MaxPayoutPerMatch
 			FROM [dbo].[Dep_CustBetLimit_Special] cbs WITH(NOLOCK) 
 			WHERE CurrencyID = @CurrencyID
 			AND [Site] = @Licensee

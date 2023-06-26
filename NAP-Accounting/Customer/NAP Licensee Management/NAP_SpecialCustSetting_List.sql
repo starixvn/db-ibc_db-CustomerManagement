@@ -2,7 +2,7 @@
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
 	@Licensee NVARCHAR(100)
 	,@Currency NVARCHAR(1000) = ''
-	,@ShowSportBook BIT = 1
+	,@ShowSportsBook BIT = 1
 	,@ShowNumberGame BIT = 1
 	,@ShowVirtualSport BIT =1
 	,@ShowKeno BIT = 1
@@ -21,6 +21,7 @@ Created: Dom
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 			- 20221010@Johnson: Add Saba cricket [redmine: #175659]
+			- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
 */
 
 BEGIN
@@ -47,7 +48,7 @@ BEGIN
 
 	DECLARE @Sport TABLE(SportID INT)
 	
-	IF(@ShowSportBook=1)
+	IF(@ShowSportsBook=1)
 	BEGIN 
 		SELECT @ProductID = 1
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
@@ -76,7 +77,7 @@ BEGIN
 		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
 	END
 
-	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
+	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MinBet MONEY, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
 
 	INSERT INTO #Data(Licensee,
 					CurrencyID, 
@@ -87,6 +88,7 @@ BEGIN
 					AgentName,
 					SportName,
 					SportGameType, 
+					MinBet,
 					MaxBet, 
 					MaxPerMatch,
 					MaxPerBall,
@@ -101,6 +103,7 @@ BEGIN
 		,s.SportName SportName
 		,CASE	WHEN cbs.SportType=99 AND cbs.bettype=9 THEN 'Mix Sports Parlay'
 				WHEN cbs.SportType=1 AND cbs.bettype=9 THEN 'Soccer Parlay' ELSE s.SportName END SportGameType
+		,cbs.MinBet
 		,cbs.MaxBet
 		,cbs.MaxPerMatch
 		,cbs.MaxPerBall
