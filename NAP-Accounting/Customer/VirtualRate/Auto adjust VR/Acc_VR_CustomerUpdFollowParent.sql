@@ -17,6 +17,8 @@ AS
 		- 20210226@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+
 	Param's Explanation:  
 	Examples:
 		EXEC Acc_VR_CustomerUpdFollowParent 
@@ -217,6 +219,7 @@ BEGIN
 			,@UserID = 0
 			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
 			,@VRLockedStatus_OS = 0
+			,@VRLockedStatus_Basketball = 0
 			,@IP = ''
 			,@UpdateBy = 'China/Desktop check'
 

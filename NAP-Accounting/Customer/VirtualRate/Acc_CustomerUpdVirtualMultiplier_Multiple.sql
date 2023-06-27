@@ -24,6 +24,7 @@ AS
 		- 20190725@Elodie: Extend range and interval steps [Redmine:#117609]
 		- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 
 	Param's Explanation:  
 		- @SportType = 0 : All
@@ -294,11 +295,11 @@ BEGIN
 		LEFT JOIN custInfo c WITH(NOLOCK) ON t.CustID = c.custid
 	WHERE c.custid IS NULL	
 	
-	DECLARE @VRLockedStatus_Soccer BIT,  @VRLockedStatus_OS	BIT, @tmpCustID INT
+	DECLARE @VRLockedStatus_Soccer BIT,  @VRLockedStatus_OS	BIT, @VRLockedStatus_Basketball BIT, @tmpCustID INT
 
 	SELECT @VRLockedStatus_Soccer = CASE WHEN @SportType IN (0,1) THEN 1 END,
-		   @VRLockedStatus_OS = CASE WHEN @SportType IN (0,2) THEN 1 END
-
+		   @VRLockedStatus_OS = CASE WHEN @SportType IN (0,2) THEN 1 END,
+		   @VRLockedStatus_Basketball = CASE WHEN @SportType IN (0,2) THEN 1 END
 	WHILE 1 = 1
 	BEGIN
 		UPDATE TOP(1)  c
@@ -315,6 +316,7 @@ BEGIN
 			,@UserID = @UserID
 			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
 			,@VRLockedStatus_OS = @VRLockedStatus_OS
+			,@VRLockedStatus_Basketball = @VRLockedStatus_Basketball
 			,@IP = @IP
 			,@UpdateBy = '3m perf check'
 	END

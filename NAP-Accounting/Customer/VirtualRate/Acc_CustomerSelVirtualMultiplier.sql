@@ -20,6 +20,8 @@ AS
 			- 20200608@Cherry: Not show Basketball (#134978)
 			- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
 			- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
+			- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -44,10 +46,12 @@ BEGIN
             -0.95               AS Min_VirtualMultiplier,
             2.0                 AS Max_VirtualMultiplier,
 			CASE WHEN sc.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Soccer,
-			CASE WHEN os.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_OS
+			CASE WHEN os.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_OS,
+			CASE WHEN bb.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Basketball
     FROM    custInfo ci WITH(NOLOCK)
 			LEFT JOIN VRCustLockStatus sc WITH(NOLOCK) ON ci.custid = sc.CustID AND sc.Type = 1 --soccer 
 			LEFT JOIN VRCustLockStatus os WITH(NOLOCK) ON ci.custid = os.CustID AND os.Type = 2 --soccer 
+			LEFT JOIN VRCustLockStatus bb WITH(NOLOCK) ON ci.custid = bb.CustID AND bb.Type = 3 --basketball
     WHERE   ci.custid = @CustID
 
     INSERT INTO @CustVirtualRate

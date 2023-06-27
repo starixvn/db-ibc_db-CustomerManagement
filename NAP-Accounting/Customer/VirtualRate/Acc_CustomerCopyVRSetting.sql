@@ -17,6 +17,8 @@ AS
 	    - 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
+		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+
 	Param's Explanation:  	
 
 	EXEC Acc_CustomerCopyVRSetting 
@@ -89,6 +91,7 @@ BEGIN
 	DECLARE @Source_EnableVirtualrate BIT = 0
 	DECLARE @Source_VRLockedStatus_Soccer BIT 
 	DECLARE @Source_VRLockedStatus_OS BIT
+	DECLARE @Source_VRLockedStatus_Basketball BIT
 	DECLARE @Source_Virtualmultiplier VARCHAR(MAX)
 
 	SELECT @Source_EnableVirtualrate = VirtualMultiplier FROM custInfo c WITH(NOLOCK) WHERE custid = @Source_CustID
@@ -102,6 +105,11 @@ BEGIN
 		SET @Source_VRLockedStatus_OS = 1
 	ELSE 
 		SET @Source_VRLockedStatus_OS = 0
+
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @Source_CustID AND Type = 3)			
+		SET @Source_VRLockedStatus_Basketball = 1																
+	ELSE																										
+		SET @Source_VRLockedStatus_Basketball = 0	
 
 	SELECT @Source_Virtualmultiplier = CONVERT (VARCHAR(MAX),
 		(	
@@ -146,6 +154,7 @@ BEGIN
 			 @ErrMsg = @ErrMsg OUTPUT, 
 			 @VRLockedStatus_Soccer = @Source_VRLockedStatus_Soccer, 
 			 @VRLockedStatus_OS = @Source_VRLockedStatus_OS,
+			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,	
 			 @CopyFrom = @Source_CustID
 
 		IF @ErrCode <> 0
