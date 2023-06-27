@@ -2,7 +2,9 @@
 ALTER PROCEDURE [dbo].[EAS_CustomerSelAllInfo]  
     @GroupName	VARCHAR(50), 
 	@UserName	VARCHAR(30),  
-	@UserId		INT
+	@UserId		INT, 
+	@ErrCode 		INT = 0 OUTPUT,
+	@ErrMsg 		NVARCHAR(4000) = '' OUTPUT	
 AS  
 /*  
 Creator: 20181030@Elodie  
@@ -13,6 +15,7 @@ Revisions:
 	- 20181030@Elodie: Search Customer on left panel of EXT NAP [Redmine:#95978]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#160682]
+	- 20230602@Eden: Ext Nap - Archive Super level [Redmine:#183447]
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
 */
@@ -31,12 +34,17 @@ BEGIN
 			@UplineHasSecurityCode			BIT = 0,
 			@IsInternalAdmin				BIT = 0,
 			@ClosedReason					TINYINT
+	
+	DECLARE @IsCheckSuperArchived BIT = 0
 
 	--Search Info	
 	--Get CustID from DBCUST, where got index on Username and Username2
 	EXEC @CustId = dbo.f_GetCustIDFromUsername @username
 	IF @CustId IS NULL
-		RETURN
+	BEGIN
+		SET @IsCheckSuperArchived = 1
+		GOTO CheckSuperArchived;
+	END
 
 	SELECT  @RoleId = roleID, @Site = site,
 			@srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
@@ -46,7 +54,8 @@ BEGIN
 	-- check belong to group 
 	IF NOT EXISTS (SELECT 1 FROM dbo.Acc_CustGroup WITH(NOLOCK) WHERE CustID = @srecommend AND GroupName = @GroupName)
 	BEGIN
-		RETURN
+		SET @IsCheckSuperArchived = 1
+		GOTO CheckSuperArchived;
 	END
 
 	EXEC dbo.Acc_CustomerIsInternalAdmin @CustId = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
@@ -139,6 +148,25 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS ps
 		WHERE c.custid = @CustId	
+	END
+
+	CheckSuperArchived:
+	IF @IsCheckSuperArchived = 1
+	BEGIN
+		IF EXISTS(
+			SELECT TOP 1 1
+			FROM dbo.Cust_ArchiveAccount ar WITH (NOLOCK) 
+				INNER JOIN dbo.Acc_CustGroup gr WITH(NOLOCK)
+					ON ar.CustID = gr.CustID
+			WHERE ar.Username = @UserName
+				AND ar.RoleID = 4
+				AND ar.StageID = 4
+				AND gr.GroupName = @GroupName
+		)
+		BEGIN
+			SELECT @ErrCode = 101, 
+					@ErrMsg = '<b>' + @UserName + '</b> has been archived. You can create a new account with this username if it is available.'
+		END
 	END
 END
 GO
