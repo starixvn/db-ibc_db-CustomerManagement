@@ -70,4 +70,5 @@ BEGIN
 
     SELECT custid, sporttype, bettype, islive, virtualMultiplier
     FROM @CustVirtualRate
+	ORDER BY sporttype, bettype, islive
 END
