@@ -4,7 +4,7 @@
 	Task : API Support Check UserName - Password - APISecretKey For Headline
 	DB: DBCUST/CustDB  
 	Revisions:  
-		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035] 
+		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
 	Parameter's Explanation:  
 		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
 		@IsAuthenticated:
@@ -42,6 +42,38 @@ BEGIN
 		@IsAuthenticated = 0
 			RETURN;
 	END
+		
+	DECLARE @Srecommend		INT
+
+	SET @Srecommend = 0
+
+	-- Check user and password of Main Cust
+	SELECT @Srecommend = ISNULL(c.srecommend,0) , @CustID = C.custid
+	FROM dbo.customer c WITH (NOLOCK)    
+	WHERE (username = @UserName OR username2 = @UserName) 
+	AND c.userpwd = @UserPassword
+	AND c.roleid IN (2,3,4) -- Just Check SMA   
+
+	IF @Srecommend = 0
+	BEGIN
+		
+		-- Check CustSub and Permission Report
+		SET @CustID = (SELECT CustID FROM CustSub WITH (NOLOCK) WHERE (username = @UserName OR UserName2 = @UserName) AND userpwd = @UserPassword AND PageAccess LIKE '%[E]%')
+
+		-- Check user and password of Sub Cust
+		SELECT @Srecommend = ISNULL(c.srecommend,0)
+		FROM dbo.customer c WITH (NOLOCK)  
+		WHERE CustID = @CustID
+		AND c.roleid IN (2,3,4)	-- Just Check SMA	
+
+		IF @Srecommend = 0 -- user not found  
+		BEGIN 
+			SELECT  @ErrMsg =  'Wrong username or password.',    
+					@ErrCode = 103  ,  
+					@IsAuthenticated = 0  
+					RETURN;  
+		END
+	END
 
 	SELECT @GroupID = GroupID 
 	FROM NAP_UserControl.dbo.eaGroup ea WITH (NOLOCK)  
@@ -52,32 +84,11 @@ BEGIN
 	UNION
 	SELECT GroupName FROM NAP_UserControl.dbo.eaGroup ea WITH (NOLOCK) WHERE ParentID = @GroupID
 
-	-- Check CustSub and Permission Report
-
-	SET @CustID = (SELECT CustID FROM CustSub WITH (NOLOCK) WHERE (username = @UserName OR UserName2 = @UserName) AND userpwd = @UserPassword AND PageAccess LIKE '%[E]%')
-
-	CREATE TABLE #Temp (SreCommend INT , CustID INT )
-
-	-- Check user and password
-	INSERT INTO #Temp (SreCommend , CustID)
-	SELECT ISNULL(c.srecommend,0) , CustID
-	FROM dbo.customer c WITH (NOLOCK)  
-	WHERE (CustID = @CustID OR ((username = @UserName OR username2 = @UserName) AND c.userpwd = @UserPassword))
-	AND c.roleid IN (2,3,4)	-- Just Check SMA	
-	IF @@ROWCOUNT = 0 -- user not found  
-	BEGIN
-	  SELECT  @ErrMsg =  'Wrong username or password.',  
-		@ErrCode = 103		,
-		@IsAuthenticated = 0
-			RETURN;
-	END
-
 	-- Check CustGroup
-	SELECT @CustID = t.CustID 
+	IF NOT EXISTS (SELECT 1
 	FROM Acc_CustGroup ac WITH (NOLOCK)  
-	INNER JOIN #Temp t ON ac.CustID = t.SreCommend
-	WHERE ac.GroupName IN (SELECT GroupName From #GroupName)
-	IF @@ROWCOUNT = 0 -- CustGroup not found  
+	WHERE ac.CustID = @Srecommend
+	AND ac.GroupName IN (SELECT GroupName From #GroupName))-- CustGroup not found  
 	BEGIN
 	  SELECT  @ErrMsg =  'Wrong CustGroup',  
 		@ErrCode = 102 ,
