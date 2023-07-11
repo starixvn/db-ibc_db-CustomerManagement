@@ -17,6 +17,7 @@ AS
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+		- 20230710@Winfred: VR Auto Job - Update the Agent VR to follow UPLINE VR setting [Redmine: #185994]
 		
 	Param's Explanation:  
 		@Type = 
@@ -86,11 +87,11 @@ BEGIN
 	DELETE FROM @AgentTbl WHERE CustID  IN (SELECT custID FROM @temp)
 	 --*/ END: Delete Agents list who have VR <> 0 
 
-	--get Agents and their dowlines need to update VR = super's
-	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, srecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
+	--get Agents and their dowlines need to update VR = Upline
+	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, mrecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
 
-	INSERT INTO @Update_CustTbl(CustID,srecommend)
-	SELECT c.custid,c.srecommend
+	INSERT INTO @Update_CustTbl(CustID,mrecommend)
+	SELECT c.custid,c.mrecommend
 	FROM @AgentTbl t
 		INNER JOIN custInfo c WITH(NOLOCK) ON c.recommend = t.CustID 
 	WHERE c.Enabled = 1
@@ -124,7 +125,7 @@ BEGIN
 			dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) AS virtualMultiplier
 	FROM @Update_CustTbl t 
 			INNER JOIN CustVirtualSetting AS cvs WITH(NOLOCK)
-			ON cvs.custid = t.srecommend
+			ON cvs.custid = t.mrecommend
 			INNER JOIN ProfileVirtualSetting AS pvs WITH(NOLOCK)
 			ON cvs.seqNo = pvs.seqNo
 	WHERE pvs.sporttype NOT IN(43);
@@ -236,7 +237,7 @@ BEGIN
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 			@UserId				= 0,
 			@custID				= @custID,
-			@ActionId			= 824,
+			@ActionId			= 838,
 			@TrackingValue		= @NewLogData
 	END
 
