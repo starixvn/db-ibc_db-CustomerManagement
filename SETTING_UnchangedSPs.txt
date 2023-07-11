@@ -1,1 +1,3 @@
-NAP-Accounting\Customer\NAP Licensee Management\NAP_SpecialCustSetting_Modify.sql
+NAP-Accounting\DormantAccountList\Acc_DormantAccountListByHeadline_Sel.sql
+NAP-Accounting\DormantAccountList\Acc_DormantAccountList_Sel.sql
+NAP-Accounting\DormantAccountList\Acc_DormantDownlineListByHeadline_Sel.sql
