@@ -2,7 +2,7 @@
 ALTER PROCEDURE [dbo].[Dot_Member_CustomerClassSitePolicySel] 
 	@CustId INT,
 	@Site NVARCHAR(50), 
-	@Currency TINYINT,
+	@Currency INT,
 	@IsTest BIT = 0,
 	@CustomerClass SMALLINT,
 	@SportType SMALLINT,
@@ -33,7 +33,7 @@ BEGIN
 	DECLARE @ModeTest BIT,
 		  @ReturnedCustomerClass SMALLINT, 
 		  @ReturnedSite NVARCHAR(50),
-		  @ReturnedCurrency TINYINT,
+		  @ReturnedCurrency INT,
 		  @ReturnedPlatform TINYINT,
 		  @ReturnedSportType SMALLINT, 
 		  @ReturnedDiffBalanceRatio DECIMAL(9, 2), 
@@ -52,7 +52,7 @@ BEGIN
 		  @ReturnedAgentBetInterval SMALLINT, 
 		  @ReturnedLeagueGroupID SMALLINT
 	
-	CREATE TABLE #CustomerClass( Custid INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT, CustomerClass SMALLINT,SportType SMALLINT, 
+	CREATE TABLE #CustomerClass( Custid INT, Site NVARCHAR(50), Currency INT, Platform TINYINT, CustomerClass SMALLINT,SportType SMALLINT, 
 			IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2), NextBetInterval SMALLINT, SuperBetInterval SMALLINT, 
 			SiteBetInterval SMALLINT, MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT, SeizeBetAccumulateBal BIT,
 			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupID SMALLINT)

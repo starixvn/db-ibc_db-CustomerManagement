@@ -29,8 +29,8 @@ BEGIN
 	DECLARE @RowStart int, @RowEnd int
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
-    CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, RuleID INT)    
-    CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), Currency TINYINT, CurrencyName NVARCHAR(50),Platform VARCHAR(MAX), RuleID INT , RowNumber INT)    
+    CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency INT, RuleID INT)    
+    CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), Currency INT, CurrencyName NVARCHAR(50),Platform VARCHAR(MAX), RuleID INT , RowNumber INT)    
     CREATE TABLE #LeagueGroup( GroupID SMALLINT, GroupName VARCHAR(200), SportType SMALLINT, IsActive BIT)    
     
     CREATE CLUSTERED INDEX Ix_CustomerClass ON #CustomerClass (PolicyID, Site, Currency)    

@@ -33,10 +33,10 @@ BEGIN
 	IF @PolicySites IS NULL	OR @PolicySites = ''
 		RETURN
 	
-	CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, 
+	CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency INT, 
 							Platform TINYINT, PolicyID_Dup INT,IsTest TINYINT, STT INT IDENTITY (1,1))
 	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))
-	CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, CurrencyName	nvarchar(50), Platform VARCHAR(MAX))
+	CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency INT, CurrencyName	nvarchar(50), Platform VARCHAR(MAX))
 	CREATE CLUSTERED INDEX CIX_CustomerClassSiteManagement ON #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform)
 	CREATE NONCLUSTERED INDEX inx_temp ON #CustomerClassCurrency(PolicyID, Site) INCLUDE (Platform,Currency)
 
@@ -64,7 +64,7 @@ BEGIN
 	END CATCH
 
 	INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform)	
-	SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform 
+	SELECT a.PolicyID, b.Site, CAST(c.Currency AS INT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform 
 	FROM #CustomerClass a
 		CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b
 		CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(a.Currency,',') WHERE VALUE <> '' ) c

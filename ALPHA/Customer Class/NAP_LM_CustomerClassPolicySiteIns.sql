@@ -43,12 +43,12 @@ BEGIN
 	 IF @PolicySites IS NULL OR @PolicySites = ''  
 	  RETURN  
    
-	 CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+	 CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency INT,   
 		   Platform TINYINT, PolicyID_Dup INT,IsTest TINYINT,SportType	SMALLINT, STT INT IDENTITY (1,1))  
-	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency INT,   
 		   Platform TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)  
 	 CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))  
-	 CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, CurrencyName nvarchar(50), Platform VARCHAR(MAX))  
+	 CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency INT, CurrencyName nvarchar(50), Platform VARCHAR(MAX))  
   
 	 BEGIN TRY  
 	  EXECUTE sp_xml_preparedocument @iDoc OUTPUT, @PolicySites;  
@@ -74,7 +74,7 @@ BEGIN
 	 END CATCH  
   
 	 INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, SportType)  
-	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType 
+	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS INT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType 
 	 FROM #CustomerClass a  
 	  INNER JOIN CustomerClassPolicyManagement aRule WITH(NOLOCK) ON a.PolicyID = aRule.PolicyID
 	  CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b  

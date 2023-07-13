@@ -27,8 +27,8 @@ BEGIN
 	DECLARE @RowStart INT, @RowEnd INT
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
-	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)
-	CREATE TABLE #CustomerClassSiteManagement ( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, CurrencyName	nvarchar(50), Platform VARCHAR(MAX) , RowNumber INT)
+	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency INT, Platform TINYINT)
+	CREATE TABLE #CustomerClassSiteManagement ( PolicyID INT, Site NVARCHAR(50), Currency INT, CurrencyName	nvarchar(50), Platform VARCHAR(MAX) , RowNumber INT)
 	CREATE CLUSTERED INDEX CIX_CustomerClass ON #CustomerClass(PolicyID, Site, Currency, Platform)
 	CREATE NONCLUSTERED INDEX inx_temp ON #CustomerClassSiteManagement( PolicyID, RowNumber )
 	INCLUDE (Site, Currency)
