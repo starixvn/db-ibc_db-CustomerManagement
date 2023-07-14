@@ -11,6 +11,7 @@ AS
 	Original: 
 	Revisions:
 		- 20221205@Tacy: Create SP [Redmine: #171247]
+		- 20230714@Tacy: Remove HideKeno column [redmine: #191260]
 
 	Param's Explanation: 
 */
@@ -47,17 +48,9 @@ BEGIN
 		FROM custInfo WITH (NOLOCK)
 		WHERE custid=@CustID
 
-		--Non DSC Products
-		INSERT INTO #CustSetting_StatusSelect(RealProductID,ProductID,SportType,BetType,isHidden)
-		SELECT 8,8,202,1501, HideKeno
-		FROM custInfo WITH(NOLOCK)
-		WHERE custid=@CustID
-
-
 		--DSC Products
 		INSERT INTO #CustSetting_StatusSelect(RealProductID,ProductID,SportType,BetType,IsSync,isHidden,isDisabled,isSyncedUpline,isHiddenUpline,isDisabledUpline,HasDownline)
 		EXEC Acc_CustSetting_StatusSelect @CustID = @custid, @roleid = @roleid, @SettingStatus = @SettingStatus
-
 
 		SELECT *
 		FROM #CustSetting_StatusSelect
