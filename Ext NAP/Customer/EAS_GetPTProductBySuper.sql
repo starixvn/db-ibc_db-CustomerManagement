@@ -30,6 +30,8 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230118@Helios: add JiliGame [RedmineId: #182869]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
+
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
 		
@@ -100,7 +102,6 @@ BEGIN
 			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			or (B.ProductID IN (24) and SportType = 219 and BetType = 1011) -- Fishing World
 			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
-			or (B.ProductID IN (23) and SportType = 213 and BetType = 2501) -- NG2			
 			)
 
 	--Get PT DCS
