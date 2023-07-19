@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins]
 	  @Currency				TINYINT,
 	  @SiteID				INT,
 	  @Type					TINYINT,
+	  @LimitNewAccUpdPT		BIT = 0,
 	  @SettingStatus		TINYINT = 0
 	, @UserId				INT = 0 
 	, @IP					VARCHAR(15) = ''
@@ -21,6 +22,7 @@ AS
 			- 20211126@Winfred: Limit to update PT one time per day [Redmine: #165249]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
+			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
 
 	*/
 BEGIN
@@ -146,14 +148,14 @@ BEGIN
 	BEGIN TRY
 		IF @Type = 1
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 1 AS MaxCount, @Type , @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus)
+			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus
 			FROM @tblCust t , #Product b
 		END
 		ELSE
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,SettingStatus)
-			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 1 AS MaxCount, @Type , @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus)
+			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus
 			FROM #Product
 		END 
 	END TRY
@@ -163,7 +165,7 @@ BEGIN
 	END CATCH
 
 	SELECT @TypeName = CASE @Type WHEN 1 THEN 'SMA Line' WHEN 2 THEN 'Site'  WHEN 3 THEN 'Currency' WHEN 4 THEN 'Site - Currency' ELSE 'SMA Line' END
-								
+	
 	WHILE (1=1)
 	BEGIN
 		UPDATE TOP (1) #Product
@@ -178,6 +180,7 @@ BEGIN
 							CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@currencyName as VARCHAR(50)),SPACE(1)) + '" '  ELSE '' END +
 							CASE WHEN @Type <> 1 THEN 'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" '   ELSE '' END +
 							'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
+							'LimitNewAccUpdPT="'+ COALESCE(CAST((CASE WHEN ISNULL(@LimitNewAccUpdPt,0)=0 THEN 'No' ELSE 'Yes' END) AS NVARCHAR(10)),SPACE(1)) + '" ' +
 							'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
 							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1)) + '" ' +
 							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" />'

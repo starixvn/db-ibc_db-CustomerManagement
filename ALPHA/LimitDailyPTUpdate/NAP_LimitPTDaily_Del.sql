@@ -18,20 +18,22 @@ AS
 		Revisions:
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
 			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
+			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
 
 	*/
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @StartRun	DATETIME
-		, @EndRun		DATETIME
-		, @Duration		INT
-		, @ProductName	VARCHAR(50)
-		, @logSpData		 NVARCHAR(MAX)
-		, @site			NVARCHAR(50)
-		, @currencyName NVARCHAR(50)
-		, @SettingStatus	 TINYINT = 0
-		, @TypeName			NVARCHAR(50)
+	DECLARE @StartRun			DATETIME
+		, @EndRun				DATETIME
+		, @Duration				INT
+		, @ProductName			VARCHAR(50)
+		, @logSpData			NVARCHAR(MAX)
+		, @site					NVARCHAR(50)
+		, @currencyName			NVARCHAR(50)
+		, @SettingStatus		TINYINT = 0
+		, @TypeName				NVARCHAR(50)
+		, @LimitNewAccUpdPT		BIT
 	SET @startRun = GETDATE()
 	SELECT	@ErrCode	= 0	,	@ErrMsg			= ''	
 	
@@ -39,7 +41,7 @@ BEGIN
 	SELECT @ProductName = p.ProductName
 	FROM DBACC.bodb02.dbo.Products AS p WITH(NOLOCK)
 	WHERE p.ProductID = @ProductID
-	
+
 	If 	@SiteID = 0
 	BEGIN
 		SET @site = 'All sites'
@@ -67,7 +69,7 @@ BEGIN
 		RETURN
 	END	
 	BEGIN TRY
-		SELECT @SettingStatus = SettingStatus FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
+		SELECT @SettingStatus = SettingStatus, @LimitNewAccUpdPT = LimitNewAccUpdPT FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
 		WHERE CustID = @CustID and ProductID = @ProductID AND SiteID = @SiteID AND Currency = @Currency AND Type  = @Type
 		
 		DELETE t
@@ -88,6 +90,7 @@ BEGIN
 	                    CASE WHEN @Type <> 1 THEN 'Currency="'+ COALESCE(CAST(@currencyName as VARCHAR(50)),SPACE(1)) + '" '  ELSE '' END +
 						CASE WHEN @Type <> 1 THEN 'Site="'+ COALESCE(CAST(@site as VARCHAR(50)),SPACE(1)) + '" '   ELSE '' END +
 						'Type="'+ COALESCE(CAST(@TypeName as VARCHAR(50)),SPACE(1)) + '" ' +
+						'LimitNewAccUpdPT="'+ COALESCE(CAST((CASE WHEN ISNULL(@LimitNewAccUpdPt,0)=0 THEN 'No' ELSE 'Yes' END) AS NVARCHAR(10)),SPACE(1)) + '" ' +
 						'SettingStatus="'+ COALESCE(CAST((CASE WHEN @SettingStatus = 0 THEN 'PRO' ELSE 'UAT' END)  as VARCHAR(10)),SPACE(1)) + '" ' +
 						'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(400)),space(1)) + '" ' +
 						'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" />'
