@@ -49,6 +49,7 @@ AS
 		- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
 		- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20230724@Eden: HotFix - EXT NAP - S&C super [Redmine: #191683]
 
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -115,7 +116,7 @@ BEGIN
 	
 	SELECT @Site = c.site, @SiteLabel=s.SiteLabel
 	FROM Customer C WITH (NOLOCK)
-	INNER JOIN Site s WITH (NOLOCK) ON s.site=s.site
+	INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 	WHERE CustID = @ExistingCustid	
 	
 	IF @roleid <> 4
