@@ -1,4 +1,5 @@
-﻿ ALTER PROCEDURE [dbo].[Acc_CustomerSelInfoByUsername]
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelInfoByUsername]
 	@UserName	VARCHAR(30),
 	@CustID		INT =0		OUTPUT,
 	@RoleID		TINYINT =0	OUTPUT,
@@ -11,7 +12,7 @@ DB: DB06.BODB02
 Original:
 
 Revisions:
-	
+	- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 Param's Explanation:
 */
 SET NOCOUNT ON
@@ -20,13 +21,4 @@ BEGIN
 	FROM custinfo WITH(NOLOCK)
 	WHERE UserName = @UserName
 END
-
-
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelInfoByUsername] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelInfoByUsername] TO [bodbAdminNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelInfoByUsername] TO [bodbDownlineNet]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelInfoByUsername] TO [bodbDownlineNetView]

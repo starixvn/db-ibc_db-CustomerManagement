@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@Language	VARCHAR(2)		= 'E',
 	@IP			VARCHAR(15)	= '',
 	@ErrCode	INT				= 0 OUTPUT,
-	@ErrMsg		NVARCHAR(500)	= '' OUTPUT
+	@ErrMsg		NVARCHAR(500)	= '' OUTPUT,
+	@TotalAmt MONEY = NULL
 AS
 
 /*
@@ -42,6 +43,7 @@ AS
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
+		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 
 */
 
@@ -56,7 +58,6 @@ BEGIN
 			@OldCredit MONEY,
 			@OldMaxCredit MONEY,
 			@AgentCredit MONEY,
-			@TotalAmt MONEY,
 			@Credit_AllOtherMember MONEY,
 			@matchlimit SMALLMONEY
 
@@ -120,7 +121,8 @@ BEGIN
 										WHEN @AgentMaxCredit > @Agent_Credit_Bal THEN @Agent_Credit_Bal
 										ELSE @AgentMaxCredit END
 
-		EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT
+		
+		SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 				
 		IF @NewCredit < 0
 		BEGIN

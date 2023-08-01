@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdCredit_Ag]
 	@IP				VARCHAR(15)		= '',
 	@Language		VARCHAR(2)		= 'E',
 	@CreditProblem	BIT				= 0 OUTPUT,
-	@ErrMsg			NVARCHAR(500)	= '' OUTPUT
+	@ErrMsg			NVARCHAR(500)	= '' OUTPUT,
+	@TotalAmt MONEY = NULL
 AS
 
 /*  
@@ -39,9 +40,10 @@ AS
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
+		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 	Param's Explanation:  
-		• @custid: custid that need to be updated   
-		• @CreditAmt: new credit   
+		- @custid: custid that need to be updated   
+		- @CreditAmt: new credit   
 */
 
 BEGIN
@@ -50,8 +52,7 @@ BEGIN
 	DECLARE
 		@Credit_AllOtherMember MONEY,
 		@Credit_Ag MONEY,
-		@MaxCredit_Ag MONEY,
-		@TotalAmt MONEY
+		@MaxCredit_Ag MONEY
 
 	DECLARE @ErrCode INT = 0
   
@@ -90,9 +91,7 @@ BEGIN
 	SELECT @MaxCredit_Ag = ISNULL(maxcredit, 0)
 	FROM dbo.CustAgent WITH (NOLOCK)
 	WHERE custid = @AgID
-	
-	EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT  
-	
+
 	SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 
 	IF @CreditAmt + @TotalAmt < 0

@@ -6,7 +6,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdClearCredit]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@IP varchar(15) = '',
-	@system VARCHAR(50) = ''
+	@system VARCHAR(50) = '',
+	@TotalAmt MONEY = NULL
 AS
 
 /*	Created by: [Creator]
@@ -28,6 +29,7 @@ AS
 		- 20150612@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines to DBCUST.CustDB, use Acc_CustomerTotalAmountSel to get total amount)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
+		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -105,17 +107,8 @@ BEGIN
 	else if @roleid = 1
 	BEGIN
 		Select @custLine =' member '
-		
-		DECLARE @TotalAmt money
 
-		EXEC DBTXN.bodb02.dbo.Acc_CustomerTotalAmountSel @CustID = @custid, @TotalAmt = @TotalAmt OUTPUT
-		
-		--select  @TotalAmt = sum(winlost-actual_stake+playercomm)
-	 --   from bodb02.dbo.bettrans with (nolock)
-	 --   where custid = @CustID
-	    
-	 --   select @TotalAmt = isnull(@TotalAmt, 0)
-		--SELECT  @TotalAmt = @TotalAmt + ISNULL(SUM(-actual_stake), 0) FROM bodb02.dbo.translog WITH(NOLOCK) WHERE custid=@custid AND statusID=0
+		SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 			
 		Update custinfo with (ROWLOCK, UPDLOCK) 
 		set credit = case when @TotalAmt >= 0 then 0 else abs(@TotalAmt) end
