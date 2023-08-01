@@ -50,6 +50,7 @@ AS
 		- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230724@Eden: HotFix - EXT NAP - S&C super [Redmine: #191683]
+		- 20230718@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -106,6 +107,7 @@ BEGIN
 			,@site VARCHAR(10)
 			,@SiteLabel VARCHAR(50)			
 			,@EnableVR BIT
+			,@SiteDBGroupID	smallint
 
 	SELECT @existingUsername =  ISNULL(username,''), 
 		@roleid = ISNULL(roleid,0), 
@@ -114,7 +116,7 @@ BEGIN
 	FROM dbo.CustInfo WITH(NOLOCK) 
 	WHERE custid = @ExistingCustid
 	
-	SELECT @Site = c.site, @SiteLabel=s.SiteLabel
+	SELECT @Site = c.site, @SiteLabel=s.SiteLabel, @SiteDBGroupID = s.SiteDBGroupID
 	FROM Customer C WITH (NOLOCK)
 	INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 	WHERE CustID = @ExistingCustid	
@@ -306,8 +308,8 @@ BEGIN
 		SELECT @MaxMember = CASE WHEN @SiteLabel = '789y' THEN 20000 ELSE -1 END
 		SELECT @MaxMemberLog = CASE WHEN @SiteLabel = '789y' THEN '20000' ELSE 'Unlimited' END
 
-		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer)  
-		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer
+		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer,SiteDBGroupID)  
+		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer,@SiteDBGroupID
 		FROM CustSuper WITH(NOLOCK)
 		WHERE custid=@ExistingCustid		
 	END TRY
