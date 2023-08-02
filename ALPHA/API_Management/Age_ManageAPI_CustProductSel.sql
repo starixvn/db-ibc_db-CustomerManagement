@@ -2,8 +2,7 @@
 ALTER PROCEDURE [dbo].[Age_ManageAPI_CustProductSel]
 	-- Add the parameters for the stored procedure here
 	  @CustID	INT=NULL,
-	  @UserName	VARCHAR(100)=NULL,
-	  @SettingStatus TINYINT = 0
+	  @UserName	VARCHAR(100)=NULL
 AS
 /*
 	Task : Alpha - API Management - Support data through API
@@ -12,6 +11,7 @@ AS
 	Revisions:
 		- 20221205@Tacy: Create SP [Redmine: #171247]
 		- 20230714@Tacy: Remove HideKeno column [redmine: #191260]
+		- 20230726@Tacy: Enhance performance [redmine: #190504]
 
 	Param's Explanation: 
 */
@@ -20,41 +20,19 @@ BEGIN
 	
 	IF @CustID IS NULL AND @UserName IS NULL RETURN
 
-	SELECT ci.custid, ci.roleid, c.site, ci.currency
-	FROM custInfo ci WITH (NOLOCK)
-		INNER JOIN Customer c WITH(NOLOCK) ON c.custid=ci.custid
-	WHERE ci.username=@UserName
-		OR ci.custid=@CustID
-
 	IF @CustID<>0
 	BEGIN
-		DECLARE @roleid TINYINT
-
-		CREATE TABLE #CustSetting_StatusSelect (
-				RealProductID		TINYINT,
-				ProductID			TINYINT,
-				SportType			SMALLINT,
-				Bettype				SMALLINT,
-				IsSync				BIT DEFAULT(0),
-				isHidden			BIT DEFAULT(0),
-				isDisabled			BIT DEFAULT(0),
-				isSyncedUpline		BIT DEFAULT(0),
-				isHiddenUpline		BIT DEFAULT(0),
-				isDisabledUpline	BIT DEFAULT(0),
-				HasDownline			BIT DEFAULT(1)
-		)
-
-		SELECT @roleid=roleid
-		FROM custInfo WITH (NOLOCK)
-		WHERE custid=@CustID
-
-		--DSC Products
-		INSERT INTO #CustSetting_StatusSelect(RealProductID,ProductID,SportType,BetType,IsSync,isHidden,isDisabled,isSyncedUpline,isHiddenUpline,isDisabledUpline,HasDownline)
-		EXEC Acc_CustSetting_StatusSelect @CustID = @custid, @roleid = @roleid, @SettingStatus = @SettingStatus
-
-		SELECT *
-		FROM #CustSetting_StatusSelect
-		ORDER BY RealProductID
+		SELECT ci.custid, ci.roleid, c.site, ci.currency
+		FROM custInfo ci WITH (NOLOCK)
+			INNER JOIN Customer c WITH(NOLOCK) ON c.custid=ci.custid
+		WHERE ci.custid=@CustID
 	END
+	ELSE IF @UserName<>''
+	BEGIN
+		SELECT ci.custid, ci.roleid, c.site, ci.currency
+		FROM custInfo ci WITH (NOLOCK)
+			INNER JOIN Customer c WITH(NOLOCK) ON c.custid=ci.custid
+		WHERE ci.username=@UserName
+	END 
 END
 GO

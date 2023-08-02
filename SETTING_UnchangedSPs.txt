@@ -1,10 +1,2 @@
-NAP-Accounting\CanSee\Acc_ManageCansee_Ins.sql
-NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitCheck.sql
-NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_BetLimitSel.sql
-NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_ProductCurrencySel.sql
-NAP-Accounting\GlobalBetLimitSetting\Acc_InitializingGlobal_SportTypeSel.sql
-NAP-Accounting\SportBettypeSettingMatrix\Acc_ReferenceSetting_BetTypeSel.sql
-NAP-Accounting\SportBettypeSettingMatrix\Acc_ReferenceSetting_Check.sql
-NAP-Accounting\SportBettypeSettingMatrix\Acc_ReferenceSetting_Sel.sql
-NAP-Accounting\SportBettypeSettingMatrix\Acc_ReferenceSetting_SportTypeSel.sql
-NAP-Accounting\ViewPT-Comm\dbo.Acc_MT_SportTypeSel.sql
+Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
+ALPHA\Customer\Age_CustomerSelAllStatus.sql
