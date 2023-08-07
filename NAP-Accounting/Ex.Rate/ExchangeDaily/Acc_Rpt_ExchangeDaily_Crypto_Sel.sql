@@ -9,6 +9,7 @@ AS
 	DB: DBACC.bodb2
 	Revisions:
 		- 20221107@Evan: Initial SP [RedmineID: #177844]
+		- 20230807@Evan: Support rate for EUR [RedmineID: #192375]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -23,6 +24,7 @@ BEGIN
 		edo.Code AS CurrencyCode,
 		edo.MYR,
 		edo.CNY,
+		edo.EUR,
 		ex.USDT
 	FROM dbo.ExchangeDailyOanda edo WITH (NOLOCK)
 		INNER JOIN ExchangeDaily_Crypto ex WITH(NOLOCK) ON ex.ExchangeId = edo.ExchangeId AND ex.ExchangeDate = edo.ExchangeDate
