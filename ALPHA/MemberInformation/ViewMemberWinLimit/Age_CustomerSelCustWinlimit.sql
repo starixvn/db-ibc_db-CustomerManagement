@@ -11,6 +11,7 @@ ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 				,	@PageSize		INT				= 500
 				,	@PageIndex		INT				= 1
 				,	@TotalRows		INT				= 0			OUTPUT
+				,   @SettingStatus TINYINT = 0
 AS
 /*
 	Create:	20150715@Patrick
@@ -27,6 +28,7 @@ AS
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230804@Eden: Win loss limit - Change SP to allow dynamic seting [RedmineID: #180640]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -45,10 +47,13 @@ BEGIN
 	--> Get Representative sporttype, bettype of this sport( use for settingtype 22 storeing way)
 	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
 			@BetType = ISNULL(BettypeRefWinlossLimit,@BetType)
-	FROM SportBettypeSettingMatrix st WITH(NOLOCK) 
+	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
+		INNER JOIN dbo.SportBettypeSettingMatrix st WITH(NOLOCK) 
+			ON st.SporttypeRefWinlossLimit = s.SportType 
+			AND st.BettypeRefWinlossLimit = s.Bettype
+			AND st.isLicensee = 0 AND st.Site = 'ALL'
 	WHERE st.SportType = @SportType
 		AND st.bettype = @BetType
-		AND st.isLicensee = 0 AND st.Site = 'ALL'
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
 	FROM dbo.CustInfo c WITH(NOLOCK)
