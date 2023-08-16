@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitCheck]
 	-- Add the parameters for the stored procedure here
 	 @InputData		VARCHAR(MAX)=''
 	, @IsCheck		BIT = 0		
+	, @SettingStatus TINYINT
 	, @ProductID	TINYINT=0			OUTPUT
 	, @NotiCode		INT=0				OUTPUT
 	, @NotiMsg		NVARCHAR(4000)=''	OUTPUT
@@ -22,6 +23,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230308@Tacy: NAP - Enhance function - Support dummy sport [RedmineID: #183826]
 		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
+		- 20230810@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 
 	Param's Explanation:
 		• @IsCheck : 0 ~ not allow insert deposit's single stakelevel with SiteID=NULL
@@ -172,10 +174,7 @@ BEGIN
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID)
 	SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
-	UNION 
-	SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
 
 	SELECT TOP (1)
 			@ErrCode=CASE WHEN ISNULL(SportType, '')=''			THEN 131
