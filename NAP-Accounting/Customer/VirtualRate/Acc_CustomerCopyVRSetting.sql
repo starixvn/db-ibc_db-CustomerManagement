@@ -18,7 +18,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
-
+		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
 	Param's Explanation:  	
 
 	EXEC Acc_CustomerCopyVRSetting 
@@ -92,6 +92,7 @@ BEGIN
 	DECLARE @Source_VRLockedStatus_Soccer BIT 
 	DECLARE @Source_VRLockedStatus_OS BIT
 	DECLARE @Source_VRLockedStatus_Basketball BIT
+	DECLARE @Source_VRAccumulatedBalance BIT
 	DECLARE @Source_Virtualmultiplier VARCHAR(MAX)
 
 	SELECT @Source_EnableVirtualrate = VirtualMultiplier FROM custInfo c WITH(NOLOCK) WHERE custid = @Source_CustID
@@ -110,6 +111,12 @@ BEGIN
 		SET @Source_VRLockedStatus_Basketball = 1																
 	ELSE																										
 		SET @Source_VRLockedStatus_Basketball = 0	
+
+	IF EXISTS (SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @Source_CustID  AND Type = 4)
+		SET @Source_VRAccumulatedBalance = 1
+	ELSE 
+		SET @Source_VRAccumulatedBalance = 0
+		
 
 	SELECT @Source_Virtualmultiplier = CONVERT (VARCHAR(MAX),
 		(	
@@ -154,7 +161,8 @@ BEGIN
 			 @ErrMsg = @ErrMsg OUTPUT, 
 			 @VRLockedStatus_Soccer = @Source_VRLockedStatus_Soccer, 
 			 @VRLockedStatus_OS = @Source_VRLockedStatus_OS,
-			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,	
+			 @VRLockedStatus_Basketball = @Source_VRLockedStatus_Basketball,
+			 @VRAccumulate_Balance = @Source_VRAccumulatedBalance,
 			 @CopyFrom = @Source_CustID
 
 		IF @ErrCode <> 0

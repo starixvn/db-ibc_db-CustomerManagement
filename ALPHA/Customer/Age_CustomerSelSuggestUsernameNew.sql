@@ -2,7 +2,9 @@
 ALTER PROCEDURE [dbo].[Age_CustomerSelSuggestUsernameNew] 
 	@prefix		VARCHAR(50),	
 	@roleid		INT,
-	@seqname	VARCHAR(10) = '' OUTPUT	
+	@seqname	VARCHAR(10) = ''  OUTPUT,
+	@ErrCode 	INT = 0			  OUTPUT,
+	@ErrMsg		NVARCHAR(4000) = '' OUTPUT
 AS
 	/*
 		Created: 20230414@Johnson		
@@ -13,11 +15,12 @@ AS
 		Revisions:
 			- 20230414@Johnson: initial sp [redmine:#183697] 
 			- 20230420@Johnson: check username2 [redmine:#187266]
+			- 20230808@Helios: Add Errorlog, ErrMsg [Redmine: #190167]
 		Parameter's Explanation:			
 			- @prefix: prefix's name of new member
 			- @roleid: roleid of upline
 			- @username: username suggest
-				Exec [Age_CustomerSelSuggestUsernameNew] 'agent01',1176086,2,@seqname
+				Exec [Age_CustomerSelSuggestUsernameNew] 'agent01',1176086,2,@seqname,@ErrMsg
 	*/ 
 BEGIN	
 	SET NOCOUNT ON
@@ -42,5 +45,20 @@ BEGIN
 		WHERE @prefix + SeqName  = username OR @prefix + SeqName  = username2
 		)
 	ORDER BY SeqName ASC
+
+	IF ISNULL (@seqname , '') = '' 
+	BEGIN
+		IF @roleid = 2	-- Agent Create Member
+		BEGIN
+			SELECT @ErrMsg = 'Sorry, you cannot create more accounts because the total downlines have reached the limit (46656). Please contact your upline for further assistance.'
+		     , @ErrCode = 40040
+		END
+		ELSE			
+		BEGIN
+			SELECT @ErrMsg = 'Sorry, you cannot create more accounts because the total downlines have reached the limit (1296). Please contact your upline for further assistance.'
+		     , @ErrCode = 40039
+		END
+	END
+		
 END
 GO

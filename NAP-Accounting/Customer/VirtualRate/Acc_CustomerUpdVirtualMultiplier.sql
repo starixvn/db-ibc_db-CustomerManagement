@@ -11,6 +11,8 @@ ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier
 				,   @VRLockedStatus_Soccer		BIT = NULL
 				,   @VRLockedStatus_OS			BIT = NULL
 				,	@VRLockedStatus_BasketBall	BIT = NULL
+				,	@VRAccumulate_Balance		BIT = NULL
+				,	@Is_VRAccumulate_Balance	BIT = NULL --Checked Apply All Downline or not
 				,   @CopyFrom					INT = NULL --Source CustID of Copy VR function
 				,   @AdditionalActions VARCHAR(MAX) = ''
 AS  
@@ -49,6 +51,7 @@ AS
 		- 20210308@Eden: Copy and apply VR settings to multiple member accounts [Redmine:#149372]
 		- 20210325@Eden: Implement option to override Lock VR status and values for Master/Agent and even unlocked status of members [Redmine:#152094]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649] 
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -65,6 +68,10 @@ AS
 	    > 0: Specific Error.  
 	    
 	- @ErrMsg: Error description.  
+
+	- @Is_VRAccumulate_Balance:
+		0 (UnCheck)   : Is Manual Update
+		1 (Check)     : Is Apply For All Downline
 */  
 BEGIN  
 	SET NOCOUNT ON  
@@ -72,13 +79,13 @@ BEGIN
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
-	DECLARE	@Unlock3		BIT, --Unlock VR all Masters
-			@Unlock2		BIT, --Unlock VR all Agents
-			@Unlock1		BIT, --Unlock VR all Members
-			@Enable3		BIT, --Enable VR all Masters
-			@Enable2		BIT, --Enable VR all Agents
-			@Enable1		BIT --Enable VR all Members
-
+	DECLARE	@Unlock3									BIT, --Unlock VR all Masters
+			@Unlock2									BIT, --Unlock VR all Agents
+			@Unlock1									BIT, --Unlock VR all Members
+			@Enable3									BIT, --Enable VR all Masters
+			@Enable2									BIT, --Enable VR all Agents
+			@Enable1									BIT --Enable VR all Members
+	
 	DECLARE @tblVirtualrate TABLE (
 									SportType INT
 									,BetType INT
@@ -124,20 +131,20 @@ BEGIN
 		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AdditionalActions
 
 		SELECT
-			@Unlock3 =ISNULL(Data.Unlock3,0),
-			@Unlock2 =ISNULL(Data.Unlock2,0),
-			@Unlock1 =ISNULL(Data.Unlock1,0),
-			@Enable3 =ISNULL(Data.Enable3,0),
-			@Enable2 =ISNULL(Data.Enable2,0),
-			@Enable1 =ISNULL(Data.Enable1,0)
+			@Unlock3								= ISNULL(Data.Unlock3,0),
+			@Unlock2								= ISNULL(Data.Unlock2,0),
+			@Unlock1								= ISNULL(Data.Unlock1,0),
+			@Enable3								= ISNULL(Data.Enable3,0),
+			@Enable2								= ISNULL(Data.Enable2,0),
+			@Enable1								= ISNULL(Data.Enable1,0)
 		FROM OPENXML (@DocHandler, '/ROOT/VR',1) 
 		WITH (
-			Unlock3		BIT,
-			Unlock2		BIT,
-			Unlock1		BIT,
-			Enable3		BIT,
-			Enable2		BIT,
-			Enable1		BIT
+			Unlock3									BIT,
+			Unlock2									BIT,
+			Unlock1									BIT,
+			Enable3									BIT,
+			Enable2									BIT,
+			Enable1									BIT
 		) AS Data
 
 		EXEC sp_xml_removedocument @DocHandler
@@ -188,6 +195,9 @@ BEGIN
 			, @IsUpdate_VRLockedStatus_OS BIT = 0
 			, @Old_VRLockedStatus_Basketball BIT = 0
 			, @IsUpdate_VRLockedStatus_Basketball BIT = 0
+			, @Old_VRAccumulate_Balance BIT = 0
+			, @IsUpdate_VRAccumulate_Balance BIT = 0
+
 
 	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 1)
 		SET @Old_VRLockedStatus_Soccer = 1
@@ -219,7 +229,17 @@ BEGIN
 		SET @IsUpdate_VRLockedStatus_Basketball = 1															
 	END	
 
-	IF @IsUpdate_VRLockedStatus_OS = 1 OR @IsUpdate_VRLockedStatus_Soccer = 1 OR @IsUpdate_VRLockedStatus_Basketball = 1	
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 4)			
+		SET @Old_VRAccumulate_Balance = 1																
+	
+	SET @VRAccumulate_Balance = ISNULL(@VRAccumulate_Balance,@Old_VRAccumulate_Balance)		
+
+	IF @VRAccumulate_Balance <> @Old_VRAccumulate_Balance										
+	BEGIN																									
+		SET @IsUpdate_VRAccumulate_Balance = 1															
+	END	
+
+	IF @IsUpdate_VRLockedStatus_OS = 1 OR @IsUpdate_VRLockedStatus_Soccer = 1 OR @IsUpdate_VRLockedStatus_Basketball = 1 OR (@IsUpdate_VRAccumulate_Balance = 1  AND @Is_VRAccumulate_Balance = 0)
 	BEGIN
 		--Update VR lock status
 		EXEC Acc_VRCustLockStatusUpd 
@@ -228,6 +248,7 @@ BEGIN
 			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer
 			,@VRLockedStatus_OS = @VRLockedStatus_OS
 			,@VRLockedStatus_BasketBall = @VRLockedStatus_BasketBall
+			,@VRAccumulate_Balance = @VRAccumulate_Balance
 			,@IP = @IP
 			,@UpdateBy = 'Manual'
 			,@ErrCode = @ErrCode OUTPUT
@@ -240,10 +261,12 @@ BEGIN
 	DECLARE @LogSPData3 varchar(MAX)= ''  
 		,@IsUnlockDownLine BIT = 0
 		,@IsEnableDownline BIT = 0
+		,@ISVR_AccBalance BIT = 0
 
-	IF (@roleid = 4 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Unlock3 = 1 OR @Enable1 = 1 OR @Enable2 = 1 OR @Enable3 = 1))
-		OR (@roleid = 3 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Enable1 = 1 OR @Enable2 = 1))
-		OR (@roleid = 2 AND ( @Unlock1 = 1 OR @Enable1 = 1))
+
+	IF (@roleid = 4 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Unlock3 = 1 OR @Enable1 = 1 OR @Enable2 = 1 OR @Enable3 = 1 ))
+		OR (@roleid = 3 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Enable1 = 1 OR @Enable2 = 1 ))
+		OR (@roleid = 2 AND ( @Unlock1 = 1 OR @Enable1 = 1 ))
 	BEGIN --Update Enable VR/ Unlock VR status for all downlines
 
 		IF (@roleid = 4 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Unlock3 = 1))
@@ -272,6 +295,17 @@ BEGIN
 							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'  
 	END
 
+	
+	/* @Is_VRAccumulate_Balance:
+	0 (UnCheck)   : Is Manual Update
+	1 (Check)     : Is Apply For All Downline */
+	IF (@roleid = 4 AND (@Is_VRAccumulate_Balance = 1 ))
+		OR (@roleid = 3 AND (@Is_VRAccumulate_Balance = 1))
+		OR (@roleid = 2 AND (@Is_VRAccumulate_Balance = 1))
+	BEGIN
+		SET @ISVR_AccBalance = 1
+	END
+
 	IF @IsUnlockDownLine  = 1
 	BEGIN
 		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
@@ -296,6 +330,26 @@ BEGIN
 			,	@action = 'EnableVRDownline'
 			,   @AdditionalActions = @AdditionalActions
 	END
+
+	IF @ISVR_AccBalance  = 1
+	BEGIN
+	DECLARE @LogSPData_AccBalance varchar(MAX) = ''
+
+		EXECUTE dbo.Acc_CustomerInfo_Execrep_04
+				@custid = @custid
+			,	@roleid = @roleid
+			,	@action = 'ApplyVRAccBalanceAllDownlines'
+			,   @VRAccumulate_Balance = @VRAccumulate_Balance
+
+		SELECT @LogSPData_AccBalance = '<R VRAccumulatedBalance="'+ coalesce(cast(@VRAccumulate_Balance as varchar(1)),space(1)) + '" '	
+				+ 'IP="' + coalesce(cast(@IP as varchar(15)),space(1)) + '" '							
+				+ 'ApplyAllDownlines="1" '
+				+ 'UpdatedBy="'+ coalesce(cast('Manual' as varchar(100)),space(1)) + + '" ' 					
+				+ ' />'	
+	END
+
+
+
 				
 	Declare @LogSPData varchar(MAX) = '',
 			@LogSPData2 varchar(MAX)= ''  
@@ -439,6 +493,17 @@ BEGIN
 				@TrackingValue		= @LogSPData3,
 				@Duration			= @Duration	
 	END
+
+
+	IF @LogSPData_AccBalance <> ''				
+	BEGIN														
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper				
+				@UserId				= @UserId,					
+				@CustId				= @CustId,					
+				@ActionId			= 839,
+				@TrackingValue		= @LogSPData_AccBalance,			
+				@Duration			= @Duration					
+	END		
 END
 
 
