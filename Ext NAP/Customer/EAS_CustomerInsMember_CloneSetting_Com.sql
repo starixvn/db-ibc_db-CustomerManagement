@@ -51,6 +51,7 @@ AS
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230724@Eden: HotFix - EXT NAP - S&C super [Redmine: #191683]
 		- 20230718@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20230622@Helios: Alpha/ExtNAP - Create new downlines - Remove some obsolete rules [Redmine: #190167] 
 
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -58,9 +59,9 @@ AS
 			  = 2 : IsGroupHeadline 1-> 0
 			  = 3 : IsGroupHeadline 0-> 1, the User don't change group
 			  = 4 : IsGroupHeadline 0-> 1, the User change group
-		@GroupAdmin: Ext group assign to admin 	
+		@GroupAdmin: Ext group assign to admin 	 
 		@SettingStatus: 0: Pro, 1: UAT  
-	
+	 
 */
 BEGIN
 	SET NOCOUNT ON
@@ -167,6 +168,7 @@ BEGIN
 			RETURN	
 		END
 		
+		/* #190167 : Remove Code
 		--check limit super per month
 		DECLARE @tmpCustGroup TABLE(custid INT)
 		DECLARE @fromdate DATETIME,
@@ -190,6 +192,38 @@ BEGIN
 				@ErrCode = 201
 			RETURN		
 		END	
+		#190167 : End Remove Code */
+
+		-- New Code #190167
+
+		DECLARE 
+			@existingMrecommend		INT,
+			@existingSrecommend		INT,
+			@Prefix					VARCHAR(50),
+			@CreatedMode			TINYINT,
+			@IsQRCode				BIT
+
+		EXEC Acc_CustomerLimitCreatedAccountCheck 
+				@Custid = 0 , 
+				@RuleID = 'EAS' , 
+				@existingMrecommend = 0 , 
+				@existingSrecommend = 0 , 
+				@Prefix				= '' , 
+				@GroupName			= @GroupName , 
+				@CreatedMode		= 0 , 
+				@IsQRCode			= 0 , 
+				@SystemID			= 0 , 
+				@IP					= @IP ,
+				@Credit				= @Credit ,
+				@ErrCode			= @ErrCode OUTPUT , 
+				@ErrMsg				= @ErrMsg OUTPUT , 
+				@Language			= @Language
+		IF @ErrCode <> 0
+		BEGIN
+			SELECT @ErrCode , @ErrMsg
+			RETURN		
+		END	
+
 	END
 		
 	BEGIN TRY

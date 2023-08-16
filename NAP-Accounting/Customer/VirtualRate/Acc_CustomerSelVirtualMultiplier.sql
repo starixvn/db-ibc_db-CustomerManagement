@@ -21,8 +21,9 @@ AS
 			- 20210223@Eden: Implement Lock for VR update [Redmine:#149370]
 			- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 			- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
-
+			- 20230711@Helios: VR Accumulate Balance [Redmine: #189649] 
 		Parameter's Explanation:
+
 	*/
 BEGIN
 	SET NOCOUNT ON
@@ -47,11 +48,13 @@ BEGIN
             2.0                 AS Max_VirtualMultiplier,
 			CASE WHEN sc.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Soccer,
 			CASE WHEN os.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_OS,
-			CASE WHEN bb.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Basketball
+			CASE WHEN bb.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRLockedStatus_Basketball,
+			CASE WHEN ab.CustID IS NOT NULL THEN 1 ELSE 0 END AS VRAccumulated_Balance
     FROM    custInfo ci WITH(NOLOCK)
 			LEFT JOIN VRCustLockStatus sc WITH(NOLOCK) ON ci.custid = sc.CustID AND sc.Type = 1 --soccer 
 			LEFT JOIN VRCustLockStatus os WITH(NOLOCK) ON ci.custid = os.CustID AND os.Type = 2 --soccer 
 			LEFT JOIN VRCustLockStatus bb WITH(NOLOCK) ON ci.custid = bb.CustID AND bb.Type = 3 --basketball
+			LEFT JOIN VRCustLockStatus ab WITH(NOLOCK) ON ci.custid = ab.CustID AND ab.Type = 4 --VRAccumulatedBalance
     WHERE   ci.custid = @CustID
 
     INSERT INTO @CustVirtualRate

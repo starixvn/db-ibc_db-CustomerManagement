@@ -4,7 +4,8 @@ ALTER PROCEDURE	dbo.Acc_VRCustLockStatusUpd
 				,	@UserID							INT
 				,   @VRLockedStatus_Soccer			BIT = NULL
 				,   @VRLockedStatus_OS				BIT = NULL
-				,	@VRLockedStatus_Basketball		BIT = NULL		
+				,	@VRLockedStatus_Basketball		BIT = NULL
+				,	@VRAccumulate_Balance			BIT = NULL
 				,   @UpdateBy						VARCHAR(100)	= 'Manual'
 				,	@IP								VARCHAR(15)		= ''
 				,	@ErrCode						INT				= 0		OUTPUT
@@ -19,7 +20,7 @@ AS
 	Revisions:  
 	    - 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
-
+		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
 	Param's Explanation:  	
 	-@ErrCode:  
 	    = 0: update successfully.  
@@ -57,12 +58,15 @@ BEGIN
 	DECLARE @LogSPData_SC VARCHAR(1000)
 	DECLARE @LogSPData_OS VARCHAR(1000)
 	DECLARE @LogSPData_BB VARCHAR(1000)
+	DECLARE @LogSPData_AB VARCHAR(1000)
 	DECLARE @Old_VRLockedStatus_Soccer BIT = 0
 	DECLARE @Old_VRLockedStatus_OS BIT = 0
 	DECLARE @Old_VRLockedStatus_Basketball BIT = 0
+	DECLARE @Old_VRAcc_Balance		 BIT = 0
 	DECLARE @IsUpdateVRLockedStatus_Soccer BIT = 0
 	DECLARE @IsUpdateVRLockedStatus_OS BIT = 0
 	DECLARE @IsUpdateVRLockedStatus_Basketball BIT = 0
+	DECLARE @IsUpdateVRAcc_Balance BIT = 0
 	DECLARE @IsCallExecrep_Soccer BIT = 0
 	DECLARE @IsCallExecrep_OS BIT = 0
 	DECLARE @IsCallExecrep_Basketball BIT = 0	
@@ -77,11 +81,15 @@ BEGIN
 		SET @Old_VRLockedStatus_OS = 1
 
 	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 3)			
-		SET @Old_VRLockedStatus_Basketball = 1		
+		SET @Old_VRLockedStatus_Basketball = 1	
+		
+	IF EXISTS ( SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 4)			
+		SET @Old_VRAcc_Balance = 1	
 
 	SELECT  @IsUpdateVRLockedStatus_Soccer = CASE WHEN @VRLockedStatus_Soccer = @Old_VRLockedStatus_Soccer OR @VRLockedStatus_Soccer IS NULL THEN 0 ELSE 1 END,
 			@IsUpdateVRLockedStatus_OS = CASE WHEN @VRLockedStatus_OS = @Old_VRLockedStatus_OS OR @VRLockedStatus_OS IS NULL THEN 0 ELSE 1 END,
-			@IsUpdateVRLockedStatus_Basketball = CASE WHEN @VRLockedStatus_Basketball = @Old_VRLockedStatus_Basketball OR @VRLockedStatus_Basketball IS NULL THEN 0 ELSE 1 END	
+			@IsUpdateVRLockedStatus_Basketball = CASE WHEN @VRLockedStatus_Basketball = @Old_VRLockedStatus_Basketball OR @VRLockedStatus_Basketball IS NULL THEN 0 ELSE 1 END,
+			@IsUpdateVRAcc_Balance = CASE WHEN @VRAccumulate_Balance = @Old_VRAcc_Balance OR @VRAccumulate_Balance IS NULL THEN 0 ELSE 1 END	
 
 	SELECT @RoleID = roleid FROM custInfo WITH(NOLOCK) WHERE custid = @custid
 
@@ -156,6 +164,25 @@ BEGIN
 						+ ' />'																							
 
 	END	
+
+	IF @IsUpdateVRAcc_Balance = 1																			
+	BEGIN																												
+		IF @VRAccumulate_Balance = 0																				
+		BEGIN																											
+			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 4						
+		END																											
+		ELSE														
+		BEGIN																											
+			INSERT INTO VRCustLockStatus(CustID,Type)																	
+			SELECT @custid,4																							
+		END																																																					
+
+		SELECT @LogSPData_AB = '<R VRAccumulatedBalance="'+ coalesce(cast(@VRAccumulate_Balance as varchar(1)),space(1)) + '" '	
+						+ 'IP="' + coalesce(cast(@IP as varchar(15)),space(1)) + '" '
+						+ 'ApplyAllDownlines="0" '
+						+ 'UpdatedBy="'+ coalesce(cast(@UpdateBy as varchar(100)),space(1)) + + '" ' 					
+						+ ' />'																							
+	END	
 	
 	--Call SP execrep 
 	IF @IsCallExecrep_Soccer = 1 AND @IsCallExecrep_OS = 1 AND @IsCallExecrep_Basketball = 1
@@ -224,6 +251,16 @@ BEGIN
 				@CustId				= @CustId,					
 				@ActionId			= 837,						
 				@TrackingValue		= @LogSPData_BB,			
+				@Duration			= @Duration					
+	END		
+
+	IF @IsUpdateVRAcc_Balance = 1			
+	BEGIN														
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper				
+				@UserId				= @UserId,					
+				@CustId				= @CustId,					
+				@ActionId			= 839,
+				@TrackingValue		= @LogSPData_AB,			
 				@Duration			= @Duration					
 	END		
 END

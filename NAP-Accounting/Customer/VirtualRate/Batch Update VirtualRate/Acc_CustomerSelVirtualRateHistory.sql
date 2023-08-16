@@ -18,6 +18,7 @@ Revisions:
 	- 20200115@Johnson: add new logaction for auto update VR [redmine:#126998]
 	- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 	- 20230418@Luke: Separate log for Lock function & increase log data to top 50 [Redmine: #186897]
+	- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
 Explanations:
 ActionID: 801, SPName: Acc_CustomerUpdVirtualMultiplier
 ActionID: 802, SPName: Acc_VirtualRateMulUpd
@@ -83,6 +84,7 @@ BEGIN
 			,(810)
 			,(2800)
 			,(2802)
+			,(839)
 	END
 	ELSE --View all log
 	BEGIN
@@ -98,6 +100,7 @@ BEGIN
 			,(837)
 			,(2800)
 			,(2802)
+			,(839)
 	END
 	IF @Site='CN88'
 	BEGIN
