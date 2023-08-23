@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255]
 		- 20230522@Tacy: Enhance function - Do not validate Bettype value [Redmine: #184255] 
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		* @IsNew : 1 ~ Insert new reference setting
@@ -44,9 +45,10 @@ AS
 						BetTypeRefBetSetting="1"
 						TableBetSetting="CustSetting"
 						TableBettrans="bettrans"
-						SporttypeRefWinlossLimit="NULL"
-						BettypeRefWinlossLimit="NULL"
+						SporttypeRefWinlossLimit=""
+						BettypeRefWinlossLimit=""
 						RealProductId="1"
+						DummyProductId=""
 				/>
 			</ROOT>
 */
@@ -85,7 +87,8 @@ BEGIN
 			BettypeRefWinlossLimit	 VARCHAR(10),
 			
 			TableBettrans			VARCHAR(100),
-			RealProductId			VARCHAR(10)
+			RealProductId			VARCHAR(10),
+			DummyProductId			VARCHAR(10)
 		)
 	
 	CREATE TABLE #Bettype (typeid INT , typenamee NVARCHAR(128))
@@ -119,13 +122,13 @@ BEGIN
 											SportTypeRefComm, BetTypeRefComm, TableComm,
 											SportTypeRefBetSetting, BetTypeRefBetSetting, TableBetSetting,
 											SporttypeRefWinlossLimit, BettypeRefWinlossLimit,
-											RealProductId, TableBettrans)
+											DummyProductId, RealProductId, TableBettrans)
 		SELECT	SportType, BetType, IsLicensee, IsLive, Site,
 				SportTypeRefPT, BetTypeRefPT, IsLivePT, TablePT,
 				SportTypeRefComm, BetTypeRefComm, TableComm,
 				SportTypeRefBetSetting, BetTypeRefBetSetting, TableBetSetting,
 				SporttypeRefWinlossLimit, BettypeRefWinlossLimit,
-				RealProductId, TableBettrans
+				DummyProductId, RealProductId, TableBettrans
 		FROM OPENXML(@iDoc, '/ROOT/Setting', 1) WITH (
 					SportType					VARCHAR(10)
 					, BetType					VARCHAR(10)
@@ -144,6 +147,7 @@ BEGIN
 					, TableBetSetting			VARCHAR(50)
 					, SporttypeRefWinlossLimit	VARCHAR(10)
 					, BettypeRefWinlossLimit	VARCHAR(10)
+					, DummyProductId			VARCHAR(10)
 					, RealProductId				VARCHAR(10)
 					, TableBettrans				VARCHAR(100)
 				)
@@ -178,6 +182,7 @@ BEGIN
 		SporttypeRefWinlossLimit= CASE WHEN LEN(SporttypeRefWinlossLimit)=0	THEN NULL ELSE SporttypeRefWinlossLimit END,
 		BettypeRefWinlossLimit	= CASE WHEN LEN(BettypeRefWinlossLimit)=0	THEN NULL ELSE BettypeRefWinlossLimit   END,
 		
+		DummyProductId			= CASE WHEN LEN(DummyProductId)=0			THEN NULL ELSE DummyProductId      		END,
 		RealProductId			= CASE WHEN LEN(RealProductId)=0			THEN NULL ELSE RealProductId      		END,
 		TableBettrans			= CASE WHEN LEN(TableBettrans)=0			THEN NULL ELSE TableBettrans      		END
 	FROM #NewReferenceSettingTbl t
@@ -187,7 +192,7 @@ BEGIN
 		OR LEN(SportTypeRefComm)=0 OR LEN(BetTypeRefComm)=0 OR LEN(TableComm)=0
 		OR LEN(SportTypeRefBetSetting)=0 OR LEN(BetTypeRefBetSetting)=0 OR LEN(TableBetSetting)=0
 		OR LEN(SporttypeRefWinlossLimit)=0 OR LEN(BettypeRefWinlossLimit)=0 
-		OR LEN(RealProductId)=0 OR LEN(TableBettrans)=0
+		OR LEN(DummyProductId)=0 OR LEN(RealProductId)=0 OR LEN(TableBettrans)=0
 	
 	--check: allow Number only
 	SELECT TOP (1)
@@ -204,6 +209,7 @@ BEGIN
 							  WHEN SporttypeRefWinLossLimit IS NOT NULL	AND ISNUMERIC(SporttypeRefWinLossLimit)=0	THEN 'BettypeRefWinLossLimit'
 							  WHEN BettypeRefWinLossLimit IS NOT NULL	AND ISNUMERIC(BettypeRefWinLossLimit)=0		THEN 'BettypeRefWinLossLimit'
 							  WHEN RealProductId IS NOT NULL			AND ISNUMERIC(RealProductId)=0				THEN 'RealProductId'
+							  WHEN DummyProductId IS NOT NULL			AND ISNUMERIC(DummyProductId)=0				THEN 'DummyProductId'
 							  ELSE '' 
 						END
 	FROM #NewReferenceSettingTbl t
@@ -218,6 +224,8 @@ BEGIN
 		OR (SporttypeRefWinLossLimit IS NOT NULL	AND ISNUMERIC(SporttypeRefWinLossLimit)=0) 
 		OR (BettypeRefWinLossLimit IS NOT NULL		AND ISNUMERIC(BettypeRefWinLossLimit)=0)
 		OR (RealProductId IS NOT NULL				AND ISNUMERIC(RealProductId)=0)
+		OR (DummyProductId IS NOT NULL				AND ISNUMERIC(DummyProductId)=0)
+
 
 	IF @ErrCode <> 0
 	BEGIN
@@ -385,7 +393,7 @@ BEGIN
 		AND t.IsLicensee=s.isLicensee
 		AND t.IsLive=s.isLive
 		AND t.Site=s.Site
-	WHERE  @IsSingleCheck=1
+	WHERE  @IsSingleCheck=1 AND s.isDeleted=0 
 		AND (  
 				(NOT (t.SportTypeRefPT IS NULL AND t.BetTypeRefPT IS NULL AND t.TablePT IS NULL)
 				AND NOT (t.SportTypeRefPT IS NOT NULL AND t.BetTypeRefPT IS NOT NULL AND t.TablePT IS NOT NULL)
@@ -674,6 +682,7 @@ BEGIN
 				AND t.IsLicensee=sm.IsLicensee
 				AND t.IsLive=sm.IsLive
 				AND t.Site=sm.Site
+				AND sm.isDeleted=0
 
 		IF @ErrCode <> 0
 		BEGIN
@@ -694,7 +703,8 @@ BEGIN
 					AND t.BetType=sm.BetType
 					AND t.IsLicensee=sm.IsLicensee
 					AND t.IsLive=sm.IsLive
-					AND t.Site=sm.Site)
+					AND t.Site=sm.Site
+					AND sm.isDeleted=0)
 
 		IF @ErrCode <> 0
 		BEGIN

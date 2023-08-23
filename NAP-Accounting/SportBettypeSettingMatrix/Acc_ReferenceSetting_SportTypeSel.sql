@@ -10,7 +10,8 @@ AS
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
-		
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
+
 	Param's Explanation:
 		@pMutilProductID  0 : All, <> 0 : ProductID
 		@pMutilSportType  0 : All, <> 0 : SportType
@@ -51,7 +52,7 @@ BEGIN
 		CROSS APPLY (SELECT TOP 1 1 as value					
 					 FROM SportBettypeSettingMatrix sm WITH (NOLOCK) 
 					 INNER JOIN #Products p ON p.ProductID=sm.RealProductId
-					 WHERE s.SportType=sm.SportType) sm
+					 WHERE s.SportType=sm.SportType AND sm.isDeleted=0) sm
 	ORDER BY S.SportType
 
    DROP TABLE #Sports, #Products

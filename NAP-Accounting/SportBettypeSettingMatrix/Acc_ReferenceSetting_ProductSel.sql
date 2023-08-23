@@ -9,6 +9,7 @@ AS
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		@pMutilProductID  0 : All, <> 0 : ProductID
@@ -37,7 +38,7 @@ BEGIN
 	FROM #Products p
 	CROSS APPLY (SELECT TOP 1 1 as value 
 				 FROM SportBettypeSettingMatrix sm WITH (NOLOCK) 
-				 WHERE p.ProductID=sm.RealProductId) t
+				 WHERE p.ProductID=sm.RealProductId AND sm.isDeleted=0) t
 	ORDER BY p.ProductID
 END
 GO

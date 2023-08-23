@@ -11,6 +11,7 @@ AS
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		@pMutilProductID  0 : All, <> 0 : ProductID
@@ -62,7 +63,7 @@ BEGIN
 				 FROM SportBettypeSettingMatrix sm WITH (NOLOCK)
 					INNER JOIN #Products p WITH (NOLOCK) ON p.ProductID=sm.RealProductId
 					INNER JOIN #Sports s WITH (NOLOCK) ON s.SportType=sm.SportType
-				 WHERE sm.BetType=b.BetType) sm
+				 WHERE sm.BetType=b.BetType AND sm.isDeleted=0) sm
 	ORDER BY b.BetType
    
    DROP TABLE #Bettype,#Products,#Sports
