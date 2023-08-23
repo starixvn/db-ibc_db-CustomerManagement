@@ -52,6 +52,7 @@ AS
 		- 20210325@Eden: Implement option to override Lock VR status and values for Master/Agent and even unlocked status of members [Redmine:#152094]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649] 
+		- 20230721@Luke: Unlock VR for Soccer, Basketball, Other Sports [Redmine: #191162]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -61,7 +62,7 @@ AS
 								<Rate SportType="99" BetType="1" IsLive="1" VirtualMultiplier="1.5" />	
 							</ROOT>'	
 	- @AdditionalActions = '<ROOT>
-								<VR Unlock3="1"  Unlock2="0" Unlock1="1" Enable3="0"  Enable2="1" Enable1="0" />	
+								<VR UnlockSC3="1"  UnlockSC2="0" UnlockSC1="1" UnlockBB3="1"  UnlockBB2="0" UnlockBB1="1" UnlockOS3="1"  UnlockOS2="0" UnlockOS1="1" Enable3="0"  Enable2="1" Enable1="0" />	
 							</ROOT>'	
 	- @ErrCode:  
 	    = 0: update successfully.  
@@ -79,13 +80,22 @@ BEGIN
 	DECLARE @startRun datetime  
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
-	DECLARE	@Unlock3									BIT, --Unlock VR all Masters
-			@Unlock2									BIT, --Unlock VR all Agents
-			@Unlock1									BIT, --Unlock VR all Members
-			@Enable3									BIT, --Enable VR all Masters
-			@Enable2									BIT, --Enable VR all Agents
-			@Enable1									BIT --Enable VR all Members
-	
+	DECLARE	@UnlockSC3		BIT, --Unlock VR Soccer all Masters
+			@UnlockSC2		BIT, --Unlock VR Soccer all Agents
+			@UnlockSC1		BIT, --Unlock VR Soccer all Members
+
+			@UnlockBB3		BIT, --Unlock VR Basketball all Masters
+			@UnlockBB2		BIT, --Unlock VR Basketball all Agents
+			@UnlockBB1		BIT, --Unlock VR Basketball all Members
+
+			@UnlockOS3		BIT, --Unlock VR Other Sports all Masters
+			@UnlockOS2		BIT, --Unlock VR Other Sports all Agents
+			@UnlockOS1		BIT, --Unlock VR Other Sports all Members
+
+			@Enable3		BIT, --Enable VR all Masters
+			@Enable2		BIT, --Enable VR all Agents
+			@Enable1		BIT --Enable VR all Members
+
 	DECLARE @tblVirtualrate TABLE (
 									SportType INT
 									,BetType INT
@@ -123,34 +133,8 @@ BEGIN
 										@Language='E',  
 										@ErrMsg=@ErrMsg output,  
 										@ErrCode=@ErrCode output  
-	IF @ErrCode <>0 RETURN  
-	  
-	IF @AdditionalActions <> ''
-	BEGIN
-		-- For read xml					
-		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AdditionalActions
+	IF @ErrCode <>0 RETURN  		   
 
-		SELECT
-			@Unlock3								= ISNULL(Data.Unlock3,0),
-			@Unlock2								= ISNULL(Data.Unlock2,0),
-			@Unlock1								= ISNULL(Data.Unlock1,0),
-			@Enable3								= ISNULL(Data.Enable3,0),
-			@Enable2								= ISNULL(Data.Enable2,0),
-			@Enable1								= ISNULL(Data.Enable1,0)
-		FROM OPENXML (@DocHandler, '/ROOT/VR',1) 
-		WITH (
-			Unlock3									BIT,
-			Unlock2									BIT,
-			Unlock1									BIT,
-			Enable3									BIT,
-			Enable2									BIT,
-			Enable1									BIT
-		) AS Data
-
-		EXEC sp_xml_removedocument @DocHandler
-		-- end read xml	
-	END		   
-	
 	IF @virtualmultiplier <> ''
 	BEGIN
 		-- For read xml					
@@ -188,7 +172,14 @@ BEGIN
 		select @ErrMsg    = N'Invalid virtual rate.', @ErrCode = 101  
 		return  
 	END 
-	
+
+	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
+				@custid = @custid
+			,	@roleid = @roleid
+			,	@action = 'VirtualMultiplier'
+			,	@EnableVirtualrate = @EnableVirtualrate
+			,	@virtualmultiplier = @virtualmultiplier
+			
 	DECLARE   @Old_VRLockedStatus_Soccer BIT = 0
 			, @IsUpdate_VRLockedStatus_Soccer BIT = 0
 			, @Old_VRLockedStatus_OS BIT = 0
@@ -258,43 +249,230 @@ BEGIN
 			RETURN
 	END
 
-	DECLARE @LogSPData3 varchar(MAX)= ''  
-		,@IsUnlockDownLine BIT = 0
+	IF @AdditionalActions <> ''
+	BEGIN
+		CREATE TABLE #tempCustID(custid INT, roleid TINYINT, virtualmultiplier SMALLMONEY, type TINYINT)
+		IF @roleid = 4
+		BEGIN
+			INSERT INTO #tempCustID(custid, roleid, virtualmultiplier, type)
+			SELECT c.custid, c.roleid, c.VirtualMultiplier, s.Type
+			FROM custinfo c WITH (NOLOCK)
+				LEFT JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			WHERE c.srecommend = @custid 
+		END
+		ELSE IF @roleid = 3
+		BEGIN
+			INSERT INTO #tempCustID(custid, roleid, virtualmultiplier, type)
+			SELECT c.custid, c.roleid, c.VirtualMultiplier, s.Type
+			FROM custinfo c WITH (NOLOCK)
+				LEFT JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			WHERE c.mrecommend = @custid 
+		END
+		ELSE IF @roleid = 2
+		BEGIN
+			INSERT INTO #tempCustID(custid, roleid, virtualmultiplier, type)
+			SELECT c.custid, c.roleid, c.VirtualMultiplier, s.Type
+			FROM custinfo c WITH (NOLOCK)
+				LEFT JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			WHERE c.recommend = @custid 
+		END
+
+		-- For read xml					
+		EXEC sp_xml_preparedocument @DocHandler OUTPUT, @AdditionalActions
+
+		SELECT
+			@UnlockSC3 = CASE WHEN @roleid = 4 AND Data.UnlockSC3 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 1 AND roleid = 3
+								) THEN 1 ELSE 0 END,
+			@UnlockSC2 = CASE WHEN @roleid IN(4,3) AND Data.UnlockSC2 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 1 AND roleid = 2
+								) THEN 1 ELSE 0 END,
+			@UnlockSC1 = CASE WHEN @roleid IN (4,3,2) AND Data.UnlockSC1 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 1 AND roleid = 1
+								) THEN 1 ELSE 0 END,
+
+			@UnlockBB3 = CASE WHEN @roleid = 4 AND Data.UnlockBB3 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 3 AND roleid = 3
+								) THEN 1 ELSE 0 END,
+			@UnlockBB2 = CASE WHEN @roleid IN(4,3) AND Data.UnlockBB2 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 3 AND roleid = 2
+								) THEN 1 ELSE 0 END,
+			@UnlockBB1 = CASE WHEN @roleid IN (4,3,2) AND Data.UnlockBB1 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 3 AND roleid = 1
+								) THEN 1 ELSE 0 END,
+
+			@UnlockOS3 = CASE WHEN @roleid = 4 AND Data.UnlockOS3 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 2 AND roleid = 3
+								) THEN 1 ELSE 0 END,
+			@UnlockOS2 = CASE WHEN @roleid IN(4,3) AND Data.UnlockOS2 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 2 AND roleid = 2
+								) THEN 1 ELSE 0 END,
+			@UnlockOS1 = CASE WHEN @roleid IN (4,3,2) AND Data.UnlockOS1 = 1 
+								AND EXISTS(
+									SELECT TOP 1 1 
+									FROM #tempCustID WITH (NOLOCK) 
+									WHERE Type = 2 AND roleid = 1
+								) THEN 1 ELSE 0 END,
+
+			@Enable3 = CASE WHEN @roleid  = 4 
+								AND Data.Enable3 = 1 
+								AND EXISTS(
+										SELECT TOP 1 1
+										FROM #tempCustID c WITH (NOLOCK)
+										WHERE c.roleid = 3 AND c.VirtualMultiplier = 0
+									) THEN 1 ELSE 0 END,
+			@Enable2 = CASE WHEN @roleid IN (4,3) 
+								AND Data.Enable2 = 1 
+								AND EXISTS(
+										SELECT TOP 1 1
+										FROM #tempCustID c WITH (NOLOCK)
+										WHERE c.roleid = 2 AND c.VirtualMultiplier = 0
+									) THEN 1 ELSE 0 END,
+			@Enable1 = CASE WHEN @roleid IN (4,3,2) 
+								AND Data.Enable1 = 1 
+								AND EXISTS(
+										SELECT TOP 1 1
+										FROM #tempCustID c WITH (NOLOCK)
+										WHERE c.roleid = 1 AND c.VirtualMultiplier = 0
+									) THEN 1 ELSE 0 END
+		FROM OPENXML (@DocHandler, '/ROOT/VR',1) 
+		WITH (
+			UnlockSC3		BIT,
+			UnlockSC2		BIT,
+			UnlockSC1		BIT,
+
+			UnlockBB3		BIT,
+			UnlockBB2		BIT,
+			UnlockBB1		BIT,
+
+			UnlockOS3		BIT,
+			UnlockOS2		BIT,
+			UnlockOS1		BIT,
+
+			Enable3			BIT,
+			Enable2			BIT,
+			Enable1			BIT
+		) AS Data
+
+		EXEC sp_xml_removedocument @DocHandler
+		-- end read xml	
+		DROP TABLE #tempCustID
+	END
+
+	DECLARE  
+		@LogSPDataEnable VARCHAR(MAX) = ''
+		,@LogSPDataUnlockSC VARCHAR(MAX) = ''
+		,@LogSPDataUnlockBB VARCHAR(MAX) = ''
+		,@LogSPDataUnlockOS	VARCHAR(MAX) = ''
+		,@IsUnlockSCDownLine BIT = 0
+		,@IsUnlockBBDownLine BIT = 0
+		,@IsUnlockOSDownLine BIT = 0
 		,@IsEnableDownline BIT = 0
 		,@ISVR_AccBalance BIT = 0
 
+	--Soccer unlock downline log
+	IF (@roleid = 4 AND (@UnlockSC3 = 1 OR @UnlockSC2 = 1 OR @UnlockSC1 = 1))
+		OR (@roleid = 3 AND (@UnlockSC2 = 1 OR @UnlockSC1 = 1))
+		OR (@roleid = 2 AND @UnlockSC1 = 1)
+	BEGIN
+		SET @IsUnlockSCDownLine = 1
 
-	IF (@roleid = 4 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Unlock3 = 1 OR @Enable1 = 1 OR @Enable2 = 1 OR @Enable3 = 1 ))
-		OR (@roleid = 3 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Enable1 = 1 OR @Enable2 = 1 ))
-		OR (@roleid = 2 AND ( @Unlock1 = 1 OR @Enable1 = 1 ))
-	BEGIN --Update Enable VR/ Unlock VR status for all downlines
+		SELECT @LogSPDataUnlockSC = '<Acc_CustomerUpdVirtualMultiplier CustID="' + cast(@custid as varchar(50))+ '" ' +  							
+							CASE WHEN @UnlockSC3 = 1 THEN 'UnlockMaster-Soccer="1" ' ELSE '' END + 
+							CASE WHEN @UnlockSC2 = 1 THEN 'UnlockAgent-Soccer="1" ' ELSE '' END + 
+							CASE WHEN @UnlockSC1 = 1 THEN 'UnlockMember-Soccer="1" ' ELSE '' END + 
+							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+  
+							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(50)),space(1)) + '" '+  
+							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
+	END
 
-		IF (@roleid = 4 AND ( @Unlock1 = 1 OR @Unlock2 = 1 OR @Unlock3 = 1))
-			OR (@roleid = 3 AND ( @Unlock1 = 1 OR @Unlock2 = 1))
-			OR (@roleid = 2 AND ( @Unlock1 = 1 ))
-		BEGIN
-			SET @IsUnlockDownLine = 1
-		END
+	--Basketball unlock downline log
+	IF (@roleid = 4 AND (@UnlockBB3 = 1 OR @UnlockBB2 = 1 OR @UnlockBB1 = 1))
+		OR (@roleid = 3 AND (@UnlockBB2 = 1 OR @UnlockBB1 = 1))
+		OR (@roleid = 2 AND @UnlockBB1 = 1)
+	BEGIN
+		SET @IsUnlockBBDownLine = 1
 
-		IF (@roleid = 4 AND ( @Enable1 = 1 OR @Enable2 = 1 OR @Enable3 = 1))
-			OR (@roleid = 3 AND ( @Enable1 = 1 OR @Enable2 = 1))
-			OR (@roleid = 2 AND (@Enable1 = 1))
-		BEGIN
-			SET @IsEnableDownline = 1
-		END
+		SELECT @LogSPDataUnlockBB = '<Acc_CustomerUpdVirtualMultiplier CustID="' + cast(@custid as varchar(50))+ '" ' +  							
+							CASE WHEN @UnlockBB3 = 1 THEN 'UnlockMaster-Basketball="1" ' ELSE '' END + 
+							CASE WHEN @UnlockBB2 = 1 THEN 'UnlockAgent-Basketball="1" ' ELSE '' END + 
+							CASE WHEN @UnlockBB1 = 1 THEN 'UnlockMember-Basketball="1" ' ELSE '' END + 
+							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+  
+							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(50)),space(1)) + '" '+  
+							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
+	END
 
-		Select @LogSPData3 = '<Acc_CustomerUpdVirtualMultiplier CustID="' + cast(@custid as varchar(50))+ '" ' +  							
-							CASE WHEN @Unlock3 = 1 THEN 'UnlockMaster="1" ' ELSE '' END + 
-							CASE WHEN @Unlock2 = 1 THEN 'UnlockAgent="1" ' ELSE '' END + 
-							CASE WHEN @Unlock1 = 1 THEN 'UnlockMember="1" ' ELSE '' END + 
+	--Other sports unlock downline log
+	IF (@roleid = 4 AND (@UnlockOS3 = 1 OR @UnlockOS2 = 1 OR @UnlockOS1 = 1))
+		OR (@roleid = 3 AND (@UnlockOS2 = 1 OR @UnlockOS1 = 1))
+		OR (@roleid = 2 AND @UnlockOS1 = 1)
+	BEGIN
+		SET @IsUnlockOSDownLine = 1
+
+		SELECT @LogSPDataUnlockOS = '<Acc_CustomerUpdVirtualMultiplier CustID="' + cast(@custid as varchar(50))+ '" ' +  							
+							CASE WHEN @UnlockOS3 = 1 THEN 'UnlockMaster-OtherSports="1" ' ELSE '' END + 
+							CASE WHEN @UnlockOS2 = 1 THEN 'UnlockAgent-OtherSports="1" ' ELSE '' END + 
+							CASE WHEN @UnlockOS1 = 1 THEN 'UnlockMember-OtherSports="1" ' ELSE '' END + 
+							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+  
+							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(50)),space(1)) + '" '+  
+							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
+	END
+
+	--Enable downline log
+	IF (@roleid = 4 AND (@Enable3 = 1 OR @Enable2 = 1 OR @Enable1 = 1))
+		OR (@roleid = 3 AND (@Enable2 = 1 OR @Enable1 = 1))
+		OR (@roleid = 2 AND @Enable1 = 1)
+	BEGIN
+		SET @IsEnableDownLine = 1
+
+		SELECT @LogSPDataEnable = '<Acc_CustomerUpdVirtualMultiplier CustID="' + cast(@custid as varchar(50))+ '" ' +  							
 							CASE WHEN @Enable3 = 1 THEN 'EnableMaster="1" ' ELSE '' END + 
 							CASE WHEN @Enable2 = 1 THEN 'EnableAgent="1" ' ELSE '' END + 
 							CASE WHEN @Enable1 = 1 THEN 'EnableMember="1" ' ELSE '' END + 
 							'ErrCode="'+ coalesce(cast(@ErrCode as varchar(50)),space(1)) + '" '+  
 							'ErrMsg="'+ coalesce(cast(@ErrMsg as varchar(50)),space(1)) + '" '+  
-							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'  
+							'IP="'+ coalesce(cast(@IP as varchar(15)),space(1))+'" />'
 	END
 
+	IF @IsUnlockSCDownLine  = 1 OR @IsUnlockBBDownLine = 1 OR @IsUnlockOSDownLine = 1 OR @IsEnableDownline = 1
+	BEGIN
+		SELECT @AdditionalActions = '<ROOT><VR UnlockSC3="' + cast(@UnlockSC3 as char(1)) + '" ' +
+												'UnlockSC2="' + cast(@UnlockSC2 as char(1)) + '" ' +
+												'UnlockSC1="' + cast(@UnlockSC1 as char(1)) + '" ' +
+												'UnlockBB3="' + cast(@UnlockBB3 as char(1)) + '" ' +
+												'UnlockBB2="' + cast(@UnlockBB2 as char(1)) + '" ' +
+												'UnlockBB1="' + cast(@UnlockBB1 as char(1)) + '" ' +
+												'UnlockOS3="' + cast(@UnlockOS3 as char(1)) + '" ' +
+												'UnlockOS2="' + cast(@UnlockOS2 as char(1)) + '" ' +
+												'UnlockOS1="' + cast(@UnlockOS1 as char(1)) + '" ' +
+												'Enable3="' + cast(@Enable3 as char(1)) + '" ' +
+												'Enable2="' + cast(@Enable2 as char(1)) + '" ' +
+												'Enable1="' + cast(@Enable1 as char(1)) + '" /></ROOT>'
+	END
 	
 	/* @Is_VRAccumulate_Balance:
 	0 (UnCheck)   : Is Manual Update
@@ -306,7 +484,7 @@ BEGIN
 		SET @ISVR_AccBalance = 1
 	END
 
-	IF @IsUnlockDownLine  = 1
+	IF @IsUnlockSCDownLine  = 1 OR @IsUnlockBBDownLine = 1 OR @IsUnlockOSDownLine = 1
 	BEGIN
 		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
 				@custid = @custid
@@ -314,13 +492,6 @@ BEGIN
 			,	@action = 'UnlockVRDownline'
 			,   @AdditionalActions = @AdditionalActions
 	END
-		
-	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
-				@custid = @custid
-			,	@roleid = @roleid
-			,	@action = 'VirtualMultiplier'
-			,	@EnableVirtualrate = @EnableVirtualrate
-			,	@virtualmultiplier = @virtualmultiplier
 
 	IF @IsEnableDownline  = 1
 	BEGIN
@@ -330,7 +501,7 @@ BEGIN
 			,	@action = 'EnableVRDownline'
 			,   @AdditionalActions = @AdditionalActions
 	END
-
+				
 	IF @ISVR_AccBalance  = 1
 	BEGIN
 	DECLARE @LogSPData_AccBalance varchar(MAX) = ''
@@ -484,16 +655,15 @@ BEGIN
 		END CATCH    
 	END
 
-	IF @LogSPData3 <> ''
+	IF @LogSPDataEnable <> ''
 	BEGIN
 		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
 				@UserId				= @UserId,
 				@CustId				= @CustId,
 				@ActionId			= 832,
-				@TrackingValue		= @LogSPData3,
+				@TrackingValue		= @LogSPDataEnable,
 				@Duration			= @Duration	
 	END
-
 
 	IF @LogSPData_AccBalance <> ''				
 	BEGIN														
@@ -504,6 +674,37 @@ BEGIN
 				@TrackingValue		= @LogSPData_AccBalance,			
 				@Duration			= @Duration					
 	END		
+
+	IF @LogSPDataUnlockSC <> ''
+	BEGIN
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserId				= @UserId,
+				@CustId				= @CustId,
+				@ActionId			= 840,
+				@TrackingValue		= @LogSPDataUnlockSC,
+				@Duration			= @Duration	
+	END
+
+	IF @LogSPDataUnlockBB <> ''
+	BEGIN
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserId				= @UserId,
+				@CustId				= @CustId,
+				@ActionId			= 841,
+				@TrackingValue		= @LogSPDataUnlockBB,
+				@Duration			= @Duration	
+	END
+
+	IF @LogSPDataUnlockOS <> ''
+	BEGIN
+		EXEC dbo.Acc_WriteLog_UserLog_RunSP_Wrapper
+				@UserId				= @UserId,
+				@CustId				= @CustId,
+				@ActionId			= 842,
+				@TrackingValue		= @LogSPDataUnlockOS,
+				@Duration			= @Duration	
+	END
+
 END
 
 

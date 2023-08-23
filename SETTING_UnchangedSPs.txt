@@ -1,2 +1,1 @@
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
+NAP-Accounting\Customer\VirtualRate\Acc_VRCustLockStatusUpd.sql
