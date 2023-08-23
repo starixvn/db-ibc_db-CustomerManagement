@@ -17,6 +17,7 @@ AS
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		@IsLicensee				0 : Credit, 1 : Deposit
@@ -35,8 +36,10 @@ BEGIN
 			@RowEnd = @RowStart + @PageSize - 1 	
 	
 	CREATE TABLE #ReferenceSettingTbl(
-			ProductID				TINYINT,
-			ProductName				VARCHAR(50),
+			RealProductID			TINYINT,
+			RealProductName			VARCHAR(50),
+			DummyProductID			TINYINT,
+			DummyProductName		VARCHAR(50),
 			SportType				SMALLINT,
 			SportName				NVARCHAR(50),
 			BetType					INT,
@@ -86,7 +89,6 @@ BEGIN
 	SELECT ProductID, ProductName
 	FROM Products WITH (NOLOCK)
 	WHERE Enabled=1
-	AND ProductID IN (SELECT TRIM(value) val FROM STRING_SPLIT(@pMutilProductID, ','))
 
 	INSERT INTO #Sports (SportType, SportName)	
 	EXEC Acc_SporttypeSel @Mode=1
@@ -100,14 +102,17 @@ BEGIN
 	WHERE typeid IN (SELECT TRIM(value) val FROM STRING_SPLIT(@pMutilBetType, ','))
 
 	INSERT INTO #ReferenceSettingTbl 
-		(ProductID, ProductName, SportType, SportName, BetType, BettypeName,
+		(RealProductID, RealProductName, 
+		 DummyProductID, DummyProductName,
+		 SportType, SportName, BetType, BettypeName,
 		 isLicensee, isLive, Site, isActive,
 		 SportTypeRefPT, BetTypeRefPT, TablePT, isLivePT,
 		 SportTypeRefComm, BetTypeRefComm, TableComm,
 		 SportTypeRefBetSetting, BetTypeRefBetSetting, TableBetSetting,
 		 SporttypeRefWinlossLimit, BettypeRefWinlossLimit, TableBettrans)
 	SELECT DISTINCT
-			p.ProductID, p.ProductName,
+			sm.RealProductID, p.ProductName,	--real
+			sm.ProductID, dp.ProductName,		--dummy
 			s.SportType, s.SportName,
 			b.Bettype, b.Bettypename,
 			sm.isLicensee, sm.isLive,
@@ -121,13 +126,17 @@ BEGIN
 	INNER JOIN #Products p ON p.ProductID=sm.RealProductId
 	INNER JOIN #Sports s ON s.SportType=sm.SportType
 	INNER JOIN #Bettype b ON b.Bettype=sm.BetType
+	LEFT JOIN #Products dp ON dp.ProductID=sm.ProductID	--dummy
 	WHERE @IsLicensee=sm.isLicensee AND @IsLive=sm.isLive
-	
+		AND isDeleted=0
+		AND sm.RealProductId IN (SELECT TRIM(value) val FROM STRING_SPLIT(@pMutilProductID, ','))
+
 	--ExportData
 	IF @ExportData = 1
 	BEGIN
 		SELECT 
-			ProductID, ProductName,
+			RealProductID, RealProductName,
+			DummyProductID, DummyProductName,
 			SportType, SportName,
 			Bettype, Bettypename,
 			isLicensee, isLive,
@@ -145,7 +154,8 @@ BEGIN
 		FROM #ReferenceSettingTbl
 
 		SELECT 
-			ProductID, ProductName,
+			RealProductID, RealProductName,
+			DummyProductID, DummyProductName,
 			SportType, SportName,
 			Bettype, Bettypename,
 			isLicensee, isLive,
@@ -156,7 +166,7 @@ BEGIN
 			SporttypeRefWinlossLimit, BettypeRefWinlossLimit,
 			TableBettrans
 		FROM (
-				SELECT ROW_NUMBER() OVER(ORDER BY ProductID, SportType, Bettype) rn, *
+				SELECT ROW_NUMBER() OVER(ORDER BY RealProductID, SportType, Bettype) rn, *
 				FROM #ReferenceSettingTbl
 		   )t
 		WHERE rn BETWEEN @RowStart AND @RowEnd

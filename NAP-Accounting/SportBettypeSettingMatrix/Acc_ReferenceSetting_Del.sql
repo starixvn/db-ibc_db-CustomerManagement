@@ -13,6 +13,7 @@ AS
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		 @pInputData : 
@@ -76,8 +77,10 @@ BEGIN
 	
 	--DELETE:
 	BEGIN TRY
-		DELETE s
-		FROM SportBettypeSettingMatrix s  WITH (ROWLOCK)
+		UPDATE s
+		SET s.[RepUpdateTime]=sysdatetime(),
+			s.[isDeleted]=1
+		FROM SportBettypeSettingMatrix s  WITH (ROWLOCK,UPDLOCK)
 		INNER JOIN #NewReferenceSettingTbl t 
 			ON t.SportType=s.SportType
 			AND t.BetType=s.BetType

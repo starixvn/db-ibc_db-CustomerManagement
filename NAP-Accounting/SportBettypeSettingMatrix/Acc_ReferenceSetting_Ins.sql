@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255]
+		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
 		
 	Param's Explanation:
 		 @pInputData : 
@@ -35,9 +36,10 @@ AS
 					BetTypeRefBetSetting="1"
 					TableBetSetting="CustSetting"
 					TableBettrans="bettrans"
-					SporttypeRefWinlossLimit="NULL"
-					BettypeRefWinlossLimit="NULL"
+					SporttypeRefWinlossLimit=""
+					BettypeRefWinlossLimit=""
 					RealProductId="1"
+					DummyProductId=""
 			/>
 	</ROOT>
 */
@@ -79,7 +81,8 @@ BEGIN
 			BettypeRefWinlossLimit	 SMALLINT,
 			
 			TableBettrans			VARCHAR(100),
-			RealProductId			TINYINT
+			RealProductId			TINYINT,
+			DummyProductId			TINYINT
 		)
 	
 	IF @InputData IS NULL OR @InputData = ''
@@ -100,7 +103,7 @@ BEGIN
 											SportTypeRefComm, BetTypeRefComm, TableComm,
 											SportTypeRefBetSetting, BetTypeRefBetSetting, TableBetSetting,
 											SporttypeRefWinlossLimit, BettypeRefWinlossLimit,
-											RealProductId, TableBettrans)
+											DummyProductId, RealProductId, TableBettrans)
 		SELECT	SportType, BetType, IsLicensee, IsLive, Site, 
 				
 				CASE WHEN ISNUMERIC(SportTypeRefPT)=0	THEN NULL ELSE SportTypeRefPT	END SportTypeRefPT,
@@ -114,11 +117,12 @@ BEGIN
 			
 				CASE WHEN ISNUMERIC(SportTypeRefBetSetting)=0	THEN NULL ELSE SportTypeRefBetSetting	END SportTypeRefBetSetting,
 				CASE WHEN ISNUMERIC(BetTypeRefBetSetting)=0		THEN NULL ELSE BetTypeRefBetSetting		END BetTypeRefBetSetting, 
-				CASE WHEN TableBetSetting IN ('NULL','')			THEN NULL ELSE TableBetSetting			END TableBetSetting, 
+				CASE WHEN TableBetSetting IN ('NULL','')		THEN NULL ELSE TableBetSetting			END TableBetSetting, 
 			
 				CASE WHEN ISNUMERIC(SporttypeRefWinlossLimit)=0	THEN NULL ELSE SporttypeRefWinlossLimit	END SporttypeRefWinlossLimit,
 				CASE WHEN ISNUMERIC(BettypeRefWinlossLimit)=0	THEN NULL ELSE BettypeRefWinlossLimit	END BettypeRefWinlossLimit,
 
+				CASE WHEN ISNUMERIC(DummyProductId)=0	THEN NULL ELSE DummyProductId	END DummyProductId,
 				RealProductId,
 				TableBettrans 
 
@@ -140,7 +144,8 @@ BEGIN
 					, TableBetSetting			VARCHAR(50)
 					, SporttypeRefWinlossLimit	VARCHAR(10)
 					, BettypeRefWinlossLimit	VARCHAR(10)
-					, RealProductId				INT
+					, RealProductId				TINYINT
+					, DummyProductId			VARCHAR(10)
 					, TableBettrans				VARCHAR(100)
 				)
 		EXEC sp_xml_removedocument @iDoc
@@ -152,10 +157,66 @@ BEGIN
 
 	--INSERT:
 	BEGIN TRY
-		INSERT INTO SportBettypeSettingMatrix
-				([SportType], [BetType], [IsLicensee], [IsLive], [Site], [isActive], [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], [IsLiveComm], [IsLiveBetSetting], [TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId])
-		SELECT	 [SportType], [BetType], [IsLicensee], [IsLive], [Site], 1,			 [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], 0,			0,					[TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId]
-		FROM #NewReferenceSettingTbl
+		IF EXISTS (SELECT TOP 1 1 FROM #NewReferenceSettingTbl t
+					INNER JOIN SportBettypeSettingMatrix sm WITH (NOLOCK) 
+						ON  t.SportType=sm.SportType
+						AND t.BetType=sm.BetType
+						AND t.IsLicensee=sm.IsLicensee
+						AND t.IsLive=sm.IsLive
+						AND t.Site=sm.Site
+						AND sm.isDeleted=1)
+		BEGIN	--case: isDeleted=1, user insert new setting.
+			UPDATE s
+			SET s.SportTypeRefPT=t.SportTypeRefPT 
+				, s.BetTypeRefPT=t.BetTypeRefPT 
+				, s.IsLivePT=t.IsLivePT
+				, s.TablePT=t.TablePT
+
+				, s.SportTypeRefComm=t.SportTypeRefComm
+				, s.BetTypeRefComm=t.BetTypeRefComm
+				, s.TableComm=t.TableComm
+
+				, s.SportTypeRefBetSetting=t.SportTypeRefBetSetting
+				, s.BetTypeRefBetSetting=t.BetTypeRefBetSetting
+				, s.TableBetSetting=t.TableBetSetting
+
+				, s.SporttypeRefWinlossLimit=t.SporttypeRefWinlossLimit
+				, s.BettypeRefWinlossLimit=t.BettypeRefWinlossLimit
+
+				, s.TableBettrans=t.TableBettrans
+				, s.RealProductId=t.RealProductId
+				, s.ProductID=t.DummyProductId
+				, s.[RepUpdateTime]=sysdatetime()
+				, s.isDeleted=0
+			FROM SportBettypeSettingMatrix s WITH (ROWLOCK, UPDLOCK)
+			INNER JOIN #NewReferenceSettingTbl t 
+				ON t.SportType=s.SportType
+				AND t.BetType=s.BetType
+				AND t.IsLicensee=s.IsLicensee
+				AND t.IsLive=s.IsLive
+				AND t.Site=s.Site
+				AND s.isDeleted=1
+		END
+		
+		--delete
+		DELETE t
+		FROM #NewReferenceSettingTbl t
+		INNER JOIN SportBettypeSettingMatrix sm WITH (NOLOCK) 
+			ON  t.SportType=sm.SportType
+			AND t.BetType=sm.BetType
+			AND t.IsLicensee=sm.IsLicensee
+			AND t.IsLive=sm.IsLive
+			AND t.Site=sm.Site
+
+		--new setting
+		IF EXISTS (SELECT TOP 1 1 FROM #NewReferenceSettingTbl t)
+		BEGIN
+			INSERT INTO SportBettypeSettingMatrix
+					([SportType], [BetType], [IsLicensee], [IsLive], [Site], [isActive], [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], [IsLiveComm], [IsLiveBetSetting], [TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [ProductId])
+			SELECT	 [SportType], [BetType], [IsLicensee], [IsLive], [Site], 1,			 [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], 0,			0,					[TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [DummyProductId]
+			FROM #NewReferenceSettingTbl
+		END
+
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE()
