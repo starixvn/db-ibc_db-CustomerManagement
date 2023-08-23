@@ -8,6 +8,7 @@ AS
 	DB: DBCUST/CustDB  
 	Revisions:  
 		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]  
+		- 20230818@Tacy: Add APISecretKey for ACCUT [Redmine: #192805]
 
 */  
 RETURN  
@@ -16,6 +17,7 @@ RETURN
   CASE   
     --ACCUUS
    WHEN @APISecretKey =  '}#U)Gw-PG7XYwvhh|8=C(bo~g6dXsNOUJ7]JpuuDtv8,-,7+i@*)rP"VQh}qb_' THEN 'ACCUT'
+   WHEN @APISecretKey =  'qrWV6EGztqkv&DcM@S%pmuBfrPHxJp4MRvXB3m#KD$5$xntc9daWf3nQbUCM5M' THEN 'ACCUT'
    WHEN @APISecretKey =  '.CL}T&sA/OQ~<kDe#oA$,i=PV"WlRk~yA}Cg@E=CC+=rJR$M,?*D/npdz[Dpw^' THEN 'ACCYEN789'
    WHEN @APISecretKey =  'EBhUvN@#M$%:)J[-OzojFO|3cSe+`X=Qd*EC?,4%4JOSZWegM0ey]_`ppN]>|' THEN 'ACCYEN889'
    WHEN @APISecretKey =  '}#U)Gw-PG7XYwvhh|8=C(bo~g6dXsNOUJ7]JpuuDtv8,-,7+i@*)rP"VQh}q' THEN 'ACCUUS'
