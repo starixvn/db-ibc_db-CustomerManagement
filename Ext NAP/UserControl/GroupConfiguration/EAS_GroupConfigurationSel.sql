@@ -15,6 +15,7 @@ AS
 		- 20200812@Sophia:  Format at openquery code [Redmine: #137767]
 		- 20200922@Danny:	Add OrderNo, Type column into result set [Redmine: #141832]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+		- 20230713@Lewis: Change Line Code Openquery -- due to Deploy Tool [RedmineID: #189207]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -24,14 +25,8 @@ BEGIN
 	-- Get all enabled products
 	INSERT INTO #tmpProducts (ProductId, ProductName, OrderNo, Type)
 	SELECT ProductId, ProductName, OrderNo, [Type]
-	FROM OPENQUERY (DBAGE, 'SELECT		CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID 
-										,p.ProductName
-										,ISNULL(p.OrderNo,0) AS OrderNo
-										,CASE	WHEN p.CasinoType = 1 THEN 53
-												WHEN p.CasinoType = 2 THEN 41
-												ELSE 0 END AS [Type]
-							FROM		bodb02.dbo.Products p WITH (NOLOCK)
-							LEFT JOIN	bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
+	FROM OPENQUERY (DBAGE, 'SELECT	CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID, p.ProductName, ISNULL(p.OrderNo,0) AS OrderNo, CASE WHEN p.CasinoType = 1 THEN 53 WHEN p.CasinoType = 2 THEN 41 ELSE 0 END AS [Type] 
+							FROM	bodb02.dbo.Products p WITH (NOLOCK) LEFT JOIN	bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId 
 							WHERE p.GroupType = 0 AND gp.ProductId IS NULL AND p.Enabled = 1'
 					)
 

@@ -14,6 +14,7 @@ Revisions:
 	- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 	- 2001020@Winfred: Fix miss product when add new group and add new product apply all group [Redmine: #140026]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+	- 20230713@Lewis: Change Line Code Openquery -- due to Deploy Tool [RedmineID: #189207]
 
 Param's Explanation:
 	- @data:		
@@ -60,14 +61,9 @@ BEGIN
 	-- Get all enabled products
 	INSERT INTO #tmpProducts (ProductId, ProductName)
 	SELECT ProductId, ProductName
-	FROM OPENQUERY (DBAGE, '
-							SELECT
-								CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID
-							   ,p.ProductName
-							FROM bodb02.dbo.Products p WITH (NOLOCK)
-								LEFT JOIN bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
-							WHERE p.GroupType = 0 AND gp.ProductId IS NULL
-								AND p.Enabled = 1')
+	FROM OPENQUERY (DBAGE, 'SELECT CAST(ISNULL(gp.GroupProductId, p.ProductID) AS INT) AS ProductID,p.ProductName
+							FROM bodb02.dbo.Products p WITH (NOLOCK) LEFT JOIN bodb02.dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
+							WHERE p.GroupType = 0 AND gp.ProductId IS NULL AND p.Enabled = 1')
 	
 	BEGIN TRY
 		EXEC sp_xml_preparedocument @iDoc OUTPUT, @data

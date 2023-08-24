@@ -1,1 +1,0 @@
-NAP-Accounting\Customer\VirtualRate\Acc_VRCustLockStatusUpd.sql
