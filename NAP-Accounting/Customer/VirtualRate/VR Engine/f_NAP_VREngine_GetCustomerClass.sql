@@ -13,7 +13,7 @@ RETURNS TABLE
 		- 20220228@Elodie: Add new class 131,132 [Redmine:#169232]
 		- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
 		- 20220815@Eden: Virtual Rate - Initialize new CC IDs for all customers [Redmine:#175976]
-		- 20230825@Winfred: egrate new CC 952 [Redmine:#192966]
+		- 20230825@Winfred: Integrate new CC 952 [Redmine:#192966]
 
 	Parameter explanation:	
 
