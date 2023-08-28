@@ -23,6 +23,8 @@ AS
 
 	Revisions:  
 	- 20210622@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
+	- 20230823@Eden : Archive super level 789y (Stage 3 and Stage 4) [Redmine: #183447]
+
 
 	Parameter Definition
 		-@FilterDateType: apply for headline dirrect acccounts' downlines
@@ -845,7 +847,9 @@ BEGIN
 		,lastlogged       = CASE WHEN ar.StageID = 4 THEN ar.Lastlogged
 								ELSE c.lastlogged 
 							END             
-		,ClosedDate       = CASE WHEN cps.CloseInfo > 0 THEN ar.ClosedDate END     
+		,ClosedDate       = CASE WHEN cps.CloseInfo > 0 THEN ar.ClosedDate 
+								 WHEN cps.custid IS NULL THEN ar.ClosedDate -- Deleted account
+								END     
 		,DisabledDate     = ar.DisabledDate      
 		,SettingDeletedDate = ar.SettingDeletedDate
 		,IsWarningTicket   = 0  
