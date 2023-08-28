@@ -19,6 +19,7 @@ AS
 		- 20201201@Eden: Alpha Site | Implement Dormant Account List [RedmineID: #144903]
 		- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210610@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
+		- 20230823@Eden : Archive super level 789y (Stage 3 and Stage 4) [Redmine: #183447]
 
 	Parameter Definition
 		-@FilterStatusID:
@@ -370,7 +371,9 @@ BEGIN
 		,lastlogged       = CASE WHEN ar.StageID = 4 THEN ar.Lastlogged
 								ELSE c.lastlogged 
 							END             
-		,ClosedDate       = CASE WHEN cps.CloseInfo > 0 THEN ar.ClosedDate END     
+		,ClosedDate       = CASE WHEN cps.CloseInfo > 0 THEN ar.ClosedDate 
+								 WHEN cps.custid IS NULL THEN ar.ClosedDate -- Deleted account
+							END 
 		,DisabledDate     = ar.DisabledDate      
 		,SettingDeletedDate = ar.SettingDeletedDate
 		,IsWarningTicket   = 0  
