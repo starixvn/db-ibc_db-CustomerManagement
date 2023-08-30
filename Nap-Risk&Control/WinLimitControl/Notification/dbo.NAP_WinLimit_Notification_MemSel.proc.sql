@@ -26,6 +26,7 @@ Revisions:
 	- 20180918@Robert: Macau Games - CWL Integration [Redmine: 101546]
 	- 20230104@Tacy: CWL - Split 789y Site [RedmineID: #182390]
 	- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
+	- 20230829@Luke: Implement Company Max Payout Notification [Redmine: #193288]
 
 Param's Explanation:
 	� @ErrCode:
@@ -35,6 +36,9 @@ Param's Explanation:
 */
 
 BEGIN
+	SET NOCOUNT ON
+	DECLARE @FromDate DATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()),0) 
+
     SELECT wl.custid
 	    , c.username
 	    , CASE
@@ -47,8 +51,7 @@ BEGIN
 				ELSE ag.site
 		END AS site
 	    , s.isLicensee AS      IsDeposit
-	    , p.ProductName
-	    , p.ProductId
+	    , wl.ProductID
 	    , wl.GroupID
 	    , CASE
 			WHEN wl.Levelid = 1
@@ -74,11 +77,11 @@ BEGIN
 	    , wl.LevelId
 	    , l.LevelName
 	    , wl.BettypeIDList
+	INTO #tmp
     FROM WinLimit_CustGameMonitoring_History AS wl WITH (NOLOCK)
 	   INNER JOIN Customer AS c WITH (NOLOCK) ON c.custid = wl.CustID
 	   INNER JOIN Customer AS ag WITH (NOLOCK) ON ag.custid = c.recommend
 	   INNER JOIN Site AS S WITH (NOLOCK) ON S.site = ag.site
-	   INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH (NOLOCK) ON p.ProductID = wl.ProductID
 	   INNER JOIN Winlimit_LevelSetting AS l WITH (NOLOCK) ON l.LevelId = wl.LevelId
 	   INNER JOIN exchange AS e WITH (NOLOCK) ON c.currency = e.exchangeid
     WHERE CASE
@@ -99,4 +102,29 @@ BEGIN
 		    END = @Username
 		AND S.isActive = 1
 		AND wl.ActionID < 200 
+		AND wl.ModifiedDate >= @FromDate
+
+	IF EXISTS (SELECT TOP 1 1 FROM #tmp)
+	BEGIN
+		SELECT custid
+	    , username
+	    , code
+	    , site
+	    , IsDeposit
+		, p.ProductName
+	    , p.ProductID
+	    , GroupID
+	    , WinlimitAmount
+	    , TotalWinAmt_OriginalCurrency
+	    , TotalWinAmt_BaseCurrency
+	    , ModifiedDate
+	    , WinlostDate
+	    , LevelId
+	    , LevelName
+	    , BettypeIDList
+		FROM #tmp t 
+			INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH (NOLOCK) ON p.ProductID = t.ProductID
+	END
+	ELSE
+		RETURN  
 END
