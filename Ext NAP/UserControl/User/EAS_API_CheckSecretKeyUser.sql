@@ -1,27 +1,30 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
-/*
-	Created: Helios  
-	Task : API Support Check UserName - Password - APISecretKey For Headline
-	DB: DBCUST/CustDB  
-	Revisions:  
-		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
-	Parameter's Explanation:  
-		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
-		@IsAuthenticated:
-			Pass : @IsAuthenticated = 1
-			Err    : @IsAuthenticated = 0
-*/
+
 CREATE PROCEDURE [dbo].[EAS_API_CheckSecretKeyUser]
 	@UserName			VARCHAR(50)		
   , @UserPassword		NVARCHAR(100)		
   , @APISecretKey		VARCHAR(100)		
   , @CustID				INT			  = 0	OUTPUT
-  , @RoleID				TINYINT		  = 0	OUTPUT
+  , @SubAccID			INT			  = 0	OUTPUT
   , @ErrCode			INT			  = 0	OUTPUT
   , @ErrMsg				NVARCHAR(200) = ''  OUTPUT
   , @IsAuthenticated	BIT			  = 1	OUTPUT
 AS
+/*
+	Created: Helios  
+	Task : API Support Check UserName - Password - APISecretKey For Headline
+	DB: DBCUST/CustDB  
 
+	Revisions:  
+		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
+		- 20230816@Tacy: EXT - Adjust API to support Live Casino for Headline [Redmine: #192805]
+
+	Parameter's Explanation:  
+		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
+		@IsAuthenticated:
+			Pass : @IsAuthenticated = 1
+			Err  : @IsAuthenticated = 0
+*/
 BEGIN
 	SET NOCOUNT ON
 
@@ -30,7 +33,8 @@ BEGIN
 	DECLARE 
 		@GroupID		INT = 0
 	,	@GroupName		VARCHAR(50) = ''
-	 
+	,	@IsActive		BIT = 1
+	
 	CREATE TABLE #GroupName (GroupName VARCHAR(50))
 
 	-- Check SecrectKey
@@ -56,9 +60,12 @@ BEGIN
 
 	IF @Srecommend = 0
 	BEGIN
-		
 		-- Check CustSub and Permission Report
-		SET @CustID = (SELECT CustID FROM CustSub WITH (NOLOCK) WHERE (username = @UserName OR UserName2 = @UserName) AND userpwd = @UserPassword AND PageAccess LIKE '%[E]%')
+		SELECT @CustID=CustID , @SubAccID=subaccid
+		FROM CustSub WITH (NOLOCK) 
+		WHERE (username = @UserName OR UserName2 = @UserName) 
+			AND userpwd = @UserPassword 
+			AND PageAccess LIKE '%[E]%'
 
 		-- Check user and password of Sub Cust
 		SELECT @Srecommend = ISNULL(c.srecommend,0)
@@ -73,6 +80,31 @@ BEGIN
 					@IsAuthenticated = 0  
 					RETURN;  
 		END
+	END
+
+	--Check status:
+	IF @SubAccID > 0
+	BEGIN
+		SELECT @IsActive=0 
+		FROM custSub WITH (NOLOCK)
+		WHERE custid=@CustID AND subaccid=@SubAccID
+			AND closed=1
+	END
+	ELSE
+	BEGIN
+		SELECT @IsActive=0
+		FROM custInfo ci WITH (NOLOCK)
+		INNER JOIN CustProductStatus cs WITH (NOLOCK) ON cs.CustID=ci.custid
+		WHERE ci.custid=@CustID 
+		AND (ci.Enabled=0 OR cs.CloseInfo>0)
+	END
+
+	IF @IsActive=0
+	BEGIN
+		SELECT  @ErrMsg =  'This account was closed.',    
+				@ErrCode = 104  ,  
+				@IsAuthenticated = 0  
+				RETURN;
 	END
 
 	SELECT @GroupID = GroupID 
@@ -96,6 +128,5 @@ BEGIN
 			RETURN;
 	END
 
-
-
 END
+GO
