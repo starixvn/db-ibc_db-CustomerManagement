@@ -25,6 +25,7 @@ AS
 		- 20221027@Elodie: Filter by setting status [Redmine: #179335]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
+		- 20230728@Helios: Customer Setting - Simplify Live Casino Customer Setting [RedmineID: #189389]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
@@ -35,18 +36,19 @@ BEGIN
 	CREATE TABLE #SportBettype
 	(	SportType INT, 
 		BetType INT, 
-		IsLive BIT
+		IsLive BIT,
+		RealProductID TINYINT
 	)		
 
 
-	INSERT INTO #SportBettype (SportType, BetType, IsLive)
-	SELECT SportType, BetType, IsLive 
+	INSERT INTO #SportBettype (SportType, BetType, IsLive, RealProductID)
+	SELECT SportType, BetType, IsLive , RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
-	WHERE RealProductId = @ProductID
+	--WHERE RealProductId = @ProductID
 	UNION ALL 
-	SELECT SportType, BetType, IsLive 
+	SELECT SportType, BetType, IsLive , RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
-	WHERE RealProductId = @ProductID
+	--WHERE RealProductId = @ProductID
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
@@ -54,6 +56,14 @@ BEGIN
 	FROM    custInfo AS ci WITH(NOLOCK)		
 	WHERE   ci.Recommend = @Recommend 
       AND   ci.roleid = 1
+
+	UPDATE sb	
+	SET sb.RealProductID = m.RealProductId
+	FROM #SportBettype sb
+	INNER JOIN SportBettypeSettingMatrix m WITH (NOLOCK) ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID AND m.isLicensee = 0 AND m.Site = 'All'
+	WHERE m.ProductID IS NOT NULL
+
+	DELETE FROM #SportBettype WHERE ISNULL(RealProductID , 0) <> @ProductID 
 
 	SELECT	*
 	FROM (
@@ -130,6 +140,7 @@ BEGIN
 				ON 	csm3.CustID = cpts3.CustID
 				AND	csm3.IsGrouped = 0
 		WHERE	csm3.CustID = info.custid
+		--AND RealProductID = @ProductID
 	) pt
 	WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
 	ORDER BY RowNumber, SportType, islive, BetType, roleid
