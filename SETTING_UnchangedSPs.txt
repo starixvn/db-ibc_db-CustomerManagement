@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\VirtualRate\VR Engine\NAP_VREngine_CriteriaMatrix_Sel.sql
+Ext NAP\Customer\EAS_CustomerInsMember_CloneSetting_Com.sql

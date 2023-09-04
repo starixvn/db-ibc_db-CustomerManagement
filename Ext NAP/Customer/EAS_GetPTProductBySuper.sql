@@ -31,6 +31,7 @@ AS
 		- 20230118@Helios: add JiliGame [RedmineId: #182869]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
+		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -43,7 +44,9 @@ BEGIN
 								SportType SMALLINT DEFAULT(0),
 								BetType SMALLINT DEFAULT(0),
 								ProductID TINYINT DEFAULT(0),
-								SuperPT SMALLMONEY DEFAULT(0))
+								SuperPT SMALLMONEY DEFAULT(0),
+								IsHidden BIT DEFAULT(0)
+								)
 
 	CREATE TABLE #Tmp_ProductProfile(	SportType SMALLINT,
 								BetType SMALLINT ,
@@ -61,9 +64,21 @@ BEGIN
 	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
 	)
 
+	CREATE TABLE #ProductSettingType(
+		SettingType	tinyint,
+		SettingName	varchar(30)
+	)
+
+	INSERT INTO #ProductSettingType(SettingType,SettingName)
+	SELECT SettingType,SettingName 
+	FROM DBCUST.CUSTDB.dbo.ProductSettingType WITH(NOLOCK) 
+	WHERE SettingName IN('Bet Setting','Stake Level')
+
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
-	SELECT SportType,BetType,SettingType,IsLive,ProductID 
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	SELECT p.SportType,p.BetType,p.SettingType,p.IsLive,p.ProductID 
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
+		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
+	WHERE p.ProductID IN (41,18)
 
 	INSERT INTO #Supers(CustID)
 	SELECT DISTINCT value
@@ -106,11 +121,16 @@ BEGIN
 
 	--Get PT DCS
 	UPDATE a
-	SET a.SuperPT = cast(b.SuperPT AS SMALLMONEY) / 100   
+	SET a.SuperPT = cast(b.SuperPT AS SMALLMONEY) / 100,
+		a.IsHidden = case when b.CustID IS NULL THEN 1 ELSE 0 END
 	FROM #tblCustomer a
-	INNER JOIN CustPTSetting3rd_Agent b WITH(NOLOCK) ON a.custID = b.CustID 
-						AND a.BetType = b.BetType AND a.SportType = b.SportType
-	
+	LEFT JOIN CustPTSetting3rd_Agent b WITH(NOLOCK) 
+				ON a.custID = b.CustID 
+				AND a.BetType = b.BetType 
+				AND a.SportType = b.SportType
+
+	DELETE FROM #tblCustomer WHERE IsHidden = 1
+
 	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
 	SELECT ss.CustID,c.SportType,c.BetType,
@@ -136,8 +156,21 @@ BEGIN
 		ON  c.SettingType = 8
 		AND c.ProductID = b.ProductID 
 
-	-- Non DCS Setting
-	
+	--For LiveCasino
+	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
+	SELECT ss.CustID,c.SportType,c.BetType, b.ProductID, b.SuperPT
+	FROM #Supers ss 
+		INNER JOIN #tblCustomer b ON  b.ProductID = 41 and b.SportType = 9911 and ss.CustID = b.CustID
+		INNER JOIN #ProductSettingDetail c WITH(NOLOCK)	
+			ON c.ProductID = b.ProductID 
+			AND c.SportType <> 242 --IBCBet Live Casino
+
+	UPDATE b
+	SET b.ProductID = ISNULL(mt.RealProductId, b.ProductID)
+	FROM #tblCustomer b
+		INNER JOIN SportBettypeSettingMatrix mt WITH(NOLOCK) ON mt.SportType = b.SportType AND mt.BetType = b.BetType AND mt.isLicensee = 0 AND mt.Site = 'ALL'
+	WHERE b.ProductID = 41
+
 	-- Sportsbook - Soccer
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
 	SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, b.spositiontaking
@@ -148,11 +181,13 @@ BEGIN
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 
 		INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
+	WHERE a.ProductID NOT IN (41) -- Not show dummy product
 	ORDER BY a.CustID,a.ProductID
 	
 	DROP TABLE #tblCustomer		
 	DROP TABLE #ProductSettingDetail
 	DROP TABLE #Supers
 	DROP TABLE #Tmp_ProductProfile
+	DROP TABLE #ProductSettingType
 END
 GO

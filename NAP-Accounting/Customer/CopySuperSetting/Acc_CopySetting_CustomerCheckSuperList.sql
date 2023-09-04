@@ -5,7 +5,8 @@ ALTER PROCEDURE [dbo].[Acc_CopySetting_CustomerCheckSuperList]
 	@custid		INT = 0 OUTPUT,
 	@ProductList VARCHAR(MAX) = '',
 	@ErrCode INT = 0 OUTPUT,
-	@ErrMsg  NVARCHAR(1000)='' OUTPUT
+	@ErrMsg  NVARCHAR(1000)='' OUTPUT,
+	@SettingStatus TINYINT = 0
 AS
 /*
 	Created: 20210719@Johnson
@@ -19,6 +20,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -119,6 +121,19 @@ BEGIN
 	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, BitmapOrder TINYINT)
 	CREATE TABLE #MatrixRefWL(SportType SMALLINT, Bettype SMALLINT, SporttypeRefWinlossLimit SMALLINT, BettypeRefWinlossLimit SMALLINT)
 
+	CREATE TABLE #ProductSettingDetail(
+		[SettingType] [smallint],
+		[SportType] [smallint],
+		[BetType] [smallint],
+		[ProductID] [tinyint]
+	)
+
+	INSERT INTO #ProductSettingDetail(SettingType,SportType,BetType,ProductID)
+	SELECT d.SettingType,d.SportType,d.BetType,d.ProductID
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) d
+		INNER JOIN ProductSettingType t WITH(NOLOCK) ON d.SettingType = t.SettingType
+	WHERE t.SettingName = 'Win Loss Limit'
+
 	INSERT INTO #MatrixRefWL(SportType,Bettype,SporttypeRefWinlossLimit,BettypeRefWinlossLimit)
 	SELECT SportType
 			,CASE WHEN mt.BetType = 1021 THEN 1024  ELSE mt.BetType END
@@ -132,25 +147,20 @@ BEGIN
 	
 	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder)
 	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder
-	FROM dbo.ProductSettingDetail p WITH(NOLOCK)
-		INNER JOIN ProductSettingType t WITH(NOLOCK) ON p.SettingType = t.SettingType
+	FROM #ProductSettingDetail p WITH(NOLOCK)
 		INNER JOIN #MatrixRefWL mt
 			ON p.SportType = mt.SporttypeRefWinlossLimit 
 			AND p.Bettype = mt.BettypeRefWinlossLimit
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) 
 			ON PSP.Bettype = mt.BetType
 				AND PSP.Sporttype = mt.SportType		
-	WHERE t.SettingName = 'Win Loss Limit'
-		AND p.SettingStatus = 0
+	WHERE p.ProductID <> 41 -- Live Casino use common productstatus
 	UNION ALL
 	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder	
-	FROM dbo.ProductSettingDetail p WITH(NOLOCK)
-		INNER JOIN ProductSettingType t WITH(NOLOCK) ON p.SettingType = t.SettingType
+	FROM #ProductSettingDetail p WITH(NOLOCK)
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) 
 			ON PSP.Bettype = p.BetType
 				AND PSP.Sporttype = p.SportType		
-	WHERE t.SettingName = 'Win Loss Limit'
-		AND p.SettingStatus = 0
 
 	INSERT INTO @tblProduct(ProductID,SportType)
 	SELECT DISTINCT ft.ProductID, ft.SportType		

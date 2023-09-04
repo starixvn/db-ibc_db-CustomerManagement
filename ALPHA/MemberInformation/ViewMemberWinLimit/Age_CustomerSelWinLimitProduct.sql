@@ -22,11 +22,20 @@ AS
 		- 20210323@Johnson: hide setting GoldDeluxe [redmine:#151188]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)
+	DECLARE @Currency INT, @SiteID INT
+
+	--Product Status
+	SELECT	@SiteID = s.siteid,
+			@Currency = c.currency
+	FROM customer c WITH (NOLOCK)
+	    INNER JOIN Site s WITH (NOLOCK) ON c.site = s.site	
+    WHERE c.custid = @custid
 	
 	-- For DCS Product
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
@@ -68,13 +77,15 @@ BEGIN
 	CREATE TABLE #SportBetype(
 		[SportType] [smallint],
 		[BetType] [smallint],
-		[RealProductId] [tinyint]
+		[RealProductId] [tinyint],
+		[ProductId] [tinyint]
 	)
 
-	INSERT INTO #SportBetype(SportType,BetType,RealProductId)
+	INSERT INTO #SportBetype(SportType,BetType,RealProductId,ProductId)
 	SELECT st.SportType
 		,st.BetType
-		,st.RealProductId 
+		,st.RealProductId
+		,s.productID
 	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
 		INNER JOIN DBACC.bodb02.dbo.SportBettypeSettingMatrix st WITH(NOLOCK) 
 			ON st.SporttypeRefWinlossLimit = s.SportType 
@@ -86,17 +97,22 @@ BEGIN
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
 	INNER JOIN	#SportBetype AS sbss
-			ON	sbss.SportType = psp.Sporttype
-			AND	CASE WHEN sbss.BetType = 1021 THEN 1024 ELSE sbss.BetType END = psp.Bettype
+			ON  CASE WHEN sbss.ProductId = 41 THEN 9911 ELSE sbss.SportType END = psp.Sporttype
+			AND	CASE WHEN sbss.BetType = 1021 THEN 1024 
+					 WHEN sbss.ProductId = 41 THEN 2400
+				ELSE sbss.BetType END = psp.Bettype
 	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
 			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
 			,	dbo.f_GetProductStatus(cps.bitmapIsHidden, psp.bitmapOrder)
 	) ps(isSynced, isHidden)
+	CROSS APPLY	( SELECT dbo.f_CustSetting_GetSportOfferStatusBySiteCurrency(@SiteID,@Currency,sbss.Sporttype,sbss.Bettype,@SettingStatus)
+				) dm (IsHidden)
 	WHERE	cps.CustID = @CustId
 		AND	ps.isSynced = 1
-		AND	ps.isHidden = 0
+		AND	ps.isHidden = 0 --Dummy Product must offerred
+		AND (dm.IsHidden = 0  OR sbss.ProductId <> 41)--real Product under live casino must offerred
 
 	SELECT p.BetType, 
 		   p.SportType, 

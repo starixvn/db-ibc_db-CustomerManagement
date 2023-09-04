@@ -18,6 +18,7 @@ AS
 		- 20201009@Tina: Add new parameter @SettingStatus [Redmine: #143077]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+		- 20230728@Helios: Customer Setting - Simplify Live Casino Customer Setting [RedmineID: #189389]
 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -27,17 +28,25 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @SportType INT
-	CREATE TABLE #SportBettypeFilter ( ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, IsLive BIT, SettingType SMALLINT)
+	CREATE TABLE #SportBettypeFilter ( ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, IsLive BIT, SettingType SMALLINT, RealProductID TINYINT)
 
-	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
-	SELECT ProductID, SportType, Bettype, IsLive, SettingType
+	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType, RealProductID)
+	SELECT ProductID, SportType, Bettype, IsLive, SettingType, RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,3,@SettingStatus)
-	WHERE RealProductId = @ProductID
+	--WHERE RealProductId = @ProductID
 	
-	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType)
-	SELECT ProductID, SportType, Bettype, IsLive, SettingType
+	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType, RealProductID)
+	SELECT ProductID, SportType, Bettype, IsLive, SettingType, RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,19,@SettingStatus)
-	WHERE RealProductId = @ProductID
+	--WHERE RealProductId = @ProductID
+
+	UPDATE sb	
+	SET sb.RealProductID = m.RealProductId
+	FROM #SportBettypeFilter sb
+	INNER JOIN SportBettypeSettingMatrix m WITH (NOLOCK) ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID AND m.isLicensee = 0 AND m.Site = 'All'
+	WHERE m.ProductID IS NOT NULL
+
+	DELETE FROM #SportBettypeFilter WHERE ISNULL(RealProductID , 0) <> @ProductID 
 
 	SELECT 
 		CAST(cps.closed AS BIT) closed,
@@ -71,6 +80,7 @@ BEGIN
 								) AS cps
 		LEFT JOIN CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustID = ci.custid
 	WHERE m.MRecommend = @MRecommend and m.roleid=1 
+	--AND RealProductID = @ProductID
 	ORDER BY 
 		case 
 			when isnull(ci.enabled, 0) = 0 then 3 

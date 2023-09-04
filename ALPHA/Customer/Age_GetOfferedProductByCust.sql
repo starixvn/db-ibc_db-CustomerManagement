@@ -29,6 +29,7 @@ AS
 		- 20230307@Winfred:  Hotfix - Telegram Chatbot: Report Today Win Loss not include data of product Macau games [Redmine: #184766]
 		- 20230118@Helios: add JiliGame [RedmineId: #182869] 
 		- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -39,18 +40,17 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-	DECLARE @Currency INT,@Site varchar(10)
+	DECLARE @Currency INT, @SiteID INT
 
 	--Product Status
-	SELECT	@Site = site,
+	SELECT	@SiteID = s.siteid,
 			@Currency = c.currency
 	FROM customer c WITH (NOLOCK)
-	    INNER JOIN custinfo ci WITH (NOLOCK) ON c.custid = ci.custid	
+	    INNER JOIN Site s WITH (NOLOCK) ON c.site = s.site	
     WHERE c.custid = @custid
 	
-	DECLARE @PGDisable BIT  = 1   ,@SiteID INT, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 ,@AdvantPlayMiniDisable BIT  = 1,
+	DECLARE @PGDisable BIT  = 1, @JokerDisable BIT  = 1 ,@MaxGameDisable BIT  = 1,@HabaneroDisable BIT  = 1 ,@CGDisable BIT  = 1 ,@AdvantPlayDisable BIT  = 1 ,@AdvantPlayMiniDisable BIT  = 1,
 			@SEALDisable BIT  = 1,@MicrogamingDisable BIT  = 1 ,@PPDisable BIT  = 1,@SGDisable BIT  = 1,@ArcadiaGamingDisable BIT = 1, @MacauGamesDisable BIT  = 1 ,@JiliGame BIT =1 --ADD Jili
-	SELECT @SiteID = siteid FROM Site WITH(NOLOCK) WHERE site = @site
 	
 	IF NOT EXISTS(SELECT 1 FROM SportNonOfferedSiteCurrency WITH (NOLOCK) 
 				  WHERE SiteID = @SiteID AND (Currency = 0 OR Currency = @currency) AND SportType = 232 AND BetType = 6001)
@@ -131,6 +131,7 @@ BEGIN
 	BEGIN
 		SET @MacauGamesDisable = 0 
 	END
+
 	DECLARE @SuperID INT, @IsIMBC BIT = 0   
    
 	SELECT @SuperID = ci.srecommend
@@ -149,12 +150,13 @@ BEGIN
 	INSERT INTO #ProductSettingType(SettingType,SettingName)
 	SELECT SettingType,SettingName 
 	FROM DBCUST.CUSTDB.dbo.ProductSettingType WITH(NOLOCK) 
-	WHERE SettingName IN('Product Status')
+	WHERE SettingName IN('Product Status','Bet Setting','Stake Level')
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 	SELECT p.RealProductId,p.SportType,p.Bettype,p.IsLive, p.SettingType   
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
 		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
+	WHERE t.SettingName = 'Product Status'
 
 	SELECT DISTINCT ft.ProductID, 
 			CAST(CASE WHEN @IsIMBC = 0 AND ft.ProductID = 20 THEN 1 
@@ -165,11 +167,31 @@ BEGIN
 		CROSS JOIN dbo.CustProductStatus stt WITH (NOLOCK)
 	WHERE stt.CustID = @CustID
 
+	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, IsHidden BIT DEFAULT(1), Main_IsHidden BIT)
+	--Insert sports of Live Casino
+	INSERT INTO #SportBettypeDummy (RealProductId,SportType,Bettype,Main_IsHidden)
+	SELECT mt.RealProductId,p.SportType,p.Bettype,dm.isHidden
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
+		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
+		INNER JOIN SportBettypeSettingMatrix mt WITH(NOLOCK) ON mt.SportType = p.SportType AND mt.BetType = p.BetType AND mt.isLicensee = 0 AND mt.Site = 'ALL'
+		INNER JOIN #OfferProduct dm ON p.ProductID = dm.ProductID
+	WHERE SettingName IN('Bet Setting','Stake Level')
+		AND p.ProductID IN (41) --Live Casino
+
+	IF EXISTS ( SELECT 1 FROM #SportBettypeDummy WHERE Main_IsHidden = 0)
+	BEGIN
+		UPDATE t
+		SET t.IsHidden = dbo.f_CustSetting_GetSportOfferStatusBySiteCurrency(@SiteID,@Currency,t.Sporttype,t.Bettype,@SettingStatus)
+		FROM #SportBettypeDummy t
+		WHERE Main_IsHidden = 0
+	END
+
 	SELECT p.ProductID, r.isHidden, p.EndOfSupportDate
 	FROM (
 		SELECT ProductID, isHidden FROM #OfferProduct
 		UNION ALL
 		SELECT 1, 0 --Sportbook always offer for all customer
+		--RNG Slot
 		UNION ALL
 		SELECT 34, CASE WHEN  isHidden = 0 THEN  @ArcadiaGamingDisable ELSE isHidden END FROM #OfferProduct WHERE ProductID = 18	-- Arcadia Gaming
 		UNION ALL
@@ -198,6 +220,9 @@ BEGIN
 		SELECT 75, CASE WHEN  isHidden = 0 THEN  @JiliGame ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Jili Game	
 		UNION ALL
 		SELECT 22, CASE WHEN  isHidden = 0 THEN  @MacauGamesDisable ELSE isHidden END  FROM #OfferProduct WHERE ProductID = 18	-- Macau Games	
+		--Live Casino
+		UNION ALL
+		SELECT dm.RealProductId, CASE WHEN  dm.Main_IsHidden = 0 THEN  dm.IsHidden ELSE dm.Main_IsHidden END FROM #SportBettypeDummy dm
 		) r
 		INNER JOIN dbo.Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
 	WHERE p.GroupType = 0
@@ -206,5 +231,6 @@ BEGIN
 	DROP TABLE #OfferProduct
 	DROP TABLE #ProductSettingType
 	DROP TABLE #SportBettypeFilter
+	DROP TABLE #SportBettypeDummy
 END
 GO
