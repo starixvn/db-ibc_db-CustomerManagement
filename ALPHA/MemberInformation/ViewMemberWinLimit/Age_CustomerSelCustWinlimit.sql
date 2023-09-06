@@ -29,6 +29,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230804@Eden: Win loss limit - Change SP to allow dynamic seting [RedmineID: #180640]
+		- 20230905@Eden: Enhance BBIN display [Redmine: #193539]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -110,9 +111,6 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #MemberBalance
 	
-	
-	--IF EXISTS (SELECT 1 FROM dbo.ProductSettingDetail AS psd WHERE psd.SportType = @SportType AND psd.BetType = @BetType)
-	--BEGIN
 	SELECT	tmp.RowNumber
 		,	tmp.closed
 		,	tmp.Enabled
@@ -124,7 +122,7 @@ BEGIN
 		,	tmp.CustId
 		,	SUBSTRING(PlayerID3rd, PATINDEX('%$%', PlayerID3rd) + 1, (LEN(PlayerId3rd) - PATINDEX('%$%', PlayerID3rd))) AS PlayerId
 		,	tmp.IsAutoReset
-		,	tmp.MaxWinLimit
+		,	CASE WHEN @ProductID = 47 THEN -3 ELSE tmp.MaxWinLimit END AS MaxWinLimit
 		,	tmp.MaxLossLimit
 		,	tmp.Locked
 		,   tmp.ClosedReason
