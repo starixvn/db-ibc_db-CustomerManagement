@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSetting]
 	 @Site NVARCHAR(50) = NULL
 	,@CustomerClass SMALLINT
 	,@SportType SMALLINT
+	,@LeagueGroups VARCHAR(MAX)
 	,@IsTest TINYINT
 	,@PageSize INT = 500
 	,@PageIndex INT = 1
@@ -17,6 +18,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230928@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS' @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
@@ -25,22 +27,35 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @RowStart int, @RowEnd int
+	DECLARE @RowStart INT, @RowEnd INT, @iDoc INT, @xml XML
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
     CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, RuleID INT)    
     CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), Currency TINYINT, CurrencyName NVARCHAR(50),Platform VARCHAR(MAX), RuleID INT , RowNumber INT)    
-    CREATE TABLE #LeagueGroup( GroupID SMALLINT, GroupName VARCHAR(200), SportType SMALLINT, IsActive BIT)    
+    CREATE TABLE #LeagueGroup( GroupID SMALLINT, GroupName VARCHAR(200), SportType SMALLINT)    
     
     CREATE CLUSTERED INDEX Ix_CustomerClass ON #CustomerClass (PolicyID, Site, Currency)    
     CREATE CLUSTERED INDEX Ix_LeagueGroupTemp ON #LeagueGroup (GroupID, SportType)    
     CREATE CLUSTERED INDEX Ix_CustomerClassSiteManagement ON #CustomerClassSiteManagement (Site,Currency,RuleID) 	
     CREATE NONCLUSTERED INDEX NIx_CustomerClassSiteManagement_RowNumber ON #CustomerClassSiteManagement (RowNumber) 	
 
-	INSERT INTO #LeagueGroup(GroupID, GroupName, SportType, IsActive)  
-	SELECT GroupID, GroupName, SportType, IsActive   
-	FROM DBACC.BODB02.DBO.LeagueGroup a WITH(NOLOCK)  
-	WHERE SportType = @SportType OR @SportType = 0  
+	--Check if XML is null or empty
+	IF @LeagueGroups IS NULL OR @LeagueGroups = ''
+		RETURN
+	
+	EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT, @LeagueGroups;
+	INSERT INTO #LeagueGroup(GroupID, GroupName, SportType)
+	SELECT	CAST(Data.GroupID AS SMALLINT) AS GroupID				
+		,	CASE WHEN Data.GroupName = '' THEN null ELSE CAST(Data.GroupName AS VARCHAR(200)) END 
+			AS GroupName 					    
+		,	 CAST(Data.SportType AS SMALLINT)  AS SportType 
+	FROM OPENXML(@iDoc, '/ROOT/r', 1) 
+	WITH (     
+			GroupID 	 SMALLINT,       
+			GroupName 	 VARCHAR(500),       
+			SportType 	 VARCHAR(20)
+	) AS Data;
+	EXECUTE	sp_xml_removedocument @iDoc;
 
 	IF @SportType = 0
 	BEGIN
@@ -155,7 +170,7 @@ BEGIN
 		c.MaxPerMatch,
 		c.RepeatedBets,
 		c.SeizeBetTicket,
-		c.EnableParlay,
+		c.DisableParlay,
 		c.PeakHourSpreadAdjustment,
 		c.Enable,
 		c.LastModifiedUser,

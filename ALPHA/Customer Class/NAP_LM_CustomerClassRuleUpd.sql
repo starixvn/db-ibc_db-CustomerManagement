@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 
 	Param's Explanation:
 	* @Rules:
@@ -35,13 +36,13 @@ AS
 				MaxPerMatch =11 
 				RepeatedBets =5  
 				SeizeBetTicket = 9  
-				EnableParlay = 1  
+				DisableParlay = 1  
 				PeakHourSpreadAdjustment = 5 
 				AgentBetInterval = 6
 				LeagueGroupIDs = '111,222,333,444,555'/> 
 		</ROOT>'
 
-	Example: NAP_LM_CustomerClassRuleUpd @Rules ='<ROOT><r RuleID=1 CustomerClass="200" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  EnableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs = '111,222,333,444,555'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_LM_CustomerClassRuleUpd @Rules ='<ROOT><r RuleID=1 CustomerClass="200" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs = '111,222,333,444,555'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -62,12 +63,12 @@ BEGIN
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
-			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
+			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
 	CREATE TABLE #CustomerClassRule_History( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
-			EnableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
+			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
 	CREATE TABLE #CustomerClassRuleLeagueGroup_History( RuleID INT, LeagueGroupID SMALLINT)
 
 	BEGIN TRY
@@ -88,7 +89,7 @@ BEGIN
 					 ,	MaxPerMatch 				
 					 ,	RepeatedBets 				
 					 ,	SeizeBetTicket 			
-					 ,	EnableParlay 			  
+					 ,	DisableParlay 			  
 					 ,	PeakHourSpreadAdjustment 
 					 ,	AgentBetInterval
 					 ,	LeagueGroupIDs 
@@ -108,7 +109,7 @@ BEGIN
 			,	CASE WHEN Data.MaxPerMatch = '' THEN null ELSE  CAST(Data.MaxPerMatch AS INT) END AS MaxPerMatch 				
 			,	CASE WHEN Data.RepeatedBets = '' THEN null ELSE  CAST(Data.RepeatedBets AS TINYINT) END AS RepeatedBets 				
 			,	CASE WHEN Data.SeizeBetTicket = '' THEN null ELSE  CAST(Data.SeizeBetTicket AS TINYINT) END AS SeizeBetTicket 			
-			,	CASE WHEN Data.EnableParlay = '' THEN null ELSE  CAST(Data.EnableParlay AS BIT) END AS EnableParlay 			 
+			,	CASE WHEN Data.DisableParlay = '' THEN null ELSE  CAST(Data.DisableParlay AS BIT) END AS DisableParlay 			 
 			,	CASE WHEN Data.PeakHourSpreadAdjustment = '' THEN null ELSE  CAST(Data.PeakHourSpreadAdjustment 	AS SMALLINT)		END AS PeakHourSpreadAdjustment 
 			,	CASE WHEN Data.AgentBetInterval = '' THEN null ELse  CAST(Data.AgentBetInterval AS SMALLINT) END AS AgentBetInterval			  
 			 ,	Data.LeagueGroupIDs 	   					    
@@ -130,7 +131,7 @@ BEGIN
 			 MaxPerMatch 				VARCHAR(20),       
 			 RepeatedBets 				VARCHAR(20),       
 			 SeizeBetTicket 			VARCHAR(20),       
-			 EnableParlay 				VARCHAR(1),        
+			 DisableParlay 				VARCHAR(1),        
 			 PeakHourSpreadAdjustment 	VARCHAR(20),    
 			 AgentBetInterval		 	VARCHAR(20), 
 			 LeagueGroupIDs				VARCHAR(MAX)
@@ -212,7 +213,7 @@ BEGIN
 		,a.MaxPerMatch 				=   b.MaxPerMatch 				
 		,a.RepeatedBets 			=   b.RepeatedBets 			
 		,a.SeizeBetTicket 			=   b.SeizeBetTicket 			
-		,a.EnableParlay 			=   b.EnableParlay 			 
+		,a.DisableParlay 			=   b.DisableParlay 			 
 		,a.PeakHourSpreadAdjustment =   b.PeakHourSpreadAdjustment
 		,a.AgentBetInterval			=   b.AgentBetInterval
 	OUTPUT	b.RuleID 					
@@ -230,7 +231,7 @@ BEGIN
 		,	deleted.MaxPerMatch 				
 		,	deleted.RepeatedBets 				
 		,	deleted.SeizeBetTicket 			
-		,	deleted.EnableParlay 		
+		,	deleted.DisableParlay 		
 		,	deleted.PeakHourSpreadAdjustment 
 		,	deleted.AgentBetInterval 			  
 		,	deleted.IsTest 
@@ -249,7 +250,7 @@ BEGIN
 			 ,	MaxPerMatch 				
 			 ,	RepeatedBets 				
 			 ,	SeizeBetTicket 			
-			 ,	EnableParlay 			  
+			 ,	DisableParlay 			  
 			 ,	PeakHourSpreadAdjustment 	
 			 ,	AgentBetInterval
 			 ,	IsTest )
@@ -296,7 +297,7 @@ BEGIN
 							cs.MaxPerMatch						AS '@MaxPerMatch',
 							cs.RepeatedBets						AS '@RepeatedBets',
 							cs.SeizeBetTicket					AS '@SeizeBetTicket',
-							cs.EnableParlay						AS '@EnableParlay',
+							cs.DisableParlay					AS '@DisableParlay',
 							cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
 							cs.AgentBetInterval					AS '@AgentBetInterval',
 							cs.LeagueGroupIDs					AS '@LeagueGroupIDs',
@@ -330,7 +331,7 @@ BEGIN
 								cs.MaxPerMatch						AS '@MaxPerMatch',
 								cs.RepeatedBets						AS '@RepeatedBets',
 								cs.SeizeBetTicket					AS '@SeizeBetTicket',
-								cs.EnableParlay						AS '@EnableParlay',
+								cs.DisableParlay					AS '@DisableParlay',
 								cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
 								cs.AgentBetInterval					AS '@AgentBetInterval',
 								cs.LeagueGroupIDs					AS '@LeagueGroupIDs',
