@@ -12,6 +12,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassRuleSel @RuleID = 1	
@@ -33,7 +34,7 @@ BEGIN
 			   a.MaxPerMatch,
 			   a.RepeatedBets,
 			   a.SeizeBetTicket,
-			   a.EnableParlay,
+			   a.DisableParlay,
 			   a.PeakHourSpreadAdjustment,
 			   a.AgentBetInterval,
 			   b.LeagueGroupIDs 

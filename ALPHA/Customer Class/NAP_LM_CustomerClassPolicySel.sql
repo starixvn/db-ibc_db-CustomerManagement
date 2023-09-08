@@ -11,7 +11,8 @@ AS
 	Original:
 
 	Revisions:
-		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904]  
+		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
@@ -37,7 +38,7 @@ BEGIN
 			c.MaxPerMatch,
 			c.RepeatedBets,
 			c.SeizeBetTicket,
-			c.EnableParlay,
+			c.DisableParlay,
 			c.PeakHourSpreadAdjustment,
 			c.IsTest,
 			c.LastModifiedUser,
