@@ -11,6 +11,7 @@ AS
 	Revisions:	
 		- 20220816@Eddie: Initialize SPs [RedmineID: #174852]
 		- 20230208@Eddie: add parameter @SiteName and remove @MarketName [RedmineID: #182841]
+		- 20230720@Lewis: Add conditions [RedmineID: #186142]
 	
 	Param's Explanation:
 
@@ -36,6 +37,13 @@ BEGIN
 		WHERE c.custid = @CustId
 	END
 
+	IF (@SiteName <> '' AND @SiteID = 0)
+	BEGIN
+		SELECT @SiteID = siteid 
+		FROM Site WITH (NOLOCK) 
+		WHERE site = @SiteName
+	END
+
 	IF( @SiteID <> 0 OR @SiteName <> '' )
 	BEGIN
 		INSERT INTO @Results(FunctionTypeName, BeginTime, EndTime)
@@ -43,8 +51,7 @@ BEGIN
 			, DATEADD(HOUR, 12, uc.BeginTime) AS BeginTime
 			, DATEADD(HOUR, 12, uc.EndTime)   AS EndTime
 		FROM dbo.UMConfig uc WITH (NOLOCK)
-			INNER JOIN Site s WITH (NOLOCK) ON s.siteid = uc.SiteID
-		WHERE (uc.SiteID = @SiteID OR s.site = @SiteName ) AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
+		WHERE (uc.SiteID = @SiteID OR uc.SiteID = 0 ) AND ( @current_date BETWEEN uc.BeginTime AND uc.EndTime )
 	END
 
 	SELECT FunctionTypeName, BeginTime, EndTime FROM @Results
