@@ -13,6 +13,7 @@ Revisions:
 	- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
 	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
 	- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20230720@Lewis: Add Funtion Type - Last Bets(New) [Redmine: #186142]
 
 Param's Explanation:
 	FunctionType = : 
@@ -35,6 +36,7 @@ Param's Explanation:
 		214 : Group Bet List Drilldown
 		215 : Group Bet List
 		216 : My Watchlist
+		217 : Last Bets(New)
 		
 Examples : 
 	EXEC [Acc_UMTool_GetProductSettingByFunction]
@@ -89,7 +91,9 @@ SET NOCOUNT ON
 	-- Group Bet List
 	SELECT 215,0,0,0 UNION ALL
 	-- My Watchlist
-	SELECT 216,0,0,0
+	SELECT 216,0,0,0 UNION ALL
+	-- Last Bets(New)
+	SELECT 217,0,0,0
 
 	--Edit Setting (DCS)
 	INSERT INTO @ProductSportSettingType(FunctionType,ProductID,SportType,SettingType)
