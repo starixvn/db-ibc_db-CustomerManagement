@@ -1,10 +1,11 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE dbo.Acc_WLMonitored_Player_WatchList_Sel
 	 @AgentID INT
 	,@Username VARCHAR(30)= ''
 	,@Sporttype SMALLINT = 0
 	,@SortType       TINYINT = 1
 	,@IsDesc	     BIT = 1
+	,@ExportAll		 BIT = 0
 	,@PageSize       INT     = 50
 	,@PageIndex      INT     = 1
 	,@TotalItems     INT     = 0 OUTPUT
@@ -19,6 +20,7 @@ AS
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 		- 20230420@Tacy: Alpha - Enhance My Watchlist & Problem Accounts to allow SMA control risk effectively [RedmineID: 185312]
+		- 20230626@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
 
 	Param's Explanation:  	
 		- @SortType : ( order by)
@@ -30,17 +32,20 @@ AS
 			6: firstname/lastname
 			7: Problem Account
 
-	DECLARE @TotalItems INT
-	EXEC Acc_WLMonitored_Player_WatchList_Sel 
-		    @AgentID	= 1176086	
-			--,@Username	= 'member01'	
-			,@SortType = 9
-			,@IsDesc = 0
-			,@PageSize            = 50
-			,@PageIndex           = 1
-			,@TotalItems          = @TotalItems OUTPUT
-	SELECT @TotalItems
+		- @ExportAll : 1 ~ no paging, get all
+					   0 ~ paging data
 	
+	Example:
+		DECLARE @TotalItems INT
+		EXEC Acc_WLMonitored_Player_WatchList_Sel 
+				@AgentID	= 1176086	
+				--,@Username	= 'member01'	
+				,@SortType = 9
+				,@IsDesc = 0
+				,@PageSize            = 50
+				,@PageIndex           = 1
+				,@TotalItems          = @TotalItems OUTPUT
+		SELECT @TotalItems
 */  
 BEGIN 
 	DECLARE @RowStart int, @RowEnd int
@@ -49,6 +54,7 @@ BEGIN
 	CREATE TABLE #Temp(
 		CustID				INT,
 		username			VARCHAR(30),
+		username2			VARCHAR(50),		
 		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
@@ -63,7 +69,8 @@ BEGIN
 
 	CREATE TABLE #Temp2(
 		CustID				INT,
-		username			VARCHAR(30),		
+		username			VARCHAR(30),	
+		username2			VARCHAR(50),		
 		firstlastname		NVARCHAR(110),
 		lastlogged			DATETIME,
 		Status				VARCHAR(10),
@@ -78,7 +85,8 @@ BEGIN
 
 	INSERT INTO #Temp(
 		 CustID			
-		,username	
+		,username
+		,username2	
 		,firstlastname
 		,lastlogged		
 		,Status			
@@ -91,7 +99,7 @@ BEGIN
 	)
 	SELECT  
 		ci.custid,
-		ci.username,
+		ci.username, c.username2,
 		CASE WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN firstname + '/ ' + lastname
 			 WHEN c.firstname IS NOT NULL AND c.firstname NOT IN ('NULL','') AND (c.lastname IS NULL	OR c.lastname IN ('NULL',''))		THEN firstname
 			 WHEN (c.firstname IS NULL	  OR c.firstname IN ('NULL',''))	 AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN lastname
@@ -132,6 +140,7 @@ BEGIN
 		 CustID				
 		,recommend			
 		,username	
+		,username2
 		,firstlastname			
 		,lastlogged			
 		,Status				
@@ -144,6 +153,7 @@ BEGIN
 	SELECT t.CustID				
 		,t.recommend			
 		,t.username
+		,t.username2
 		,firstlastname
 		,lastlogged			
 		,Status				
@@ -174,21 +184,30 @@ BEGIN
 	SELECT @TotalItems = COUNT(1) 
 	FROM #Temp2
 
-	SELECT t.CustID				
-		,recommend			
-		,username		
-		,firstlastname
-		,lastlogged			
-		,Status						
-		,WinningThreshold	
-		,LosingThreshold
-		,Locked
-		,ClosedReason
-		,IsPA
-		,RowNumber
-	FROM  #Temp2 t
-	WHERE RowNumber BETWEEN @rowstart AND @rowend
-	ORDER BY RowNumber
+	IF @ExportAll=1
+	BEGIN
+		SELECT CustID, username, username2
+		FROM  #Temp2 t
+		ORDER BY username
+	END
+	ELSE
+	BEGIN
+		SELECT t.CustID				
+			,recommend			
+			,username		
+			,firstlastname
+			,lastlogged			
+			,Status						
+			,WinningThreshold	
+			,LosingThreshold
+			,Locked
+			,ClosedReason
+			,IsPA
+			,RowNumber
+		FROM  #Temp2 t
+		WHERE RowNumber BETWEEN @rowstart AND @rowend
+		ORDER BY RowNumber
+	END
 
 	DROP TABLE #Temp
 	DROP TABLE #Temp2
