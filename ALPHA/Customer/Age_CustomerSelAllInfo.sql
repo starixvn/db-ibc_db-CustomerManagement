@@ -62,6 +62,8 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
+		- 20230920@Bobby: Enhance performance get max transid [Redmine: #194274]
+
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
 		• @uplineId: the ID of the upline.
@@ -78,7 +80,7 @@ BEGIN
     SELECT @username = RTRIM(LTRIM(@username))
 
     SELECT @custid = custid, @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
-	FROM custinfo WITH(NOLOCK)
+	FROM customer WITH(NOLOCK)
     WHERE username = @username 
 	   AND (srecommend = @uplineid OR mrecommend = @uplineid OR recommend = @uplineid)
 
@@ -123,6 +125,7 @@ BEGIN
 				SELECT MAX(transdate)  AS transdate
 				FROM dbo.transfer WITH (NOLOCK) WHERE custid = @custid
 			) x
+			OPTION(OPTIMIZE FOR	(@custid = -1))
 		END 
 		ELSE IF @roleID = 2 --for agent
 		BEGIN
@@ -133,11 +136,12 @@ BEGIN
 			
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE recommend = @custid
-			OPTION(OPTIMIZE FOR	UNKNOWN)
+			OPTION(OPTIMIZE FOR	(@custid = -1))
 
 			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
 			WHERE recommend = @custid
 				AND bettype NOT IN (20000,19999)
+			OPTION(OPTIMIZE FOR	(@custid = -1))
 			
 			SELECT @transdate = MAX(transdate)
 			FROM 
@@ -156,11 +160,12 @@ BEGIN
 
 			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
 			WHERE mrecommend = @custid
-			OPTION(OPTIMIZE FOR	UNKNOWN)
+			OPTION(OPTIMIZE FOR	(@custid = -1))
 
 			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
 			WHERE mrecommend = @custid
 				AND bettype NOT IN (20000,19999)
+			OPTION(OPTIMIZE FOR	(@custid = -1))
 			
 			SELECT @transdate = MAX(transdate)
 			FROM 
