@@ -14,6 +14,7 @@ Revisions:
 	- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 	- 20170313@Jacob: Risk & Control - Phase 3A [#72604].
 	- 20210423@Helen: CWL - Support to add 2 columns IsNotified and LogID into CWL History Monitoring Page - [Redmine:153291]
+	- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 
 	Parameters Explanation:	
 	   @ProductId: Product ID
@@ -53,6 +54,7 @@ BEGIN
 				 ) AS tmp
     WHERE h.ProductID = @ProductId
           AND h.CustID = @CustId
+		  AND h.ActionID < 200		--Exclude max payout setting (ActionID = 255)
      ORDER BY h.ModifiedDate DESC
 END     
 GO

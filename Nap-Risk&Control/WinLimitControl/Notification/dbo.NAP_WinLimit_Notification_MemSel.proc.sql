@@ -25,6 +25,7 @@ Revisions:
 	- 20180816@Robert: Poker Games - CWL Integration 
 	- 20180918@Robert: Macau Games - CWL Integration [Redmine: 101546]
 	- 20230104@Tacy: CWL - Split 789y Site [RedmineID: #182390]
+	- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 
 Param's Explanation:
 	� @ErrCode:
@@ -96,5 +97,6 @@ BEGIN
 			   THEN c.username
 			   ELSE @Username
 		    END = @Username
-		AND S.isActive = 1;
+		AND S.isActive = 1
+		AND wl.ActionID < 200 
 END

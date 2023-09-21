@@ -23,6 +23,7 @@ AS
 		- 20171016@Jacob: Support multiple selection on dropdownlist "Reached Limit Level" [#84893]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
+		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 
 	Parameters Explanation:   
 	   @FromDate: From date  
@@ -115,6 +116,7 @@ BEGIN
                         AND cm.GroupID = cmh.GroupID
                         AND cm.LevelID = cmh.LevelID
                         AND cm.WinlostDate = cmh.WinlostDate
+						AND cmh.ActionID < 200
                 ORDER BY IsNotified
             ) AS cmh_notified
                     INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON cm.CustID = ci.CustID
@@ -155,6 +157,7 @@ BEGIN
                 AND h.ProductID = m.ProductId
                 AND h.GroupID = m.GroupId
                 AND h.ActionID NOT IN(2, 4)
+				AND h.ActionID < 200
         ) AS NumberReachedLimit,
             m.IsNotified,
             cs.IsBlockedPlaceBet,
