@@ -13,7 +13,8 @@ AS
 	
 	Revisions:
 		- 20210423@Helen: CWL - Support to add 2 columns IsNotified and LogID into CWL History Monitoring Page - [Redmine:153291]
-			
+		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
+		
 	Param's Explanation:
 	
 		
@@ -25,7 +26,7 @@ BEGIN
 	UPDATE w 
 		SET IsNotified = 0
 	FROM WinLimit_CustGameMonitoring_History w WITH (ROWLOCK)
-	WHERE w.IsNotified = 1 AND w.LogID = @LogID
+	WHERE w.IsNotified = 1 AND w.LogID = @LogID AND w.ActionID < 200 
 	
 	IF @@ROWCOUNT = 0
 		RETURN
