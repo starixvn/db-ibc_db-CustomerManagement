@@ -16,6 +16,8 @@ AS
 		- 20220722@Johnson: Scale Out DBTXN - get data on WinLimit_CustWinlostGame instead of Winlimit_CreditGame [Redmine:#175278]
 		- 20230207@Johnson: get distinct data source to ignore duplicated game type in CWL notification service [redmine:#183536]
 		- 20230407@Johnson: fix the case to show duplicate game name [redmine:#186608]
+		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
+						 Change WinlostDate from DATETIME to SMALLDATETIME
 	Param's Explanation:
 	
 */
@@ -88,7 +90,7 @@ BEGIN
 							, IsNotified BIT  
 							, ModifiedBy INT 
 							, CreatedBy  INT 
-							, WinlostDate DATETIME
+							, WinlostDate SMALLDATETIME
 							, MaxWinLimitSetting XML
 							, TotalWinAmt_RM MONEY
 							, BettypeIDList VARCHAR(MAX)
@@ -387,6 +389,7 @@ BEGIN
 									AND g.ProductID = gh1.ProductID	
 									AND gh1.LevelID >= @LosslimitLevel_min AND gh1.LevelID <= @LosslimitLevel_max
 									AND ls1.LevelOrder >= T.LevelOrder
+									AND gh1.ActionID < 200
 							)
 						THEN 0 ELSE 1 END	
 						)	
@@ -405,6 +408,7 @@ BEGIN
 								AND g.ProductID = gh2.ProductID
 								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
 								AND ls2.LevelOrder >= T.LevelOrder
+								AND gh2.ActionID < 200 
 							)
 				) 
 			-- Reach level again after unblocked
@@ -425,6 +429,7 @@ BEGIN
 												)
 												AND ls3.LevelOrder >= T.LevelOrder
 											THEN 1 ELSE 0 END
+								AND gh3.ActionID < 200 
 							)				
 				)
 		)
@@ -561,6 +566,7 @@ BEGIN
 	DROP TABLE #DataTmp
 	DROP TABLE #CustReachCWLList
 	DROP TABLE #DataTmp_pre
-	DROP TABLE #DataTmp_pre1	
+	DROP TABLE #DataTmp_pre1
+	DROP TABLE #WinLimit_ProductSettingDetail
 END
 GO
