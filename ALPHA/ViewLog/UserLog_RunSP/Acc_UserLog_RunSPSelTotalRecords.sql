@@ -41,6 +41,7 @@ AS
 		- 20230303@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [RedmineID: #186773]
+		- 20230925@Luke: Live Casino - Allow uncheck bet limit to control product status [Redmine: #194121]
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -647,6 +648,8 @@ BEGIN
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 				END
+
+				SELECT @__cnt AS cnt
 			END			
 		END--@ActionTypeId > 0			
 		ELSE
