@@ -1,4 +1,1 @@
-NAP-Accounting/MinimizeUMTime/Acc_CheckUM_ByReport.sql
-NAP-Accounting/MinimizeUMTime/UMTool/Acc_UMTool_Configuration_Sel.sql
-NAP-Accounting/MinimizeUMTime/UMTool/Acc_UMTool_GetProductSettingByFunction.sql
-NAP-Accounting/MinimizeUMTime/f_CustReport_UM_ProductsSel.sql
+Nap-Risk&Control\WinLimitControl\Notification\dbo.NAP_WinLimit_Notification_MemUpd.proc.sql
