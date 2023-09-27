@@ -8,6 +8,7 @@ ALTER PROC NAP_CWL_Initialize_Settings
    , @RepresentativeBettype				INT		    
    , @GroupID                                INT
    , @GroupName                              VARCHAR(200)
+   , @IsDeposit                              BIT = 0
    , @Level1                                 MONEY         = 10000
    , @Level2                                 MONEY         = 30000
    , @Level3                                 MONEY         = 100000
@@ -47,6 +48,7 @@ AS
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 				- 20220804@Johnson: call sp NAP_CWL_ProductOffer_Initialize_Settings manually to scale out [redmine: #175278]
+				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -251,7 +253,7 @@ BEGIN
 			FROM #Temp
 			GROUP BY ProductID
 		 ) AS b, 
-		 Winlimit_LevelSetting AS l
+		 (SELECT * FROM Winlimit_LevelSetting WHERE LevelID <=200) AS l
 		 WHERE NOT EXISTS
 		 (
 			SELECT t.BettypeID
@@ -287,7 +289,8 @@ BEGIN
 								    , Level101
 								    , Level102
 								    , blockedTransferLvl3
-									, Currency)
+									, Currency
+									, IsDeposit)
 		 SELECT DISTINCT t.ProductID
 			 , t.BetTypeID
 			 , t.GroupID
@@ -299,6 +302,7 @@ BEGIN
 			 , @Level102 AS                             Level102
 			 , @IsBlockedTransfer_DepositSite_Level3 AS BlockedTransferLv3
 			 , c.Currency
+			 , @IsDeposit
 		 FROM #Temp AS t
 			CROSS APPLY @tmpCurrency c
 		 WHERE t.BetTypeID =
@@ -314,6 +318,7 @@ BEGIN
 				 AND t.GroupID = setting.GroupID
 				 AND t.GroupName = setting.GroupName
 				 AND c.Currency = setting.Currency
+				 AND setting.IsDeposit = @IsDeposit
 		 );
 		
     ;WITH CTE_ProductSettingDetail
@@ -355,19 +360,21 @@ BEGIN
 		   WHERE e.currency NOT IN('H', 'C')
 				AND EXISTS (SELECT 1 FROM @tmpCurrency t WHERE currency = 0 OR e.Exchangeid = t.currency)
 			    AND s.isActive = 1
-			    AND (s.isLicensee = 1
+			    AND ((s.isLicensee = 1 
+					AND @IsDeposit = 1
 				    AND e.exchangeid IN
 				   (
 					  SELECT exchangeid
 					  FROM #Currency_Deposit
 					  WHERE siteid = s.siteid
-				   )
-				    OR s.isLicensee = 0
+				   ))
+				    OR (s.isLicensee = 0
+					AND @IsDeposit = 0	
 				    AND e.exchangeid IN
 				   (
 					  SELECT Id
 					  FROM f_Nap_WinLimit_CreditCurrencySel()
-				   )))
+				   ))))
 
 	    INSERT INTO WinLimit_ProductSettingDetail(ProductID
 									    , GroupID
@@ -482,6 +489,7 @@ BEGIN
   , @Level101     = @Level101
   , @Level102     = @Level102
   , @Currency	   = @Currency
+  , @IsDeposit	   = @IsDeposit
     
     DROP TABLE #Temp;
     DROP TABLE #Currency_Deposit;

@@ -15,6 +15,7 @@ AS
 		- 20220224@Johnson: Global setting by currency [#168583]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -46,6 +47,7 @@ BEGIN
 																		AND c.exchangeid = pd.exchangeid
 		WHERE pd.siteid IS NULL
 			AND t.currency = 0
+			AND t.IsDeposit = 1
 
 		UPDATE t
 		SET t.isPrivate = 1
@@ -53,6 +55,7 @@ BEGIN
 			INNER JOIN WinLimit_ProductGlobalSetting p WITH(NOLOCK) ON t.productid = p.productid
 																		AND t.GroupID = p.GroupID																		
 																		AND t.exchangeid = p.currency
+																		AND p.IsDeposit = 1
 		
 
 		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
@@ -60,6 +63,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 1
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END
 		UNION ALL
@@ -68,6 +72,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 1
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
@@ -78,6 +83,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID	
+											AND p.IsDeposit = 1
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
@@ -87,7 +93,8 @@ BEGIN
 				,p.Level101 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
-											AND p.groupID = s.groupID	
+											AND p.groupID = s.groupID
+											AND p.IsDeposit = 1											
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
@@ -98,6 +105,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 1
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 
@@ -139,6 +147,7 @@ BEGIN
 		WHERE E.exchangeid IN (SELECT currency FROM @tmpCurrency)
 			AND  pd.siteid IS NULL
 			AND t.currency = 0
+			AND t.IsDeposit = 0
 			
 		
 		UPDATE t
@@ -147,12 +156,14 @@ BEGIN
 			INNER JOIN WinLimit_ProductGlobalSetting p WITH(NOLOCK) ON t.productid = p.productid
 																		AND t.GroupID = p.GroupID																		
 																		AND t.exchangeid = p.currency
+																		AND p.IsDeposit = 0
 
 		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c,p.Level1 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 0
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END	
 			
@@ -162,6 +173,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 0
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
@@ -172,6 +184,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID	
+											AND p.IsDeposit = 0
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
@@ -181,7 +194,8 @@ BEGIN
 				,p.Level101 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
-											AND p.groupID = s.groupID	
+											AND p.groupID = s.groupID
+											AND p.IsDeposit = 0											
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
@@ -192,6 +206,7 @@ BEGIN
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
+											AND p.IsDeposit = 0
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 
