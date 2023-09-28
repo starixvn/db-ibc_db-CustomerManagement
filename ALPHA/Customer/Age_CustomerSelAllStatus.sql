@@ -20,7 +20,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230410@Bobby: AutoJob clear balance downlines IsAllowAutoTransfer [RedmineID: #182071]
-
+		- 20230925@Tacy: Remove link server DBACC [Redmine: #194274]
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -43,7 +43,6 @@ BEGIN
 		  , @isDirectSuspend 		BIT = 0
 		  , @isDirectClosed 		BIT = 0
 		  , @Locked					TINYINT
-		  , @IsProtectedMode		BIT
 		  , @IsAllowAutoTransfer	BIT = 0
 
     SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
@@ -137,9 +136,6 @@ BEGIN
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
-	SELECT	@IsProtectedMode = ISNULL(IsProtectedMode,0) 
-	FROM DBACC.bodb02.dbo.CustLoginInfo cl WITH (NOLOCK) 
-	WHERE custid = @custid
 	-------------------------------------------------------------------------
 	DECLARE @TransferOption VARCHAR(8)
     EXEC DBCUST.CustDB.dbo.Acc_CustomerSelTransferOption @uplineid, @TransferOption OUTPUT
@@ -160,7 +156,6 @@ BEGIN
 			@upLineDisableOutright AS upLineDisableOutright,
 			ISNULL(@IsAllDayBalTransfer, 0) AS IsAllDayBalTransfer,
 			@Locked AS Locked,
-			@IsProtectedMode AS IsProtectedMode,
 			@IsAllowAutoTransfer AS IsAllowAutoTransfer
 	FROM custinfo ci WITH (NOLOCK)
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
