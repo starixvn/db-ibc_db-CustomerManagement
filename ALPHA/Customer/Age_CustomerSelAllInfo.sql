@@ -63,6 +63,7 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
 		- 20230920@Bobby: Enhance performance get max transid [Redmine: #194274]
+		- 20230925@Tacy: remove get Closed Reason and Protection Mode info from DBACC [Redmine: #194274]
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -73,8 +74,8 @@ BEGIN
     SET NOCOUNT ON
 
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
-    DECLARE @ClosedReason TINYINT, @transdate DATETIME, @upLineEnabled BIT,
-			@isDirectSuspend BIT = 0, @transid BIGINT, @Locked TINYINT, @ProtectionMode BIT, @transferid BIGINT,
+    DECLARE @upLineEnabled BIT,
+			@isDirectSuspend BIT = 0, @Locked TINYINT,
 			@isDirectClosed BIT
 
     SELECT @username = RTRIM(LTRIM(@username))
@@ -115,41 +116,13 @@ BEGIN
 			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
 			FROM custinfo WITH(NOLOCK)
 			WHERE custID = @recommend	
-		
-			SELECT @transdate = MAX(x.transdate) 
-			FROM
-			(
-				SELECT MAX(transdate)  AS transdate
-				FROM bettrans WITH (NOLOCK) WHERE custid = @custid
-				UNION ALL
-				SELECT MAX(transdate)  AS transdate
-				FROM dbo.transfer WITH (NOLOCK) WHERE custid = @custid
-			) x
-			OPTION(OPTIMIZE FOR	(@custid = -1))
 		END 
 		ELSE IF @roleID = 2 --for agent
 		BEGIN
 			--Upline
 			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
 			FROM custinfo WITH(NOLOCK)
-			WHERE custID = @mrecommend	
-			
-			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
-			WHERE recommend = @custid
-			OPTION(OPTIMIZE FOR	(@custid = -1))
-
-			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
-			WHERE recommend = @custid
-				AND bettype NOT IN (20000,19999)
-			OPTION(OPTIMIZE FOR	(@custid = -1))
-			
-			SELECT @transdate = MAX(transdate)
-			FROM 
-			(
-				SELECT  transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
-				UNION ALL
-				SELECT  transdate FROM dbo.transfer WITH (NOLOCK) WHERE transid = @transferid
-			) x
+			WHERE custID = @mrecommend
 		END
 		ELSE IF @roleID = 3 --for master
 		BEGIN
@@ -157,32 +130,7 @@ BEGIN
 			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
 			FROM custinfo WITH(NOLOCK)
 			WHERE custID = @srecommend	
-
-			SELECT @transid = MAX(transid) FROM bettrans WITH (NOLOCK) 
-			WHERE mrecommend = @custid
-			OPTION(OPTIMIZE FOR	(@custid = -1))
-
-			SELECT @transferid = MAX(transid) FROM dbo.transfer WITH (NOLOCK) 
-			WHERE mrecommend = @custid
-				AND bettype NOT IN (20000,19999)
-			OPTION(OPTIMIZE FOR	(@custid = -1))
-			
-			SELECT @transdate = MAX(transdate)
-			FROM 
-			(
-				SELECT  transdate FROM bettrans WITH (NOLOCK) WHERE transid = @transid
-				UNION ALL
-				SELECT  transdate FROM dbo.transfer WITH (NOLOCK) WHERE transid = @transferid
-			) x
 		END
-    
-		IF @roleid=1
-			SELECT @ClosedReason=ClosedReason FROM DBACC.bodb02.dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE Custid = @custid
-		ELSE
-			SELECT	@ClosedReason=ClosedReason, 
-					@ProtectionMode = ISNULL(IsProtectedMode,0)
-			FROM DBACC.bodb02.dbo.CustLoginInfo WITH(NOLOCK) 
-			WHERE Custid = @custid	
 	END
 	
 	--check suspend status is direct or not
@@ -193,7 +141,7 @@ BEGIN
 	WHERE custid = @custid
 	
 	-------------------------------------------------------------------------
-    SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, ISNULL(@ClosedReason,0) AS ClosedReason, 
+    SELECT	c.custid, ci.roleid, c.username, c.username2, c.firstname, c.lastname, c.phone, c.mobilephone, c.fax, 
 			ci.enabled,	ISNULL(@upLineEnabled,0) AS upLineEnabled, cs.closed, 
 			cs.reject AS suspended,
 			ISNULL(@isDirectSuspend,0) as isDirectSuspend,
@@ -206,8 +154,7 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @transdate AS lastTxn, @Locked AS Locked, 
-			@ProtectionMode AS IsProtectedMode			
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @Locked AS Locked
     FROM custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
