@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20230821@Winfred: Fix Param LeagueGroupID when all value  [RedmineID: #192953] 
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSitePolicySel @CustId=1315, @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -78,7 +79,7 @@ BEGIN
 			INNER JOIN CustomerClassRuleLeagueGroup_UAT clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
 		WHERE cm.Site = @site AND cm.Currency = @Currency 
 			AND cpm.SportType = @SportType 
-			AND (clg.LeagueGroupID = @LeagueGroupID OR @LeagueGroupID = -1)
+			AND (clg.LeagueGroupID = @LeagueGroupID OR clg.LeagueGroupID = -1)
 			AND cpm.IsTest = @IsTest 
 			AND cm.Platform IN (0,@Platform) 
 			AND cc.IsLive IN (2, @liveindicator)
@@ -97,13 +98,13 @@ BEGIN
 			INNER JOIN CustomerClassRuleLeagueGroup clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
 		WHERE cm.Site = @site AND cm.Currency = @Currency 
 			AND cpm.SportType = @SportType 
-			AND (clg.LeagueGroupID = @LeagueGroupID OR @LeagueGroupID = -1)
+			AND (clg.LeagueGroupID = @LeagueGroupID OR clg.LeagueGroupID = -1)
 			AND cpm.IsTest = @IsTest 
 			AND cm.Platform IN (0,@Platform) 
 			AND cc.IsLive IN (2, @liveindicator)
 	 END
 
-	 SELECT 
+	 SELECT TOP 1
 			@ReturnedSite = Site, 
 			@ReturnedCurrency = Currency , 
 			@ReturnedCustomerClass = CustomerClass,
@@ -124,6 +125,7 @@ BEGIN
 			@ReturnedPlatform = @Platform
 	 FROM #CustomerClass 
 	 GROUP BY Custid, Site, Currency , SportType, CustomerClass,LeagueGroupID
+	 ORDER BY LeagueGroupID DESC
 
 	SELECT @ReturnedCustomerClass AS ReturnedCustomerClass, 
 		  @ReturnedSite AS ReturnedSite, 
