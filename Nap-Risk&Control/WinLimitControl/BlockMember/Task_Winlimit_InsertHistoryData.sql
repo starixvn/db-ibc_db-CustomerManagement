@@ -10,6 +10,7 @@ AS
 		- 20170810@Helen: NAP Risk & Control - Phase 4 - Win Loss Limit [Redmine: 72870]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
+		- 20231004@Luke: Adjust filter condition [Redmine: #195051]
 		
 	Param's Explanation:
 		
@@ -95,7 +96,7 @@ BEGIN
 			OUTER APPLY (SELECT TOP 1 h.WinAmt 
 						FROM WinLimit_CustGameMonitoring_History h WITH (NOLOCK)
 						WHERE h.CustID = t.CustId 
-							AND h.ProductID = t.ProductId 
+							--AND h.ProductID = t.ProductId 
 							AND h.GroupID = t.GroupID 
 							AND h.TransID = t.TransID
 							AND h.ActionID = t.ActionID
