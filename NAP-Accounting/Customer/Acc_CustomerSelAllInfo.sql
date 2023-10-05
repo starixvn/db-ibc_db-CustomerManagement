@@ -122,6 +122,7 @@ Revisions:
 	- 20230418@Tacy: NAP - get @membersite = member's site [RedmineID: #181596]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230421@Elodie: Remove linked-server DBACC [RedmineID: #169643]
+	- 20230421@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -651,8 +652,6 @@ BEGIN
 	    ci.DisableOutRight,
 	    ci.DoubleCommLosing,	    	   
 		ci.DisableEsports,
-		ISNULL(ci.DisableColossusBet,1) AS DisableColossusBet,
-		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
 	    @IsDeposit IsDeposit, 

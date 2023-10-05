@@ -1,5 +1,5 @@
 /*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct 
+ALTER PROCEDURE dbo.Age_CustomerSelWinLimitProduct
 	@CustId INT
 	, @SettingStatus TINYINT = 0
 AS
@@ -23,6 +23,8 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
+		- 20230929@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
+
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -124,6 +126,7 @@ BEGIN
 				ELSE 0 END AS [Type]
 	FROM @Products p 
 		INNER JOIN dbo.Products d WITH(NOLOCK) ON p.ProductID = d.ProductID
+	WHERE d.Enabled=1
 	ORDER BY d.OrderNo
 
 	DROP TABLE #SportBetype
