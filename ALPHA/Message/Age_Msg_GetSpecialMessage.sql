@@ -21,6 +21,7 @@ AS
 		- 20220323@Elodie: Initial SP [RedmineID #170363]
 		- 20230517@Tacy: Alpha - Special Announcement - Exclude a message sending to 755555 & 76666B [RedmineID: #188246]
 		- 20230612@Tacy: Alpha - Enhance annoucement to make it clear to users [RedmineID: #188109]
+		- 20230929@Tacy: Alpha - Special Announcement - ONLY Upload for 755555 and 766666b [RedmineID: #194638]
 
     Param's Explanation:
 		* @PageSize = 0 ~ all
@@ -138,8 +139,8 @@ BEGIN
 			WHEN (@PageSize <> 0 AND RowID BETWEEN @rowstart AND @rowend) THEN 1
 			WHEN (@PageSize = 0) THEN 1
 		ELSE 0 END = 1
-	AND CASE WHEN @Site IN ('755555', '76666B') AND m.MessageId<>1732314 THEN 1 
-			 WHEN @Site NOT IN ('755555', '76666B') THEN 1
+	AND CASE WHEN @Site IN ('755555', '76666B') AND m.MessageId<>1799334	 THEN 1
+			 WHEN @Site NOT IN ('755555', '76666B') AND m.MessageId<>1799336 THEN 1
 		ELSE 0 END = 1
 	ORDER BY TopLevel, PostTime DESC, RowID
 
