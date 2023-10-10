@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[Age_ProblemAccount_CustomerList]
 	@ToDate				DATETIME,
 	@CustId				INT,
 	@SubAccId			INT = 0,
-	@UplineUsername		NVARCHAR(50) = '',
+	@UplineUsername		VARCHAR(50) = '',
 	@SearchRoleId		TINYINT,
 	@SearchUsername		NVARCHAR(50) = '',
 	@ReviewStatusId		TINYINT = 0,
