@@ -12,6 +12,7 @@ AS
   
 	Revisions:
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Examples:
 		EXEC [Acc_GetProductList] @Type = 1, @CustID = 28529050 , @SettingStatus = 3
@@ -71,9 +72,9 @@ BEGIN
 			RN = ROW_NUMBER() OVER ( PARTITION BY ISNULL(st.RealProductId, d.RealProductId) ORDER by d.SportType,d.BetType)
 		FROM dbo.f_CustSetting_ProductProfileSel (NULL,@SettingStatus,@SiteID,@Currency) d 
 			INNER JOIN #ProductsettingType t ON d.SettingType = t.SettingType
-			LEFT JOIN SportBettypeSettingMatrix st WITH(NOLOCK) ON st.SportType = d.SportType AND st.BetType = d.BetType AND st.isLicensee = 0 AND st.Site = 'ALL'
+			LEFT JOIN SportBettypeSettingMatrix st WITH(NOLOCK) ON st.SportType = d.SportType AND st.BetType = d.BetType AND st.isLicensee = 0 AND st.Site = 'ALL' AND st.isDeleted = 0
 			LEFT JOIN #SportOfferStatus non ON d.SportType = non.sporttype AND d.BetType = non.bettype AND non.IsHidden = 1
-		WHERE non.sporttype IS NULL
+		WHERE non.sporttype IS NULL 
 		)
 	INSERT INTO #TempProduct(ProductID)
 	SELECT RealProductId

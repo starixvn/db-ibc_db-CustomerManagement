@@ -26,6 +26,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 		- 20230728@Helios: Customer Setting - Simplify Live Casino Customer Setting [RedmineID: #189389]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Param's Explanation:
 	• @Recommend: Agent ID
@@ -62,6 +63,7 @@ BEGIN
 	FROM #SportBettype sb
 	INNER JOIN SportBettypeSettingMatrix m WITH (NOLOCK) ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID AND m.isLicensee = 0 AND m.Site = 'All'
 	WHERE m.ProductID IS NOT NULL
+		AND m.isDeleted = 0
 
 	DELETE FROM #SportBettype WHERE ISNULL(RealProductID , 0) <> @ProductID 
 

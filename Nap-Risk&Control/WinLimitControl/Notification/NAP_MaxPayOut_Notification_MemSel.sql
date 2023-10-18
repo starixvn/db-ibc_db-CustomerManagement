@@ -11,6 +11,8 @@ Original:
 Revisions:
 	- 20230829@Luke: Implement Company Max Payout Notification [Redmine: #193288]
 					 Clone from NAP_WinLimit_Notification_MemSel
+	- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+
 Param's Explanation:
 	� @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -45,7 +47,8 @@ BEGIN
 		INNER JOIN exchange AS e WITH (NOLOCK) ON c.currency = e.exchangeid
 		CROSS APPLY(SELECT TOP 1 RealProductID as ProductID
 					FROM SportBettypeSettingMatrix s WITH (NOLOCK)
-					WHERE s.SportType = wl.ProductID) t
+					WHERE s.SportType = wl.ProductID 
+						AND s.isDeleted = 0) t
 	WHERE CASE
 			WHEN @ProductId = 0
 			THEN wl.IsNotified

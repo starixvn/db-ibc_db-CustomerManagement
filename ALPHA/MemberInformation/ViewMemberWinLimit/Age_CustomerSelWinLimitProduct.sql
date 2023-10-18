@@ -24,6 +24,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 		- 20230929@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -93,6 +94,7 @@ BEGIN
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype
 			AND st.isLicensee = 0 AND st.Site = 'ALL'
+			AND st.isDeleted = 0
 
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
