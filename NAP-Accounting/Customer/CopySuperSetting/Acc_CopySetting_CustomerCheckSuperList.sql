@@ -21,6 +21,7 @@ AS
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -144,6 +145,7 @@ BEGIN
 		AND mt.BettypeRefWinlossLimit  IS NOT NULL
 		AND mt.isLicensee = 0
 		AND mt.site = 'ALL'
+		AND mt.isDeleted = 0
 	
 	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder)
 	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder

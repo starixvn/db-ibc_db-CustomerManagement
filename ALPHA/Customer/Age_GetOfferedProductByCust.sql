@@ -30,6 +30,7 @@ AS
 		- 20230118@Helios: add JiliGame [RedmineId: #182869] 
 		- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
@@ -177,6 +178,7 @@ BEGIN
 		INNER JOIN #OfferProduct dm ON p.ProductID = dm.ProductID
 	WHERE SettingName IN('Bet Setting','Stake Level')
 		AND p.ProductID IN (41) --Live Casino
+		AND mt.isDeleted = 0
 
 	IF EXISTS ( SELECT 1 FROM #SportBettypeDummy WHERE Main_IsHidden = 0)
 	BEGIN

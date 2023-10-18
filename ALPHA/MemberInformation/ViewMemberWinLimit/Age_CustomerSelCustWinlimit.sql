@@ -30,6 +30,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230804@Eden: Win loss limit - Change SP to allow dynamic seting [RedmineID: #180640]
 		- 20230905@Eden: Enhance BBIN display [Redmine: #193539]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -55,6 +56,7 @@ BEGIN
 			AND st.isLicensee = 0 AND st.Site = 'ALL'
 	WHERE st.SportType = @SportType
 		AND st.bettype = @BetType
+		AND st.isDeleted = 0
 
 	SELECT @RoleId = RoleId, @srecommend = srecommend
 	FROM dbo.CustInfo c WITH(NOLOCK)

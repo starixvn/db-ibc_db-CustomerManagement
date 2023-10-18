@@ -22,6 +22,7 @@ AS
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
 		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
+		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -169,6 +170,7 @@ BEGIN
 	FROM #tblCustomer b
 		INNER JOIN SportBettypeSettingMatrix mt WITH(NOLOCK) ON mt.SportType = b.SportType AND mt.BetType = b.BetType AND mt.isLicensee = 0 AND mt.Site = 'ALL'
 	WHERE b.ProductID = 41
+		AND mt.isDeleted = 0
 	
 	-- Sportsbook - Soccer
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
