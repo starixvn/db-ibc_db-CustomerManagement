@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100] 
 
 	Param's Explanation:
 	* @Policys:
@@ -63,8 +64,8 @@ BEGIN
 		RETURN
 	END CATCH
 
-	INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform)	
-	SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform 
+	INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, IsTest)	
+	SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform , @IsTest
 	FROM #CustomerClass a
 		CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b
 		CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(a.Currency,',') WHERE VALUE <> '' ) c
@@ -74,14 +75,14 @@ BEGIN
 	DELETE a FROM #CustomerClassSiteManagement a 
 	INNER JOIN #CustomerClassSiteManagement b ON a.PolicyID = b.PolicyID AND a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform AND a.STT > b.STT
 
-	UPDATE a
-	SET a.PolicyID_Dup = b.PolicyID , a.IsTest = aRule.IsTest
-	FROM #CustomerClassSiteManagement a 
-		INNER JOIN CustomerClassPolicyManagement aRule WITH(NOLOCK) ON a.PolicyID = aRule.PolicyID
-		INNER JOIN CustomerClassSiteManagement b WITH(NOLOCK) ON a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform
-		INNER JOIN CustomerClassPolicyManagement bRule WITH(NOLOCK) ON b.PolicyID = bRule.PolicyID
-	WHERE a.PolicyID <> b.PolicyID AND aRule.IsTest = bRule.IsTest AND aRule.SportType = bRule.SportType
-	AND aRule.IsTest = @IsTest
+	--UPDATE a
+	--SET a.PolicyID_Dup = b.PolicyID , a.IsTest = aRule.IsTest
+	--FROM #CustomerClassSiteManagement a 
+	--	INNER JOIN CustomerClassPolicyManagement aRule WITH(NOLOCK) ON a.PolicyID = aRule.PolicyID
+	--	INNER JOIN CustomerClassSiteManagement b WITH(NOLOCK) ON a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform
+	--	INNER JOIN CustomerClassPolicyManagement bRule WITH(NOLOCK) ON b.PolicyID = bRule.PolicyID
+	--WHERE a.PolicyID <> b.PolicyID AND aRule.IsTest = bRule.IsTest AND aRule.SportType = bRule.SportType
+	--AND aRule.IsTest = @IsTest
 	
 	DELETE a FROM #CustomerClassSiteManagement a WHERE PolicyID_Dup IS NULL OR 
 	 EXISTS( SELECT TOP 1 1 FROM CustomerClassPolicyManagement WITH(NOLOCK)
