@@ -35,6 +35,16 @@ ALTER PROC NAP_CWL_Initialize_Settings
    , @IsBlockedTransfer_CreditSite_Level3    BIT           = 0
    , @IsBlockedTransfer_CreditSite_Level101  BIT           = 0
    , @IsBlockedTransfer_CreditSite_Level102  BIT           = 0
+   , @IsSuspendedAccount_DepositSite_Level1   BIT          = 0
+   , @IsSuspendedAccount_DepositSite_Level2   BIT          = 0
+   , @IsSuspendedAccount_DepositSite_Level3   BIT          = 0
+   , @IsSuspendedAccount_DepositSite_Level101 BIT          = 0
+   , @IsSuspendedAccount_DepositSite_Level102 BIT          = 0
+   , @IsSuspendedAccount_CreditSite_Level1    BIT          = 0
+   , @IsSuspendedAccount_CreditSite_Level2    BIT          = 0
+   , @IsSuspendedAccount_CreditSite_Level3    BIT          = 0
+   , @IsSuspendedAccount_CreditSite_Level101  BIT          = 0
+   , @IsSuspendedAccount_CreditSite_Level102  BIT          = 0
 AS
 
 /*	Creator	 : 20180319@Robert
@@ -49,6 +59,7 @@ AS
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 				- 20220804@Johnson: call sp NAP_CWL_ProductOffer_Initialize_Settings manually to scale out [redmine: #175278]
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
+				- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -80,6 +91,8 @@ BEGIN
 	  , GroupName VARCHAR(200));
 
     DECLARE @bettype INT;
+
+    DECLARE @tbSuspendedSites TABLE (SiteID INT);
 	
 	DECLARE @tmpCurrency TABLE(
 		Currency INT		
@@ -99,20 +112,30 @@ BEGIN
 	  , IsBlockedPlaceBet_DepositSite BIT
 	  , IsBlockedPlaceBet_CreditSite  BIT
 	  , IsBlockedTransfer_DepositSite BIT
-	  , IsBlockedTransfer_CreditSite  BIT);
+	  , IsBlockedTransfer_CreditSite  BIT
+	  , IsSuspendedAccount_DepositSite BIT
+	  , IsSuspendedAccount_CreditSite  BIT);
+
+	--List sites: apply suspend account
+	INSERT INTO @tbSuspendedSites (SiteID)
+	SELECT SiteID FROM f_NAP_CWL_SuspendedSite() 
 
     INSERT INTO @LevelSettings(LevelId
 					    , Level
 					    , IsBlockedPlaceBet_DepositSite
 					    , IsBlockedPlaceBet_CreditSite
 					    , IsBlockedTransfer_DepositSite
-					    , IsBlockedTransfer_CreditSite)
+					    , IsBlockedTransfer_CreditSite
+						, IsSuspendedAccount_DepositSite
+						, IsSuspendedAccount_CreditSite)
 		 SELECT 1 AS                                     LevelId
 			 , @Level1 AS                               Level
 			 , @IsBlockedPlaceBet_DepositSite_Level1 AS IsBlockedPlaceBet_DepositSite
 			 , @IsBlockedPlaceBet_CreditSite_Level1 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level1 AS IsBlockedTransfer_DepositSite
 			 , @IsBlockedTransfer_CreditSite_Level1 AS  IsBlockedTransfer_CreditSite
+			 , @IsSuspendedAccount_DepositSite_Level1 AS IsSuspendedAccount_DepositSite
+			 , @IsSuspendedAccount_CreditSite_Level1 AS  IsSuspendedAccount_CreditSite
 		 UNION ALL
 		 SELECT 2 AS                                     LevelId
 			 , @Level2 AS                               Level
@@ -120,6 +143,8 @@ BEGIN
 			 , @IsBlockedPlaceBet_CreditSite_Level2 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level2 AS IsBlockedTransfer_DepositSite
 			 , @IsBlockedTransfer_CreditSite_Level2 AS  IsBlockedTransfer_CreditSite
+			 , @IsSuspendedAccount_DepositSite_Level2 AS IsSuspendedAccount_DepositSite
+			 , @IsSuspendedAccount_CreditSite_Level2 AS  IsSuspendedAccount_CreditSite
 		 UNION ALL
 		 SELECT 3 AS                                     LevelId
 			 , @Level3 AS                               Level
@@ -127,6 +152,8 @@ BEGIN
 			 , @IsBlockedPlaceBet_CreditSite_Level3 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level3 AS IsBlockedTransfer_DepositSite
 			 , @IsBlockedTransfer_CreditSite_Level3 AS  IsBlockedTransfer_CreditSite
+			 , @IsSuspendedAccount_DepositSite_Level3 AS IsSuspendedAccount_DepositSite
+			 , @IsSuspendedAccount_CreditSite_Level3 AS  IsSuspendedAccount_CreditSite
 		 UNION ALL
 		 SELECT 101 AS                                     LevelId
 			 , @Level101 AS                               Level
@@ -134,13 +161,17 @@ BEGIN
 			 , @IsBlockedPlaceBet_CreditSite_Level101 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level101 AS IsBlockedTransfer_DepositSite
 			 , @IsBlockedTransfer_CreditSite_Level101 AS  IsBlockedTransfer_CreditSite
+			 , @IsSuspendedAccount_DepositSite_Level101 AS IsSuspendedAccount_DepositSite
+			 , @IsSuspendedAccount_CreditSite_Level101 AS  IsSuspendedAccount_CreditSite
 		 UNION ALL
 		 SELECT 102 AS                                     LevelId
 			 , @Level102 AS                               Level
 			 , @IsBlockedPlaceBet_DepositSite_Level102 AS IsBlockedPlaceBet_DepositSite
 			 , @IsBlockedPlaceBet_CreditSite_Level102 AS  IsBlockedPlaceBet_CreditSite
 			 , @IsBlockedTransfer_DepositSite_Level102 AS IsBlockedTransfer_DepositSite
-			 , @IsBlockedTransfer_CreditSite_Level102 AS  IsBlockedTransfer_CreditSite;
+			 , @IsBlockedTransfer_CreditSite_Level102 AS  IsBlockedTransfer_CreditSite
+			 , @IsSuspendedAccount_DepositSite_Level102 AS IsSuspendedAccount_DepositSite
+			 , @IsSuspendedAccount_CreditSite_Level102 AS  IsSuspendedAccount_CreditSite;
 	
 	
 	INSERT INTO @tmpCurrency(Currency)
@@ -338,6 +369,14 @@ BEGIN
 				    THEN l.IsBlockedTransfer_DepositSite
 				    ELSE l.IsBlockedTransfer_CreditSite
 				END AS     IsBlockedTransfer
+			   , CASE
+				    WHEN s.isLicensee = 1
+				    THEN l.IsSuspendedAccount_DepositSite
+					WHEN s.siteid IN (SELECT ss.SiteID FROM @tbSuspendedSites ss) 
+						AND l.LevelId BETWEEN 2 AND 100	--WinLevel
+						THEN l.IsSuspendedAccount_CreditSite
+					ELSE 0
+				END AS     IsSuspendedAccount
 			   , l.Level AS MaxWinLimit_RM
 			   , e.actualrate
 		   FROM exchange AS e WITH (NOLOCK), 
@@ -354,6 +393,8 @@ BEGIN
 				  , IsBlockedPlaceBet_CreditSite
 				  , IsBlockedTransfer_DepositSite
 				  , IsBlockedTransfer_CreditSite
+				  , IsSuspendedAccount_DepositSite
+				  , IsSuspendedAccount_CreditSite
 			  FROM @LevelSettings
 		   ) AS l, 
 			   Site AS s
@@ -383,6 +424,7 @@ BEGIN
 									    , LevelID
 									    , IsBlockedPlaceBet
 									    , IsBlockedTransfer
+										, IsSuspendedAccount
 									    , MaxWinLimit_RM
 									    , MaxWinLimit)
 			 SELECT setting.ProductID
@@ -392,6 +434,7 @@ BEGIN
 				 , setting.LevelID
 				 , setting.IsBlockedPlaceBet
 				 , setting.IsBlockedTransfer
+				 , setting.IsSuspendedAccount
 				 , setting.MaxWinLimit_RM
 				 , CASE
 					  WHEN setting.exchangeid = 20
@@ -408,6 +451,7 @@ BEGIN
 					, MaxWinLimit_RM
 					, IsBlockedPlaceBet
 					, IsBlockedTransfer
+					, IsSuspendedAccount
 					, ActualRate
 				FROM CTE_ProductSettingDetail
 			 ) AS setting
@@ -445,6 +489,7 @@ BEGIN
 	    , MaxWinLimit
 	    , IsBlockedPlaceBet
 	    , IsBlockedTransfer
+		, IsSuspendedAccount
 	    , MaxWinLimit_RM
     FROM WinLimit_ProductSettingDetail cs WITH (NOLOCK)
     WHERE ProductID = @ProductID

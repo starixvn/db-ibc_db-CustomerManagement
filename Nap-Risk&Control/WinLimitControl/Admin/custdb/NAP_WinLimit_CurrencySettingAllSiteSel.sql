@@ -1,4 +1,3 @@
-
 /*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel] 
@@ -8,21 +7,23 @@ CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingAllSiteSel]
 AS
 
 /*
-Created: Jacob	
-Date: 2017-03-13
-Task: #72604 - Implement Game Win Limit Control phase2 3A
+	Created: Jacob	
+	Date: 2017-03-13
+	Task: #72604 - Implement Game Win Limit Control phase2 3A
 
-DB: DBCUST/CustDB
+	DB: DBCUST/CustDB
 
-Revisions:
-20170313@Jacob: Risk & Control - Phase 3A [#72604].
-20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
-20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
-Parameters Explanation:
-   @ProductId: Product ID
+	Revisions:
+		- 20170313@Jacob: Risk & Control - Phase 3A [#72604].
+		- 20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
+		- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
+		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+
+	Parameters Explanation:
+	   @ProductId: Product ID
    
-Example:
-EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
+	Example:
+	EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
 */
 
 
@@ -123,7 +124,8 @@ EXEC [NAP_WinLimit_CurrencySettingAllSiteSel] @ProductId = 22, @CurrencyId = 72
 			pc.IsCreditSite, 
 			ISNULL(s.MaxWinLimit_RM, 0) AS MaxWinLimit, 
 			ISNULL(s.IsBlockedPlaceBet, 0) AS IsBlockedPlaceBet, 
-			ISNULL(s.IsBlockedTransfer, 0) AS IsBlockedTransfer
+			ISNULL(s.IsBlockedTransfer, 0) AS IsBlockedTransfer,
+			ISNULL(s.IsSuspendedAccount, 0) AS IsSuspendedAccount
 	   FROM #ProductSiteCurrencySetting pc
 		   INNER JOIN @Products p ON p.ProductId = pc.ProductId
 		   INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON s.ProductID = p.ProductId

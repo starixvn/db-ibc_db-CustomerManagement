@@ -18,6 +18,8 @@ AS
 		- 20230407@Johnson: fix the case to show duplicate game name [redmine:#186608]
 		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 						 Change WinlostDate from DATETIME to SMALLDATETIME
+		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+
 	Param's Explanation:
 	
 */
@@ -29,6 +31,10 @@ BEGIN
 	DECLARE @WinlostDate SMALLDATETIME, @ReachedDate DATETIME
 	DECLARE @WinlimitLevel_min INT, @WinlimitLevel_max INT, @LosslimitLevel_min INT, @LosslimitLevel_max INT
 	
+	-- suspend account
+	DECLARE @CustID INT,
+			@Message NVARCHAR(Max)
+
 	SET @WinlimitLevel_min = 1
 	SET @WinlimitLevel_max = 100
 	
@@ -67,6 +73,7 @@ BEGIN
 								, WinlostDate SMALLDATETIME
 								, LevelOrder TINYINT
 								, LevelID TINYINT
+								, IsReached BIT DEFAULT (0)	--ever reached yellow/red level within a day
 								, MaxWinLimit MONEY
 								, TotalWinAmount MONEY
 								, ExchangeID INT
@@ -103,7 +110,15 @@ BEGIN
 												, SiteID INT
 												, MaxWinLimitSetting NVARCHAR(MAX)
 												)						 
-						 
+	DECLARE @tbl_SuspendList TABLE (
+				 CustId			INT
+				,Username		VARCHAR(30)
+				,TotalWinAmt	MONEY
+				,ProductID		TINYINT
+				,recommend		INT
+				,rUsername		VARCHAR(30)
+	)
+	
 	SELECT @WinlostDate = CAST(GETDATE() AS DATE)
 	
 	INSERT INTO #DataTmp_pre1(CustId, WinlostDate, Bettype, TotalWinAmount)
@@ -294,6 +309,18 @@ BEGIN
 		SET LevelID = LS.LevelID
 	FROM #CustReachCWLList T
 		INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON T.LevelOrder = LS.LevelOrder
+
+	--check: ever reached yellow/red level (within a day)
+	UPDATE T
+		SET t.IsReached=1
+	FROM #CustReachCWLList T
+		CROSS APPLY (SELECT TOP 1 1 AS val 
+					 FROM WinLimit_CustGameMonitoring_History g WITH (NOLOCK)
+					 INNER JOIN WinLimit_ProductSettingDetail psd WITH (NOLOCK)
+								ON g.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID and g.LevelID = psd.LevelID AND psd.SiteID = t.SiteID AND psd.GroupID = g.GroupID
+					 WHERE g.CustID=t.CustId AND PSD.IsSuspendedAccount=1
+						AND DATEDIFF(DAY, WinlostDate, @ReachedDate)=0
+						AND g.LevelID BETWEEN 2 AND @WinlimitLevel_max) gm
 		
 	-- Update table Monitoring due to Changing Status of Currency Setting (Change Profile)
 	UPDATE g
@@ -463,6 +490,48 @@ BEGIN
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID 
 	WHERE g.CustID IS NULL
 		
+	-- Suspend member accounts if reaching Yellow level
+	INSERT INTO @tbl_SuspendList (CustId, Username, recommend, rUsername, TotalWinAmt, ProductID)
+	SELECT DISTINCT T.CustId, c.username, C.recommend, ag.username, t.TotalWinAmount, t.ProductId
+	FROM #CustReachCWLList T 
+		INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID=t.CustId
+		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=T.CustId
+		INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid=c.recommend
+		LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON cs.custid=c.srecommend	
+		INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND t.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID
+	WHERE T.LevelID BETWEEN 2 AND @WinlimitLevel_max AND psd.IsSuspendedAccount=1
+		AND t.IsReached=0 AND cs.custid IS NULL --CREDIT ONLY
+		AND cps.SuspendInfo=0
+
+	WHILE EXISTS (SELECT TOP 1 1 FROM @tbl_SuspendList)
+	BEGIN
+		SELECT TOP 1 @CustID=CustId
+		FROM @tbl_SuspendList
+
+		IF ISNULL(@CustID,0)=0
+			BREAK;
+
+		--Suspend Account
+		--@UserID = 10278938, --starixIT
+		EXEC Acc_CustomerUpdSuspended @CustID=@CustID,@Suspended=1,@SubAccID=0,@UserID=10278938,@ActionID=75043
+		
+		--Send Personal Message for Agent
+		SELECT @Message = CONVERT (NVARCHAR(MAX),
+									(SELECT Username	AS '@Username'
+										, TotalWinAmt	AS '@TotalWinAmt'
+										, ProductID		AS '@ProductID'
+										, recommend		AS '@recommend'
+										, rUsername		AS '@rUsername'
+									FROM @tbl_SuspendList
+									WHERE CustId=@CustID
+									FOR XML PATH ('Msg'), ROOT('Root')))			
+									
+		EXEC NAP_WinLimit_PersonalMessageIns @Message=@Message
+
+		DELETE FROM @tbl_SuspendList
+		WHERE CustId=@CustID
+	END
+
 	IF EXISTS (SELECT 1 FROM #HistoryData)
 	BEGIN
 		-- Update lates status

@@ -42,6 +42,8 @@ AS
 		- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [RedmineID: #186773]
 		- 20230925@Luke: Live Casino - Allow uncheck bet limit to control product status [Redmine: #194121]
+		- 20230927@Tacy: Show log suspend member account by CWL flow on Alpha [RedmineID: #184911]
+
 */
 BEGIN
 -- SET NOCOUNT ON added to prevent extra result sets from
@@ -268,7 +270,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -319,7 +323,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -388,7 +394,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 					SET @__cnt = @__cnt + @__cntTemp
@@ -406,7 +414,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 					SET @__cnt = @__cnt + @__cntTemp
