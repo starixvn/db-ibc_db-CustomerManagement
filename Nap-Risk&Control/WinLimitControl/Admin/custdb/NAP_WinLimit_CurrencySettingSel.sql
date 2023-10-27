@@ -20,6 +20,7 @@ AS
 		- 20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 		- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
+		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		
 	Parameters Explanation:
 		@ProductId	: Product ID
@@ -161,7 +162,8 @@ BEGIN
 			pc.SiteId, 
 			ISNULL(s.MaxWinLimit_RM, 0) AS MaxWinLimit, 
 			ISNULL(s.IsBlockedPlaceBet, 0) AS IsBlockedPlaceBet, 
-			ISNULL(s.IsBlockedTransfer, 0) AS IsBlockedTransfer, 
+			ISNULL(s.IsBlockedTransfer, 0) AS IsBlockedTransfer,
+			ISNULL(s.IsSuspendedAccount, 0) AS IsSuspendedAccount, 
 			IsCreditSite
 		FROM #ProductSiteCurrencySetting pc
 			INNER JOIN @Products p ON p.ProductId = pc.ProductId

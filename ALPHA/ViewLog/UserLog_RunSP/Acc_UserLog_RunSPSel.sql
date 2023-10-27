@@ -42,7 +42,7 @@ AS
 		- 20230303@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 		- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [RedmineID: #186773]
-
+		- 20230927@Tacy: Show log suspend member account by CWL flow on Alpha [RedmineID: #184911]
 	Description:
 		- Get paged log run sp. If @LowerActionId and @UpperActionId are both not null, get actions in range 
 	
@@ -313,7 +313,7 @@ BEGIN
 					SELECT  LogID,
 							UserID,
 							Username =	CASE 
-											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (c.RoleId > 4 and @IsInternal=0 and la.ActionID<>75043) THEN 'Admin'
 											ELSE c.Username
 										END,
 							ul.TrackingValue,
@@ -337,7 +337,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 				END
@@ -388,7 +390,7 @@ BEGIN
 					SELECT  LogID,
 							UserID,
 							Username =	CASE 
-											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (c.RoleId > 4 and @IsInternal=0 and la.ActionID<>75043) THEN 'Admin'
 											ELSE c.Username
 										END,
 							ul.TrackingValue,
@@ -412,7 +414,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 
 				END
@@ -498,7 +502,7 @@ BEGIN
 					SELECT  LogID,
 							UserID,
 							Username =	CASE 
-											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (c.RoleId > 4 and @IsInternal=0 and la.ActionID<>75043) THEN 'Admin'
 											ELSE c.Username
 										END,
 							ul.TrackingValue,
@@ -522,7 +526,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 					
 					INSERT INTO #tmpLog (LogID, UserID, Username, TrackingValue, TrackingValueOld, LogDate, ActionID, ActionTypeID
@@ -530,7 +536,7 @@ BEGIN
 					SELECT  LogID,
 							UserID,
 							Username =	CASE 
-											when (c.RoleId > 4 and @IsInternal=0) THEN 'Admin'
+											when (c.RoleId > 4 and @IsInternal=0 and la.ActionID<>75043) THEN 'Admin'
 											ELSE c.Username
 										END,
 							ul.TrackingValue,
@@ -554,7 +560,9 @@ BEGIN
 							AND la.ActionTypeID = @ActionTypeId
 							AND IsInternal <= @IsInternal
 							--dont show these actions on alpha
-							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 THEN 999999 WHEN @IsInternal = 0 THEN 4 END
+							AND ISNULL(c.roleid,0) <= CASE WHEN @IsInternal = 1 OR la.ActionID=75043 --action: suspend membe by CWL flow
+																				THEN 999999 
+														   WHEN @IsInternal = 0 THEN 4 END
 					OPTION (OPTIMIZE FOR (@i = 1))
 				END
 						

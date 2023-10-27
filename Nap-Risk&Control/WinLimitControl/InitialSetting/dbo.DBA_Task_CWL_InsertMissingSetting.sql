@@ -16,6 +16,8 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
+		- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -58,8 +60,8 @@ BEGIN
 																		AND p.IsDeposit = 1
 		
 
-		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c,p.Level1 MaxWinLimit_RM
+		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM)
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -68,7 +70,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0,p.Level2 MaxWinLimit_RM
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0, 0,p.Level2 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -79,6 +81,7 @@ BEGIN
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
 				, p.blockedTransferLvl3 IsBlockedTransfer
+				, 0 IsSuspendedAccount
 				,p.Level3 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
@@ -90,6 +93,7 @@ BEGIN
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
+				, 0 IsSuspendedAccount
 				,p.Level101 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
@@ -101,6 +105,7 @@ BEGIN
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
+				, 0 IsSuspendedAccount
 				,p.Level102 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currency s ON p.productid = s.productid 
@@ -130,6 +135,12 @@ BEGIN
 		FROM STRING_SPLIT(@currencies,',')
 		WHERE value <> ''
 
+		--List sites: apply suspend account
+		DECLARE @tbSuspendedSites TABLE (SiteID INT);
+		
+		INSERT INTO @tbSuspendedSites (SiteID)
+		SELECT SiteID FROM f_NAP_CWL_SuspendedSite() 
+
 		IF @@rowcount <= 0 
 		RETURN
 		
@@ -158,8 +169,8 @@ BEGIN
 																		AND t.exchangeid = p.currency
 																		AND p.IsDeposit = 0
 
-		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, MaxWinLimit_RM)
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c,p.Level1 MaxWinLimit_RM
+		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM)
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -169,28 +180,34 @@ BEGIN
 			
 		UNION ALL
 		
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0,p.Level2 MaxWinLimit_RM
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0
+			,CASE WHEN ss.SiteID IS NOT NULL THEN 1 ELSE 0 END
+			,p.Level2 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
 											AND p.IsDeposit = 0
+			LEFT JOIN @tbSuspendedSites ss ON ss.SiteID=s.SiteID
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
+				,CASE WHEN ss.SiteID IS NOT NULL THEN 1 ELSE 0 END IsSuspendedAccount
 				,p.Level3 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID	
 											AND p.IsDeposit = 0
+			LEFT JOIN @tbSuspendedSites ss ON ss.SiteID=s.SiteID
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
+				, 0 IsSuspendedAccount
 				,p.Level101 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
@@ -202,6 +219,7 @@ BEGIN
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
+				, 0 IsSuspendedAccount
 				,p.Level102 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
