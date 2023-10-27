@@ -52,7 +52,7 @@ Revisions:
 	- 20210812@Percy: Add back ACCTHAI2, ACCTHAI56, ACCTHAI99 as normal group [RedmineID: #146710]
 	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
 	- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
-
+	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -172,7 +172,11 @@ BEGIN
 		UNION ALL
 		SELECT 1 --BEST-ODDS		
 	END
-	
+	ELSE IF(@System IN ('ACCTHaiSK','AccThaiSKUUS'))
+	BEGIN
+		Insert Into @tbSite(siteid)
+		SELECT 1233 --7a5555,...
+	END
 	RETURN
 END
 
