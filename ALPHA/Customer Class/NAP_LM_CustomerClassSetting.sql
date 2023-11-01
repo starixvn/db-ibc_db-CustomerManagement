@@ -18,7 +18,8 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
-		- 20230928@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
+		- 20230928@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
+		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365]  
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS' @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
@@ -137,6 +138,35 @@ BEGIN
 					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
 						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
 					WHERE cp.PolicyID = a.PolicyID
+				) r
+			CROSS APPLY(
+				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+				FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
+					FROM CustomerClassSiteManagement WITH(NOLOCK)
+					WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Currency = currency) mis
+			) d
+	END
+	ELSE
+	BEGIN
+		INSERT INTO #CustomerClass(PolicyID, Site, Currency)    
+		SELECT DISTINCT a.PolicyID, a.Site, a.Currency     
+		FROM CustomerClassSiteManagement a WITH(NOLOCK) 
+			INNER JOIN  CustomerClassPolicyManagement ccp WITH(NOLOCK) ON a.PolicyID = ccp.PolicyID
+		WHERE a.Site = @Site AND ccp.SportType = @SportType AND ccp.IsTest <= @IsTest
+		-- Get all Platform for policy 
+		INSERT INTO #CustomerClassSiteManagement( Site, Currency, Platform, RuleID, RowNumber)
+		SELECT DISTINCT
+				a.Site,
+				a.Currency,
+				d.Platforms,
+				r.RuleID  , 
+				DENSE_RANK() OVER( ORDER BY Site,r.RuleID,d.Platforms) AS RowNumber
+		FROM #CustomerClass a WITH(NOLOCK)
+			CROSS APPLY(
+					SELECT cr.RuleID
+					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
+						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
+					WHERE cp.PolicyID = a.PolicyID AND cr.CustomerClass = @CustomerClass
 				) r
 			CROSS APPLY(
 				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
