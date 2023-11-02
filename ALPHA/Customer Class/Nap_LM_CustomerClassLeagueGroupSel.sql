@@ -11,6 +11,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365] 
 
 	Param's Explanation:
 		* @SportType : 0 All
@@ -28,7 +29,7 @@ BEGIN
 	BEGIN
 		SELECT GroupID, GroupName ,SportType
 		FROM LeagueGroup WITH(NOLOCK)
-		WHERE SportType = @SportType
+		WHERE SportType IN (0, @SportType)
 		ORDER BY GroupName
 	END
 END
