@@ -22,20 +22,24 @@ AS
 */ 
 BEGIN
 	SET NOCOUNT ON;
+	CREATE TABLE #RuleTemp( RuleID INT) 
+	INSERT INTO #RuleTemp(RuleID)
+	SELECT VALUE AS RuleID FROM STRING_SPLIT(@RuleIDs,',') WHERE VALUE = ''
 
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassRule a WITH(NOLOCK) 
-					CROSS APPLY ( SELECT  TOP 1 VALUE FROM STRING_SPLIT(@RuleIDs,',') WHERE VALUE = a.RuleID ) b
+					CROSS APPLY ( SELECT TOP 1 RuleID FROM #RuleTemp WHERE RuleID = a.RuleID ) b
 				WHERE a.IsTest <> @IsTest ) 
 	BEGIN
 		SELECT @ErrCode = 105 , @ErrMsg = 'Cannot Delete PROD data' 
 		RETURN
 	END	
 
-	SELECT DISTINCT a.RuleID, a.RuleTitle 
-	FROM CustomerClassRule a WITH(NOLOCK) 
-		CROSS APPLY ( SELECT  TOP 1 VALUE FROM STRING_SPLIT(@RuleIDs,',') WHERE VALUE = a.RuleID ) b
-		CROSS APPLY ( SELECT  TOP 1 PolicyID FROM CustomerClassPolicyRule  WITH(NOLOCK) WHERE RuleID = a.RuleID ) c
-	WHERE a.IsTest = @IsTest
+	SELECT DISTINCT a.RuleID, b.RuleTitle 
+	FROM #RuleTemp a 
+		CROSS APPLY ( SELECT TOP 1 RuleTitle FROM CustomerClassRule WHERE RuleID = a.RuleID AND IsTest = @IsTest ) b
+		CROSS APPLY ( SELECT TOP 1 PolicyID FROM CustomerClassPolicyRule  WITH(NOLOCK) WHERE RuleID = a.RuleID ) c
 	ORDER BY a.RuleID
+
+	DROP TABLE #RuleTemp
 END
 GO

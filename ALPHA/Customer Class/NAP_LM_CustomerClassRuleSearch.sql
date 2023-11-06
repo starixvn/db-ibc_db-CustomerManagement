@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
+		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassRuleSearch @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
@@ -44,7 +45,9 @@ BEGIN
 			   a.AgentBetInterval,
 			   a.Enable,
 			   a.LastModifiedUser,
-			   a.LastModifiedTime ,c.LeagueGroupNames
+			   a.LastModifiedTime,
+			   c.LeagueGroupNames,
+			   d.PolicyTitles
 		FROM CustomerClassRule a WITH(NOLOCK)
 			CROSS APPLY(
 						SELECT STRING_AGG(CAST((CASE WHEN b.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
@@ -52,6 +55,12 @@ BEGIN
 								LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON b.LeagueGroupID = ps.GroupID 
 							WHERE a.RuleID = b.RuleID
 					) c
+			OUTER APPLY(
+						SELECT STRING_AGG(CAST(PolicyTitle AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY PolicyTitle)  AS PolicyTitles
+							FROM CustomerClassPolicyRule r WITH(NOLOCK)
+									CROSS APPLY ( SELECT TOP 1 PolicyTitle FROM CustomerClassPolicyManagement WHERE PolicyID = r.PolicyID ) b
+							WHERE r.RuleID = a.RuleID
+					) d
 		WHERE a.SportType = @SportType AND (@Islive = 2 OR a.IsLive = @Islive)
 			AND (@CustomerClass = 0 OR a.CustomerClass = @CustomerClass)
 			AND a.IsTest <= @IsTest

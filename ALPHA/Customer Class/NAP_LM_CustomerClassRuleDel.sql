@@ -28,12 +28,15 @@ BEGIN
 	DECLARE @StartRun	DATETIME
 		, @EndRun		DATETIME
 		, @Duration		INT
-		, @iDoc			INT
 		, @logSpData_Old   NVARCHAR(MAX)
 		, @xml			 XML
+	CREATE TABLE #RuleTemp( RuleID INT) 
+	INSERT INTO #RuleTemp(RuleID)
+	SELECT VALUE AS RuleID FROM STRING_SPLIT(@RuleIDs,',') WHERE VALUE = ''
+	SELECT @StartRun = GETDATE()
 
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassRule a WITH(NOLOCK) 
-					CROSS APPLY ( SELECT  TOP 1 VALUE FROM STRING_SPLIT(@RuleIDs,',') WHERE VALUE = a.RuleID ) b
+					CROSS APPLY ( SELECT  TOP 1 RuleID FROM #RuleTemp WHERE RuleID = a.RuleID ) b
 				WHERE a.IsTest <> @IsTest ) 
 	BEGIN
 		SELECT @ErrCode = 105 , @ErrMsg = 'Cannot Delete PROD data' 
@@ -46,23 +49,87 @@ BEGIN
 		RETURN 	
 	END
 
-	CREATE TABLE #CustomerClassRule_History( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
+	CREATE TABLE #CustomerClassRule_History( RuleID INT PRIMARY KEY, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
-			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
+			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, 
+			LeagueGroupIDs VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
 
+	INSERT INTO #CustomerClassRule_History( RuleID, CustomerClass, RuleTitle, SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval, SuperBetInterval, SiteBetInterval, 
+				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Enable, IsTest, LastModifiedUser, LastModifiedTime)
+	SELECT a.RuleID,
+			a.CustomerClass,
+			a.RuleTitle,
+			a.SportType,
+			a.IsLive,
+			a.DiffBalanceRatio,
+			a.BetDelay,
+			a.NextBetInterval,
+			a.SuperBetInterval,
+			a.SiteBetInterval,
+			a.MinBet,
+			a.MaxBet,
+			a.MaxPerMatch,
+			a.RepeatedBets,
+			a.SeizeBetTicket,
+			a.DisableParlay,
+			a.PeakHourSpreadAdjustment,
+			a.AgentBetInterval,
+			b.LeagueGroupIDs,
+			a.Enable,
+			a.IsTest,
+			a.LastModifiedUser,
+			a.LastModifiedTime  
+	FROM CustomerClassRule a WITH(NOLOCK)
+		OUTER APPLY(
+				SELECT STRING_AGG(CAST(LeagueGroupID AS VARCHAR(20)), ',') WITHIN GROUP (ORDER BY LeagueGroupID)  AS LeagueGroupIDs
+				FROM CustomerClassRuleLeagueGroup b WITH(NOLOCK)
+					WHERE a.RuleID = b.RuleID
+			) b (LeagueGroupIDs)
+		CROSS APPLY ( SELECT TOP 1 RuleID FROM #RuleTemp WHERE RuleID = a.RuleID ) c
+	WHERE a.IsTest <= @IsTest
+	
+	DELETE a FROM CustomerClassRule a WITH (ROWLOCK)
+		INNER JOIN #RuleTemp b ON a.RuleID = b.RuleID
 
+	DELETE a FROM CustomerClassRuleLeagueGroup a WITH (ROWLOCK)
+		INNER JOIN #RuleTemp b ON a.RuleID = b.RuleID
 
 	-- Log new updated data
 	SET @xml = (
-			SELECT	@RuleID						AS '@RuleID',	
-					@UserID						AS '@UserID',
-					@IP							AS '@IP',
-					@Enable						AS '@Enable',
-					@IsTest						AS '@IsTest',			
+			SELECT	@UserID						AS '@UserID',				
+					@IP							AS '@IP',			
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
-					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'
+					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode',
+					(
+						SELECT DISTINCT cs.RuleID					AS '@RuleID',
+							cs.CustomerClass					AS '@CustomerClass',
+							cs.RuleTitle						AS '@RuleTitle',
+							cs.SportType						AS '@SportType',
+							cs.IsLive							AS '@isLive',
+							cs.DiffBalanceRatio					AS '@DiffBalanceRatio',
+							cs.NextBetInterval					AS '@NextBetInterval',
+							cs.SuperBetInterval					AS '@SuperBetInterval',
+							cs.SiteBetInterval					AS '@SiteBetInterval',
+							cs.MinBet							AS '@MinBet',
+							cs.MaxBet							AS '@MaxBet',
+							cs.MaxPerMatch						AS '@MaxPerMatch',
+							cs.RepeatedBets						AS '@RepeatedBets',
+							cs.SeizeBetTicket					AS '@SeizeBetTicket',
+							cs.DisableParlay					AS '@DisableParlay',
+							cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
+							cs.AgentBetInterval					AS '@AgentBetInterval',
+							cs.LeagueGroupIDs					AS '@LeagueGroupIDs',
+							cs.IsTest							AS '@IsTest',
+							cs.LastModifiedUser		AS '@LastModifiedUser',
+							CONVERT(VARCHAR(10), cs.LastModifiedTime, 120) AS '@LastModifiedTime',	
+							cs.Enable							AS '@Enable'
+						FROM	#CustomerClassRule_History AS cs	
+						ORDER BY cs.RuleID
+						FOR XML PATH('ClassRule'),
+						TYPE
+					)
 			FOR XML PATH('R'),
 			TYPE
 		)
@@ -73,11 +140,12 @@ BEGIN
 	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 				@CustID  = @UserID,
 				@UserID = @UserID,
-				@ActionID = 31906,
+				@ActionID = 31915,
 				@TrackingValue = '',
 			    @TrackingValue2 = @logSpData_Old,
 				@duration = @Duration
 
 	DROP TABLE #CustomerClassRule_History
+	DROP TABLE #RuleTemp
 END
 GO
