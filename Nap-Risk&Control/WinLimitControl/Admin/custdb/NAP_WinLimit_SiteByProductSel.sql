@@ -13,7 +13,7 @@ AS
 		20160923@Jacob: Risk & Control - Phase 3 [#61220].
 		20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 		20230213@Tacy: CWL - Split 789y site [RedmineID: #182387]
-
+		202231108@Johnson: Offer site SEAL888 to group Others [RedmineID: #195581]
 	Parameters Explanation:
 		   @ProductId: Product ID
 
@@ -98,7 +98,7 @@ BEGIN
 			CASE WHEN s.SiteLabel IS NULL THEN 'Others' ELSE s.SiteLabel END AS SiteLabel,
 			'Credit Sites' AS GroupName
 		FROM dbo.Site s WITH (NOLOCK)
-		WHERE (s.isLicensee = 0 OR s.site='Saba789')
+		WHERE (s.isLicensee = 0 OR s.site IN ('Saba789','SEAL888'))
 			AND S.isActive = 1
 		UNION ALL
 		SELECT DISTINCT
@@ -112,7 +112,7 @@ BEGIN
 			INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = dlp.LicenseeName
 													AND S.isActive = 1
 													AND S.isLicensee = 1
-		WHERE s.site<>'Saba789'
+		WHERE s.site NOT IN ('Saba789','SEAL888')
         ORDER BY 
 				GroupName,
 				SiteLabel,
