@@ -1,7 +1,4 @@
 ﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0" isNested="1"></info>*/
-USE CustDB
-GO 
-
 ALTER PROCEDURE [dbo].[Age_LoginCheckSiteGroup]
 	@SiteGroup	VARCHAR(20) = 'ALL',
 	@Site		VARCHAR(20) = '',
@@ -44,15 +41,14 @@ BEGIN
 	BEGIN
 		SELECT	@isAllowed  = 1 
 	END
-	ELSE IF @SiteGroup IN ('789y','IBCBET','Others','CN88','IBCIndo','TH7a5')
+	ELSE IF @SiteGroup IN ('789y','IBCBET','Others','CN88','IBCIndo','TH7a5','777')
 	BEGIN
 		IF		@SiteGroup = '789y'		AND @SiteLabel = '789y'	SELECT @isAllowed = 1
 		ELSE IF @SiteGroup = 'CN88'		AND @Site = 'CN88'		SELECT @isAllowed = 1
 		ELSE IF @SiteGroup = 'IBCIndo'	AND @Site = 'IBCIndo'	SELECT @isAllowed = 1
-		ELSE IF @SiteGroup = 'TH7a5'	AND @Site = '7a5555'	SELECT @isAllowed = 1
-		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @SiteLabel <> '789y' AND @Site NOT IN ('CN88','IBCIndo','7a5555') SELECT @isAllowed = 1
+		ELSE IF @SiteGroup = 'TH7a5'	AND @Site = '7a5555'	SELECT @isAllowed = 1		
 		ELSE IF @SiteGroup = '777'		AND @Site = '777777'	SELECT @isAllowed = 1
-		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @SiteLabel <> '789y' AND @Site NOT IN ('CN88','IBCIndo','777777') SELECT @isAllowed = 1
+		ELSE IF @SiteGroup IN ('IBCBET','Others') AND @SiteLabel <> '789y' AND @Site NOT IN ('CN88','IBCIndo','777777','7a5555') SELECT @isAllowed = 1
 		ELSE SELECT @isAllowed = 0 			
 	END 
 	ELSE SELECT	@isAllowed = 0 	

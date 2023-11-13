@@ -1,11 +1,5 @@
-NAP-Accounting\Customer\Player3rd\Acc_CustomerSelPlayerID.sql
-NAP-Accounting\Customer\MoveSite\Acc_CustomerSelSiteByUserName.sql
-NAP-Accounting\Customer\MoveSite\Acc_CustomerSelSiteByUserName.sql
-NAP-Accounting\Customer\MoveSite\Acc_CustomerUpdMoveSite.sql
-Ext NAP\Customer\EAS_CustomerSelAllInfo.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelByCom.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelBySAg.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelByMAg.sql
-Ext NAP\Customer\dbo.EAS_CustomerSelByAg.sql
-NAP-Accounting\ExternalSite\Group\dbo.Acc_CustGroupSel.sql
-NAP-Accounting\Customer\GroupHeadLine\dbo.Acc_CustomerSelByGroupHeadline.sql
+
+
+ALPHA\Login-On_User\Age_LoginVerifyDownline.sql
+ALPHA\Login-On_User\Age_LoginDownline_Sub.sql
+ALPHA\Login-On_User\Age_LoginDownline.sql
