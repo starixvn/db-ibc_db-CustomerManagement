@@ -20,6 +20,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230821@Winfred: Fix Param LeagueGroupID when all value  [RedmineID: #192953] 
+		- 20231114@Winfred: [NAP CM] Customer Class mng - Return as 1 if Null  [RedmineID: #196827]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSitePolicySel @CustId=1315, @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -132,8 +133,8 @@ BEGIN
 		  @ReturnedCurrency AS ReturnedCurrency,
 		  @ReturnedPlatform AS ReturnedPlatform,
 		  @ReturnedSportType AS ReturnedSportType, 
-		  @ReturnedDiffBalanceRatio AS ReturnedDiffBalanceRatio, 
-		  @ReturnedBetDelay AS ReturnedBetDelay,
+		  ISNULL(@ReturnedDiffBalanceRatio,1) AS ReturnedDiffBalanceRatio, 
+		  ISNULL(@ReturnedBetDelay,1) AS ReturnedBetDelay,
 		  @ReturnedNextBetInterval AS ReturnedNextBetInterval, 
 		  @ReturnedSuperBetInterval AS ReturnedSuperBetInterval, 
 		  @ReturnedSiteBetInterval AS ReturnedSiteBetInterval,
