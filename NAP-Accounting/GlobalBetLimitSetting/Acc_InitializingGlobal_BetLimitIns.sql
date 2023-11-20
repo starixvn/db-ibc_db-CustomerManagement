@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
+	,@SettingStatus	TINYINT
 	,@UserID	INT
 	,@IP		VARCHAR(50)		= ''
 	,@ErrCode	INT = 0				OUTPUT
@@ -21,6 +22,7 @@ AS
 		- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
+		- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -129,10 +131,8 @@ BEGIN
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
 	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
-	UNION 
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+
 	--Parse XML data
 	DECLARE @iDoc INT
 	BEGIN TRY
