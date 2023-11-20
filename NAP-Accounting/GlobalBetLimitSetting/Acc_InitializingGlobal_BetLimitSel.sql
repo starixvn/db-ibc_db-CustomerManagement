@@ -7,6 +7,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitSel]
 	,@pMutilBetType			VARCHAR(MAX) = ''
 	,@pMutilCurrencyCredit	VARCHAR(MAX) = ''
 	,@pMutilCurrencyDeposit	VARCHAR(MAX) = ''
+	,@SettingStatus			TINYINT
 	,@ExportData			INT	=	0
 	,@PageSize				INT	=	50
 	,@PageIndex				INT	=	0
@@ -22,6 +23,7 @@ AS
 			- 20220921@Tacy: Add column MaxGameStake [Redmine: #174509]
 			- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+			- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 		
 		Param's Explanation:
 			@ProductID				0 : All, <> 0 : ProductID
@@ -99,10 +101,7 @@ BEGIN
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
 	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
-	UNION 
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
 
 	INSERT INTO #ProductProfile (SportType, SportName, BetType, typenamee, SettingType, IsCredit)				
 	SELECT SportType, SportName, BetType, typenamee, SettingType, IsCredit

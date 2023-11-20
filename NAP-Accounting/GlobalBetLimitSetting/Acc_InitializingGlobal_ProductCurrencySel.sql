@@ -4,6 +4,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_ProductCurrencySel]
 	-- Add the parameters for the stored procedure here
 	 @pMutilProductID	VARCHAR(MAX) = ''
 	,@pMutilCurrency	VARCHAR(MAX) = ''
+	,@SettingStatus		TINYINT
 AS
 /*
 		Task : NAP -  Flexible Initializing Bet Limit
@@ -12,6 +13,7 @@ AS
 		Revisions:
 			- 20220708@Tacy: Create SP [Redmine: #174509]
 			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
+			- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 		
 		Param's Explanation:
 			@pMutilProductID 0 : All, <> 0 : ProductID
@@ -66,10 +68,7 @@ BEGIN
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
 	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(1)
-	UNION 
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(3)
+	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
 
 	--CREDIT
 	INSERT INTO #Credit_ProductCurrency (ProductID, ProductName, SportType, SportName, CurrencyCredit)
