@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetMessage]
 	@MessageId int = NULL,
 	@Content_en	nvarchar(4000) = NULL,
@@ -23,6 +23,7 @@ ALTER PROCEDURE [dbo].[Age_Msg_SetMessage]
 	@IsBatch bit = 0,
 	@MsgContentsType tinyint = 0,
 	@BetTransId varchar(2000) = NULL, -- remove when admin lanuch batchmessage
+	@Remark varchar(300) = NULL,
 	@MessageIDOutput INT = NULL OUTPUT
 AS
 /*	
@@ -32,7 +33,8 @@ AS
     Original: Dot_Msg_SetMessage
 
     Revisions:
-			- 20221121@Tacy: Create SP
+		- 20221121@Tacy: Create SP [RedmineID: #180704]
+		- 20231019@Tacy: Add @Remark [RedmineID: #194024]
 
 	Param's Explanation:
 		@MessageId: MessageId of a message
@@ -92,7 +94,8 @@ BEGIN
 			IsTest = @IsTest,
 			MatchId = @MatchId,
 			IsBatch = @IsBatch,
-			MsgContentsType = @MsgContentsType --set default values Normal Data 
+			MsgContentsType = @MsgContentsType, --set default values Normal Data 
+			Remark=@Remark
 		WHERE MessageId = @MessageId;
 		SELECT @MessageIDOutput = @MessageId
 		SELECT @MessageID AS MessageId;
@@ -106,7 +109,7 @@ BEGIN
 						MsgType, IsSticky, Creator, CreatorName, MatchId,
 						LastUpdator, LastUpdateName, CreateTime, LastUpdateTime, PostTime, IsTest,
 						IsBatch,
-						MsgContentsType
+						MsgContentsType, Remark
 						) 
 		VALUES(@Content_ch, @Content_it, @Content_cs, @Content_jp, @Content_th, 
   			   @Content_en, @Content_ko, @Content_es, @Content_vn, @Content_id,
@@ -114,7 +117,7 @@ BEGIN
 			   @MsgType, @IsSticky, @Creator, @CreatorName, @MatchId,
 			   @Creator, @CreatorName, getdate(), getdate(), getdate(), @IsTest,
 			   @IsBatch,
-			   @MsgContentsType
+			   @MsgContentsType, @Remark
 				);
 		
 		SELECT @MessageId = SCOPE_IDENTITY();

@@ -24,6 +24,7 @@ AS
 		- 20221123@Tacy: TW enhance performance's sp [Dot_Msg_GetPublicMessage]
 		- 20230517@Tacy: Add @Site [RedmineID: #188246]
 		- 20230612@Tacy: Alpha - Enhance annoucement to make it clear to users [RedmineID: #188109]
+		- 20231020@Tacy: NAP/Alpha - Manage Domain (Msg.MsgContentsType=110) [RedmineID: #194024]
 
     Param's Explanation:
 		* @PageSize = 0 ~ all
@@ -66,6 +67,7 @@ BEGIN
 			AND m.IsSticky =0
 			AND m.PostTime BETWEEN @sdate AND @edate
 			AND m.IsTest = 0
+			AND m.MsgContentsType<>110
 			AND m.MessageId >=497229; --343146
 
 		INSERT INTO #TopMsg (MessageId, TopLevel)
@@ -150,6 +152,9 @@ BEGIN
 					WHEN (@MatchID = 0) THEN 1
 					WHEN (m.MatchID = @MatchID) THEN 1
 				ELSE 0 END = 1	
+			AND CASE WHEN MsgContentsType=110 AND Remark=@Site THEN 1
+					 WHEN MsgContentsType<>110 THEN 1
+				ELSE 0 END = 1
 
 		IF @targetid2 <> '0'
 		BEGIN
