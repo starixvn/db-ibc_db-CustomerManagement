@@ -43,7 +43,7 @@ BEGIN
 		RETURN
 	END	
 
-	EXEC NAP_LM_CustomerClassRuleCheck @RuleIDs = @RuleIDs, @IsTest = @IsTest, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
+	EXEC NAP_LM_CustomerClassRuleCheck @RuleIDs = @RuleIDs, @IsTest = @IsTest, @IsShow = 0, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 	IF @ErrCode <> 0
 	BEGIN
 		RETURN 	

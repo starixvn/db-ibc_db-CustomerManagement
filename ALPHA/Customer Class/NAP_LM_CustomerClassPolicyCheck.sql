@@ -2,6 +2,7 @@
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassPolicyCheck] 
 	  @Policies		VARCHAR(MAX)
 	, @IsTest		TINYINT	
+	, @IsShow		BIT				= 1	
 	, @ErrCode		INT				= 0	 OUTPUT
 	, @ErrMsg		NVARCHAR(MAX)	= '' OUTPUT
 AS
@@ -43,7 +44,10 @@ BEGIN
 		CROSS APPLY (SELECT TOP 1 PolicyID FROM CustomerClassSiteManagement WITH(NOLOCK) WHERE PolicyID = a.PolicyID ) c
 	ORDER BY a.PolicyID
 
-	SELECT PolicyID, PolicyTitle FROM #PolicyError ORDER BY PolicyID
+	IF	@IsShow = 1
+	BEGIN
+		SELECT PolicyID, PolicyTitle FROM #PolicyError ORDER BY PolicyID
+	END
 
 	IF 	EXISTS(SELECT TOP 1 1 FROM #PolicyError a) 
 	BEGIN

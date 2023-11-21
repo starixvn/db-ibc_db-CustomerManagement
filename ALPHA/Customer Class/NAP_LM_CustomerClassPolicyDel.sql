@@ -43,7 +43,7 @@ BEGIN
 		RETURN
 	END	
 
-	EXEC NAP_LM_CustomerClassPolicyCheck @Policies = @Policies, @IsTest = @IsTest, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
+	EXEC NAP_LM_CustomerClassPolicyCheck @Policies = @Policies, @IsTest = @IsTest, @IsShow =0, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 	IF @ErrCode <> 0
 	BEGIN
 		RETURN 	
