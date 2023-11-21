@@ -1,2 +1,3 @@
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
+ALPHA\Login-On_User\Age_LoginVerifyDownline.sql
+ALPHA\Login-On_User\Age_LoginDownline_Sub.sql
+ALPHA\Login-On_User\Age_LoginDownline.sql
