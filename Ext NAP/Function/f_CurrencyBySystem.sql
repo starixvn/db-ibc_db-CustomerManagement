@@ -49,6 +49,7 @@ Revisions:
 	- 20210309@Tina: add more group ACCAthena000
 	- 20210812@Percy: Add back ACCTHAI2, ACCTHAI56, ACCTHAI99 as normal group [RedmineID: #146710]
 	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
+	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
 
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
@@ -95,7 +96,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 40 --IRR
 	END
-	ELSE IF (@system IN ('ACCUUS','ACCUUSMyanmar'))
+	ELSE IF (@system IN ('ACCUUS','ACCUUSMyanmar','AccThaiSKUUS'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 20 --UUS
@@ -191,6 +192,11 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)		
 		SELECT 51 --INH		
 	END	
+	ELSE IF(@System IN ('ACCThaiSK'))
+	BEGIN
+		Insert Into @tbCurrency(exchangeID)
+		SELECT 43 --THB,...
+	END
 	RETURN
 END
 
