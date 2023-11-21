@@ -15,8 +15,7 @@ AS
 	Original:
 
 	Revisions:
-		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100]
-		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590]  
+		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100] 
 
 	Param's Explanation:
 	* @PolicySites:
@@ -86,23 +85,11 @@ BEGIN
 		 COALESCE(CAST(@ErrMsg AS VARCHAR(400)),SPACE(1)) AS '@ErrMsg',  
 		 COALESCE(CAST(@ErrCode AS VARCHAR(50)),SPACE(1)) AS '@ErrCode',  
 		 (  
-		  SELECT DISTINCT cs.PolicyID  AS '@PID',  
+		  SELECT cs.PolicyID  AS '@PID',  
 			cs.Site     AS '@S',  
-			c.Currencies    AS '@C' ,  
-			p.Platforms    AS '@P'    
+			cs.Currency    AS '@C' ,  
+			cs.Platform    AS '@P'    
 		  FROM #CustomerClassSiteManagement_history AS cs   
-			CROSS APPLY(
-					SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-					FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
-						FROM #CustomerClassSiteManagement_history WITH(NOLOCK)
-						WHERE PolicyID = cs.PolicyID AND cs.Site = Site) mis
-					) p
-			CROSS APPLY(
-					SELECT STRING_AGG(Currency, ',') WITHIN GROUP (ORDER BY Currency)  AS Currencies
-					FROM (SELECT DISTINCT CAST(Currency AS VARCHAR(20)) AS Currency
-						FROM #CustomerClassSiteManagement_history WITH(NOLOCK)
-						WHERE PolicyID = cs.PolicyID AND cs.Site = Site) mis
-					) c
 		  ORDER BY cs.PolicyID  
 		  FOR XML PATH('PS'),  
 		  TYPE  
