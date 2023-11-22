@@ -54,10 +54,10 @@ BEGIN
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
 			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, 
-			LeagueGroupIDs VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
+			LeagueGroupIDs VARCHAR(MAX),Policies VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
 
 	INSERT INTO #CustomerClassRule_History( RuleID, CustomerClass, RuleTitle, SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval, SuperBetInterval, SiteBetInterval, 
-				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Enable, IsTest, LastModifiedUser, LastModifiedTime)
+				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Policies, Enable, IsTest, LastModifiedUser, LastModifiedTime)
 	SELECT a.RuleID,
 			a.CustomerClass,
 			a.RuleTitle,
@@ -77,16 +77,22 @@ BEGIN
 			a.PeakHourSpreadAdjustment,
 			a.AgentBetInterval,
 			b.LeagueGroupIDs,
+			p.Policies,
 			a.Enable,
 			a.IsTest,
 			a.LastModifiedUser,
 			a.LastModifiedTime  
 	FROM CustomerClassRule a WITH(NOLOCK)
 		OUTER APPLY(
-				SELECT STRING_AGG(CAST(LeagueGroupID AS VARCHAR(20)), ',') WITHIN GROUP (ORDER BY LeagueGroupID)  AS LeagueGroupIDs
+				SELECT STRING_AGG(CAST(LeagueGroupID AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY LeagueGroupID)  AS LeagueGroupIDs
 				FROM CustomerClassRuleLeagueGroup b WITH(NOLOCK)
 					WHERE a.RuleID = b.RuleID
 			) b (LeagueGroupIDs)
+		OUTER APPLY(
+				SELECT STRING_AGG(CAST(PolicyID AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY PolicyID)  AS Policies
+				FROM CustomerClassPolicyRule b WITH(NOLOCK)
+					WHERE a.RuleID = b.RuleID
+			) p (Policies)
 		CROSS APPLY ( SELECT TOP 1 RuleID FROM #RuleTemp WHERE RuleID = a.RuleID ) c
 	WHERE a.IsTest <= @IsTest
 	
@@ -121,6 +127,7 @@ BEGIN
 							cs.PeakHourSpreadAdjustment			AS '@PeakHourSpreadAdjustment',
 							cs.AgentBetInterval					AS '@AgentBetInterval',
 							cs.LeagueGroupIDs					AS '@LeagueGroupIDs',
+							cs.Policies							AS '@Policies',
 							cs.IsTest							AS '@IsTest',
 							cs.LastModifiedUser		AS '@LastModifiedUser',
 							CONVERT(VARCHAR(10), cs.LastModifiedTime, 120) AS '@LastModifiedTime',	

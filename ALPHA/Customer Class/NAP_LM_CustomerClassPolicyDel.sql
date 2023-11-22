@@ -30,6 +30,7 @@ BEGIN
 		, @Duration		INT
 		, @logSpData_Old   NVARCHAR(MAX)
 		, @xml			 XML
+		, @Threshold	INT = 5000
 	CREATE TABLE #PolicyTemp(PolicyID INT) 
 	INSERT INTO #PolicyTemp(PolicyID)
 	SELECT VALUE AS PolicyID FROM STRING_SPLIT(@Policies,',') WHERE VALUE <> ''
@@ -42,13 +43,10 @@ BEGIN
 		SELECT @ErrCode = 105 , @ErrMsg = 'Cannot Delete PROD data' 
 		RETURN
 	END	
-
-	EXEC NAP_LM_CustomerClassPolicyCheck @Policies = @Policies, @IsTest = @IsTest, @IsShow =0, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
-	IF @ErrCode <> 0
-	BEGIN
-		RETURN 	
-	END
-
+	
+	CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+		   Platform TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME, isFinished BIT DEFAULT(0))  
+	CREATE TABLE #tempCC(PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)	
 	CREATE TABLE #CustomerClassPolicy_History( PolicyID INT PRIMARY KEY, PolicyTitle VARCHAR(500),RuleIDs VARCHAR(MAX),
 			SportType SMALLINT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
 
@@ -63,12 +61,33 @@ BEGIN
 		CROSS APPLY ( SELECT TOP 1 PolicyID FROM #PolicyTemp WHERE PolicyID = a.PolicyID ) c
 	WHERE a.IsTest <= @IsTest
 	
+	 INSERT INTO #CustomerClassSiteManagement_history(PolicyID, Site, Currency, Platform)  
+	 SELECT a.PolicyID, b.Site, b.Currency, b.Platform
+	 FROM #PolicyTemp a  
+		INNER JOIN CustomerClassSiteManagement b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
+
 	DELETE a FROM CustomerClassPolicyManagement a WITH (ROWLOCK)
 		INNER JOIN #PolicyTemp b ON a.PolicyID = b.PolicyID
 
 	DELETE a FROM CustomerClassPolicyRule a WITH (ROWLOCK)
 		INNER JOIN #PolicyTemp b ON a.PolicyID = b.PolicyID
+	
+	WHILE (1 = 1)
+	BEGIN
+		UPDATE TOP (@Threshold) c
+		SET isFinished = 1
+		OUTPUT DELETED.PolicyID, DELETED.Site, DELETED.Currency , DELETED.Platform
+		INTO #tempCC(PolicyID, Site,Currency,Platform)
+		FROM #CustomerClassSiteManagement_history c
+		WHERE isFinished = 0	
+			
+		IF @@ROWCOUNT = 0 BREAK 
 
+		DELETE a FROM CustomerClassSiteManagement a WITH (ROWLOCK)
+		INNER JOIN #tempCC b ON a.PolicyID = b.PolicyID AND a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform 
+
+		TRUNCATE TABLE #tempCC	
+	END
 	-- Log new updated data
 	SET @xml = (
 			SELECT	@UserID						AS '@UserID',				
@@ -80,10 +99,31 @@ BEGIN
 							cs.PolicyTitle				 AS '@PolicyTitle',
 							cs.SportType				 AS '@SportType',
 							cs.RuleIDs					 AS '@RuleIDs',
-							cs.IsTest					 AS '@IsTest',
+							cs.IsTest					 AS '@IsTest', 
+							s.Sites						AS '@S',  
+							c.Currencies				AS '@C' ,  
+							p.Platforms					AS '@P' , 
 							cs.LastModifiedUser			 AS '@LastModifiedUser',
 							CONVERT(VARCHAR(10), cs.LastModifiedTime, 120) AS '@LastModifiedTime'
 						FROM	#CustomerClassPolicy_History AS cs	
+							CROSS APPLY(
+									SELECT STRING_AGG(Site, ',') WITHIN GROUP (ORDER BY Site)  AS Sites
+									FROM (SELECT DISTINCT CAST(Site AS VARCHAR(20)) AS Site
+										FROM #CustomerClassSiteManagement_history WITH(NOLOCK)
+										WHERE PolicyID = cs.PolicyID) mis
+									) s
+							CROSS APPLY(
+									SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+									FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
+										FROM #CustomerClassSiteManagement_history WITH(NOLOCK)
+										WHERE PolicyID = cs.PolicyID) mis
+									) p
+							CROSS APPLY(
+									SELECT STRING_AGG(Currency, ',') WITHIN GROUP (ORDER BY Currency)  AS Currencies
+									FROM (SELECT DISTINCT CAST(Currency AS VARCHAR(20)) AS Currency
+										FROM #CustomerClassSiteManagement_history WITH(NOLOCK)
+										WHERE PolicyID = cs.PolicyID) mis
+									) c  
 						ORDER BY cs.PolicyID
 						FOR XML PATH('CP'),
 						TYPE
@@ -105,5 +145,6 @@ BEGIN
 
 	DROP TABLE #CustomerClassPolicy_History
 	DROP TABLE #PolicyTemp
+	DROP TABLE #CustomerClassSiteManagement_history
 END
 GO
