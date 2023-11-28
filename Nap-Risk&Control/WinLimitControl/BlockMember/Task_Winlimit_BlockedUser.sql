@@ -19,6 +19,7 @@ AS
 		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 						 Change WinlostDate from DATETIME to SMALLDATETIME
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
 
 	Param's Explanation:
 	
@@ -32,7 +33,7 @@ BEGIN
 	DECLARE @WinlimitLevel_min INT, @WinlimitLevel_max INT, @LosslimitLevel_min INT, @LosslimitLevel_max INT
 	
 	-- suspend account
-	DECLARE @CustID INT,
+	DECLARE @CustID INT, @ProductID TINYINT,  @GroupID INT,
 			@Message NVARCHAR(Max)
 
 	SET @WinlimitLevel_min = 1
@@ -74,6 +75,7 @@ BEGIN
 								, LevelOrder TINYINT
 								, LevelID TINYINT
 								, IsReached BIT DEFAULT (0)	--ever reached yellow/red level within a day
+								, IsSuspended BIT DEFAULT (0)
 								, MaxWinLimit MONEY
 								, TotalWinAmount MONEY
 								, ExchangeID INT
@@ -115,6 +117,7 @@ BEGIN
 				,Username		VARCHAR(30)
 				,TotalWinAmt	MONEY
 				,ProductID		TINYINT
+				,GroupID		INT 
 				,recommend		INT
 				,rUsername		VARCHAR(30)
 	)
@@ -316,12 +319,24 @@ BEGIN
 	FROM #CustReachCWLList T
 		CROSS APPLY (SELECT TOP 1 1 AS val 
 					 FROM WinLimit_CustGameMonitoring_History g WITH (NOLOCK)
-					 INNER JOIN WinLimit_ProductSettingDetail psd WITH (NOLOCK)
-								ON g.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID and g.LevelID = psd.LevelID AND psd.SiteID = t.SiteID AND psd.GroupID = g.GroupID
-					 WHERE g.CustID=t.CustId AND PSD.IsSuspendedAccount=1
+					 WHERE g.CustID=t.CustId AND g.ActionID IN (6,7)
 						AND DATEDIFF(DAY, WinlostDate, @ReachedDate)=0
 						AND g.LevelID BETWEEN 2 AND @WinlimitLevel_max) gm
 		
+	--Get: SuspendList, exclude: change setting IsSuspendedAccount 0 --> 1 only
+	INSERT INTO @tbl_SuspendList (CustId, Username, recommend, rUsername, TotalWinAmt, ProductID, GroupID)
+	SELECT DISTINCT T.CustId, c.username, C.recommend, ag.username, t.TotalWinAmount, t.ProductId, t.GroupID
+	FROM #CustReachCWLList T 
+		INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID=t.CustId
+		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=T.CustId
+		INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid=c.recommend
+		LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON cs.custid=c.srecommend	
+		LEFT JOIN WinLimit_CustGameMonitoring g WITH (NOLOCK) ON g.CustID=t.CustId AND g.ProductID=t.ProductId AND g.GroupID=t.GroupID AND g.LevelID=t.LevelID --change setting only
+		INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND t.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID
+	WHERE T.LevelID BETWEEN 2 AND @WinlimitLevel_max AND psd.IsSuspendedAccount=1
+		AND t.IsReached=0 AND cs.custid IS NULL --CREDIT ONLY
+		AND cps.SuspendInfo=0 AND g.CustID IS NULL
+
 	-- Update table Monitoring due to Changing Status of Currency Setting (Change Profile)
 	UPDATE g
 	SET 
@@ -356,7 +371,6 @@ BEGIN
 					 FROM dbo.WinLimit_CustGameStatus tmp WITH (NOLOCK) 
 						INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = psd.GroupID AND tmp.BettypeID = gs.BetTypeID
 					 WHERE  tmp.CustID = G.CustID AND tmp.ProductID = G.ProductID) AS CGS
-		
 	WHERE (psd.IsBlockedPlaceBet = 1 AND cgs.IsBlockedPlaceBet = 0 AND CGS.ActionID NOT IN (2,4)) 
 		OR (psd.IsBlockedTransfer = 1 AND cgs.IsBlockedTransfer = 0 AND CGS.ActionID NOT IN (2,4))
 		
@@ -490,22 +504,10 @@ BEGIN
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID 
 	WHERE g.CustID IS NULL
 		
-	-- Suspend member accounts if reaching Yellow level
-	INSERT INTO @tbl_SuspendList (CustId, Username, recommend, rUsername, TotalWinAmt, ProductID)
-	SELECT DISTINCT T.CustId, c.username, C.recommend, ag.username, t.TotalWinAmount, t.ProductId
-	FROM #CustReachCWLList T 
-		INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID=t.CustId
-		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=T.CustId
-		INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid=c.recommend
-		LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON cs.custid=c.srecommend	
-		INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND t.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID
-	WHERE T.LevelID BETWEEN 2 AND @WinlimitLevel_max AND psd.IsSuspendedAccount=1
-		AND t.IsReached=0 AND cs.custid IS NULL --CREDIT ONLY
-		AND cps.SuspendInfo=0
-
+	-- Suspend member accounts if reaching Yellow/Red level
 	WHILE EXISTS (SELECT TOP 1 1 FROM @tbl_SuspendList)
 	BEGIN
-		SELECT TOP 1 @CustID=CustId
+		SELECT TOP 1 @CustID=CustId, @ProductID=ProductID, @GroupID=GroupID
 		FROM @tbl_SuspendList
 
 		IF ISNULL(@CustID,0)=0
@@ -523,10 +525,20 @@ BEGIN
 										, recommend		AS '@recommend'
 										, rUsername		AS '@rUsername'
 									FROM @tbl_SuspendList
-									WHERE CustId=@CustID
+									WHERE CustId=@CustID 
+										AND ProductID=@ProductID
+										AND GroupID=@GroupID
 									FOR XML PATH ('Msg'), ROOT('Root')))			
 									
 		EXEC NAP_WinLimit_PersonalMessageIns @Message=@Message
+
+		--update Suspend:
+		UPDATE T
+		SET t.IsSuspended=1
+		FROM #CustReachCWLList t 
+		WHERE CustId=@CustID 
+		AND ProductID=@ProductID
+		AND GroupID=@GroupID
 
 		DELETE FROM @tbl_SuspendList
 		WHERE CustId=@CustID
@@ -539,6 +551,8 @@ BEGIN
 			SET IsBlockedPlaceBet = CASE WHEN CS.IsBlockedPlaceBet = 1 THEN 1 ELSE PSD.IsBlockedPlaceBet END
 				, IsBlockedTransfer = CASE WHEN CS.IsBlockedTransfer = 1 THEN 1 ELSE PSD.IsBlockedTransfer END
 				,  ActionID =  CASE WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsBlockedTransfer = 1 THEN 5
+									WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsSuspendedAccount = 1 AND T.IsSuspended=1 THEN 7
+									WHEN PSD.IsSuspendedAccount=1 AND T.IsSuspended=1 THEN 6
 								   WHEN PSD.IsBlockedPlaceBet = 1 THEN 1
 								   WHEN PSD.IsBlockedTransfer = 1 THEN 3
 							   ELSE 0 END
@@ -555,9 +569,11 @@ BEGIN
 				, PSD.IsBlockedPlaceBet
 				, PSD.IsBlockedTransfer
 				, CASE WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsBlockedTransfer = 1 THEN 5
-								   WHEN PSD.IsBlockedPlaceBet = 1 THEN 1
-								   WHEN PSD.IsBlockedTransfer = 1 THEN 3
-							   ELSE 0 END AS ActionID
+						WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsSuspendedAccount = 1 AND T.IsSuspended=1 THEN 7
+						WHEN PSD.IsSuspendedAccount=1 AND T.IsSuspended=1 THEN 6
+						WHEN PSD.IsBlockedPlaceBet = 1 THEN 1
+						WHEN PSD.IsBlockedTransfer = 1 THEN 3
+						ELSE 0 END AS ActionID
 				,@ReachedDate AS ModifiedDate
 		FROM #CustReachCWLList T WITH(NOLOCK)
 			INNER JOIN #HistoryData H WITH(NOLOCK) ON T.CustId = H.CustId AND T.GroupID = H.GroupID AND T.ProductId = H.ProductId AND H.WinlostDate = T.WinlostDate
@@ -592,6 +608,8 @@ BEGIN
 						, GM.WinAmt  AS 'a6'
 						, GM.LevelID  AS 'a7'
 						, CASE WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsBlockedTransfer = 1 THEN 5
+							   WHEN PSD.IsBlockedPlaceBet = 1 AND PSD.IsSuspendedAccount = 1 AND C.IsSuspended=1 THEN 7
+							   WHEN PSD.IsSuspendedAccount=1 AND C.IsSuspended=1 THEN 6
 							   WHEN PSD.IsBlockedPlaceBet = 1 THEN 1
 							   WHEN PSD.IsBlockedTransfer = 1 THEN 3
 							   ELSE 0 END AS 'a8'
