@@ -27,6 +27,7 @@ Revisions:
 	- 20230104@Tacy: CWL - Split 789y Site [RedmineID: #182390]
 	- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 	- 20230829@Luke: Implement Company Max Payout Notification [Redmine: #193288]
+	- 20231031@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
 
 Param's Explanation:
 	� @ErrCode:
@@ -77,6 +78,7 @@ BEGIN
 	    , wl.LevelId
 	    , l.LevelName
 	    , wl.BettypeIDList
+		, CASE WHEN wl.ActionID IN (6,7) THEN 1 ELSE 0 END AS IsSuspended
 	INTO #tmp
     FROM WinLimit_CustGameMonitoring_History AS wl WITH (NOLOCK)
 	   INNER JOIN Customer AS c WITH (NOLOCK) ON c.custid = wl.CustID
@@ -122,6 +124,7 @@ BEGIN
 	    , LevelId
 	    , LevelName
 	    , BettypeIDList
+		, IsSuspended
 		FROM #tmp t 
 			INNER JOIN DBPRO.bodb02.dbo.Products AS p WITH (NOLOCK) ON p.ProductID = t.ProductID
 	END

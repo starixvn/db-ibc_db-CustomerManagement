@@ -24,6 +24,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
+		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
 
 	Parameters Explanation:   
 	   @FromDate: From date  
@@ -78,6 +79,7 @@ BEGIN
         CurrencyId         INT,
         SiteId             INT,
         IsNotified         BIT,
+        IsSuspendedAccount BIT,
         MaxWinLimitSetting XML
         );
         INSERT INTO #WinLimitMonitor
@@ -92,6 +94,7 @@ BEGIN
         CurrencyId,
         SiteId,
         IsNotified,
+		IsSuspendedAccount,
         MaxWinLimitSetting
         )
             SELECT cm.CustID,
@@ -105,6 +108,7 @@ BEGIN
                     c.currency,
                     s.siteid,
                     cmh_notified.IsNotified,
+					CASE WHEN cmh_suspended.IsSuspended IS NOT NULL THEN 1 ELSE 0 END IsSuspendedAccount,
                     cm.MaxWinLimitSetting
             FROM WinLimit_CustGameMonitoring cm WITH (NOLOCK)
                     CROSS APPLY
@@ -119,6 +123,16 @@ BEGIN
 						AND cmh.ActionID < 200
                 ORDER BY IsNotified
             ) AS cmh_notified
+					OUTER APPLY 
+			(
+                SELECT TOP 1 1 AS IsSuspended
+                FROM WinLimit_CustGameMonitoring_History cmh WITH (NOLOCK)
+                WHERE cm.CustID = cmh.CustID
+                        AND cm.ProductID = cmh.ProductID
+                        AND cm.GroupID = cmh.GroupID
+                        AND cm.WinlostDate = cmh.WinlostDate
+						AND cmh.ActionID IN (6,7)
+            ) AS cmh_suspended
                     INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON cm.CustID = ci.CustID
                     INNER JOIN dbo.Customer c WITH (NOLOCK) ON c.custid = ci.recommend
                     INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = c.site
@@ -160,6 +174,7 @@ BEGIN
 				AND h.ActionID < 200
         ) AS NumberReachedLimit,
             m.IsNotified,
+			IsSuspendedAccount,
             cs.IsBlockedPlaceBet,
             cs.IsBlockedTransfer,
             CASE
