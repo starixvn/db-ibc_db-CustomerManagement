@@ -20,6 +20,7 @@ AS
 		- 20210309@Max: [Alpha] Duplicated message shown in Personal message [Redmine: #149622]
 		- 20230517@Tacy: Alpha - Special Announcement - Exclude a message sending to 755555 & 76666B [RedmineID: #188246]
 		- 20230929@Tacy: Alpha - Special Announcement - ONLY Upload for 755555 and 766666b [RedmineID: #194638]
+		- 20231204@Tacy: Alpha - Special Announcement - show Announcement for site 7a5555 [RedmineID: #197951]
 
 	Param's Explanation: 
 */
@@ -67,8 +68,8 @@ BEGIN
 	WHERE  m.PostTime > @minLastSeen 
 		AND m.isDeleted = 0 
 		AND m.IsTest = @IsTest
-		AND CASE WHEN @Site IN ('755555', '76666B') AND m.MessageId<>1799334	 THEN 1
-				 WHEN @Site NOT IN ('755555', '76666B') AND m.MessageId<>1799336 THEN 1
+		AND CASE WHEN @Site IN ('755555', '76666B', '7a5555') AND m.MessageId<>1799334	 THEN 1
+				 WHEN @Site NOT IN ('755555', '76666B', '7a5555') AND m.MessageId<>1799336 THEN 1
 			ELSE 0 END = 1
 	)
 	SELECT SUM(CASE WHEN m.MsgType = 3 AND m.IsSticky = 0 AND m.PostTime > @lastSeenNormalMsg THEN 1 ELSE 0 END) as Normal
