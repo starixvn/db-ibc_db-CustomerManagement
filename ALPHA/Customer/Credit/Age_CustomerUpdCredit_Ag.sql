@@ -41,6 +41,7 @@ AS
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20231212@Johnson: Enhance log credit get Actualrate from DBCUST [redmine: #196720]
 	Param's Explanation:  
 		- @custid: custid that need to be updated   
 		- @CreditAmt: new credit   
@@ -56,9 +57,10 @@ BEGIN
 
 	DECLARE @ErrCode INT = 0
   
-	DECLARE @SAgID INT, @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
+	DECLARE @SAgID INT, @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT, @Currency INT
 	
-	SELECT @SAgID = srecommend, @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid
+	SELECT @SAgID = srecommend, @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid,
+		@Currency = Currency
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @CustID
 
@@ -140,13 +142,21 @@ BEGIN
 		SELECT @LogData = @LogData + ' by Sub-Account ' + COALESCE(dbo.f_GetSubUsername(@SubAccID), SPACE(1))
 	END
 	
-	DECLARE @log xml, @SB_Error BIT = 0
+	DECLARE @log xml, @SB_Error BIT = 0, @Date DATE, @ActualRate FLOAT
+					
+	SELECT @Date = CURRENT_TIMESTAMP
+		
+	SELECT @ActualRate = e.ActualRate
+	FROM dbo.ExchangeDailyOanda e WITH (NOLOCK)
+	WHERE ExchangeDate = @Date
+		AND ExchangeId = @Currency
  
 	SELECT @log = (SELECT @UserID as '@UserID',
 						@custid as '@CustID',
 						@LogData as '@Doing',
 						@OldCredit as '@OldValue',
 						@CreditAmt as '@NewValue',
+						ISNULL(@ActualRate,0) as '@ActualRate',
 						@IP as '@IP',
 						1203 as '@ActionID',
 						getdate() as '@LogDate'

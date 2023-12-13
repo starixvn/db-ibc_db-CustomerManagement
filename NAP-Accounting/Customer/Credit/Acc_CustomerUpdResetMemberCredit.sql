@@ -24,6 +24,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20210716@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20231211@Johnson: Enhance log credit get Actualrate from DBCUST [redmine: #196720]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -49,7 +50,7 @@ BEGIN
 	IF @ErrCode <>0 RETURN
 	--end
 
-	DECLARE @tmpCust TABLE( custid INT, Credit MONEY)
+	DECLARE @tmpCust TABLE( custid INT, Credit MONEY, currency INT)
 
 	SELECT @AgentUserName = username FROM custinfo (NOLOCK) WHERE custid = @agentID
 
@@ -64,13 +65,13 @@ BEGIN
 		IF (@isLicensee = 1)
 		BEGIN
 			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
-			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+			OUTPUT deleted.custid, deleted.Credit, deleted.currency INTO @tmpCust(custid, Credit, currency)
 			WHERE roleid = 1 AND closed=1 AND recommend = @agentID AND Credit != 0 
 		END
 		ELSE
 		BEGIN
 			UPDATE ci  SET credit = 0 
-			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+			OUTPUT deleted.custid, deleted.Credit, deleted.currency INTO @tmpCust(custid, Credit, currency)
 			FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
 				INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
 			WHERE roleid = 1 AND cps.CloseInfo > 0 AND recommend = @agentID AND Credit != 0 
@@ -81,16 +82,20 @@ BEGIN
 	ELSE
 	BEGIN
 		UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
-		OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+		OUTPUT deleted.custid, deleted.Credit, deleted.currency INTO @tmpCust(custid, Credit, currency)
 		WHERE roleid = 1 AND recommend = @agentID AND Credit != 0 
 		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines'
 	END
 
-	DECLARE @log xml, @SB_Error BIT = 0
-		
+	DECLARE @log xml, @SB_Error BIT = 0,@Date DATE
+					
+	SELECT @Date = CURRENT_TIMESTAMP
+			
 	SELECT @log = (
-		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogData as Doing, 1202 as ActionID, getdate() as LogDate
-		FROM @tmpCust
+		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogData as Doing, 1202 as ActionID, ISNULL(e.Actualrate,0) as Actualrate, getdate() as LogDate
+		FROM @tmpCust t
+			LEFT JOIN ExchangeDailyOanda e WITH (NOLOCK) ON t.currency = e.ExchangeID
+		WHERE ExchangeDate = @Date
 		FOR XML RAW('Row')
 	)
 

@@ -30,6 +30,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20231211@Johnson: Enhance log credit get Actualrate from DBCUST [redmine: #196720]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -51,7 +52,7 @@ BEGIN
 	declare @custid		int,
 			@roleid		tinyint,
 			@custLine	varchar(20)
-	declare	@tmpCust table (custid int, Credit money)
+	declare	@tmpCust table (custid int, Credit money, currency int)
 
 	select @custid = custid, @roleid = roleid from custinfo with (NOLOCK) where username = @username
 
@@ -87,21 +88,21 @@ BEGIN
 	BEGIN
 		Select @custLine =' all lines of super '
 		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
-		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
+		output deleted.custid, deleted.Credit, deleted.currency into @tmpCust(custid, Credit, currency)
 		where srecommend = @custid AND Credit != 0  
 	END
 	else if @roleid = 3
 	BEGIN
 		Select @custLine =' all lines of master '
 		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
-		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
+		output deleted.custid, deleted.Credit, deleted.currency into @tmpCust(custid, Credit, currency)
 		where mrecommend = @custid AND Credit != 0 
 	END
 	else if @roleid = 2
 	BEGIN
 		Select @custLine =' all lines of agent '
 		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
-		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
+		output deleted.custid, deleted.Credit, deleted.currency into @tmpCust(custid, Credit, currency)
 		where recommend = @custid AND Credit != 0 
 	END
 	else if @roleid = 1
@@ -112,7 +113,7 @@ BEGIN
 			
 		Update custinfo with (ROWLOCK, UPDLOCK) 
 		set credit = case when @TotalAmt >= 0 then 0 else abs(@TotalAmt) end
-		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
+		output deleted.custid, deleted.Credit, deleted.currency into @tmpCust(custid, Credit, currency)
 		where custid = @custid AND Credit != 0 
 	END
 
@@ -120,11 +121,15 @@ BEGIN
 	Declare @LogSPCredit varchar(500)
 	Select @LogSPCredit = 'Clear credit of' + @custLine + ': '+ @username 
 	
-	DECLARE @log xml, @SB_Error BIT = 0
+	DECLARE @log xml, @SB_Error BIT = 0,@Date DATE
+					
+	SELECT @Date = CURRENT_TIMESTAMP
 	
 	SELECT @log = (
-		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogSPCredit as Doing, 1201 as ActionID, getdate() as LogDate
-		FROM @tmpCust
+		SELECT @UserID as UserID,CustID, Credit as OldValue, 0 as NewValue, @ip as IP, @LogSPCredit as Doing, 1201 as ActionID, ISNULL(e.Actualrate,0) as Actualrate, getdate() as LogDate
+		FROM @tmpCust t
+			LEFT JOIN ExchangeDailyOanda e WITH (NOLOCK) ON t.currency = e.ExchangeID
+		WHERE ExchangeDate = @Date
 		FOR XML RAW('Row')
 	)
 

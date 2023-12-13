@@ -44,7 +44,7 @@ AS
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
-
+		- 20231211@Johnson: Enhance log credit get Actualrate from DBCUST [redmine: #196720]
 */
 
 BEGIN
@@ -369,13 +369,21 @@ BEGIN
 	END
 	
 	---------------------------  
-	DECLARE @log xml, @SB_Error BIT = 0
+	DECLARE @log xml, @SB_Error BIT = 0,@Date DATE, @ActualRate FLOAT
+					
+	SELECT @Date = CURRENT_TIMESTAMP
+		
+	SELECT @ActualRate = e.ActualRate
+	FROM dbo.ExchangeDailyOanda e WITH (NOLOCK)
+	WHERE ExchangeDate = @Date
+		AND ExchangeId = @Currency
 	 
 	SELECT @log = (SELECT @UserID as '@UserID',
 						@custid as '@CustID',
 						@LogData as '@Doing',
 						@OldCredit as '@OldValue',
 						@NewCredit as '@NewValue',
+						ISNULL(@ActualRate,0) as '@ActualRate',
 						@IP as '@IP',
 						1200 as '@ActionID',
 						getdate() as '@LogDate'
