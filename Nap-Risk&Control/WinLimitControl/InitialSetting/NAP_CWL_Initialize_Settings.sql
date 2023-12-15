@@ -60,6 +60,8 @@ AS
 				- 20220804@Johnson: call sp NAP_CWL_ProductOffer_Initialize_Settings manually to scale out [redmine: #175278]
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 				- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+				- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
+
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -374,6 +376,7 @@ BEGIN
 				    THEN l.IsSuspendedAccount_DepositSite
 					WHEN s.siteid IN (SELECT ss.SiteID FROM @tbSuspendedSites ss) 
 						AND l.LevelId BETWEEN 2 AND 100	--WinLevel
+						AND e.ExchangeId<>20
 						THEN l.IsSuspendedAccount_CreditSite
 					ELSE 0
 				END AS     IsSuspendedAccount
