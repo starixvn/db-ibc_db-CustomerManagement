@@ -20,7 +20,7 @@ AS
 						 Change WinlostDate from DATETIME to SMALLDATETIME
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
-
+		- 20231214@Tacy: Risk Control - Member was not suspended after reaching Yellow Level [Redmine: #198396]
 	Param's Explanation:
 	
 */
@@ -331,7 +331,7 @@ BEGIN
 		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=T.CustId
 		INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid=c.recommend
 		LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON cs.custid=c.srecommend	
-		LEFT JOIN WinLimit_CustGameMonitoring g WITH (NOLOCK) ON g.CustID=t.CustId AND g.ProductID=t.ProductId AND g.GroupID=t.GroupID AND g.LevelID=t.LevelID --change setting only
+		LEFT JOIN WinLimit_CustGameMonitoring g WITH (NOLOCK) ON g.CustID=t.CustId AND g.ProductID=t.ProductId AND g.GroupID=t.GroupID AND g.LevelID=t.LevelID AND g.WinlostDate=t.WinlostDate --change setting only
 		INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND t.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID
 	WHERE T.LevelID BETWEEN 2 AND @WinlimitLevel_max AND psd.IsSuspendedAccount=1
 		AND t.IsReached=0 AND cs.custid IS NULL --CREDIT ONLY
