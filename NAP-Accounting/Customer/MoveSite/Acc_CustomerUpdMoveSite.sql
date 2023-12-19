@@ -31,6 +31,7 @@ AS
 		- 20230112@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230317@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230418@Tacy: allow Member move site [RedmineID: 181596]
+		- 20231219@Tacy: NAP - Move sites among 789y and other site labels with YNG currency for testing
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -115,7 +116,7 @@ BEGIN
 	END
 	
 	--
-	IF  (@OldSiteLabel = '789y' AND @SiteLabel <> '789y' AND @currency<>20)
+	IF  (@OldSiteLabel = '789y' AND @SiteLabel <> '789y' AND @currency NOT IN (20,72)) --UUS, YNG (Testing)
 	BEGIN
 		SELECT @ErrCode = 103, @ErrMsg = 'Cannot move site for ' + @OldSite + ' (' + SiteLabel + ')'
 		FROM Site WITH (NOLOCK)
