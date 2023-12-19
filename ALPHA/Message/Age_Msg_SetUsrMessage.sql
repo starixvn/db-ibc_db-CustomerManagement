@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetUsrMessage]
 	@MessageId int,
 	@TargetId int,
@@ -16,6 +16,7 @@ AS
 
     Revisions:
 			- 20221121@Tacy: Create SP
+			- 20231101@Bobby: Enhance TransferOption config [RedmineID: #195135]
 */
 
 BEGIN

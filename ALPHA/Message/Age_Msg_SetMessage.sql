@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView,bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetMessage]
 	@MessageId int = NULL,
 	@Content_en	nvarchar(4000) = NULL,
@@ -35,6 +35,7 @@ AS
     Revisions:
 		- 20221121@Tacy: Create SP [RedmineID: #180704]
 		- 20231019@Tacy: Add @Remark [RedmineID: #194024]
+			- 20231101@Bobby: Enhance TransferOption config [RedmineID: #195135]
 
 	Param's Explanation:
 		@MessageId: MessageId of a message
