@@ -17,6 +17,7 @@ AS
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 		- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+		- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
 
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
@@ -135,6 +136,15 @@ BEGIN
 		FROM STRING_SPLIT(@currencies,',')
 		WHERE value <> ''
 
+		--Get RNG Slot products
+		DECLARE @Products TABLE (ProductId TINYINT)
+
+		INSERT INTO @Products (ProductId)
+		SELECT DISTINCT RealProductId
+		FROM SportBettypeSettingMatrix sm WITH (NOLOCK)
+		WHERE ProductID=18 AND isDeleted=0 
+			AND isLicensee=0 AND Site='ALL'
+
 		--List sites: apply suspend account
 		DECLARE @tbSuspendedSites TABLE (SiteID INT);
 		
@@ -181,26 +191,34 @@ BEGIN
 		UNION ALL
 		
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0
-			,CASE WHEN ss.SiteID IS NOT NULL THEN 1 ELSE 0 END
+			,CASE WHEN pp.ProductId IS NOT NULL	-- RNG slot products
+					AND ss.SiteID IS NOT NULL AND s.ExchangeID<>20 -- not apply suspended account for UUS
+					THEN 1 ELSE 0 
+				END IsSuspendedAccount
 			,p.Level2 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
 											AND p.IsDeposit = 0
 			LEFT JOIN @tbSuspendedSites ss ON ss.SiteID=s.SiteID
+			LEFT JOIN @Products pp ON pp.ProductId=p.ProductID
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
 		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
 				, 0 IsBlockedTransfer
-				,CASE WHEN ss.SiteID IS NOT NULL THEN 1 ELSE 0 END IsSuspendedAccount
+				,CASE WHEN pp.ProductId IS NOT NULL	-- RNG slot products
+					AND ss.SiteID IS NOT NULL AND s.ExchangeID<>20 -- not apply suspended account for UUS
+					THEN 1 ELSE 0 
+				END IsSuspendedAccount
 				,p.Level3 MaxWinLimit_RM
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK) 
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID	
 											AND p.IsDeposit = 0
 			LEFT JOIN @tbSuspendedSites ss ON ss.SiteID=s.SiteID
+			LEFT JOIN @Products pp ON pp.ProductId=p.ProductID
 		WHERE 1 = CASE WHEN s.isPrivate =1 AND p.currency = s.ExchangeID THEN 1
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
