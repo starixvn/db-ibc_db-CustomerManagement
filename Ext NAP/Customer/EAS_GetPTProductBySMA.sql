@@ -1,5 +1,5 @@
 /*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
+ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),
 	@SettingStatus TINYINT = 0 
@@ -23,6 +23,7 @@ AS
 		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
 		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -48,30 +49,22 @@ BEGIN
 
 	CREATE TABLE #SMATemp (CustID INT,roleid	TINYINT) 
 
-	CREATE TABLE #ProductSettingDetail(
-		[SettingType] [smallint],
-		[SportType] [smallint],
-		[BetType] [smallint],
-		[IsLive] [bit] ,
-		[ProductID] [tinyint],
-	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
-	)
+	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT)
 
-	CREATE TABLE #ProductSettingType(
-		SettingType	tinyint,
-		SettingName	varchar(30)
-	)
-
-	INSERT INTO #ProductSettingType(SettingType,SettingName)
-	SELECT SettingType,SettingName 
-	FROM DBCUST.CUSTDB.dbo.ProductSettingType WITH(NOLOCK) 
-	WHERE SettingName IN('Bet Setting','Stake Level')
-
-	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
-	SELECT p.SportType,p.BetType,p.SettingType,p.IsLive,p.ProductID 
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
-		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
-	WHERE p.ProductID IN (41,18)
+	--Get RNG slot & live CS
+	INSERT INTO #SportBettypeDummy (RealProductId, SportType, Bettype, ProductId)
+	SELECT p.ProductID, s.SportType, s.BetType, s.DummyProductID
+	FROM Products p WITH (NOLOCK)
+	CROSS APPLY (SELECT TOP 1 s.RealProductId, s.SportType
+						, s.BetTypeRefBetSetting AS BetType
+						, s.ProductID AS DummyProductID
+				 FROM SportBettypeSettingMatrix s WITH (NOLOCK)
+				 WHERE s.ProductID IN (18,41)
+				 AND s.RealProductId=p.ProductID
+				 AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'
+				 AND s.SportType <> 242) s --IBCBet Live Casino
+	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0
+		AND Environment <= @SettingStatus
 
 	INSERT INTO #SMATemp(CustID)
 	SELECT DISTINCT value
@@ -107,7 +100,9 @@ BEGIN
 
 	-- DCS Setting
 	INSERT INTO #tblCustomer (CustID,SportType,BetType,ProductID,roleid)
-	SELECT s.CustID,b.SportType,b.BetType,b.RealProductId,s.roleid
+	SELECT s.CustID,b.SportType,b.BetType
+		,CASE WHEN b.SportType=242 THEN 46 ELSE b.RealProductId END --IBCBet Live Casino
+		,s.roleid
 	FROM #Tmp_ProductProfile b
 		CROSS APPLY #SMATemp s
 	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming,JiliGame
@@ -131,46 +126,15 @@ BEGIN
 
 	DELETE FROM #tblCustomer WHERE IsHidden = 1
 	
-	 -- On Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
+	-- Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
+	-- LiveCasino
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID,c.SportType,c.BetType,
-		CASE 
-		 WHEN c.SportType = 232 THEN  55
-		 WHEN c.SportType = 234 THEN  56
-		 WHEN c.SportType = 247 THEN  36
-		 WHEN c.SportType = 165 THEN  34
-		 WHEN c.SportType = 248 THEN  32
-		 WHEN c.SportType = 237 THEN  60
-		 WHEN c.SportType = 238 THEN  61
-		 WHEN c.SportType = 167 THEN  62
-		 WHEN c.SportType = 172 THEN  67
-		 WHEN c.SportType = 174 THEN  68
-		 WHEN c.SportType = 156 THEN  72
-		 WHEN c.SportType = 155 THEN  73
-		 WHEN c.SportType = 158 THEN  75 --Add Jili
-		 WHEN c.SportType = 212 THEN  22
-		ELSE c.ProductID END ProductID, b.ValuePT, ss.roleid
+	SELECT ss.CustID, c.SportType, c.BetType, c.RealProductId, b.ValuePT, ss.roleid
 	FROM #SMATemp ss 
-	INNER JOIN #tblCustomer b ON  b.ProductID = 18 and b.SportType = 9906 and ss.CustID = b.CustID
-	INNER JOIN #ProductSettingDetail c WITH(NOLOCK)	
-		ON  c.SettingType = 8
-		AND c.ProductID = b.ProductID 
-
-	--For LiveCasino
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID,c.SportType,c.BetType, b.ProductID, b.ValuePT,ss.roleid
-	FROM #SMATemp ss 
-		INNER JOIN #tblCustomer b ON  b.ProductID = 41 and b.SportType = 9911 and ss.CustID = b.CustID
-		INNER JOIN #ProductSettingDetail c WITH(NOLOCK)	
-			ON c.ProductID = b.ProductID 
-			AND c.SportType <> 242 --IBCBet Live Casino
-
-	UPDATE b
-	SET b.ProductID = ISNULL(mt.RealProductId, b.ProductID)
-	FROM #tblCustomer b
-		INNER JOIN SportBettypeSettingMatrix mt WITH(NOLOCK) ON mt.SportType = b.SportType AND mt.BetType = b.BetType AND mt.isLicensee = 0 AND mt.Site = 'ALL'
-	WHERE b.ProductID = 41
-		AND mt.isDeleted = 0
+	INNER JOIN #tblCustomer b ON  ss.CustID = b.CustID
+	INNER JOIN #SportBettypeDummy c WITH(NOLOCK)	
+		ON  c.ProductId = b.ProductID 
+	WHERE b.ProductID=18 or (b.ProductID=41 AND b.SportType=9911)
 	
 	-- Sportsbook - Soccer
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
@@ -189,9 +153,8 @@ BEGIN
 	ORDER BY a.CustID,a.ProductID
 	
 	DROP TABLE #tblCustomer			
-	DROP TABLE #ProductSettingDetail
 	DROP TABLE #Tmp_ProductProfile
 	DROP TABLE #SMATemp
-	DROP TABLE #ProductSettingType
+	DROP TABLE #SportBettypeDummy
 END
 GO
