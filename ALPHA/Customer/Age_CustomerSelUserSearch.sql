@@ -27,6 +27,7 @@ AS
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20190512@Elodie: Allow to search nickname on customer list[Redmine: #113044]
 		- 20230407@Helios: Changed datatype parameter @username [Redmine: #183697]
+		- 20231222@Helios: Alpha - Search Customer run slowly - Add Forced Index  [Redmine: #198788]
 	Param's Explanation:
 		• @custid: User who are logging in.
 		• @username: part of downline's username.
@@ -81,7 +82,7 @@ BEGIN
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
-				FROM customer WITH (NOLOCK)
+				FROM customer WITH (NOLOCK , INDEX = IX_agent)
 				WHERE roleid = 2
 					AND recommend = @custid
 					AND (username LIKE @username  + '%' 
@@ -94,7 +95,7 @@ BEGIN
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
-				FROM customer WITH (NOLOCK)
+				FROM customer WITH (NOLOCK , INDEX = IX_agent)
 				WHERE roleid < 2
 					AND recommend = @custid
 					AND (username LIKE @username  + '%' 
@@ -110,7 +111,7 @@ BEGIN
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
-				FROM customer WITH (NOLOCK)
+				FROM customer WITH (NOLOCK , INDEX = IX_master)
 				WHERE roleid =2
 					AND mrecommend = @custid
 					AND (username LIKE @username  + '%' 
@@ -125,7 +126,7 @@ BEGIN
 				BEGIN
 					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 					SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
-					FROM customer WITH (NOLOCK)
+					FROM customer WITH (NOLOCK , INDEX = IX_master)
 					WHERE roleid < 3 AND roleid > 1
 						AND mrecommend = @custid
 						AND (username LIKE @username  + '%' 
@@ -138,7 +139,7 @@ BEGIN
 				BEGIN
 					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 					SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 2 THEN username2 ELSE NULL END, -1 AS searchcount
-					FROM customer WITH (NOLOCK)
+					FROM customer WITH (NOLOCK , INDEX = IX_master)
 					WHERE roleid < 3
 						AND mrecommend = @custid
 						AND (username LIKE @username  + '%' 
@@ -155,7 +156,7 @@ BEGIN
 			BEGIN
 				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 				SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID THEN username2 ELSE NULL END, -1 AS searchcount
-				FROM customer WITH (NOLOCK)
+				FROM customer WITH (NOLOCK, INDEX = ix_sma)
 				WHERE roleid = 3
 					AND srecommend = @custid
 					AND (username LIKE @username  + '%' 
@@ -170,7 +171,7 @@ BEGIN
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 						SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
-						FROM customer WITH (NOLOCK)
+						FROM customer WITH (NOLOCK, INDEX = ix_sma)
 						WHERE roleid < 4 AND roleid > 1
 							AND srecommend = @custid
 							AND (username LIKE @username  + '%' 
@@ -183,7 +184,7 @@ BEGIN
 					BEGIN
 						INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
 						SELECT TOP 10 username, firstname, lastname, CASE WHEN @UserRoleId = @RoleID AND roleid = 3 THEN username2 ELSE NULL END, -1 AS searchcount
-						FROM customer WITH (NOLOCK)
+						FROM customer WITH (NOLOCK, INDEX = ix_sma)
 						WHERE roleid < 4
 							AND srecommend = @custid
 							AND (username LIKE @username  + '%' 
