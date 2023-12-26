@@ -11,6 +11,7 @@ AS
   
 	Revisions:
 		- 20231031@Tacy: Create SP [Redmine: #196141] 
+		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 
 	Examples:
 	
@@ -103,7 +104,13 @@ BEGIN
 		SELECT dm.RealProductId, dm.IsHidden FROM #SportBettypeDummy dm
 		) r
 		INNER JOIN #Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
-	ORDER BY p.[Type], p.OrderNo
+	UNION
+	SELECT p.ProductID, p.ProductName, 
+			CASE WHEN dbo.f_Age_OfferedProductBySite(@Site)=1 THEN 0 ELSE 1 END isHidden, 
+			p.EndOfSupportDate, p.OrderNo, p.[Type]
+	FROM #Products p
+	WHERE ProductID=37
+	ORDER BY [Type], OrderNo
 
 	DROP TABLE #OfferProduct
 	DROP TABLE #ProductSettingType

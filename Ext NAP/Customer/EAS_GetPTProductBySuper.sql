@@ -35,6 +35,7 @@ AS
 		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
+		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -56,7 +57,7 @@ BEGIN
 								ProductID TINYINT,
 								RealProductID TINYINT)
 
-	CREATE TABLE #Supers (CustID INT) 
+	CREATE TABLE #Supers (CustID INT, Site VARCHAR(10)) 
 
 	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT)
 
@@ -80,6 +81,12 @@ BEGIN
 	FROM STRING_SPLIT(@Supers, ',') AS ss
 	WHERE value <> ''
 	OPTION (maxrecursion 0)    
+
+	--update super's site
+	UPDATE s
+	SET s.Site=c.site
+	FROM #Supers s 
+	INNER JOIN Customer c WITH (NOLOCK) ON c.custid=s.CustID
 
 	INSERT INTO #Tmp_ProductProfile( ProductID,SportType,BetType,RealProductID)
 	SELECT ProductID,SportType,BetType,RealProductID
@@ -148,7 +155,13 @@ BEGIN
 		INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
 	WHERE a.ProductID NOT IN (41) -- Not show dummy product
 		AND p.Environment <= @SettingStatus
-	ORDER BY a.CustID,a.ProductID
+	UNION
+	SELECT s.CustID, 0 AS SuperPT, p.ProductID,p.ProductName
+	FROM #Supers s
+		CROSS APPLY (SELECT p.ProductID,p.ProductName 
+					 FROM Products p WITH (NOLOCK) WHERE p.ProductID=37) p
+	WHERE dbo.f_Age_OfferedProductBySite(s.Site)=1
+	ORDER BY CustID, ProductID
 	
 	DROP TABLE #tblCustomer		
 	DROP TABLE #Supers

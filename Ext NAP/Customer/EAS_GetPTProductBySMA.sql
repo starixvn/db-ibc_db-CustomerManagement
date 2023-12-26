@@ -24,6 +24,7 @@ AS
 		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
+		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -47,7 +48,7 @@ BEGIN
 								ProductID TINYINT,
 								RealProductID TINYINT)
 
-	CREATE TABLE #SMATemp (CustID INT,roleid	TINYINT) 
+	CREATE TABLE #SMATemp (CustID INT, roleid TINYINT, Site VARCHAR(10)) 
 
 	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT)
 
@@ -73,9 +74,9 @@ BEGIN
 	OPTION (maxrecursion 0)  
 	
 	UPDATE s
-	SET s.roleid = ci.roleid
+	SET s.roleid = c.roleid, s.Site=c.site
 	FROM #SMATemp s
-		INNER JOIN custInfo ci WITH(NOLOCK) ON s.CustID = ci.custid
+		INNER JOIN Customer c WITH(NOLOCK) ON s.CustID = c.custid
 	
 	INSERT INTO #Tmp_ProductProfile( ProductID,SportType,BetType,RealProductID)
 	SELECT ProductID,SportType,BetType,RealProductID
@@ -150,7 +151,11 @@ BEGIN
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a
 	WHERE a.ProductID NOT IN (41) -- Not show dummy product
-	ORDER BY a.CustID,a.ProductID
+	UNION
+	SELECT s.CustID, 0 AS SuperPT, 37 AS ProductID
+	FROM #SMATemp s
+	WHERE dbo.f_Age_OfferedProductBySite(s.Site)=1
+	ORDER BY CustID, ProductID
 	
 	DROP TABLE #tblCustomer			
 	DROP TABLE #Tmp_ProductProfile
