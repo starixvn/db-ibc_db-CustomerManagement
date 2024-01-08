@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySel]
 	@IsTest	TINYINT,
-	@PolicyID	INT
+	@PolicyID		INT = 0,
+	@PolicyTitle	VARCHAR(500) = ''
 AS
 /*
 	Created: Winfred
@@ -12,15 +13,17 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904]  
-		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
+		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]  
+		- 20231118@Winfred: [NAP CM] Allow to choose overwriting policy or creating new assign setting [RedmineID: #196932] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
 */ 
 BEGIN
 	SET NOCOUNT ON; 
-
-	SELECT  a.PolicyID, 
+	IF @PolicyID = 0 
+	BEGIN
+		SELECT  a.PolicyID, 
 			a.PolicyTitle , 
 			c.RuleID,
 			c.Enable,
@@ -44,15 +47,54 @@ BEGIN
 			c.LastModifiedUser,
 			c.LastModifiedTime,
 			d.LeagueGroupNames 
-	FROM CustomerClassPolicyManagement a WITH(NOLOCK)
-		LEFT JOIN CustomerClassPolicyRule b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
-		LEFT JOIN CustomerClassRule c WITH(NOLOCK) ON b.RuleID = c.RuleID --AND ( c.Enable IS NULL OR c.Enable = 1)
-		CROSS APPLY(
-			SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
-				FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
-					LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON lg.LeagueGroupID = ps.GroupID 
-				WHERE lg.RuleID = b.RuleID
-		) d
-	WHERE  a.IsTest <= @IsTest AND (@PolicyID = 0  OR a.PolicyID = @PolicyID)
+		FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+			LEFT JOIN CustomerClassPolicyRule b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
+			LEFT JOIN CustomerClassRule c WITH(NOLOCK) ON b.RuleID = c.RuleID --AND ( c.Enable IS NULL OR c.Enable = 1)
+			CROSS APPLY(
+				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
+					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
+						LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON lg.LeagueGroupID = ps.GroupID 
+					WHERE lg.RuleID = b.RuleID
+			) d
+		WHERE  a.IsTest <= @IsTest AND a.PolicyTitle like '%' + @PolicyTitle + '%'
+	END
+	ELSE
+	BEGIN
+		SELECT  a.PolicyID, 
+			a.PolicyTitle , 
+			c.RuleID,
+			c.Enable,
+			c.CustomerClass,
+			c.RuleTitle,
+			a.SportType,
+			c.IsLive ,
+			(c.DiffBalanceRatio - 1) * 100 AS DiffBalanceRatio,
+			(c.BetDelay - 1) * 100 AS BetDelay,
+			c.NextBetInterval,
+			c.SuperBetInterval,
+			c.SiteBetInterval,
+			c.MinBet,
+			c.MaxBet,
+			c.MaxPerMatch,
+			c.RepeatedBets,
+			c.SeizeBetTicket,
+			c.DisableParlay,
+			c.PeakHourSpreadAdjustment,
+			c.IsTest,
+			c.LastModifiedUser,
+			c.LastModifiedTime,
+			d.LeagueGroupNames 
+		FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+			LEFT JOIN CustomerClassPolicyRule b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
+			LEFT JOIN CustomerClassRule c WITH(NOLOCK) ON b.RuleID = c.RuleID --AND ( c.Enable IS NULL OR c.Enable = 1)
+			CROSS APPLY(
+				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
+					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
+						LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON lg.LeagueGroupID = ps.GroupID 
+					WHERE lg.RuleID = b.RuleID
+			) d
+		WHERE  a.IsTest <= @IsTest AND a.PolicyID = @PolicyID
+	END
+	
 END
 GO
