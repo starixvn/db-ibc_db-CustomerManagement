@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSetting] 
-	 @Site NVARCHAR(50) = NULL
+	 @Site NVARCHAR(MAX) = NULL
 	,@CustomerClass SMALLINT
 	,@SportType SMALLINT
 	,@LeagueGroups VARCHAR(MAX)
@@ -20,6 +20,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230928@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
 		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365]  
+		- 20231107@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS' @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
@@ -31,14 +32,56 @@ BEGIN
 	DECLARE @RowStart INT, @RowEnd INT, @iDoc INT, @xml XML
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
-    CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, RuleID INT)    
-    CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), Currency TINYINT, CurrencyName NVARCHAR(50),Platform VARCHAR(MAX), RuleID INT , RowNumber INT)    
+    CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), CurrencyID NVARCHAR(MAX), CurrencyName NVARCHAR(MAX),Platform VARCHAR(300), RuleID INT , RowNumber INT)    
     CREATE TABLE #LeagueGroup( GroupID SMALLINT, GroupName VARCHAR(200), SportType SMALLINT)    
+	CREATE TABLE #PolicyRule( PolicyID INT,  RuleID INT)  
     
-    CREATE CLUSTERED INDEX Ix_CustomerClass ON #CustomerClass (PolicyID, Site, Currency)    
+	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform INT, RuleID INT)  
+    CREATE CLUSTERED INDEX Ix_CustomerClass ON #CustomerClass (PolicyID, Site, Currency, RuleID, Platform)  
+
+	CREATE TABLE #CustomerClass_Platform( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform NVARCHAR(MAX))  
+    CREATE CLUSTERED INDEX Ix_CustomerClass_Platform ON #CustomerClass_Platform (PolicyID, Site, Currency)  
+
+	CREATE TABLE #CustomerClass_Currency( PolicyID INT, Site NVARCHAR(50), CurrencyID NVARCHAR(MAX), CurrencyName NVARCHAR(MAX), Platform NVARCHAR(MAX))  
+    CREATE CLUSTERED INDEX Ix_CustomerClass_Currency ON #CustomerClass_Currency (PolicyID, Site)
+	CREATE CLUSTERED INDEX Ix_PolicyRule ON #PolicyRule (PolicyID, RuleID)       
     CREATE CLUSTERED INDEX Ix_LeagueGroupTemp ON #LeagueGroup (GroupID, SportType)    
-    CREATE CLUSTERED INDEX Ix_CustomerClassSiteManagement ON #CustomerClassSiteManagement (Site,Currency,RuleID) 	
-    CREATE NONCLUSTERED INDEX NIx_CustomerClassSiteManagement_RowNumber ON #CustomerClassSiteManagement (RowNumber) 	
+	CREATE NONCLUSTERED INDEX NIx_CustomerClassSiteManagement ON #CustomerClassSiteManagement (RuleID,Platform) INCLUDE (CurrencyID, Site)
+	CREATE NONCLUSTERED INDEX NIx_CustomerClassSiteManagement_RowNumber ON #CustomerClassSiteManagement (RowNumber) 
+
+	DECLARE @SiteTbl TABLE(Site NVARCHAR(50), isDeposit BIT)
+	INSERT INTO @SiteTbl (Site) SELECT  'All' --All
+	INSERT INTO @SiteTbl (Site , isDeposit)
+	SELECT VALUE AS site, s.isDeposit
+	FROM STRING_SPLIT(@Site,',') a
+		OUTER APPLY ( SELECT TOP 1 IsDeposit FROM Site WITH(NOLOCK) WHERE isActive = 1 AND site = a.VALUE ) s 
+	WHERE VALUE <> ''
+	
+	IF EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE site = 'AllCredit' )
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT site 
+		FROM Site a WITH(NOLOCK) WHERE  IsDeposit = 0 AND isActive = 1 
+		AND Site NOT IN (SELECT Site FROM @SiteTbl)
+	END
+
+	IF EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE site = 'AllDeposit' )
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT site 
+		FROM Site a WITH(NOLOCK) WHERE  IsDeposit = 1 AND isActive = 1 
+		AND Site NOT IN (SELECT Site FROM @SiteTbl)
+	END
+
+	IF NOT EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE site = 'AllCredit') AND
+			   EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE IsDeposit = 0)
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT  'AllCredit'
+	END
+
+	IF NOT EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE site = 'AllDeposit') AND
+			EXISTS(SELECT TOP 1 1 FROM @SiteTbl WHERE IsDeposit = 1)
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT  'AllDeposit'
+	END
 
 	--Check if XML is null or empty
 	IF @LeagueGroups IS NULL OR @LeagueGroups = ''
@@ -57,133 +100,147 @@ BEGIN
 			SportType 	 VARCHAR(20)
 	) AS Data;
 	EXECUTE	sp_xml_removedocument @iDoc;
-
-	IF @SportType = 0
+	
+	-- Get all PolicyID, RuleID 
+	IF @CustomerClass = 0
 	BEGIN
-		INSERT INTO #CustomerClass(PolicyID, Site, Currency)    
-		SELECT DISTINCT a.PolicyID, a.Site, a.Currency     
-		FROM CustomerClassSiteManagement a WITH(NOLOCK) 
-			INNER JOIN  CustomerClassPolicyManagement ccp WITH(NOLOCK) ON a.PolicyID = ccp.PolicyID
-		WHERE a.Site = @Site AND ccp.IsTest <= @IsTest
-		-- Get all Platform for policy 
-		INSERT INTO #CustomerClassSiteManagement( Site, Currency, Platform, RuleID, RowNumber)
-		SELECT DISTINCT
-				a.Site,
-				a.Currency,
-				d.Platforms,
-				r.RuleID  , 
-				DENSE_RANK() OVER( ORDER BY Site,r.RuleID,d.Platforms) AS RowNumber
-		FROM #CustomerClass a WITH(NOLOCK)
-			CROSS APPLY(
-					SELECT cr.RuleID
-					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
-						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
-					WHERE cp.PolicyID = a.PolicyID AND cr.CustomerClass = @CustomerClass
-				) r
-			CROSS APPLY(
-				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-				FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
-					FROM CustomerClassSiteManagement WITH(NOLOCK)
-					WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Currency = currency) mis
-			) d
-
-	END
-	ELSE IF @Site IS NULL
-	BEGIN
-		INSERT INTO #CustomerClass(PolicyID, Site, Currency)    
-		SELECT DISTINCT a.PolicyID, a.Site, a.Currency     
-		FROM CustomerClassSiteManagement a WITH(NOLOCK) 
-			INNER JOIN  CustomerClassPolicyManagement ccp WITH(NOLOCK) ON a.PolicyID = ccp.PolicyID
-		WHERE ccp.SportType = @SportType AND ccp.IsTest <= @IsTest
-		-- Get all Platform for policy 
-		INSERT INTO #CustomerClassSiteManagement( Site, Currency, Platform, RuleID, RowNumber)
-		SELECT DISTINCT
-				a.Site,
-				a.Currency,
-				d.Platforms,
-				r.RuleID  , 
-				DENSE_RANK() OVER( ORDER BY Site,r.RuleID,d.Platforms) AS RowNumber
-		FROM #CustomerClass a WITH(NOLOCK)
-			CROSS APPLY(
-					SELECT cr.RuleID
-					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
-						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
-					WHERE cp.PolicyID = a.PolicyID AND cr.CustomerClass = @CustomerClass
-				) r
-			CROSS APPLY(
-				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-				FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
-					FROM CustomerClassSiteManagement WITH(NOLOCK)
-					WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Currency = currency) mis
-			) d
-	END
-	ELSE IF @CustomerClass = 0
-	BEGIN
-		INSERT INTO #CustomerClass(PolicyID, Site, Currency)    
-		SELECT DISTINCT a.PolicyID, a.Site, a.Currency     
-		FROM CustomerClassSiteManagement a WITH(NOLOCK) 
-			INNER JOIN  CustomerClassPolicyManagement ccp WITH(NOLOCK) ON a.PolicyID = ccp.PolicyID
-		WHERE a.Site = @Site AND ccp.SportType = @SportType AND ccp.IsTest <= @IsTest
-		-- Get all Platform for policy 
-		INSERT INTO #CustomerClassSiteManagement( Site, Currency, Platform, RuleID, RowNumber)
-		SELECT DISTINCT
-				a.Site,
-				a.Currency,
-				d.Platforms,
-				r.RuleID  , 
-				DENSE_RANK() OVER( ORDER BY Site,r.RuleID,d.Platforms) AS RowNumber
-		FROM #CustomerClass a WITH(NOLOCK)
-			CROSS APPLY(
-					SELECT cr.RuleID
-					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
-						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
-					WHERE cp.PolicyID = a.PolicyID
-				) r
-			CROSS APPLY(
-				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-				FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
-					FROM CustomerClassSiteManagement WITH(NOLOCK)
-					WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Currency = currency) mis
-			) d
+		INSERT INTO #PolicyRule( PolicyID, RuleID)
+		SELECT PolicyID, a.RuleID 
+		FROM CustomerClassPolicyRule a WITH(NOLOCK) 
+			CROSS APPLY( SELECT TOP 1 RuleID FROM CustomerClassRule WITH(NOLOCK) 
+						 WHERE RuleID = a.RuleID AND IsTest <= @IsTest ) r
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #CustomerClass(PolicyID, Site, Currency)    
-		SELECT DISTINCT a.PolicyID, a.Site, a.Currency     
-		FROM CustomerClassSiteManagement a WITH(NOLOCK) 
-			INNER JOIN  CustomerClassPolicyManagement ccp WITH(NOLOCK) ON a.PolicyID = ccp.PolicyID
-		WHERE a.Site = @Site AND ccp.SportType = @SportType AND ccp.IsTest <= @IsTest
-		-- Get all Platform for policy 
-		INSERT INTO #CustomerClassSiteManagement( Site, Currency, Platform, RuleID, RowNumber)
-		SELECT DISTINCT
-				a.Site,
-				a.Currency,
-				d.Platforms,
-				r.RuleID  , 
-				DENSE_RANK() OVER( ORDER BY Site,r.RuleID,d.Platforms) AS RowNumber
-		FROM #CustomerClass a WITH(NOLOCK)
-			CROSS APPLY(
-					SELECT cr.RuleID
-					FROM CustomerClassPolicyRule cp WITH(NOLOCK)
-						INNER JOIN CustomerClassRule cr WITH(NOLOCK) ON cp.RuleID =cr.RuleID
-					WHERE cp.PolicyID = a.PolicyID AND cr.CustomerClass = @CustomerClass
-				) r
-			CROSS APPLY(
-				SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-				FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(20)) AS Platform
-					FROM CustomerClassSiteManagement WITH(NOLOCK)
-					WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Currency = currency) mis
-			) d
+		INSERT INTO #PolicyRule( PolicyID, RuleID)
+		SELECT PolicyID, a.RuleID 
+		FROM CustomerClassPolicyRule a WITH(NOLOCK) 
+			CROSS APPLY( SELECT TOP 1 RuleID FROM CustomerClassRule WITH(NOLOCK) 
+						 WHERE RuleID = a.RuleID AND IsTest <= @IsTest AND CustomerClass = @CustomerClass ) r
 	END
+
+	IF @SportType = 0
+	BEGIN
+		IF @Site IS NULL OR @Site = 'All'
+		BEGIN
+			INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
+			SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
+			FROM #PolicyRule a
+				CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) WHERE PolicyID = a.PolicyID AND IsTest <= @IsTest ) r
+				CROSS APPLY( SELECT DISTINCT Site, Currency  
+							FROM CustomerClassSiteManagement WITH(NOLOCK) 
+							WHERE PolicyID = a.PolicyID ) s
+				CROSS APPLY(
+							SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+							FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(300)) AS Platform
+								FROM CustomerClassSiteManagement WITH(NOLOCK)
+							WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.currency) mis
+						) d
+		END
+		ELSE
+		BEGIN
+			INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
+			SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
+			FROM #PolicyRule a
+				CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) WHERE PolicyID = a.PolicyID AND IsTest <= @IsTest ) r
+				CROSS APPLY( SELECT Site FROM @SiteTbl ) t
+				CROSS APPLY( SELECT DISTINCT Site, Currency  
+							FROM CustomerClassSiteManagement WITH(NOLOCK) 
+							WHERE PolicyID = a.PolicyID AND Site = t.Site ) s
+				CROSS APPLY(
+							SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+							FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(300)) AS Platform
+								FROM CustomerClassSiteManagement WITH(NOLOCK)
+							WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.currency) mis
+						) d
+		END
+	END
+	ELSE
+	BEGIN
+		IF @Site IS NULL OR @Site = 'All'
+		BEGIN
+			INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
+			SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
+			FROM #PolicyRule a
+				CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) WHERE PolicyID = a.PolicyID AND SportType = @SportType AND IsTest <= @IsTest ) r
+				CROSS APPLY( SELECT DISTINCT Site, Currency  
+							FROM CustomerClassSiteManagement WITH(NOLOCK) 
+							WHERE PolicyID = a.PolicyID ) s
+				CROSS APPLY(
+							SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+							FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(300)) AS Platform
+								FROM CustomerClassSiteManagement WITH(NOLOCK)
+							WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.currency) mis
+						) d
+		END
+		ELSE
+		BEGIN
+			INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
+			SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
+			FROM #PolicyRule a
+				CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) WHERE PolicyID = a.PolicyID AND SportType = @SportType AND IsTest <= @IsTest ) r
+				CROSS APPLY( SELECT Site FROM @SiteTbl ) t
+				CROSS APPLY( SELECT DISTINCT Site, Currency  
+							FROM CustomerClassSiteManagement WITH(NOLOCK) 
+							WHERE PolicyID = a.PolicyID AND Site = t.Site) s
+				CROSS APPLY(
+							SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+							FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(300)) AS Platform
+								FROM CustomerClassSiteManagement WITH(NOLOCK)
+							WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.currency) mis
+						) d
+		END
+	END
+
+	INSERT INTO #CustomerClass_Currency( PolicyID, Site, CurrencyID, CurrencyName, Platform)
+	SELECT DISTINCT
+			a.PolicyID,
+			a.Site,
+			e.CurrencyID,
+			d.CurrencyName,
+			CASE WHEN a.Platform = '1,2,3,4,5' THEN '0' ELSE a.Platform END AS Platform
+	FROM #CustomerClass_Platform a
+		CROSS APPLY(
+			SELECT STRING_AGG(CAST(CurrencyName AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY CurrencyName)  AS CurrencyName
+			FROM (SELECT DISTINCT (CASE WHEN b.currency = 0 THEN 'All' ELSE e.currency END) AS CurrencyName
+				FROM #CustomerClass_Platform b  
+					LEFT JOIN exchange e WITH(NOLOCK) ON b.Currency = e.ExchangeId		
+				WHERE PolicyID = a.PolicyID AND a.Site = b.Site AND a.Platform = b.Platform ) mis
+		) d
+		CROSS APPLY(
+			SELECT STRING_AGG(CAST(Currency AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY Currency)  AS CurrencyID
+			FROM (SELECT DISTINCT Currency 
+				FROM #CustomerClass_Platform 
+				WHERE PolicyID = a.PolicyID AND a.Site = Site AND a.Platform = Platform ) mis
+		) e
+		
 	
+	INSERT INTO #CustomerClassSiteManagement( Site, CurrencyID, CurrencyName, Platform, RuleID,RowNumber)
+	SELECT DISTINCT
+			a.Site,
+			a.CurrencyID,
+			a.CurrencyName,
+			b.Platforms,
+			d.RuleID  
+			,DENSE_RANK() OVER( ORDER BY a.CurrencyName,Platform,RuleID) AS RowNumber
+	FROM #CustomerClass_Currency a WITH(NOLOCK)
+		CROSS APPLY( SELECT RuleID From #PolicyRule where a.PolicyID = PolicyID ) d
+		CROSS APPLY(
+					SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
+					FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(300)) AS Platform
+						FROM #CustomerClass_Currency b WITH(NOLOCK)
+							CROSS APPLY( SELECT RuleID From #PolicyRule where b.PolicyID = PolicyID ) c
+					WHERE c.RuleID = d.RuleID AND Site = a.Site AND CurrencyID = a.CurrencyID) mis --PolicyID = a.PolicyID AND
+				) b
+
 	--Paging
 	SELECT @TotalItems = MAX(RowNumber) FROM #CustomerClassSiteManagement c     
     
 	DELETE FROM #CustomerClassSiteManagement  WHERE  RowNumber NOT BETWEEN @RowStart AND @RowEnd 
 	
 	SELECT DISTINCT
-		a.Site,
-		d.CurrencyName,
+		d.Sites,
+		a.CurrencyName,
 		a.Platform ,
 		a.RuleID,
 		c.CustomerClass,
@@ -206,23 +263,24 @@ BEGIN
 		c.LastModifiedUser,
 		c.LastModifiedTime ,
 		e.LeagueGroupNames
-	FROM #CustomerClassSiteManagement a 
-		INNER JOIN CustomerClassRule c WITH(NOLOCK) ON a.RuleID = c.RuleID
+	FROM CustomerClassRule c WITH(NOLOCK)
+		CROSS APPLY( SELECT DISTINCT RuleID, Platform, CurrencyID, CurrencyName FROM #CustomerClassSiteManagement WHERE RuleID = c.RuleID ) a
 		CROSS APPLY(
-			SELECT STRING_AGG(CurrencyName, ',') WITHIN GROUP (ORDER BY CurrencyName)  AS CurrencyName
-			FROM (SELECT DISTINCT e.currency AS CurrencyName
-				FROM #CustomerClassSiteManagement b  
-					INNER JOIN exchange e WITH(NOLOCK) ON b.Currency = e.ExchangeId		
-				WHERE a.RuleID = b.RuleID AND a.Site = b.Site AND a.Platform = b.Platform ) mis
+			SELECT STRING_AGG(Site, ',') WITHIN GROUP (ORDER BY Site)  AS Sites
+			FROM (SELECT DISTINCT CAST(Site AS VARCHAR(MAX)) AS Site
+				FROM #CustomerClassSiteManagement
+				WHERE a.RuleID = RuleID AND a.Platform = Platform AND a.CurrencyID = CurrencyID) mis
 		) d
 		CROSS APPLY(
-			SELECT STRING_AGG(CAST(GroupName AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
+			SELECT STRING_AGG(CAST(GroupName AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
 			FROM (SELECT DISTINCT (CASE WHEN b.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS GroupName
 				FROM CustomerClassRuleLeagueGroup b WITH(NOLOCK)
 					LEFT JOIN #LeagueGroup ps ON b.LeagueGroupID = ps.GroupID 
 				WHERE a.RuleID = b.RuleID) mis
 		) e
+	ORDER BY d.Sites
 
 	DROP TABLE #CustomerClass
+	DROP TABLE #CustomerClass_Platform
+	DROP TABLE #CustomerClass_Currency
 END
-GO

@@ -21,6 +21,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230821@Winfred: Fix Param LeagueGroupID when all value  [RedmineID: #192953] 
 		- 20231114@Winfred: [NAP CM] Customer Class mng - Return as 1 if Null  [RedmineID: #196827]
+		- 20231101@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSitePolicySel @CustId=1315, @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -58,6 +59,26 @@ BEGIN
 			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupID SMALLINT)
 	CREATE CLUSTERED INDEX CIX_CustomerClass ON #CustomerClass(Site, Currency, Platform)
 	
+	DECLARE @SiteTbl TABLE(Site NVARCHAR(50))
+	DECLARE @OfferTbl TABLE(Site NVARCHAR(50), Currency INT, Platform TINYINT)
+	INSERT INTO @SiteTbl (Site) SELECT  'All' --All
+	INSERT INTO @SiteTbl (Site) SELECT @site
+
+	IF 	EXISTS(SELECT TOP 1 1 FROM Site a WITH(NOLOCK) WHERE site = @site AND IsDeposit = 0 )
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT  'AllCredit'
+	END
+	ELSE
+	BEGIN
+		INSERT INTO @SiteTbl (Site) SELECT  'AllDeposit'
+	END
+
+	INSERT INTO @OfferTbl (Site, Currency, Platform) 
+	SELECT Site , c.Currency, d.Platform
+	FROM @SiteTbl s
+		CROSS APPLY (SELECT @Currency AS  Currency UNION SELECT 0 AS  Currency) c
+		CROSS APPLY (SELECT @Platform AS  Platform UNION SELECT 0 AS Platform) d
+
 	IF @IsTest = 1
 	BEGIN
 		SELECT @IsTest = dbo.f_CheckSPVersion(@@PROCID)
@@ -78,11 +99,10 @@ BEGIN
 			INNER JOIN CustomerClassPolicyRule_UAT cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
 			INNER JOIN CustomerClassRule_UAT cc WITH(NOLOCK) ON cp.RuleID = cc.RuleID AND cc.CustomerClass = @CustomerClass
 			INNER JOIN CustomerClassRuleLeagueGroup_UAT clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
-		WHERE cm.Site = @site AND cm.Currency = @Currency 
-			AND cpm.SportType = @SportType 
+			INNER JOIN @OfferTbl s ON cm.Site = s.Site AND cm.Currency = s.Currency AND cm.Platform = s.Platform
+		WHERE cpm.SportType = @SportType 
 			AND (clg.LeagueGroupID = @LeagueGroupID OR clg.LeagueGroupID = -1)
 			AND cpm.IsTest = @IsTest 
-			AND cm.Platform IN (0,@Platform) 
 			AND cc.IsLive IN (2, @liveindicator)
 	 END
 	 ELSE
@@ -97,11 +117,10 @@ BEGIN
 			INNER JOIN CustomerClassPolicyRule cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
 			INNER JOIN CustomerClassRule cc WITH(NOLOCK) ON cp.RuleID = cc.RuleID AND cc.CustomerClass = @CustomerClass
 			INNER JOIN CustomerClassRuleLeagueGroup clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
-		WHERE cm.Site = @site AND cm.Currency = @Currency 
-			AND cpm.SportType = @SportType 
+			INNER JOIN @OfferTbl s ON cm.Site = s.Site AND cm.Currency = s.Currency AND cm.Platform = s.Platform
+		WHERE cpm.SportType = @SportType 
 			AND (clg.LeagueGroupID = @LeagueGroupID OR clg.LeagueGroupID = -1)
 			AND cpm.IsTest = @IsTest 
-			AND cm.Platform IN (0,@Platform) 
 			AND cc.IsLive IN (2, @liveindicator)
 	 END
 
@@ -120,7 +139,7 @@ BEGIN
 			@ReturnedMaxPerMatch = Min(MaxPerMatch), 
 			@ReturnedRepeatedBets = Min(RepeatedBets), 
 			@ReturnedSeizeBetTicket = Max(SeizeBetTicket), 
-			@ReturnedDisableParlay = MIN( CASE WHEN DisableParlay  = 0 THEN 0 ELSE 1 END), 
+			@ReturnedDisableParlay = MAX(CASE WHEN DisableParlay  = 0 THEN 0 ELSE 1 END), 
 			@ReturnedPeakHourSpreadAdjustment = MAX(PeakHourSpreadAdjustment) ,
 			@ReturnedLeagueGroupID = LeagueGroupID,
 			@ReturnedPlatform = @Platform
