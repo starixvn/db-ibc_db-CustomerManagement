@@ -12,7 +12,7 @@ AS
 	Revisions:
 		- 20231031@Tacy: Create SP [Redmine: #196141] 
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
-
+		- 20240111@Johnson: exclude saba casino from dummy products [redmine: #194591]
 	Examples:
 	
 */
@@ -90,7 +90,7 @@ BEGIN
 				 WHERE s.RealProductID=p.ProductID) s
 	LEFT JOIN #OfferProduct dm ON s.DummyProductID = dm.ProductID
 	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0
-		AND p.ProductID<>11 -- AG Casino, offer for licensee only
+		AND p.ProductID NOT IN (6,11) -- AG Casino, offer for licensee only
 		AND p.Environment <= @SettingStatus
 
 	--Get data

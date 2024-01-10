@@ -286,7 +286,7 @@ BEGIN
 
 	DECLARE @SiteID INT , @Currency INT, @SpecialPlatform TINYINT
 
-	SELECT @Currency = ci.currency, @SiteID = s.siteid, @SpecialPlatform = SpecialPlatfrom
+	SELECT @Currency = ci.currency, @SiteID = s.siteid, @SpecialPlatform = ISNULL(SpecialPlatfrom,0)
 	FROM customer ci WITH(NOLOCK) 
 		INNER JOIN Site s WITH(NOLOCK) ON ci.site = s.site
 	WHERE ci.custid = @CustID
