@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
     @recommend		INT,  
     @UserName		VARCHAR(30) = NULL,
     @Status			TINYINT = 0,
+	@Currencies 	VARCHAR(MAX) = '',
 	@UserID			INT,
 	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
@@ -63,7 +64,8 @@ Revisions:
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-
+	- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
+	
 	Explanation's Param:
 	@Status = 
 		0: All
@@ -119,7 +121,11 @@ BEGIN
 								) AS cps
 				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			WHERE ci.recommend = @recommend
-				AND ci.roleid = 1	
+				AND ci.roleid = 1
+				AND 1 = CASE WHEN @Currencies = '' 
+								OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
+												)
+								THEN 1 ELSE 0 END				
 				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
@@ -148,7 +154,11 @@ BEGIN
 								) AS cps
 				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			WHERE ci.recommend = @recommend
-				AND ci.roleid = 1			
+				AND ci.roleid = 1
+				AND 1 = CASE WHEN @Currencies = '' 
+								OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
+												)
+								THEN 1 ELSE 0 END		
 				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
 											 WHEN @Status = 4 THEN 0 ELSE enabled END
 
@@ -176,6 +186,7 @@ BEGIN
 	SELECT	c.custid,
 			c.username,
 			ci.enabled,
+			(SELECT e.currency FROM Exchange e WITH(NOLOCK) WHERE e.ExchangeId =c.currency) as currency,
 			cps.closed,
 			
 			ISNULL(cps.reject, 0) AS suspended,
@@ -216,7 +227,7 @@ BEGIN
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 AND @IsMyanmarOdds = 1
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
-	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.ugroup, c.username2,
+	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber  ,AC.playerdiscount,cps.Locked
