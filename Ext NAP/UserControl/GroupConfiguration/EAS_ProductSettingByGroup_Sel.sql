@@ -17,11 +17,12 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230320@Eden: Migrate Number games to DCS structure [Redmine: #179711]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - move from bodb02 to custdb [Redmine: #189389]
+		- 20240220@Luke: EXT - Avoid missing manage product [Redmine: #199912]
 */
 BEGIN
 	SET NOCOUNT ON
 
-	CREATE TABLE #tmpProducts (ProductId TINYINT)
+	CREATE TABLE #tmpProducts (ProductId TINYINT, Environment TINYINT)
 	CREATE TABLE #tmpProducts_Show (ProductId TINYINT)
 
 	CREATE TABLE #ProductSettingDetail(
@@ -42,8 +43,8 @@ BEGIN
 	WHERE t.SettingName IN ('Product Status','Bet Setting','Stake Level')
 
 	-- Get all enabled products
-	INSERT INTO #tmpProducts (ProductId)
-	SELECT ProductId
+	INSERT INTO #tmpProducts (ProductId, Environment)
+	SELECT ProductId, Environment
 	FROM DBPRO.bodb02.dbo.Products p WITH (NOLOCK)
 	WHERE p.Enabled = 1
 
@@ -55,8 +56,12 @@ BEGIN
 	SELECT DISTINCT CASE WHEN c.ProductId = 22 THEN 18 ELSE c.ProductId END AS ProductId
 	FROM #tmpProducts p
 		INNER JOIN dbo.eaGroupConfiguration c WITH (NOLOCK) ON p.ProductId = c.ProductId
+		INNER JOIN dbo.eaGroup g WITH (NOLOCK) ON c.GroupId = g.GroupID
 	WHERE (c.GroupId = @groupId OR @groupId IS NULL)
 		AND c.IsShow = 1
+		AND 1 = CASE WHEN g.GroupName IN ('ACCTEST', 'ACCUUS') THEN 1
+					WHEN Environment = 0 THEN 1
+					ELSE 0 END
 
 	INSERT INTO #tmpProducts_Show(ProductId)
 	SELECT DISTINCT d.ProductId
