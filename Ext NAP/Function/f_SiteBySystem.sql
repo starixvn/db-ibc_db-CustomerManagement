@@ -53,6 +53,7 @@ Revisions:
 	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
 	- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
+	- 20231206@Johnson: Add ACCS56RM [redmine: #197031]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -176,6 +177,15 @@ BEGIN
 	BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 1233 --7a5555,...
+	END
+	ELSE IF(@System IN ('ACCS56RM'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)
+		SELECT siteid 
+		FROM [Site] WITH (NOLOCK)
+		WHERE isLicensee = 0 
+			AND SiteLabel = 'MBC'
+			AND isActive=1
 	END
 	RETURN
 END
