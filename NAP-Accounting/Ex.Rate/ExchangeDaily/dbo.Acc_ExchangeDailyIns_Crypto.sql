@@ -19,6 +19,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto]
 	, @PHP FLOAT
 	, @BDT FLOAT
 	, @INR FLOAT
+	, @TRY FLOAT
+	, @NPR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -31,6 +33,7 @@ Original: Acc_ExchangeDailyIns
 Revisions:
 	- 20220908@Evan: Support crypto  [Redmine: #177481]  
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  
+	- 20240112@Evan: Add 2 more base currencies TRY & NPR - [RedmineID: #197693]
 */
 BEGIN
 
@@ -106,6 +109,8 @@ BEGIN
 					, PHP
 					, BDT
 					, INR
+					, TRY
+					, NPR
 					, ActualRate
 					)
 				VALUES (
@@ -130,6 +135,8 @@ BEGIN
 					, @PHP * @MultipliedBy
 					, @BDT * @MultipliedBy
 					, @INR * @MultipliedBy
+					, @TRY * @MultipliedBy
+					, @NPR * @MultipliedBy
 					, @MYR * @MultipliedBy
 					)
 			END
@@ -154,6 +161,8 @@ BEGIN
 					, PHP = @PHP * @MultipliedBy
 					, BDT = @BDT * @MultipliedBy
 					, INR = @INR * @MultipliedBy
+					, TRY = @TRY * @MultipliedBy
+					, NPR = @NPR * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
