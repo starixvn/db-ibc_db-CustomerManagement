@@ -13,6 +13,7 @@ AS
 		- 20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
 		- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
+		- 20240123@Lewis: Add 2 more base currencies NPR & TRY [RedmineID: #200163]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -41,7 +42,9 @@ BEGIN
 		TWD,
 		PHP,
 		BDT,
-		INR
+		INR,
+		NPR,
+		TRY
 	FROM (
 		SELECT 
 			edo.ExchangeDate,
@@ -68,6 +71,8 @@ BEGIN
 			edo.PHP,
 			edo.BDT,
 			edo.INR,
+			edo.NPR,
+			edo.TRY,
 			ROW_NUMBER() OVER(
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC
