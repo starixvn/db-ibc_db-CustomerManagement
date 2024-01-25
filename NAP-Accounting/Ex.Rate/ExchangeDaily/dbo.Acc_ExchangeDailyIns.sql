@@ -19,6 +19,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 	, @PHP FLOAT
 	, @BDT FLOAT
 	, @INR FLOAT
+	, @TRY FLOAT
+	, @NPR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -37,6 +39,7 @@ Revisions:
 	- 20171124@Harper: Add 2 more base currencies TWD and PHP into OANDA service [RedmineID: #87042]
 	- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  	
+	- 20240112@Evan: Add 2 more base currencies TRY & NPR into OANDA service - [RedmineID: #197693]
 */
 /*
 declare @p3 nvarchar(200)
@@ -97,11 +100,15 @@ BEGIN
 			, PHP
 			, BDT
 			, INR
+			, TRY
+			, NPR
 			)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -148,6 +155,8 @@ BEGIN
 			, PHP = 2e-101
 			, BDT = 2e-101
 			, INR = 2e-101
+			, TRY = 2e-101
+			, NPR = 2e-101
 		WHERE ExchangeId = 20
 			AND ExchangeDate = @date
 	END
@@ -210,6 +219,8 @@ BEGIN
 				, PHP
 				, BDT
 				, INR
+				, TRY
+				, NPR
 				)
 			VALUES (
 				@ExchangeId
@@ -233,6 +244,8 @@ BEGIN
 				, @PHP * @MultipliedBy
 				, @BDT * @MultipliedBy
 				, @INR * @MultipliedBy
+				, @TRY * @MultipliedBy
+				, @NPR * @MultipliedBy
 				)
 		END
 		ELSE
@@ -261,6 +274,8 @@ BEGIN
 				, PHP = @PHP * @MultipliedBy
 				, BDT = @BDT * @MultipliedBy
 				, INR = @INR * @MultipliedBy
+				, TRY = @TRY * @MultipliedBy
+				, NPR = @NPR * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code
@@ -318,6 +333,8 @@ BEGIN
 			, @PHP = PHP
 			, @BDT = BDT
 			, @INR = INR
+			, @TRY = TRY
+			, @NPR = NPR
 		FROM dbo.ExchangeDailyOanda WITH (NOLOCK)
 		WHERE Code = 'VND'
 			AND ExchangeDate = @Date
@@ -353,6 +370,8 @@ BEGIN
 				, PHP
 				, BDT
 				, INR
+				, TRY
+				, NPR
 				)
 			VALUES (
 				@ExchangeId
@@ -376,6 +395,8 @@ BEGIN
 				, @PHP * @MultipliedBy
 				, @BDT * @MultipliedBy
 				, @INR * @MultipliedBy
+				, @TRY * @MultipliedBy
+				, @NPR * @MultipliedBy
 				)	
 		END
 		ELSE
@@ -403,6 +424,8 @@ BEGIN
 				, PHP = @PHP * @MultipliedBy
 				, BDT = @BDT * @MultipliedBy
 				, INR = @INR * @MultipliedBy
+				, TRY = @TRY * @MultipliedBy
+				, NPR = @NPR * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code		
