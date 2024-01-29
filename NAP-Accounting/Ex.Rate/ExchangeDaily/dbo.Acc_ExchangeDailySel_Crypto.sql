@@ -5,6 +5,7 @@ ALTER PROCEDURE [Acc_ExchangeDailySel_Crypto]
 	, @MYR FLOAT OUTPUT
 	, @CNY FLOAT OUTPUT
 	, @EUR FLOAT OUTPUT
+	, @USD FLOAT OUTPUT
 
 AS
 /*
@@ -14,6 +15,7 @@ DB: DBCUST.CustDB
 Revisions:
 	- 20221115@Evan: Initialize sp  [Redmine: #180168]  
 	- 20230807@Evan: Support EUR rate  [Redmine: #192369]  
+	- 20240128@Evan: Support USD rate  [Redmine: #200341]  
 
 Note: In case if coinmarketcap does not have the rate of the currency, the web will call this SP to get the latest rate in table ExchangeDailyOanda to call API keep running. 
 
@@ -28,7 +30,8 @@ BEGIN
 
 	SELECT	@MYR = a.MYR / b.MultipliedBy,
 			@CNY = a.CNY / b.MultipliedBy,
-			@EUR = a.EUR / b.MultipliedBy
+			@EUR = a.EUR / b.MultipliedBy,
+			@USD = a.USD / b.MultipliedBy
 	FROM dbo.ExchangeDailyOanda a WITH(NOLOCK) 
 		INNER JOIN dbo.exchange b WITH(NOLOCK) ON a.ExchangeId = b.ExchangeId
 	WHERE a.ExchangeDate = @Yesterday AND b.Code = @Code
@@ -37,7 +40,8 @@ BEGIN
 	BEGIN
 		SELECT TOP 1 @MYR = a.MYR / b.MultipliedBy,
 				@CNY = a.CNY / b.MultipliedBy,
-				@EUR = a.EUR / b.MultipliedBy
+				@EUR = a.EUR / b.MultipliedBy,
+				@USD = a.USD / b.MultipliedBy
 		FROM dbo.ExchangeDailyOanda a WITH(NOLOCK) 
 			INNER JOIN dbo.exchange b WITH(NOLOCK) ON a.ExchangeId = b.ExchangeId
 		WHERE  b.Code = @Code
@@ -45,5 +49,3 @@ BEGIN
 	END
 
 END
-
-GO
