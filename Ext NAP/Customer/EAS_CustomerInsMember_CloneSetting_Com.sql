@@ -52,6 +52,7 @@ AS
 		- 20230724@Eden: HotFix - EXT NAP - S&C super [Redmine: #191683]
 		- 20230718@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20230622@Helios: Alpha/ExtNAP - Create new downlines - Remove some obsolete rules [Redmine: #190167] 
+		- 20240129@Luke: NAP - Virtual rate - Change default of VR Status for newly created Super to Enable [Redmine: #200311]
 
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -365,7 +366,8 @@ BEGIN
 	FROM dbo.exchange WITH (NOLOCK) 
 	WHERE exchangeid = @currency
 	
-	SELECT @EnableVR = EnableVR FROM f_GenerateVirtualStatusBySite (@Site)
+	--SELECT @EnableVR = EnableVR FROM f_GenerateVirtualStatusBySite (@Site)
+	SELECT @EnableVR = 1 --Enable as default [#200311]
 
 	BEGIN TRY
 		-- insert CustInfo info
