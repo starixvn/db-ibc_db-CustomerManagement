@@ -22,9 +22,13 @@ AS
 		- 20230517@Tacy: Alpha - Special Announcement - Exclude a message sending to 755555 & 76666B [RedmineID: #188246]
 		- 20230612@Tacy: Alpha - Enhance annoucement to make it clear to users [RedmineID: #188109]
 		- 20230929@Tacy: Alpha - Special Announcement - ONLY Upload for 755555 and 766666b [RedmineID: #194638]
-		- 20231204@Tacy: Alpha - Special Announcement - show Announcement for site 7a5555 [RedmineID: #197951]
+		- 20231204@Tacy: Alpha - Special Announcement - show Announcement "three days" for site 7a5555 [RedmineID: #197951]
+		- 20240130@Tacy: Alpha - Special Announcement - show Announcement "seven days" for site 7a5555 [RedmineID: #200446]
 
-    Param's Explanation:
+	Param's Explanation:
+		* MsgID: 1799334 ~ ...【VOID SETTLED WINNING TICKET】 of the past seven days
+				 1799336 ~ ...【VOID SETTLED WINNING TICKET】 of the past three days
+		
 		* @PageSize = 0 ~ all
     
 */
@@ -140,8 +144,8 @@ BEGIN
 			WHEN (@PageSize <> 0 AND RowID BETWEEN @rowstart AND @rowend) THEN 1
 			WHEN (@PageSize = 0) THEN 1
 		ELSE 0 END = 1
-	AND CASE WHEN @Site IN ('755555', '76666B', '7a5555') AND m.MessageId<>1799334	 THEN 1
-			 WHEN @Site NOT IN ('755555', '76666B', '7a5555') AND m.MessageId<>1799336 THEN 1
+	AND CASE WHEN @Site IN ('755555', '76666B') AND m.MessageId<>1799334	 THEN 1
+			 WHEN @Site NOT IN ('755555', '76666B') AND m.MessageId<>1799336 THEN 1
 		ELSE 0 END = 1
 	ORDER BY TopLevel, PostTime DESC, RowID
 
