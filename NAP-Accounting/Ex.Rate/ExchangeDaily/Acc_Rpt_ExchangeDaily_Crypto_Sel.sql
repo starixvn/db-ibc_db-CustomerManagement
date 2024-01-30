@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20221107@Evan: Initial SP [RedmineID: #177844]
 		- 20230807@Evan: Support rate for EUR [RedmineID: #192375]
+		- 20240130@Lewis: Support rate for USD [RedmineID: #200376]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -25,6 +26,7 @@ BEGIN
 		edo.MYR,
 		edo.CNY,
 		edo.EUR,
+		edo.USD,
 		ex.USDT
 	FROM dbo.ExchangeDailyOanda edo WITH (NOLOCK)
 		INNER JOIN ExchangeDaily_Crypto ex WITH(NOLOCK) ON ex.ExchangeId = edo.ExchangeId AND ex.ExchangeDate = edo.ExchangeDate
