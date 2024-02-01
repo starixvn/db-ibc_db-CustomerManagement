@@ -3,6 +3,7 @@ CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassSpreadIns]
 	  @PolicyID			INT						 OUTPUT
 	, @PolicyTitle 		VARCHAR(500)
 	, @CustomerClasses 	VARCHAR(MAX)
+	, @SportType		SMALLINT
 	, @Sites 			VARCHAR(MAX)
 	, @Currencies 		VARCHAR(MAX)
 	, @Platforms 		VARCHAR(MAX)
@@ -23,11 +24,12 @@ AS
 
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
+		- 20240115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
 
 	Param's Explanation:
-	* @Sites:  "All : All
-				AllCredit : All site Credit 
-				AllDeposit : All site Deposit"
+	* @Sites:  "0 : All
+				-1 : All site Credit 
+				-2 : All site Deposit"
 	* @Currencies : 0 : All
 	* @Platforms : "0 : All
 					1 : Desktop
@@ -36,8 +38,8 @@ AS
 					4 : Oddsfeed
 					5 : DirectAPI"
 
-	Example: NAP_LM_CustomerClassSpreadIns @PolicyID = 0, @PolicyTitle = 'Bad Performance', @CustomerClasses = '200,300,305',
-	@Sites = 'Inbet,HonorW,Abcasino,Lexibet', @Currencies = '13,2,45,6', @Platforms = '2,3,4', @Spread = 2.5, @Enable = 1 ,
+	Example: NAP_LM_CustomerClassSpreadIns @PolicyID = 0, @PolicyTitle = 'Bad Performance', @CustomerClasses = '200,300,305', @SportType = 1,
+	@Sites = '1,2,3,4', @Currencies = '13,2,45,6', @Platforms = '2,3,4', @Spread = 2.5, @Enable = 1 ,
 	@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6, @IsTest = 1
 */ 
 BEGIN
@@ -57,28 +59,28 @@ BEGIN
 		RETURN
 	END	
 
-	IF ISNULL(@CustomerClasses ,'') = '' OR ISNULL(@Sites ,'') = '' OR ISNULL(@Currencies ,'') = '' OR ISNULL(@Platforms ,'') = '' 
+	IF ISNULL(@PolicyTitle, '') = '' OR ISNULL(@CustomerClasses ,'') = '' OR ISNULL(@Sites ,'') = '' OR ISNULL(@Currencies ,'') = '' OR ISNULL(@Platforms ,'') = '' OR ISNULL(@SportType, '') = ''
 	BEGIN
 		SELECT @ErrCode = 103 , @ErrMsg = 'Missing Required field' 
 		RETURN
 	END	
 
 	
-	IF ISNULL(@Spread ,0) < 0 OR ISNULL(@Spread ,0) > 20
+	IF ISNULL(@Spread ,0) < 0 OR ISNULL(@Spread ,0) > 0.5
 	BEGIN
-		SELECT @ErrCode = 104 , @ErrMsg = 'Please input a value between [0:20]' 
+		SELECT @ErrCode = 104 , @ErrMsg = 'Please input a value between [0:0.5]' 
 		RETURN
 	END	
-	
+
 	INSERT INTO CustomerClassSpread(
- 		PolicyTitle 					    
+ 		PolicyTitle 	
 	,	Spread 		
 	,	Enable 	
 	,	IsTest
 	,  LastModifiedUser
 	,  LastModifiedTime)	
 	SELECT
-		@PolicyTitle 				
+		@PolicyTitle 
 		,@Spread 					    
 		,@Enable 					
 		,@IsTest
@@ -87,15 +89,15 @@ BEGIN
 		
 	SET @PolicyID = SCOPE_IDENTITY()
 				
-	INSERT INTO CustomerClassSpreadClass(PolicyID ,  CustomerClass)	
+	INSERT INTO CustomerClassSpreadClass(PolicyID, CustomerClass)	
 	SELECT @PolicyID AS PolicyID, VALUE AS CustomerClass 
 	FROM STRING_SPLIT(@CustomerClasses,',') 
 	WHERE VALUE <> '' 
 
-	INSERT INTO CustomerClassSpreadManagement(PolicyID ,  Site, Currency, Platform)	
-	SELECT @PolicyID AS PolicyID, s.VALUE AS Site , c.Currency, p.Platform
+	INSERT INTO CustomerClassSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)	
+	SELECT @PolicyID AS PolicyID, s.VALUE AS SiteID , c.Currency, p.Platform,  @SportType AS SportType
 	FROM STRING_SPLIT(@Sites,',') s   
-	  CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(@Currencies,',') WHERE VALUE <> '' ) c  
+	  CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(@Currencies,',') WHERE VALUE <> '' ) c
 	  CROSS APPLY ( SELECT VALUE AS Platform FROM STRING_SPLIT(@Platforms,',') WHERE VALUE <> '' ) p
 	WHERE s.VALUE <> '' 
 
@@ -105,10 +107,11 @@ BEGIN
 					@IP						AS '@IP',					
 					@PolicyID				AS '@PolicyID',					
 					@PolicyTitle			AS '@PolicyTitle',					
-					@CustomerClasses		AS '@CustomerClasses',					
+					@CustomerClasses		AS '@CustomerClasses',
 					@Sites					AS '@Sites',					
 					@Currencies				AS '@Currencies',							
-					@Platforms				AS '@Platforms',						
+					@Platforms				AS '@Platforms',
+					@SportType				AS '@SportType',
 					@Spread					AS '@Spread',						
 					@Enable					AS '@Enable',						
 					@IsTest					AS '@IsTest',	
