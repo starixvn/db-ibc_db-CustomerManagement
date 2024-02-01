@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
+		- 20230115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
 
 	Param's Explanation:
 
@@ -33,6 +34,7 @@ BEGIN
 		, @logSpData_Old   NVARCHAR(MAX)
 		, @xml			  XML
 		, @CustomerClasses_Old VARCHAR(MAX) = ''
+		, @SportType_Old	SMALLINT
 		, @Sites_Old VARCHAR(MAX)= ''
 		, @Currencies_Old VARCHAR(MAX)= ''
 		, @Platforms_Old VARCHAR(MAX)= ''
@@ -51,7 +53,10 @@ BEGIN
 	SELECT PolicyID, PolicyTitle, Spread, Enable, IsTest, LastModifiedUser, LastModifiedTime 
 	FROM CustomerClassSpread WITH(NOLOCK) WHERE PolicyID = @PolicyID
 	
-	
+	SELECT TOP 1 @SportType_Old = SportType 
+	FROM CustomerClassSpreadDetail WITH (NOLOCK)
+	WHERE PolicyID = @PolicyID
+
 	SELECT @CustomerClasses_Old = (SELECT STRING_AGG(CAST(CustomerClass AS VARCHAR(MAX)), ',') 
 									WITHIN GROUP (ORDER BY CustomerClass)
 								FROM( SELECT DISTINCT CustomerClass
@@ -61,25 +66,25 @@ BEGIN
 	SELECT @Currencies_Old = (SELECT STRING_AGG(CAST(Currency AS NVARCHAR(MAX)), ',') 
 									WITHIN GROUP (ORDER BY Currency)
 								FROM(	SELECT DISTINCT Currency
-								FROM CustomerClassSpreadManagement WITH(NOLOCK)
+								FROM CustomerClassSpreadDetail WITH(NOLOCK)
 								WHERE PolicyID = @PolicyID)cc) 
 							
-	SELECT @Sites_Old = (SELECT STRING_AGG(CAST(Site AS NVARCHAR(MAX)), ',') 
-								WITHIN GROUP (ORDER BY Site)
-							FROM(	SELECT DISTINCT Site
-							FROM CustomerClassSpreadManagement WITH(NOLOCK)
+	SELECT @Sites_Old = (SELECT STRING_AGG(CAST(SiteID AS NVARCHAR(MAX)), ',') 
+								WITHIN GROUP (ORDER BY SiteID)
+							FROM(	SELECT DISTINCT SiteID
+							FROM CustomerClassSpreadDetail WITH(NOLOCK)
 							WHERE PolicyID = @PolicyID)cc) 
 								
 	SELECT @Platforms_Old = (SELECT STRING_AGG(CAST(Platform AS NVARCHAR(MAX)), ',') 
 								WITHIN GROUP (ORDER BY Platform)
 							FROM(	SELECT DISTINCT Platform
-							FROM CustomerClassSpreadManagement WITH(NOLOCK)
+							FROM CustomerClassSpreadDetail WITH(NOLOCK)
 							WHERE PolicyID = @PolicyID)cc) 
 	
 	BEGIN TRY
 		DELETE FROM CustomerClassSpread WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
 		DELETE FROM CustomerClassSpreadClass WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
-		DELETE FROM CustomerClassSpreadManagement WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
+		DELETE FROM CustomerClassSpreadDetail WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
  	
 	END TRY
 	BEGIN CATCH
@@ -93,13 +98,14 @@ BEGIN
 					@IP						AS '@IP',					
 					@PolicyID				AS '@PolicyID',					
 					PolicyTitle				AS '@PolicyTitle',					
-					@CustomerClasses_Old	AS '@CustomerClasses',					
+					@CustomerClasses_Old	AS '@CustomerClasses',
 					@Sites_Old				AS '@Sites',					
 					@Currencies_Old			AS '@Currencies',							
-					@Platforms_Old			AS '@Platforms',						
-					Spread					AS '@Spread',						
-					Enable					AS '@Enable',						
-					IsTest					AS '@IsTest',	
+					@Platforms_Old			AS '@Platforms',	
+					@SportType_Old			AS '@SportType',
+					Spread					AS '@Spread',
+					Enable					AS '@Enable',
+					IsTest					AS '@IsTest',
 					CONVERT(VARCHAR(10), LastModifiedTime, 120) AS '@LastModifiedTime',	
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
 					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'
