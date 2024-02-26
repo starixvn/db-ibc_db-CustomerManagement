@@ -1,1 +1,4 @@
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerCopyVRSetting.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
+NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql

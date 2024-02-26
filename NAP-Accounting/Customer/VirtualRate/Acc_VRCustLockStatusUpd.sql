@@ -21,6 +21,8 @@ AS
 	    - 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
+		- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
+
 	Param's Explanation:  	
 	-@ErrCode:  
 	    = 0: update successfully.  
@@ -179,7 +181,6 @@ BEGIN
 
 		SELECT @LogSPData_AB = '<R VRAccumulatedBalance="'+ coalesce(cast(@VRAccumulate_Balance as varchar(1)),space(1)) + '" '	
 						+ 'IP="' + coalesce(cast(@IP as varchar(15)),space(1)) + '" '
-						+ 'ApplyAllDownlines="0" '
 						+ 'UpdatedBy="'+ coalesce(cast(@UpdateBy as varchar(100)),space(1)) + + '" ' 					
 						+ ' />'																							
 	END	
