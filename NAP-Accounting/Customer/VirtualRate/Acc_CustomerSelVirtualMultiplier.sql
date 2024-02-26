@@ -22,6 +22,7 @@ AS
 			- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 			- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 			- 20230711@Helios: VR Accumulate Balance [Redmine: #189649] 
+			- 20231205@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
 		Parameter's Explanation:
 
 	*/
@@ -74,4 +75,58 @@ BEGIN
     SELECT custid, sporttype, bettype, islive, virtualMultiplier
     FROM @CustVirtualRate
 	ORDER BY sporttype, bettype, islive
+
+	DECLARE @roleid TINYINT
+	SELECT @roleid = roleid 
+	FROM custinfo WITH (NOLOCK)
+	WHERE custid = @CustID
+
+	DECLARE @downlines TABLE (custid INT, roleid TINYINT)
+	IF @roleid = 4
+		INSERT INTO @downlines(custid, roleid)
+		SELECT custid, roleid
+		FROM custinfo with (NOLOCK)
+		WHERE srecommend = @custid
+			AND custid <> @custid
+	ELSE IF @roleid = 3
+		INSERT INTO @downlines(custid, roleid)
+		SELECT custid, roleid 
+		FROM custinfo with (NOLOCK)
+		WHERE mrecommend = @custid
+			AND custid <> @custid
+	ELSE IF @roleid = 2
+		INSERT INTO @downlines(custid, roleid)
+		SELECT custid, roleid 
+		FROM custinfo with (NOLOCK)
+		WHERE recommend = @custid
+			AND custid <> @custid
+
+	DECLARE @statusCnt TABLE (roleid TINYINT, lockSC INT, lockOS INT, lockBB INT, enableAB INT)
+	DECLARE @custCnt TABLE (roleid TINYINT, cnt INT)
+
+	INSERT INTO @statusCnt(roleid, lockSC, lockOS, lockBB, enableAB)
+	SELECT roleid, 
+		SUM(IIF(type = 1,1,0)) lockSC,
+		SUM(IIF(type = 2,1,0)) lockOS,
+		SUM(IIF(type = 3,1,0)) lockBB,
+		SUM(IIF(type = 4,1,0)) enableAB
+
+	FROM VRCustLockStatus vr WITH (NOLOCK)
+		INNER JOIN @downlines c ON vr.CustID = c.custid
+	GROUP BY roleid
+
+	INSERT INTO @custCnt(roleid, cnt)
+	SELECT roleid,
+		COUNT(1) as cnt
+	FROM @downlines
+	GROUP BY roleid
+
+	SELECT c.roleid, cnt, 
+			ISNULL(lockSC,0) AS lockSC, 
+			ISNULL(lockOS,0) AS lockOS, 
+			ISNULL(lockBB,0) AS lockBB, 
+			ISNULL(enableAB,0) AS enableAB
+	FROM @custCnt c 
+		LEFT JOIN @statusCnt s ON c.roleid = s.roleid
+	ORDER BY c.roleid DESC
 END

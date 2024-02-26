@@ -19,6 +19,7 @@ Revisions:
 	- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 	- 20230418@Luke: Separate log for Lock function & increase log data to top 50 [Redmine: #186897]
 	- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
+	- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
 Explanations:
 ActionID: 801, SPName: Acc_CustomerUpdVirtualMultiplier
 ActionID: 802, SPName: Acc_VirtualRateMulUpd
@@ -72,6 +73,9 @@ BEGIN
 			(829)
 			,(830)
 			,(837)
+			,(844)
+			,(845)
+			,(846)
 	END
 	ELSE IF (@ViewType = 2) --View VR log, VR status (except Lock Status log)
 	BEGIN
@@ -85,6 +89,13 @@ BEGIN
 			,(2800)
 			,(2802)
 			,(839)
+			,(847)
+			,(95116)
+			,(95117)
+			,(95118)
+			,(2803)
+			,(2804)
+			,(2805)
 	END
 	ELSE --View all log
 	BEGIN
@@ -101,6 +112,16 @@ BEGIN
 			,(2800)
 			,(2802)
 			,(839)
+			,(844)
+			,(845)
+			,(846)
+			,(847)
+			,(95116)
+			,(95117)
+			,(95118)
+			,(2803)
+			,(2804)
+			,(2805)
 	END
 	IF @Site='CN88'
 	BEGIN
@@ -110,7 +131,7 @@ BEGIN
 			TrackingValue,
 			Username =	
 			CASE 
-							when (u.ActionID IN (2800,2802)) then 'LRF Admin'
+							when (u.ActionID IN (2800,2802,2803,2804,2805)) then 'LRF Admin'
 							ELSE c.Username
 						END
 		FROM dbo.CS_UserLog_RunSP u WITH(NOLOCK)
@@ -136,7 +157,7 @@ BEGIN
 				TrackingValue,
 				Username =	
 				CASE 
-								when (u.ActionID IN (2800,2802)) then 'LRF Admin'
+								when (u.ActionID IN (2800,2802,2803,2804,2805)) then 'LRF Admin'
 								ELSE c.Username
 							END
 			FROM bodb_CustomerLog_Archive.dbo.CS_UserLog_RunSP u WITH(NOLOCK)
@@ -165,7 +186,7 @@ BEGIN
 			TrackingValue,
 			Username =	
 			CASE 
-							when (u.ActionID IN (2800,2802)) then 'LRF Admin'
+							when (u.ActionID IN (2800,2802,2803,2804,2805)) then 'LRF Admin'
 							ELSE c.Username
 						END
 		FROM dbo.UserLog_RunSP u WITH(NOLOCK)
@@ -191,7 +212,7 @@ BEGIN
 				TrackingValue,
 				Username =	
 				CASE 
-								when (u.ActionID IN (2800,2802)) then 'LRF Admin'
+								when (u.ActionID IN (2800,2802,2803,2804,2805)) then 'LRF Admin'
 								ELSE c.Username
 							END
 			FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP u WITH(NOLOCK)

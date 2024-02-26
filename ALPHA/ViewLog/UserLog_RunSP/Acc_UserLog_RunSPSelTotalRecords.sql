@@ -43,6 +43,7 @@ AS
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [RedmineID: #186773]
 		- 20230925@Luke: Live Casino - Allow uncheck bet limit to control product status [Redmine: #194121]
 		- 20230927@Tacy: Show log suspend member account by CWL flow on Alpha [RedmineID: #184911]
+		- 20240108@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
 
 */
 BEGIN
@@ -213,6 +214,103 @@ BEGIN
 			DELETE 
 			FROM @tempLog 
 			WHERE logid = @tLogID
+		END
+	END
+	IF (@ActionTypeId = 4 OR @ActionTypeId = -1)	--downlines view upline's actions on VR value
+	BEGIN
+		--ActionTypeID = 4 (General Info)
+		--ActionID in (95116,95117,95118,2803,2804,2805)
+		DECLARE @VRUpperActionID INT
+				,@VRLowerActionID INT
+				,@VRUpperActionID_LRF INT
+				,@VRLowerActionID_LRF INT
+
+		SELECT @VRLowerActionID = 95116
+				,@VRUpperActionID = CASE @roleid WHEN 4 THEN 95116
+												WHEN 3 THEN 95117
+												WHEN 2 THEN 95118
+												WHEN 1 THEN 95118 END
+				,@VRLowerActionID_LRF = 2803
+				,@VRUpperActionID_LRF = CASE @roleid WHEN 4 THEN 2803
+												WHEN 3 THEN 2804
+												WHEN 2 THEN 2805
+												WHEN 1 THEN 2805 END
+		DECLARE @VRCust TABLE (CustID INT)
+		INSERT INTO @VRCust(CustID)
+			SELECT @srecommend
+			WHERE @roleid <= 4
+		UNION
+			SELECT @mrecommend
+			WHERE @roleid <= 3
+		UNION 
+			SELECT @recommend
+			WHERE @roleid <= 2
+
+		IF @FromDate > @__archiveDate
+		BEGIN
+			SELECT @__cntTemp = COUNT(ul.LogID)
+			FROM	@VRCust tmp
+					CROSS APPLY (	SELECT TOP (@i) * 
+									FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+									WHERE ul.custid = tmp.Custid 
+										AND LogDate BETWEEN @FromDate AND @ToDate) ul
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+			WHERE	((la.ActionID BETWEEN @VRLowerActionID AND @VRUpperActionID) OR (la.ActionID BETWEEN @VRLowerActionID_LRF AND @VRUpperActionID_LRF))
+					AND la.ActionTypeID = 4
+					AND IsInternal <= @IsInternal
+			OPTION (OPTIMIZE FOR (@i = 1))
+			SET @__cnt = @__cnt + @__cntTemp
+			SET @__cntTemp = 0
+		END
+		ELSE IF @ToDate < @__archiveDate
+		BEGIN
+			SELECT @__cntTemp = COUNT(ul.LogID)
+			FROM	@VRCust tmp
+					CROSS APPLY (	SELECT TOP (@i) * 
+									FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+									WHERE ul.custid = tmp.Custid 
+										AND LogDate BETWEEN @FromDate AND @ToDate) ul
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+			WHERE	((la.ActionID BETWEEN @VRLowerActionID AND @VRUpperActionID) OR (la.ActionID BETWEEN @VRLowerActionID_LRF AND @VRUpperActionID_LRF))
+					AND la.ActionTypeID = 4
+					AND IsInternal <= @IsInternal
+			OPTION (OPTIMIZE FOR (@i = 1))
+			SET @__cnt = @__cnt + @__cntTemp
+			SET @__cntTemp = 0
+		END
+		ELSE
+		BEGIN
+			SELECT @__cntTemp = COUNT(ul.LogID)
+			FROM	@VRCust tmp
+					CROSS APPLY (	SELECT TOP (@i) * 
+									FROM dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+									WHERE ul.custid = tmp.Custid 
+										AND LogDate BETWEEN @__archiveDate AND @ToDate) ul
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+			WHERE	((la.ActionID BETWEEN @VRLowerActionID AND @VRUpperActionID) OR (la.ActionID BETWEEN @VRLowerActionID_LRF AND @VRUpperActionID_LRF))
+					AND la.ActionTypeID = 4
+					AND IsInternal <= @IsInternal
+			OPTION (OPTIMIZE FOR (@i = 1))	
+			SET @__cnt = @__cnt + @__cntTemp
+			SET @__cntTemp = 0
+			
+			SELECT @__cntTemp = COUNT(ul.LogID)
+			FROM	@VRCust tmp
+					CROSS APPLY (	SELECT TOP (@i) * 
+									FROM bodb_CustomerLog_Archive.dbo.UserLog_RunSP AS ul WITH (NOLOCK) 
+									WHERE ul.custid = tmp.Custid 
+										AND LogDate >= @FromDate AND logdate < @__archiveDate) ul
+					INNER JOIN dbo.LogAction AS la WITH (NOLOCK) ON ul.ActionID = la.ActionID
+					LEFT JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.custid = ul.UserID
+			WHERE	((la.ActionID BETWEEN @VRLowerActionID AND @VRUpperActionID) OR (la.ActionID BETWEEN @VRLowerActionID_LRF AND @VRUpperActionID_LRF))
+					AND la.ActionTypeID = 4
+					AND IsInternal <= @IsInternal
+			OPTION (OPTIMIZE FOR (@i = 1))	
+			SET @__cnt = @__cnt + @__cntTemp
+			SET @__cntTemp = 0
 		END
 	END
 	IF  (@LowerActionId IS NULL OR @UpperActionId IS NULL)  
@@ -463,6 +561,8 @@ BEGIN
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 							--exclude log for limit PT update
 							AND ul.ActionID NOT IN (470,471,473,474)
+							--exclude log for VR value update
+							AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 					-- Count  Parlay Max Payout Indirectly
@@ -515,6 +615,8 @@ BEGIN
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 							--exclude log for limit PT update
 							AND ul.ActionID NOT IN (470,471,473,474)
+							--exclude log for VR value update
+							AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)
 
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
@@ -568,7 +670,8 @@ BEGIN
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 							--exclude log for limit PT update
 							AND ul.ActionID NOT IN (470,471,473,474)
-
+							--exclude log for VR value update
+							AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 
@@ -587,7 +690,8 @@ BEGIN
 							AND ul.ActionID NOT BETWEEN 220008 AND 220019
 							--exclude log for limit PT update
 							AND ul.ActionID NOT IN (470,471,473,474)
-					
+							--exclude log for VR value update
+							AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)					
 					SET @__cnt = @__cnt + @__cntTemp
 					SET @__cntTemp = 0
 					
@@ -704,7 +808,8 @@ BEGIN
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						--exclude log for limit PT update
 						AND ul.ActionID NOT IN (470,471,473,474)
-						
+						--exclude log for VR value update
+						AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
 
@@ -766,7 +871,8 @@ BEGIN
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019
 						--exclude log for limit PT update
 						AND ul.ActionID NOT IN (470,471,473,474)
-
+						--exclude log for VR value update
+						AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)				
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
 
@@ -838,7 +944,8 @@ BEGIN
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019 
 						--exclude log for limit PT update
 						AND ul.ActionID NOT IN (470,471,473,474)
-						
+						--exclude log for VR value update
+						AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)						
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
 
@@ -863,7 +970,8 @@ BEGIN
 						AND ul.ActionID NOT BETWEEN 220008 AND 220019  
 						--exclude log for limit PT update
 						AND ul.ActionID NOT IN (470,471,473,474)
-						
+						--exclude log for VR value update
+						AND ul.ActionID NOT IN (95116,95117,95118,2803,2804,2805)				
 				SET @__cnt = @__cnt + @__cntTemp
 				SET @__cntTemp = 0
 				-- check  Parlay Max Payout Indirectly
