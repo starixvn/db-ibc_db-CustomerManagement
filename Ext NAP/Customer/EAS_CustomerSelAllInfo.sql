@@ -16,6 +16,7 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#160682]
 	- 20230602@Eden: Ext Nap - Archive Super level [Redmine:#183447]
+	- 20240220@Luke: Ext Nap - Support to show Headline's username on left panel [Redmine: #200995]
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
 */
@@ -33,7 +34,9 @@ BEGIN
 			@AgentName						NVARCHAR(50),		 		
 			@UplineHasSecurityCode			BIT = 0,
 			@IsInternalAdmin				BIT = 0,
-			@ClosedReason					TINYINT
+			@ClosedReason					TINYINT,
+			@CustGroupHeadlineID			INT,
+			@UplineID						INT
 	
 	DECLARE @IsCheckSuperArchived BIT = 0
 
@@ -72,7 +75,14 @@ BEGIN
 	SELECT @SuperName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @srecommend
 	SELECT @MasterName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @mrecommend
 	SELECT @AgentName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @recommend
-	
+
+	SELECT @CustGroupHeadlineID = CDA.CustID
+	FROM CustDirectAccount CDA WITH (NOLOCK)
+	WHERE CDA.CustID IN (@srecommend,@mrecommend,@recommend,@custid)
+		
+	IF @CustGroupHeadlineID IS NULL
+		SET @CustGroupHeadlineID = @srecommend	
+
 	IF @RoleId = 4
 	BEGIN
 		SELECT @UplineHasSecurityCode = 1
@@ -114,10 +124,12 @@ BEGIN
 				ci.Enabled, ps.closed, ISNULL(ps.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				ISNULL(ps.Locked,0) AS Locked,
-				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed
+				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed,
+				ISNULL(Headline.username,'') AS Headline
 		FROM CustSuperProfile cp WITH (NOLOCK)
 			RIGHT JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
+			LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, Locked
@@ -125,6 +137,11 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS ps
+			OUTER APPLY (SELECT C.username
+				FROM dbo.custaccount ca WITH (NOLOCK)
+				INNER JOIN Customer C ON CA.custid = C.custid 
+				WHERE ca.GroupID = GroupHeadline.GroupID AND ca.IsGroupHeadLine = 1
+			) AS Headline
 		WHERE c.custid = @CustId			
 	END
 	ELSE
@@ -137,9 +154,11 @@ BEGIN
 				ci.Enabled, ps.closed, ISNULL(ps.reject, 0) AS suspended,
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				ISNULL(ps.Locked,0) AS Locked,
-				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed
+				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed,
+				ISNULL(Headline.username,'') AS Headline
 		FROM dbo.customer c WITH (NOLOCK) 
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
+			LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, Locked
@@ -147,6 +166,11 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS ps
+			OUTER APPLY (SELECT C.username
+				FROM dbo.custaccount ca WITH (NOLOCK)
+				INNER JOIN Customer C ON CA.custid = C.custid 
+				WHERE ca.GroupID = GroupHeadline.GroupID AND ca.IsGroupHeadLine = 1
+			) AS Headline
 		WHERE c.custid = @CustId	
 	END
 
