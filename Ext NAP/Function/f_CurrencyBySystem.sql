@@ -51,6 +51,7 @@ Revisions:
 	- 20220408@Elodie: Add ACCTHAITT - [Redmine: #171299]
 	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
 	- 20231206@Johnson: Add ACCS56RM [redmine: #197031]
+	- 20240227@Johnson: Add ACCHHRM,ACCCH1,ACCMG7,ACCNV1,ACCA951 [redmine: #201332]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -197,7 +198,8 @@ BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
 	END
-	ELSE IF(@System IN ('ACCS56RM'))
+	--Malaysia HL
+	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT ExchangeID 
