@@ -749,7 +749,7 @@ BEGIN
 			FOR XML  RAW('s')
 		)
 
-		SELECT @VRTrackingValue2 = '<Acc_CustomerUpdVirtualMultiplier CustID="'+ cast(@custid as varchar(50))+ '" ' 
+		SELECT @VRTrackingValue2 = '<Acc_CustomerUpdVirtualMultiplier CustID="'+ cast(@custid as varchar(50))+ '">' 
 									 + @VRTrackingValue2 +
 									'</Acc_CustomerUpdVirtualMultiplier>'
 	END
