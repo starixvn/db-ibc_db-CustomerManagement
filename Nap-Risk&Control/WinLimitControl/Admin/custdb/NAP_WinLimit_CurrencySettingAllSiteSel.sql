@@ -18,7 +18,7 @@ AS
 		- 20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 		- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
-
+		- 20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
 	Parameters Explanation:
 	   @ProductId: Product ID
    
@@ -41,18 +41,10 @@ AS
 			LicenseeId, 
 			LicenseeName
 		 )
-			SELECT 
-				  l.LicenseeId, 
-				  l.LicenseeName
-			FROM bodb_licensee.dbo.LicenseeProduct3rd lp WITH(NOLOCK)
-				INNER JOIN bodb_licensee.dbo.Licensees l WITH(NOLOCK) ON l.LicenseeId = lp.LicenseeId
-				INNER JOIN(SELECT DISTINCT 
-							   CASE
-								  WHEN ProductId = 13
-								  THEN 14
-								  ELSE ProductId
-							   END ProductId
-						 FROM dbo.f_Nap_WinLimit_ProductSettingSel(@ProductId)) p ON p.ProductId = lp.ProductId;
+			SELECT DISTINCT
+				  lp.LicenseeId, 
+				  lp.LicenseeName
+			FROM bodb_licensee.dbo.f_Nap_SiteByProductSel(@ProductId) lp
     END;
     BEGIN -- @Products
 	   DECLARE 
