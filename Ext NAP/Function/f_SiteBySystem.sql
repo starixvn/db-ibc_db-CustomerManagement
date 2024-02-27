@@ -54,6 +54,7 @@ Revisions:
 	- 20221226@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
 	- 20231206@Johnson: Add ACCS56RM [redmine: #197031]
+	- 20240227@Johnson: Add ACCHHRM,ACCCH1,ACCMG7,ACCNV1,ACCA951 [redmine: #201332]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -178,7 +179,8 @@ BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 1233 --7a5555,...
 	END
-	ELSE IF(@System IN ('ACCS56RM'))
+	--Malaysia HL
+	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid 
