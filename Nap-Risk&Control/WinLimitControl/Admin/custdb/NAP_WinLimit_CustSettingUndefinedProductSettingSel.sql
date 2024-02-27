@@ -11,8 +11,9 @@ Task: #57722 - Implement Game Win Limit Control phase2
 DB: DBCUST/CustDB
 
 Revisions:
-20160923@Jacob: Risk & Control - Phase 3 [#61220].
-20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
+	20160923@Jacob: Risk & Control - Phase 3 [#61220].
+	20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
+	20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
 
 Parameters Explanation:
 
@@ -86,24 +87,14 @@ EXEC [NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username = 'SPONUUS01
          ELSE -- Get all products of licensee
              BEGIN
                  INSERT INTO @OfferProducts
-                        SELECT p.ProductId,
-                               p.GroupId,
-                               p.LevelId
-                        FROM @ProductSetting p
-                             INNER JOIN
-                        (
-                            SELECT DISTINCT
-                                   CASE
-                                       WHEN ProductID = 14
-                                       THEN 13
-                                       ELSE ProductID
-                                   END AS ProductID,
-                                   LicenseeId
-                            FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
-                        ) AS lp ON p.ProductId = lp.ProductId
-                             INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp.licenseeId
-                             INNER JOIN dbo.[Site] s WITH (NOLOCK) ON l.LicenseeName = s.[site]
-                        WHERE s.[siteid] = @SiteId;
+                    SELECT p.ProductId,
+                            p.GroupId,
+                            p.LevelId
+                    FROM @ProductSetting p
+						CROSS APPLY (SELECT lp.LicenseeName
+									 FROM bodb_licensee.dbo.f_Nap_SiteByProductSel(p.ProductId) lp) lp
+						INNER JOIN [Site] s WITH (NOLOCK) ON lp.LicenseeName = s.[site]
+					WHERE s.[siteid] = @SiteId
              END;
      END;
      BEGIN -- @ExistedSetting

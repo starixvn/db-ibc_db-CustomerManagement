@@ -14,6 +14,8 @@ AS
 		20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 		20230213@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		202231108@Johnson: Offer site SEAL888 to group Others [RedmineID: #195581]
+		20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
+
 	Parameters Explanation:
 		   @ProductId: Product ID
 
@@ -67,28 +69,9 @@ BEGIN
                 SELECT DISTINCT
                        lp3rd.ProductID,
                        lp3rd.LicenseeId,
-                       l.LicenseeName,
+                       lp3rd.LicenseeName,
                        pt.PartyId
-                FROM
-                (
-                    SELECT CASE
-                               WHEN ProductID = 14
-                               THEN 13
-                               ELSE ProductID
-                           END AS ProductID,
-                           LicenseeId
-                    FROM bodb_licensee.dbo.LicenseeProduct3rd WITH (NOLOCK)
-                    WHERE ProductID IN
-                    (
-                        SELECT CASE
-                                   WHEN ProductId = 13
-                                   THEN 14
-                                   ELSE ProductId
-                               END
-                        FROM dbo.f_Nap_WinLimit_ProductSettingSel(@ProductId)
-                    )
-                ) AS lp3rd
-                INNER JOIN bodb_licensee.dbo.Licensees l WITH (NOLOCK) ON l.LicenseeID = lp3rd.licenseeId
+                FROM bodb_licensee.dbo.f_Nap_SiteByProductSel(@ProductId) lp3rd
                 INNER JOIN DBLIC.bodb_licensee.dbo.OAS_Party pt WITH (NOLOCK) ON pt.OldRefID = lp3rd.licenseeId
                                                                                  AND pt.PartyType = 1;
      END;
