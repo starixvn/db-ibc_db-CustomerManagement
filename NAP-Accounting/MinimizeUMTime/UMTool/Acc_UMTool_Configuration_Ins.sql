@@ -27,6 +27,7 @@ BEGIN
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852]
 		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #182841]
+		- 20231023@Helios: SportsBook_PartialUM [RedmineID: #199603]
 
 	Param's Explanation:   
 		
@@ -82,7 +83,7 @@ SET NOCOUNT ON
 		GOTO ReturnErrorTbl;
 	END
 
-	IF (@ProductID IN (0,1,8,12) AND (@SportType <> 0 OR @SettingType <> 0 ))
+	IF (@ProductID = 0 AND (@SportType <> 0 OR @SettingType <> 0 ))
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',12,'Must Config for All Sport/SettingType' 
@@ -113,7 +114,7 @@ SET NOCOUNT ON
 						AND ( SettingType = @SettingType OR @SettingType = 0)
 						AND SettingStatus = 0
 					) 
-		AND @ProductID NOT IN (0,1,8,12)
+		AND @ProductID = 0 -- NOT IN (0,1,8,12)
 	BEGIN
 		INSERT INTO @ErrorTbl(Username,ErrorCode,ErrorMsg)
 		SELECT '',15,'Product/Sport/SettingType does not exist' 

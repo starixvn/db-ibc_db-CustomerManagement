@@ -19,7 +19,8 @@ Revisions:
 	- 20200629@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-
+	- 20231023@Helios: SportsBook_PartialUM [RedmineID: #199603] 
+	
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -270,23 +271,23 @@ SET NOCOUNT ON
 
 	SELECT @ErrMsg = ''
 
-	IF EXISTS(SELECT 1 FROM @UMProduct)
-		AND ISNULL(@SettingType,0) = 0 AND @ProductID IN(1,6,8,12) AND @FunctionType = 1 --edit
-	BEGIN
-		SELECT @FromTime = CONVERT(VARCHAR,MIN(t.BeginTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MIN(t.BeginTime),8),5)),
-			@ToTime = CONVERT(VARCHAR,MAX(t.EndTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MAX(t.EndTime),8),5))
-		FROM @UMProduct t
-		WHERE t.ProductID IN (@ProductID,0)
+	--IF EXISTS(SELECT 1 FROM @UMProduct)
+	--	AND ISNULL(@SettingType,0) = 0 AND @ProductID IN(1,6,8,12) AND @FunctionType = 1 --edit
+	--BEGIN
+	--	SELECT @FromTime = CONVERT(VARCHAR,MIN(t.BeginTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MIN(t.BeginTime),8),5)),
+	--		@ToTime = CONVERT(VARCHAR,MAX(t.EndTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MAX(t.EndTime),8),5))
+	--	FROM @UMProduct t
+	--	WHERE t.ProductID IN (@ProductID,0)
 
-		SELECT @ProductName = p.ProductName FROM DBPRO.bodb02.dbo.Products p WITH(NOLOCK) WHERE p.ProductID = @ProductID
+	--	SELECT @ProductName = p.ProductName FROM DBPRO.bodb02.dbo.Products p WITH(NOLOCK) WHERE p.ProductID = @ProductID
 
-		IF @Language NOT IN  ('E', 'EN')
-			SET @ProductName = '{0}' --web translate
+	--	IF @Language NOT IN  ('E', 'EN')
+	--		SET @ProductName = '{0}' --web translate
 
-		SELECT @ErrCode = 90014
-		SELECT @ErrorTemplate = [dbo].[f_Get_MsgNamebyMsgID](90014,@Language)
-		SELECT @ErrMsg =   REPLACE(REPLACE(REPLACE(@ErrorTemplate,'<Product>',@ProductName),'<FromTime>',@FromTime),'<ToTime>',@ToTime)
-	END
+	--	SELECT @ErrCode = 90014
+	--	SELECT @ErrorTemplate = [dbo].[f_Get_MsgNamebyMsgID](90014,@Language)
+	--	SELECT @ErrMsg =   REPLACE(REPLACE(REPLACE(@ErrorTemplate,'<Product>',@ProductName),'<FromTime>',@FromTime),'<ToTime>',@ToTime)
+	--END
 
 	IF EXISTS(SELECT 1 FROM @UMProduct) AND @FunctionType = 2
 	BEGIN

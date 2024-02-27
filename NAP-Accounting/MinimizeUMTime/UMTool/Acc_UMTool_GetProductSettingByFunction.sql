@@ -14,6 +14,7 @@ Revisions:
 	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
 	- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230720@Lewis: Add Funtion Type - Last Bets(New) [Redmine: #186142]
+	- 20231023@Helios: SportsBook_PartialUM [RedmineID: #199603]
 
 Param's Explanation:
 	FunctionType = : 
@@ -56,7 +57,7 @@ SET NOCOUNT ON
 	SELECT 2,0,0,0 UNION ALL
 	--Edit Setting (Non-DCS)
 	SELECT 1,0,0,0 UNION ALL --All Sport
-	SELECT 1,1,0,0 UNION ALL --SB + NG
+	--SELECT 1,1,0,0 UNION ALL --SB + NG
 	--SELECT 1,6,0,0 UNION ALL --RNG Casino
 	--SELECT 1,8,0,0 UNION ALL -- RNG Keno
 	--SELECT 1,12,0,0 UNION ALL  --GD
@@ -113,6 +114,11 @@ SET NOCOUNT ON
 	FROM ProductSettingDetail p WITH(NOLOCK)
 	WHERE SettingStatus = 0
 
+	DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
+
+	INSERT INTO @tmp_Sports (SportType, SportName)
+	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
+
 	SELECT c.FunctionType,
 		c.ProductID,
 		c.SportType,
@@ -126,7 +132,7 @@ SET NOCOUNT ON
 	FROM @ProductSportSettingType c
 		LEFT JOIN ProductSettingType st WITH(NOLOCK) ON c.SettingType = st.SettingType
 		LEFT JOIN DBPRO.bodb02.dbo.Products p WITH(NOLOCK) ON c.ProductID = p.ProductID
-		LEFT JOIN DBPRO.bodb02.dbo.Sports sp WITH(NOLOCK) ON c.sporttype = sp.sporttype
+		LEFT JOIN @tmp_Sports sp  ON c.sporttype = sp.sporttype
 	ORDER BY c.FunctionType,c.ProductID,c.SportType,c.SettingType
 END
 GO
