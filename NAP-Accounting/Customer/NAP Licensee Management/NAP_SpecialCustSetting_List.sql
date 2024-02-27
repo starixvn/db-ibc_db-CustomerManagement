@@ -4,7 +4,6 @@ ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
 	,@Currency NVARCHAR(1000) = ''
 	,@ShowSportsBook BIT = 1
 	,@ShowNumberGame BIT = 1
-	,@ShowVirtualSport BIT =1
 	,@ShowKeno BIT = 1
 AS
 /*
@@ -22,6 +21,7 @@ Created: Dom
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 			- 20221010@Johnson: Add Saba cricket [redmine: #175659]
 			- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
+			- 20240117@Tacy: LAP - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199521]
 */
 
 BEGIN
@@ -46,35 +46,26 @@ BEGIN
 	UNION ALL
 	SELECT 9907, 'Saba Cricket' 
 
-	DECLARE @Sport TABLE(SportID INT)
-	
 	IF(@ShowSportsBook=1)
 	BEGIN 
 		SELECT @ProductID = 1
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,10)
 	END
 	IF(@ShowNumberGame=1)
 	BEGIN 
 		SELECT @ProductID = 3
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
-	END
-	IF(@ShowVirtualSport=1)
-	BEGIN 
-		SELECT @ProductID = 5
-		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
-		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,12)
 	END
 	IF(@ShowKeno=1)
 	BEGIN 
 		SELECT @ProductID = 8
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,NULL)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,2)
 	END
 
 	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MinBet MONEY, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
@@ -109,13 +100,13 @@ BEGIN
 		,cbs.MaxPerBall
 		,cbs.MaxPayoutPerMatch
 	FROM [dbo].[Dep_CustBetLimit_Special] cbs WITH(NOLOCK)
+	CROSS APPLY (SELECT TOP (1) SportType FROM #SportBettypeFilter sf
+				WHERE sf.SportType=cbs.SportType) sf
 	INNER JOIN @tmp_Sports s ON s.SportType = cbs.SportType
 	INNER JOIN Exchange ex WITH(NOLOCK) ON ex.exchangeid = cbs.CurrencyID
 	LEFT JOIN CustInfo ci WITH(NOLOCK) ON ci.CustID = cbs.AgentID and ci.roleid=2
-	WHERE cbs.SportType IN(SELECT SportType FROM #SportBettypeFilter WHERE SettingType IN (10, 12, 2))
-		AND CurrencyID IN (SELECT value FROM string_split(@Currency,','))
+	WHERE CurrencyID IN (SELECT value FROM string_split(@Currency,','))
 		AND [Site] = @Licensee	
-	ORDER BY 1,2,3,4
 
 	DELETE #DATA WHERE MaxBet IS NULL AND 
 					MaxPerMatch IS NULL AND
@@ -123,6 +114,4 @@ BEGIN
 
 	SELECT * FROM #DATA ORDER BY Licensee,CurrencyID, Currency , AgentID,SportType,Bettype
 END
-
 GO
-

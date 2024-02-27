@@ -21,6 +21,7 @@ AS
 			- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 			- 20221013@Johnson: Add cricket & Saba cricket [redmine:#175659]
 			- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
+			- 20240117@Tacy: LAP - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199521]
 			
 */
 BEGIN
@@ -57,13 +58,6 @@ BEGIN
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=50, bettype=1, MinBet=NULL,maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=9907, bettype=1, MinBet=NULL,maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='SB' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=161, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='NG' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=180, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=181, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=182, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=183, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=184, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=185, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
-	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=186, bettype=1, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='VS' UNION ALL
 	SELECT [site]=@licensee,CurrencyID=@CurrencyID,sporttype=202, bettype=1501, MinBet=NULL, maxbet=NULL,maxpermatch=NULL,maxperball=NULL,maxpayoutpermatch=NULL,[group]='KN' 
 
 	IF NOT EXISTS(SELECT TOP 1 1 FROM [Dep_CustBetLimit_Special] cbs WITH(NOLOCK) WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID=@CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR (AgentID = @AgentID)) )	
