@@ -101,8 +101,8 @@ AS
 		- 20221207@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
 		- 20230519@Luke: YeeBet - Integrate new Live Casino product [Redmine: #186046]
 		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
-	- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
-
+		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
+		- 20231113@Johnson: Get Site.SpecialPlatfrom to remove text SABA for 777777 [redmine: #194591]
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT
@@ -284,9 +284,9 @@ BEGIN
 		,	@IsHidden_Keno	INT = 1
 		,	@IsHidden_NG	INT = 1
 
-	DECLARE @SiteID INT , @Currency INT
+	DECLARE @SiteID INT , @Currency INT, @SpecialPlatform TINYINT
 
-	SELECT @Currency = ci.currency, @SiteID = s.siteid
+	SELECT @Currency = ci.currency, @SiteID = s.siteid, @SpecialPlatform = ISNULL(SpecialPlatfrom,0)
 	FROM customer ci WITH(NOLOCK) 
 		INNER JOIN Site s WITH(NOLOCK) ON ci.site = s.site
 	WHERE ci.custid = @CustID
@@ -627,7 +627,8 @@ BEGIN
 			@SyncNG AS SyncedNG,
 			@DisableKeno AS DisableKeno,
 			@HideKeno AS HideKeno,
-			@SyncKeno AS SyncedKeno
+			@SyncKeno AS SyncedKeno,
+			@SpecialPlatform SpecialPlatform
 	FROM custinfo AS ci WITH (nolock)
 		LEFT JOIN CustMaster AS cm WITH (NOLOCK) ON ci.CustID = cm.custid
 		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed

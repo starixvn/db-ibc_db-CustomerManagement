@@ -10,12 +10,13 @@ AS
 	
 	Revisions:
 		- 20231206@Tacy: Create function [RedmineID: #194981]
+		- 20240109@Johnson: offered Saba Promotion for 777 [RedmineID:#194591]
 
 	Example:
 */
 BEGIN
 	RETURN 
-	(	SELECT CASE WHEN s.SiteLabel IN ('789y','777') THEN 0 ELSE 1 END IsOffered
+	(	SELECT CASE WHEN s.SiteLabel IN ('789y') THEN 0 ELSE 1 END IsOffered
 		FROM Site s WITH (NOLOCK)
 		WHERE s.site=@Site
 	)
