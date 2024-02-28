@@ -55,6 +55,7 @@ Revisions:
 	- 20231027@Johnson: Add ACCThaiSK [redmine: #195550]
 	- 20231206@Johnson: Add ACCS56RM [redmine: #197031]
 	- 20240227@Johnson: Add ACCHHRM,ACCCH1,ACCMG7,ACCNV1,ACCA951 [redmine: #201332]
+	- 20240227@Johnson: Add ACCTW1,ACCSB1 [redmine: #201452]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -180,7 +181,7 @@ BEGIN
 		SELECT 1233 --7a5555,...
 	END
 	--Malaysia HL
-	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951'))
+	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951','ACCTW1','ACCSB1'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid 
