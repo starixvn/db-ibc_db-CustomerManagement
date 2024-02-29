@@ -19,6 +19,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100] 
 		- 20231101@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
+		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
 
 	Param's Explanation:
 	* @Policys:
@@ -64,8 +65,8 @@ BEGIN
 								  PolicyID_old INT, Site_old NVARCHAR(50), Currency_old TINYINT, Platform_old TINYINT, isDeposit BIT)
 	 CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))  
 	CREATE TABLE #tempPS(PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)
-	 CREATE NONCLUSTERED INDEX inx_temp ON #CustomerClassSiteManagement(  PolicyID, STT,  Currency, Platform, isDeposit, Site ) 
-	 CREATE CLUSTERED INDEX inx_tempPS ON #tempPS( PolicyID, Site, Currency, Platform )
+	 CREATE NONCLUSTERED INDEX ix_temp ON #CustomerClassSiteManagement(  PolicyID, STT,  Currency, Platform, isDeposit, Site ) 
+	 CREATE CLUSTERED INDEX cix_tempPS ON #tempPS( PolicyID, Site, Currency, Platform )
 
 	 BEGIN TRY  
 	  EXECUTE sp_xml_preparedocument @iDoc OUTPUT, @PolicySites;  
@@ -102,7 +103,7 @@ BEGIN
 
 	CREATE TABLE #SiteTbl ( site_parent NVARCHAR(50),Site NVARCHAR(50), isDeposit BIT)
 	CREATE CLUSTERED INDEX CIX_SiteTbl ON #SiteTbl( site_parent, Site, isDeposit) 
-	CREATE NONCLUSTERED INDEX NIX_SiteTbl ON #SiteTbl( Site, isDeposit) 
+	CREATE NONCLUSTERED INDEX IX_SiteTbl ON #SiteTbl( Site, isDeposit) 
 
 	INSERT INTO #SiteTbl (Site , site_parent, isDeposit)
 	SELECT DISTINCT site, site, s.isDeposit
