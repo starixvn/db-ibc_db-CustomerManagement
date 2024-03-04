@@ -1,6 +1,2 @@
-Ext NAP\Customer\EAS_GetPTProductBySMA.sql
-Ext NAP\Customer\EAS_GetPTProductBySuper.sql
-ALPHA\Customer\Age_GetOfferedProductBySiteCurrency.sql
-ALPHA\Login-On_User\Age_LoginVerifyDownline.sql
-ALPHA\Login-On_User\Age_LoginDownline_Sub.sql
-ALPHA\Login-On_User\Age_LoginDownline.sql
+NAP-Accounting\Customer\Status\Danger\Acc_CustomerUpdDangerCust.sql
+NAP-Accounting\Customer\Status\Danger\Acc_CustomerSelDangerCust.sql
