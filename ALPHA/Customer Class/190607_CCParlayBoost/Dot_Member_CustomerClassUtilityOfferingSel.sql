@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20231002@Winfred: [NAP CM] Allow to offer Parlay Boost on rule setting [RedmineID: #190607] 
+		- 20240303@Helen: SP tuning [RedmineID: #201771] 
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassUtilityOfferingSel @SiteID = 20, @Currency = 20 , @IsTest=1, @CustomerClass =901, @IsDeposit=0, @IsParlayBoot = @IsParlayBoot OUTPUT
@@ -25,24 +26,16 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	DECLARE @ModeTest BIT = 0
-	DECLARE @SiteTbl TABLE(SiteID INT)
-	DECLARE @OfferTbl TABLE(SiteID INT, Currency TINYINT, CustomerClass SMALLINT)
-	INSERT INTO @SiteTbl (SiteID) SELECT  0 --All
-	INSERT INTO @SiteTbl (SiteID) SELECT @SiteID
-	IF @IsDeposit = 0 
-	BEGIN
-		INSERT INTO @SiteTbl (SiteID) SELECT  -1 --AllCredit
-	END
-	ELSE
-	BEGIN
-		INSERT INTO @SiteTbl (SiteID) SELECT  -2 --AllDeposit
-	END
+	DECLARE @RefSiteID SMALLINT
 
-	INSERT INTO @OfferTbl (SiteID, Currency, CustomerClass) 
-	SELECT SiteID , c.Currency, d.CustomerClass
-	FROM @SiteTbl s
-		CROSS APPLY (SELECT @Currency AS  Currency UNION SELECT 0 AS  Currency) c
-		CROSS APPLY (SELECT @CustomerClass AS  CustomerClass UNION SELECT 0 AS CustomerClass) d
+	IF @IsDeposit = 0
+	BEGIN
+		SET @RefSiteID = -1
+	END
+	ELSE 
+	BEGIN
+		SET @RefSiteID = -2
+	END
 
 	IF @IsTest = 1
 	BEGIN
@@ -56,15 +49,17 @@ BEGIN
 		SET @IsParlayBoot = ISNULL((SELECT TOP 1  cs.UtilityOffering & POWER(2,0)
 									FROM CustomerClassUtilityOffer cs WITH(NOLOCK)
 										INNER JOIN  CustomerClassUtilityOfferDetail csd WITH(NOLOCK) ON cs.PolicyID = csd.PolicyID AND cs.isDeleted = csd.isDeleted
-										INNER JOIN @OfferTbl s ON csd.SiteID = s.SiteID AND csd.Currency = s.Currency AND csd.CustomerClass = s.CustomerClass
-									WHERE cs.isDeleted = 0 AND cs.IsTest = @IsTest AND cs.UtilityOffering & POWER(2,0) = 1),0)
+									WHERE cs.isDeleted = 0 AND cs.IsTest = @IsTest AND cs.UtilityOffering & POWER(2,0) = 1
+										AND csd.SiteID IN (0,@SiteID, @RefSiteID) AND csd.Currency IN (0, @Currency) AND csd.CustomerClass IN (0, @CustomerClass)
+									),0)
 	END
 	ELSE
 	BEGIN
 		SET @IsParlayBoot = ISNULL((SELECT TOP 1  cs.UtilityOffering & POWER(2,0)
 									FROM CustomerClassUtilityOffer_UAT cs WITH(NOLOCK)
 										INNER JOIN  CustomerClassUtilityOfferDetail_UAT csd WITH(NOLOCK) ON cs.PolicyID = csd.PolicyID AND cs.isDeleted = csd.isDeleted
-										INNER JOIN @OfferTbl s ON csd.SiteID = s.SiteID AND csd.Currency = s.Currency AND csd.CustomerClass = s.CustomerClass
-									WHERE cs.isDeleted = 0  AND cs.IsTest = @IsTest AND cs.UtilityOffering & POWER(2,0) = 1),0)
+									WHERE cs.isDeleted = 0  AND cs.IsTest = @IsTest AND cs.UtilityOffering & POWER(2,0) = 1
+										AND csd.SiteID IN (0,@SiteID, @RefSiteID) AND csd.Currency IN (0, @Currency) AND csd.CustomerClass IN (0, @CustomerClass)
+									),0)
 	END
 END
