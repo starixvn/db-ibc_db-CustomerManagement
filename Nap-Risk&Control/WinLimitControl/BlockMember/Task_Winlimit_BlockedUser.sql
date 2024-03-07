@@ -21,6 +21,7 @@ AS
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
 		- 20231214@Tacy: Risk Control - Member was not suspended after reaching Yellow Level [Redmine: #198396]
+		- 20240307@Johnson: Enhance performance [redmine: #201794]
 	Param's Explanation:
 	
 */
@@ -64,7 +65,10 @@ BEGIN
 							, TotalWinAmount MONEY
 							, WinlostDate SMALLDATETIME
 							, IsPrivateSetting BIT
-							, BettypeIDList VARCHAR(MAX))
+							, BettypeIDList VARCHAR(MAX)							
+							)
+	
+	CREATE CLUSTERED INDEX IX_DataTmp ON #DataTmp (CustID,WinlostDate,GroupID,ProductID)
 	
 	
 	CREATE TABLE #CustReachCWLList(ID INT IDENTITY PRIMARY KEY
@@ -140,7 +144,7 @@ BEGIN
 		RETURN
 	END
 	
-	CREATE CLUSTERED INDEX IX_DataTmp_pre ON #DataTmp_pre (CustID,GroupID)
+	CREATE CLUSTERED INDEX IX_DataTmp_pre ON #DataTmp_pre (CustID,WinlostDate,GroupID,ProductID)
 	
 	UPDATE pre
 		SET GroupID = GGS.GroupID, ProductId = GGS.ProductID
@@ -148,15 +152,19 @@ BEGIN
 		INNER JOIN dbo.Winlimit_GameGroupSetting GGS WITH (NOLOCK) ON pre.Bettype = GGS.BetTypeID
 	
 	INSERT INTO #DataTmp (CustId, WinlostDate, GroupID, TotalWinAmount,IsPrivateSetting,ProductId, BettypeIDList)
-	SELECT CustId, WinlostDate, pre.GroupID, SUM(pre.TotalWinAmount),0 ,pre.ProductID, STUFF(tmp.BettypeIDList,1,1,'') BettypeIDList
-	FROM #DataTmp_pre pre WITH(NOLOCK)
-		CROSS APPLY (SELECT ',' + CONVERT (VARCHAR(200), pre_1.Bettype)
+	SELECT CustId, WinlostDate, pre.GroupID, SUM(pre.TotalWinAmount),0 ,pre.ProductID, '' BettypeIDList
+	FROM #DataTmp_pre pre WITH(NOLOCK)		
+	GROUP BY CustId, WinlostDate, pre.GroupID,pre.ProductID
+	
+	UPDATE pre
+	SET BettypeIDList = STUFF(tmp.BettypeIDList,1,1,'')
+	FROM #DataTmp pre
+	CROSS APPLY (SELECT ',' + CONVERT (VARCHAR(200), pre_1.Bettype)
 					FROM #DataTmp_pre pre_1 WITH (NOLOCK) 
 					WHERE pre_1.GroupID = pre.GroupID AND pre.CustId = pre_1.CustId
 					FOR XML PATH ('')
 					) AS Tmp (BettypeIDList)
-	GROUP BY CustId, WinlostDate, pre.GroupID,pre.ProductID,tmp.BettypeIDList
-	
+					
 	UPDATE t 
 	SET ExchangeID = cc.currency
 		, SiteID = s.siteid
