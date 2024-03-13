@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByMAg]
     @Status			TINYINT = 0,
 	@Currencies 	VARCHAR(MAX) = '',
 	@UserID			INT,
+	@IsNoDownlines	BIT = 0,
 	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
 	@TotalRows		INT = 0 OUTPUT
@@ -66,6 +67,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]	
+		- 20240223@Luke: EXT - Support one more filter to filter "No Downline" Supers [Redmine: #201009]
 	Explanation's Param:
 		@Status = 
 			0: All
@@ -81,7 +83,7 @@ AS
 BEGIN
     SET NOCOUNT ON  
 
-    DECLARE @tmpAgentList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
+    DECLARE @tmpAgentList TABLE (custID INT, Downlines INT, username VARCHAR(30), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT,@IsMyanmarOdds BIT = 0,@srecommend		INT	
@@ -99,8 +101,8 @@ BEGIN
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @UserName IS NULL
 	BEGIN
-		INSERT INTO @tmpAgentList(CustID, username, RowNumber)
-		SELECT ci.custID, ci.username,
+		INSERT INTO @tmpAgentList(CustID, Downlines, username, RowNumber)
+		SELECT ci.custID, d.Downlines, ci.username,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
@@ -111,6 +113,10 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT COUNT(1) Downlines 
+							FROM custInfo cif WITH (NOLOCK)
+							WHERE cif.recommend = ci.custID AND cif.roleid = 1 
+						) d
 		WHERE ci.mrecommend = @mrecommend
 			AND ci.roleid = 2	
 			AND 1 = CASE WHEN @Currencies = '' 
@@ -127,13 +133,16 @@ BEGIN
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1
+						WHEN @IsNoDownlines = 1 AND Downlines = 0 THEN 1
+						ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 	ELSE
 	BEGIN
-		INSERT INTO @tmpAgentList(CustID, username, RowNumber)
-		SELECT ci.custID, ci.username,
+		INSERT INTO @tmpAgentList(CustID, Downlines, username, RowNumber)
+		SELECT ci.custID, d.Downlines, ci.username,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
@@ -144,6 +153,10 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT COUNT(1) Downlines 
+							FROM custInfo cif WITH (NOLOCK)
+							WHERE cif.recommend = ci.custID AND cif.roleid = 1 
+						) d
 		WHERE ci.mrecommend = @mrecommend
 			AND ci.roleid = 2		
 			AND 1 = CASE WHEN @Currencies = '' 
@@ -161,6 +174,9 @@ BEGIN
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND c.username LIKE @UserName + '%'
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1
+						WHEN @IsNoDownlines = 1 AND Downlines = 0 THEN 1
+						ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -190,7 +206,8 @@ BEGIN
 			ISNULL(c.iplogin, '') as lastloginip,
 			@UplineDoubleCommLosing AS UplineDoubleCommLosing,
 			ci.DoubleCommLosing,
-			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,	
+			al.Downlines,
 
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
 			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
@@ -216,10 +233,10 @@ BEGIN
 		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 
-	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
+	WHERE RowNumber BETWEEN @RowStart AND @RowEnd
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, 
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
-			ci.DoubleCommLosing, cl.ClosedReason,
+			ci.DoubleCommLosing, cl.ClosedReason, al.Downlines,
 			cl.SecurityCode, al.RowNumber  ,ac.CustId,AC.CommRate,cps.Locked
 	
 	ORDER BY RowNumber

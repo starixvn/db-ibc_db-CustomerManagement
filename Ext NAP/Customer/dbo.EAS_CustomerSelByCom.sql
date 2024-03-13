@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByCom]
 	@Currencies 	VARCHAR(MAX) = '',
 	@UserID			INT,
 	@IsDataLimited	BIT	= 0,
+	@IsNoDownlines	BIT = 0,
 	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
 	@TotalRows		INT = 0 OUTPUT
@@ -70,6 +71,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
+		- 20240223@Luke: EXT - Support one more filter to filter "No Downline" Supers [Redmine: #201009]
 	Explanation's Param:
 		@Status = 
 			0: All
@@ -84,7 +86,7 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @tmpSuperList TABLE (custID INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, SubGroup VARCHAR(1000), RowNumber INT)
+    DECLARE @tmpSuperList TABLE (custID INT, Downlines INT, username VARCHAR(30), LimitDays SMALLINT, MinDate SMALLDATETIME, SubGroup VARCHAR(1000), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT
@@ -102,8 +104,8 @@ BEGIN
     --@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @UserName IS NULL
 	BEGIN
-		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
-		SELECT ci.custID, ci.username, LimitDays, MinDate,
+		INSERT INTO @tmpSuperList(CustID, Downlines, username, LimitDays, MinDate, RowNumber)
+		SELECT ci.custID, d.Downlines, ci.username, LimitDays, MinDate,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
@@ -114,6 +116,10 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT COUNT(1) Downlines 
+							FROM custInfo cif WITH (NOLOCK)
+							WHERE cif.srecommend = ci.custID AND cif.roleid = 3 
+						) d
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4	
 			AND 1 = CASE WHEN @Currencies = '' 
@@ -131,13 +137,16 @@ BEGIN
 			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1
+						WHEN @IsNoDownlines = 1 AND Downlines = 0 THEN 1
+						ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 	ELSE
 	BEGIN
-		INSERT INTO @tmpSuperList(CustID, username, LimitDays, MinDate, RowNumber)
-		SELECT ci.custID, ci.username, LimitDays, MinDate,
+		INSERT INTO @tmpSuperList(CustID, Downlines, username, LimitDays, MinDate, RowNumber)
+		SELECT ci.custID, d.Downlines, ci.username, LimitDays, MinDate,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
@@ -148,6 +157,10 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT COUNT(1) Downlines 
+							FROM custInfo cif WITH (NOLOCK)
+							WHERE cif.srecommend = ci.custID AND cif.roleid = 3 
+						) d
 		WHERE ci.custid IN (SELECT custid FROM dbo.Acc_CustGroup  WITH(NOLOCK) WHERE GroupName = @GroupName)
 			AND ci.roleid = 4	
 			AND 1 = CASE WHEN @Currencies = '' 
@@ -166,6 +179,9 @@ BEGIN
 			AND (@IsDataLimited=0 OR (@IsDataLimited=1 AND (l.LimitDays IS NOT NULL OR l.MinDate IS NOT NULL)))
 			AND c.username LIKE @UserName + '%'
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1
+						WHEN @IsNoDownlines = 1 AND Downlines = 0 THEN 1
+						ELSE 0 END
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END	
@@ -217,7 +233,8 @@ BEGIN
 			ISNULL(c.iplogin, '') as lastloginip,
 			CAST(1 AS BIT) AS UplineDoubleCommLosing,
 			ci.DoubleCommLosing,
-			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
+			ISNULL(cl.ClosedReason,0) AS ClosedReason,	
+			sl.Downlines,
 			sl.LimitDays,
 			sl.MinDate,	
 			sl.SubGroup,
@@ -232,7 +249,8 @@ BEGIN
 			
 			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.sdiscount ELSE 0 END) AS discountcs,
-			ISNULL(cps.Locked,0) AS Locked         			
+			ISNULL(cps.Locked,0) AS Locked
+
 	FROM @tmpSuperList sl
 		INNER JOIN dbo.customer c WITH(NOLOCK) on sl.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
@@ -247,10 +265,11 @@ BEGIN
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1
 
-	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
+	WHERE RowNumber BETWEEN @RowStart AND @RowEnd
+
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency,
 			cp.firstname, cp.lastname, c.creatdate, c.iplogin,		 
-			ci.DoubleCommLosing, cl.ClosedReason,
+			ci.DoubleCommLosing, cl.ClosedReason, sl.Downlines,
 			sl.LimitDays, sl.MinDate, sl.SubGroup, cl.SecurityCode, sl.RowNumber,ac.CustId,AC.CommRate,cps.Locked
 	
 	ORDER BY RowNumber
