@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
+		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
 
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
@@ -36,7 +37,7 @@ BEGIN
 
 	SELECT DISTINCT a.RuleID, b.RuleTitle 
 	FROM #RuleTemp a 
-		CROSS APPLY ( SELECT TOP 1 RuleTitle FROM CustomerClassRule WHERE RuleID = a.RuleID AND IsTest = @IsTest ) b
+		CROSS APPLY ( SELECT TOP 1 RuleTitle FROM CustomerClassRule WITH(NOLOCK) WHERE RuleID = a.RuleID AND IsTest = @IsTest ) b
 		CROSS APPLY ( SELECT TOP 1 PolicyID FROM CustomerClassPolicyRule  WITH(NOLOCK) WHERE RuleID = a.RuleID ) c
 	ORDER BY a.RuleID
 

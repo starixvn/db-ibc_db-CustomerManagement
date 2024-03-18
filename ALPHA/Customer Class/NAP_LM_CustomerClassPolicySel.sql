@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySel]
 	@IsTest	TINYINT,
 	@PolicyID		INT = 0,
+	@LeagueGroups VARCHAR(MAX),
 	@PolicyTitle	VARCHAR(500) = ''
 AS
 /*
@@ -15,12 +16,34 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904]  
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]  
 		- 20231118@Winfred: [NAP CM] Allow to choose overwriting policy or creating new assign setting [RedmineID: #196932] 
+		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
 */ 
 BEGIN
 	SET NOCOUNT ON; 
+
+	DECLARE @iDoc INT, @xml XML
+	CREATE TABLE #LeagueGroup( GroupID SMALLINT, GroupName VARCHAR(200), SportType SMALLINT)   
+	--Check if XML is null or empty
+	IF @LeagueGroups IS NULL OR @LeagueGroups = ''
+		RETURN
+	
+	EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT, @LeagueGroups;
+	INSERT INTO #LeagueGroup(GroupID, GroupName, SportType)
+	SELECT	CAST(Data.GroupID AS SMALLINT) AS GroupID				
+		,	CASE WHEN Data.GroupName = '' THEN null ELSE CAST(Data.GroupName AS VARCHAR(200)) END 
+			AS GroupName 					    
+		,	 CAST(Data.SportType AS SMALLINT)  AS SportType 
+	FROM OPENXML(@iDoc, '/ROOT/r', 1) 
+	WITH (     
+			GroupID 	 SMALLINT,       
+			GroupName 	 VARCHAR(500),       
+			SportType 	 VARCHAR(20)
+	) AS Data;
+	EXECUTE	sp_xml_removedocument @iDoc;
+
 	IF @PolicyID = 0 
 	BEGIN
 		SELECT  a.PolicyID, 
@@ -53,7 +76,7 @@ BEGIN
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
 					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
-						LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON lg.LeagueGroupID = ps.GroupID 
+						LEFT JOIN #LeagueGroup ps ON lg.LeagueGroupID = ps.GroupID 
 					WHERE lg.RuleID = b.RuleID
 			) d
 		WHERE  a.IsTest <= @IsTest AND a.PolicyTitle like '%' + @PolicyTitle + '%'
@@ -90,11 +113,12 @@ BEGIN
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
 					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
-						LEFT JOIN DBACC.BODB02.DBO.LeagueGroup ps  WITH(NOLOCK) ON lg.LeagueGroupID = ps.GroupID 
+						LEFT JOIN #LeagueGroup ps ON lg.LeagueGroupID = ps.GroupID 
 					WHERE lg.RuleID = b.RuleID
 			) d
 		WHERE  a.IsTest <= @IsTest AND a.PolicyID = @PolicyID
 	END
 	
+	DROP TABLE #LeagueGroup
 END
 GO
