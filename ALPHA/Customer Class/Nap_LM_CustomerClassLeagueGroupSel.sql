@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365] 
+		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
 
 	Param's Explanation:
 		* @SportType : 0 All
@@ -27,10 +28,41 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT GroupID, GroupName ,SportType
-		FROM LeagueGroup WITH(NOLOCK)
-		WHERE SportType IN (0, @SportType)
-		ORDER BY GroupName
+		IF @SportType = 1  --Soccer
+		BEGIN
+			SELECT GroupID, GroupName ,SportType
+			FROM LeagueGroup WITH(NOLOCK)
+			WHERE SportType IN (0, @SportType) AND GroupID NOT IN (42, 74, 108)
+			ORDER BY GroupName
+		END
+		ELSE IF @SportType = 9901  --Saba Soccer
+		BEGIN
+			SELECT GroupID, GroupName ,SportType
+			FROM LeagueGroup WITH(NOLOCK)
+			WHERE GroupID IN (42, 74, 108) OR SportType = 0
+			ORDER BY GroupName
+		END
+		ELSE IF @SportType = 2  --Basketball
+		BEGIN
+			SELECT GroupID, GroupName ,SportType
+			FROM LeagueGroup WITH(NOLOCK)
+			WHERE SportType IN (0, @SportType) AND GroupID NOT IN (42)
+			ORDER BY GroupName
+		END
+		ELSE IF @SportType = 9902 --Saba Basketball
+		BEGIN
+			SELECT GroupID, GroupName ,SportType
+			FROM LeagueGroup WITH(NOLOCK)
+			WHERE GroupID IN (42) OR SportType = 0
+			ORDER BY GroupName
+		END
+		ELSE
+		BEGIN
+			SELECT GroupID, GroupName ,SportType
+			FROM LeagueGroup WITH(NOLOCK)
+			WHERE SportType IN (0, @SportType)
+			ORDER BY GroupName
+		END
 	END
 END
 GO
