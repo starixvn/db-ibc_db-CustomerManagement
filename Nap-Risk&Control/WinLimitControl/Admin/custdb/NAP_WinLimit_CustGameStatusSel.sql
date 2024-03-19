@@ -47,7 +47,7 @@ Parameters Explanation:
            AND ProductID = @ProductId
            AND BettypeID = @BetTypeId;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustGameStatusSel] TO [vnteam];
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-IPDB" selecters="bodbAdminNet,bodbDownlineNet" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-IPDB" selecters="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[strSplit](@string [nvarchar](MAX), @splitter [char](1))
 RETURNS @res TABLE (
     [id] [int] NOT NULL,

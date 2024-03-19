@@ -1,4 +1,4 @@
-﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_MenuIns] 
     @Menu           VARCHAR(50),
     @ParentId       INT,
@@ -30,7 +30,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_MenuIns] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_MenuIns] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_MenuIns] TO [vnteam]
 

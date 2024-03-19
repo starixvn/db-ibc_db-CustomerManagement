@@ -102,7 +102,7 @@ Parameters Explanation:
          END CATCH;
      END;
 GO
-GRANT EXECUTE ON [dbo].NAP_WinLimit_CustSettingUpd TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].NAP_WinLimit_CustSettingUpd TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].NAP_WinLimit_CustSettingUpd TO [vnteam];
 GO

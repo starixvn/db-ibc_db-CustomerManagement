@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE dbo.Acc_ReferenceSetting_TableSel
 		@TableType TINYINT = 0
 AS

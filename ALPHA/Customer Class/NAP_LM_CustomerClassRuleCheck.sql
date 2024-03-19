@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassRuleCheck] 
 	  @RuleIDs		VARCHAR(MAX)
 	, @IsTest		TINYINT	

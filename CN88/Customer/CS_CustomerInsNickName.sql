@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" isFunction="0"></info>*/
 ALTER  PROCEDURE [dbo].[CS_CustomerInsNickName] 
 	@custid		INT,
 	@Nickname	VARCHAR(50) = NULL,

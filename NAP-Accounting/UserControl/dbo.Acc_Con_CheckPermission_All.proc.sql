@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,BODBDownlineNet,BODBDownlineNetView, Dot_Member" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv, Dot_Member" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission_All]
 	@CustID int, 
 	@FuncID int=null,
@@ -63,10 +63,10 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_CheckPermission_All] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbExtAccNet,wsv_xnap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission_All] TO [bodbDownlineNetView,wsv_alpv]

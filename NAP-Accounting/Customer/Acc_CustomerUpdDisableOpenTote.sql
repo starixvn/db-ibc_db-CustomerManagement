@@ -203,8 +203,8 @@ EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableOpenTote] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableOpenTote] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableOpenTote] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableOpenTote] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdDisableOpenTote] TO [vnteam] 

@@ -74,7 +74,7 @@ exec NAP_WinLimit_CustSettingValidateInsertingUser @Username='166HK488'
 	 
 	 SELECT 0 AS ErrorCode
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingValidateInsertingUser] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingValidateInsertingUser] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingValidateInsertingUser] TO [vnteam];
 GO

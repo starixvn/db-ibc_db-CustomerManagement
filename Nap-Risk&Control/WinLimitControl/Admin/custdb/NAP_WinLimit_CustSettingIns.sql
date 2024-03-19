@@ -102,7 +102,7 @@ EXEC [NAP_WinLimit_CustSettingIns]
          END CATCH;
      END;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingIns] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingIns] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingIns] TO [vnteam];
 GO

@@ -275,8 +275,8 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [bodbExtAccNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdUserInfo] TO [vnteam] AS [dbo]

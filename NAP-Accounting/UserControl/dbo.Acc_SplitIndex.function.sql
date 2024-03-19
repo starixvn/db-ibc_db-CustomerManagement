@@ -25,4 +25,4 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_SplitIndex] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_SplitIndex] TO [bodbAdminNet,wsv_nap]

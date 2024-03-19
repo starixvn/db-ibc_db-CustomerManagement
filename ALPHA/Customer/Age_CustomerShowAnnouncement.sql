@@ -61,8 +61,8 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON Age_CustomerShowAnnouncement TO bodbDownlineNet
+GRANT EXECUTE ON Age_CustomerShowAnnouncement TO bodbDownlineNet,wsv_alp
 GO
-GRANT EXECUTE ON Age_CustomerShowAnnouncement TO bodbDownlineNetView
+GRANT EXECUTE ON Age_CustomerShowAnnouncement TO bodbDownlineNetView,wsv_alpv
 GO
 GRANT VIEW DEFINITION ON Age_CustomerShowAnnouncement TO vnteam

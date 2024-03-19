@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLIC-bodb_licensee" executers="bodbadminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBLIC-bodb_licensee" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0"></info>*/
 USE bodb_licensee
 GO
 ALTER PROCEDURE	dbo.Acc_CustomerVirtualRateSelectBA

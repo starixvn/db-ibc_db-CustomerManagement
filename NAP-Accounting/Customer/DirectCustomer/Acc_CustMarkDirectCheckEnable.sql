@@ -214,5 +214,5 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[Acc_CustMarkDirectCheckEnable] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[Acc_CustMarkDirectCheckEnable] TO [bodbAdminNet]
+ GRANT EXECUTE ON [dbo].[Acc_CustMarkDirectCheckEnable] TO [bodbAdminNet,wsv_nap]
 GO 

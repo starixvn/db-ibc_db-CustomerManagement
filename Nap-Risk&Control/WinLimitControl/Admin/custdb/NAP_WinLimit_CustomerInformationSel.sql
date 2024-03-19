@@ -89,7 +89,7 @@ EXEC [NAP_WinLimit_CustomerInformationSel] @CustId = 807023
             @SuperId SuperId,
             @Super Super;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustomerInformationSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustomerInformationSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustomerInformationSel] TO [vnteam];
 GO

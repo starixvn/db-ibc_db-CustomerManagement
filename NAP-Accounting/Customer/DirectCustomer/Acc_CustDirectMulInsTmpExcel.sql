@@ -253,7 +253,7 @@ GO
 
 
 GO 
- GRANT EXECUTE ON [dbo].[Acc_CustDirectMulInsTmpExcel] TO [bodbAdminNet]
+ GRANT EXECUTE ON [dbo].[Acc_CustDirectMulInsTmpExcel] TO [bodbAdminNet,wsv_nap]
 GO 
  GRANT VIEW DEFINITION ON [dbo].[Acc_CustDirectMulInsTmpExcel] TO [vnteam]
 GO 

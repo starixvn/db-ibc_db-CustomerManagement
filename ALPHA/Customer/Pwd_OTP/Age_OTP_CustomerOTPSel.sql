@@ -23,7 +23,7 @@ BEGIN
 	WHERE CustID = @CustID AND SubAccId = @SubAccID AND IsDelete = 0
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPSel] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPSel] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPSel] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPSel] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

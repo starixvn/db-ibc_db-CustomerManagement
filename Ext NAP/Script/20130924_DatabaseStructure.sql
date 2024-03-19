@@ -3,7 +3,7 @@
 /*
 	External accounting
 	Task:	- create database 
-			- create users [bodbExtAccNet], [vnteam], [vnDBA]
+			- create users [bodbExtAccNet,wsv_xnap], [vnteam], [vnDBA]
 			- tables
 	
 */
@@ -29,7 +29,7 @@ GO
 
 USE [bodb_EAS]
 GO
-CREATE USER [bodbExtAccNet] FOR LOGIN [bodbExtAccNet] 
+CREATE USER [bodbExtAccNet,wsv_xnap] FOR LOGIN [bodbExtAccNet,wsv_xnap] 
 GO
 CREATE USER [vnteam] FOR LOGIN [vnteam]
 GO

@@ -135,7 +135,7 @@ BEGIN
 	WHERE RowNum between @RowStart and @RowEnd
 END
 GO
-GRANT EXECUTE ON [dbo].[Agm_CustomerSelGivenCreditByMAg] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agm_CustomerSelGivenCreditByMAg] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agm_CustomerSelGivenCreditByMAg] TO [vnteam] AS [dbo]
 GO

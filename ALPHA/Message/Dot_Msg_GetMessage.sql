@@ -72,8 +72,8 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetMessage] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetMessage] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetMessage] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetMessage] TO [bodbDownlineNetView,wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Dot_Msg_GetMessage] TO vnteam

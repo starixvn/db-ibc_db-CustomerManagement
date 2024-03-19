@@ -20,9 +20,9 @@ where (case @RoleID
 order by mid desc
 GO
 
-GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNetView,wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_MessageSelAll] TO vnteam
 

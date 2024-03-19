@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE dbo.Acc_WLMonitored_Player_WatchList_Sel
 	 @AgentID INT
 	,@Username VARCHAR(30)= ''

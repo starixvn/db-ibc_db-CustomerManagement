@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[EAS_AccountType_Ins]
 	  @UserID	INT
 	, @CustID	INT

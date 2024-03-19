@@ -19,7 +19,7 @@ WHERE custid = @custid
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelMatchLimit] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelMatchLimit] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelMatchLimit] TO [vnteam] AS [dbo]
 

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeRateSelHistory]
 	@FromExchangeID int = null,
 	@ToExchangeID int = null,
@@ -34,7 +34,7 @@ BEGIN
 	ORDER BY a.Actiondate DESC
 END	
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeRateSelHistory] TO [bodbAdminNet]	
+GRANT EXECUTE ON [dbo].[Acc_ExchangeRateSelHistory] TO [bodbAdminNet,wsv_nap]	
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeRateSelHistory] TO [VNTeam]
 GO

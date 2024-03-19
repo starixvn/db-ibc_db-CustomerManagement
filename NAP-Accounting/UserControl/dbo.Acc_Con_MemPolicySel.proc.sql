@@ -26,5 +26,5 @@ ORDER BY Acc_FunctionInfo.ParentID;
 
 GO
 GRANT EXECUTE
-    ON [dbo].[Acc_Con_MemPolicySel] TO [bodbAdminNet];
+    ON [dbo].[Acc_Con_MemPolicySel] TO [bodbAdminNet,wsv_nap];
 

@@ -48,7 +48,7 @@ EXEC [NAP_Winlimit_CreditGameReset]
          WHERE GroupId = @GroupId
      );
 GO
-GRANT EXECUTE ON [dbo].[NAP_Winlimit_CreditGameReset] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_Winlimit_CreditGameReset] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_Winlimit_CreditGameReset] TO [vnteam];
 GO

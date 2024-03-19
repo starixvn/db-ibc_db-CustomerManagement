@@ -48,8 +48,8 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
   @Duration = @Duration  
   
 GO
-GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbExtAccNet,wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CheckOut] TO [vnteam]

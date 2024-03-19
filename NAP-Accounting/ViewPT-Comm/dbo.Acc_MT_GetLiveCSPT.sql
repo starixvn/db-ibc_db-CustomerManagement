@@ -85,5 +85,5 @@ SET NOCOUNT ON
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_MT_GetLiveCSPT] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_MT_GetLiveCSPT] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_MT_GetLiveCSPT] TO [bodbAdminNet,wsv_nap]
 

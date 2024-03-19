@@ -124,6 +124,6 @@ SET NOCOUNT ON
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [bodbDownlineNetView,wsv_alpv]

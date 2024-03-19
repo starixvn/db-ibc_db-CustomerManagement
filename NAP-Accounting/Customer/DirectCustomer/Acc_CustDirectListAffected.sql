@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB,DBTXN-CustDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBTXN-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustDirectListAffected]
     @custid	INT
   , @mode   INT = 0

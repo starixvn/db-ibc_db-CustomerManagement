@@ -33,6 +33,6 @@ WHERE CustID = @CustID
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_OperatorSelByID] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_OperatorSelByID] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorSelByID] TO [vnteam] AS [dbo]

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb_ChatBot" executers="bodbDownlineNet" viewers="vnteam" selecters=""></info>*/
+﻿/*<info serverAlias="DBAGE-bodb_ChatBot" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" selecters=""></info>*/
 
 USE [bodb_ChatBot]
 GO
@@ -38,7 +38,7 @@ END
 
 GO
 
-GRANT EXECUTE ON  [dbo].[Chatbot_UpdateUserLanguage] TO bodbDownlineNet;  
+GRANT EXECUTE ON  [dbo].[Chatbot_UpdateUserLanguage] TO bodbDownlineNet,wsv_alp;  
 
 GO
 

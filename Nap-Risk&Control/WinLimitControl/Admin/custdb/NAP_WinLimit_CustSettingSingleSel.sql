@@ -51,7 +51,7 @@ EXEC [NAP_WinLimit_CustSettingSingleSel] @CustId=18766097, @ProductId=6, @GroupI
            AND ProductID = @ProductID
            AND GroupId = @GroupId;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingSingleSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingSingleSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingSingleSel] TO [vnteam];
 GO

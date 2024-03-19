@@ -76,8 +76,8 @@ ORDER BY
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [bodbDownlineNetView,wsv_alpv]
 Go
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelRBComm_MAg] TO [vnteam]

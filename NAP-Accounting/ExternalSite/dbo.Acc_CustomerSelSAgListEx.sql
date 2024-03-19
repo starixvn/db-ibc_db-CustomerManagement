@@ -34,7 +34,7 @@ ORDER BY c.username
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSAgListEx] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelSAgListEx] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelSAgListEx] TO [vnteam]
 

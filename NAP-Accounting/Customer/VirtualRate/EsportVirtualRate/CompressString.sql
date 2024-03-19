@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="1"></info>*/
 CREATE FUNCTION [dbo].[CompressString](@Text [nvarchar](max))
 RETURNS [nvarchar](max)
 AS

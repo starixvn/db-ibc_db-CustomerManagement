@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNetView,bodbDownlineNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNetView,wsv_alpv,bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE Acc_WriteLog_UserLog_Login_Wrapper
     @UserID INT, 

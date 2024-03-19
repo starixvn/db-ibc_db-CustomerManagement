@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_GroupInfoSel]
 	@GroupID int = null,
 	@UserID int = 0,
@@ -105,11 +105,11 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_GroupInfoSel] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_Con_GroupInfoSel] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_GroupInfoSel] TO [vnteam] AS [dbo]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_GroupInfoSel] TO [vnteam]
 go
-GRANT EXECUTE ON [dbo].Acc_Con_GroupInfoSel TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].Acc_Con_GroupInfoSel TO [bodbAdminNet,wsv_nap]

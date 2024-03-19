@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_MenuSelList] 
     
 @System varchar(50) = ''                
@@ -25,9 +25,9 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_MenuSelList] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_MenuSelList] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_MenuSelList] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_MenuSelList] TO [bodbExtAccNet,wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_MenuSelList] TO [vnteam]
 

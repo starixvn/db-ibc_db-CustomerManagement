@@ -24,6 +24,6 @@ BEGIN
 	RETURN @ReturnVal
 END
 GO
-GRANT EXECUTE ON [dbo].[f_IsMatchCustCurrency] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[f_IsMatchCustCurrency] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_IsMatchCustCurrency] TO [vnteam]

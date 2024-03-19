@@ -87,6 +87,6 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[f_IsAllowedAccUser] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[f_IsAllowedAccUser] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_IsAllowedAccUser] TO [vnteam]

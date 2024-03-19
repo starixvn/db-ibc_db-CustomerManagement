@@ -32,4 +32,4 @@ SET NOCOUNT ON
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_AnnouncementUpdShowDate_Sub] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_AnnouncementUpdShowDate_Sub] TO [bodbDownlineNet,wsv_alp]

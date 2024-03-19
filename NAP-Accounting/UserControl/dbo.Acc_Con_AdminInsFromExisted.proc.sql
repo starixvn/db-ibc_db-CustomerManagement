@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminInsFromExisted]
 	@username VARCHAR (30), 
 	@GroupId INT, 
@@ -116,5 +116,5 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminInsFromExisted] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminInsFromExisted] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_AdminInsFromExisted] TO [bodbAdminNet,wsv_nap]
 

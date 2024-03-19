@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdCredit_SAg]
 	@UserID			INT,
 	@CustID			INT, -- masterID

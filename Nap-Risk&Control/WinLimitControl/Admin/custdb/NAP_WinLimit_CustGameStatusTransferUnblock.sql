@@ -82,7 +82,7 @@ Parameters Explanation:
          END CATCH;
      END;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] TO [vnteam];
 GO

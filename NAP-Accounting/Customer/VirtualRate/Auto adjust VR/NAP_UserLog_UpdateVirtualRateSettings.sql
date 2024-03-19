@@ -102,4 +102,4 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/

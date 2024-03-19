@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200)='329'
   , @currency INT = 0
@@ -254,5 +254,5 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].CS_CustomerSelByGroupHeadline TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].CS_CustomerSelByGroupHeadline TO [bodbAdminNet,wsv_nap]
 GO 

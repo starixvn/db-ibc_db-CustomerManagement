@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBMSG-bodb_Message" executers="bodbAdminNet,Dot_Admin" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBMSG-bodb_Message" executers="bodbAdminNet,wsv_nap,Dot_Admin" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Dot_Msg_SetMessage]
 	@MessageId int = NULL,

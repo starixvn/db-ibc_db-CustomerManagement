@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_ExchangeSelByID]
 	@ExchangeID [int]

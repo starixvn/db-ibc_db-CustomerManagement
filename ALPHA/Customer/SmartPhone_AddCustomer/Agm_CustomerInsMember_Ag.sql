@@ -679,6 +679,6 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Agm_CustomerInsMember_Ag] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Agm_CustomerInsMember_Ag] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agm_CustomerInsMember_Ag] TO [vnteam]

@@ -46,8 +46,8 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 	 @Doing = @LogData,
 	 @Duration = @Duration
 GO
-GRANT EXECUTE ON [dbo].[Acc_On_UserUpdLogout] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_On_UserUpdLogout] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_On_UserUpdLogout] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_On_UserUpdLogout] TO [bodbExtAccNet,wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_On_UserUpdLogout] TO [vnteam]

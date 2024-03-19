@@ -49,4 +49,4 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_EAS_strSplit] TO [vnteam]
 GO
-GRANT SELECT ON [dbo].[f_EAS_strSplit] TO [bodbExtAccNet]
+GRANT SELECT ON [dbo].[f_EAS_strSplit] TO [bodbExtAccNet,wsv_xnap]

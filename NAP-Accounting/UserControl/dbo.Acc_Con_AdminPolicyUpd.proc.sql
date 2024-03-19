@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicyUpd]
 	@OldMemPolicys NVARCHAR(MAX)= '', 
 	@MemPolicys NVARCHAR(MAX)= '', 	
@@ -230,5 +230,5 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminPolicyUpd] TO [vnteam]
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminPolicyUpd] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_AdminPolicyUpd] TO [bodbAdminNet,wsv_nap]
 

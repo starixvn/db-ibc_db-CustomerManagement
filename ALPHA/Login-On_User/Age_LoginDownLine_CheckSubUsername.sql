@@ -15,6 +15,6 @@ else
 
 GO
 
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [bodbDownlineNetView,wsv_alpv]

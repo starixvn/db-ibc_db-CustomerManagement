@@ -105,10 +105,10 @@ where custid = @CustID
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNetView,wsv_alpv]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelMinMax] TO vnteam 

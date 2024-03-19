@@ -213,7 +213,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Agm_CustomerSelGivenCreditByAg] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agm_CustomerSelGivenCreditByAg] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agm_CustomerSelGivenCreditByAg] TO [vnteam] AS [dbo]
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,bodbExtAccNet" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
 CREATE FUNCTION [dbo].[f_GetModeCustomerClass]()
 RETURNS BIT
 AS

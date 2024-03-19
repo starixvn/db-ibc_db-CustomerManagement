@@ -1,4 +1,4 @@
-/*<info serverAlias="DBONUSER-ON_USER" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBONUSER-ON_USER" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OnUser_Agent_LoginTime_Sel]
 	@CustID INT , 
 	@SubAccID INT = 0 , --Sub-AccountID,  

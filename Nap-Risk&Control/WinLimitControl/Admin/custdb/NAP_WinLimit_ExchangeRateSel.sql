@@ -22,7 +22,7 @@ AS
             fEx.MYR AS Rate
      FROM Lrf_f_GetExchangeDaily(@Fromdate, @Todate) fEx;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_ExchangeRateSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_ExchangeRateSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_ExchangeRateSel] TO [vnteam];
 GO

@@ -36,8 +36,8 @@ WHERE recommend = @custid and roleid = 1
  and len(username) = len(@agentUserName) + 3
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_CheckExistedUserName] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_CheckExistedUserName] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Agw_CheckExistedUserName] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_CheckExistedUserName] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_CheckExistedUserName] TO [vnteam] AS [dbo]

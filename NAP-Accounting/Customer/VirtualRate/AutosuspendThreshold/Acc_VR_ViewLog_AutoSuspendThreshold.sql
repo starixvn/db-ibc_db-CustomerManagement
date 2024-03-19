@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE Acc_VR_ViewLog_AutoSuspendThreshold 
 	  @SportType INT
 	, @StartLogTime DATETIME

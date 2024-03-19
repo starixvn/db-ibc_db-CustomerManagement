@@ -55,11 +55,11 @@ BEGIN
     END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbExtAccNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [vnteam] AS [dbo]
 GO

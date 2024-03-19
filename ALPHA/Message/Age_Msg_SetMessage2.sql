@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetMessage2]
 	@MessageId int = NULL OUTPUT,
 	@Content_en	nvarchar(4000) = NULL,

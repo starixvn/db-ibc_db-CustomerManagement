@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_LoginAdminCheckGrantAccess]
 	@username VARCHAR(50),

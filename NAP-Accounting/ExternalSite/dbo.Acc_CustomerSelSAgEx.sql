@@ -113,7 +113,7 @@ WHERE a.RowNumber BETWEEN @RowStart AND @RowEnd
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSAgEx] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelSAgEx] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelSAgEx] TO [vnteam]
 

@@ -118,7 +118,7 @@ SELECT @minPT1_HDP as minPT1_HDP,
 
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_SelSuitablePTRange_Ag] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Agw_SelSuitablePTRange_Ag] TO [bodbDownlineNet,wsv_alp]
 
 GO
 

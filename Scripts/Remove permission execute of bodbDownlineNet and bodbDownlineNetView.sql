@@ -12,12 +12,12 @@ GO
 		
 */
 
-REVOKE EXECUTE ON OBJECT:: [DBO].[EAS_GetPTProductBySuper] FROM bodbDownlineNet;
+REVOKE EXECUTE ON OBJECT:: [DBO].[EAS_GetPTProductBySuper] FROM bodbDownlineNet,wsv_alp;
 GO
-REVOKE EXECUTE ON OBJECT:: [DBO].[EAS_GetPTProductBySuper] FROM bodbDownlineNetView;
+REVOKE EXECUTE ON OBJECT:: [DBO].[EAS_GetPTProductBySuper] FROM bodbDownlineNetView,wsv_alpv;
 
 
 SELECT object_name(id), user_name(uid), id 
 FROM sysprotects 
-WHERE user_name(uid) IN ('bodbDownlineNet', 'bodbDownlineNetView') 
+WHERE user_name(uid) IN ('bodbDownlineNet,wsv_alp', 'bodbDownlineNetView,wsv_alpv') 
 	AND object_name(id) = 'EAS_GetPTProductBySuper'

@@ -7,7 +7,7 @@ AS
 	DB: DB06.BODB02
 	
 	Revisions:
-	- 20120907@Sophia: Grant permission for bodbExtAccNet
+	- 20120907@Sophia: Grant permission for bodbExtAccNet,wsv_xnap
 	
 */
 
@@ -18,9 +18,9 @@ BEGIN
 	SELECT custid FROM customer with (nolock) WHERE username = @custname
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbExtAccNet,wsv_xnap]
 GO 
 GRANT VIEW DEFINITION ON [dbo].[Acc_GetCustIdByUsername] TO [VNTeam]
 GO

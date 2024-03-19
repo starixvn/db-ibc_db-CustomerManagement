@@ -54,5 +54,5 @@ SELECT * FROM [f_Nap_WinLimit_ProductSettingSel] (0)
                                        ELSE 0
                                    END;
 GO
-GRANT SELECT ON f_Nap_WinLimit_ProductSettingSel TO [bodbAdminNet];
+GRANT SELECT ON f_Nap_WinLimit_ProductSettingSel TO [bodbAdminNet,wsv_nap];
 GO

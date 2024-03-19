@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelLoginInfo]  
     @CustId	INT,
 	@GroupName VARCHAR(50)

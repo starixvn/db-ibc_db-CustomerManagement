@@ -24,8 +24,8 @@ from custinfo (nolock)
 where custid=@Custid
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCasinoStatus] TO [vnteam]

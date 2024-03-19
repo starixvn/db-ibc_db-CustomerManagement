@@ -39,7 +39,7 @@ EXEC [NAP_WinLimit_AllProductSel]
           LEFT JOIN DBTXN.bodb02.dbo.Products p WITH (NOLOCK) ON p.ProductID = s.ProductId
      ORDER BY p.ProductName;
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllProductSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllProductSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_AllProductSel] TO [vnteam];
 GO

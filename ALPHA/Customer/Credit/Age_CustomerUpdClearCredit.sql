@@ -115,7 +115,7 @@ END CATCH
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdClearCredit] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdClearCredit] TO [bodbDownlineNet,wsv_alp]
 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdClearCredit] TO [vnteam]

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode_Sub]
 	@subAccid	INT,	
 	@custid		INT,	
@@ -90,4 +90,4 @@ BEGIN
 END	
 	
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSecurityCode_Sub] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSecurityCode_Sub] TO [bodbAdminNet,wsv_nap]

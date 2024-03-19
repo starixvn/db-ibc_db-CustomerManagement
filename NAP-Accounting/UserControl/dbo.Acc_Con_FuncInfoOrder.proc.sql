@@ -82,4 +82,4 @@ from @tmp t inner join acc_functioninfo with (nolock) on t.funcID = acc_function
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_FuncInfoOrder] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_FuncInfoOrder] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_FuncInfoOrder] TO [bodbAdminNet,wsv_nap]

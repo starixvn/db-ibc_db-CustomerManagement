@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0"></info>*/
 SET QUOTED_IDENTIFIER ON 
 GO
 SET ANSI_NULLS ON 
@@ -120,5 +120,5 @@ BEGIN
 END	
 
 GO 
- GRANT EXECUTE ON [dbo].[Acc_CustDirectMulUpd] TO [bodbAdminNet]
+ GRANT EXECUTE ON [dbo].[Acc_CustDirectMulUpd] TO [bodbAdminNet,wsv_nap]
 GO 

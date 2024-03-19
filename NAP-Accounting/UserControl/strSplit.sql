@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_Licensee,DBCUST-IPDB,DBCUST-CustDB,DBPOL-NAP_UserControl" selecters="bodbAdminNet,bodbLicenseeNet,bodbDownlineNet,Dot_Member" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-bodb_Licensee,DBCUST-IPDB,DBCUST-CustDB,DBPOL-NAP_UserControl" selecters="bodbAdminNet,wsv_nap,bodbLicenseeNet,bodbDownlineNet,wsv_alp,Dot_Member" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[strSplit](@string [nvarchar](MAX), @splitter [char](1))
 RETURNS TABLE
 AS

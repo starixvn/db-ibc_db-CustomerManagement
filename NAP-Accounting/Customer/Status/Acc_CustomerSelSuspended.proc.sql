@@ -22,7 +22,7 @@ FROM custinfo WITH (NOLOCK)
 WHERE CustID = @CustID
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSuspended] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelSuspended] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelSuspended] TO [vnteam]
 

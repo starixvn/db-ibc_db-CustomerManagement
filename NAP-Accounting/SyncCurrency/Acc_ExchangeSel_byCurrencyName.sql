@@ -21,6 +21,6 @@ BEGIN
 END
 
 GO
-GRANT  EXECUTE  ON [dbo].[Acc_ExchangeSel_byCurrencyName]  TO [bodbAdminNet]
+GRANT  EXECUTE  ON [dbo].[Acc_ExchangeSel_byCurrencyName]  TO [bodbAdminNet,wsv_nap]
 GO
 

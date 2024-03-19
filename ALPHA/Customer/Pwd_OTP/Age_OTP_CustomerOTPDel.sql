@@ -134,11 +134,11 @@ BEGIN
 		SELECT @ErrMsg = N''
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbExtAccNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

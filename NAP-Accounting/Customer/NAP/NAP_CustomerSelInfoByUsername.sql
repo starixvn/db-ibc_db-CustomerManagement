@@ -22,8 +22,8 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[NAP_CustomerSelInfoByUsername] TO [bodbDownlineNetView,wsv_alpv]

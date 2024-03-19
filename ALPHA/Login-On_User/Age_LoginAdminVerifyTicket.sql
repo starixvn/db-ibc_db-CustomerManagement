@@ -34,12 +34,12 @@ BEGIN
 	RETURN    
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbExtAccNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_LoginAdminVerifyTicket] TO [vnteam] AS [dbo]

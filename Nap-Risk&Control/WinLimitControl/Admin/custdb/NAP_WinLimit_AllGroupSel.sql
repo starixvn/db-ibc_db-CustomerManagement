@@ -38,7 +38,7 @@ EXEC [NAP_WinLimit_AllGroupSel]
             Groupname AS Name
      FROM dbo.WinLimit_Group WITH (NOLOCK);
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllGroupSel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllGroupSel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_AllGroupSel] TO [vnteam];
 GO

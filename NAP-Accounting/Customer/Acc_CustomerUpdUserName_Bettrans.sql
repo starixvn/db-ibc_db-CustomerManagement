@@ -38,7 +38,7 @@ COMMIT TRANSACTION
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdUserName_Bettrans] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdUserName_Bettrans] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerUpdUserName_Bettrans] TO [vnteam] AS [dbo]
 GO

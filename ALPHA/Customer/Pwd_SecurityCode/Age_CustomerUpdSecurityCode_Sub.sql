@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode_Sub]
 	@subAccid	INT,	
 	@custid		INT,			
@@ -80,4 +80,4 @@ SET NOCOUNT ON
 	END CATCH
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode_Sub] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode_Sub] TO [bodbDownlineNet,wsv_alp] AS [dbo]

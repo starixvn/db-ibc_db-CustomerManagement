@@ -105,10 +105,10 @@ BEGIN
 	
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbExtAccNet,wsv_xnap]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbDownlineNetView,wsv_alpv]

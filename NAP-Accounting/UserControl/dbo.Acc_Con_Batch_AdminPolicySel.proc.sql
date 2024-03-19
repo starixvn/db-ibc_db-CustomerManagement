@@ -57,5 +57,5 @@ GRANT VIEW DEFINITION
 
 GO
 GRANT EXECUTE
-    ON [dbo].Acc_Con_Batch_AdminPolicySel TO [bodbAdminNet];
+    ON [dbo].Acc_Con_Batch_AdminPolicySel TO [bodbAdminNet,wsv_nap];
 

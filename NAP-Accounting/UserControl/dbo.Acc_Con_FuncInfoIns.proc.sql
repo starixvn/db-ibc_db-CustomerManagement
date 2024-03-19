@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_Con_FuncInfoIns]
 	@FuncId int output,
 	@FuncName nvarchar(50),
@@ -137,6 +137,6 @@ AS
 	END CATCH
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_FuncInfoIns] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_FuncInfoIns] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_FuncInfoIns] TO [vnteam]

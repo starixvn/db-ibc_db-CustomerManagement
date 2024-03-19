@@ -73,6 +73,6 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_ExchangeRate
 	@Doing = @LogData
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeUpdateOpenToteRate] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_ExchangeUpdateOpenToteRate] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeUpdateOpenToteRate] TO [vnteam] 

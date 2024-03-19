@@ -30,4 +30,4 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_Get_GroupNameByGroupID] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[f_Get_GroupNameByGroupID] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[f_Get_GroupNameByGroupID] TO [bodbAdminNet,wsv_nap]

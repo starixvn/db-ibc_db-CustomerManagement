@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubUpdInfo]
 	@custid int,
 	@subaccid int,
@@ -166,8 +166,8 @@ END
 
 
 GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [bodbDownlineNet]
+GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [bodbDownlineNetView]
+GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [bodbDownlineNetView,wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustSubUpdInfo] TO [vnteam]

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_RunSP]
 	@UserID			INT,
 	@CustID			INT = 0,
@@ -32,4 +32,4 @@ SET NOCOUNT ON
 
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_RunSP] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_RunSP] TO [bodbExtAccNet,wsv_xnap]

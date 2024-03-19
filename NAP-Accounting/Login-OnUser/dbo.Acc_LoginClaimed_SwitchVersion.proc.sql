@@ -54,6 +54,6 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_LoginClaimed_SwitchVersion] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_LoginClaimed_SwitchVersion] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_LoginClaimed_SwitchVersion] TO [vnteam]

@@ -62,7 +62,7 @@ Select @On_UserID = SCOPE_IDENTITY()
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CheckIn] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CheckIn] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CheckIn] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_CheckIn] TO [bodbExtAccNet,wsv_xnap]
 GO

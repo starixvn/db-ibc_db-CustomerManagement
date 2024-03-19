@@ -60,6 +60,6 @@ FROM custinfo ci WITH(NOLOCK)
 WHERE custid = @custid
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoBonusStatus] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoBonusStatus] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCasinoBonusStatus] TO [vnteam]

@@ -22,7 +22,7 @@ AS
 	WHERE am.policy > 0 OR ag.policy > 0 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeRateSelMailList] TO [bodbAdminNet]	
+GRANT EXECUTE ON [dbo].[Acc_ExchangeRateSelMailList] TO [bodbAdminNet,wsv_nap]	
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeRateSelMailList] TO [VNTeam]	
 GO

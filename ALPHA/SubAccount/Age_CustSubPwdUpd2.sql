@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,VNTeam" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp,VNTeam" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd2]
 	@CustID int,
 	@SubAccID int,	

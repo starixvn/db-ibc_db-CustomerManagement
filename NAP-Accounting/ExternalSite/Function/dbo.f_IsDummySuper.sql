@@ -38,6 +38,6 @@ BEGIN
 	RETURN @ReturnVal
 END
 GO
-GRANT EXECUTE ON [dbo].[f_IsDummySuper] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[f_IsDummySuper] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_IsDummySuper] TO [vnteam]

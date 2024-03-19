@@ -54,6 +54,6 @@ BEGIN
 END
 
 
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdUserSearchEx] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdUserSearchEx] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdUserSearchEx] TO [vnteam]

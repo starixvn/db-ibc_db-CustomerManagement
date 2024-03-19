@@ -133,8 +133,8 @@ SET NOCOUNT ON
 	END CATCH
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSyncLiveCS] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSyncLiveCS] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSyncLiveCS] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSyncLiveCS] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdSyncLiveCS] TO [vnteam]

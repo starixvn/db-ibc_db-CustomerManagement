@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginDownline_Admin]
 	@UserName varchar(50),
 	@LoginIP varchar(20),

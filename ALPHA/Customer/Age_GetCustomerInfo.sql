@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,wsv_alp" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_GetCustomerInfo]
 	@CustId	INT
 AS

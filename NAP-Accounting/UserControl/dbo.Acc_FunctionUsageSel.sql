@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMA-bodb_Maintenance" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBMA-bodb_Maintenance" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_FunctionUsageSel]    
 	@UserId			INT, 
 	@SiteId			INT = 0,
@@ -70,7 +70,7 @@ BEGIN
 	ORDER BY Position, VisitedCount DESC
 END 
 GO 
-GRANT EXECUTE ON [dbo].[Acc_FunctionUsageSel] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_FunctionUsageSel] TO [bodbAdminNet,wsv_nap]
 GO 
 GRANT VIEW DEFINITION ON [dbo].[Acc_FunctionUsageSel] TO [vnteam]
 GO 

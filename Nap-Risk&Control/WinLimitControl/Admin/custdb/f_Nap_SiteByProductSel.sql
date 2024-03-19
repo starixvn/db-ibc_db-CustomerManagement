@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-bodb_licensee" selecters="bodbadminNet" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCust-bodb_licensee" selecters="bodbAdminNet,wsv_nap" viewers="" isFunction="1" isNested="1"></info>*/
 CREATE FUNCTION [dbo].[f_Nap_SiteByProductSel]
 (@ProductId TINYINT = 0)
 RETURNS TABLE

@@ -19,6 +19,6 @@ SET NOCOUNT ON
 	WHERE SubAccID = @SubAccID AND custid = @custid
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [bodbDownlineNetView,wsv_alpv]

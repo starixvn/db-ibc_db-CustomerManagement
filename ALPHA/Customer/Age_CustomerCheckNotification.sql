@@ -86,6 +86,6 @@ END
 GO
 GRANT VIEW DEFINITION ON Age_CustomerCheckNotification TO vnteam
 GO
-GRANT EXECUTE ON Age_CustomerCheckNotification TO bodbDownlineNet
+GRANT EXECUTE ON Age_CustomerCheckNotification TO bodbDownlineNet,wsv_alp
 GO
-GRANT EXECUTE ON Age_CustomerCheckNotification TO bodbDownlineNetView
+GRANT EXECUTE ON Age_CustomerCheckNotification TO bodbDownlineNetView,wsv_alpv

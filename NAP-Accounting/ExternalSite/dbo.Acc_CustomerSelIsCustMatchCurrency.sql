@@ -16,7 +16,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelIsCustMatchCurrency] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelIsCustMatchCurrency] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelIsCustMatchCurrency] TO [vnteam]
 

@@ -36,12 +36,12 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbExtAccNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCheckEnable] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCheckEnable] TO [vnteam] AS [dbo]

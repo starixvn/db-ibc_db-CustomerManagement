@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE EAS_CustomerSelProtectionModeList
 	@GroupName		VARCHAR(50),

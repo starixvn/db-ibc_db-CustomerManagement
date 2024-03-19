@@ -82,5 +82,5 @@ GO
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] TO [vnteam];
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] TO [bodbAdminNet,wsv_nap];
 GO

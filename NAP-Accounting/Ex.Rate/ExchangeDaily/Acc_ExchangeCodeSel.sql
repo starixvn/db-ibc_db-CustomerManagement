@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBEXT-bodb02" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
 CREATE PROCEDURE  [dbo].[Acc_ExchangeCodeSel]   
  @Type TINYINT = 0  
 AS  

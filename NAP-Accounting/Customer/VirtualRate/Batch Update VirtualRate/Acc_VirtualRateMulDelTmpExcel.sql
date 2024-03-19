@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-BODB_ACC" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VirtualRateMulDelTmpExcel]	
 	@UserID INT,	
 	@ErrCode INT = 0 OUTPUT,
@@ -39,6 +39,6 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_VirtualRateMulDelTmpExcel] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_VirtualRateMulDelTmpExcel] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_VirtualRateMulDelTmpExcel] TO [vnteam]

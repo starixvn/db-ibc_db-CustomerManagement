@@ -20,8 +20,8 @@ RETURN
 
 
 GO
-GRANT SELECT ON [f_AGE_IsCrossLevelUpdate] TO [bodbDownlineNet] 
+GRANT SELECT ON [f_AGE_IsCrossLevelUpdate] TO [bodbDownlineNet,wsv_alp] 
 GO
-GRANT SELECT ON [f_AGE_IsCrossLevelUpdate] TO [bodbDownlineNetView]
+GRANT SELECT ON [f_AGE_IsCrossLevelUpdate] TO [bodbDownlineNetView,wsv_alpv]
 GO
 

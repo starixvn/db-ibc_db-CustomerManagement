@@ -47,6 +47,6 @@ WHERE recommend=@Recommend AND roleid=1 and username like @Keyword
 WHERE RowNum between @RowStart and @RowEnd
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_CustomerSelByAg] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_CustomerSelByAg] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_CustomerSelByAg] TO [vnteam] AS [dbo]

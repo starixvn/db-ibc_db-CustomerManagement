@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_GroupPolicySel]
 @Groupid INT,
 @system	 VARCHAR(50)='ACCOUNTING'
@@ -49,5 +49,5 @@ GRANT VIEW DEFINITION
 
 GO
 GRANT EXECUTE
-    ON [dbo].Acc_Con_GroupPolicySel TO [bodbAdminNet];
+    ON [dbo].Acc_Con_GroupPolicySel TO [bodbAdminNet,wsv_nap];
 

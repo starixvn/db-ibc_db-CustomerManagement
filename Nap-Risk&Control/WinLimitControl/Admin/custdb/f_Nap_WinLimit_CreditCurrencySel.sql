@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" selecters="bodbAdminNet" viewers="" isFunction="1" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" selecters="bodbAdminNet,wsv_nap" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION dbo.f_Nap_WinLimit_CreditCurrencySel()
 RETURNS TABLE

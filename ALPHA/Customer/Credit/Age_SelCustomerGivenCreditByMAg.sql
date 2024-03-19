@@ -127,7 +127,7 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_SelCustomerGivenCreditByMAg] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_SelCustomerGivenCreditByMAg] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_SelCustomerGivenCreditByMAg] TO [vnteam]
 GO

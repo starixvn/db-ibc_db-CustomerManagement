@@ -1,4 +1,4 @@
-﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_AdminGroupSel]
 	@username	VARCHAR(30)='',
 	@groupID	INT =0 OUTPUT,
@@ -26,4 +26,4 @@ ALTER PROCEDURE [dbo].[Acc_AdminGroupSel]
 	
  END
  GO
- GRANT EXECUTE ON [dbo].[Acc_AdminGroupSel] TO [bodbAdminNet]
+ GRANT EXECUTE ON [dbo].[Acc_AdminGroupSel] TO [bodbAdminNet,wsv_nap]

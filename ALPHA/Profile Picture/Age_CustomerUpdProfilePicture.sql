@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-bodb_Credit" executers="bodbDownlineNet" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-bodb_Credit" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 
 CREATE PROCEDURE Age_CustomerUpdProfilePicture
 	@custid INT,

@@ -26,7 +26,7 @@ BEGIN
 END
 GO
 
-GRANT EXECUTE ON [dbo].[Acc_CustomerUsernameSelByList] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUsernameSelByList] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUsernameSelByList] TO [vnteam] AS [dbo]
 GO

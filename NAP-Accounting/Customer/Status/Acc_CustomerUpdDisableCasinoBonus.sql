@@ -200,10 +200,10 @@ END CATCH
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT  EXECUTE  ON [dbo].[Acc_CustomerUpdDisableCasinoBonus]  TO [bodbDownlineNet]
+GRANT  EXECUTE  ON [dbo].[Acc_CustomerUpdDisableCasinoBonus]  TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [bodbExtAccNet] 
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [bodbExtAccNet,wsv_xnap] 

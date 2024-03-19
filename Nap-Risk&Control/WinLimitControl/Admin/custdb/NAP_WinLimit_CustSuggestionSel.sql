@@ -50,7 +50,7 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSuggestionSel] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSuggestionSel] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSuggestionSel] TO [vnteam]
 GO

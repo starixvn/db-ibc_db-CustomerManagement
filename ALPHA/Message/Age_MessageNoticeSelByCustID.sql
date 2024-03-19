@@ -30,9 +30,9 @@ BEGIN
 END
 GO
 
-GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [bodbDownlineNetView] 
+GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [bodbDownlineNetView,wsv_alpv] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_MessageNoticeSelByCustID] TO [vnteam] 
 GO

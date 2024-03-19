@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
 GO
 ALTER PROCEDURE [dbo].[Acc_ManageCansee_Sel] 
 	-- Add the parameters for the stored procedure here

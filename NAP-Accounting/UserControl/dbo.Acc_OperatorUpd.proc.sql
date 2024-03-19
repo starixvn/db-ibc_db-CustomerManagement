@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_OperatorUpd]
 	@custid INT, 
 	@firstname NVARCHAR (50), 
@@ -238,7 +238,7 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_OperatorUpd] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_OperatorUpd] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorUpd] TO [vnteam]
 GO

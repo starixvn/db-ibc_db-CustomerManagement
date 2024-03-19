@@ -36,7 +36,7 @@ EXEC NAP_WinLimit_AllCurrencySel
             e.Code+' ('+e.currency+')' AS Name
      FROM dbo.exchange e WITH (NOLOCK);
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllCurrencySel] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_AllCurrencySel] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_AllCurrencySel] TO [vnteam];
 GO

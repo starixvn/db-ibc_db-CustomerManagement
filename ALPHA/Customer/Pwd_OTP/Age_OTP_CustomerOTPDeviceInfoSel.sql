@@ -36,7 +36,7 @@ BEGIN
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNetView] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDeviceInfoSel] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

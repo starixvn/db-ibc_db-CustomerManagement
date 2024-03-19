@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" selecters="bodbAdminNet,bodbDownlineNet,bodbExtAccNet,bodbDownlineNetView" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" selecters="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbExtAccNet,wsv_xnap,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION fn_LimitCreateAccountSiteConfig (@Site VARCHAR(50) = '' )
 RETURNS TABLE
 AS

@@ -54,8 +54,8 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[f_CheckAgentLoginDomain] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[f_CheckAgentLoginDomain] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[f_CheckAgentLoginDomain] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[f_CheckAgentLoginDomain] TO [bodbDownlineNetView,wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[f_CheckAgentLoginDomain] TO [vnteam]

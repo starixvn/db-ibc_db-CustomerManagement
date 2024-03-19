@@ -47,7 +47,7 @@ EXEC [NAP_Winlimit_DebitGameReset]
          WHERE GroupId = @GroupId
      );
 GO
-GRANT EXECUTE ON [dbo].[NAP_Winlimit_DebitGameReset] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_Winlimit_DebitGameReset] TO [bodbAdminNet,wsv_nap];
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_Winlimit_DebitGameReset] TO [vnteam];
 GO

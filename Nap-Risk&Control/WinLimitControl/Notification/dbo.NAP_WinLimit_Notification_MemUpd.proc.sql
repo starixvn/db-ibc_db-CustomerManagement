@@ -76,5 +76,5 @@ GO
 GO
 GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_Notification_MemUpd] TO [vnteam];
 GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_Notification_MemUpd] TO [bodbAdminNet];
+GRANT EXECUTE ON [dbo].[NAP_WinLimit_Notification_MemUpd] TO [bodbAdminNet,wsv_nap];
 GO

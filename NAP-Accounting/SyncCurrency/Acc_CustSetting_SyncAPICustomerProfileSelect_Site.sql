@@ -252,8 +252,8 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_Site] TO [bodbAdminNet] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_Site] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_Site] TO [bodbAdminNet] AS [dbo]
+GRANT VIEW DEFINITION ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_Site] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustSetting_SyncAPICustomerProfileSelect_Site] TO [vnteam] AS [dbo]

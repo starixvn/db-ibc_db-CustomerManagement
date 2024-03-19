@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicyIns]
 	@CustID INT, 
 	@UserID INT, 
@@ -35,6 +35,6 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminPolicyIns] TO [vnteam]
 GO
-GRANT EXECUTE  ON [dbo].[Acc_Con_AdminPolicyIns] TO [bodbAdminNet]
+GRANT EXECUTE  ON [dbo].[Acc_Con_AdminPolicyIns] TO [bodbAdminNet,wsv_nap]
 GO
 

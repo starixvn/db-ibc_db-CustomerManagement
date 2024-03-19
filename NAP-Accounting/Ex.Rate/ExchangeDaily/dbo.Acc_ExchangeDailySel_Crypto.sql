@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [Acc_ExchangeDailySel_Crypto] 
 	@Code VARCHAR(12)
 	, @RunDate DATE = NULL

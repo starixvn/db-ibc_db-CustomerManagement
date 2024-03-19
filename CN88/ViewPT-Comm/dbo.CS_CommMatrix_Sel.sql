@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbadminNet" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_CommMatrix_Sel]
    @UserName VARCHAR(30) = '',
    @ErrCode INT = 0 OUTPUT,

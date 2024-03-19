@@ -38,7 +38,7 @@ END
 
 GO
 GRANT EXECUTE
-    ON [dbo].[Acc_Con_AdminSelSystembyCustID_Settlement] TO [bodbAdminNet];
+    ON [dbo].[Acc_Con_AdminSelSystembyCustID_Settlement] TO [bodbAdminNet,wsv_nap];
 
 
 GO

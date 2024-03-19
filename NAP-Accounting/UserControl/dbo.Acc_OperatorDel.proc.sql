@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_OperatorDel]
 	@CustID INT, 
 	@Language VARCHAR (2)='E', 
@@ -81,7 +81,7 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_OperatorDel] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_OperatorDel] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorDel] TO [vnteam]
 GO

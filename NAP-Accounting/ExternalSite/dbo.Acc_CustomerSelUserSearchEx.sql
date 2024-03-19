@@ -73,7 +73,7 @@ FROM
 	)a
 ORDER BY searchcount DESC, username
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelUserSearchEx] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelUserSearchEx] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelUserSearchEx] TO [vnteam]
 

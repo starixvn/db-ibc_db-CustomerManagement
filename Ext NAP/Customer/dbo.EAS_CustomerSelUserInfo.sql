@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbExtAccNet,wsv_xnap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelUserInfo]  
 	@custid	int = 0,
 	@username varchar(30),

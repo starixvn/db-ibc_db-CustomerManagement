@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,bodbExtAccNet,bodbDownlineNet,bodbDownlineNetView" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_CheckPermission]
 	@CustID int, 
 	@FuncID int=null,
@@ -62,9 +62,9 @@ END
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_Con_CheckPermission] TO [vnteam]	
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbExtAccNet,wsv_xnap]
 Go
-GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_Con_CheckPermission] TO [bodbDownlineNet,wsv_alp]
 	

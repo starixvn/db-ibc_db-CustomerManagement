@@ -40,7 +40,7 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelGDComm_Ag] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelGDComm_Ag] TO [bodbDownlineNet,wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelGDComm_Ag] TO [bodbDownlineNetView]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelGDComm_Ag] TO [bodbDownlineNetView,wsv_alpv]
 Go 

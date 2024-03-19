@@ -23,8 +23,8 @@ WHERE c.srecommend = @superID AND c.roleid = 3
 ORDER BY c.username
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbExtAccNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbExtAccNet,wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [vnteam]

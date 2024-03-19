@@ -28,7 +28,7 @@ WHERE	UserName = @UserName
 		AND dbo.f_IsDummySuper(srecommend) = 0
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelByUserNameEx] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelByUserNameEx] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelByUserNameEx] TO [vnteam]
 

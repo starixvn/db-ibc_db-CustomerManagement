@@ -20,7 +20,7 @@ From custinfo with (nolock)
 Where CustID = @CustID
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelDisableOutRight] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelDisableOutRight] TO [bodbAdminNet,wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelDisableOutRight] TO [vnteam]
 

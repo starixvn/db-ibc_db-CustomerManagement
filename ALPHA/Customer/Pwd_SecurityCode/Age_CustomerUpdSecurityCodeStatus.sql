@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" isFunction="0"></info>*/
  ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus]
 	@custid			INT,
 	@CheckedSecurityCode	BIT = 1,

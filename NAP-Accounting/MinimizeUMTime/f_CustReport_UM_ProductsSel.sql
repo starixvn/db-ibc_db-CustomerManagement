@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" selecters="bodbAdminNet" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" selecters="bodbAdminNet,wsv_nap" viewers="" isFunction="1"></info>*/
 CREATE FUNCTION [dbo].[f_CustReport_UM_ProductsSel](@Functiontype	TINYINT)
 RETURNS TABLE
 AS

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,bodbDownlineNetView" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelAllStatus]
 	@custid INT
 	, @SettingStatus TINYINT = 0

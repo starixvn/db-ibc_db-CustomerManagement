@@ -28,10 +28,10 @@ GRANT VIEW DEFINITION
 
 GO
 GRANT EXECUTE
-    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [bodbAdminNet];
+    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [bodbAdminNet,wsv_nap];
 
 
 GO
 GRANT EXECUTE
-    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [bodbExtAccNet];
+    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [bodbExtAccNet,wsv_xnap];
 

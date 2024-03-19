@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
 ALTER PROCEDURE Acc_CustDirectSel
 (
 	@CustID INT

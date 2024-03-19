@@ -24,11 +24,11 @@ WHERE c.CustID = @CustID
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbDownlineNet]
+GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbDownlineNet,wsv_alp]
 GO
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbAdminNet]
+GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbAdminNet,wsv_nap]
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[Acc_SelCustomerGivenCredit] TO [vnteam]
