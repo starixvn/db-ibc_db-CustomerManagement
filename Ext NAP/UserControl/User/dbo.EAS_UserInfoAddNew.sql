@@ -25,6 +25,7 @@ AS
 			- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 			- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 			- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+			- 20240321@Luke: EXT - Failed to create external account [Redmine: #202675]
 
 		Parameter's Explanation:
 	*/
@@ -83,11 +84,9 @@ SET NOCOUNT ON
 		RETURN;
 	END
 
+	EXEC NAP_UserControl.dbo.EAS_eaUserInfo_Ins @UserId = @custid, @GroupId = @groupid, @Creator = @userID, @ErrCode = @ErrCode OUTPUT
 	
-	INSERT INTO NAP_UserControl.dbo.eaUserInfo (UserID, GroupID, enabled, creator, CreatedDate)
-	VALUES (@CustID, @GroupID, 1, @userID, current_timestamp)
-	
-	IF @@ERROR <> 0
+	IF @ErrCode <> 0
 	BEGIN
 		--roll back transaction
 		DELETE FROM customer WITH(ROWLOCK) WHERE custid = @custid
@@ -96,8 +95,8 @@ SET NOCOUNT ON
 		SELECT @ErrMsg = 'Add user failed.',
 			   @ErrCode = 103;
 		RETURN;
-	END
-	
+	END	
+
 	/**************Write to Log table********************/
 	DECLARE @LogData NVARCHAR(MAX)	
 	SELECT @LogData = '<EAS_UserInfoAddNew>'+
