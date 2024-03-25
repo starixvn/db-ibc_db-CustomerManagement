@@ -123,6 +123,7 @@ Revisions:
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230421@Elodie: Remove linked-server DBACC [RedmineID: #169643]
 	- 20230421@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
+	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS - Remove Old Structure Column DisableEsports [RedmineID: #193083]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -651,7 +652,7 @@ BEGIN
 	 
 	    ci.DisableOutRight,
 	    ci.DoubleCommLosing,	    	   
-		ci.DisableEsports,
+		--ci.DisableEsports,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
 	    @IsDeposit IsDeposit, 

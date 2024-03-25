@@ -25,6 +25,7 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -84,6 +85,10 @@ BEGIN
 	UNION ALL
 	SELECT ProductID,SportType,BetType,RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+	UNION ALL
+	SELECT ProductID,SportType,BetType,RealProductID
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,28,@SettingStatus)
+	WHERE SportType = 9914 AND Bettype = 915
 
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
 	;WITH tmp AS(
@@ -106,7 +111,7 @@ BEGIN
 		,s.roleid
 	FROM #Tmp_ProductProfile b
 		CROSS APPLY #SMATemp s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming,JiliGame
+	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5,1) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games , FGG, SEAL, Microgaming,JiliGame, SportsBook
 			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
 			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
 			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
@@ -137,16 +142,16 @@ BEGIN
 		ON  c.ProductId = b.ProductID 
 	WHERE b.ProductID=18 or (b.ProductID=41 AND b.SportType=9911)
 	
-	-- Sportsbook - Soccer
-	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
-	SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, 
-					CASE WHEN ss.roleid = 4 THEN b.spositiontaking 
-						WHEN ss.roleid = 3 THEN b.mpositiontaking
-						WHEN ss.roleid = 2 THEN b.apositiontaking
-						ELSE b.spositiontaking END AS ValuePT,ss.roleid
-	FROM #SMATemp ss
-		INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	WHERE b.BetType = 1 AND b.SportType = 1	
+	---- Sportsbook - Soccer
+	--INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
+	--SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, 
+	--				CASE WHEN ss.roleid = 4 THEN b.spositiontaking 
+	--					WHEN ss.roleid = 3 THEN b.mpositiontaking
+	--					WHEN ss.roleid = 2 THEN b.apositiontaking
+	--					ELSE b.spositiontaking END AS ValuePT,ss.roleid
+	--FROM #SMATemp ss
+	--	INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
+	--WHERE b.BetType = 1 AND b.SportType = 1	
 	
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a

@@ -27,6 +27,7 @@ AS
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 		- 20230728@Helios: Customer Setting - Simplify Live Casino Customer Setting [RedmineID: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 
 	Param's Explanation:
 	• @SRecommend: Super Agent ID
@@ -46,11 +47,12 @@ BEGIN
 	INSERT INTO #SportBettype (SportType, BetType, IsLive, RealProductID)
 	SELECT SportType, BetType, IsLive , RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
-	--WHERE RealProductId = @ProductID
 	UNION ALL 
 	SELECT SportType, BetType, IsLive , RealProductID
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
-	--WHERE RealProductId = @ProductID
+	UNION ALL 
+	SELECT SportType, BetType, IsLive , RealProductID
+	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,28,@SettingStatus)
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
@@ -106,7 +108,7 @@ BEGIN
 	CROSS APPLY (
 		SELECT		cpts3.SportType,
 					cpts3.BetType,
-					cpts3.IsLive,
+					CASE WHEN cpts3.SportType = 9915 THEN 1 ELSE cpts3.IsLive END AS IsLive,
 					CASE WHEN roleid = 4	THEN cpts3.SuperPT 
 											ELSE NULL 
 											END AS positiontaking
@@ -116,10 +118,9 @@ BEGIN
 				AND	cpts3.BetType = sbt.BetType
 				AND	cpts3.IsLive = sbt.IsLive
 		WHERE	cpts3.CustID = info.custid
-		--AND RealProductID = @ProductID
 	) pt
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-	ORDER BY RowNumber, SportType, isLive, BetType, roleid
+	ORDER BY RowNumber, isLive, SportType, BetType, roleid
 END
 GO
 

@@ -68,6 +68,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]	
 		- 20240223@Luke: EXT - Support one more filter to filter "No Downline" Supers [Redmine: #201009]
+		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 	Explanation's Param:
 		@Status = 
 			0: All
@@ -86,7 +87,7 @@ BEGIN
     DECLARE @tmpAgentList TABLE (custID INT, Downlines INT, username VARCHAR(30), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0
-	DECLARE @RowStart INT, @RowEnd INT,@IsMyanmarOdds BIT = 0,@srecommend		INT	
+	DECLARE @RowStart INT, @RowEnd INT,@srecommend		INT	
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
@@ -190,7 +191,7 @@ BEGIN
 
 	SELECT @UplineDoubleCommLosing = DoubleCommLosing,@srecommend = srecommend FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @mrecommend
 	-- MyanmarOdds
-	SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds(@srecommend)
+	--SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds(@srecommend)
 	
 	SELECT	c.custid,
 			c.username,
@@ -209,16 +210,14 @@ BEGIN
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,	
 			al.Downlines,
 
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupa ELSE 0 END) AS groupa,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupb ELSE 0 END) AS groupb,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupc ELSE 0 END) AS groupc,
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.groupd ELSE 0 END) AS groupd,
-				   --For Myanmar Odds
-		   @IsMyanmarOdds AS  IsMyanmarOdds,
-		   ISNULL(AC.CommRate,0) AS discountMyanmarOdds,
-		   
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discount1x2,
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discountcs,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 1 THEN cda.Discount ELSE 0 END) AS groupa,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 3 THEN cda.Discount ELSE 0 END) AS groupb,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 7 THEN cda.Discount ELSE 0 END) AS groupc,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 8 THEN cda.Discount ELSE 0 END) AS groupd,
+			MAX(CASE WHEN cda.SportType = 2 and cda.BetType = 1 THEN 1		    ELSE 0 END) AS IsMyanmarOdds,
+			MAX(CASE WHEN cda.SportType = 2 and cda.BetType = 1 THEN cda.Discount ELSE 0 END) AS discountMyanmarOdds,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 5 THEN cda.Discount ELSE 0 END) AS discount1x2,
+			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 4 THEN cda.Discount ELSE 0 END) AS discountcs,
 			ISNULL(cps.Locked,0) AS Locked
            			
 	FROM @tmpAgentList al
@@ -230,14 +229,13 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS cps
-		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
+		LEFT JOIN CustDiscount3rd_Agent cda WITH (NOLOCK) ON c.custid = cda.CustID AND cda.SportType IN (1,2)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-		LEFT JOIN AgentCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, 
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason, al.Downlines,
-			cl.SecurityCode, al.RowNumber  ,ac.CustId,AC.CommRate,cps.Locked
+			cl.SecurityCode, al.RowNumber ,cps.Locked
 	
 	ORDER BY RowNumber
 END
