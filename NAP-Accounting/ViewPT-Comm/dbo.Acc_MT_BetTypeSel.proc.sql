@@ -22,6 +22,7 @@ Revisions:
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 	- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 Parameters Explanation:  
 	
 */
@@ -64,17 +65,14 @@ BEGIN
 			END
 		END CATCH
 	----- 20150610@Kos -------------------
-
-	SELECT DISTINCT t.bettype, b.Name AS typenamee
-	FROM 
-		(	
-			SELECT cs.custid, cs.bettype, cs.sporttype FROM CustSetting cs WITH (NOLOCK)
-			UNION
-			SELECT 73104,Bettype,SportType FROM #ProductSettingDetail
-		 ) t
-		INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
-	WHERE t.custid IN( 73104) AND t.sporttype = ISNULL(@sporttype, t.sporttype)
+	SELECT DISTINCT
+		Bettype 
+	,	b.Name AS typenamee
+	FROM #ProductSettingDetail t
+	INNER JOIN #tmp_Bettype b ON t.bettype = b.ID
+	WHERE t.sporttype = ISNULL(@sporttype, t.sporttype)
 	ORDER BY t.bettype
+
 
 	DROP TABLE #tmp_Bettype
 	DROP TABLE #ProductSettingDetail

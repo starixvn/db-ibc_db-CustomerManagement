@@ -65,6 +65,7 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
+	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 	
 	Explanation's Param:
 	@Status = 
@@ -83,8 +84,8 @@ BEGIN
     DECLARE @tmpMemberList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
 	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
 	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0, @AgentSite VARCHAR(10)
-	DECLARE @RowStart INT, @RowEnd INT
-	 DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0,@srecommend		INT	
+	DECLARE @RowStart INT, @RowEnd INT,@srecommend		INT
+	 --DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0,@srecommend		INT	
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
@@ -99,9 +100,9 @@ BEGIN
 	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
 
 	 -- MyanmarOdds
-	SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
-	IF @IsMyanmarOdds = 1
-	SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 1)
+	--SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
+	--IF @IsMyanmarOdds = 1
+	--SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 1)
 	
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @DenySite )
@@ -201,18 +202,18 @@ BEGIN
 			ci.DoubleCommLosing,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.discount ELSE 0 END) AS discount,			
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discountcs,
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.discount ELSE 0 END) AS discount1x2,
-	
-			-- Myanmar odds
-			ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
-			ISNULL(AC.playerdiscount,0) AS playerdiscountMyanmarOdds,
-			ISNULL(@discountMyanmarOdds,0) AS discountMyanmarOdds,
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount,
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discountcs,
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount1x2,
 
-			MAX(CASE WHEN cs.bettype = 1 and cs.sporttype=1 THEN cs.playerdiscount ELSE 0 END) AS playerdiscount,			
-			MAX(CASE WHEN cs.bettype = 4 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscountcs,
-			MAX(CASE WHEN cs.bettype = 5 and cs.sporttype = 1 then cs.playerdiscount ELSE 0 END) AS playerdiscount1x2,
+			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN 1				ELSE 0 END)    AS IsMyanmarOdds,
+			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountMyanmarOdds,
+			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discountMyanmarOdds,
+
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount,
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountcs,
+			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount1x2,
+
 			ISNULL(cps.Locked,0) AS Locked
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
@@ -223,14 +224,13 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS cps
-		LEFT JOIN dbo.CustSetting as cs WITH(NOLOCK) on c.custid = cs.custid AND cs.sporttype = 1 AND cs.bettype IN (1,5,4)
+		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON c.custid = cdm.CustID AND cdm.SportType IN (1,2)
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
-		LEFT JOIN CustCommRate AC WITH (NOLOCK) ON AC.CustId = CI.custid AND AC.Sporttype = 1 AND AC.Bettype = 1 AND @IsMyanmarOdds = 1
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			cl.SecurityCode, ml.RowNumber  ,AC.playerdiscount,cps.Locked
+			cl.SecurityCode, ml.RowNumber  ,cps.Locked
 	
 	ORDER BY RowNumber
 

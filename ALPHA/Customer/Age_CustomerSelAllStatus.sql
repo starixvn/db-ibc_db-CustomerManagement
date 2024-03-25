@@ -22,6 +22,8 @@ AS
 		- 20230410@Bobby: AutoJob clear balance downlines IsAllowAutoTransfer [RedmineID: #182071]
 		- 20230925@Tacy: Remove link server DBACC [Redmine: #194274]
 		- 20231027@Bobby: AutoJob transfer - schedule option [RedmineID: #195135]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+
 	Param's Explanation:
 		- @username: username of customer that need to be viewed.   
 		- @uplineId: the ID of the upline.
@@ -32,10 +34,7 @@ BEGIN
     DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1
 
 	DECLARE @IsAllDayBalTransfer BIT,@ExecuteSQL NVARCHAR(MAX) = '',@query NVARCHAR(MAX) = '',@Param NVARCHAR(MAX) 	
-    
-	--Downline/Upline status 
-    DECLARE @uplineDisableEsports			BIT 
-		  
+    		  
 	DECLARE @upLineDisableOutright	BIT
           , @upLineClosed			BIT
           , @upLineSuspend			BIT
@@ -58,7 +57,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
 				,	@uplineid = custid
 	     FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -82,8 +80,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				
 				,	@uplineid = custid
 	     FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -109,8 +105,6 @@ BEGIN
 				,	@upLineClosed = ISNULL(cs.closed, 0)
 				,	@upLineDisableOutright = ISNULL(DisableOutright, 0)
 				,	@uplineDoubleCommLosing = ISNULL(DoubleCommLosing, 0)
-				,	@uplineDisableEsports = ISNULL(DisableEsports, 0)
-				
 				,	@uplineid = custid
 	     FROM custinfo ci WITH(NOLOCK)
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -168,13 +162,7 @@ BEGIN
 								) AS cs
     WHERE ci.custid = @custid
 	
-	--Product Status
-	SELECT	ci.DisableEsports, 
-			@uplineDisableEsports AS uplineDisableEsports			
-	FROM custinfo ci WITH (NOLOCK)
-    WHERE ci.custid = @custid
-
 	-- For Product DCS
-	EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
+    EXEC Acc_CustSetting_StatusSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
 END
 GO

@@ -32,6 +32,7 @@ AS
 		- 20200504@Johnson: allow negative given credit for some supers [redmine:#132994]
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -88,16 +89,20 @@ BEGIN
 		IF (@Credit_AllOtherMaster + @CreditAmt > @Credit_SAg)
 		BEGIN
 			SELECT	@CreditProblem = 1,
-					@ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, credit increase unsuccessful. You have exceeded your agent credit.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](70003, @Language) END
+					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_SAg - @Credit_AllOtherMaster, '#,#0.####'))
 			RETURN
 		END 
 		
 		IF (@Credit_AllAgent > @CreditAmt)
 		BEGIN
 			SELECT	@CreditProblem = 1,
-					@ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, credit update unsuccessful. The new master credit cannot be less than total agent given credit.'
-								ELSE [dbo].[f_Get_MsgNamebyMsgID](70004, @Language) END
+					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllAgent, '#,#0.####'))
 			RETURN
 		END
 	END

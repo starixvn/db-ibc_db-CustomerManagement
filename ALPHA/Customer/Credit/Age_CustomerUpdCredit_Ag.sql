@@ -41,6 +41,7 @@ AS
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 	Param's Explanation:  
 		- @custid: custid that need to be updated   
 		- @CreditAmt: new credit   
@@ -105,8 +106,10 @@ BEGIN
 	IF @Credit_AllOtherMember + @CreditAmt > @Credit_Ag
 	BEGIN
 		SELECT	@CreditProblem = 1,
-				@ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, increase credit unsuccessfully. You have exceeded your agent credit.'  
-							ELSE [dbo].[f_Get_MsgNamebyMsgID](70003, @Language) END
+				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_Ag - @Credit_AllOtherMember, '#,#0.####'))
 		RETURN 
 	END
 
@@ -121,9 +124,10 @@ BEGIN
     IF @CreditAmt > @Credit_Mem_Max
     BEGIN  
         SELECT	@CreditProblem = 1,
-				@ErrMsg = CASE @Language WHEN 'E' THEN 'Sorry, increase credit unsuccessfully. You have exceeded the agent''s member max credit'
-                            ELSE [dbo].[f_Get_MsgNamebyMsgID](70007, @Language) END
-						 + ' (' + convert(varchar(20), @Credit_Mem_Max) + ').'
+				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'You have exceeded the member max credit given by upline ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
         RETURN
     END
 	

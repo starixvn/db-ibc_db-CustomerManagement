@@ -44,11 +44,11 @@ AS
 		- 20200717@Johnson: revise message check credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 
 */
-
 BEGIN
-	SET NOCOUNT ON
+SET NOCOUNT ON
 
 	DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @username VARCHAR(50), @uplineId INT, @IsDepositMember BIT, @currency INT, @NewCreditRM MONEY
 
@@ -132,28 +132,33 @@ BEGIN
 			RETURN	
 		END
 		
-		IF @TotalAmt + @NewCredit < 0
-		BEGIN
-			SELECT	@ErrCode = 101,
-					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'The new bet credit is out of the available range.'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70006, @Language) END
-			RETURN 
-		END
-
 		IF @NewCredit + @Credit_AllOtherMember > @AgentCredit 
 		BEGIN
-			SELECT	@ErrCode = 101,
-					@ErrMsg =  @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Sorry, increase credit unsuccessfully. You have exceeded your agent credit.'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70003, @Language) END
+			SELECT	@ErrCode = 101
+			SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@AgentCredit - @Credit_AllOtherMember, '#,#0.####'))
 			RETURN
+		END
+
+		IF @TotalAmt + @NewCredit < 0
+		BEGIN
+			SELECT	@ErrCode = 101
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit must be greater than or equal to ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70031,@Language) 
+											END  
+											, '{number}', FORMAT(@TotalAmt, '#,#0.####'))
+			RETURN 
 		END
 
 		IF @NewCredit > @Credit_Mem_Max
 		BEGIN
-			SELECT	@ErrCode = 101,
-					@ErrMsg =  @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Sorry, credit increase is unsuccessful, You have exceeded member max credit given by your upline'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70013, @Language) END
-												+' (' + CONVERT(VARCHAR(20), @Credit_Mem_Max) + ').'
+			SELECT	@ErrCode = 101
+			SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the maximum Member credit set by upline ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
 			RETURN
 		END
 	END
@@ -161,10 +166,6 @@ BEGIN
 	BEGIN
 		SELECT @uplineId = @mrecommend
 			
-		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
-		FROM dbo.custInfo WITH (NOLOCK)
-		WHERE recommend = @CustID AND roleid = 1
-
 		IF @MaxCredit IS NOT NULL
 		BEGIN
 			DECLARE @MaxCredit_Mem_Min MONEY
@@ -175,19 +176,21 @@ BEGIN
 
 			IF @MaxCredit_Mem_Min > @maxcredit AND @MaxCredit > 0
 			BEGIN
-				SELECT	@ErrCode = 119,
-						@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Max credit update not successful, The new max credit is less than the credit of the current members!!!'
-														ELSE [dbo].[f_Get_MsgNamebyMsgID](70015, @Language) END
-													+ ' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
+				SELECT	@ErrCode = 119
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The Member max credit must be greater than or equal to current Member credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70035,@Language) 
+											END  
+											, '{number}', FORMAT(@MaxCredit_Mem_Min, '#,#0.####'))
 				RETURN
 			END 
 
-			IF @maxcredit > @newcredit 
+			IF @maxcredit > @newcredit -- (Member Max Credit > Agent Max Credit)
 			BEGIN
-				SELECT	@ErrCode = 120,
-						@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Max credit update not successful, The new max credit is greater than the credit of the agent'
-														ELSE [dbo].[f_Get_MsgNamebyMsgID](70016, @Language) END
-													+ ' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
+				SELECT	@ErrCode = 120
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The Member max credit must be less than or equal to the Agent credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70034,@Language) 
+											END  
+											, '{number}', FORMAT(@newcredit, '#,#0.####'))
 				RETURN
 			END 	
 		END
@@ -210,18 +213,25 @@ BEGIN
 
 		IF @Credit_AllOtherAgent + @NewCredit > @Credit_MAg
 		BEGIN
-			SELECT	@ErrCode = 201,
-					@ErrMsg = @UserName + ': '+ CASE @Language WHEN 'E' THEN 'Sorry, credit update is not successful, You have exceeded your master credit.'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70011, @Language) END
+			SELECT	@ErrCode = 201
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_MAg - @Credit_AllOtherAgent, '#,#0.####'))
 			RETURN
 		END
 		
+		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK)
+		WHERE recommend = @CustID AND roleid = 1
+
 		IF @Credit_AllMember > @NewCredit
 		BEGIN
-			SELECT	@ErrCode = 202,
-					@ErrMsg = @UserName + ': '+ CASE @Language WHEN 'E' THEN 'Credit update not successful, The new credit is not enough for all current members'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70017, @Language) END
-												+ ' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
+			SELECT	@ErrCode = 202
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
 			RETURN
 		END
 	END
@@ -257,27 +267,32 @@ BEGIN
 		BEGIN
 			IF @Credit_AllOtherMaster + @NewCredit > @Credit_SAg
 			BEGIN
-				SELECT	@ErrCode = 301,
-						@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Sorry, credit update is not successful, You have exceeded your super agent credit.'
-														ELSE [dbo].[f_Get_MsgNamebyMsgID](70010, @Language) END
+				SELECT	@ErrCode = 301
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_SAg - @Credit_AllOtherMaster, '#,#0.####'))
 				RETURN
 			END
 			
 			IF @Credit_AllMember > @NewCredit
 			BEGIN
-				SELECT	@ErrCode = 302,
-						@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Sorry, credit update is not successful, You have exceeded your master credit.'
-														ELSE [dbo].[f_Get_MsgNamebyMsgID](70011, @Language) END
-													+ ' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
+				SELECT	@ErrCode = 302
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
 				RETURN
 			END
 			
 			IF @Credit_AllAgent > @NewCredit
 			BEGIN
-				SELECT	@ErrCode = 303,
-						@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Credit update not successful, The new credit is not enough for all current agents'
-														ELSE [dbo].[f_Get_MsgNamebyMsgID](70018, @Language) END
-													+ ' (' + CONVERT(VARCHAR(20), @Credit_AllAgent) + ').'
+				SELECT	@ErrCode = 303
+				
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Agents ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70036,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllAgent, '#,#0.####'))
 				RETURN
 			END
 		END
@@ -306,30 +321,33 @@ BEGIN
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 2
 
-		IF @Credit_AllMaster > @NewCredit
+		IF @Credit_AllMember > @NewCredit 
 		BEGIN
-			SELECT	@ErrCode = 401,
-					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Credit update not successful, The new credit is not enough for all current masters'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70019, @Language) END
-												+ ' (' + CONVERT(VARCHAR(20), @Credit_AllMaster) + ').'
+			SELECT	@ErrCode = 403
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
 			RETURN
 		END
 
 		IF @Credit_AllAgent > @NewCredit 
 		BEGIN
-			SELECT	@ErrCode = 402,
-					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Credit update not successful, The new credit is not enough for all current agents'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70018, @Language) END
-												+ ' (' + CONVERT(VARCHAR(20), @Credit_AllAgent) + ').'
+			SELECT	@ErrCode = 402
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Agents ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70036,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllAgent, '#,#0.####'))
 			RETURN
 		END
 
-		IF @Credit_AllMember > @NewCredit 
+		IF @Credit_AllMaster > @NewCredit
 		BEGIN
-			SELECT	@ErrCode = 403,
-					@ErrMsg = @UserName + ': ' + CASE @Language WHEN 'E' THEN 'Credit update not successful, The new credit is not enough for all current members'
-													ELSE [dbo].[f_Get_MsgNamebyMsgID](70017, @Language) END
-												+' (' + CONVERT(VARCHAR(20), @Credit_AllMember) + ').'
+			SELECT	@ErrCode = 401
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Masters ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70037,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMaster, '#,#0.####'))
 			RETURN
 		END
 	END
@@ -389,29 +407,13 @@ BEGIN
 
 	--if ssb error
 	IF @SB_Error = 1 
-	BEGIN			
-		BEGIN TRY
-			EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-				@UserID = @UserID,
-				@CustID = @CustID,
-				@Doing = @LogData,
-				@OldValue = @OldCredit,
-				@NewValue = @NewCredit,
-				@IP = @IP,
-				@ActionID = 1200
-		END TRY
-		BEGIN CATCH
-			SELECT @LogData = @LogData + ' ErrMsg:' + ERROR_MESSAGE()
-
-			EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_Credit
-				@UserID = @UserID,
-				@CustID = @CustID,
-				@Doing = @LogData,
-				@OldValue = @OldCredit,
-				@NewValue = @NewCredit,
-				@IP = @IP,
-				@ActionID = 1200
-		END CATCH
-	END	
+	EXEC dbo.Acc_WriteLog_UserLog_Credit_Wrapper
+				@UserID		= @UserID,
+				@CustID		= @CustID,
+				@Doing		= @LogData,
+				@OldValue		= @OldCredit,
+				@NewValue		= @NewCredit,
+				@IP			= @IP,
+				@ActionID		= 1200
 END
 GO

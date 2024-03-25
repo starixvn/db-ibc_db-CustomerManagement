@@ -103,6 +103,7 @@ AS
 		- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
 		- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 		- 20231113@Johnson: Get Site.SpecialPlatfrom to remove text SABA for 777777 [redmine: #194591]
+		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS - Remove Unused column : DisableEsports, HideEsports, HideMuayThai, DisableMuayThai [RedmineID: #193083]
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT
@@ -499,11 +500,11 @@ BEGIN
 
 			ISNULL(DoubleCommLosing,0) as DoubleCommLosing,		
 			-- For MuayThai
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)),1) AS DisableMuayThai,
-			CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
+			--ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_MuayThai)),1) AS DisableMuayThai,
+			--CAST(CASE WHEN @IsHidden_MuayThai = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_MuayThai)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideMuayThai,
 			-- For Esports
-			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Esports)),1) AS DisableEsports,
-			CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
+			--ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Esports)),1) AS DisableEsports,
+			--CAST(CASE WHEN @IsHidden_Esports = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Esports)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideEsports,
 		
 			-- For LiveCasino (AllBet+ SA Gaming + SexyGaming + ION )
 			CAST(CASE WHEN @DisableAllbet = 0 OR @DisableSAGaming= 0 OR @DisableSexyGaming = 0 OR @DisableBBIN = 0 OR @DisableGTCasino = 0 OR @DisableION = 0 OR @DisableWM = 0 OR @DisableBG = 0 OR @DisableYeeBet = 0 THEN 0 ELSE 1 END AS BIT)AS DisableLiveCasino,		

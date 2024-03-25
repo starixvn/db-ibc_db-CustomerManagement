@@ -53,6 +53,7 @@ AS
 		- 20230718@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20230622@Helios: Alpha/ExtNAP - Create new downlines - Remove some obsolete rules [Redmine: #190167] 
 		- 20240129@Luke: NAP - Virtual rate - Change default of VR Status for newly created Super to Enable [Redmine: #200311]
+		- 20230918@Eden: DCS Sportsbook Credit[redmine: #193083]
 
 	Parameter's Explaination:
 		@Case = 0 : No change 
@@ -88,6 +89,16 @@ BEGIN
 		,@Language = @Language
 
 	IF @ErrCode <> 0 RETURN
+
+	IF @credit <0
+	BEGIN
+		SELECT  @ErrCode = 2
+		SELECT @ErrMsg = 	CASE @Language 
+								WHEN 'E' THEN 'Credits must be positive.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025,@Language)
+							END
+		RETURN
+	END
 		 
 	EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
 	
@@ -201,7 +212,6 @@ BEGIN
 			@existingMrecommend		INT,
 			@existingSrecommend		INT,
 			@Prefix					VARCHAR(50),
-			@CreatedMode			TINYINT,
 			@IsQRCode				BIT
 
 		EXEC Acc_CustomerLimitCreatedAccountCheck 
@@ -211,7 +221,6 @@ BEGIN
 				@existingSrecommend = 0 , 
 				@Prefix				= '' , 
 				@GroupName			= @GroupName , 
-				@CreatedMode		= 0 , 
 				@IsQRCode			= 0 , 
 				@SystemID			= 0 , 
 				@IP					= @IP ,
@@ -343,8 +352,8 @@ BEGIN
 		SELECT @MaxMember = CASE WHEN @SiteLabel = '789y' THEN 20000 ELSE -1 END
 		SELECT @MaxMemberLog = CASE WHEN @SiteLabel = '789y' THEN '20000' ELSE 'Unlimited' END
 
-		INSERT INTO CustSuper(custId, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer,SiteDBGroupID)  
-		SELECT	@CustID, AutoIBCPositionTaking_Tote, AutoIBCPositionTaking_Fixed, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer,@SiteDBGroupID
+		INSERT INTO CustSuper(custId,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer,SiteDBGroupID)  
+		SELECT	@CustID, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer,@SiteDBGroupID
 		FROM CustSuper WITH(NOLOCK)
 		WHERE custid=@ExistingCustid		
 	END TRY
@@ -513,9 +522,6 @@ BEGIN
 		--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del  @Custid
 		DELETE FROM dbo.CustInfo WITH(ROWLOCK) WHERE CustID = @CustID
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
-		
-		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
 		RETURN	
 	END CATCH
 	
@@ -536,9 +542,6 @@ BEGIN
 		--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del  @Custid
 		DELETE FROM dbo.CustInfo WITH(ROWLOCK) WHERE CustID = @CustID
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
-		
-		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
 		DELETE FROM CustLoginInfo WITH(ROWLOCK) WHERE custid = @Custid
 		RETURN	
 	END CATCH	
@@ -600,9 +603,6 @@ BEGIN
 		--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del  @Custid
 		DELETE FROM dbo.CustInfo WITH(ROWLOCK) WHERE CustID = @CustID
 		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  	
-		
-		DELETE FROM dbo.CustSetting WITH(ROWLOCK) WHERE CustID = @CustID
-		DELETE FROM custoverride WITH (ROWLOCK) WHERE custid =  @CustID
 		DELETE FROM CustLoginInfo WITH(ROWLOCK) WHERE custid = @Custid
 		DELETE FROM CustVirtualSetting WITH(ROWLOCK) WHERE custid = @Custid
 		
