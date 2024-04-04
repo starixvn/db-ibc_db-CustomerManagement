@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSetting] 
 	 @Site NVARCHAR(MAX) = NULL
-	,@CustomerClass SMALLINT
+	,@CustomerClass VARCHAR(MAX)
+	,@CustomerClassDetail VARCHAR(MAX)
 	,@SportTypes VARCHAR(2000)
 	,@LeagueGroups VARCHAR(MAX)
 	,@IsTest TINYINT
@@ -21,11 +22,12 @@ AS
 		- 20230928@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
 		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365]  
 		- 20231107@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
-		- 20240223@Winfred: [NAP CM] Customer Class - Support for Saba [RedmineID: #193809] 
+		- 20240223@Winfred: [NAP CM] Customer Class - Support for Saba [RedmineID: #193809]   
 		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS' @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
+	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS', @CustomerClass = '200', @CustomerClassDetail = '204,300,500', @SportType = 2, @LeagueGroup = '1,2,4,5,6', @Islive = 1	
 	* @LeagueGroup : 0 All
 */ 
 BEGIN
@@ -118,22 +120,16 @@ BEGIN
 	EXECUTE	sp_xml_removedocument @iDoc;
 	
 	-- Get all PolicyID, RuleID 
-	IF @CustomerClass = 0
-	BEGIN
-		INSERT INTO #PolicyRule( PolicyID, RuleID, RuleTitle, CustomerClass)
-		SELECT PolicyID, a.RuleID, r.RuleTitle, r.CustomerClass
-		FROM CustomerClassPolicyRule a WITH(NOLOCK) 
-			CROSS APPLY( SELECT TOP 1 RuleTitle, CustomerClass FROM CustomerClassRule WITH(NOLOCK) 
-						 WHERE RuleID = a.RuleID AND IsTest <= @IsTest ) r
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #PolicyRule( PolicyID, RuleID, RuleTitle, CustomerClass)
-		SELECT PolicyID, a.RuleID, r.RuleTitle, r.CustomerClass
-		FROM CustomerClassPolicyRule a WITH(NOLOCK) 
-			CROSS APPLY( SELECT TOP 1 RuleTitle, CustomerClass FROM CustomerClassRule WITH(NOLOCK) 
-						 WHERE RuleID = a.RuleID AND IsTest <= @IsTest AND CustomerClass = @CustomerClass ) r
-	END
+	INSERT INTO #PolicyRule( PolicyID, RuleID, RuleTitle, CustomerClass)
+	SELECT PolicyID, a.RuleID, r.RuleTitle, r.CustomerClass
+	FROM CustomerClassPolicyRule a WITH(NOLOCK) 
+		CROSS APPLY( SELECT TOP 1 RuleTitle, CustomerClass FROM CustomerClassRule WITH(NOLOCK) 
+					WHERE RuleID = a.RuleID AND IsTest <= @IsTest 
+					AND 
+					((@CustomerClass = ''  OR CustomerClass IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClass,',') WHERE VALUE <> '') ) 
+					AND
+					 (@CustomerClassDetail = ''  OR CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',')WHERE VALUE <> '') )
+					)) r
 
 	INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
 	SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
@@ -196,6 +192,7 @@ BEGIN
 		a.Platform ,
 		a.RuleID,
 		c.CustomerClass,
+		c.CustomerClassDetail,
 		c.RuleTitle,
 		c.SportType,
 		c.IsLive,

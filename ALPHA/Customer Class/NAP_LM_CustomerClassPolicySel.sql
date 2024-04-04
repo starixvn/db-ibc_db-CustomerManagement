@@ -17,8 +17,9 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904]  
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]  
 		- 20231118@Winfred: [NAP CM] Allow to choose overwriting policy or creating new assign setting [RedmineID: #196932] 
-		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
+		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]  
 		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
@@ -53,6 +54,7 @@ BEGIN
 			c.RuleID,
 			c.Enable,
 			c.CustomerClass,
+			c.CustomerClassDetail,
 			c.RuleTitle,
 			a.SportType,
 			c.IsLive ,
@@ -115,6 +117,7 @@ BEGIN
 			c.RuleID,
 			c.Enable,
 			c.CustomerClass,
+			c.CustomerClassDetail,
 			c.RuleTitle,
 			a.SportType,
 			c.IsLive ,

@@ -17,12 +17,14 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
 	* @Rules:
 		'<ROOT><r 
 				RuleID=1 
 				CustomerClass="200" 
+				CustomerClassDetail="200" 
 				RuleTitle = "Rule 1" 
 				SportType = 99  
 				IsLive = 1 
@@ -42,7 +44,7 @@ AS
 				LeagueGroupIDs ='1125,1126,1124,1128,1126'/> 
 		</ROOT>'
 
-	Example: NAP_LM_CustomerClassRuleIns @Rules ='<ROOT><r RuleID=1 CustomerClass="200" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs ='1125,1126,1124,1128,1126'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_LM_CustomerClassRuleIns @Rules ='<ROOT><r RuleID=1 CustomerClass="200" CustomerClassDetail="300" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs ='1125,1126,1124,1128,1126'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -60,7 +62,7 @@ BEGIN
 	IF @Rules IS NULL OR @Rules = ''
 		RETURN
 	
-	CREATE TABLE #CustomerClassRule( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
+	CREATE TABLE #CustomerClassRule( RuleID INT, CustomerClass SMALLINT, CustomerClassDetail SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
@@ -69,7 +71,8 @@ BEGIN
 	BEGIN TRY
 		EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT,	@Rules;
 		
-		INSERT INTO	#CustomerClassRule (CustomerClass 				
+		INSERT INTO	#CustomerClassRule (CustomerClass 
+					 ,	CustomerClassDetail				
 					 ,	RuleTitle 					    
 					 ,	SportType 					
 					 ,	IsLive 					
@@ -88,7 +91,8 @@ BEGIN
 					 ,	AgentBetInterval
 					 ,	LeagueGroupIDs
 					 ,	IsTest	) 
-		SELECT	CAST(Data.CustomerClass AS SMALLINT) AS CustomerClass				
+		SELECT	CAST(Data.CustomerClass AS SMALLINT) AS CustomerClass		
+			 ,	CASE WHEN Data.CustomerClassDetail = '' THEN null ELSE  CAST(Data.CustomerClassDetail AS SMALLINT) END AS CustomerClassDetail			
 			,	CASE WHEN Data.RuleTitle = '' THEN null ELse CAST(Data.RuleTitle AS VARCHAR(500)) END AS RuleTitle 					    
 			,	 CAST(Data.SportType AS SMALLINT)  AS SportType 					
 			,	CASE WHEN Data.IsLive = '' THEN null ELse CAST(Data.IsLive AS TINYINT) END AS IsLive  
@@ -109,7 +113,8 @@ BEGIN
 			,	@IsTest AS IsTest 
 		FROM OPENXML(@iDoc, '/ROOT/r', 1) 
 		WITH (     
-			 CustomerClass 				SMALLINT,       
+			 CustomerClass 				SMALLINT, 
+			 CustomerClassDetail		SMALLINT,         
 			 RuleTitle 					VARCHAR(500),       
 			 SportType 					VARCHAR(20),       
 			 IsLive 					VARCHAR(3),       
@@ -189,7 +194,8 @@ BEGIN
 		IF @@ROWCOUNT = 0 OR @ErrCode<>0 BREAK 
 			
 		INSERT INTO CustomerClassRule(
- 			CustomerClass 				
+ 			CustomerClass  				
+		,	CustomerClassDetail 					
 		,	RuleTitle 					    
 		,	SportType 					
 		,	IsLive 					
@@ -211,27 +217,28 @@ BEGIN
 		,  LastModifiedUser
 		,  LastModifiedTime)	
 		SELECT
-			CustomerClass 				
-			,RuleTitle 					    
-			,SportType 					
-			,IsLive 					
-			,DiffBalanceRatio 			    
-			,BetDelay 					    
-			,NextBetInterval 			
-			,SuperBetInterval 			
-			,SiteBetInterval 			
-			,MinBet 					
-			,MaxBet 					
-			,MaxPerMatch 				
-			,RepeatedBets 				
-			,SeizeBetTicket 			
-			,DisableParlay 				  
-			,PeakHourSpreadAdjustment 	
-			,AgentBetInterval
-			,Enable
-			,IsTest
-			,@UserID
-			,GETDATE()
+			CustomerClass 			
+			, CustomerClassDetail				
+			, RuleTitle 					    
+			, SportType 					
+			, IsLive 					
+			, DiffBalanceRatio 			    
+			, BetDelay 					    
+			, NextBetInterval 			
+			, SuperBetInterval 			
+			, SiteBetInterval 			
+			, MinBet 					
+			, MaxBet 					
+			, MaxPerMatch 				
+			, RepeatedBets 				
+			, SeizeBetTicket 			
+			, DisableParlay 				  
+			, PeakHourSpreadAdjustment 	
+			, AgentBetInterval
+			, Enable
+			, IsTest
+			, @UserID
+			, GETDATE()
 		FROM #CustomerClassRule
 		WHERE STT = @STT
 		
@@ -255,6 +262,7 @@ BEGIN
 					(
 						SELECT DISTINCT cs.RuleID					AS '@RuleID',
 								cs.CustomerClass					AS '@CustomerClass',
+								cs.CustomerClassDetail				AS '@CustomerClassDetail',
 								cs.RuleTitle						AS '@RuleTitle',
 								cs.SportType						AS '@SportType',
 								cs.IsLive							AS '@IsLive',

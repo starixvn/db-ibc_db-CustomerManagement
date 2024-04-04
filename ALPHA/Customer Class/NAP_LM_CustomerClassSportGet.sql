@@ -14,7 +14,8 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
-		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]  
+		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]   
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSportGet @SportType = 1, @IsTest = 1	
@@ -43,6 +44,7 @@ BEGIN
 
 	SELECT a.RuleID,
 			a.CustomerClass,
+			a.CustomerClassDetail,
 			a.RuleTitle,
 			a.SportType,
 			a.isLive,

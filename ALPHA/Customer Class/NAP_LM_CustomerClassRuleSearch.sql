@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleSearch] 
-	@CustomerClass SMALLINT
+	@CustomerClass VARCHAR(MAX)
 	,@SportTypes VARCHAR(2000)
+	,@CustomerClassDetail VARCHAR(MAX)
 	,@LeagueGroup VARCHAR(MAX)
 	,@LeagueGroups VARCHAR(MAX)
 	,@Islive TINYINT = 0 
@@ -20,9 +21,10 @@ AS
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
 		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassRuleSearch @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
+	Example: NAP_LM_CustomerClassRuleSearch @CustomerClass = '200' ,@CustomerClassDetail = '204,300,500' , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
 	* @LeagueGroup : 0 All
 */ 
 BEGIN
@@ -50,6 +52,7 @@ BEGIN
   
 	SELECT a.RuleID,
 			   a.CustomerClass,
+			   a.CustomerClassDetail,
 			   a.RuleTitle,
 			   a.SportType,
 			   a.IsLive,
@@ -85,8 +88,10 @@ BEGIN
 							WHERE r.RuleID = a.RuleID
 					) d
 		WHERE a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '')
-			AND @CustomerClass IN (0, a.CustomerClass) 
-			AND (@Islive = 2 OR a.IsLive = @Islive)
+			AND (@CustomerClass = '0' 
+			OR  a.CustomerClass IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClass,',') WHERE VALUE <> ''))
+			AND (@CustomerClassDetail = '0' 
+			OR  a.CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',') WHERE VALUE <> ''))
 			AND a.IsTest <= @IsTest
 			AND a.RuleID IN (SELECT RuleID 
 							 FROM CustomerClassRuleLeagueGroup WITH(NOLOCK)
