@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,wsv_aff" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] 
 	@Code VARCHAR(12)
 	, @MYR FLOAT
@@ -40,6 +40,7 @@ Revisions:
 	- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  	
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR into OANDA service - [RedmineID: #197693]
+	- 20240401@Lewis: Support new currency SBC, DIV - [RedmineID: #202273] + [RedmineID: #203096]
 */
 /*
 declare @p3 nvarchar(200)
@@ -69,101 +70,6 @@ IF @rundate IS NULL
 ELSE
 	SET @date = convert(DATETIME, convert(NVARCHAR(20), @rundate, 101))
 
-IF @Code = 'UUS'
-BEGIN
-	IF NOT EXISTS (
-			SELECT 1
-			FROM ExchangeDailyOanda(NOLOCK)
-			WHERE ExchangeDate = @date
-				AND ExchangeId = 20
-			)
-	BEGIN
-		INSERT INTO ExchangeDailyOanda (
-			ExchangeId
-			, ExchangeDate
-			, Code
-			, MYR
-			, USD
-			, EUR
-			, CNY
-			, IDR
-			, AUD
-			, CHF
-			, GBP
-			, SGD
-			, THB
-			, VND
-			, KRW
-			, JPY
-			, HKD
-			, TWD
-			, PHP
-			, BDT
-			, INR
-			, TRY
-			, NPR
-			)
-		VALUES (
-			20
-			, @date
-			, 'UUS'
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			, 2e-101
-			)
-	END
-	ELSE
-	BEGIN
-		UPDATE ExchangeDailyOanda
-		WITH (
-				ROWLOCK
-				, UPDLOCK
-				)
-
-		SET MYR = 2e-101
-			, USD = 2e-101
-			, EUR = 2e-101
-			, CNY = 2e-101
-			, IDR = 2e-101
-			, AUD = 2e-101
-			, CHF = 2e-101
-			, GBP = 2e-101
-			, SGD = 2e-101
-			, THB = 2e-101
-			, VND = 2e-101
-			, KRW = 2e-101
-			, JPY = 2e-101
-			, HKD = 2e-101
-			, TWD = 2e-101
-			, PHP = 2e-101
-			, BDT = 2e-101
-			, INR = 2e-101
-			, TRY = 2e-101
-			, NPR = 2e-101
-		WHERE ExchangeId = 20
-			AND ExchangeDate = @date
-	END
-
-	RETURN
-END
-
 INSERT INTO @exchange (
 	exchangeid
 	, MultipliedBy
@@ -174,7 +80,6 @@ FROM exchange(NOLOCK)
 WHERE Code = @Code
 
 IF @@ROWCOUNT > 0
-	AND @Code <> 'YNG'
 BEGIN
 	SET @i = 1
 
@@ -293,153 +198,391 @@ BEGIN
 	END
 END
 
-IF @Code = 'YNG'
+-- Insert UUS
+IF NOT EXISTS (
+		SELECT 1
+		FROM ExchangeDailyOanda(NOLOCK)
+		WHERE ExchangeDate = @date
+			AND ExchangeId = 20
+			AND Code = 'UUS'
+		)
 BEGIN
+	INSERT INTO ExchangeDailyOanda (
+		ExchangeId
+		, ExchangeDate
+		, Code
+		, MYR
+		, USD
+		, EUR
+		, CNY
+		, IDR
+		, AUD
+		, CHF
+		, GBP
+		, SGD
+		, THB
+		, VND
+		, KRW
+		, JPY
+		, HKD
+		, TWD
+		, PHP
+		, BDT
+		, INR
+		, TRY
+		, NPR
+		)
+	VALUES (
+		20
+		, @date
+		, 'UUS'
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		)
+END
+
+-- Insert YNG
+IF @Code = 'VND'
+BEGIN
+	SELECT	@ExchangeId = ExchangeId
+			,@MultipliedBy = 1
+	FROM Exchange WITH (NOLOCK) 
+	WHERE Code = 'YNG'
+
 	IF NOT EXISTS (
 			SELECT 1
-			FROM dbo.ExchangeDailyOanda(NOLOCK)
-			WHERE  ExchangeDate = @date
-				AND Code = 'VND'
-			)
-		RETURN;
-	SET @i = 1
-
-	SELECT @max = count(1)
-	FROM @exchange
-
-	WHILE (@i <= @max)
-	BEGIN
-		SELECT @ExchangeId = exchangeid
-		FROM @exchange
-		WHERE id = @i
-		
-		SET @MultipliedBy = 0.001
-		
-		SELECT @MYR = MYR
-			, @USD = USD
-			, @EUR = EUR
-			, @CNY = CNY
-			, @IDR = IDR
-			, @AUD = AUD
-			, @CHF = CHF
-			, @GBP = GBP
-			, @SGD = SGD
-			, @THB = THB
-			, @VND = VND
-			, @KRW = KRW
-			, @JPY = JPY
-			, @HKD = HKD
-			, @TWD = TWD
-			, @PHP = PHP
-			, @BDT = BDT
-			, @INR = INR
-			, @TRY = TRY
-			, @NPR = NPR
-		FROM dbo.ExchangeDailyOanda WITH (NOLOCK)
-		WHERE Code = 'VND'
-			AND ExchangeDate = @Date
-
-		--Check exist, if false then insert 
-		IF NOT EXISTS (
-				SELECT 1
-				FROM ExchangeDailyOanda(NOLOCK)
-				WHERE ExchangeId = @ExchangeId
-					AND ExchangeDate = @date
-					AND Code = @Code
-				)
-		BEGIN
-			INSERT INTO ExchangeDailyOanda (
-				ExchangeId
-				, ExchangeDate
-				, Code
-				, MYR
-				, USD
-				, EUR
-				, CNY
-				, IDR
-				, AUD
-				, CHF
-				, GBP
-				, SGD
-				, THB
-				, VND
-				, KRW
-				, JPY
-				, HKD
-				, TWD
-				, PHP
-				, BDT
-				, INR
-				, TRY
-				, NPR
-				)
-			VALUES (
-				@ExchangeId
-				, @date
-				, @Code
-				, @MYR * @MultipliedBy 
-				, @USD * @MultipliedBy 
-				, @EUR * @MultipliedBy 
-				, @CNY * @MultipliedBy 
-				, @IDR * @MultipliedBy 
-				, @AUD * @MultipliedBy 
-				, @CHF * @MultipliedBy 
-				, @GBP * @MultipliedBy 
-				, @SGD * @MultipliedBy 
-				, @THB * @MultipliedBy 
-				, @VND * @MultipliedBy 
-				, @KRW * @MultipliedBy 
-				, @JPY * @MultipliedBy 
-				, @HKD * @MultipliedBy
-				, @TWD * @MultipliedBy 
-				, @PHP * @MultipliedBy
-				, @BDT * @MultipliedBy
-				, @INR * @MultipliedBy
-				, @TRY * @MultipliedBy
-				, @NPR * @MultipliedBy
-				)	
-		END
-		ELSE
-		BEGIN
-			UPDATE ExchangeDailyOanda
-			WITH (
-					ROWLOCK
-					, UPDLOCK
-					)
-			SET MYR =  @MYR * @MultipliedBy 
-				, USD = @USD * @MultipliedBy 
-				, EUR = @EUR * @MultipliedBy 
-				, CNY = @CNY * @MultipliedBy 
-				, IDR = @IDR * @MultipliedBy 
-				, AUD = @AUD * @MultipliedBy 
-				, CHF = @CHF * @MultipliedBy 
-				, GBP = @GBP * @MultipliedBy 
-				, SGD = @SGD * @MultipliedBy 
-				, THB = @THB * @MultipliedBy 
-				, VND = @VND * @MultipliedBy 
-				, KRW = @KRW * @MultipliedBy 
-				, JPY = @JPY * @MultipliedBy 
-				, HKD = @HKD * @MultipliedBy 
-				, TWD = @TWD * @MultipliedBy
-				, PHP = @PHP * @MultipliedBy
-				, BDT = @BDT * @MultipliedBy
-				, INR = @INR * @MultipliedBy
-				, TRY = @TRY * @MultipliedBy
-				, NPR = @NPR * @MultipliedBy
+			FROM ExchangeDailyOanda(NOLOCK)
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
-				AND Code = @Code		
-		END
-
-		IF @@Error <> 0
-		BEGIN
-			SELECT @ErrMsg = 'Exchange rate insert fail.'
-				, @ErrCode = 100
-
-			RETURN
-		END
-
-		SET @i = @i + 1
+				AND Code = 'YNG'
+			)
+	BEGIN
+		INSERT INTO ExchangeDailyOanda (
+			ExchangeId
+			, ExchangeDate
+			, Code
+			, MYR
+			, USD
+			, EUR
+			, CNY
+			, IDR
+			, AUD
+			, CHF
+			, GBP
+			, SGD
+			, THB
+			, VND
+			, KRW
+			, JPY
+			, HKD
+			, TWD
+			, PHP
+			, BDT
+			, INR
+			, TRY
+			, NPR
+			)
+		VALUES (
+			@ExchangeId
+			, @date
+			, 'YNG'
+			, @MYR * @MultipliedBy
+			, @USD * @MultipliedBy
+			, @EUR * @MultipliedBy
+			, @CNY * @MultipliedBy
+			, @IDR * @MultipliedBy
+			, @AUD * @MultipliedBy
+			, @CHF * @MultipliedBy
+			, @GBP * @MultipliedBy
+			, @SGD * @MultipliedBy
+			, @THB * @MultipliedBy
+			, @VND * @MultipliedBy
+			, @KRW * @MultipliedBy
+			, @JPY * @MultipliedBy
+			, @HKD * @MultipliedBy
+			, @TWD * @MultipliedBy
+			, @PHP * @MultipliedBy
+			, @BDT * @MultipliedBy
+			, @INR * @MultipliedBy
+			, @TRY * @MultipliedBy
+			, @NPR * @MultipliedBy
+			)
 	END
+	ELSE
+	BEGIN
+		UPDATE ExchangeDailyOanda
+		WITH (
+				ROWLOCK
+				, UPDLOCK
+				)
+		SET MYR = @MYR * @MultipliedBy
+			, USD = @USD * @MultipliedBy
+			, EUR = @EUR * @MultipliedBy
+			, CNY = @CNY * @MultipliedBy
+			, IDR = @IDR * @MultipliedBy
+			, AUD = @AUD * @MultipliedBy
+			, CHF = @CHF * @MultipliedBy
+			, GBP = @GBP * @MultipliedBy
+			, SGD = @SGD * @MultipliedBy
+			, THB = @THB * @MultipliedBy
+			, VND = @VND * @MultipliedBy
+			, KRW = @KRW * @MultipliedBy
+			, JPY = @JPY * @MultipliedBy
+			, HKD = @HKD * @MultipliedBy
+			, TWD = @TWD * @MultipliedBy
+			, PHP = @PHP * @MultipliedBy
+			, BDT = @BDT * @MultipliedBy
+			, INR = @INR * @MultipliedBy
+			, TRY = @TRY * @MultipliedBy
+			, NPR = @NPR * @MultipliedBy
+		WHERE ExchangeId = @ExchangeId
+			AND ExchangeDate = @date
+			AND Code = 'YNG'
+	END
+
+	IF @@Error <> 0
+	BEGIN
+		SELECT @ErrMsg = 'Exchange rate insert fail.'
+			, @ErrCode = 100
+
+		RETURN
+	END
+
+END
+
+-- Insert SBC
+IF @Code = 'USD'
+BEGIN
+	SELECT	@ExchangeId = ExchangeId
+			,@MultipliedBy = 0.01 
+	FROM Exchange WITH (NOLOCK) 
+	WHERE Code = 'SBC'
+
+	IF NOT EXISTS (
+			SELECT 1
+			FROM ExchangeDailyOanda(NOLOCK)
+			WHERE ExchangeId = @ExchangeId
+				AND ExchangeDate = @date
+				AND Code = 'SBC'
+			)
+	BEGIN
+		INSERT INTO ExchangeDailyOanda (
+			ExchangeId
+			, ExchangeDate
+			, Code
+			, MYR
+			, USD
+			, EUR
+			, CNY
+			, IDR
+			, AUD
+			, CHF
+			, GBP
+			, SGD
+			, THB
+			, VND
+			, KRW
+			, JPY
+			, HKD
+			, TWD
+			, PHP
+			, BDT
+			, INR
+			, TRY
+			, NPR
+			)
+		VALUES (
+			@ExchangeId
+			, @date
+			, 'SBC'
+			, @MYR * @MultipliedBy
+			, @USD * @MultipliedBy
+			, @EUR * @MultipliedBy
+			, @CNY * @MultipliedBy
+			, @IDR * @MultipliedBy
+			, @AUD * @MultipliedBy
+			, @CHF * @MultipliedBy
+			, @GBP * @MultipliedBy
+			, @SGD * @MultipliedBy
+			, @THB * @MultipliedBy
+			, @VND * @MultipliedBy
+			, @KRW * @MultipliedBy
+			, @JPY * @MultipliedBy
+			, @HKD * @MultipliedBy
+			, @TWD * @MultipliedBy
+			, @PHP * @MultipliedBy
+			, @BDT * @MultipliedBy
+			, @INR * @MultipliedBy
+			, @TRY * @MultipliedBy
+			, @NPR * @MultipliedBy
+			)
+	END
+	ELSE
+	BEGIN
+		UPDATE ExchangeDailyOanda
+		WITH (
+				ROWLOCK
+				, UPDLOCK
+				)
+		SET MYR = @MYR * @MultipliedBy
+			, USD = @USD * @MultipliedBy
+			, EUR = @EUR * @MultipliedBy
+			, CNY = @CNY * @MultipliedBy
+			, IDR = @IDR * @MultipliedBy
+			, AUD = @AUD * @MultipliedBy
+			, CHF = @CHF * @MultipliedBy
+			, GBP = @GBP * @MultipliedBy
+			, SGD = @SGD * @MultipliedBy
+			, THB = @THB * @MultipliedBy
+			, VND = @VND * @MultipliedBy
+			, KRW = @KRW * @MultipliedBy
+			, JPY = @JPY * @MultipliedBy
+			, HKD = @HKD * @MultipliedBy
+			, TWD = @TWD * @MultipliedBy
+			, PHP = @PHP * @MultipliedBy
+			, BDT = @BDT * @MultipliedBy
+			, INR = @INR * @MultipliedBy
+			, TRY = @TRY * @MultipliedBy
+			, NPR = @NPR * @MultipliedBy
+		WHERE ExchangeId = @ExchangeId
+			AND ExchangeDate = @date
+			AND Code = 'SBC'
+	END
+
+	IF @@Error <> 0
+	BEGIN
+		SELECT @ErrMsg = 'Exchange rate insert fail.'
+			, @ErrCode = 100
+
+		RETURN
+	END
+
+END
+
+-- Insert DIV
+IF @Code = 'CNY'
+BEGIN
+	SELECT	@ExchangeId = ExchangeId
+			,@MultipliedBy = 0.125 
+	FROM Exchange WITH (NOLOCK) 
+	WHERE Code = 'DIV'
+
+	IF NOT EXISTS (
+			SELECT 1
+			FROM ExchangeDailyOanda(NOLOCK)
+			WHERE ExchangeId = @ExchangeId
+				AND ExchangeDate = @date
+				AND Code = 'DIV'
+			)
+	BEGIN
+		INSERT INTO ExchangeDailyOanda (
+			ExchangeId
+			, ExchangeDate
+			, Code
+			, MYR
+			, USD
+			, EUR
+			, CNY
+			, IDR
+			, AUD
+			, CHF
+			, GBP
+			, SGD
+			, THB
+			, VND
+			, KRW
+			, JPY
+			, HKD
+			, TWD
+			, PHP
+			, BDT
+			, INR
+			, TRY
+			, NPR
+			)
+		VALUES (
+			@ExchangeId
+			, @date
+			, 'DIV'
+			, @MYR * @MultipliedBy
+			, @USD * @MultipliedBy
+			, @EUR * @MultipliedBy
+			, @CNY * @MultipliedBy
+			, @IDR * @MultipliedBy
+			, @AUD * @MultipliedBy
+			, @CHF * @MultipliedBy
+			, @GBP * @MultipliedBy
+			, @SGD * @MultipliedBy
+			, @THB * @MultipliedBy
+			, @VND * @MultipliedBy
+			, @KRW * @MultipliedBy
+			, @JPY * @MultipliedBy
+			, @HKD * @MultipliedBy
+			, @TWD * @MultipliedBy
+			, @PHP * @MultipliedBy
+			, @BDT * @MultipliedBy
+			, @INR * @MultipliedBy
+			, @TRY * @MultipliedBy
+			, @NPR * @MultipliedBy
+			)
+	END
+	ELSE
+	BEGIN
+		UPDATE ExchangeDailyOanda
+		WITH (
+				ROWLOCK
+				, UPDLOCK
+				)
+		SET MYR = @MYR * @MultipliedBy
+			, USD = @USD * @MultipliedBy
+			, EUR = @EUR * @MultipliedBy
+			, CNY = @CNY * @MultipliedBy
+			, IDR = @IDR * @MultipliedBy
+			, AUD = @AUD * @MultipliedBy
+			, CHF = @CHF * @MultipliedBy
+			, GBP = @GBP * @MultipliedBy
+			, SGD = @SGD * @MultipliedBy
+			, THB = @THB * @MultipliedBy
+			, VND = @VND * @MultipliedBy
+			, KRW = @KRW * @MultipliedBy
+			, JPY = @JPY * @MultipliedBy
+			, HKD = @HKD * @MultipliedBy
+			, TWD = @TWD * @MultipliedBy
+			, PHP = @PHP * @MultipliedBy
+			, BDT = @BDT * @MultipliedBy
+			, INR = @INR * @MultipliedBy
+			, TRY = @TRY * @MultipliedBy
+			, NPR = @NPR * @MultipliedBy
+		WHERE ExchangeId = @ExchangeId
+			AND ExchangeDate = @date
+			AND Code = 'DIV'
+	END
+
+	IF @@Error <> 0
+	BEGIN
+		SELECT @ErrMsg = 'Exchange rate insert fail.'
+			, @ErrCode = 100
+
+		RETURN
+	END
+
 END
 GO
