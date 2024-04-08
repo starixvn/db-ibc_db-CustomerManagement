@@ -1,3 +1,1 @@
-NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSel.sql
-NAP-Accounting\ViewLog\UserLog_RunSP\NAP_UserLog_RunSPSelTotalRecords.sql
+Ext NAP\UserControl\User\EAS_API_CheckSecretKeyUser.sql
