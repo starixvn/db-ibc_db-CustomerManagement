@@ -40,7 +40,7 @@ Revisions:
 	- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  	
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR into OANDA service - [RedmineID: #197693]
-	- 20240401@Lewis: Support new currency SBC, DIV - [RedmineID: #202273] + [RedmineID: #203096]
+	- 20240401@Lewis: Support new currency SBC, DIA - [RedmineID: #202273] + [RedmineID: #203096]
 */
 /*
 declare @p3 nvarchar(200)
@@ -477,20 +477,20 @@ BEGIN
 
 END
 
--- Insert DIV
+-- Insert DIA
 IF @Code = 'CNY'
 BEGIN
 	SELECT	@ExchangeId = ExchangeId
 			,@MultipliedBy = 0.125 
 	FROM Exchange WITH (NOLOCK) 
-	WHERE Code = 'DIV'
+	WHERE Code = 'DIA'
 
 	IF NOT EXISTS (
 			SELECT 1
 			FROM ExchangeDailyOanda(NOLOCK)
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
-				AND Code = 'DIV'
+				AND Code = 'DIA'
 			)
 	BEGIN
 		INSERT INTO ExchangeDailyOanda (
@@ -521,7 +521,7 @@ BEGIN
 		VALUES (
 			@ExchangeId
 			, @date
-			, 'DIV'
+			, 'DIA'
 			, @MYR * @MultipliedBy
 			, @USD * @MultipliedBy
 			, @EUR * @MultipliedBy
@@ -573,7 +573,7 @@ BEGIN
 			, NPR = @NPR * @MultipliedBy
 		WHERE ExchangeId = @ExchangeId
 			AND ExchangeDate = @date
-			AND Code = 'DIV'
+			AND Code = 'DIA'
 	END
 
 	IF @@Error <> 0
