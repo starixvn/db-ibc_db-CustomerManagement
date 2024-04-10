@@ -3,7 +3,8 @@ ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySel]
 	@IsTest	TINYINT,
 	@PolicyID		INT = 0,
 	@LeagueGroups VARCHAR(MAX),
-	@PolicyTitle	VARCHAR(500) = ''
+	@PolicyTitle	VARCHAR(500) = '',
+	@SportTypes VARCHAR(2000)
 AS
 /*
 	Created: Winfred
@@ -17,6 +18,7 @@ AS
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]  
 		- 20231118@Winfred: [NAP CM] Allow to choose overwriting policy or creating new assign setting [RedmineID: #196932] 
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
+		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
@@ -72,17 +74,42 @@ BEGIN
 			d.LeagueGroupNames 
 		FROM CustomerClassPolicyManagement a WITH(NOLOCK)
 			LEFT JOIN CustomerClassPolicyRule b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
-			LEFT JOIN CustomerClassRule c WITH(NOLOCK) ON b.RuleID = c.RuleID --AND ( c.Enable IS NULL OR c.Enable = 1)
+			OUTER APPLY( SELECT TOP 1 RuleID
+									,CustomerClass
+									,RuleTitle
+									,SportType
+									,IsLive
+									,DiffBalanceRatio
+									,BetDelay
+									,NextBetInterval
+									,SuperBetInterval
+									,SiteBetInterval
+									,MinBet
+									,MaxBet
+									,MaxPerMatch
+									,RepeatedBets
+									,SeizeBetTicket
+									,EnableParlay
+									,PeakHourSpreadAdjustment
+									,AgentBetInterval
+									,Enable
+									,IsTest
+									,LastModifiedUser
+									,LastModifiedTime
+									,DisableParlay	
+					FROM CustomerClassRule WITH(NOLOCK) WHERE RuleID = b.RuleID) c
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
 					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
 						LEFT JOIN #LeagueGroup ps ON lg.LeagueGroupID = ps.GroupID 
 					WHERE lg.RuleID = b.RuleID
 			) d
-		WHERE  a.IsTest <= @IsTest AND a.PolicyTitle like '%' + @PolicyTitle + '%'
+		WHERE  a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '')
+		  AND a.IsTest <= @IsTest AND a.PolicyTitle like '%' + @PolicyTitle + '%' 
 	END
 	ELSE
 	BEGIN
+
 		SELECT  a.PolicyID, 
 			a.PolicyTitle , 
 			c.RuleID,
@@ -109,14 +136,38 @@ BEGIN
 			d.LeagueGroupNames 
 		FROM CustomerClassPolicyManagement a WITH(NOLOCK)
 			LEFT JOIN CustomerClassPolicyRule b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
-			LEFT JOIN CustomerClassRule c WITH(NOLOCK) ON b.RuleID = c.RuleID --AND ( c.Enable IS NULL OR c.Enable = 1)
+			OUTER APPLY( SELECT TOP 1 RuleID
+									,CustomerClass
+									,RuleTitle
+									,SportType
+									,IsLive
+									,DiffBalanceRatio
+									,BetDelay
+									,NextBetInterval
+									,SuperBetInterval
+									,SiteBetInterval
+									,MinBet
+									,MaxBet
+									,MaxPerMatch
+									,RepeatedBets
+									,SeizeBetTicket
+									,EnableParlay
+									,PeakHourSpreadAdjustment
+									,AgentBetInterval
+									,Enable
+									,IsTest
+									,LastModifiedUser
+									,LastModifiedTime
+									,DisableParlay	
+					FROM CustomerClassRule WITH(NOLOCK) WHERE RuleID = b.RuleID) c
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
 					FROM CustomerClassRuleLeagueGroup lg WITH(NOLOCK)
 						LEFT JOIN #LeagueGroup ps ON lg.LeagueGroupID = ps.GroupID 
 					WHERE lg.RuleID = b.RuleID
 			) d
-		WHERE  a.IsTest <= @IsTest AND a.PolicyID = @PolicyID
+		WHERE a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '') AND a.IsTest <= @IsTest AND a.PolicyID = @PolicyID
+
 	END
 	
 	DROP TABLE #LeagueGroup

@@ -1,8 +1,9 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteSel] 
 	@PolicyID INT
-	,@Site NVARCHAR(MAX)
-	,@Platform NVARCHAR(MAX)
+	,@Site VARCHAR(MAX)
+	,@Platform VARCHAR(MAX)
+	,@SportTypes VARCHAR(2000)
 	,@IsTest TINYINT
 	,@PageSize INT = 500
 	,@PageIndex INT = 1
@@ -18,6 +19,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20231107@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
+		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicySiteSel @PolicyID = 1, @Site = '12Bet', @Platform = 1
@@ -28,9 +30,9 @@ BEGIN
 	DECLARE @RowStart INT, @RowEnd INT
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
-	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency TINYINT)
+	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(50), Currency INT)
 	
-	CREATE TABLE #CustomerClass_Platform ( PolicyID INT, Site VARCHAR(50), Currency TINYINT, CurrencyName NVARCHAR(50), Platform VARCHAR(500))
+	CREATE TABLE #CustomerClass_Platform ( PolicyID INT, Site VARCHAR(50), Currency INT, CurrencyName NVARCHAR(50), Platform VARCHAR(500))
 
 	CREATE TABLE #CustomerClassSiteManagement ( PolicyID INT, Site VARCHAR(50), CurrencyName	VARCHAR(MAX), CurrencyID VARCHAR(MAX),
 												Platform VARCHAR(500), RowNumber INT)
@@ -38,7 +40,11 @@ BEGIN
 	CREATE CLUSTERED INDEX CIX_CustomerClass_Platform ON #CustomerClass_Platform(PolicyID, Site, Platform)
 	CREATE NONCLUSTERED INDEX inx_temp3 ON #CustomerClassSiteManagement(RowNumber )
 	CREATE NONCLUSTERED INDEX CIX_CustomerClassSiteManagement ON #CustomerClassSiteManagement(PolicyID, Platform) INCLUDE ( CurrencyID,Site)
-	 
+	
+	CREATE TABLE #SportType( SportType SMALLINT) 
+	INSERT INTO #SportType(SportType)
+	SELECT VALUE AS SportType FROM STRING_SPLIT(@SportTypes,',') WHERE VALUE <> ''
+
 	DECLARE @SiteTbl TABLE(Site NVARCHAR(50), isDeposit BIT)
 	DECLARE @PlatformTB TABLE(Platform TINYINT)
 	INSERT INTO @PlatformTB(Platform)
@@ -54,10 +60,11 @@ BEGIN
 					b.Site,
 					b.Currency
 				FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+					CROSS APPLY ( SELECT SportType FROM #SportType) s
 					CROSS APPLY ( SELECT DISTINCT Site, Currency 
 								  FROM CustomerClassSiteManagement WITH(NOLOCK) 
 								  WHERE a.PolicyID = PolicyID) b
-				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.IsTest <= @IsTest
+				WHERE @PolicyID IN ( 0, a.PolicyID) AND a.SportType = s.SportType AND a.IsTest <= @IsTest
 		END
 		ELSE
 		BEGIN
@@ -66,11 +73,12 @@ BEGIN
 					b.Site,
 					b.Currency
 				FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+					CROSS APPLY ( SELECT SportType FROM #SportType) s
 					CROSS APPLY ( SELECT DISTINCT Site, Currency 
 								  FROM CustomerClassSiteManagement WITH(NOLOCK) 
 								  WHERE a.PolicyID = PolicyID 
 								  AND Platform IN (SELECT Platform FROM @PlatformTB)) b
-				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.IsTest <= @IsTest
+				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.SportType = s.SportType AND a.IsTest <= @IsTest
 		END
 	END
 	ELSE
@@ -115,11 +123,12 @@ BEGIN
 					b.Site,
 					b.Currency
 				FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+					CROSS APPLY ( SELECT SportType FROM #SportType) s
 					CROSS APPLY ( SELECT DISTINCT Site, Currency 
 								  FROM CustomerClassSiteManagement WITH(NOLOCK) 
 								  WHERE a.PolicyID = PolicyID 
 								  AND Site IN (SELECT Site FROM @SiteTbl)) b
-				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.IsTest <= @IsTest
+				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.SportType = s.SportType AND a.IsTest <= @IsTest
 		END
 		ELSE
 		BEGIN
@@ -128,12 +137,13 @@ BEGIN
 					b.Site,
 					b.Currency
 				FROM CustomerClassPolicyManagement a WITH(NOLOCK)
+					CROSS APPLY ( SELECT SportType FROM #SportType) s
 					CROSS APPLY ( SELECT DISTINCT Site, Currency 
 								  FROM CustomerClassSiteManagement WITH(NOLOCK) 
 								  WHERE a.PolicyID = PolicyID 
 								  AND Platform IN (SELECT Platform FROM @PlatformTB)
 								  AND Site IN (SELECT Site FROM @SiteTbl) ) b
-				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.IsTest <= @IsTest 
+				WHERE (@PolicyID = 0 OR a.PolicyID = @PolicyID) AND a.SportType = s.SportType AND a.IsTest <= @IsTest
 		END
 	END
 
@@ -196,5 +206,6 @@ BEGIN
 	DROP TABLE #CustomerClass
 	DROP TABLE #CustomerClass_Platform
 	DROP TABLE #CustomerClassSiteManagement
+	DROP TABLE #SportType
 END
 GO
