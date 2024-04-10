@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleSearch] 
 	@CustomerClass SMALLINT
-	,@SportType SMALLINT
+	,@SportTypes VARCHAR(2000)
 	,@LeagueGroup VARCHAR(MAX)
 	,@LeagueGroups VARCHAR(MAX)
 	,@Islive TINYINT = 0 
@@ -19,6 +19,7 @@ AS
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
+		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassRuleSearch @CustomerClass = 200 , @SportType = 2,  @LeagueGroup = '1,2,4,5,6', @Islive = 1	
@@ -83,8 +84,9 @@ BEGIN
 									CROSS APPLY ( SELECT TOP 1 PolicyTitle FROM CustomerClassPolicyManagement WHERE PolicyID = r.PolicyID ) b
 							WHERE r.RuleID = a.RuleID
 					) d
-		WHERE a.SportType = @SportType AND (@Islive = 2 OR a.IsLive = @Islive)
-			AND (@CustomerClass = 0 OR a.CustomerClass = @CustomerClass)
+		WHERE a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '')
+			AND @CustomerClass IN (0, a.CustomerClass) 
+			AND (@Islive = 2 OR a.IsLive = @Islive)
 			AND a.IsTest <= @IsTest
 			AND a.RuleID IN (SELECT RuleID 
 							 FROM CustomerClassRuleLeagueGroup WITH(NOLOCK)

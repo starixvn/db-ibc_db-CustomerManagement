@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicyGet]
-	@SportType SMALLINT,
+	@SportTypes VARCHAR(2000),
 	@IsTest	TINYINT
 AS
 /*
@@ -12,6 +12,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassPolicyGet	
@@ -21,6 +22,6 @@ BEGIN
 	
 	SELECT  DISTINCT a.PolicyID, a.PolicyTitle , a.SportType
 	FROM CustomerClassPolicyManagement a WITH(NOLOCK)
-	WHERE (@SportType = 0 OR a.SportType = @SportType ) AND a.IsTest <= @IsTest
+	WHERE a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '') AND a.IsTest <= @IsTest
 END
 GO

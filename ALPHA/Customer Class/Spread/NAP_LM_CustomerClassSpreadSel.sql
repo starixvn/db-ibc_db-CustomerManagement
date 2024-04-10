@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbLicenseeNet" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSpreadSel] 
 	  @CustomerClasses 	VARCHAR(MAX)=''
+	, @SportTypes VARCHAR(2000)
 	, @Sites 			VARCHAR(MAX)=''
 	, @Currencies 		VARCHAR(MAX)=''
 	, @Spread 			DECIMAL(4,2)
@@ -16,6 +17,7 @@ AS
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20240115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
+		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 
 	Param's Explanation:
 
@@ -30,12 +32,18 @@ BEGIN
 	CREATE TABLE #Site(SiteID INT, isDeposit BIT)
 	CREATE TABLE #Currency(Currency INT)  
 	CREATE TABLE #CC(CustomerClass SMALLINT)  
+	CREATE TABLE #SportType(SportType SMALLINT)  
 	
 	SELECT @CustomerClasses = ISNULL(@CustomerClasses, '')
 	
 	INSERT INTO #CC(CustomerClass) 
 	SELECT DISTINCT VALUE
 	FROM STRING_SPLIT(@CustomerClasses,',') 
+	WHERE VALUE <> ''
+
+	INSERT INTO #SportType(SportType) 
+	SELECT DISTINCT VALUE
+	FROM STRING_SPLIT(ISNULL(@SportTypes,''),',') 
 	WHERE VALUE <> ''
 
 	IF @Currencies <> '0'
@@ -101,6 +109,7 @@ BEGIN
 					WHERE c.PolicyID = cm.PolicyID  
 						AND cm.SiteID IN (SELECT SiteID FROM #Site) 
 						AND cm.Currency IN (SELECT Currency FROM #Currency)
+						AND cm.SportType IN (SELECT SportType FROM #SportType)
 					) t2
 		WHERE c.IsTest <= @IsTest  
 		OPTION (RECOMPILE)
@@ -120,6 +129,7 @@ BEGIN
 					WHERE c.PolicyID = cm.PolicyID  
 						AND cm.SiteID IN (SELECT SiteID FROM #Site) 
 						AND cm.Currency IN (SELECT Currency FROM #Currency)
+						AND cm.SportType IN (SELECT SportType FROM #SportType)
 					) t2
 		WHERE c.Spread = @Spread AND c.IsTest <= @IsTest 
 		OPTION (RECOMPILE)
@@ -161,6 +171,6 @@ BEGIN
 	ORDER BY Enable DESC, PolicyTitle
 
 	DROP TABLE #CustomerClassSpread
-	DROP TABLE #Site, #CC, #Currency
+	DROP TABLE #Site, #CC, #Currency , #SportType
 END
 GO
