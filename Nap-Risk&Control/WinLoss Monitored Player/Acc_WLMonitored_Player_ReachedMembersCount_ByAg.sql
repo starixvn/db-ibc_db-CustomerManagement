@@ -34,7 +34,7 @@ AS
 	
 */  
 BEGIN 		
-	SELECT @ReachedDailyLimitCount = COUNT(*)
+	SELECT @ReachedDailyLimitCount = COUNT(distinct w.custid)
 	FROM dbo.WLMonitored_Player_History w WITH(NOLOCK)
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) ON ci.custid = w.custid
 	WHERE ci.recommend = @AgentID
