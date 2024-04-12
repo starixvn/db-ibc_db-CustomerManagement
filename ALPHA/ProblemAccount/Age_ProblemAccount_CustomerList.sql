@@ -49,7 +49,7 @@ BEGIN
 	SET NOCOUNT ON
 	
 	CREATE TABLE #tempProblemAccount (custId INT, username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate DATETIME, 
-									  isReviewed BIT, ClosedReason TINYINT, Locked TINYINT, IsExistedWatchList TINYINT
+									  isReviewed BIT, ClosedReason TINYINT, Locked TINYINT, IsExistedWatchList TINYINT)
 	DECLARE @RoleId TINYINT, @_CustId INT
 
 	SELECT @RoleId = roleid FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustId
