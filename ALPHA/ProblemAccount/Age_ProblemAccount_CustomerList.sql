@@ -28,6 +28,7 @@ AS
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 		- 20221017@Tacy: Hide Display for Credit Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
 		- 20230630@Elodie: Enhance SP [Redmine:#190527]
+		- 20240410@Kelvin: Alpha - Link WL Detail to My Watchlist [Redmine:#201733]
 
 	Param's Explanation:
 		@CustId: Customer login
@@ -48,7 +49,7 @@ BEGIN
 	SET NOCOUNT ON
 	
 	CREATE TABLE #tempProblemAccount (custId INT, username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate DATETIME, 
-									  isReviewed BIT, ClosedReason TINYINT, Locked TINYINT)
+									  isReviewed BIT, ClosedReason TINYINT, Locked TINYINT, IsExistedWatchList TINYINT
 	DECLARE @RoleId TINYINT, @_CustId INT
 
 	SELECT @RoleId = roleid FROM dbo.custInfo WITH (NOLOCK) WHERE custid = @CustId
@@ -168,13 +169,15 @@ BEGIN
 		BEGIN				
 			IF @RoleId = 2 --Agent view member
 			BEGIN
-				INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason, Locked)
+				INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason, Locked, IsExistedWatchList)
 				SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0) ClosedReason, ISNULL(ps.Locked,0) Locked
+					, ISNULL(wl.IsExistedWatchList,0) IsExistedWatchList
 				FROM dbo.custinfo ci WITH (NOLOCK)
 					INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid										
 					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
+					OUTER APPLY (SELECT 1 AS IsExistedWatchList FROM WLMonitored_Player wl WITH (NOLOCK) WHERE wl.CustID = c.custid) AS wl
 				WHERE c.recommend = @_CustId
 					AND c.roleid = 1
 					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
@@ -246,11 +249,11 @@ BEGIN
 
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked
+	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked, IsExistedWatchList
 	FROM (
 		SELECT t.custId, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, t.ClosedReason,
 			CASE WHEN ci.Enabled = 1 THEN CASE WHEN cs.closed = 1 THEN 3 WHEN cs.reject = 1 THEN 2 ELSE 1 END ELSE 4 END AS Status,
-			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId, Locked
+			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId, Locked, IsExistedWatchList
 		FROM #tempProblemAccount t
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.custId
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
