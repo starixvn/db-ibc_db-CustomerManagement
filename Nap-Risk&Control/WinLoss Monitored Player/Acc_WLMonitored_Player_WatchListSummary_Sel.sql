@@ -72,13 +72,13 @@ SET NOCOUNT ON;
 		AND ci.roleid = 1				
 	
 	------------------------------------------------------------------------------------------------------------
-	SELECT @UnlimitedThresholdUsers	= CONCAT(@UnlimitedThresholdUsers, ',', UserName)
+	SELECT @UnlimitedThresholdUsers	= CONCAT(@UnlimitedThresholdUsers, ', ', UserName)
 			,@UnlimitedThresholdCustID	= CONCAT(@UnlimitedThresholdCustID, ',', CustID)
 	FROM #Temp
 	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
 
 	SELECT @UnlimitedThresholdCount  = @@ROWCOUNT,
-		   @UnlimitedThresholdUsers  = RIGHT(@UnlimitedThresholdUsers, LEN(@UnlimitedThresholdUsers) - 1), --remove first comma ','
+		   @UnlimitedThresholdUsers  = RIGHT(@UnlimitedThresholdUsers, LEN(@UnlimitedThresholdUsers) - 2), --remove first comma and space (', ')
 		   @UnlimitedThresholdCustID = RIGHT(@UnlimitedThresholdCustID, LEN(@UnlimitedThresholdCustID) - 1)
 	------------------------------------------------------------------------------------------------------------
 	
