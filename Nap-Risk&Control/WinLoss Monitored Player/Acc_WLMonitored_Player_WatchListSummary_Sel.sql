@@ -26,6 +26,7 @@ BEGIN
 SET NOCOUNT ON;
 
 	DECLARE @UnlimitedThresholdUsers	VARCHAR(MAX),
+			@UnlimitedThresholdCustID	VARCHAR(MAX),
 			@UnlimitedThresholdCount	INT
 	
 	CREATE TABLE #Temp
@@ -72,11 +73,13 @@ SET NOCOUNT ON;
 	
 	------------------------------------------------------------------------------------------------------------
 	SELECT @UnlimitedThresholdUsers	= CONCAT(@UnlimitedThresholdUsers, ',', UserName)
+			,@UnlimitedThresholdCustID	= CONCAT(@UnlimitedThresholdCustID, ',', CustID)
 	FROM #Temp
 	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
 
-	SELECT @UnlimitedThresholdCount = @@ROWCOUNT,
-		   @UnlimitedThresholdUsers = RIGHT(@UnlimitedThresholdUsers, LEN(@UnlimitedThresholdUsers) - 1) --remove first comma ','
+	SELECT @UnlimitedThresholdCount  = @@ROWCOUNT,
+		   @UnlimitedThresholdUsers  = RIGHT(@UnlimitedThresholdUsers, LEN(@UnlimitedThresholdUsers) - 1), --remove first comma ','
+		   @UnlimitedThresholdCustID = RIGHT(@UnlimitedThresholdCustID, LEN(@UnlimitedThresholdCustID) - 1)
 	------------------------------------------------------------------------------------------------------------
 	
 	SELECT 
@@ -84,7 +87,8 @@ SET NOCOUNT ON;
 	  SUM(IsExistedWatchList) AS MonitoredMembers,
 	  @ReachedDailyLimitCount AS ReachedDailyLimitMembers,
 	  @UnlimitedThresholdCount AS UnlimitedThresholdMembers,
-	  @UnlimitedThresholdUsers AS UnlimitedThresholdUsers
+	  @UnlimitedThresholdUsers AS UnlimitedThresholdUsers,
+	  @UnlimitedThresholdCustID AS UnlimitedThresholdCustID
 	FROM #Temp
 						
 	DROP TABLE #Temp
