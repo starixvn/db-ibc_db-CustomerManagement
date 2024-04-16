@@ -1,8 +1,9 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_WLMonitored_Player_WatchListSummary_Sel
 (
-	 @AgentID INT,
-	 @ReachedDailyLimitCount INT = 0
+	 @AgentID					INT,
+	 @Sporttype					SMALLINT = 0,
+	 @ReachedDailyLimitCount	INT = 0
 )
 AS  
 /*  
@@ -66,7 +67,7 @@ SET NOCOUNT ON;
 				 ) AS cs
 	OUTER APPLY ( SELECT 1 AS IsExistedWatchList, WinningThreshold, LosingThreshold
 				  FROM WLMonitored_Player WITH(NOLOCK) 
-				  WHERE CustID = ci.custid
+				  WHERE CustID = ci.custid AND Sporttype = @Sporttype
 				 ) AS wl
 	WHERE ci.recommend = @AgentID
 		AND ci.roleid = 1				
