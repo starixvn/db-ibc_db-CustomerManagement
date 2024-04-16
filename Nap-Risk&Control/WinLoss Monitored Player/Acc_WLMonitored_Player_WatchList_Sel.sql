@@ -70,6 +70,8 @@ AS
 		SELECT @TotalItems
 */  
 BEGIN 
+SET NOCOUNT ON;
+
 	DECLARE @RowStart int, @RowEnd int
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
@@ -143,7 +145,7 @@ BEGIN
 		ISNULL(cs.Locked,0),
 		ISNULL(lg.ClosedReason,0),
 		pa.IsPA,
-		per.InitSettingTime
+		per.CreatedDate
 	FROM WLMonitored_Player per WITH(NOLOCK) 
 		INNER JOIN custInfo ci WITH(NOLOCK) ON per.custid = ci.custid AND ci.roleid = 1
 		INNER JOIN customer c WITH(NOLOCK) ON ci.custid = c.custid
@@ -165,8 +167,8 @@ BEGIN
 	WHERE per.agentID = @AgentID
 		AND per.Sporttype = @Sporttype
 		AND ci.username LIKE  '%' + ISNULL(@Username,'') + '%'
-		AND per.InitSettingTime >= @AddedFromDate
-		AND per.InitSettingTime < @AddedToDate + 1
+		AND per.CreatedDate >= @AddedFromDate
+		AND per.CreatedDate < @AddedToDate + 1
 		AND (	CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 					WHEN cs.closed = 1 THEN 'Closed'
 					WHEN cs.reject = 1 THEN 'Suspended'

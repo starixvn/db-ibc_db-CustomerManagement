@@ -25,8 +25,8 @@ AS
 BEGIN 
 SET NOCOUNT ON;
 
-	DECLARE @UnlimitedThresholdUsersList	VARCHAR(MAX),
-			@UnlimitedThresholdCount		INT
+	DECLARE @UnlimitedThresholdUsers	VARCHAR(MAX),
+			@UnlimitedThresholdCount	INT
 	
 	CREATE TABLE #Temp
 	(
@@ -69,19 +69,22 @@ SET NOCOUNT ON;
 				 ) AS wl
 	WHERE ci.recommend = @AgentID
 		AND ci.roleid = 1				
-		
-	SELECT @UnlimitedThresholdUsersList	= CONCAT(@UnlimitedThresholdUsersList, ',', UserName)
+	
+	------------------------------------------------------------------------------------------------------------
+	SELECT @UnlimitedThresholdUsers	= CONCAT(@UnlimitedThresholdUsers, ',', UserName)
 	FROM #Temp
-	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND WinningThreshold IS NULL
+	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
 
-	SELECT @UnlimitedThresholdCount = @@ROWCOUNT
+	SELECT @UnlimitedThresholdCount = @@ROWCOUNT,
+		   @UnlimitedThresholdUsers = RIGHT(@UnlimitedThresholdUsers, LEN(@UnlimitedThresholdUsers) - 1) --remove first comma ','
+	------------------------------------------------------------------------------------------------------------
 	
 	SELECT 
 	  SUM(Status) AS ActiveMembers,
 	  SUM(IsExistedWatchList) AS MonitoredMembers,
 	  @ReachedDailyLimitCount AS ReachedDailyLimitMembers,
 	  @UnlimitedThresholdCount AS UnlimitedThresholdMembers,
-	  RIGHT(@UnlimitedThresholdUsersList, LEN(@UnlimitedThresholdUsersList) - 1) AS UnlimitedThresholdUsers
+	  @UnlimitedThresholdUsers AS UnlimitedThresholdUsers
 	FROM #Temp
 						
 	DROP TABLE #Temp
