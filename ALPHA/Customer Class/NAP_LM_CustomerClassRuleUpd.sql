@@ -121,8 +121,8 @@ BEGIN
 		FROM OPENXML (@iDoc, '/ROOT/r', 1) 
 		WITH (
 			 RuleID 					INT,       
-			 CustomerClass 				SMALLINT,   
-			 CustomerClassDetail		SMALLINT,      
+			 CustomerClass 				VARCHAR(20),   
+			 CustomerClassDetail		VARCHAR(20),      
 			 RuleTitle 					VARCHAR(500),       
 			 SportType 					VARCHAR(20),       
 			 IsLive 					VARCHAR(3),       

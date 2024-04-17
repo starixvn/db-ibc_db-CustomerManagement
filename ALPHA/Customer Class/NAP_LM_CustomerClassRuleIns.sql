@@ -91,8 +91,8 @@ BEGIN
 					 ,	AgentBetInterval
 					 ,	LeagueGroupIDs
 					 ,	IsTest	) 
-		SELECT	CAST(Data.CustomerClass AS SMALLINT) AS CustomerClass		
-			 ,	CASE WHEN Data.CustomerClassDetail = '' THEN null ELSE  CAST(Data.CustomerClassDetail AS SMALLINT) END AS CustomerClassDetail			
+		SELECT	CASE WHEN Data.CustomerClass = '' THEN null ELSE  CAST(Data.CustomerClass AS SMALLINT) END AS CustomerClass	
+			,	CASE WHEN Data.CustomerClassDetail = '' THEN null ELSE  CAST(Data.CustomerClassDetail AS SMALLINT) END AS CustomerClassDetail			
 			,	CASE WHEN Data.RuleTitle = '' THEN null ELse CAST(Data.RuleTitle AS VARCHAR(500)) END AS RuleTitle 					    
 			,	 CAST(Data.SportType AS SMALLINT)  AS SportType 					
 			,	CASE WHEN Data.IsLive = '' THEN null ELse CAST(Data.IsLive AS TINYINT) END AS IsLive  
@@ -113,8 +113,8 @@ BEGIN
 			,	@IsTest AS IsTest 
 		FROM OPENXML(@iDoc, '/ROOT/r', 1) 
 		WITH (     
-			 CustomerClass 				SMALLINT, 
-			 CustomerClassDetail		SMALLINT,         
+			 CustomerClass 				VARCHAR(20), 
+			 CustomerClassDetail		VARCHAR(20),         
 			 RuleTitle 					VARCHAR(500),       
 			 SportType 					VARCHAR(20),       
 			 IsLive 					VARCHAR(3),       
