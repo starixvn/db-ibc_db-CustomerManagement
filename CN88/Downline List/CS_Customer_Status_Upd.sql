@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap,bodbDownlineNet,wsv_alp" isFunction="0" isNested="0"></info>*/
 USE [CustDB]
 GO
 
@@ -44,7 +44,7 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN
 
-	IF @UserID <> @CustID AND CURRENT_USER <> 'bodbAdminNet,wsv_nap' AND EXISTS (SELECT 1 FROM custInfo WITH (NOLOCK) WHERE custid = @CustID AND LockUpd = 1 AND roleid = 1)
+	IF @UserID <> @CustID AND CURRENT_USER <> 'wsv_nap' AND EXISTS (SELECT 1 FROM custInfo WITH (NOLOCK) WHERE custid = @CustID AND LockUpd = 1 AND roleid = 1)
 	BEGIN
 		-- You are currently not authorized to perform this action. Please contact the Customer Service Department for further assistance.
 		 SELECT @ErrCode = 101, @ErrMsg = dbo.f_Get_MsgNamebyMsgID (40033, @Language)

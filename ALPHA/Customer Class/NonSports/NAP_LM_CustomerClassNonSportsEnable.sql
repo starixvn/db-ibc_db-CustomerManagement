@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassNonSportsEnable] 
 	  @PolicyID			INT						 
 	, @Enable			BIT

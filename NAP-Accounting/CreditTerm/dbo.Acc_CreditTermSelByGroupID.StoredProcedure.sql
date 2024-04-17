@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet,wsv_nap"  isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-BODB02" executers="wsv_nap"  isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CreditTermSelByGroupID]
 (
 	@GroupID INT = 0

@@ -109,6 +109,6 @@ GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNet,wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNetView,wsv_alpv]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [wsv_nap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelMinMax] TO vnteam 

@@ -37,7 +37,7 @@ SELECT    COUNT(LogID)
 					AND ci.roleid <=4
 
 GO
-GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [bodbDownlineNet,wsv_alp]
 GO

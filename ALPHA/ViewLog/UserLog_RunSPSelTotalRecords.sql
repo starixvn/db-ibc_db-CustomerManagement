@@ -68,7 +68,7 @@ BEGIN
 			AND c.roleid <= 4
 END
 GO
-GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [bodbDownlineNet,wsv_alp]
 GO

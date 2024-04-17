@@ -46,7 +46,7 @@ values
 Select @On_UserID = SCOPE_IDENTITY()
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbDownlineNet,wsv_alp]
 GO

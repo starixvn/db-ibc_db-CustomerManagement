@@ -134,7 +134,7 @@ BEGIN
 		SELECT @ErrMsg = N''
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbAdminNet,wsv_nap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [wsv_nap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-BODB02" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-BODB02" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Nap_LM_CustomerClassLeagueGroupSel] 
 	@SportType SMALLINT = 0
 AS

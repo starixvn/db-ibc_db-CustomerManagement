@@ -52,7 +52,7 @@ INSERT INTO dbo.UserLog_CasinoAPI(
 								 )
 
 GO
-GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [bodbExtAccNet,wsv_xnap]
 GO

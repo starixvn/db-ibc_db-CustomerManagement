@@ -34,7 +34,7 @@ BEGIN
 	RETURN    
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbAdminNet,wsv_nap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_nap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO

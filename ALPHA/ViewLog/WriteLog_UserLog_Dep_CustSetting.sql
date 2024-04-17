@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="Dot_Admin,Dot_Member,bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv,wsv_lap" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="Dot_Admin,Dot_Member,wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv,wsv_lap" viewers="vnteam" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_Dep_CustSetting]
 		@UserID INT,

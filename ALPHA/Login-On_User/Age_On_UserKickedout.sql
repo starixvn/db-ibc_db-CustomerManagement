@@ -1,4 +1,4 @@
-/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet,wsv_nap, bodbDownlineNet,wsv_alp, bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_nap, bodbDownlineNet,wsv_alp, bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_On_UserKickedout]
 	@CustID INT,
@@ -11,7 +11,7 @@ AS
 	Original:
 
 	Revisions:
-		- 20190620@Elodie: Add permission for bodbAdminNet,wsv_nap  [Redmine: #116825]
+		- 20190620@Elodie: Add permission for wsv_nap  [Redmine: #116825]
 
 	Param's Explanation:
 */

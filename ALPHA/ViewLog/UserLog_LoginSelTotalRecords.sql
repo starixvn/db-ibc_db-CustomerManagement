@@ -55,7 +55,7 @@ BEGIN
 END
    
 GO
-GRANT EXECUTE ON [dbo].[UserLog_LoginSelTotalRecords] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[UserLog_LoginSelTotalRecords] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_LoginSelTotalRecords] TO [bodbDownlineNet,wsv_alp]
 GO

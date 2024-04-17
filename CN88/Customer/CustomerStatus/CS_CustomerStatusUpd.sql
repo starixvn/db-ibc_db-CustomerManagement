@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_CustomerStatusUpd]	
 	@CustID			INT,
@@ -39,7 +39,7 @@ BEGIN
 	IF @ErrCode <> 0
 		RETURN
 
-	IF @UserID <> @CustID AND CURRENT_USER <> 'bodbAdminNet,wsv_nap' AND EXISTS (SELECT 1 FROM custInfo WITH (NOLOCK) WHERE custid = @CustID AND LockUpd = 1 AND roleid = 1)
+	IF @UserID <> @CustID AND CURRENT_USER <> 'wsv_nap' AND EXISTS (SELECT 1 FROM custInfo WITH (NOLOCK) WHERE custid = @CustID AND LockUpd = 1 AND roleid = 1)
 	BEGIN
 		SELECT  @ErrMsg = CASE @language WHEN 'E' THEN 'You are currently not authorized to perform this action. Please contact the Customer Service Department for further assistance.' 
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](40033,@Language) END,

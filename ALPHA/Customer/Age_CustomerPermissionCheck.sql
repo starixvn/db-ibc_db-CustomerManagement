@@ -105,7 +105,7 @@ BEGIN
 	
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerPermissionCheck] TO [bodbDownlineNet,wsv_alp]
 GO

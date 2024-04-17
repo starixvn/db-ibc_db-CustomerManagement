@@ -28,7 +28,7 @@ GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbDownlineNet,wsv_alp]
 GO
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [wsv_nap]
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[Acc_SelCustomerGivenCredit] TO [vnteam]

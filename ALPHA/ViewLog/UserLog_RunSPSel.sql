@@ -184,7 +184,7 @@ BEGIN
 	WHERE   RowNum BETWEEN @lbound AND @ubound
 END
 GO
-GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [bodbDownlineNet,wsv_alp]
 GO

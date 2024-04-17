@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassNonSportsProduct] 
 AS
 /*

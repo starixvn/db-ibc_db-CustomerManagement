@@ -50,7 +50,7 @@ SELECT @maxMemberCredit = case when (@maxMemberCredit < @agentMaxMemberCredit or
 
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_SelMaxMemberCredit] TO [bodbAdminNet,wsv_nap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_SelMaxMemberCredit] TO [wsv_nap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Agw_SelMaxMemberCredit] TO [bodbDownlineNet,wsv_alp] AS [dbo]
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Nap_LM_CustomerClassSel] 
 AS
 /*

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_UserLog_CreditSel]    
     @CustID INT ,
 	@CustName varchar(50) = '',

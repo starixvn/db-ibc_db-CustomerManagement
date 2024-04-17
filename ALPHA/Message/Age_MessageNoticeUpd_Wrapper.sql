@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp,bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp,wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_MessageNoticeUpd_Wrapper]
 	@custID			int, 	
 	@userID			int,

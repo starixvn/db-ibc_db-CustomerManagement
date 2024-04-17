@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-IPDB" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-IPDB" executers="wsv_nap,bodbDownlineNet,wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_IPRangesByCountrySelByIPList]
 	@IpList	VARCHAR(MAX)

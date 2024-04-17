@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ManageCansee_Del] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)

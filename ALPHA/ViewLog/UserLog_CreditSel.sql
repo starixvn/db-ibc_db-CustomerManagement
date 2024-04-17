@@ -104,7 +104,7 @@ WHERE   RowNum BETWEEN @lbound AND @ubound
 
 
 GO
-GRANT EXECUTE ON [dbo].[UserLog_CreditSel] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[UserLog_CreditSel] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_CreditSel] TO [bodbDownlineNet,wsv_alp]
 GO
