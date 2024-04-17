@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,wsv_alp,wsv_xnap" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0,
@@ -124,6 +124,8 @@ Revisions:
 	- 20230421@Elodie: Remove linked-server DBACC [RedmineID: #169643]
 	- 20230421@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS - Remove Old Structure Column DisableEsports [RedmineID: #193083]
+	- 20240417@Tacy: NAP - Incorporate Saba Coins [RedmineID: #204003]
+
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -246,7 +248,11 @@ BEGIN
 										      ELSE 0 END												  									  										  							  
     -------------------------------------------------------------------------
     DECLARE @IsDeposit BIT --Identify deposit customer
-	    SET @IsDeposit = 0
+		, @IsSabaCoins BIT
+		, @ShadowCustID INT
+	    
+	SELECT @IsDeposit = 0, @IsSabaCoins = 0
+
 
     IF @roleid in (2,3,4)
     BEGIN
@@ -273,9 +279,16 @@ BEGIN
 							    INNER JOIN dbo.Site s WITH(NOLOCK) ON c.site = s.site 
 					    WHERE custid = @uplineid
 						      AND isLicensee =1)
+		BEGIN
+			SET @IsDeposit =1
+			
+			SELECT @IsSabaCoins=1
+				, @ShadowCustID=c.custid
+			FROM dbo.Customer c WITH(NOLOCK)
+			WHERE username2 = 'SabaCoins$' + CAST(@custid AS varchar(30))
+				AND currency IN (213,72)
+		END
 
-	    SET @IsDeposit =1
-    	
 	    SELECT @LastChangedSecurityCodeDate = LastChangedDate,@ClosedReason=ClosedReason
 	    FROM DBCUST.CustDB.dbo.CustLoginInfo_Member WITH(NOLOCK)
 	    WHERE custid = @custid
@@ -656,6 +669,8 @@ BEGIN
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
 	    @IsDeposit IsDeposit, 
+		@IsSabaCoins IsSabaCoins,
+		@ShadowCustID ShadowCustID,
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
 		s.sitelabel,
 	    c.site AS site,
