@@ -43,5 +43,5 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSettingGameType_Sel] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSettingGameType_Sel] TO [bodbLicenseeNet]
+ GRANT EXECUTE ON [dbo].[NAP_SpecialCustSettingGameType_Sel] TO [wsv_lap]
 GO 

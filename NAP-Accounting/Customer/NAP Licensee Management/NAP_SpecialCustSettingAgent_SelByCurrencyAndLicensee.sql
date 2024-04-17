@@ -43,5 +43,5 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee] TO [bodbLicenseeNet]
+ GRANT EXECUTE ON [dbo].[NAP_SpecialCustSettingAgent_SelByCurrencyAndLicensee] TO [wsv_lap]
 GO 

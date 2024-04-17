@@ -59,5 +59,5 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_LicenseeSel] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_LicenseeSel] TO [bodbLicenseeNet]
+ GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_LicenseeSel] TO [wsv_lap]
 GO 

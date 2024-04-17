@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbLicenseeNet" viewers="vnteam" isFunction="0"></info>*/ 
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_lap" viewers="vnteam" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE NAP_SpecialCustSetting_Modify
 	@Licensee NVARCHAR(100),

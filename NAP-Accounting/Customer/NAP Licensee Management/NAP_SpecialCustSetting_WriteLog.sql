@@ -44,5 +44,5 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[NAP_SpecialCustSetting_WriteLog] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_WriteLog] TO [bodbLicenseeNet]
+ GRANT EXECUTE ON [dbo].[NAP_SpecialCustSetting_WriteLog] TO [wsv_lap]
 GO 
