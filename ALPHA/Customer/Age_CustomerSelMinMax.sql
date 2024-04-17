@@ -105,7 +105,7 @@ where custid = @CustID
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelMinMax] TO [bodbDownlineNetView,wsv_alpv]
 GO

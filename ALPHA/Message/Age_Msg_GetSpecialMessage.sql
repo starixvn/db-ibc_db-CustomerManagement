@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBMSG-bodb_Message" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_GetSpecialMessage]
 	@targetid int = 0,
 	@targetid2 varchar(100) = '0',

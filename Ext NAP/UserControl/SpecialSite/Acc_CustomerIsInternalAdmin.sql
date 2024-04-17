@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,bodbExtAccNet,wsv_xnap,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerIsInternalAdmin]
 	@CustID INT,
 	@IsInternalAdmin BIT = 0 OUTPUT, 
@@ -69,7 +69,7 @@ GRANT EXECUTE ON [Acc_CustomerIsInternalAdmin] TO [bodbExtAccNet,wsv_xnap]
 GO
 GRANT EXECUTE ON [Acc_CustomerIsInternalAdmin] TO [wsv_nap]
 GO
-GRANT EXECUTE ON [Acc_CustomerIsInternalAdmin] TO bodbDownlineNet,wsv_alp
+GRANT EXECUTE ON [Acc_CustomerIsInternalAdmin] TO wsv_alp
 GO
 GRANT EXECUTE ON [Acc_CustomerIsInternalAdmin] TO bodbDownlineNetView,wsv_alpv
 GO

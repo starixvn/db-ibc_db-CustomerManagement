@@ -26,6 +26,6 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelAgentList] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelAgentList] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelAgentList] TO [bodbDownlineNetView,wsv_alpv]

@@ -513,7 +513,7 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_API] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_API] TO [wsv_alp] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_API] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

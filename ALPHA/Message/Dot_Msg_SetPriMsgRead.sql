@@ -19,7 +19,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_SetPriMsgRead] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Dot_Msg_SetPriMsgRead] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_SetPriMsgRead] TO [bodbDownlineNetView,wsv_alpv]
 GO

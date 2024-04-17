@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBONUSER-on_user" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBONUSER-on_user" executers="bodbAdminNet,wsv_nap,wsv_alp,bodbDownlineNetView,wsv_alpv,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelOnline]
 	@custid INT,

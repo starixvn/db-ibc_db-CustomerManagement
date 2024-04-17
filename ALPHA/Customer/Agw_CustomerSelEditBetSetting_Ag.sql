@@ -483,6 +483,6 @@ group by
  ci.currency
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_CustomerSelEditBetSetting_Ag] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_CustomerSelEditBetSetting_Ag] TO [wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_CustomerSelEditBetSetting_Ag] TO [vnteam] AS [dbo]

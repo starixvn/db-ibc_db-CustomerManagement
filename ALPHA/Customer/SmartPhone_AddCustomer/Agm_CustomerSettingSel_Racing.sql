@@ -57,7 +57,7 @@ EXEC dbo.Agm_CustomerSettingSel_Racing @CustID=1511840
 */
 
 GO
-GRANT EXECUTE ON [dbo].Agm_CustomerSettingSel_Racing TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].Agm_CustomerSettingSel_Racing TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].Agm_CustomerSettingSel_Racing TO [vnteam]
 

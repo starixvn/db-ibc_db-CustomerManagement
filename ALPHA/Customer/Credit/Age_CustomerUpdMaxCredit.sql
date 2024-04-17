@@ -139,5 +139,5 @@ END CATCH
 GO 
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdMaxCredit] TO [vnteam]
 GO 
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdMaxCredit] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdMaxCredit] TO [wsv_alp]
 

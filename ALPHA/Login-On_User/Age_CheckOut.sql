@@ -77,7 +77,7 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 	 @Nickname = @Nickname
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [bodbDownlineNetView,wsv_alpv]
 GO

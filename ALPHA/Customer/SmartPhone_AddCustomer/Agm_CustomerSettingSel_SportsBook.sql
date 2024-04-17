@@ -85,7 +85,7 @@ EXEC dbo.Agm_CustomerSettingSel_SportsBook @CustID=1415610
 */
 
 GO
-GRANT EXECUTE ON [dbo].Agm_CustomerSettingSel_SportsBook TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].Agm_CustomerSettingSel_SportsBook TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].Agm_CustomerSettingSel_SportsBook TO [vnteam]
 

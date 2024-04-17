@@ -19,7 +19,7 @@ BEGIN
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [bodbDownlineNetView,wsv_alpv]
 Go

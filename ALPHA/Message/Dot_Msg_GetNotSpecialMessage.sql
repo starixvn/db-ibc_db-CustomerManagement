@@ -71,7 +71,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetNotSpecialMessage] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetNotSpecialMessage] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_GetNotSpecialMessage] TO [bodbDownlineNetView,wsv_alpv]
 GO

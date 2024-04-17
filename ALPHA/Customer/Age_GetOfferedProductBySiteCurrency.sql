@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_GetOfferedProductBySiteCurrency]
 	@Site VARCHAR(50), 
 	@Currency INT,

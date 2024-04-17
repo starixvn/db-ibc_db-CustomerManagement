@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="wsv_alp" viewers="vnteam" isFunction="0"></info>*/
 
 USE [bodb_Message]
 GO

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02,DBTXN-CustDB" executers="bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv,bodbExtAccNet,wsv_xnap,wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02,DBACC-bodb02,DBTXN-CustDB" executers="wsv_alp,bodbDownlineNetView,wsv_alpv,bodbExtAccNet,wsv_xnap,wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_GetSportOfferStatusBySiteCurrency]
 	@SiteID INT, 
 	@Currency INT,

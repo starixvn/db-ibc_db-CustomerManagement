@@ -33,7 +33,7 @@ FROM custsetting cs with (nolock)
 WHERE custid=@custid 
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_SelCommValues_Ag] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Agw_SelCommValues_Ag] TO [wsv_alp]
 GO
 
 

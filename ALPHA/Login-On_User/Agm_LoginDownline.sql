@@ -1105,7 +1105,7 @@ BEGIN CATCH
 END CATCH
 
 GO
-GRANT EXECUTE ON [dbo].[Agm_LoginDownline] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Agm_LoginDownline] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Agm_LoginDownline] TO [bodbDownlineNetView,wsv_alpv]
 GO

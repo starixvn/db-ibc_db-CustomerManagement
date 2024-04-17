@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet,wsv_alp"  viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBBOT-bodb_ChatBot" executers="wsv_alp"  viewers="" isFunction="0" isNested="1"></info>*/
  ALTER PROCEDURE [dbo].[Age_CustFeedbackArea_Ins]
 	-- Add the parameters for the stored procedure here
 	   @XMLfb	NVARCHAR(MAX) 

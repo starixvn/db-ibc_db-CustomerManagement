@@ -24,7 +24,7 @@ WHERE c.CustID = @CustID
 
 
 GO
-GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Acc_SelCustomerGivenCredit] TO [wsv_alp]
 GO
 
 GO

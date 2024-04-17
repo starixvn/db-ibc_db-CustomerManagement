@@ -53,7 +53,7 @@ ORDER BY
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelLiveCasinoComm_Ag] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelLiveCasinoComm_Ag] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelLiveCasinoComm_Ag] TO [bodbDownlineNetView,wsv_alpv]
 Go

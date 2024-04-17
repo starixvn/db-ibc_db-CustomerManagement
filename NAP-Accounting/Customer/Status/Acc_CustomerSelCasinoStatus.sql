@@ -26,6 +26,6 @@ where custid=@Custid
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelCasinoStatus] TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelCasinoStatus] TO [vnteam]

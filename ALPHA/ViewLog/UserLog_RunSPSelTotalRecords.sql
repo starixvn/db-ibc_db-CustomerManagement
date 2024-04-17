@@ -70,7 +70,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [bodbDownlineNetView,wsv_alpv]
 GO

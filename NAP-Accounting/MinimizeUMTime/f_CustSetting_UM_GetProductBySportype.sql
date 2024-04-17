@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" selecters="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbExtAccNet,wsv_xnap,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBCust-CustDB" selecters="bodbAdminNet,wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION [dbo].[f_CustSetting_UM_GetProductBySportype](@Sporttype  SMALLINT)
 RETURNS TABLE
 AS

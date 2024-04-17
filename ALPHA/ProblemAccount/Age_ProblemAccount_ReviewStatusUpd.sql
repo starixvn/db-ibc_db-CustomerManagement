@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_ProblemAccount_ReviewStatusUpd]
 	@UserId					INT,
 	@SubAccId				INT = 0,

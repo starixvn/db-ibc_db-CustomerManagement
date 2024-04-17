@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="wsv_nap,bodbDownlineNet,wsv_alp" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="wsv_nap,wsv_alp" viewers="vnteam" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[f_EncodeXMLValue](@value NVARCHAR(MAX))
 RETURNS NVARCHAR(MAX)
 AS

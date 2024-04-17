@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_Customer_SecurityCode_upd]
 	@custid		INT,

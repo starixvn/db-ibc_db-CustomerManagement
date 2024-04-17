@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelCustomerInfo] 
 	@CustID INT = null,
 	@Username NVARCHAR(50) = null

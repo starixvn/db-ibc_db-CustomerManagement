@@ -36,7 +36,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_alp] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

@@ -24,6 +24,6 @@ FROM Customer c with(nolock) INNER JOIN Custinfo ci with(nolock) ON c.CustID = c
 WHERE c.CustID = @CustID
 
 GO
-GRANT EXECUTE ON [dbo].[Agw_SelCustomerGivenCredit] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_SelCustomerGivenCredit] TO [wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_SelCustomerGivenCredit] TO [vnteam] AS [dbo]

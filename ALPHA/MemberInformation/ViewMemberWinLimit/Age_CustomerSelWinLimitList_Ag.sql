@@ -92,5 +92,5 @@ GO
 GO 
  GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [bodbDownlineNetView,wsv_alpv]
 GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [bodbDownlineNet,wsv_alp]
+ GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [wsv_alp]
 GO 

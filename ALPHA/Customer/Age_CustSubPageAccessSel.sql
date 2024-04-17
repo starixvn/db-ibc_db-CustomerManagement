@@ -23,6 +23,6 @@ BEGIN
 END	
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustSubPageAccessSel] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_CustSubPageAccessSel] TO [wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustSubPageAccessSel] TO [vnteam] AS [dbo]

@@ -264,6 +264,6 @@ SELECT
 GO
 GRANT EXECUTE ON [dbo].[Agw_CustomerSelMinMaxBetHR] TO [wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Agw_CustomerSelMinMaxBetHR] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Agw_CustomerSelMinMaxBetHR] TO [wsv_alp] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_CustomerSelMinMaxBetHR] TO [vnteam] AS [dbo]

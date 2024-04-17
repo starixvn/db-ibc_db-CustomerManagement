@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBONUSER-ON_USER" executers="bodbDownlineNet,wsv_alp, bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_alp, bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_RecheckIn] 
 	@On_UserID int,
 	@IsKickedOut bit = 0 OUTPUT,

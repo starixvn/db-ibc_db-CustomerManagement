@@ -34,7 +34,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Age_MessageNoticeUpdStatus] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_MessageNoticeUpdStatus] TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_MessageNoticeUpdStatus] TO [vnteam] 
 GO

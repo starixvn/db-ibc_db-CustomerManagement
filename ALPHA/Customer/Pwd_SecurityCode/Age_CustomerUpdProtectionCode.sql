@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet,wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE Age_CustomerUpdProtectionCode
 	@Custid			INT,

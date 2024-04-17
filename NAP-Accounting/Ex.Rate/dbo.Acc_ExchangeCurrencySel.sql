@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02,DBACC-bodb02" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap,wsv_alp" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeCurrencySel]
 	@Mode int = 1
 AS

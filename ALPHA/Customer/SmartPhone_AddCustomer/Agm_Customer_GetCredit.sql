@@ -49,6 +49,6 @@ EXEC dbo.Agm_Customer_GetCredit 1272
 select * from dbo.CustAgent AS ca WITH(NOLOCK) where ca.custid=1262
 */
 GO
-GRANT EXECUTE ON [dbo].Agm_Customer_GetCredit TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].Agm_Customer_GetCredit TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].Agm_Customer_GetCredit TO [vnteam]

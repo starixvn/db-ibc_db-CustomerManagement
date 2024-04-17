@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0" ></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelRnGStatus]
 	@strUserName VARCHAR(4000)
 AS

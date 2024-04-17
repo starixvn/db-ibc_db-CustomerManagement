@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb_ChatBot" executers="bodbDownlineNet,wsv_alp" selecters=""></info>*/
+/*<info serverAlias="DBAGE-bodb_ChatBot" executers="wsv_alp" selecters=""></info>*/
 
 USE [bodb_ChatBot]
 GO

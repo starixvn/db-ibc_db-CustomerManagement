@@ -63,7 +63,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginCheckGrantAccess] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginCheckGrantAccess] TO [wsv_alp] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginCheckGrantAccess] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

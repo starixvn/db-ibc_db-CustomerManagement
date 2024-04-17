@@ -39,7 +39,7 @@ SELECT    COUNT(LogID)
 GO
 GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [bodbDownlineNetView,wsv_alpv]
 GO

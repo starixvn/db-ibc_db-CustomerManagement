@@ -186,7 +186,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSel] TO [bodbDownlineNetView,wsv_alpv]
 GO

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBBOT-bodb_ChatBot" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" selecters=""></info>*/
+﻿/*<info serverAlias="DBBOT-bodb_ChatBot" executers="wsv_alp" viewers="vnteam" selecters=""></info>*/
 
 USE [bodb_ChatBot]
 GO
@@ -50,7 +50,7 @@ END
 
 GO
 
-GRANT EXECUTE ON  [dbo].[Chatbot_GetUsersByFunctions] TO bodbDownlineNet,wsv_alp;  
+GRANT EXECUTE ON  [dbo].[Chatbot_GetUsersByFunctions] TO wsv_alp;  
 
 GO
 

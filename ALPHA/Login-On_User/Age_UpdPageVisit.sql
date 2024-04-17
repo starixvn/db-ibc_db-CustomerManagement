@@ -42,7 +42,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Age_UpdPageVisit] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_UpdPageVisit] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_UpdPageVisit] TO [bodbDownlineNetView,wsv_alpv]
 GO

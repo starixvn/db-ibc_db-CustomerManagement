@@ -110,7 +110,7 @@ BEGIN
 		SELECT @ErrMsg = N''
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPStatusUpd] TO [bodbDownlineNet,wsv_alp] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPStatusUpd] TO [wsv_alp] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPStatusUpd] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
 GO

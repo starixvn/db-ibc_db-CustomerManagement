@@ -13,7 +13,7 @@ order by mid desc
 
 GO
 
-GRANT EXECUTE ON [dbo].[Age_MessageSelOne] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_MessageSelOne] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_MessageSelOne] TO [bodbDownlineNetView,wsv_alpv]
 GO

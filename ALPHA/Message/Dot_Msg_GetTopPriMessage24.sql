@@ -92,7 +92,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPriMessage24] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPriMessage24] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPriMessage24] TO [bodbDownlineNetView,wsv_alpv]
 GO

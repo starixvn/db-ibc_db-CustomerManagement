@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="bodbExtAccNet,wsv_xnap,bodbDownlineNet,wsv_alp,bodbDownlineNetView,wsv_alpv,wsv_nap" viewers="vnteam" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="bodbExtAccNet,wsv_xnap,wsv_alp,bodbDownlineNetView,wsv_alpv,wsv_nap" viewers="vnteam" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_Msg_SetUsrMessage]
 	@MessageId int,
 	@TargetId int,

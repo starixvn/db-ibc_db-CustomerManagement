@@ -20,7 +20,7 @@ where (case @RoleID
 order by mid desc
 GO
 
-GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Age_MessageSelAll] TO [bodbDownlineNetView,wsv_alpv]
 GO

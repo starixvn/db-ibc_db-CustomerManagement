@@ -1,4 +1,4 @@
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap,bodbDownlineNet,wsv_alp,bodbExtAccNet,wsv_xnap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustAbnormalLoginSel]
 	@OldMaxLogID BIGINT,
 	@MaxLogID BIGINT OUTPUT

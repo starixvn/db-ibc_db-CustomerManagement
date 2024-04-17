@@ -56,7 +56,7 @@ GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [bodbExtAccNet,wsv_xnap]
 GO
-GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[WriteLog_UserLog_CasinoAPI] TO [vnteam]
 GO

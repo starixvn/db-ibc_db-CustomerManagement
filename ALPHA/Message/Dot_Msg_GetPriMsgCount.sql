@@ -18,7 +18,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetPriMsgCount] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetPriMsgCount] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_GetPriMsgCount] TO [bodbDownlineNetView,wsv_alpv]
 GO

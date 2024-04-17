@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,wsv_alp" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp" viewers="vnteam" isFunction="0"></info>*/
 ALTER  PROCEDURE [dbo].[Age_CustomerInsNickName] 
 	@custid			INT,
 	@Nickname		VARCHAR(50) = NULL,
@@ -106,6 +106,6 @@ END
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerInsNickName] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Age_CustomerInsNickName] TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerInsNickName] TO [vnteam]

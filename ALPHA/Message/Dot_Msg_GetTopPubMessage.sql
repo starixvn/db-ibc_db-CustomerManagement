@@ -64,7 +64,7 @@ BEGIN
 END
 
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [bodbDownlineNet,wsv_alp]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [wsv_alp]
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [bodbDownlineNetView,wsv_alpv]
 GO
