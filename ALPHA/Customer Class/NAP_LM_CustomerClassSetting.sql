@@ -149,21 +149,19 @@ BEGIN
 					 (@CustomerClassDetail = ''  OR CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',')WHERE VALUE <> '') )
 					)) r
 
-	print '5 - ' + convert(varchar(20),getdate(),108)
-
-	INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)    
+	INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)  
 	SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
 	FROM #PolicyRule a
 		CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) 
 					WHERE PolicyID = a.PolicyID AND IsTest <= @IsTest 
 					AND SportType IN (SELECT SportType FROM #SportType) ) r
-		--CROSS APPLY ( SELECT Site FROM @SiteTbl ) t
-		CROSS APPLY( SELECT DISTINCT Site, Currency
-					FROM CustomerClassSiteManagement WITH(NOLOCK) 
+		CROSS APPLY( SELECT DISTINCT sm.Site, sm.Currency
+					FROM CustomerClassSiteManagement sm WITH(NOLOCK) 
+						CROSS APPLY ( SELECT Site FROM @SiteTbl ) t
+						CROSS APPLY ( SELECT Currency FROM #Currency ) c
 					WHERE PolicyID = r.PolicyID 
-					AND Site in ( SELECT Site FROM @SiteTbl )--Site = t.Site 
-					AND Currency IN  ( SELECT Currency FROM #Currency ) 
-					AND Platform IN (0,1,2,3,4,5)
+					AND sm.Site = t.Site
+					AND sm.Currency = c.Currency
 					) s
 		CROSS APPLY(
 					SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
@@ -172,8 +170,6 @@ BEGIN
 					WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.Currency) mis
 				) d
 	--OPTION (RECOMPILE)
-
-	print '6 - ' + convert(varchar(20),getdate(),108)
 
 	INSERT INTO #CustomerClass_Currency( PolicyID, Site, CurrencyName, Platform)
 	SELECT DISTINCT
@@ -190,8 +186,6 @@ BEGIN
 				WHERE PolicyID = a.PolicyID AND a.Site = b.Site AND a.Platform = b.Platform ) mis
 		) d
 
-	print '6.1 - ' + convert(varchar(20),getdate(),108)
-	
 	INSERT INTO #CustomerClassSiteManagement( Site, CurrencyName, Platform, RuleID,RowNumber)
 	SELECT DISTINCT
 			a.Site,
@@ -208,8 +202,6 @@ BEGIN
 							CROSS APPLY( SELECT RuleID From #PolicyRule where b.PolicyID = PolicyID ) c
 					WHERE c.RuleID = d.RuleID AND Site = a.Site AND CurrencyName = a.CurrencyName) mis --PolicyID = a.PolicyID AND
 				) b
-
-	print '7 - ' + convert(varchar(20),getdate(),108)
 
 	--Paging
 	SELECT @TotalItems = MAX(RowNumber) FROM #CustomerClassSiteManagement c     

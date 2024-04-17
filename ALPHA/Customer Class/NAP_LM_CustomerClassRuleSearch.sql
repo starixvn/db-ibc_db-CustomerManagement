@@ -88,9 +88,9 @@ BEGIN
 							WHERE r.RuleID = a.RuleID
 					) d
 		WHERE a.SportType IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@SportTypes ,',') WHERE VALUE <> '')
-			AND (@CustomerClass = '0' 
+			AND (@CustomerClass = '' 
 			OR  a.CustomerClass IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClass,',') WHERE VALUE <> ''))
-			AND (@CustomerClassDetail = '0' 
+			AND (@CustomerClassDetail = '' 
 			OR  a.CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',') WHERE VALUE <> ''))
 			AND a.IsTest <= @IsTest
 			AND a.RuleID IN (SELECT RuleID 
