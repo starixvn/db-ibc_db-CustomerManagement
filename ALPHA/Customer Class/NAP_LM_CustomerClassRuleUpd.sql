@@ -74,7 +74,7 @@ BEGIN
 	CREATE TABLE #CustomerClassRuleLeagueGroup_History( RuleID INT, LeagueGroupID SMALLINT)
 
 	BEGIN TRY
-		EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT,	@Rules;
+		EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT, @Rules;
 
 		INSERT INTO	#CustomerClassRule (RuleID 					
 					 ,	CustomerClass
@@ -98,7 +98,7 @@ BEGIN
 					 ,	LeagueGroupIDs 
 					 ,	IsTest	)
 		SELECT	Data.RuleID 					
-			 ,	CASE WHEN Data.CustomerClass = '' THEN null ELSE  CAST(Data.CustomerClass AS SMALLINT) END AS CustomerClass				
+			 ,	CASE WHEN Data.CustomerClass = '' THEN 0 ELSE  CAST(Data.CustomerClass AS SMALLINT) END AS CustomerClass				
 			 ,	CASE WHEN Data.CustomerClassDetail = '' THEN null ELSE  CAST(Data.CustomerClassDetail AS SMALLINT) END AS CustomerClassDetail				
 			,	CASE WHEN Data.RuleTitle = '' THEN null ELSE  CAST(Data.RuleTitle AS VARCHAR(500)) END AS RuleTitle 					    
 			,	CASE WHEN Data.SportType = '' THEN null ELSE  CAST(Data.SportType AS SMALLINT) END AS SportType 					
@@ -201,6 +201,12 @@ BEGIN
 
 	IF 	@ErrCode = 107
 	BEGIN
+		RETURN
+	END	
+
+	IF 	EXISTS( SELECT TOP 1 1 FROM #CustomerClassRule WHERE ISNULL(CustomerClass,0) = 0 AND CustomerClassDetail IS NULL )	
+	BEGIN
+		SELECT @ErrCode = 108 , @ErrMsg = 'Please enter at least 1 of the 2 CC fields!' 
 		RETURN
 	END	
 
