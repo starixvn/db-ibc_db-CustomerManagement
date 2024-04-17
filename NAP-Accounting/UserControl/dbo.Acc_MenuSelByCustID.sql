@@ -1,4 +1,4 @@
-﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿ /*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_MenuSelByCustID]  
 	@CustID  INT,
 	@System varchar(50) = ''  
@@ -73,7 +73,7 @@ end
 GO
 GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [bodbAdminNet,wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_MenuSelByCustID] TO [vnteam] AS [dbo]
 

@@ -50,4 +50,4 @@ GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CheckIn] TO [wsv_alpv]

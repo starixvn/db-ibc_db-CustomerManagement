@@ -60,7 +60,7 @@ GO
 
 GRANT EXECUTE ON [dbo].[Age_MessageSelByType] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_MessageSelByType] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_MessageSelByType] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_MessageSelByType] TO [vnteam]
 GO

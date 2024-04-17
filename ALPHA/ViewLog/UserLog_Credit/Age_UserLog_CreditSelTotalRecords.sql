@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_alpv" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_UserLog_CreditSelTotalRecords]    
 	@CustName varchar(50),
 	@UserId INT,

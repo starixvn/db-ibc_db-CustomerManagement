@@ -81,6 +81,6 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_Ag] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_Ag] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_Ag] TO [wsv_alpv]
 Go
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelRBComm_Ag] TO [vnteam]

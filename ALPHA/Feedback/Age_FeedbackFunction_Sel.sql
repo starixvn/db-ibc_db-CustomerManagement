@@ -1,4 +1,4 @@
-/*<info serverAlias="DBBOT-bodb_ChatBot" executers="wsv_alp,bodbDownlineNetView,wsv_alpv"  viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBBOT-bodb_ChatBot" executers="wsv_alp,wsv_alpv"  viewers="" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Age_FeedbackFunction_Sel]
 	-- Add the parameters for the stored procedure here
 	  @FuncID	INT

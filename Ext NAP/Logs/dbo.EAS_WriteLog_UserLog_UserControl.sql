@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_UserControl]
     @CustID INT,
     @TrackingValue NVARCHAR(MAX),
@@ -40,4 +40,4 @@ INSERT INTO  dbo.eaUserLog_UserControl
             )
 
 GO
-GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_UserControl] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_UserControl] TO [wsv_xnap]

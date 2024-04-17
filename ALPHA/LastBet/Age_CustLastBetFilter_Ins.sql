@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustLastBetFilter_Ins]
 	-- Add the parameters for the stored procedure here
 	  @CustID		INT

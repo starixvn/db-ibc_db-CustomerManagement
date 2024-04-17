@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap,bodbDownlineNetView,wsv_alpv,Dot_Admin,wsv_lap" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv,Dot_Admin,wsv_lap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@UserID INT,
 		@CustID INT = 0,

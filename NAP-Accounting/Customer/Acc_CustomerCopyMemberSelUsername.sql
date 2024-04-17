@@ -59,7 +59,7 @@ GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbAdminNet,wsv_
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerCopyMemberSelUsername] TO [vnteam] AS [dbo]
 GO

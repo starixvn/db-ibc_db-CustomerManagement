@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicyUpd]
 	@OldMemPolicys NVARCHAR(MAX)= '', 
 	@MemPolicys NVARCHAR(MAX)= '', 	

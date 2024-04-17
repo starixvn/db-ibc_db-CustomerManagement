@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicySelByCustID]
 	@CustID INT, 
 	@GroupID INT=NULL OUTPUT, 
@@ -63,5 +63,5 @@ GRANT EXECUTE
    ON [dbo].acc_con_adminpolicyselbycustid TO [bodbAdminNet,wsv_nap];
 GO
 GRANT EXECUTE
-   ON [dbo].acc_con_adminpolicyselbycustid TO [bodbExtAccNet,wsv_xnap];
+   ON [dbo].acc_con_adminpolicyselbycustid TO [wsv_xnap];
 

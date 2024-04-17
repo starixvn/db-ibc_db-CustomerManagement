@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbExtAccNet,wsv_xnap,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),

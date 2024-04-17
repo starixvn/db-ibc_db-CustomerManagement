@@ -44,5 +44,5 @@ GO
 
 GRANT EXECUTE ON [dbo].[Age_CheckValidCountry] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CheckValidCountry] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CheckValidCountry] TO [wsv_alpv]
 GO

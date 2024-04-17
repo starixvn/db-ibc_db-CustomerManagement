@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-NAP_UserControl" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

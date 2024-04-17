@@ -206,4 +206,4 @@ GRANT  EXECUTE  ON [dbo].[Acc_CustomerUpdDisableCasinoBonus]  TO [wsv_alp]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [vnteam]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [bodbExtAccNet,wsv_xnap] 
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDisableCasinoBonus] TO [wsv_xnap] 

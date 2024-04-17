@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,bodbExtAccNet,wsv_xnap,bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_xnap,bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelCheckAllowedDownlines]  
 	@custid			int = 0   

@@ -32,7 +32,7 @@ GO
 
 GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [bodbDownlineNetView,wsv_alpv] 
+GRANT EXECUTE ON [dbo].[Age_MessageNoticeSelByCustID] TO [wsv_alpv] 
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_MessageNoticeSelByCustID] TO [vnteam] 
 GO

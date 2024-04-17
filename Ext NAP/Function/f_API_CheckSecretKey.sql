@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" selecters="bodbExtAccNet,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/  
+/*<info serverAlias="DBCUST-CustDB" selecters="wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/  
 CREATE FUNCTION [dbo].[f_API_CheckSecretKey] ( @APISecretKey VARCHAR(100) )  
 RETURNS TABLE  
 AS  

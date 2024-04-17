@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginCheckSiteGroup]
 	@SiteGroup	VARCHAR(20) = 'ALL',
 	@Site		VARCHAR(20) = '',

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@CustId		INT,
@@ -28,7 +28,7 @@ AS
 		- 20090926@Jamie: Check the conditions before updating credit and writing log 
 		- 20091012@Kiwi: remove custBetCredit
 		- 20100102@Kiwi: Modify Log.
-		- 20100804@Henry: Grant execute permission to [bodbExtAccNet,wsv_xnap]
+		- 20100804@Henry: Grant execute permission to [wsv_xnap]
 		- 20110513@Amy: Add check MaxExposure for Number Game (Remove Finance)
 		- 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language
 		- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure

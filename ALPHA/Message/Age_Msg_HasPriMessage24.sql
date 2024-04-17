@@ -1,4 +1,4 @@
-/*<info serverAlias="DBMSG-bodb_Message" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBMSG-bodb_Message" executers="wsv_alp,wsv_alpv" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Age_Msg_HasPriMessage24]
 	@UserID int,
 	@IsTest bit = 0

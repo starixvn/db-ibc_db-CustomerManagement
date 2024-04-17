@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-BODB02" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-BODB02" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[EAS_Customer_AssociationInfo] 
 	 @GroupName VARCHAR(25)
 	,@AssociationList VARCHAR(MAX) = '' 

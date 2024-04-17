@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBTXN-bodb_CustomerLog" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_WriteLog_UserLog_Login]
 	@UserID INT,  
     @LoginIP VARCHAR(50)='', 
@@ -48,4 +48,4 @@ SET NOCOUNT ON
 			@Duration
 			)
 GO
-GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_Login] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[EAS_WriteLog_UserLog_Login] TO [wsv_xnap]

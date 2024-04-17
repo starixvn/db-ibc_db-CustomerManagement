@@ -44,5 +44,5 @@ GRANT VIEW DEFINITION ON [dbo].[Acc_Con_FuncInfoSel] TO [vnteam]
 GO 
 GRANT EXECUTE ON [dbo].Acc_Con_FuncInfoSel TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].Acc_Con_FuncInfoSel TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].Acc_Con_FuncInfoSel TO [wsv_xnap]
 GO

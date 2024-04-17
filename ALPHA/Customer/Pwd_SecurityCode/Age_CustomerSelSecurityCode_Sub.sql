@@ -21,4 +21,4 @@ SET NOCOUNT ON
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelSecurityCode_Sub] TO [wsv_alpv]

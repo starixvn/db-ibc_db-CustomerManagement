@@ -25,7 +25,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Acc_On_UserUpd] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_On_UserUpd] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_On_UserUpd] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_On_UserUpd] TO [VNTeam]
 GO 

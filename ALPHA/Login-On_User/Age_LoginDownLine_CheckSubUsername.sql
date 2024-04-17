@@ -17,4 +17,4 @@ GO
 
 GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_LoginDownline_CheckSubUsername] TO [wsv_alpv]

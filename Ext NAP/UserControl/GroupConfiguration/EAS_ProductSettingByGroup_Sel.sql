@@ -1,4 +1,4 @@
-/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet,wsv_xnap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_xnap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_ProductSettingByGroup_Sel]
 	@GroupId	INT = NULL, 
 	@SettingStatus TINYINT = 0

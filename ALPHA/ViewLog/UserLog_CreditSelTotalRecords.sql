@@ -41,6 +41,6 @@ GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[UserLog_CreditSelTotalRecords] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UserLog_CreditSelTotalRecords] TO [vnteam]

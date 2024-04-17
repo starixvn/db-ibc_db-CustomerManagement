@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBAGE-BODB02" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_SiteSelMoveSite] 
  @System varchar(50) = 'ACCOUNTING',
  @Userid INT=NULL
@@ -59,7 +59,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Acc_SiteSelMoveSite] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_SiteSelMoveSite] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_SiteSelMoveSite] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_SiteSelMoveSite] TO [vnteam]
 

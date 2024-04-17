@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
 USE [CustDB]
 GO
 ALTER PROCEDURE [dbo].[EAS_OTP_CustomerOTPSel]

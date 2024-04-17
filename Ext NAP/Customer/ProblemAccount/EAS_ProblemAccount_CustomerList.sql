@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbExtAccNet,wsv_xnap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_xnap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_ProblemAccount_CustomerList]
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,	

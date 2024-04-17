@@ -72,6 +72,6 @@ GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_nap]
 GO
 GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[UserLog_RunSPSelTotalRecords] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[UserLog_RunSPSelTotalRecords] TO [vnteam]

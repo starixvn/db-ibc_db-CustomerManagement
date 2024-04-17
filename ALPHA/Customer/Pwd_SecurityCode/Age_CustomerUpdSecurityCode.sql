@@ -223,4 +223,4 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [wsv_alpv] AS [dbo]

@@ -90,7 +90,7 @@ GO
 GO 
  GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [vnteam]
 GO 
- GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [bodbDownlineNetView,wsv_alpv]
+ GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [wsv_alpv]
 GO 
  GRANT EXECUTE ON [dbo].[Age_CustomerSelWinLimitList_Ag] TO [wsv_alp]
 GO 

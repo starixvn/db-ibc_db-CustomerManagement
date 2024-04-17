@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_ClosedReasonSelByCust]
 	@custid int,
 	@RoleID TINYINT

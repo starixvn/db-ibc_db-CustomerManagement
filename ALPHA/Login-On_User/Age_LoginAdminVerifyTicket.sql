@@ -38,8 +38,8 @@ GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_nap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_alpv] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_LoginAdminVerifyTicket] TO [wsv_xnap] AS [dbo]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_LoginAdminVerifyTicket] TO [vnteam] AS [dbo]

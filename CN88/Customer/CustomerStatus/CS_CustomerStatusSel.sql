@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_CustomerStatusSel]
 	@CustID INT,

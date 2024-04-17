@@ -25,4 +25,4 @@ ORDER BY username
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelMAgentList] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelMAgentList] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelMAgentList] TO [wsv_alpv]

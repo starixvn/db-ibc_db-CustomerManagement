@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" selecters="wsv_nap,bodbExtAccNet,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" selecters="wsv_nap,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_CurrencyBySystem]
 (

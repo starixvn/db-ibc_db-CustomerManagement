@@ -50,6 +50,6 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 GO
 GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_CheckOut] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CheckOut] TO [vnteam]

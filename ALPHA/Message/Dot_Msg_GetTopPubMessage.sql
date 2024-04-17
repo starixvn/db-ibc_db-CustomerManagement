@@ -66,6 +66,6 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Dot_Msg_GetTopPubMessage] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Dot_Msg_GetTopPubMessage] TO vnteam

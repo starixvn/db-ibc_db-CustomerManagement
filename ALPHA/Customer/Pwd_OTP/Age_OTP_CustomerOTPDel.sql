@@ -136,9 +136,9 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [wsv_nap] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbExtAccNet,wsv_xnap] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [wsv_xnap] AS [dbo]
 GO
 GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerOTPDel] TO [wsv_alpv] AS [dbo]
 GO

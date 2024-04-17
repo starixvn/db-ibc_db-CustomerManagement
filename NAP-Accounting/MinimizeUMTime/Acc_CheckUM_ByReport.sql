@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap, wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap, wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_CheckUM_ByReport]
 	@CustId 	INT = NULL
 	,@SiteID 	INT = 0

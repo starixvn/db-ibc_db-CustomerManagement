@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CS_ProblemAccount_CustomerList]
 	@FromDate			DATETIME,
 	@ToDate				DATETIME,

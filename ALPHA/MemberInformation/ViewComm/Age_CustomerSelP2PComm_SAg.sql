@@ -21,6 +21,6 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [wsv_alpv]
 Go
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelP2PComm_SAg] TO [vnteam]

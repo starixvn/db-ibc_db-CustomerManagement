@@ -7,7 +7,7 @@ AS
 	DB: DB06.BODB02
 	
 	Revisions:
-	- 20120907@Sophia: Grant permission for bodbExtAccNet,wsv_xnap
+	- 20120907@Sophia: Grant permission for wsv_xnap
 	
 */
 
@@ -20,7 +20,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_GetCustIdByUsername] TO [wsv_xnap]
 GO 
 GRANT VIEW DEFINITION ON [dbo].[Acc_GetCustIdByUsername] TO [VNTeam]
 GO

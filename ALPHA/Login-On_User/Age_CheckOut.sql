@@ -79,7 +79,7 @@ EXEC DBLOG.bodb_customerlog.dbo.WriteLog_UserLog_Login
 GO
 GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CheckOut] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CheckOut] TO [vnteam]
 GO

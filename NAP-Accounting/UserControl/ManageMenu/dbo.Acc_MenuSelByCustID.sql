@@ -41,6 +41,6 @@ end
 GO
 GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_MenuSelByCustID] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_MenuSelByCustID] TO [vnteam]

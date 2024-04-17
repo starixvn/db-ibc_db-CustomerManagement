@@ -25,7 +25,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [vnteam]
 

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_alp,bodbExtAccNet,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[CS_Acc_CustomerInfo_HeadlineSel]
 	@custid INT
 AS

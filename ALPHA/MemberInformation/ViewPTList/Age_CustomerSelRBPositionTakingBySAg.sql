@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="vnteam" isFunction="0"></info>*/ 
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="vnteam" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE [dbo].[Age_CustomerSelRBPositionTakingBySAg]
 (
@@ -78,7 +78,7 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelRBPositionTakingBySAg] TO [VNTeam]
 GO 

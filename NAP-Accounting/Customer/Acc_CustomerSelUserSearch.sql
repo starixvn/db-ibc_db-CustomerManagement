@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_xnap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelUserSearch]
 	@custid				int,
 	@username			varchar(30),

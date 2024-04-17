@@ -1102,6 +1102,6 @@ END CATCH
 GO
 GRANT EXECUTE ON [dbo].[Agw_LoginDownline] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Agw_LoginDownline] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Agw_LoginDownline] TO [wsv_alpv]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Agw_LoginDownline] TO [vnteam]

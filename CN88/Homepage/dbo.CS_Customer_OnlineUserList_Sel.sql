@@ -1,4 +1,4 @@
-/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_alp, bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_alp, wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CS_Customer_OnlineUserList_Sel]
 	@CustId INT,

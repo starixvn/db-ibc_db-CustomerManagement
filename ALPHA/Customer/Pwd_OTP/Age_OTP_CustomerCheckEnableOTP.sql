@@ -28,5 +28,5 @@ END
 GO
 GRANT EXECUTE ON [dbo].[Age_OTP_CustomerCheckEnableOTP] TO [wsv_alp] AS [dbo]
 GO
-GRANT EXECUTE ON [dbo].[Age_OTP_CustomerCheckEnableOTP] TO [bodbDownlineNetView,wsv_alpv] AS [dbo]
+GRANT EXECUTE ON [dbo].[Age_OTP_CustomerCheckEnableOTP] TO [wsv_alpv] AS [dbo]
 GO

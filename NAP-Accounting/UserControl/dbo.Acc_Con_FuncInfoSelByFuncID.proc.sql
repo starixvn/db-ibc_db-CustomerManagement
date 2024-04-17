@@ -33,5 +33,5 @@ GRANT EXECUTE
 
 GO
 GRANT EXECUTE
-    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [bodbExtAccNet,wsv_xnap];
+    ON [dbo].[Acc_Con_FuncInfoSelByFuncID] TO [wsv_xnap];
 

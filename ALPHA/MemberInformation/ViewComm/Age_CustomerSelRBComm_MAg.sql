@@ -78,6 +78,6 @@ ORDER BY
 GO
 GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [wsv_alp]
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].[Age_CustomerSelRBComm_MAg] TO [wsv_alpv]
 Go
 GRANT VIEW DEFINITION ON [dbo].[Age_CustomerSelRBComm_MAg] TO [vnteam]

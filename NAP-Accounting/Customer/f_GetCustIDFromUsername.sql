@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,bodbExtAccNet,wsv_xnap" viewers="vnteam" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[f_GetCustIDFromUsername]
 (
 	@Username varchar(30)

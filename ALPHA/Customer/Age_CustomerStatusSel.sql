@@ -1,4 +1,4 @@
-﻿ /*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" executers="wsv_alp,bodbDownlineNetView,wsv_alpv" viewers="" isFunction="0"></info>*/
+﻿ /*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
  ALTER PROCEDURE [dbo].[Age_CustomerStatusSel]
 	@custid INT,
 	@subAccID INT= 0,

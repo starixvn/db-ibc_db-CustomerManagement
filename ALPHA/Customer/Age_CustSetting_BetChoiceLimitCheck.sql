@@ -42,6 +42,6 @@ END
 
 
 GO 
-GRANT EXECUTE ON [dbo].Age_CustSetting_BetChoiceLimitCheck TO [bodbDownlineNetView,wsv_alpv]
+GRANT EXECUTE ON [dbo].Age_CustSetting_BetChoiceLimitCheck TO [wsv_alpv]
 GO 
 GRANT EXECUTE ON [dbo].Age_CustSetting_BetChoiceLimitCheck TO [wsv_alp]

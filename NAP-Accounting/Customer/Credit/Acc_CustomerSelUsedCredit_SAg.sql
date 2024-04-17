@@ -25,6 +25,6 @@ ORDER BY c.username
 GO
 GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbAdminNet,wsv_nap]
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [bodbExtAccNet,wsv_xnap]
+GRANT EXECUTE ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [wsv_xnap]
 GO
 GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelUsedCredit_SAg] TO [vnteam]
