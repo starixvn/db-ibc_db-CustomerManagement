@@ -1,5 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
-
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeSelByID]
 	@ExchangeID [int]
 AS
@@ -15,15 +14,31 @@ Revisions:
 	- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 	- 20200802@Elodie: Get IsActive, OfferSite column [RedmineID: #136023]
 	- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
+	- 20240419@Lewis: Exchange rate of SBC Currency [RedmineID: #204003]
 
 Param's Explanation:
 	• @ExchangeID: specIFy exchange-rate of the currency
 
 */
-
 SET NOCOUNT ON
 BEGIN
-	SELECT exchangeid, currency, actualrate, creator, minbet, minbetlive, GBPRate, EURORate, US$Rate , Description, MultipliedBy, Code, OfferSite, CurrencyType, stakerate AS CoinMarketCapID, IsActive
+	SELECT 
+		exchangeid, 
+		CASE WHEN ExchangeID = 213 THEN currency+' (USD/100)'ELSE currency END currency, 
+		actualrate, 
+		creator, 
+		minbet, 
+		minbetlive,
+		GBPRate, 
+		EURORate, 
+		US$Rate , 
+		Description, 
+		MultipliedBy,
+		Code, 
+		OfferSite, 
+		CurrencyType, 
+		stakerate AS CoinMarketCapID, 
+		IsActive
 	FROM exchange WITH(NOLOCK)
 	WHERE exchangeid = @ExchangeID
 END
