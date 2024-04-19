@@ -72,14 +72,11 @@ SET NOCOUNT ON;
 	WHERE ci.recommend = @AgentID
 		AND ci.roleid = 1				
 	
-	------------------------------------------------------------------------------------------------------------
 	SELECT @UnlimitedThresholdUsers		= STRING_AGG(UserName, ', ')
 		  ,@UnlimitedThresholdCustID	= STRING_AGG(CustID, ',')
+		  ,@UnlimitedThresholdCount		= COUNT(*)
 	FROM #Temp
 	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
-
-	SELECT @UnlimitedThresholdCount  = @@ROWCOUNT
-	------------------------------------------------------------------------------------------------------------
 	
 	SELECT 
 	  SUM(Status) AS ActiveMembers,
