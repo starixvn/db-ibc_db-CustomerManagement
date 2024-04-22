@@ -10,8 +10,8 @@ ALTER PROCEDURE [dbo].[Age_ProblemAccount_CustomerList]
 	@ReviewStatusId		TINYINT = 0,
 	@PageIndex			INT = 1,
 	@PageSize			INT = 5000,
-	@TotalRows			INT = 0 OUTPUT,
-	@Sporttype			SMALLINT = 0
+	@TotalRows			INT = 0 OUTPUT
+	
 AS
 
 /*
@@ -178,7 +178,7 @@ BEGIN
 					INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 					INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 					LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
-					OUTER APPLY (SELECT 1 AS IsExistedWatchList FROM WLMonitored_Player wl WITH (NOLOCK) WHERE wl.CustID = c.custid AND wl.Sporttype = @Sporttype) AS wl
+					OUTER APPLY (SELECT 1 AS IsExistedWatchList FROM WLMonitored_Player wl WITH (NOLOCK) WHERE wl.CustID = c.custid AND wl.Sporttype = 0) AS wl
 				WHERE c.recommend = @_CustId
 					AND c.roleid = 1
 					AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3))
