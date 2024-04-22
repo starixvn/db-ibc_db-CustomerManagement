@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Insert] 
 	@UserID INT = NULL,
 	@IP VARCHAR(20) = '',
@@ -26,6 +26,8 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Insert]
 	@Adjustmenttype	tinyint = NULL,
 	@AdjustmentValue SMALLMONEY = NULL,
 	@Status TINYINT = 0, --0 PROD, 1: UAT, 2: Inactive
+	@AccumulatedBalance BIT = 0,
+	@CurrencyIDList VARCHAR(MAX) = NULL,
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -37,6 +39,7 @@ AS
 
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
+	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -47,11 +50,12 @@ AS
 				<Row Criteria="LeagueList" Value="" />	
 				<Row Criteria="SiteIDList" Value="" />	
 				<Row Criteria="CustomerClassList" Value="8,9,10" />	
-				<Row Criteria="DateOfWeekList" Value="" />	
+				<Row Criteria="DateOfWeekList" Value="" />
+				<Row Criteria="CurrencyIDList" Value="" />
 			</Root>'	
 
 		@Enabled_Columns : Criteras is enabled on UI
-			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime'
+			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency'
 			
 	Example: 
 	DECLARE @ErrorCode INT = 0 ,@ErrorMsg VARCHAR(MAX) = '' 
@@ -76,6 +80,8 @@ AS
 		@Adjustmenttype = 1,
 		@AdjustmentValue = -99,
 		@Status = 0,
+		@AccumulatedBalance = 0,
+		@CurrencyIDList = '0',
 		@ErrorCode = @ErrorCode OUTPUT,
 		@ErrorMsg = @ErrorMsg OUTPUT
 	SELECT @ErrorCode,@ErrorMsg
@@ -90,7 +96,8 @@ BEGIN
 		@LeagueList_NotApply VARCHAR(MAX) ,
 		@SiteIDList_NotApply VARCHAR(MAX) ,
 		@CustomerClassList_NotApply VARCHAR(MAX) ,
-		@DateOfWeekList_NotApply VARCHAR(MAX) 
+		@DateOfWeekList_NotApply VARCHAR(MAX) ,
+		@CurrencyIDList_NotApply VARCHAR(MAX)
 	
 	SET @StartRun = GETDATE()
 
@@ -146,6 +153,7 @@ BEGIN
 		 SiteID        INT, 
 		 CustomerClass SMALLINT, 
 		 DateOfWeek    TINYINT,
+		 CurrencyID	   INT,
 		 IsApply	   BIT
 	)
 
@@ -156,6 +164,7 @@ BEGIN
 	SELECT @SiteIDList = ISNULL( @SiteIDList,'0')
 	SELECT @CustomerClassList = ISNULL( @CustomerClassList,'0')
 	SELECT @DateOfWeekList = ISNULL( @DateOfWeekList,'0')
+	SELECT @CurrencyIDList = ISNULL(@CurrencyIDList,'0')
 
 	IF @Criteria_NotApply <> ''
 	BEGIN
@@ -168,7 +177,8 @@ BEGIN
 			@LeagueList_NotApply = CASE WHEN @LeagueList = '-1' AND Criteria = 'LeagueList' THEN Value ELSE @LeagueList_NotApply END,
 			@SiteIDList_NotApply = CASE WHEN @SiteIDList = '0' AND Criteria = 'SiteIDList' THEN Value ELSE @SiteIDList_NotApply END,
 			@CustomerClassList_NotApply = CASE WHEN @CustomerClassList = '0' AND Criteria = 'CustomerClassList' THEN Value ELSE @CustomerClassList_NotApply END,
-			@DateOfWeekList_NotApply = CASE WHEN @DateOfWeekList = '0' AND Criteria = 'DateOfWeekList' THEN Value ELSE @DateOfWeekList_NotApply END
+			@DateOfWeekList_NotApply = CASE WHEN @DateOfWeekList = '0' AND Criteria = 'DateOfWeekList' THEN Value ELSE @DateOfWeekList_NotApply END,
+			@CurrencyIDList_NotApply = CASE WHEN @CurrencyIDList = '0' AND Criteria = 'CurrencyIDList' THEN Value ELSE @CurrencyIDList_NotApply END
 		FROM OPENXML (@DocHandler, '/Root/Row',1) 
 		WITH (
 			Criteria VARCHAR(20),
@@ -193,7 +203,9 @@ BEGIN
 		 @LeagueList_NotApply = @LeagueList_NotApply, 
 		 @SiteIDList_NotApply = @SiteIDList_NotApply, 
 		 @CustomerClassList_NotApply = @CustomerClassList_NotApply, 
-		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply, 
+		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply,
+		 @CurrencyIDList = @CurrencyIDList,
+		 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
 		 @ErrorCode = @ErrorCode OUTPUT, 
 		 @ErrorMsg = @ErrorMsg OUTPUT
 
@@ -224,6 +236,7 @@ BEGIN
 		,CreatedDTS
 		,CreatedBy
 		,Enabled_Column
+		,AccumulatedBalance
 	)
 	SELECT  @RuleName
 		,@SiteType
@@ -243,6 +256,7 @@ BEGIN
 		,GETDATE()
 		,@UserID
 		,@Enabled_Columns
+		,@AccumulatedBalance
 
 	SELECT @RuleID = SCOPE_IDENTITY()
 
@@ -255,6 +269,7 @@ BEGIN
 		,DateOfWeek
 		,LeagueGroupID
 		,LeagueID
+		,CurrencyID
 	)
 	SELECT  @RuleID
 		,Sporttype
@@ -264,6 +279,7 @@ BEGIN
 		,DateOfWeek
 		,LeagueGroupID
 		,LeagueID
+		,CurrencyID
 	FROM #ValidData
 	WHERE IsApply = 1
 
@@ -276,6 +292,7 @@ BEGIN
 		,DateOfWeek
 		,LeagueGroupID
 		,LeagueID
+		,CurrencyID
 	)
 	SELECT  @RuleID
 		,Sporttype
@@ -285,6 +302,7 @@ BEGIN
 		,DateOfWeek
 		,LeagueGroupID
 		,LeagueID
+		,CurrencyID
 	FROM #ValidData
 	WHERE IsApply = 0
 
@@ -314,11 +332,13 @@ BEGIN
 						+ 'SiteID="'+ coalesce(CASE WHEN ISNULL(@SiteIDList_NotApply,'') = ''  THEN 'IN (' + @SiteIDList + ')'  ELSE 'NOT IN (' + @SiteIDList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'CustomerClass="'+ coalesce(CASE WHEN ISNULL(@CustomerClassList_NotApply,'') = ''  THEN 'IN (' + @CustomerClassList + ')'  ELSE 'NOT IN (' + @CustomerClassList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'DateOfWeek="'+ coalesce(CASE WHEN ISNULL(@DateOfWeekList_NotApply,'') = ''  THEN 'IN (' + @DateOfWeekList + ')'  ELSE 'NOT IN (' + @DateOfWeekList_NotApply + ')'  END ,space(1)) + '" ' 
+						+ 'CurrencyID="'+ coalesce(CASE WHEN ISNULL(@CurrencyIDList_NotApply,'') = ''  THEN 'IN (' + @CurrencyIDList + ')'  ELSE 'NOT IN (' + @CurrencyIDList_NotApply + ')'  END ,space(1)) + '" ' 						
 						+ 'AdjustmentType="'+ coalesce(cast(@AdjustmentType as varchar(20)),space(1)) + '" ' 
 						+ 'AdjustmentValue="'+ coalesce(cast((CASE	WHEN @Adjustmenttype = 1 THEN (@AdjustmentValue -1 ) * 100 
 																	WHEN @Adjustmenttype = 2 THEN @AdjustmentValue * 100
 																END)
 															as varchar(10)),space(1)) + '" ' 
+						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance as varchar(2)),space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'

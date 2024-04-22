@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Delete] 
 	@UserID INT = NULL,
 	@IP VARCHAR(20) = '',
@@ -14,6 +14,7 @@ AS
 
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
+	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 
 	Parameter explanation:
 
@@ -60,7 +61,10 @@ BEGIN
 		@LeagueList_NotApply_Old VARCHAR(MAX),
 		@SiteIDList_NotApply_Old VARCHAR(MAX),
 		@CustomerClassList_NotApply_Old VARCHAR(MAX),
-		@DateOfWeekList_NotApply_Old VARCHAR(MAX)
+		@DateOfWeekList_NotApply_Old VARCHAR(MAX),
+		@CurrencyIDList_Old VARCHAR(MAX),
+		@CurrencyIDList_NotApply_Old VARCHAR(MAX),
+		@AccumulatedBalance_Old BIT
 
 	SET @StartRun = GETDATE()
 
@@ -200,6 +204,22 @@ BEGIN
 									ORDER BY DateOfWeek
 									FOR XML PATH ('')
 									),1,1,'')
+		,@CurrencyIDList_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CurrencyID)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CurrencyID
+									ORDER BY CurrencyID
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CurrencyIDList_NotApply_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CurrencyID)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CurrencyID <> 0
+									GROUP BY CurrencyID
+									ORDER BY CurrencyID
+									FOR XML PATH ('')
+									),1,1,'')
+		,@AccumulatedBalance_Old = AccumulatedBalance
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
 
@@ -246,6 +266,8 @@ BEGIN
 																	WHEN @AdjustmentType_Old = 2 THEN @AdjustmentValue_Old * 100
 																END)
 															as varchar(10)),space(1)) + '" '
+						+ 'CurrencyID="'+ coalesce(CASE WHEN ISNULL(@CurrencyIDList_NotApply_Old,'') = ''  THEN 'IN (' + @CurrencyIDList_Old + ')'  ELSE 'NOT IN (' + @CurrencyIDList_NotApply_Old + ')'  END ,space(1)) + '" ' 
+						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance_Old as varchar(2)),space(1)) + '" '
 						+ 'Status="'+ coalesce(cast(@Status_Old as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'

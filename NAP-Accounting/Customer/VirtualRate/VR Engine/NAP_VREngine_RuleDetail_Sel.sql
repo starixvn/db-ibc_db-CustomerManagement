@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_VREngine_RuleDetail_Sel] 
 	@RuleID INT = NULL
 AS
@@ -10,6 +10,7 @@ AS
 
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
+	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 
 	Parameter explanation:
 			
@@ -39,6 +40,7 @@ BEGIN
 		,ISNULL(c.username,'') AS CreatedBy
 		,CreatedDTS
 		,Enabled_Column
+		,AccumulatedBalance
 		,SportTypeList =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.Sporttype)
 									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
 									WHERE rd.RuleID = r.ruleID
@@ -87,6 +89,13 @@ BEGIN
 									WHERE rd.RuleID = r.ruleID
 									GROUP BY DateOfWeek
 									ORDER BY DateOfWeek
+									FOR XML PATH ('')
+									),1,1,'')
+		,CurrencyIDList =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CurrencyID)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CurrencyID
+									ORDER BY CurrencyID
 									FOR XML PATH ('')
 									),1,1,'')
 
@@ -145,6 +154,14 @@ BEGIN
 										AND DateOfWeek <> 0
 									GROUP BY DateOfWeek
 									ORDER BY DateOfWeek
+									FOR XML PATH ('')
+									),1,1,'')
+		,CurrencyIDList_NotApply =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CurrencyID)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CurrencyID <> 0
+									GROUP BY CurrencyID
+									ORDER BY CurrencyID
 									FOR XML PATH ('')
 									),1,1,'')
 	FROM VRSettingRule r WITH(NOLOCK)

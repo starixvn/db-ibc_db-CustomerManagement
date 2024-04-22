@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_VREngine_CriteriaMatrix_Sel] 
 AS
 /*
@@ -10,6 +10,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
+	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 
 	Parameter explanation:
 
@@ -63,10 +64,14 @@ BEGIN
 	SELECT DISTINCT bettype FROM #SportBettypeVR
 	SELECT * FROM #LeagueGroup
 
+	SELECT ExchangeId AS CurrencyID, currency AS CurrencyName
+	FROM Exchange WITH (NOLOCK)
+	WHERE IsActive = 1
+	ORDER BY ExchangeId
+
 	DROP TABLE #SportBettypeVR
 	DROP TABLE #LeagueGroup
 	DROP TABLE #SportVR
 END
 GO
-
 
