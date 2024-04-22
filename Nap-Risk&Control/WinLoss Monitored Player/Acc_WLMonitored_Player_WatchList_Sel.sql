@@ -144,7 +144,7 @@ SET NOCOUNT ON;
 		ci.recommend,
 		ISNULL(cs.Locked,0),
 		ISNULL(lg.ClosedReason,0),
-		pa.IsPA,
+		ISNULL(pa.IsPA,0),
 		per.CreatedDate
 	FROM WLMonitored_Player per WITH(NOLOCK) 
 		INNER JOIN custInfo ci WITH(NOLOCK) ON per.custid = ci.custid AND ci.roleid = 1
@@ -177,7 +177,7 @@ SET NOCOUNT ON;
 				END = @Status
 				OR ISNULL(@Status,'') = ''	
 			)
-		AND (pa.IsPA = @ProblemAccount OR @ProblemAccount = 2)
+		AND (ISNULL(pa.IsPA,0) = @ProblemAccount OR @ProblemAccount = 2)
 
 	INSERT INTO #Temp2(
 		 CustID				
