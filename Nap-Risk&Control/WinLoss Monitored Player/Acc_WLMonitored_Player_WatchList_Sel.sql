@@ -153,9 +153,9 @@ SET NOCOUNT ON;
 					FROM CategoryConfig cc WITH (NOLOCK) 
 					WHERE cc.CustomerClass=ci.CustomerClass AND HiddenSite NOT IN (1,3)
 					) cc
-		OUTER APPLY (SELECT CASE WHEN p.custid IS NOT NULL AND cc.CustomerClass IS NOT NULL THEN 1 ELSE 0 END IsPA
+		OUTER APPLY (SELECT 1 AS IsPA
 					 FROM ProblemAccountClassification p WITH(NOLOCK) 
-					 WHERE per.custid = p.custid
+					 WHERE per.custid = p.custid AND cc.CustomerClass IS NOT NULL
 					 ) pa	--Problem Account		
 		LEFT JOIN CustLoginInfo_Member lg WITH(NOLOCK) ON lg.CustID = ci.custid
 		CROSS APPLY  (	SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
