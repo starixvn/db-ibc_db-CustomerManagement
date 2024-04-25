@@ -10,6 +10,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 			
@@ -161,6 +162,36 @@ BEGIN
 										AND CurrencyID <> 0
 									GROUP BY CurrencyID
 									ORDER BY CurrencyID
+									FOR XML PATH ('')
+									),1,1,'')
+		,CustomerClassDetailList =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,CustomerClassDetailList_NotApply =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CustomerClassDetail <> 0
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,CCSportTypeList =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
+									FOR XML PATH ('')
+									),1,1,'')
+		,CCSportTypeList_NotApply =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CCSporttype <> 0
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
 									FOR XML PATH ('')
 									),1,1,'')
 

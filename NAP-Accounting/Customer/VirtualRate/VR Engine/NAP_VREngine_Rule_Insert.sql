@@ -28,6 +28,8 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Insert]
 	@Status TINYINT = 0, --0 PROD, 1: UAT, 2: Inactive
 	@AccumulatedBalance BIT = 0,
 	@CurrencyIDList VARCHAR(MAX) = NULL,
+	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
+	@CCSporttypeList VARCHAR(MAX) = NULL,
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -40,6 +42,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -82,6 +85,8 @@ AS
 		@Status = 0,
 		@AccumulatedBalance = 0,
 		@CurrencyIDList = '0',
+		@CustomerClassDetailList = '',
+		@CCSporttypeList = '0',
 		@ErrorCode = @ErrorCode OUTPUT,
 		@ErrorMsg = @ErrorMsg OUTPUT
 	SELECT @ErrorCode,@ErrorMsg
@@ -97,7 +102,9 @@ BEGIN
 		@SiteIDList_NotApply VARCHAR(MAX) ,
 		@CustomerClassList_NotApply VARCHAR(MAX) ,
 		@DateOfWeekList_NotApply VARCHAR(MAX) ,
-		@CurrencyIDList_NotApply VARCHAR(MAX)
+		@CurrencyIDList_NotApply VARCHAR(MAX),
+		@CCSporttypeList_NotApply VARCHAR(MAX) ,
+		@CustomerClassDetailList_NotApply VARCHAR(MAX) 
 	
 	SET @StartRun = GETDATE()
 
