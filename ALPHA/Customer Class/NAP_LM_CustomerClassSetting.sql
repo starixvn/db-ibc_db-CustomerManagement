@@ -106,7 +106,7 @@ BEGIN
 	FROM STRING_SPLIT(ISNULL(@SportTypes,''),',') 
 	WHERE VALUE <> ''
 
-	IF @Currencies <> ''
+	IF @Currencies <> '0'
 	BEGIN
 		INSERT INTO #Currency(Currency) 
 		SELECT DISTINCT VALUE
@@ -120,6 +120,8 @@ BEGIN
 		WHERE ExchangeID NOT IN (27,28)
 	END
 	
+	INSERT INTO #Currency(Currency) SELECT 0 -- All Currency
+
 	--Check if XML is null or empty
 	IF @LeagueGroups IS NULL OR @LeagueGroups = ''
 		RETURN
