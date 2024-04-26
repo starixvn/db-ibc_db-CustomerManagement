@@ -92,6 +92,7 @@ BEGIN
 			OR  a.CustomerClass IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClass,',') WHERE VALUE <> ''))
 			AND (@CustomerClassDetail = '' 
 			OR  a.CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',') WHERE VALUE <> ''))
+			AND (@Islive = 2 OR a.IsLive = @Islive)
 			AND a.IsTest <= @IsTest
 			AND a.RuleID IN (SELECT RuleID 
 							 FROM CustomerClassRuleLeagueGroup WITH(NOLOCK)
