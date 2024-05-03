@@ -60,7 +60,7 @@ AS
 			</Root>'	
 
 		@Enabled_Columns : Criteras is enabled on UI
-			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency'
+			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency,CCSporttype,CustomerClassDetail'
 			
 	Example: 
 	DECLARE @ErrorCode INT = 0 ,@ErrorMsg VARCHAR(MAX) = '' 
