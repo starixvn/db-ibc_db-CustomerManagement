@@ -56,6 +56,8 @@ AS
 				<Row Criteria="CustomerClassList" Value="8,9,10" />	
 				<Row Criteria="DateOfWeekList" Value="" />	
 				<Row Criteria="CurrencyIDList" Value="" />
+				<Row Criteria="CCSporttypeList" Value="" />
+				<Row Criteria="CustomerClassDetailList" Value="" />
 			</Root>'	
 
 		@Enabled_Columns : Criteras is enabled on UI

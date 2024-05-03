@@ -55,6 +55,8 @@ AS
 				<Row Criteria="CustomerClassList" Value="8,9,10" />	
 				<Row Criteria="DateOfWeekList" Value="" />
 				<Row Criteria="CurrencyIDList" Value="" />
+				<Row Criteria="CCSporttypeList" Value="" />
+				<Row Criteria="CustomerClassDetailList" Value="" />
 			</Root>'	
 
 		@Enabled_Columns : Criteras is enabled on UI
@@ -161,7 +163,9 @@ BEGIN
 		 CustomerClass SMALLINT, 
 		 DateOfWeek    TINYINT,
 		 CurrencyID	   INT,
-		 IsApply	   BIT
+		 IsApply	   BIT,
+		 CustomerClassDetail SMALLINT, 
+		 CCSporttype		 SMALLINT
 	)
 
 	SELECT @SporttypeList = ISNULL( @SporttypeList,'0')
@@ -172,6 +176,8 @@ BEGIN
 	SELECT @CustomerClassList = ISNULL( @CustomerClassList,'0')
 	SELECT @DateOfWeekList = ISNULL( @DateOfWeekList,'0')
 	SELECT @CurrencyIDList = ISNULL(@CurrencyIDList,'0')
+	SELECT @CustomerClassDetailList = ISNULL( @CustomerClassDetailList,'0')
+	SELECT @CCSporttypeList = ISNULL(@CCSporttypeList,'0')
 
 	IF @Criteria_NotApply <> ''
 	BEGIN
@@ -185,7 +191,9 @@ BEGIN
 			@SiteIDList_NotApply = CASE WHEN @SiteIDList = '0' AND Criteria = 'SiteIDList' THEN Value ELSE @SiteIDList_NotApply END,
 			@CustomerClassList_NotApply = CASE WHEN @CustomerClassList = '0' AND Criteria = 'CustomerClassList' THEN Value ELSE @CustomerClassList_NotApply END,
 			@DateOfWeekList_NotApply = CASE WHEN @DateOfWeekList = '0' AND Criteria = 'DateOfWeekList' THEN Value ELSE @DateOfWeekList_NotApply END,
-			@CurrencyIDList_NotApply = CASE WHEN @CurrencyIDList = '0' AND Criteria = 'CurrencyIDList' THEN Value ELSE @CurrencyIDList_NotApply END
+			@CurrencyIDList_NotApply = CASE WHEN @CurrencyIDList = '0' AND Criteria = 'CurrencyIDList' THEN Value ELSE @CurrencyIDList_NotApply END,
+			@CustomerClassDetailList_NotApply = CASE WHEN @CustomerClassDetailList = '0' AND Criteria = 'CustomerClassDetailList' THEN Value ELSE @CustomerClassDetailList_NotApply END,
+			@CCSporttypeList_NotApply = CASE WHEN @CCSporttypeList = '0' AND Criteria = 'CCSporttypeList' THEN Value ELSE @CCSporttypeList_NotApply END
 		FROM OPENXML (@DocHandler, '/Root/Row',1) 
 		WITH (
 			Criteria VARCHAR(20),
@@ -213,6 +221,10 @@ BEGIN
 		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply,
 		 @CurrencyIDList = @CurrencyIDList,
 		 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
+		 @CCSporttypeList = @CCSporttypeList, 
+		 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
+		 @CustomerClassDetailList = @CustomerClassDetailList, 
+		 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply,
 		 @ErrorCode = @ErrorCode OUTPUT, 
 		 @ErrorMsg = @ErrorMsg OUTPUT
 
@@ -277,6 +289,8 @@ BEGIN
 		,LeagueGroupID
 		,LeagueID
 		,CurrencyID
+		,CCSporttype
+		,CustomerClassDetail
 	)
 	SELECT  @RuleID
 		,Sporttype
@@ -287,6 +301,8 @@ BEGIN
 		,LeagueGroupID
 		,LeagueID
 		,CurrencyID
+		,CCSporttype
+		,CustomerClassDetail
 	FROM #ValidData
 	WHERE IsApply = 1
 
@@ -300,6 +316,8 @@ BEGIN
 		,LeagueGroupID
 		,LeagueID
 		,CurrencyID
+		,CCSporttype
+		,CustomerClassDetail
 	)
 	SELECT  @RuleID
 		,Sporttype
@@ -310,6 +328,8 @@ BEGIN
 		,LeagueGroupID
 		,LeagueID
 		,CurrencyID
+		,CCSporttype
+		,CustomerClassDetail
 	FROM #ValidData
 	WHERE IsApply = 0
 
@@ -346,6 +366,8 @@ BEGIN
 																END)
 															as varchar(10)),space(1)) + '" ' 
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance as varchar(2)),space(1)) + '" ' 
+						+ 'CCSportType="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply,'') = ''  THEN 'IN (' + @CCSportTypeList + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply + ')'  END ,space(1)) + '" ' 
+						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply,'') = ''  THEN 'IN (' + @CustomerClassDetailList + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'

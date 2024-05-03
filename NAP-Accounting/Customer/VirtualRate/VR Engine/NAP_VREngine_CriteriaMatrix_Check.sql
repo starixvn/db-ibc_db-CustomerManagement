@@ -16,6 +16,10 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_CriteriaMatrix_Check]
 	@DateOfWeekList_NotApply VARCHAR(MAX) =  NULL,
 	@CurrencyIDList VARCHAR(MAX) = NULL,
 	@CurrencyIDList_NotApply VARCHAR(MAX) = NULL,
+	@CCSporttypeList VARCHAR(MAX) = NULL,
+	@CCSporttypeList_NotApply VARCHAR(MAX) = NULL,
+	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
+	@CustomerClassDetailList_NotApply VARCHAR(MAX) =  NULL,
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -32,6 +36,7 @@ AS
 	- 20220610@Tacy: Alpha/NAP - Remove IsDeleted field in League Table [RedmineID: #171699]
 	- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 
@@ -136,6 +141,8 @@ BEGIN
 	CREATE TABLE #Sport(Sporttype SMALLINT)
 	CREATE TABLE #Bettype(Bettype SMALLINT)
 	CREATE TABLE #Currency(CurrencyID INT)
+	CREATE TABLE #CCSport(Sporttype SMALLINT)
+	CREATE TABLE #CCDetail(CustomerClass SMALLINT)
 	
 	INSERT INTO #Site(SiteID)
 	SELECT CAST(value AS INT) AS SiteID 	
@@ -172,7 +179,19 @@ BEGIN
 	FROM STRING_SPLIT(@CurrencyIDList,',') t
 	WHERE value <> ''
 
-	INSERT INTO #ValidData(Sporttype,Bettype,LeagueGroupID,LeagueID,SiteID,CustomerClass,DateOfWeek,CurrencyID,IsApply)
+	--> Get sport CC
+	INSERT INTO #CCSport(Sporttype)
+	SELECT CAST(value AS SMALLINT) AS Sporttype
+	FROM STRING_SPLIT(@CCSporttypeList,',') t
+	WHERE value <> ''
+
+	--> CustomerClass
+	INSERT INTO #CCDetail(CustomerClass)
+	SELECT CAST(value AS SMALLINT) AS CustomerClass 	
+	FROM STRING_SPLIT(@CustomerClassDetailList,',') t
+	WHERE value <> ''
+
+	INSERT INTO #ValidData(Sporttype,Bettype,LeagueGroupID,LeagueID,SiteID,CustomerClass,DateOfWeek,CurrencyID,IsApply,CustomerClassDetail,CCSporttype)
 	SELECT
 		CASE WHEN @SporttypeList = '0' THEN 0 ELSE s.sporttype END AS sporttype,
 		CASE WHEN @BettypeList = '0' THEN 0 ELSE bt.bettype END AS bettype,
@@ -182,7 +201,9 @@ BEGIN
 		CASE WHEN @CustomerClassList = '0' THEN 0 ELSE cc.CustomerClass END AS CustomerClass,
 		CASE WHEN @DateOfWeekList = '0' THEN 0 ELSE dw.DateOfWeek END AS DateOfWeek,
 		CASE WHEN @CurrencyIDList = '0' THEN 0 ELSE c.CurrencyID END AS CurrencyID,
-		1 AS IsApply
+		1 AS IsApply,
+		CASE WHEN @CustomerClassDetailList = '0' THEN 0 ELSE ccd.CustomerClass END AS CustomerClassDetail,
+		CASE WHEN @CCSporttypeList = '0' THEN 0 ELSE CCS.sporttype END AS CCSporttype
 	FROM #Sport s 
 		CROSS APPLY #Bettype bt
 		CROSS APPLY #LeagueGroup lg
@@ -191,38 +212,48 @@ BEGIN
 		CROSS APPLY #DateOfWeek dw
 		CROSS APPLY #Currency c
 		CROSS APPLY #CC cc
+		CROSS APPLY #CCSport ccs
+		CROSS APPLY #CCDetail ccd
 	UNION
-	SELECT CAST(value AS SMALLINT),0,-1,-1,0,0,0,0,0
+	SELECT CAST(value AS SMALLINT),0,-1,-1,0,0,0,0,0,0,0
 	FROM STRING_SPLIT(@SporttypeList_NotApply,',') t 
 	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,CAST(value AS INT),-1,-1,0,0,0,0,0
+	SELECT 0,CAST(value AS INT),-1,-1,0,0,0,0,0,0,0
 	FROM STRING_SPLIT(@BettypeList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,CAST(value AS SMALLINT),-1,0,0,0,0,0
+	SELECT 0,0,CAST(value AS SMALLINT),-1,0,0,0,0,0,0,0
 	FROM STRING_SPLIT(@LeagueGroupList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,0,-1,CAST(value AS INT),0,0,0,0,0
+	SELECT 0,0,-1,CAST(value AS INT),0,0,0,0,0,0,0
 	FROM STRING_SPLIT(@LeagueList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,CAST(value AS INT),0,0,0,0
+	SELECT 0,0,-1,-1,CAST(value AS INT),0,0,0,0,0,0
 	FROM STRING_SPLIT(@SiteIDList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,CAST(value AS SMALLINT),0,0,0
+	SELECT 0,0,-1,-1,0,CAST(value AS SMALLINT),0,0,0,0,0
 	FROM STRING_SPLIT(@CustomerClassList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,0,CAST(value AS TINYINT),0,0
+	SELECT 0,0,-1,-1,0,0,CAST(value AS TINYINT),0,0,0,0
 	FROM STRING_SPLIT(@DateOfWeekList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS TINYINT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,0,0,CAST(value AS INT),0
+	SELECT 0,0,-1,-1,0,0,0,CAST(value AS INT),0,0,0
 	FROM STRING_SPLIT(@CurrencyIDList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS INT),0) <> 0
+	UNION
+	SELECT 0,0,-1,-1,0,0,0,0,0,CAST(value AS SMALLINT),0
+	FROM STRING_SPLIT(@CustomerClassDetailList_NotApply,',') t
+	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
+	UNION
+	SELECT 0,0,-1,-1,0,0,0,0,0,0,CAST(value AS SMALLINT)
+	FROM STRING_SPLIT(@CCSporttypeList_NotApply,',') t 
+	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 
 	DROP TABLE #Sport
 	DROP TABLE #Bettype
@@ -234,6 +265,8 @@ BEGIN
 	DROP TABLE #LeagueGroupInput
 	DROP TABLE #SportVR
 	DROP TABLE #Currency
+	DROP TABLE #CCDetail
+	DROP TABLE #CCSport
 END
 GO
 
