@@ -11,6 +11,7 @@ AS
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 
@@ -57,7 +58,7 @@ BEGIN
 	WHERE isActive = 1
 	ORDER BY Site
 
-	SELECT CustomerClass,Name FROM dbo.f_NAP_VREngine_GetCustomerClass() ORDER BY 1
+	--SELECT CustomerClass,Name FROM dbo.f_NAP_VREngine_GetCustomerClass() ORDER BY 1
 	SELECT BetFrom,Name FROM dbo.f_NAP_VREngine_GetBetFrom() ORDER BY 2
 
 	SELECT * FROM #SportVR
@@ -68,6 +69,17 @@ BEGIN
 	FROM Exchange WITH (NOLOCK)
 	WHERE IsActive = 1
 	ORDER BY ExchangeId
+
+	-- CC by Sport
+	SELECT CAST(SportType AS SMALLINT) AS SportType, SportName
+	FROM Sports WITH (NOLOCK)
+	WHERE SportType in (1,2,43,99)
+	UNION
+	SELECT CAST(ResourceId AS SMALLINT) AS SportType, Resource_en AS SportName
+	FROM RefResource WITH (NOLOCK)
+	WHERE RefId='DummySport' AND ResourceId IN (9901, 9902)
+	UNION
+	SELECT 256 AS SportType, 'Non-Sports' AS SportName 
 
 	DROP TABLE #SportBettypeVR
 	DROP TABLE #LeagueGroup
