@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,wsv_aff" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap,wsv_aff" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns] 
 	@Code VARCHAR(12)
 	, @MYR FLOAT
@@ -21,6 +21,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 	, @INR FLOAT
 	, @TRY FLOAT
 	, @NPR FLOAT
+	, @MXN FLOAT
+	, @NGN FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -41,6 +43,7 @@ Revisions:
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  	
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR into OANDA service - [RedmineID: #197693]
 	- 20240401@Lewis: Support new currency SBC, DIA - [RedmineID: #202273] + [RedmineID: #203096]
+	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 */
 /*
 declare @p3 nvarchar(200)
@@ -126,6 +129,8 @@ BEGIN
 				, INR
 				, TRY
 				, NPR
+				, MXN
+				, NGN
 				)
 			VALUES (
 				@ExchangeId
@@ -151,6 +156,8 @@ BEGIN
 				, @INR * @MultipliedBy
 				, @TRY * @MultipliedBy
 				, @NPR * @MultipliedBy
+				, @MXN * @MultipliedBy
+				, @NGN * @MultipliedBy
 				)
 		END
 		ELSE
@@ -181,6 +188,8 @@ BEGIN
 				, INR = @INR * @MultipliedBy
 				, TRY = @TRY * @MultipliedBy
 				, NPR = @NPR * @MultipliedBy
+				, MXN = @MXN * @MultipliedBy
+				, NGN = @NGN * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = @Code
@@ -231,11 +240,15 @@ BEGIN
 		, INR
 		, TRY
 		, NPR
+		, MXN
+		, NGN
 		)
 	VALUES (
 		20
 		, @date
 		, 'UUS'
+		, 2e-101
+		, 2e-101
 		, 2e-101
 		, 2e-101
 		, 2e-101
@@ -299,6 +312,8 @@ BEGIN
 			, INR
 			, TRY
 			, NPR
+			, MXN
+		    , NGN
 			)
 		VALUES (
 			@ExchangeId
@@ -324,6 +339,8 @@ BEGIN
 			, @INR * @MultipliedBy
 			, @TRY * @MultipliedBy
 			, @NPR * @MultipliedBy
+			, @MXN * @MultipliedBy
+			, @NGN * @MultipliedBy
 			)
 	END
 	ELSE
@@ -353,6 +370,8 @@ BEGIN
 			, INR = @INR * @MultipliedBy
 			, TRY = @TRY * @MultipliedBy
 			, NPR = @NPR * @MultipliedBy
+			, MXN = @MXN * @MultipliedBy
+			, NGN = @NGN * @MultipliedBy
 		WHERE ExchangeId = @ExchangeId
 			AND ExchangeDate = @date
 			AND Code = 'YNG'
@@ -408,6 +427,8 @@ BEGIN
 			, INR
 			, TRY
 			, NPR
+			, MXN
+			, NGN
 			)
 		VALUES (
 			@ExchangeId
@@ -433,6 +454,8 @@ BEGIN
 			, @INR * @MultipliedBy
 			, @TRY * @MultipliedBy
 			, @NPR * @MultipliedBy
+			, @MXN * @MultipliedBy
+			, @NGN * @MultipliedBy
 			)
 	END
 	ELSE
@@ -462,6 +485,8 @@ BEGIN
 			, INR = @INR * @MultipliedBy
 			, TRY = @TRY * @MultipliedBy
 			, NPR = @NPR * @MultipliedBy
+			, MXN = @MXN * @MultipliedBy
+			, NGN = @NGN * @MultipliedBy
 		WHERE ExchangeId = @ExchangeId
 			AND ExchangeDate = @date
 			AND Code = 'SBC'
@@ -517,6 +542,8 @@ BEGIN
 			, INR
 			, TRY
 			, NPR
+			, MXN
+			, NGN
 			)
 		VALUES (
 			@ExchangeId
@@ -542,6 +569,8 @@ BEGIN
 			, @INR * @MultipliedBy
 			, @TRY * @MultipliedBy
 			, @NPR * @MultipliedBy
+			, @MXN * @MultipliedBy
+			, @NGN * @MultipliedBy
 			)
 	END
 	ELSE
@@ -571,6 +600,8 @@ BEGIN
 			, INR = @INR * @MultipliedBy
 			, TRY = @TRY * @MultipliedBy
 			, NPR = @NPR * @MultipliedBy
+			, MXN = @MXN * @MultipliedBy
+			, NGN = @NGN * @MultipliedBy
 		WHERE ExchangeId = @ExchangeId
 			AND ExchangeDate = @date
 			AND Code = 'DIA'

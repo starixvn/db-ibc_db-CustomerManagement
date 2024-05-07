@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto] 
 	@Code VARCHAR(12)
 	, @MYR FLOAT
@@ -34,6 +34,7 @@ Revisions:
 	- 20220908@Evan: Support crypto  [Redmine: #177481]  
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR - [RedmineID: #197693]
+	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 */
 BEGIN
 
@@ -111,6 +112,8 @@ BEGIN
 					, INR
 					, TRY
 					, NPR
+					, MXN
+					, NGN
 					, ActualRate
 					)
 				VALUES (
@@ -137,7 +140,10 @@ BEGIN
 					, @INR * @MultipliedBy
 					, @TRY * @MultipliedBy
 					, @NPR * @MultipliedBy
+					, @MXN * @MultipliedBy
+					, @NGN * @MultipliedBy
 					, @MYR * @MultipliedBy
+
 					)
 			END
 			ELSE
@@ -163,6 +169,8 @@ BEGIN
 					, INR = @INR * @MultipliedBy
 					, TRY = @TRY * @MultipliedBy
 					, NPR = @NPR * @MultipliedBy
+					, MXN = @MXN * @MultipliedBy
+					, NGN = @NGN * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
