@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_Rpt_ExchangeDailyOanda_Sel]
 	@FromDate SMALLDATETIME = NULL,
@@ -14,7 +14,6 @@ AS
 		- 20210223@Sol: Add 2 more base currencies BDT and INR into OANDA service - [RedmineID: #150479]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 		- 20240123@Lewis: Add 2 more base currencies NPR & TRY [RedmineID: #200163]
-		- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -45,9 +44,7 @@ BEGIN
 		BDT,
 		INR,
 		NPR,
-		TRY,
-		MXN,
-		NGN
+		TRY
 	FROM (
 		SELECT 
 			edo.ExchangeDate,
@@ -76,8 +73,6 @@ BEGIN
 			edo.INR,
 			edo.NPR,
 			edo.TRY,
-			edo.MXN,
-			edo.NGN,
 			ROW_NUMBER() OVER(
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC
