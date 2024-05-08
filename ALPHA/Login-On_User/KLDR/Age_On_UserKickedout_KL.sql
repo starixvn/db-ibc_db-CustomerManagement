@@ -1,4 +1,4 @@
-/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet, bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_nap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Age_On_UserKickedout_KL]
 	@CustID INT,

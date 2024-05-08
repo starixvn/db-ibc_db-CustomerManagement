@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBONUSER-ON_USER" executers="bodbAdminNet" viewers="VNTeam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBONUSER-ON_USER" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ReCheckIn_KL] 
 	@On_UserID	 int,
 	@IsKickedOut tinyint=0 OUTPUT

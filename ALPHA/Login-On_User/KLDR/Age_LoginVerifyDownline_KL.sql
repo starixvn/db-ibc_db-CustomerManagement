@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbDownlineNet, bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE Age_LoginVerifyDownline_KL
 	@UserName VARCHAR(50) = '' OUTPUT,  

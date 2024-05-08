@@ -1,4 +1,4 @@
-/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbExtAccNet" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_UserRecheckIn_KL]
 	@On_UserID		INT,
 	@isKickedOut	BIT = 0 OUTPUT

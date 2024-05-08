@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB, DBTXN-CustDB, DBACC-bodb02, DBAGE-bodb02, DBEXT-bodb02" executers="bodbAdminNet,bodbDownlineNet,bodbDownlineNetView,bodbExtAccNet,bodbLicenseeNet" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB, DBTXN-CustDB, DBACC-bodb02, DBAGE-bodb02, DBEXT-bodb02" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE Acc_SiteDBConfigSel_KL
 	@CustID INT = NULL,
 	@username VARCHAR(30) = NULL,
