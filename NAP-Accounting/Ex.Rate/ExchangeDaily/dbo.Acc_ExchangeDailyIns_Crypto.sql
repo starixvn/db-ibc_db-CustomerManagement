@@ -21,6 +21,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto]
 	, @INR FLOAT
 	, @TRY FLOAT
 	, @NPR FLOAT
+	, @MXN FLOAT
+	, @NGN FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
