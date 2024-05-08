@@ -47,6 +47,7 @@ BEGIN
 					WHERE a.RuleID = b.RuleID
 			) b (LeagueGroupIDs)
 		WHERE a.RuleID = @RuleID AND a.IsTest <= @IsTest
+		ORDER BY a.CustomerClass, a.CustomerClassDetail
 
 END
 GO

@@ -97,6 +97,7 @@ BEGIN
 			AND a.RuleID IN (SELECT RuleID 
 							 FROM CustomerClassRuleLeagueGroup WITH(NOLOCK)
 							 WHERE (@LeagueGroup = '' OR LeagueGroupID = -1 OR LeagueGroupID  IN ( SELECT CAST(VALUE AS INT) FROM STRING_SPLIT(@LeagueGroup,',') WHERE VALUE <> '')))
+		ORDER BY a.CustomerClass, a.CustomerClassDetail
 
 	DROP TABLE #LeagueGroup
 END
