@@ -13,16 +13,15 @@ AS
 	Revisions:
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
-
+		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
 	Examples:
 		EXEC [Acc_GetProductList] @Type = 1, @CustID = 28529050 , @SettingStatus = 3
 		EXEC [Acc_GetProductList] @Type = 2, @CustID = 28529050 , @SettingStatus = 3
 */
-
 BEGIN
 	SET NOCOUNT ON
 	CREATE TABLE #ProductsettingType (SettingType tinyint)
-	CREATE TABLE #TempProduct (ProductID tinyint)
+	CREATE TABLE #TempProduct (ProductID tinyint, GroupID TINYINT)
 	CREATE TABLE #Product_NonOffer (ProductID tinyint)
 	CREATE TABLE #SportOfferStatus (sporttype smallint, bettype smallint, IsHidden BIT)
 	CREATE NONCLUSTERED INDEX IX_NonOfferSport ON #SportOfferStatus(sporttype,bettype)
@@ -68,34 +67,41 @@ BEGIN
 		AND offer.sporttype IS NULL
 
 	;WITH Tmp AS(
-		SELECT ISNULL(st.RealProductId, d.RealProductId) AS RealProductId,
+		SELECT ISNULL(st.RealProductId, d.RealProductId) AS RealProductId,d.GroupID,
 			RN = ROW_NUMBER() OVER ( PARTITION BY ISNULL(st.RealProductId, d.RealProductId) ORDER by d.SportType,d.BetType)
 		FROM dbo.f_CustSetting_ProductProfileSel (NULL,@SettingStatus,@SiteID,@Currency) d 
 			INNER JOIN #ProductsettingType t ON d.SettingType = t.SettingType
-			LEFT JOIN SportBettypeSettingMatrix st WITH(NOLOCK) ON st.SportType = d.SportType AND st.BetType = d.BetType AND st.isLicensee = 0 AND st.Site = 'ALL' AND st.isDeleted = 0
+			LEFT JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) AS st 
+				ON st.SportType = d.SportType AND st.BetType = d.BetType
+				AND st.isLicensee = 0 AND st.Site = 'ALL' AND st.isDeleted = 0
 			LEFT JOIN #SportOfferStatus non ON d.SportType = non.sporttype AND d.BetType = non.bettype AND non.IsHidden = 1
 		WHERE non.sporttype IS NULL 
 		)
-	INSERT INTO #TempProduct(ProductID)
-	SELECT RealProductId
+	INSERT INTO #TempProduct(ProductID,GroupID)
+	SELECT RealProductId,GroupID
 	FROM Tmp t
 	WHERE RN = 1
 		AND NOT EXISTS ( SELECT 1 FROM #Product_NonOffer WHERE t.RealProductId = ProductID)
 	--SB
-	UNION SELECT 1
+	UNION SELECT 1,1
 
 	SELECT t.ProductID,
 		p.ProductName,
 		p.EndOfSupportDate,
 		ISNULL(p.OrderNo,0) AS OrderNo,
-		CASE WHEN p.CasinoType = 1 THEN 53  
-			ELSE 0 END AS [Type] 
+		--CASE WHEN p.CasinoType = 1 THEN 53  
+		--	ELSE 0 END 
+		0	AS [Type],
+		t.GroupID
 	FROM #TempProduct t
-		INNER JOIN dbo.Products p WITH (NOLOCK) 
-			ON t.ProductID = p.ProductID
+		INNER JOIN f_CustSetting_Product (@SettingStatus) AS p  ON t.ProductID = p.ProductID 
 	WHERE p.Enabled = 1
+	AND p.Environment<=@SettingStatus
 	ORDER BY OrderNo
 				
 	DROP TABLE #ProductsettingType
+	DROP TABLE #Product_NonOffer
+	DROP TABLE #SportOfferStatus
+	DROP TABLE #TempProduct
 END
 GO

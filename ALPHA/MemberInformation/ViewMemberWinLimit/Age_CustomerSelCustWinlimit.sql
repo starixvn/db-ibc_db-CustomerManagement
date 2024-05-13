@@ -31,6 +31,7 @@ AS
 		- 20230804@Eden: Win loss limit - Change SP to allow dynamic seting [RedmineID: #180640]
 		- 20230905@Eden: Enhance BBIN display [Redmine: #193539]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -50,7 +51,7 @@ BEGIN
 	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
 			@BetType = ISNULL(BettypeRefWinlossLimit,@BetType)
 	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
-		INNER JOIN dbo.SportBettypeSettingMatrix st WITH(NOLOCK) 
+		INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) st
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype
 			AND st.isLicensee = 0 AND st.Site = 'ALL'

@@ -17,29 +17,26 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230320@Eden: Migrate Number games to DCS structure [Redmine: #179711]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - move from bodb02 to custdb [Redmine: #189389]
+		- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960] 
 */
 BEGIN
 	SET NOCOUNT ON
 
 	CREATE TABLE #tmpProducts (ProductId TINYINT)
-	CREATE TABLE #tmpProducts_Show (ProductId TINYINT)
+	CREATE TABLE #tmpProducts_Show (ProductId TINYINT, Product_Type TINYINT)
 
 	CREATE TABLE #ProductSettingDetail(
-		[SettingType] [smallint],
-		[SportType] [smallint],
-		[BetType] [smallint],
-		[IsLive] [bit] ,
 		[ProductID] [tinyint],
 		[RealProductID] [tinyint],
-		[SettingName] varchar(200),
-	PRIMARY KEY([SettingType] ASC,[SportType] ASC,[BetType] ASC,[IsLive] ASC)
+		GroupID TINYINT
 	)
 
-	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID,SettingName)
-	SELECT SportType,BetType,d.SettingType,IsLive,ProductID,RealProductID,t.settingName
-	FROM custdb.dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) d
+	INSERT INTO #ProductSettingDetail(ProductID,RealProductID,GroupID)
+	SELECT DISTINCT ProductID,RealProductID,d.GroupID
+	FROM custdb.dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,NULL,NULL) d
 		INNER JOIN custdb.dbo.ProductSettingType t WITH(NOLOCK) ON d.SettingType = t.SettingType
-	WHERE t.SettingName IN ('Product Status','Bet Setting','Stake Level')
+	WHERE t.SettingName IN ('Product Status')
+		AND ISNULL(d.GroupID,0) <> 1
 
 	-- Get all enabled products
 	INSERT INTO #tmpProducts (ProductId)
@@ -52,30 +49,29 @@ BEGIN
 		)
 
 	INSERT INTO @products(ProductId)
-	SELECT DISTINCT CASE WHEN c.ProductId = 22 THEN 18 ELSE c.ProductId END AS ProductId
+	SELECT DISTINCT CASE WHEN c.ProductId = 22 THEN 53 ELSE c.ProductId END AS ProductId
 	FROM #tmpProducts p
 		INNER JOIN dbo.eaGroupConfiguration c WITH (NOLOCK) ON p.ProductId = c.ProductId
 	WHERE (c.GroupId = @groupId OR @groupId IS NULL)
 		AND c.IsShow = 1
 
-	INSERT INTO #tmpProducts_Show(ProductId)
-	SELECT DISTINCT d.ProductId
+	INSERT INTO #tmpProducts_Show(ProductId,Product_Type)
+	SELECT DISTINCT d.ProductId, 1 AS Product_Type-- ProductID
 	FROM @products p
 		INNER JOIN #ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
-	WHERE p.ProductId NOT IN (1,16) 
-		AND d.SettingName = 'Product Status'
-		AND d.ProductID NOT IN (41)
+	WHERE ISNULL(d.GroupID,0) <> 3
 
-	INSERT INTO #tmpProducts_Show(ProductId)
-	SELECT TOP 1 d.ProductId
+	INSERT INTO #tmpProducts_Show(ProductId,Product_Type)
+	SELECT DISTINCT d.GroupID, 2 as Product_Type -- Product GroupID
 	FROM #ProductSettingDetail d WITH(NOLOCK)
-		INNER JOIN CustDB.dbo.SportBettypeSettingMatrix mt WITH(NOLOCK) ON mt.SportType = d.SportType AND mt.BetType = d.BetType AND mt.isLicensee = 0 AND mt.Site = 'ALL'
+		INNER JOIN CustDB.dbo.f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) mt
+			ON mt.ProductID = d.ProductID 
+			AND mt.isLicensee = 0 AND mt.Site = 'ALL'
 		INNER JOIN @products p  ON p.ProductId = mt.RealProductId
-	WHERE d.ProductId IN (41) 
-		AND d.SettingName IN('Bet Setting','Stake Level')
+	WHERE d.GroupID IN (3)
 
-	SELECT ProductId 
+	SELECT ProductId,Product_Type
 	FROM #tmpProducts_Show 
 	ORDER BY ProductId
 	

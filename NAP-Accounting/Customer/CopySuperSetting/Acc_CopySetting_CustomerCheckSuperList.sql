@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CopySetting_CustomerCheckSuperList] 
 	@username VARCHAR(50),
 	@SuperList VARCHAR(MAX) = '',
@@ -22,6 +22,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+		- 20240316@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -117,21 +118,22 @@ BEGIN
 	FROM #tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
 		
-	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT)
+	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT, GroupID tinyint)
 	DECLARE @tblProduct_hidden TABLE (productID TINYINT, SportType SMALLINT)	
-	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, BitmapOrder TINYINT)
+	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, BitmapOrder TINYINT, GroupID tinyint)
 	CREATE TABLE #MatrixRefWL(SportType SMALLINT, Bettype SMALLINT, SporttypeRefWinlossLimit SMALLINT, BettypeRefWinlossLimit SMALLINT)
 
 	CREATE TABLE #ProductSettingDetail(
 		[SettingType] [smallint],
 		[SportType] [smallint],
 		[BetType] [smallint],
-		[ProductID] [tinyint]
+		[ProductID] [tinyint],
+		[GroupID] [tinyint]
 	)
 
-	INSERT INTO #ProductSettingDetail(SettingType,SportType,BetType,ProductID)
-	SELECT d.SettingType,d.SportType,d.BetType,d.ProductID
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) d
+	INSERT INTO #ProductSettingDetail(SettingType,SportType,BetType,ProductID,GroupID)
+	SELECT d.SettingType,d.SportType,d.BetType,d.ProductID, d.GroupID
+	FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,NULL,NULL) d
 		INNER JOIN ProductSettingType t WITH(NOLOCK) ON d.SettingType = t.SettingType
 	WHERE t.SettingName = 'Win Loss Limit'
 
@@ -140,15 +142,15 @@ BEGIN
 			,CASE WHEN mt.BetType = 1021 THEN 1024  ELSE mt.BetType END
 			,SporttypeRefWinlossLimit
 			,BettypeRefWinlossLimit
-	FROM SportBettypeSettingMatrix mt WITH(NOLOCK) 
+	FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) mt 
 	WHERE mt.SporttypeRefWinlossLimit  IS NOT NULL
 		AND mt.BettypeRefWinlossLimit  IS NOT NULL
 		AND mt.isLicensee = 0
 		AND mt.site = 'ALL'
 		AND mt.isDeleted = 0
 	
-	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder)
-	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder
+	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder,GroupID)
+	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder,p.GroupID
 	FROM #ProductSettingDetail p WITH(NOLOCK)
 		INNER JOIN #MatrixRefWL mt
 			ON p.SportType = mt.SporttypeRefWinlossLimit 
@@ -158,14 +160,14 @@ BEGIN
 				AND PSP.Sporttype = mt.SportType		
 	WHERE p.ProductID <> 41 -- Live Casino use common productstatus
 	UNION ALL
-	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder	
+	SELECT p.ProductID, p.SportType, p.Bettype, psp.bitmapOrder,p.GroupID	
 	FROM #ProductSettingDetail p WITH(NOLOCK)
 		INNER JOIN dbo.ProductStatusProfile psp WITH (NOLOCK) 
 			ON PSP.Bettype = p.BetType
 				AND PSP.Sporttype = p.SportType		
 
-	INSERT INTO @tblProduct(ProductID,SportType)
-	SELECT DISTINCT ft.ProductID, ft.SportType		
+	INSERT INTO @tblProduct(ProductID,SportType,GroupID)
+	SELECT DISTINCT ft.ProductID, ft.SportType,ft.GroupID		
 	FROM #SportBettypeFilter ft 												
 		CROSS JOIN dbo.CustProductStatus stt WITH (NOLOCK)
 		CROSS APPLY dbo.f_CustSetting_ProductStatusSel(stt.bitmapIsHidden, ft.bitmapOrder) hid
@@ -237,7 +239,7 @@ BEGIN
 		END
 	END
 	
-	SELECT productID,SportType FROM @tblProduct	
+	SELECT productID,SportType,GroupID FROM @tblProduct	
 	
 	SELECT distinct custid,username FROM #tblCust 
 

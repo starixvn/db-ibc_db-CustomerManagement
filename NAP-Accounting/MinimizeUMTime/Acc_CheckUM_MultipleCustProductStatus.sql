@@ -1,9 +1,10 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CheckUM_MultipleCustProductStatus]
 	@CustIDs	VARCHAR(MAX) ,
-	@ProductID tinyint ,
-	@FunctionType tinyint = 1
-
+	@ProductID tinyint = NULL,
+	@FunctionType tinyint = 1,
+	@GroupID TINYINT = NULL,
+	@SettingStatus TINYINT = 0
 AS
 BEGIN
 /*
@@ -15,6 +16,7 @@ Revisions:
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 	- 20220627@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
+	- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
 
 Param's Explanation:
 	- @FunctionType : Affect funtion
@@ -42,16 +44,37 @@ SET NOCOUNT ON
 			currency		TINYINT
 	)
 
+	CREATE TABLE #Products([ProductID] [tinyint])
+
 	INSERT INTO #Customers(CustID)
 	SELECT value FROM STRING_SPLIT(@CustIDs,',') WHERE value <> ''
 
-	INSERT INTO #UMConfig (CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp,Currency,SiteID)
-	SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
-	FROM #Customers s
-		CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
-	WHERE c.SettingType IN (4,11,13,21,0)
-		AND c.FunctionType IN( @FunctionType, 0)
-		AND c.ProductID IN (@ProductID, 0)
+	IF ISNULL(@ProductID,0)<> 0 -- Check by Product
+	BEGIN
+		INSERT INTO #UMConfig (CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp,Currency,SiteID)
+		SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
+		FROM #Customers s
+			CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
+		WHERE c.SettingType IN (4,11,13,21,0)
+			AND c.FunctionType IN( @FunctionType, 0)
+			AND c.ProductID IN (@ProductID, 0)
+	END
+	ELSE IF ISNULL(@GroupID,0)<> 0 -- Check by Group Product
+	BEGIN
+		INSERT INTO #Products(ProductID)
+		SELECT DISTINCT d.ProductID
+		FROM custdb.dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,NULL,NULL) d
+		WHERE SettingType IN (4,11,13,21)
+			AND d.GroupID = @GroupID
+
+		INSERT INTO #UMConfig (CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp,Currency,SiteID)
+		SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
+		FROM #Customers s
+			CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
+			INNER JOIN #Products d ON d.ProductID IN (c.ProductID, 0)
+		WHERE c.SettingType IN (4,11,13,21,0)
+			AND c.FunctionType IN( @FunctionType, 0)
+	END
 
 	--Delete Non-offered Products
 	DELETE ft
@@ -74,10 +97,11 @@ SET NOCOUNT ON
 							AND p.SettingStatus = 0 
 					)
 
-	SELECT CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp
+	SELECT DISTINCT CustID,ProductID,Sporttype,Bettype,SettingType,BeginTime,EndTime,Time_Stamp
 	FROM #UMConfig
 
 	DROP TABLE #Customers
 	DROP TABLE #UMConfig
+	DROP TABLE #Products
 END
 GO

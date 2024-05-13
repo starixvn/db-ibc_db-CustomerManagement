@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CheckUM]
 	@CustID	int ,
 	@ProductID tinyint = NULL,
@@ -8,7 +8,9 @@ ALTER PROCEDURE [dbo].[Acc_CheckUM]
 	@Language VARCHAR(2) = 'E',
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg	NVARCHAR(4000) = '' OUTPUT,
-	@ReturnUMData BIT = 1 
+	@ReturnUMData BIT = 1 ,
+	@SettingStatus TINYINT = 0,
+	@GroupID TINYINT = NULL -- If @GroupID <> NULL, Check UM by group
 AS
 BEGIN
 /*
@@ -19,6 +21,7 @@ Revisions:
 	- 20200629@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+	- 20240404@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960] 
 
 Param's Explanation:
 	- @FunctionType : Affect funtion
@@ -55,12 +58,14 @@ SET NOCOUNT ON
 		 SiteID       INT
 		);
 
+	DECLARE @Product TABLE(ProductID  TINYINT PRIMARY KEY)
+
 	IF NOT EXISTS (SELECT TOP 1 1 FROM [dbo].UMConfig c WITH(NOLOCK))
 	BEGIN
 		GOTO RETURNDATA;
 	END
 
-	IF @ProductID IS NULL AND @FunctionType IS NULL -- For Announcement
+	IF @ProductID IS NULL AND @GroupID IS NULL AND @FunctionType IS NULL -- For Announcement
 	BEGIN
 		CREATE TABLE #tmpUM (
 				ProductID		TINYINT, 
@@ -181,7 +186,7 @@ SET NOCOUNT ON
 
 		GOTO RETURNDATA;
 	END
-	ELSE
+	ELSE IF @GroupID IS NULL 
 	BEGIN
 		INSERT INTO @UMProduct(
 			 ProductID
@@ -243,6 +248,46 @@ SET NOCOUNT ON
 					 c.FunctionType
 		END
 	END
+	ELSE -- Check By GroupID
+	BEGIN
+		INSERT INTO @Product(ProductID)
+		SELECT DISTINCT ProductID
+		FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,NULL,NULL)
+		WHERE GroupID = @GroupID
+			AND ISNULL(ProductID,0) <> 0 
+		UNION ALL
+		SELECT 0
+		
+		INSERT INTO @UMProduct(
+			 ProductID
+			,SportType
+			,SettingType
+			,Functiontype
+			,BeginTime
+			,EndTime
+			,Time_Stamp
+			,Currency
+			,SiteID
+		)
+		SELECT c.ProductID, 
+			   c.Sporttype, 
+			   c.SettingType, 
+			   c.FunctionType,
+			   MIN(c.BeginTime) AS BeginTime, 
+			   MAX(c.EndTime) AS EndTime, 
+			   MAX(c.Time_Stamp) AS Time_Stamp,
+			   MAX(c.Currency) AS Currency,
+			   MAX(c.SiteID) AS SiteID
+		FROM [dbo].f_CustSetting_SportUMByCust(@CustID) c
+		WHERE c.SportType IN(ISNULL(@SportType, c.Sporttype), 0)
+			AND c.SettingType IN(ISNULL(@SettingType, c.SettingType), 0)
+			AND c.FunctionType = ISNULL(@FunctionType,c.FunctionType)
+			AND c.ProductID IN (SELECT ProductID FROM @Product)
+		GROUP BY c.ProductID, 
+				 c.Sporttype, 
+				 c.SettingType,
+				 c.FunctionType
+	END
 
 	--Delete Non-offered Products
 	DELETE ft
@@ -269,24 +314,6 @@ SET NOCOUNT ON
 	DECLARE @FromTime VARCHAR(30), @ToTime VARCHAR(30), @ProductName VARCHAR(30) 
 
 	SELECT @ErrMsg = ''
-
-	IF EXISTS(SELECT 1 FROM @UMProduct)
-		AND ISNULL(@SettingType,0) = 0 AND @ProductID IN(1,6,8,12) AND @FunctionType = 1 --edit
-	BEGIN
-		SELECT @FromTime = CONVERT(VARCHAR,MIN(t.BeginTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MIN(t.BeginTime),8),5)),
-			@ToTime = CONVERT(VARCHAR,MAX(t.EndTime),103) + ' ' + LTRIM(LEFT(CONVERT(VARCHAR, MAX(t.EndTime),8),5))
-		FROM @UMProduct t
-		WHERE t.ProductID IN (@ProductID,0)
-
-		SELECT @ProductName = p.ProductName FROM DBPRO.bodb02.dbo.Products p WITH(NOLOCK) WHERE p.ProductID = @ProductID
-
-		IF @Language NOT IN  ('E', 'EN')
-			SET @ProductName = '{0}' --web translate
-
-		SELECT @ErrCode = 90014
-		SELECT @ErrorTemplate = [dbo].[f_Get_MsgNamebyMsgID](90014,@Language)
-		SELECT @ErrMsg =   REPLACE(REPLACE(REPLACE(@ErrorTemplate,'<Product>',@ProductName),'<FromTime>',@FromTime),'<ToTime>',@ToTime)
-	END
 
 	IF EXISTS(SELECT 1 FROM @UMProduct) AND @FunctionType = 2
 	BEGIN

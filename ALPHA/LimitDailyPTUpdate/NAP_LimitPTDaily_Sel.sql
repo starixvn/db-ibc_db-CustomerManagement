@@ -21,6 +21,7 @@ AS
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 			- 20220616@Johnson: define temp table to avoid dump db [redmine:#174035]
 			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
+			- 20240216@Helios: Unify Live RNG Casino [Redmine: #198960]
 	*/
 BEGIN
 	SET NOCOUNT ON;
@@ -78,7 +79,8 @@ BEGIN
 		AND (Si.SiteID IN (SELECT siteid from #Site) OR  EXISTS (SELECT TOP 1 1 FROM #Site WHERE siteid = 0))
 		AND (e.exchangeid IN (SELECT exchangeid from #Exchange) OR  EXISTS (SELECT TOP 1 1 FROM #Exchange WHERE exchangeid = 0))
 		AND (l.ProductID IN (SELECT ProductID from #Product) OR  EXISTS (SELECT TOP 1 1 FROM #Product WHERE ProductID = 0))
-		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END 
+		AND l.SettingStatus <= CASE WHEN @SettingStatus IN (1,3) THEN 3 ELSE 0 END 
+		AND l.SettingStatus <> 2
 		UNION ALL
 		SELECT 
 			l.ProductID
@@ -104,7 +106,8 @@ BEGIN
 		AND ISNULL(l.LimitNewAccUpdPT,0) = CASE @IsLimitUpdPT	WHEN 1 THEN 1
 																WHEN 0 THEN 0
 																ELSE ISNULL(l.LimitNewAccUpdPT,0) END
-		AND l.SettingStatus <= CASE WHEN @SettingStatus = 1 THEN 1 ELSE 0 END  
+		AND l.SettingStatus <= CASE WHEN @SettingStatus IN (1,3) THEN 3 ELSE 0 END  
+		AND l.SettingStatus <> 2
 	) KQ
 	
 	UPDATE tc
