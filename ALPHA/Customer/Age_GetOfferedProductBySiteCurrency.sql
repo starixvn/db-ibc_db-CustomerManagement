@@ -13,6 +13,7 @@ AS
 		- 20231031@Tacy: Create SP [Redmine: #196141] 
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 		- 20240111@Johnson: exclude saba casino from dummy products [redmine: #194591]
+		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960] 
 	Examples:
 	
 */
@@ -42,7 +43,7 @@ BEGIN
 	   ,CASE WHEN p.CasinoType = 1 THEN 53
 	         WHEN p.CasinoType = 2 THEN 41		
 			 ELSE 0 END AS [Type]
-	FROM dbo.Products p WITH (NOLOCK)
+	FROM f_CustSetting_Product (@SettingStatus) p
 		LEFT JOIN dbo.f_GroupProduct() gp ON p.ProductID = gp.ProductId AND gp.ProductId <> gp.GroupProductId
 	WHERE p.GroupType = 0 AND gp.ProductId IS NULL AND p.Enabled=1
 		AND Environment <= @SettingStatus
@@ -83,14 +84,14 @@ BEGIN
 	SELECT p.ProductID, s.SportType, s.BetType, s.DummyProductID
 		,CASE WHEN dm.isHidden=0 THEN dbo.f_CustSetting_GetSportOfferStatusBySiteCurrency(@SiteID,@Currency,s.Sporttype,s.Bettype,@SettingStatus)
 				WHEN dm.isHidden=1 THEN dm.isHidden END AS isHidden
-	FROM Products p WITH (NOLOCK)
+	FROM f_CustSetting_Product (@SettingStatus) AS p 
 	OUTER APPLY (SELECT TOP 1 s.RealProductID, s.SportType, s.BetType,
-						CASE WHEN p.CasinoType=1 THEN 18 ELSE 41 END AS DummyProductID
+						CASE WHEN p.CasinoType=1 THEN 53 ELSE 41 END AS DummyProductID
 				 FROM SportNonOfferedSiteCurrency s WITH (NOLOCK)
 				 WHERE s.RealProductID=p.ProductID) s
 	LEFT JOIN #OfferProduct dm ON s.DummyProductID = dm.ProductID
 	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0
-		AND p.ProductID NOT IN (6,11) -- AG Casino, offer for licensee only
+		AND p.ProductID NOT IN (11) -- AG Casino, offer for licensee only
 		AND p.Environment <= @SettingStatus
 
 	--Get data

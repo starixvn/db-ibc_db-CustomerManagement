@@ -37,6 +37,7 @@ AS
 		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
+		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -62,20 +63,21 @@ BEGIN
 
 	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT)
 
-	--Get RNG slot & live CS
-	INSERT INTO #SportBettypeDummy (RealProductId, SportType, Bettype, ProductId)
-	SELECT p.ProductID, s.SportType, s.BetType, s.DummyProductID
-	FROM Products p WITH (NOLOCK)
-	CROSS APPLY (SELECT TOP 1 s.RealProductId, s.SportType
-						, s.BetTypeRefBetSetting AS BetType
-						, s.ProductID AS DummyProductID
-				 FROM SportBettypeSettingMatrix s WITH (NOLOCK)
-				 WHERE s.ProductID IN (18,41)
-				 AND s.RealProductId=p.ProductID
-				 AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'
-				 AND s.SportType <> 242) s --IBCBet Live Casino
-	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0
-		AND Environment <= @SettingStatus
+	--Live & RNG Casino
+	INSERT INTO #SportBettypeDummy (RealProductId, SportType, Bettype, ProductId)  
+	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID  
+	FROM f_CustSetting_Product (@SettingStatus) p   
+	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
+					, s.BetTypeRefPT AS BetType  
+					, s.ProductID AS DummyProductID  
+					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
+					WHERE s.ProductID IN (53,41)  
+						AND s.RealProductId=p.ProductID  
+						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'  
+						AND s.SportType <> 242 --IBCBet Live Casino  
+				) s 
+	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0  
+	AND Environment <= @SettingStatus  
 
 	INSERT INTO #Supers(CustID)
 	SELECT DISTINCT value
@@ -120,11 +122,7 @@ BEGIN
 		,CASE WHEN b.SportType=242 THEN 46 ELSE b.RealProductId END --IBCBet Live Casino
 	FROM #Tmp_ProductProfile b
 		CROSS APPLY #Supers s
-	WHERE (B.ProductID IN (41,18,42,44,66,69,64,6,5,1) -- Live Casino, Macau Games , Saba.club, RNG Lottery, VGaming,Bitcoin,Virtual Games, SEAL, Microgaming, JiliGame
-			--or (B.ProductID IN (16) and SportType = 43 and BetType = 1) -- Sportsbook 2
-			--or (B.ProductID IN (5) and SportType = 180 and BetType = 1201) -- Virtual Sports
-			--or (B.ProductID IN (38) and SportType = 245 and BetType = 4601) -- Virtual Games
-			)
+	WHERE B.ProductID IN (41,53,42,44,66,69,64,6,5,1)
 
 	--Get PT DCS
 	UPDATE a
@@ -138,33 +136,27 @@ BEGIN
 
 	DELETE FROM #tblCustomer WHERE IsHidden = 1
 
-	-- Macau Games(PP, Arcadia Gaming, SG, PG Soft, Joker, MaxGame, SEAL, Microgaming)
-	-- LiveCasino
+	--Live & RNG Casino
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
 	SELECT ss.CustID, c.SportType, c.BetType, c.RealProductId, b.SuperPT
 	FROM #Supers ss 
 	INNER JOIN #tblCustomer b ON  ss.CustID = b.CustID
 	INNER JOIN #SportBettypeDummy c WITH(NOLOCK)	
 		ON  c.ProductId = b.ProductID 
-	WHERE b.ProductID=18 or (b.ProductID=41 and b.SportType=9911)
-
-	---- Sportsbook - Soccer
-	--INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
-	--SELECT ss.CustID, b.BetType, b.SportType, 1 AS ProductID, b.spositiontaking
-	--FROM #Supers ss
-	--	INNER JOIN CustSetting b WITH(NOLOCK) ON ss.CustID = b.CustID 
-	--WHERE b.BetType = 1 AND b.SportType = 1	
+		AND c.SportType = b.SportType 
+		AND c.Bettype	= b.BetType 
+	WHERE b.ProductID IN (41,53)
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 
-		INNER JOIN Products  p WITH (NOLOCK) on a.ProductID = p.ProductID  
-	WHERE a.ProductID NOT IN (41) -- Not show dummy product
+		INNER JOIN f_CustSetting_Product (@SettingStatus)  p on a.ProductID = p.ProductID  
+	WHERE a.ProductID NOT IN (41,53) -- Not show dummy product
 		AND p.Environment <= @SettingStatus
 	UNION
 	SELECT s.CustID, 0 AS SuperPT, p.ProductID,p.ProductName
 	FROM #Supers s
 		CROSS APPLY (SELECT p.ProductID,p.ProductName 
-					 FROM Products p WITH (NOLOCK) WHERE p.ProductID=37) p
+					 FROM f_CustSetting_Product (@SettingStatus) p WHERE p.ProductID=37) p
 	WHERE dbo.f_Age_OfferedProductBySite(s.Site)=1
 	ORDER BY CustID, ProductID
 	

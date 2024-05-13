@@ -21,6 +21,7 @@ AS
 		- 20230728@Helios: Customer Setting - Simplify Live Casino Customer Setting [RedmineID: #189389] 
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
+		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT 
@@ -49,7 +50,9 @@ BEGIN
 	UPDATE sb	
 	SET sb.RealProductID = m.RealProductId
 	FROM #SportBettypeFilter sb
-	INNER JOIN SportBettypeSettingMatrix m WITH (NOLOCK) ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID AND m.isLicensee = 0 AND m.Site = 'All'
+	INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) m
+		ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID 
+		AND m.isLicensee = 0 AND m.Site = 'All'
 	WHERE m.ProductID IS NOT NULL
 		AND m.isDeleted = 0
 

@@ -26,7 +26,7 @@ AS
 		- 20230929@Tacy: Non-sports products - Remove GDG and Fishing World [RedmineID: #174511]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231213@Tacy: Live Casino - Hide un-launched product from Member Win Loss Limit page [Redmine: #198317]
-
+		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -49,7 +49,7 @@ BEGIN
 	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
-	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
 			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
@@ -67,7 +67,7 @@ BEGIN
 	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12,@SettingStatus) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
-	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
 			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
@@ -91,7 +91,7 @@ BEGIN
 		,st.RealProductId
 		,s.productID
 	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
-		INNER JOIN DBACC.bodb02.dbo.SportBettypeSettingMatrix st WITH(NOLOCK) 
+		INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) AS st
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype
 			AND st.isLicensee = 0 AND st.Site = 'ALL'
@@ -106,7 +106,7 @@ BEGIN
 			AND	CASE WHEN sbss.BetType = 1021 THEN 1024 
 					 WHEN sbss.ProductId = 41 THEN 2400
 				ELSE sbss.BetType END = psp.Bettype
-	INNER JOIN	dbo.Products				AS p	WITH (NOLOCK)
+	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
 			ON	p.ProductID = sbss.RealProductId
 	CROSS APPLY	(
 		SELECT	dbo.f_GetProductStatus(cps.bitmapHasSynced, psp.bitmapOrder)
@@ -121,15 +121,18 @@ BEGIN
 
 	SELECT p.BetType, 
 		   p.SportType, 
-		   p.ProductName, 
+		   CASE WHEN p.SportType = 9918 THEN 'Other RNG Casino' ELSE p.ProductName END AS ProductName,
 		   p.ProductID,
 		   ISNULL(d.OrderNo,0) AS OrderNo,
 		   CASE WHEN d.CasinoType = 1 THEN 53
 		        WHEN d.CasinoType = 2 THEN 41
 				ELSE 0 END AS [Type]
 	FROM @Products p 
-		INNER JOIN dbo.Products d WITH(NOLOCK) ON p.ProductID = d.ProductID
-	WHERE d.Enabled=1 AND d.Environment<=@SettingStatus
+		INNER JOIN f_CustSetting_Product (@SettingStatus) AS d ON 
+		p.ProductID = d.ProductID 
+		AND d.Enabled = 1
+		AND d.Environment<=@SettingStatus
+
 	ORDER BY d.OrderNo
 
 	DROP TABLE #SportBetype
