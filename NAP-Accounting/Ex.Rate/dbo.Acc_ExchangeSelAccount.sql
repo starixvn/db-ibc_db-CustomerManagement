@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeSelAccount]
 @CurrencyType VARCHAR (3) = ''
 AS
@@ -15,13 +15,28 @@ AS
 		- 20161219@Percy: Remove AUDRate and ZARRate columns [RedmineID: #68649]
 		- 20200802@Elodie: Get IsActive, OfferSite column [RedmineID: #136023]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
+		- 20240419@Lewis: Exchange rate of SBC Currency [RedmineID: #204003]
 */
 SET NOCOUNT ON
 SELECT 
-	exchangeid, currency, stakerate, actualrate, commaxpayout, creator, minbet, minbetlive, 
-	GBPRate, EURORate,  US$Rate, Description, MultipliedBy,
+	exchangeid, 
+	CASE WHEN ExchangeID = 213 THEN currency+' (USD/100)'ELSE currency END currency, 
+	stakerate, 
+	actualrate, 
+	commaxpayout, 
+	creator, 
+	minbet, 
+	minbetlive, 
+	GBPRate, 
+	EURORate,  
+	US$Rate, 
+	Description, 
+	MultipliedBy,
 	CASE WHEN exchangeid = 51 THEN currency ELSE Code END AS CurrencyCode, --20120711@Elodie: hardcode to not show CurrencyCode of INH
-	OfferSite, CurrencyType, stakerate AS CoinMarketCapID, IsActive
+	OfferSite, 
+	CurrencyType, 
+	stakerate AS CoinMarketCapID, 
+	IsActive
 FROM 
 	exchange WITH (NOLOCK)
 WHERE  
