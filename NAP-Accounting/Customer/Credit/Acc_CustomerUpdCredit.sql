@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@CustId		INT,
@@ -45,7 +45,7 @@ AS
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
-
+		- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
 */
 BEGIN
 SET NOCOUNT ON
@@ -148,7 +148,7 @@ SET NOCOUNT ON
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit must be greater than or equal to ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70031,@Language) 
 											END  
-											, '{number}', FORMAT(@TotalAmt, '#,#0.####'))
+											, '{number}', FORMAT(0 - @TotalAmt, '#,#0.####'))
 			RETURN 
 		END
 

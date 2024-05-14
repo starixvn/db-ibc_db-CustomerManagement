@@ -10,6 +10,7 @@ Revisions:
     - 20200309@Eden: Alpha - New function to let new member sign in via QR Code [RM#129373]
 	- 20200309@Eden: HotFix MaxCreditMember [RM#137309]
 	- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
+	- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
 */
 
 AS
@@ -41,13 +42,14 @@ BEGIN
 	SELECT @Credit_Ag_Bal = @AgentCredit - ISNULL(@Credit_AllOtherMember,0)
 	SELECT @MaxCredit_Mem = isnull(maxcredit,0) from CustAgent WITH (NOLOCK) where CustID = @AgentID
 
-	SELECT @MaxCredit_Mem = CASE WHEN @MaxCredit_Mem = 0 THEN @Credit_Ag_Bal 
-								WHEN @MaxCredit_Mem > @Credit_Ag_Bal THEN @Credit_Ag_Bal
-							 ELSE @MaxCredit_Mem END 
+	--SELECT @MaxCredit_Mem = CASE WHEN @MaxCredit_Mem = 0 THEN @Credit_Ag_Bal 
+	--							WHEN @MaxCredit_Mem > @Credit_Ag_Bal THEN @Credit_Ag_Bal
+	--						 ELSE @MaxCredit_Mem END 
 
 	SELECT @RefCredit AS RefCredit,
 		   @MaxCredit_Mem AS MaxCredit_Mem,
 		   0 AS MinCredit_Mem,
+		   @Credit_Ag_Bal AS Credit_Ag_Bal,
 		   @Status AS [Status]
 END
 GO

@@ -51,15 +51,11 @@ BEGIN
 		SELECT @MaxCredit_Mem = ISNULL(maxcredit,0) 
 		FROM dbo.CustAgent WITH(NOLOCK) WHERE CustID = @recommend
 			
-		SELECT @Credit_Ag_Bal = ISNULL(@Credit_Ag,0) - ISNULL(@Credit_AllOtherMember,0)
-			
-		SELECT @Credit_Mem_Max = CASE WHEN @MaxCredit_Mem =0 THEN @Credit_Ag_Bal
-										WHEN @MaxCredit_Mem > @Credit_Ag_Bal THEN @Credit_Ag_Bal 
-										ELSE @MaxCredit_Mem 
-									END
+		SELECT @Credit_Ag_Bal = ISNULL(@Credit_Ag,0) - ISNULL(@Credit_AllOtherMember,0)		
 									
 		SELECT @Credit AS Credit,
-			@Credit_Mem_Max AS MemMaxCredit_Max
+			@MaxCredit_Mem AS MaxCredit_Mem,
+			@Credit_Ag_Bal AS Credit_Ag_Bal
 	END
 	ELSE IF @roleid = 2
 	BEGIN
