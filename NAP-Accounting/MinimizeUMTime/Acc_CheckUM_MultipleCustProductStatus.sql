@@ -15,8 +15,9 @@ Revisions:
 	- 20200723@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-	- 20220627@Eden:  Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
+	- 20220627@Eden: Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 	- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
+	- 20240514@Eden: HotFix - UM for Live and RNG casino product [Redmine: #205044]
 
 Param's Explanation:
 	- @FunctionType : Affect funtion
@@ -71,7 +72,7 @@ SET NOCOUNT ON
 		SELECT s.CustID,c.ProductID,c.Sporttype,c.Bettype,c.SettingType,c.BeginTime,c.EndTime,c.Time_Stamp,c.Currency,c.SiteID
 		FROM #Customers s
 			CROSS APPLY [dbo].f_CustSetting_SportUMByCust(s.CustID) c
-			INNER JOIN #Products d ON d.ProductID IN (c.ProductID, 0)
+			INNER JOIN #Products d ON c.ProductID IN (d.ProductID, 0)
 		WHERE c.SettingType IN (4,11,13,21,0)
 			AND c.FunctionType IN( @FunctionType, 0)
 	END
