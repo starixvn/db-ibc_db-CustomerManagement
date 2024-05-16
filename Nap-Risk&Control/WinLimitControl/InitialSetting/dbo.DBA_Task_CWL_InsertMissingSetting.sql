@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[DBA_Task_CWL_InsertMissingSetting] 
 	@Mode TINYINT,
 	@currencies VARCHAR(500) = ''
@@ -18,6 +18,7 @@ AS
 		- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 		- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
+		- 20240516@Tacy: CWL - Change RNG slot/Casino from 18 to 53 (#198960) [RedmineID: #202670]
 
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
@@ -142,7 +143,7 @@ BEGIN
 		INSERT INTO @Products (ProductId)
 		SELECT DISTINCT RealProductId
 		FROM SportBettypeSettingMatrix sm WITH (NOLOCK)
-		WHERE ProductID=18 AND isDeleted=0 
+		WHERE ProductID=53 AND isDeleted=0 
 			AND isLicensee=0 AND Site='ALL'
 
 		--List sites: apply suspend account
