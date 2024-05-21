@@ -418,7 +418,7 @@ BEGIN
 			@CCSporttypeList_NotApply = CASE WHEN @CCSporttypeList = '0' AND Criteria = 'CCSporttypeList' THEN Value ELSE @CCSporttypeList_NotApply END
 		FROM OPENXML (@DocHandler, '/Root/Row',1) 
 		WITH (
-			Criteria VARCHAR(20),
+			Criteria VARCHAR(40),
 			Value VARCHAR(8000)
 		) AS Data
 		WHERE ISNULL(Value,'') <> ''
