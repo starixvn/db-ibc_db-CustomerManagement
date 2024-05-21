@@ -153,17 +153,15 @@ BEGIN
 
 	INSERT INTO #CustomerClass_Platform(PolicyID, Site, Currency, Platform)  
 	SELECT DISTINCT a.PolicyID, s.Site, s.Currency , d.Platforms  
-	FROM #PolicyRule a
-		CROSS APPLY( SELECT TOP 1 PolicyID FROM CustomerClassPolicyManagement  WITH(NOLOCK) 
-					WHERE PolicyID = a.PolicyID AND IsTest <= @IsTest 
-					AND SportType IN (SELECT SportType FROM #SportType) ) r
+	FROM CustomerClassPolicyManagement a  WITH(NOLOCK) 
+		CROSS APPLY( SELECT TOP 1 PolicyID FROM #PolicyRule WHERE PolicyID = a.PolicyID ) r
 		CROSS APPLY( SELECT DISTINCT sm.Site, sm.Currency
-					FROM CustomerClassSiteManagement sm WITH(NOLOCK) 
-						CROSS APPLY ( SELECT Site FROM @SiteTbl ) t
-						CROSS APPLY ( SELECT Currency FROM #Currency ) c
-					WHERE PolicyID = r.PolicyID 
-					AND sm.Site = t.Site
-					AND sm.Currency = c.Currency
+					 FROM CustomerClassSiteManagement sm WITH(NOLOCK) 
+							CROSS APPLY ( SELECT Site FROM @SiteTbl ) t
+							CROSS APPLY ( SELECT Currency FROM #Currency ) c
+					 WHERE PolicyID = r.PolicyID 
+						AND sm.Site = t.Site
+						AND sm.Currency = c.Currency
 					) s
 		CROSS APPLY(
 					SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
@@ -171,14 +169,19 @@ BEGIN
 						FROM CustomerClassSiteManagement WITH(NOLOCK)
 					WHERE PolicyID = a.PolicyID AND Site = s.Site AND Currency = s.Currency) mis
 				) d
-	--OPTION (RECOMPILE)
+	WHERE SportType IN (SELECT SportType FROM #SportType) AND IsTest <= @IsTest
 
 	INSERT INTO #CustomerClass_Currency( PolicyID, Site, CurrencyName, Platform)
 	SELECT DISTINCT
 			a.PolicyID,
 			a.Site,
 			d.CurrencyName,
-			CASE WHEN a.Platform = '1,2,3,4,5' THEN '0' ELSE a.Platform END AS Platform
+			CASE WHEN 
+				 CHARINDEX('1',a.Platform) > 0 AND
+				 CHARINDEX('2',a.Platform) > 0 AND
+				 CHARINDEX('3',a.Platform) > 0 AND
+				 CHARINDEX('4',a.Platform) > 0 AND
+				 CHARINDEX('5',a.Platform) > 0  THEN '0' ELSE a.Platform END AS Platform
 	FROM #CustomerClass_Platform a
 		CROSS APPLY(
 			SELECT STRING_AGG(CAST(CurrencyName AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY Currency)  AS CurrencyName
@@ -192,18 +195,22 @@ BEGIN
 	SELECT DISTINCT
 			a.Site,
 			a.CurrencyName,
-			CASE WHEN b.Platforms = '1,2,3,4,5' THEN '0' ELSE b.Platforms END AS Platform,
+			CASE WHEN CHARINDEX('1',STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)) > 0 AND
+					  CHARINDEX('2',STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)) > 0 AND
+					  CHARINDEX('3',STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)) > 0 AND
+					  CHARINDEX('4',STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)) > 0 AND
+					  CHARINDEX('5',STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)) > 0 
+				THEN '0' 
+				ELSE STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform) END AS Platform,
 			d.RuleID  
-			,DENSE_RANK() OVER( ORDER BY d.CustomerClass,d.RuleTitle, a.CurrencyName, Platform, RuleID) AS RowNumber
-	FROM #CustomerClass_Currency a WITH(NOLOCK)
-		CROSS APPLY( SELECT RuleID, RuleTitle, CustomerClass From #PolicyRule where a.PolicyID = PolicyID ) d
-		CROSS APPLY(
-					SELECT STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform)  AS Platforms
-					FROM (SELECT DISTINCT CAST(Platform AS VARCHAR(100)) AS Platform
-						FROM #CustomerClass_Currency b WITH(NOLOCK)
-							CROSS APPLY( SELECT RuleID From #PolicyRule where b.PolicyID = PolicyID ) c
-					WHERE c.RuleID = d.RuleID AND Site = a.Site AND CurrencyName = a.CurrencyName) mis --PolicyID = a.PolicyID AND
-				) b
+			,DENSE_RANK() OVER( ORDER BY d.CustomerClass,d.RuleTitle, a.CurrencyName, 
+								STRING_AGG(Platform, ',') WITHIN GROUP (ORDER BY Platform), 
+			RuleID) AS RowNumber
+	FROM #PolicyRule d WITH(NOLOCK)
+		CROSS APPLY( SELECT  Site, CurrencyName, Platform 
+					 FROM #CustomerClass_Currency WITH (NOLOCK, INDEX = CIX_CustomerClass_Currency ,FORCESEEK)
+					 WHERE PolicyID = d.PolicyID ) a
+	GROUP BY a.Site, a.CurrencyName ,d.RuleID , d.CustomerClass,d.RuleTitle 
 
 	--Paging
 	SELECT @TotalItems = MAX(RowNumber) FROM #CustomerClassSiteManagement c     
