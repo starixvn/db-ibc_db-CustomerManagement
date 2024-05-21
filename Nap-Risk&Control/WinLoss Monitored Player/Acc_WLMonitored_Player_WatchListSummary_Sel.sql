@@ -28,7 +28,8 @@ SET NOCOUNT ON;
 
 	DECLARE @UnlimitedThresholdUsers	VARCHAR(MAX),
 			@UnlimitedThresholdCustID	VARCHAR(MAX),
-			@UnlimitedThresholdCount	INT
+			@UnlimitedThresholdCount	INT,
+			@MinAddedDate				DATETIME
 	
 	CREATE TABLE #Temp
 	(
@@ -38,6 +39,7 @@ SET NOCOUNT ON;
 		IsExistedWatchList	TINYINT,
 		WinningThreshold	MONEY,
 		LosingThreshold		MONEY,
+		AddedDate			DATETIME
 	)
 			
 	INSERT INTO #Temp
@@ -47,7 +49,8 @@ SET NOCOUNT ON;
 		Status,
 		IsExistedWatchList,
 		WinningThreshold,
-		LosingThreshold
+		LosingThreshold,
+		AddedDate
 	)
 	SELECT  ci.custid,
 			ci.username,
@@ -57,7 +60,8 @@ SET NOCOUNT ON;
 			END AS [Status],
 			ISNULL(wl.IsExistedWatchList,0) AS IsExistedWatchList,
 			WinningThreshold,
-			LosingThreshold		
+			LosingThreshold,
+			CreatedDate AS AddedDate
 	FROM custInfo ci WITH(NOLOCK)
 	INNER JOIN customer c WITH(NOLOCK) ON ci.custid = c.custid
 	CROSS APPLY	(	SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS Closed
@@ -65,7 +69,7 @@ SET NOCOUNT ON;
 					FROM dbo.CustProductStatus WITH(NOLOCK)
 					WHERE CustID = ci.custid
 				 ) AS cs
-	OUTER APPLY ( SELECT 1 AS IsExistedWatchList, WinningThreshold, LosingThreshold
+	OUTER APPLY ( SELECT 1 AS IsExistedWatchList, WinningThreshold, LosingThreshold, CreatedDate
 				  FROM WLMonitored_Player WITH(NOLOCK) 
 				  WHERE CustID = ci.custid AND Sporttype = @Sporttype
 				 ) AS wl
@@ -77,14 +81,19 @@ SET NOCOUNT ON;
 		  ,@UnlimitedThresholdCount		= COUNT(*)
 	FROM #Temp
 	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
-	
+
+	SELECT @MinAddedDate = MIN(AddedDate)
+	FROM #Temp
+	WHERE IsExistedWatchList = 1
+
 	SELECT 
 	  SUM(Status) AS ActiveMembers,
 	  SUM(IsExistedWatchList) AS MonitoredMembers,
 	  @ReachedDailyLimitCount AS ReachedDailyLimitMembers,
 	  @UnlimitedThresholdCount AS UnlimitedThresholdMembers,
 	  @UnlimitedThresholdUsers AS UnlimitedThresholdUsers,
-	  @UnlimitedThresholdCustID AS UnlimitedThresholdCustID
+	  @UnlimitedThresholdCustID AS UnlimitedThresholdCustID,
+	  @MinAddedDate AS MinAddedDate
 	FROM #Temp
 						
 	DROP TABLE #Temp
