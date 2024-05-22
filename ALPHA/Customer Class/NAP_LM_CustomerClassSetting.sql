@@ -35,8 +35,6 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	print '1 - ' + convert(varchar(20),getdate(),108)
-
 	DECLARE @RowStart INT, @RowEnd INT, @iDoc INT, @xml XML
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
