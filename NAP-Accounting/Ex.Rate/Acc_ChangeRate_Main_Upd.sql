@@ -1,7 +1,9 @@
-/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBTXN-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ChangeRate_Main_Upd] 
-	@TableName VARCHAR(200),
-	@IsSiteDB BIT = 0 
+	@TableName	VARCHAR(200),
+	@IsSiteDB	BIT				= 0,
+	@ErrCode	INT				= 0		OUTPUT,
+	@ErrMsg		NVARCHAR(1000)	= ''	OUTPUT	
 AS
 /*
 	Created: 20211229@Malcolm
@@ -34,7 +36,7 @@ BEGIN
 	DECLARE @Winlostdate SMALLDATETIME
 	SELECT @winlostdate = CONVERT(VARCHAR(10), GETDATE(), 23)
 	
-	 
+	BEGIN TRY
 		EXEC dbo.ExecRep_00 @Winlostdate = @winlostdate
 				, @Target = 'DBTXN' -- DBTXN/REPLICATED
 				, @TableName = @TableName
@@ -44,6 +46,11 @@ BEGIN
 				, @Target = 'REPLICATED' -- DBTXN/REPLICATED
 				, @TableName = @TableName
 				, @IsSiteDB = @IsSiteDB
-	 	 
+	 END TRY
+	 BEGIN CATCH
+		SELECT @ErrCode = @@ERROR, @ErrMsg = ERROR_MESSAGE()
+		RETURN
+	 END CATCH
+
 
 END
