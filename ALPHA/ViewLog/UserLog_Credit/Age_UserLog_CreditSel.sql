@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20110623@Elodie: Initial SP [Redmine: #160429]
+		- 20240529@Tacy: HF - ORDER BY RowNum [Redmine: #205758]
 
     Param's Explaination:    
 		- @CustName: a customer which we want to view actions affect to.
@@ -112,6 +113,7 @@ BEGIN
 							AND (ci.roleid <= 4 OR uc.ActionID = 1221)
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE IF @ToDate < @__archiveDate
 	BEGIN
@@ -160,6 +162,7 @@ BEGIN
 							AND (ci.roleid <= 4 OR uc.ActionID = 1221)
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE
 	BEGIN
@@ -180,7 +183,7 @@ BEGIN
 			CustName,                                                             
 			ActionName
 		FROM ( 
-			SELECT    ROW_NUMBER() OVER (ORDER BY UserName, LogDate DESC) AS RowNum, *
+			SELECT    ROW_NUMBER() OVER (ORDER BY CustName, LogDate DESC) AS RowNum, *
 			FROM (
 				SELECT 		LogID,
 							UserID,
@@ -239,6 +242,7 @@ BEGIN
 				) AS MyTable1
 			) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 END
 GO
