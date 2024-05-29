@@ -21,6 +21,7 @@ AS
 		- 20140708@Dom: Do not show any log info (including log of Supers, Masters, Agents and Members) updated by Admin relate to all log categories [Redmine: #18125]
 		- 20190405@Patrick: Support archive date range [Redmine: #111476]
 		- 20191113@Winnie: Alpha - View Log : user can view total records when searching by nickname [Redmine: #110148]
+		- 20240529@Tacy: HF - ORDER BY RowNum [Redmine: #205758]
 
     Param's Explaination:    
 		- @CustID: a customer which we want to view actions affect to.
@@ -102,6 +103,7 @@ BEGIN
 					AND IsInternal <= @IsInternal
 		) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE IF @ToDate < @__archiveDate
 	BEGIN
@@ -149,6 +151,7 @@ BEGIN
 				AND IsInternal <= @IsInternal
 		) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE
 	BEGIN
@@ -224,6 +227,7 @@ BEGIN
 			) AS MyTable1
 		) AS MyTable
 		WHERE RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 END
 ELSE -- @IsInternal = 0
@@ -274,6 +278,7 @@ BEGIN
 							AND ci.roleid <= 4
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE IF @ToDate < @__archiveDate
 	BEGIN
@@ -320,6 +325,7 @@ BEGIN
 							AND ci.roleid <= 4
 				) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 	ELSE
 	BEGIN
@@ -396,6 +402,7 @@ BEGIN
 				) AS MyTable1
 			) AS MyTable
 		WHERE   RowNum BETWEEN @lbound AND @ubound
+		ORDER BY RowNum
 	END
 END
 	
