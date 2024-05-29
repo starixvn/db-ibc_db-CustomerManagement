@@ -14,6 +14,7 @@ AS
     
 	Revisions:
         - 20240325@Tacy: Create SP [redmine: #202501]
+        - 20240424@Tacy: HF - Show headline have Extra PT group mapping [redmine: #205723]
 		
 	Param's Explanation:
 		* @Status : 0 ~ All
@@ -103,11 +104,11 @@ BEGIN
 	SELECT hl.CustID, cu.username, hl.GroupID
     FROM dbo.CustGroupHeadline hl WITH (NOLOCK)
         INNER JOIN dbo.Customer cu WITH (NOLOCK) ON hl.CustID = cu.custid
-		CROSS APPLY (SELECT TOP 1 1 AS Val
-						 FROM Acc_CustGroup ag WITH (NOLOCK)
-						 WHERE ag.CustID=cu.srecommend
-							AND ag.GroupName=@GroupName) g
-	WHERE @groupheadline = '' OR cu.username=@GroupHeadline
+		INNER JOIN EaGroupHeadline g WITH (NOLOCK)	ON g.GroupHeadlineID=hl.GroupID
+	WHERE (@GroupHeadline = '' OR cu.username=@GroupHeadline)
+		AND g.GroupName=@GroupName
+		AND G.GroupTypeId=2 
+		AND GETDATE() BETWEEN g.EffectiveDate AND g.EndDate
 
 	--GET RESULT
     INSERT INTO #tmpResultAll (CustHeadlineID, GroupHeadline
