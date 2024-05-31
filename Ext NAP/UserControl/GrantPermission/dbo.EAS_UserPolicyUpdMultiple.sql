@@ -17,15 +17,17 @@ AS
 		Revisions:
             - 20190121@Kan: Grant permission to multiple users [Redmine Id: 106667]
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+			- 20240603@Tacy: Ext NAP - Grant permission of child functions and permission of parent functions [Redmine: #205415]
 			
 		Parameter's Explanation:
 	*/
 BEGIN
     SET NOCOUNT ON
 
-	DECLARE @StartRun DATETIME,
-        @EndRun DATETIME,
-        @Duration INT		
+	DECLARE @StartRun	DATETIME,
+			@EndRun		DATETIME,
+			@Duration	INT,
+			@ParentID	INT	
 	
 	SET @StartRun = GETDATE()
 	
@@ -33,7 +35,11 @@ BEGIN
 	
 	IF @ErrCode > 0
 		RETURN
-		
+
+	SELECT @ParentID=g.ParentID
+	FROM dbo.eaFunction g WITH (NOLOCK)
+	WHERE g.FuncID=@FuncID	
+	
 	CREATE TABLE #UserPolicyTable(UserID INT, Policy TINYINT)
 		
 	INSERT INTO #UserPolicyTable(UserID, Policy)
@@ -43,19 +49,28 @@ BEGIN
 	UPDATE u WITH (ROWLOCK, UPDLOCK)
 	SET u.Policy = t.Policy
 	FROM dbo.eaUserPolicy u
-        INNER JOIN #UserPolicyTable t ON u.FuncID = @FuncID AND u.userid = t.UserID
-	
+        INNER JOIN #UserPolicyTable t ON u.userid = t.UserID
+		INNER JOIN (SELECT @ParentID AS FuncID
+					UNION ALL 
+					SELECT @FuncID) f ON u.FuncID = f.FuncID
+
 	INSERT INTO dbo.eaUserPolicy(UserID, FuncID, Policy)
-    SELECT t.UserID, @FuncID, t.Policy 
+    SELECT t.UserID, @ParentID, t.Policy 
+    FROM #UserPolicyTable t
+        LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @ParentID AND u.UserID = t.UserID
+    WHERE u.FuncID IS NULL AND @ParentID<>0
+	UNION
+	SELECT t.UserID, @FuncID, t.Policy 
     FROM #UserPolicyTable t
         LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @FuncID AND u.UserID = t.UserID
-    WHERE u.FuncID IS NULL		
-	
+    WHERE u.FuncID IS NULL	
+
 	/**************Write to Log table for each action********************/
 	
 	DECLARE @LogData NVARCHAR(MAX)
 	
 	SELECT @LogData =	'<EAS_UserPolicyUpdMultiple>'+
+							'<ParentID>' + ISNULL(CONVERT(VARCHAR(20),@ParentID), '') + '</ParentID>' +
 							'<FuncID>' + ISNULL(CONVERT(VARCHAR(20),@FuncID), '') + '</FuncID>' +
 							'<IP>' + COALESCE(@IP, '') + '</IP>' +
 							'<Permission>' +
