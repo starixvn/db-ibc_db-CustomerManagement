@@ -203,7 +203,7 @@ BEGIN
 		CASE WHEN @CurrencyIDList = '0' THEN 0 ELSE c.CurrencyID END AS CurrencyID,
 		1 AS IsApply,
 		CASE WHEN @CustomerClassDetailList = '0' THEN 0 ELSE ccd.CustomerClass END AS CustomerClassDetail,
-		CASE WHEN @CCSporttypeList = '0' THEN 0 ELSE CCS.sporttype END AS CCSporttype
+		CASE WHEN @CCSporttypeList = '0' THEN 0 ELSE ccd.sporttype END AS CCSporttype
 	FROM #Sport s 
 		CROSS APPLY #Bettype bt
 		CROSS APPLY #LeagueGroup lg
@@ -212,8 +212,9 @@ BEGIN
 		CROSS APPLY #DateOfWeek dw
 		CROSS APPLY #Currency c
 		CROSS APPLY #CC cc
-		CROSS APPLY #CCSport ccs
-		CROSS APPLY #CCDetail ccd
+		CROSS APPLY (SELECT sporttype, CustomerClass 
+					 FROM #CCSport cs
+						CROSS APPLY #CCDetail )  ccd
 	UNION
 	SELECT CAST(value AS SMALLINT),0,-1,-1,0,0,0,0,0,0,0
 	FROM STRING_SPLIT(@SporttypeList_NotApply,',') t 
@@ -247,12 +248,11 @@ BEGIN
 	FROM STRING_SPLIT(@CurrencyIDList_NotApply,',') t
 	WHERE ISNULL(CAST(value AS INT),0) <> 0
 	UNION
-	SELECT 0,0,-1,-1,0,0,0,0,0,CAST(value AS SMALLINT),0
+	SELECT 0,0,-1,-1,0,0,0,0,0,CAST(value AS SMALLINT),CCSporttypeList_NotApply
 	FROM STRING_SPLIT(@CustomerClassDetailList_NotApply,',') t
-	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
-	UNION
-	SELECT 0,0,-1,-1,0,0,0,0,0,0,CAST(value AS SMALLINT)
-	FROM STRING_SPLIT(@CCSporttypeList_NotApply,',') t 
+		CROSS APPLY (SELECT CAST(value AS SMALLINT) AS CCSporttypeList_NotApply
+						FROM STRING_SPLIT(@CCSporttypeList_NotApply,',') t 
+					 WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0) s
 	WHERE ISNULL(CAST(value AS SMALLINT),0) <> 0
 
 	DROP TABLE #Sport
