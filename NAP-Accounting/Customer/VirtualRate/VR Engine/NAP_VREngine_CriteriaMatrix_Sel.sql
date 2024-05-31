@@ -79,7 +79,7 @@ BEGIN
 	FROM RefResource WITH (NOLOCK)
 	WHERE RefId='DummySport' AND ResourceId IN (9901, 9902)
 	UNION
-	SELECT 256 AS SportType, 'Non-Sports' AS SportName 
+	SELECT -2 AS SportType, 'Non-Sports' AS SportName 
 
 	DROP TABLE #SportBettypeVR
 	DROP TABLE #LeagueGroup
