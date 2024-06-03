@@ -20,6 +20,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20240415@Eden: Alpha - Link WL Detail to My Watchlist [RedmineID: #201733]
 
 	Param's Explanation:  	
 
@@ -60,7 +61,8 @@ BEGIN
 	SET g.WinningThreshold = @WinningThreshold,
 		g.WinningUpdateTime = CASE WHEN ISNULL(@WinningThreshold,-1) <> ISNULL(@WinningThreshold_old,-1) THEN @CurrentDTS ELSE g.WinningUpdateTime END,
 		g.LosingThreshold = @LosingThreshold,
-		g.LosingUpdateTime = CASE WHEN ISNULL(@LosingThreshold,-1) <> ISNULL(@LosingThreshold_old,-1) THEN @CurrentDTS ELSE g.LosingUpdateTime END
+		g.LosingUpdateTime = CASE WHEN ISNULL(@LosingThreshold,-1) <> ISNULL(@LosingThreshold_old,-1) THEN @CurrentDTS ELSE g.LosingUpdateTime END,
+		g.RepUpdateTime = SYSDATETIME()
 	FROM WLMonitored_Global g WITH(ROWLOCK,UPDLOCK) 
 	WHERE AgentID = @AgentID 
 		AND Sporttype = @Sporttype
