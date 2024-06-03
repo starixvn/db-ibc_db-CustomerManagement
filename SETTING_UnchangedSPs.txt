@@ -1,4 +1,2 @@
-NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
+Nap-Risk&Control\WinLoss Monitored Player\Acc_WLMonitored_SMA_Adjust .sql
+Nap-Risk&Control\WinLoss Monitored Player\Acc_WLMonitored_Global_Adjust.sql

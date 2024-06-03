@@ -16,6 +16,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20240415@Eden: Alpha - Link WL Detail to My Watchlist [RedmineID: #201733]
 
 	Param's Explanation:  	
 
@@ -65,8 +66,9 @@ BEGIN
 		RETURN
 	END
 
-	DELETE g
-	FROM WLMonitored_Player g WITH(ROWLOCK,UPDLOCK) 
+	DELETE t
+	OUTPUT deleted.CustID, deleted.Sporttype, SYSDATETIME() INTO WLMonitored_Player_Del(CustID,Sporttype,RepUpdateTime)
+	FROM WLMonitored_Player t WITH(ROWLOCK,UPDLOCK) 
 	WHERE CustID = @CustID 
 		AND Sporttype = @Sporttype
 

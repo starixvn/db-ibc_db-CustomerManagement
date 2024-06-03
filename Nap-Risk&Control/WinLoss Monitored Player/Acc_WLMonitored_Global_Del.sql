@@ -18,6 +18,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20240415@Eden: Alpha - Link WL Detail to My Watchlist [RedmineID: #201733]
 
 	Param's Explanation:  	
 
@@ -25,6 +26,8 @@ AS
 	EXEC Acc_WLMonitored_Global_Del 
 		 @AgentID = 7373
 		,@Sporttype = 0
+		,@WinningThreshold_old = 1000
+		,@LosingThreshold_old = 2000
 		,@ErrCode = @ErrCode OUT
 		,@ErrMsg = @ErrMsg OUT
 		,@UserId = 8
@@ -49,8 +52,9 @@ BEGIN
 		RETURN
 	END
 
-	DELETE 
-	FROM WLMonitored_Global WITH(ROWLOCK,UPDLOCK) 
+	DELETE t
+	OUTPUT deleted.AgentID, deleted.Sporttype, SYSDATETIME() INTO WLMonitored_Global_Del(AgentID,Sporttype,RepUpdateTime)
+	FROM WLMonitored_Global t WITH(ROWLOCK,UPDLOCK) 
 	WHERE AgentID = @AgentID 
 		AND Sporttype = @Sporttype
 

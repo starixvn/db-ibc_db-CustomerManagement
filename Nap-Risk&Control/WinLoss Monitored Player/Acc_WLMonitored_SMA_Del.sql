@@ -18,6 +18,7 @@ AS
   
 	Revisions:  
 	   - 20221220@Eden: Alpha - Monitor SMA Win Loss [Redmine:#179067]
+	   - 20240415@Eden: Alpha - Link WL Detail to My Watchlist [RedmineID: #201733]
 
 	Param's Explanation:  	
 
@@ -64,8 +65,9 @@ BEGIN
 	ELSE
 		RETURN
 
-	DELETE 
-	FROM WLMonitored_SMA WITH(ROWLOCK,UPDLOCK) 
+	DELETE t
+	OUTPUT deleted.CustID, deleted.Sporttype,SYSDATETIME() INTO WLMonitored_SMA_Del(CustID,Sporttype,RepUpdateTime)
+	FROM WLMonitored_SMA t WITH(ROWLOCK,UPDLOCK) 
 	WHERE CustID = @CustID 
 		AND Sporttype = @Sporttype
 
