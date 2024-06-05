@@ -18,7 +18,7 @@ AS
 		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230710@Winfred: VR Auto Job - Update the Agent VR to follow UPLINE VR setting [Redmine: #185994]
-		- 20240530@Winfred: Auto adjusment for VR job - Update Lock status follow Upline Status [Redmine: #185994]
+		- 20240530@Winfred: Auto adjusment for VR job - Update Lock status follow Upline Status [Redmine: #202848]
 		
 	Param's Explanation:  
 		@Type = 
