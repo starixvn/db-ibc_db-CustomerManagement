@@ -243,7 +243,9 @@ BEGIN
 			,@IP = ''
 			,@UpdateBy = 'Agent profile check'
 
-		SELECT @NewLogData = '<R '
+		SELECT @NewLogData = '<R LockSoccerUpline="'+ coalesce(cast(@VRLockedStatus_Soccer_upline as varchar(1)),space(1)) + '" '
+							+' LockBasketballUpline="'+ coalesce(cast(@VRLockedStatus_Basketball as varchar(1)),space(1)) + '" '
+							+' LockOSUpline="'+ coalesce(cast(@VRLockedStatus_OS as varchar(1)),space(1)) + '" '
 							+ 'Type="'
 									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 											ELSE space(1) 
