@@ -102,10 +102,10 @@ BEGIN
 	 --*/ END: Delete Agents list who have VR <> 0 
 
 	--get Agents and their dowlines need to update VR = Upline
-	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, mrecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
+	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, recommend INT, mrecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
 
-	INSERT INTO @Update_CustTbl(CustID,mrecommend)
-	SELECT c.custid,c.mrecommend
+	INSERT INTO @Update_CustTbl(CustID, recommend,mrecommend)
+	SELECT c.custid, c.recommend,c.mrecommend
 	FROM @AgentTbl t
 		INNER JOIN custInfo c WITH(NOLOCK) ON c.recommend = t.CustID 
 	WHERE c.Enabled = 1
@@ -223,12 +223,12 @@ BEGIN
 		UPDATE TOP(1)  c
 		SET c.islog = 1,
 			@custID = c.CustID,
-			@TotalWL = a.TotalWL,
+			@TotalWL = CASE WHEN a.CustID = c.CustID THEN a.TotalWL ELSE null END,
 			@VRLockedStatus_Soccer_upline = a.VRLockedStatus_Soccer_upline,
 			@VRLockedStatus_OS_upline = a.VRLockedStatus_OS_upline,
 			@VRLockedStatus_Basketball_upline = a.VRLockedStatus_Basketball_upline
 		FROM @Update_CustTbl c
-			LEFT JOIN @AgentTbl a ON c.CustID = a.CustID
+			LEFT JOIN @AgentTbl a ON c.recommend = a.CustID
 		WHERE c.Islog = 0
 
 		IF @@ROWCOUNT = 0 BREAK;
