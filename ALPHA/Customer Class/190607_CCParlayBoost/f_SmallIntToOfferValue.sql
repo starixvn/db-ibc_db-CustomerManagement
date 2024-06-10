@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB,DBTP-bodb02" selecters="" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCust-CustDB,DBTP-bodb02" selecters="" viewers="" isFunction="1"></info>*/
 ALTER FUNCTION	dbo.f_SmallIntToOfferValue(
 					@FunctionInfo SMALLINT
 				)  
@@ -10,7 +10,7 @@ AS
 	Original:	
 	Revision:
 		- 20231002@Winfred: [NAP CM] Customer Class - Allow to offer Parlay Boost on rule setting [RedmineID: #190607] 
-
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297] 
 	Param's Explanation:
 */
 RETURN 

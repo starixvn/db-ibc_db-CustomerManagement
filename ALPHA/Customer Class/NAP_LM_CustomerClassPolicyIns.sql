@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicyIns]
 	@PolicyTitle 	VARCHAR(500)
 	, @SportType	SMALLINT
@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297]  
 
 	Param's Explanation:
 	* @PolicyID=1 

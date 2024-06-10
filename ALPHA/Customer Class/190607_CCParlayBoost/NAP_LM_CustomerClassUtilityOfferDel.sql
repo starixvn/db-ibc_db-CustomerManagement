@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassUtilityOfferDel] 
 	  @PolicyID			INT			
 	, @UserID			INT
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20231002@Winfred: [NAP CM] Customer Class - Allow to offer Parlay Boost on rule setting [RedmineID: #190607] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297] 
 
 	Param's Explanation:
 

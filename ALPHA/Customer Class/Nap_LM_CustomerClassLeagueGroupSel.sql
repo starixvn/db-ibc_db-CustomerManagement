@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-BODB02" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBACC-BODB02" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Nap_LM_CustomerClassLeagueGroupSel] 
 	@SportType SMALLINT = 0
 AS
@@ -13,6 +13,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20231031@Winfred: NAPCM - Cannot filter specific filters and show league group None on grid [RedmineID: #196365] 
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297]  
 
 	Param's Explanation:
 		* @SportType : 0 All

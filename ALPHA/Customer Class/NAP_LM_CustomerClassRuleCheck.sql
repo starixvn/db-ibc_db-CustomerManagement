@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassRuleCheck] 
 	  @RuleIDs		VARCHAR(MAX)
 	, @IsTest		TINYINT	
@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297] 
 
 	Param's Explanation:
 	* @RuleIDs: List ID Rule

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteIns_Loop] 
 	@PolicySites  NVARCHAR(MAX)
 	, @IsTest		TINYINT
@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
 		- 20240315@Winfred: [NAP CM] - CCMgt - Enhance SP call loop for updating policies [RedmineID: #201256] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297]  
 
 	Param's Explanation:
 	* @Policys:

@@ -15,6 +15,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]  
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297]  
 
 	Param's Explanation:
 	Example: NAP_LM_CustomerClassSportGet @SportType = 1, @IsTest = 1	

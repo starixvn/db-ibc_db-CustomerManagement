@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_Admin,Dot_Member" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02,DBCUST-CUSTDB" executers="Dot_Admin,svc_tig" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Dot_Member_CustomerClassUtilityOfferingSel] 
 	@SiteID INT, 
 	@Currency INT,
@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20231002@Winfred: [NAP CM] Allow to offer Parlay Boost on rule setting [RedmineID: #190607] 
 		- 20240303@Helen: SP tuning [RedmineID: #201771] 
+		- 20240610@Winfred: NAPCM - CCS - EC24 Preparation [RedmineID: #206297] 
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassUtilityOfferingSel @SiteID = 20, @Currency = 20 , @IsTest=1, @CustomerClass =901, @IsDeposit=0, @IsParlayBoot = @IsParlayBoot OUTPUT
