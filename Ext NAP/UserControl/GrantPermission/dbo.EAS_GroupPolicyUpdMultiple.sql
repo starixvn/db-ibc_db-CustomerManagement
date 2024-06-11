@@ -45,6 +45,44 @@ BEGIN
 	SELECT funcid, policy
 	FROM dbo.f_EAS_PolicySplit(@Policy, ';', ',')
 		
+	--DELETE: Unchange policy
+	DELETE t
+	FROM #GroupPolicyTable t
+	INNER JOIN dbo.eaGroupPolicy u WITH (NOLOCK)	
+			ON t.GroupID=u.GroupID AND u.FuncID = @FuncID 
+	WHERE t.Policy=u.Policy
+	
+	--revoke parent permission
+	IF EXISTS (SELECT TOP 1 1 FROM #GroupPolicyTable WHERE Policy=0)
+		AND @ParentID<>0
+	BEGIN
+		DECLARE @RevokeTable TABLE (GroupID INT)
+
+		INSERT INTO @RevokeTable (GroupID)
+		SELECT g.GroupID 
+		FROM eaGroupPolicy g WITH (NOLOCK)
+			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
+			INNER JOIN #GroupPolicyTable t ON g.GroupID = t.GroupID AND t.Policy=0
+		WHERE f.ParentID=@ParentID AND g.Policy<>0
+		GROUP BY g.GroupID
+		HAVING COUNT(1)=1
+
+		UPDATE g WITH (ROWLOCK, UPDLOCK)
+		SET g.Policy = CASE WHEN r.GroupID IS NULL AND f.IsParent=1 
+								THEN g.Policy
+								ELSE t.Policy
+						END
+		FROM dbo.eaGroupPolicy g
+			INNER JOIN #GroupPolicyTable t ON g.GroupID = t.GroupID 
+			INNER JOIN (SELECT @ParentID AS FuncID, 1 AS IsParent
+						UNION ALL 
+						SELECT @FuncID, 0) f ON g.FuncID = f.FuncID
+			LEFT JOIN @RevokeTable r ON r.GroupID=g.GroupID
+		WHERE t.Policy=0
+
+		DELETE FROM #GroupPolicyTable WHERE Policy=0
+	END
+
 	UPDATE gp WITH (ROWLOCK, UPDLOCK)
 	SET gp.Policy = t.Policy
 	FROM dbo.eaGroupPolicy gp

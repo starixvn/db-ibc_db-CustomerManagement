@@ -27,7 +27,7 @@ BEGIN
 	DECLARE @StartRun	DATETIME,
 			@EndRun		DATETIME,
 			@Duration	INT,
-			@ParentID	INT	
+			@ParentID	INT
 	
 	SET @StartRun = GETDATE()
 	
@@ -45,7 +45,45 @@ BEGIN
 	INSERT INTO #UserPolicyTable(UserID, Policy)
 	SELECT funcid, policy
 	FROM dbo.f_EAS_PolicySplit(@Policy, ';', ',')
-		
+
+	--DELETE: Unchange policy
+	DELETE t
+	FROM #UserPolicyTable t
+	INNER JOIN dbo.eaUserPolicy u WITH (NOLOCK)	
+			ON t.UserID=u.UserID AND u.FuncID = @FuncID 
+	WHERE t.Policy=u.Policy
+	
+	--revoke parent permission
+	IF EXISTS (SELECT TOP 1 1 FROM #UserPolicyTable WHERE Policy=0)
+		AND @ParentID<>0
+	BEGIN
+		DECLARE @RevokeTable TABLE (UserID INT)
+
+		INSERT INTO @RevokeTable (UserID)
+		SELECT u.UserID 
+		FROM eaUserPolicy u WITH (NOLOCK)
+			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=u.FuncID
+			INNER JOIN #UserPolicyTable t ON u.userid = t.UserID AND t.Policy=0
+		WHERE f.ParentID=@ParentID AND u.Policy<>0
+		GROUP BY u.UserID
+		HAVING COUNT(1)=1
+
+		UPDATE u WITH (ROWLOCK, UPDLOCK)
+		SET u.Policy = CASE WHEN r.UserID IS NULL AND f.IsParent=1 
+								THEN u.Policy
+								ELSE t.Policy
+						END
+		FROM dbo.eaUserPolicy u
+			INNER JOIN #UserPolicyTable t ON u.userid = t.UserID 
+			INNER JOIN (SELECT @ParentID AS FuncID, 1 AS IsParent
+						UNION ALL 
+						SELECT @FuncID, 0) f ON u.FuncID = f.FuncID
+			LEFT JOIN @RevokeTable r ON r.UserID=u.UserID
+		WHERE t.Policy=0
+
+		DELETE FROM #UserPolicyTable WHERE Policy=0
+	END
+
 	UPDATE u WITH (ROWLOCK, UPDLOCK)
 	SET u.Policy = t.Policy
 	FROM dbo.eaUserPolicy u
@@ -64,6 +102,7 @@ BEGIN
     FROM #UserPolicyTable t
         LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @FuncID AND u.UserID = t.UserID
     WHERE u.FuncID IS NULL	
+
 
 	/**************Write to Log table for each action********************/
 	
