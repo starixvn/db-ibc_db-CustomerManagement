@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" selecters="" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBCust-CustDB" selecters="svc_tig" viewers="" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[f_SetValueBitmap_multiple] (@bitmap BINARY(128), @ProductsOffer VARCHAR(max))   
 RETURNS @outputTemp TABLE ( bitmap BINARY(32) )  
