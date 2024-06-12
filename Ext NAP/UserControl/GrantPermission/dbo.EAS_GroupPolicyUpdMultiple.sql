@@ -35,9 +35,9 @@ BEGIN
 	IF @ErrCode > 0
 		RETURN
 		
-	SELECT @ParentID=g.ParentID
-	FROM dbo.eaFunction g WITH (NOLOCK)
-	WHERE g.FuncID=@FuncID
+	SELECT @ParentID=ISNULL(f.ParentID,0)
+	FROM dbo.eaFunction f WITH (NOLOCK)
+	WHERE f.FuncID=@FuncID
 
 	CREATE TABLE #GroupPolicyTable(GroupID INT, Policy TINYINT)
 		
@@ -50,57 +50,38 @@ BEGIN
 	FROM #GroupPolicyTable t
 	INNER JOIN dbo.eaGroupPolicy u WITH (NOLOCK)	
 			ON t.GroupID=u.GroupID AND u.FuncID = @FuncID 
-	WHERE t.Policy=u.Policy
-	
-	--revoke parent permission
-	IF EXISTS (SELECT TOP 1 1 FROM #GroupPolicyTable WHERE Policy=0)
-		AND @ParentID<>0
-	BEGIN
-		DECLARE @RevokeTable TABLE (GroupID INT)
+	WHERE t.Policy=u.Policy	
 
-		INSERT INTO @RevokeTable (GroupID)
-		SELECT g.GroupID 
-		FROM eaGroupPolicy g WITH (NOLOCK)
-			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
-			INNER JOIN #GroupPolicyTable t ON g.GroupID = t.GroupID AND t.Policy=0
-		WHERE f.ParentID=@ParentID AND g.Policy<>0
-		GROUP BY g.GroupID
-		HAVING COUNT(1)=1
-
-		UPDATE g WITH (ROWLOCK, UPDLOCK)
-		SET g.Policy = CASE WHEN r.GroupID IS NULL AND f.IsParent=1 
-								THEN g.Policy
-								ELSE t.Policy
-						END
-		FROM dbo.eaGroupPolicy g
-			INNER JOIN #GroupPolicyTable t ON g.GroupID = t.GroupID 
-			INNER JOIN (SELECT @ParentID AS FuncID, 1 AS IsParent
-						UNION ALL 
-						SELECT @FuncID, 0) f ON g.FuncID = f.FuncID
-			LEFT JOIN @RevokeTable r ON r.GroupID=g.GroupID
-		WHERE t.Policy=0
-
-		DELETE FROM #GroupPolicyTable WHERE Policy=0
-	END
-
+	--UPDATE: permission of child functions
 	UPDATE gp WITH (ROWLOCK, UPDLOCK)
 	SET gp.Policy = t.Policy
 	FROM dbo.eaGroupPolicy gp
-        INNER JOIN #GroupPolicyTable t ON  gp.groupid = t.GroupID
-		INNER JOIN (SELECT @ParentID AS FuncID
-					UNION ALL 
-					SELECT @FuncID) f ON gp.FuncID = f.FuncID
-
+        INNER JOIN #GroupPolicyTable t ON gp.FuncID = @FuncID AND gp.groupid = t.GroupID
+	
 	INSERT INTO dbo.eaGroupPolicy(GroupID, FuncID, Policy)
-    SELECT t.GroupID, @ParentID, t.Policy 
-    FROM #GroupPolicyTable t
-        LEFT JOIN dbo.eaGroupPolicy gp WITH(NOLOCK) ON gp.FuncID = @ParentID AND gp.groupID = t.GroupID
-    WHERE gp.FuncID IS NULL	AND @ParentID<>0	
-	UNION ALL
-	SELECT t.GroupID, @FuncID, t.Policy 
+    SELECT t.GroupID, @FuncID, t.Policy 
     FROM #GroupPolicyTable t
         LEFT JOIN dbo.eaGroupPolicy gp WITH(NOLOCK) ON gp.FuncID = @FuncID AND gp.groupID = t.GroupID
     WHERE gp.FuncID IS NULL		
+
+	--UPDATE: permission of parent functions
+	IF @ParentID<>0
+	BEGIN
+		;WITH cte_ChildPolicy AS (
+			SELECT g.GroupID, f.ParentID, MAX(g.Policy) Max_ChildPolicy
+			FROM eaGroupPolicy g WITH (NOLOCK)
+			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
+			INNER JOIN #GroupPolicyTable t ON t.GroupID=g.GroupID
+			WHERE f.ParentID=@ParentID
+			GROUP BY g.GroupID, f.ParentID
+		)
+		UPDATE gp 
+		SET gp.Policy = t.Max_ChildPolicy
+		FROM dbo.eaGroupPolicy gp WITH (ROWLOCK, UPDLOCK)
+		INNER JOIN cte_ChildPolicy t ON t.GroupID=gp.GroupID
+									AND t.ParentID=gp.FuncID
+		WHERE gp.Policy<>t.Max_ChildPolicy
+	END
 	
 
 	/**************Write to Log table for each action********************/

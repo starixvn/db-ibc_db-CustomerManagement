@@ -36,9 +36,9 @@ BEGIN
 	IF @ErrCode > 0
 		RETURN
 
-	SELECT @ParentID=g.ParentID
-	FROM dbo.eaFunction g WITH (NOLOCK)
-	WHERE g.FuncID=@FuncID	
+	SELECT @ParentID=ISNULL(f.ParentID,0)
+	FROM dbo.eaFunction f WITH (NOLOCK)
+	WHERE f.FuncID=@FuncID	
 	
 	CREATE TABLE #UserPolicyTable(UserID INT, Policy TINYINT)
 		
@@ -52,38 +52,8 @@ BEGIN
 	INNER JOIN dbo.eaUserPolicy u WITH (NOLOCK)	
 			ON t.UserID=u.UserID AND u.FuncID = @FuncID 
 	WHERE t.Policy=u.Policy
-	
-	--revoke parent permission
-	IF EXISTS (SELECT TOP 1 1 FROM #UserPolicyTable WHERE Policy=0)
-		AND @ParentID<>0
-	BEGIN
-		DECLARE @RevokeTable TABLE (UserID INT)
 
-		INSERT INTO @RevokeTable (UserID)
-		SELECT u.UserID 
-		FROM eaUserPolicy u WITH (NOLOCK)
-			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=u.FuncID
-			INNER JOIN #UserPolicyTable t ON u.userid = t.UserID AND t.Policy=0
-		WHERE f.ParentID=@ParentID AND u.Policy<>0
-		GROUP BY u.UserID
-		HAVING COUNT(1)=1
-
-		UPDATE u WITH (ROWLOCK, UPDLOCK)
-		SET u.Policy = CASE WHEN r.UserID IS NULL AND f.IsParent=1 
-								THEN u.Policy
-								ELSE t.Policy
-						END
-		FROM dbo.eaUserPolicy u
-			INNER JOIN #UserPolicyTable t ON u.userid = t.UserID 
-			INNER JOIN (SELECT @ParentID AS FuncID, 1 AS IsParent
-						UNION ALL 
-						SELECT @FuncID, 0) f ON u.FuncID = f.FuncID
-			LEFT JOIN @RevokeTable r ON r.UserID=u.UserID
-		WHERE t.Policy=0
-
-		DELETE FROM #UserPolicyTable WHERE Policy=0
-	END
-
+	--UPDATE: permission of child functions
 	UPDATE u WITH (ROWLOCK, UPDLOCK)
 	SET u.Policy = t.Policy
 	FROM dbo.eaUserPolicy u
@@ -103,6 +73,25 @@ BEGIN
         LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @FuncID AND u.UserID = t.UserID
     WHERE u.FuncID IS NULL	
 
+	--UPDATE: permission of parent functions
+	IF @ParentID<>0
+	BEGIN
+		;WITH cte_ChildPolicy AS (
+			SELECT u.UserID, f.ParentID, MAX(u.Policy) Max_ChildPolicy
+			FROM eaUserPolicy u WITH (NOLOCK)
+			INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=u.FuncID
+			INNER JOIN #UserPolicyTable t ON t.UserID=u.UserID
+			WHERE f.ParentID=@ParentID
+			GROUP BY u.UserID, f.ParentID
+		)
+		UPDATE u 
+		SET u.Policy = t.Max_ChildPolicy
+		FROM dbo.eaUserPolicy u WITH (ROWLOCK, UPDLOCK)
+		INNER JOIN cte_ChildPolicy t ON t.UserID=u.UserID
+									AND t.ParentID=u.FuncID
+		WHERE u.Policy<>t.Max_ChildPolicy
+	END
+	
 
 	/**************Write to Log table for each action********************/
 	
