@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelByGroupHeadline]     
     @siteid VARCHAR(200) = ''
   , @currency INT = 0
@@ -32,6 +32,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		
     Example: exec Acc_CustomerSelByGroupHeadline_UAT4 @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
 
@@ -40,17 +41,29 @@ BEGIN
     SET NOCOUNT ON    
     
     DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
+	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
+
     DECLARE @tmpUserid VARCHAR(50)
     SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
 
-	DECLARE @SearchQuery varchar(1024)
+	DECLARE @SearchQuery varchar(1024), @SearchCurrency VARCHAR(1024)
+
+	--get deny site
 	SELECT @SearchQuery = 'SELECT * 
 	FROM OPENQUERY(DBPOL, 
 	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
 
 	INSERT INTO  @tmp (siteid , site,SpecialGroup)
 	EXECUTE(@SearchQuery)
-    
+
+	--get deny currency
+    SELECT @SearchCurrency = 'SELECT * 
+	FROM OPENQUERY(DBPOL, 
+	''SELECT exchangeID, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + @tmpUserid + ''''')'')'
+
+	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+	EXECUTE(@SearchCurrency)
+
     CREATE TABLE #tmpDirectCust 
     (
         CustID INT PRIMARY KEY
@@ -220,7 +233,11 @@ BEGIN
 				, r.RoleID , r.HeadlineType , r.OwnerName, r.ClosedReason, e.currency AS CurrencyName
         FROM  #tmpResultAll r
             INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
-            WHERE (@Userid IS NULL OR (@Userid IS NOT NULL AND site NOT IN (SELECT site FROM @tmp )))
+        WHERE @Userid IS NULL 
+		OR (@Userid IS NOT NULL 
+			AND site NOT IN (SELECT site FROM @tmp)
+			AND e.ExchangeId NOT IN (SELECT exchangeID FROM @tmpExchange)
+		)
         ORDER BY custheadlineid,custid    
     
      RETURN   
@@ -281,7 +298,11 @@ BEGIN
 							, r.RoleID , r.HeadlineType , r.OwnerName, r.ClosedReason , e.currency AS CurrencyName
     FROM  #tmpResult r
         INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
-        WHERE (@Userid IS NULL OR (@Userid IS NOT NULL AND site NOT IN (SELECT site FROM @tmp )))
+    WHERE @Userid IS NULL 
+	OR (@Userid IS NOT NULL 
+		AND site NOT IN (SELECT site FROM @tmp)
+		AND e.ExchangeId NOT IN (SELECT exchangeID FROM @tmpExchange)
+	)
     ORDER BY custheadlineid,custid   
 
 END

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
 	@Userid		INT			= NULL
@@ -19,6 +19,8 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
+		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+
 */
 
 BEGIN
@@ -102,28 +104,38 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		
 		DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
-		DECLARE @tmpUserid VARCHAR(50)
-		CREATE TABLE #TempCustGroup(CustID INT,Username VARCHAR(50),Firstname NVARCHAR(50),Lastname NVARCHAR(50),RoleId TINYINT,Groupname VARCHAR(50),iplogin NVARCHAR(20),recommendId INT,site VARCHAR(10))
+		DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
+		--get deny site
 		INSERT INTO  @tmp (siteid , site,SpecialGroup)
 		SELECT siteid , site,SpecialGroup 
 		FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
+		
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT exchangeID, Currency, OfferSite 
+		FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@UserId)
 	
-		INSERT INTO #TempCustGroup(CustID, Username, Firstname, Lastname, RoleId, Groupname, iplogin, recommendId, site)
-		SELECT a.CustID, c.username, c.firstname, c.lastname, a.roleid, a.GroupName, c.iplogin, c.recommend, site
+		CREATE TABLE #TempCustGroup(
+				CustID INT
+				,Username VARCHAR(50)
+				,Firstname NVARCHAR(50)
+				,Lastname NVARCHAR(50)
+				,RoleId TINYINT
+				,Groupname VARCHAR(50)
+				,iplogin NVARCHAR(20)
+				,site VARCHAR(10)
+				,currency INT
+		)
+
+		INSERT INTO #TempCustGroup(CustID, Username, Firstname, Lastname, RoleId, Groupname, iplogin, site, currency)
+		SELECT a.CustID, c.username, c.firstname, c.lastname, a.roleid, a.GroupName, c.iplogin, site, c.currency
 		FROM dbo.Acc_CustGroup a WITH (NOLOCK)
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON a.CustID = c.CustID
+		WHERE site NOT IN (SELECT site FROM @tmp)
+			AND currency NOT IN (SELECT exchangeID FROM @tmpExchange)
 		ORDER BY a.GroupName, c.username	
-	
-		UPDATE a
-		SET a.site = b.site
-		FROM #TempCustGroup a
-			INNER JOIN dbo.Customer b (NOLOCK) ON a.recommendId = b.custid
-		WHERE a.RoleId = 1
-	
-		DELETE FROM #TempCustGroup WHERE site IN (SELECT site FROM @tmp)
 
 		;WITH CTE AS
 		(

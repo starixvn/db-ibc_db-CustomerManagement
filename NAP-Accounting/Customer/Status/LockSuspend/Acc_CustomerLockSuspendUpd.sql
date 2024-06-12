@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE Acc_CustomerLockSuspendUpd
 	@CustList	VARCHAR(MAX),
 	@Lock		BIT,
@@ -16,6 +16,7 @@ AS
 		- 20200216@Elodie: Initial SP [Redmine:#128451]
 		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 
 	Param's Explanation:
 		@CustIDList: id of customer
@@ -38,7 +39,7 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	CREATE TABLE #CustList (UserName NVARCHAR(50))
+	CREATE TABLE #CustList (UserName VARCHAR(30))
 	CREATE TABLE #CustLog  (CustId INT, RoleId TINYINT, Reject BIT, IsFinished BIT DEFAULT(0))
 
 	DECLARE @WrongUserName NVARCHAR(50) = '', @CustIdLog INT, @RoleId TINYINT, @isDirectSuspend BIT, @Reject BIT
@@ -57,7 +58,7 @@ BEGIN
 		
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 	FROM #CustList t
-	WHERE NOT EXISTS (SELECT 1 FROM dbo.custInfo ci WITH (NOLOCK) WHERE t.UserName = ci.username)
+	WHERE NOT EXISTS (SELECT 1 FROM dbo.Customer ci WITH (NOLOCK) WHERE t.UserName = ci.username)
 
 	IF @WrongUserName <> ''
 	BEGIN
@@ -69,10 +70,9 @@ BEGIN
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 	FROM #CustList t
 	WHERE NOT EXISTS (	SELECT 1 
-						FROM dbo.custInfo ci WITH (NOLOCK) 
-							INNER JOIN Customer c WITH (NOLOCK) ON c.custid = ci.custid
+						FROM dbo.customer ci WITH (NOLOCK) 
 						WHERE t.UserName = ci.username 
-							AND c.site <> 'CN88'
+							AND ci.site <> 'CN88'
 							AND ci.srecommend NOT IN (SELECT custid FROM dbo.Dep_CustSuper WITH (NOLOCK))
 					)
 
@@ -80,6 +80,33 @@ BEGIN
 	BEGIN
 		SELECT	@ErrCode = 101, 
 				@ErrMsg= LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1))) + ' is invalid. Please enter only username of credit sites (except for china credit site).' 
+		RETURN
+	END
+
+	--Check: permit to access site/currency
+	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
+	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
+
+	--get deny site
+	INSERT INTO  @tmp (siteid , site,SpecialGroup)
+	SELECT siteid , site,SpecialGroup 
+	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
+		
+	--get deny currency
+	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+	SELECT exchangeID, Currency, OfferSite 
+	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+
+	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
+	FROM #CustList t
+	INNER JOIN Customer ci WITH (NOLOCK) ON ci.username=t.UserName
+	WHERE ci.site IN (SELECT site FROM @tmp)
+		OR ci.currency IN (SELECT exchangeID FROM @tmpExchange)
+
+	IF @WrongUserName <> ''
+	BEGIN
+		SELECT	@ErrCode = 102, 
+				@ErrMsg= 'You don''t have permission to access: ' + LTRIM(RTRIM(RIGHT(@WrongUserName,LEN(@WrongUserName)-1)))  
 		RETURN
 	END
 
