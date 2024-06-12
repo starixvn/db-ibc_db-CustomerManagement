@@ -34,6 +34,7 @@ AS
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
+		- 20240528@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -70,11 +71,32 @@ BEGIN
 		Return
 	END
 
-
 	--Check an account disabled or not
 	 EXEC Acc_CustomerSelCheckEnable @username = @username, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	 if @ErrCode <>0        return
 	--end
+	
+	--Check permission on Site/Currency
+	DECLARE @tmpSite TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
+	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
+	
+	--get deny site
+	INSERT INTO  @tmpSite (siteid , site,SpecialGroup)
+	SELECT siteid , site,SpecialGroup 
+	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
+		
+	--get deny currency
+	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+	SELECT exchangeID, Currency, OfferSite 
+	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+
+	IF EXISTS (SELECT 1 FROM @tmpSite WHERE site=@site)
+	OR EXISTS (SELECT 1 FROM @tmpExchange WHERE exchangeID=@Currency)
+	BEGIN
+		SELECT @ErrMsg = 'You don''t have permission to access: ' + @username,
+			@ErrCode = 101
+		Return
+	END
 
 	if exists (select 1 from custaccount with (nolock) where custid = @custid and isgroupheadline = 1)
 	BEGIN

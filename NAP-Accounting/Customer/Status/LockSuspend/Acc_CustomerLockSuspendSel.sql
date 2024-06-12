@@ -1,5 +1,6 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE Acc_CustomerLockSuspendSel
+	@UserID INT
 AS
 /*
 	Created: 20200216@Elodie
@@ -9,6 +10,7 @@ AS
 	Revisions:
 		- 20200216@Elodie: Initial SP [Redmine:#128541]
 		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20240523@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 	Param's Explanation:
 */
 BEGIN
@@ -24,6 +26,7 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid 
 								) AS cps	
+	WHERE ci.currency NOT IN (SELECT ExchangeId FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@UserID))
 	ORDER BY ci.username, ci.roleid
 END
 
