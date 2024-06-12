@@ -32,7 +32,10 @@ Revisions:
 	- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
+
 Param's Explanation:
+
 • @ErrCode:
     = 0: Transaction recorded successfully.
     > 0: Specific Error.

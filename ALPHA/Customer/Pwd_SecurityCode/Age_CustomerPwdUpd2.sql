@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,VNTeam" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerPwdUpd2]
     @CustID INT ,
     @UserPwd NVARCHAR(50) ,
@@ -27,6 +27,8 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
+
 Param's Explanation:
 - @ErrCode:
     = 0: Transaction recorded successfully.
