@@ -57,21 +57,13 @@ BEGIN
 	UPDATE u WITH (ROWLOCK, UPDLOCK)
 	SET u.Policy = t.Policy
 	FROM dbo.eaUserPolicy u
-        INNER JOIN #UserPolicyTable t ON u.userid = t.UserID
-		INNER JOIN (SELECT @ParentID AS FuncID
-					UNION ALL 
-					SELECT @FuncID) f ON u.FuncID = f.FuncID
-
+        INNER JOIN #UserPolicyTable t ON u.FuncID = @FuncID AND u.userid = t.UserID
+	
 	INSERT INTO dbo.eaUserPolicy(UserID, FuncID, Policy)
-    SELECT t.UserID, @ParentID, t.Policy 
-    FROM #UserPolicyTable t
-        LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @ParentID AND u.UserID = t.UserID
-    WHERE u.FuncID IS NULL AND @ParentID<>0
-	UNION
-	SELECT t.UserID, @FuncID, t.Policy 
+    SELECT t.UserID, @FuncID, t.Policy 
     FROM #UserPolicyTable t
         LEFT JOIN dbo.eaUserPolicy u WITH(NOLOCK) ON u.FuncID = @FuncID AND u.UserID = t.UserID
-    WHERE u.FuncID IS NULL	
+    WHERE u.FuncID IS NULL		
 
 	--UPDATE: permission of parent functions
 	IF @ParentID<>0
