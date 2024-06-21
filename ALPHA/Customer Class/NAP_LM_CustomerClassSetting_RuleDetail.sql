@@ -162,19 +162,27 @@ BEGIN
 					 WHERE PolicyID = d.PolicyID ) a
 	GROUP BY a.Site, a.CurrencyName ,d.RuleID 
 	
-	SELECT DISTINCT d.Sites,
-		LEN(d.Sites) - LEN(REPLACE(d.Sites, ',', '')) + 1 AS NumberOfSites,
+	--SELECT DISTINCT d.Sites,
+	--	LEN(d.Sites) - LEN(REPLACE(d.Sites, ',', '')) + 1 AS NumberOfSites,
+	--	a.CurrencyName,
+	--	LEN(a.CurrencyName) - LEN(REPLACE(a.CurrencyName, ',', '')) + 1 AS NumberOfCurrencies,
+	--	a.Platform ,
+	--	LEN(a.Platform) - LEN(REPLACE(a.Platform, ',', '')) + 1 AS NumberOfPlatform
+	--FROM #CustomerClassSiteManagement a
+	--CROSS APPLY(
+	--		SELECT STRING_AGG(Site, ',') WITHIN GROUP (ORDER BY Site)  AS Sites
+	--		FROM (SELECT DISTINCT CAST(Site AS VARCHAR(MAX)) AS Site
+	--			FROM #CustomerClassSiteManagement
+	--			WHERE a.Platform = Platform AND a.CurrencyName = CurrencyName) mis
+	--	) d
+
+	SELECT DISTINCT a.Site,
 		a.CurrencyName,
 		LEN(a.CurrencyName) - LEN(REPLACE(a.CurrencyName, ',', '')) + 1 AS NumberOfCurrencies,
 		a.Platform ,
+		--LEN(a.Sites) - LEN(REPLACE(a.Sites, ',', '')) + 1 AS NumberOfSites,
 		LEN(a.Platform) - LEN(REPLACE(a.Platform, ',', '')) + 1 AS NumberOfPlatform
 	FROM #CustomerClassSiteManagement a
-	CROSS APPLY(
-			SELECT STRING_AGG(Site, ',') WITHIN GROUP (ORDER BY Site)  AS Sites
-			FROM (SELECT DISTINCT CAST(Site AS VARCHAR(MAX)) AS Site
-				FROM #CustomerClassSiteManagement
-				WHERE a.Platform = Platform AND a.CurrencyName = CurrencyName) mis
-		) d
 		
 	DROP TABLE #CustomerClassSiteManagement
 	DROP TABLE #CustomerClass_Platform
