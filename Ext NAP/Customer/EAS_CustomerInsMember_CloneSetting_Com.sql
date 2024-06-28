@@ -54,7 +54,7 @@ AS
 		- 20230622@Helios: Alpha/ExtNAP - Create new downlines - Remove some obsolete rules [Redmine: #190167] 
 		- 20240129@Luke: NAP - Virtual rate - Change default of VR Status for newly created Super to Enable [Redmine: #200311]
 		- 20230918@Eden: DCS Sportsbook Credit[redmine: #193083]
-
+		- 20240628@Johnson: scale out DBCUST [redmine: #199915]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -482,7 +482,33 @@ BEGIN
 		
 		RETURN
 	END CATCH
-
+	
+	
+	EXEC dbo.Acc_Custsetting_CloneSetting_SportsbookIns
+		@custid = @custid,
+		@ExistingCustid = @ExistingCustid,
+		@Language = @Language,
+		@SettingStatus = @SettingStatus,
+		@ErrCode = @ErrCode OUTPUT,
+		@ErrMsg = @ErrMsg OUTPUT
+	
+	IF @ErrCode >0 
+	BEGIN
+		SELECT @ErrMsg = CASE @Language 
+								WHEN 'E' THEN 'Create customer failed. Please try again.'
+								ELSE [dbo].[f_Get_MsgNamebyMsgID](40004,@Language)
+							end
+				,@ErrCode = 106
+		-- ROLLBACK MANUALLY	
+		DELETE FROM dbo.Customer WITH(ROWLOCK) WHERE CustID = @CustID
+		--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del  @Custid
+		DELETE FROM dbo.CustInfo WITH(ROWLOCK) WHERE CustID = @CustID
+		DELETE FROM CustSuper WITH(ROWLOCK) WHERE custId = @CustID  
+		
+		
+		RETURN
+	END
+	
 	DECLARE @isForcedChangeSecurityCode BIT = 0, @ClosedReason TINYINT=0,@Closed BIT,
 		@SystemID INT = 4 --EXT NAP
 

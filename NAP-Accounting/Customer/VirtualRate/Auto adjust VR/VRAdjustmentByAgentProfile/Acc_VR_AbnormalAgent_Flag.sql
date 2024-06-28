@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Flag   
 	@Type TINYINT
 	,@IsTest BIT = 0
@@ -18,7 +18,7 @@ AS
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20230307@VN-Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
-
+		- 20240701@Johnson: scale out DBCUST [redmine: #199915]
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -85,7 +85,7 @@ BEGIN
 			AVG(st.maxbet) AS [AVGMemMaxBet]
 		FROM custInfo c WITH(NOLOCK)
 			INNER JOIN @AgentTbl t ON c.recommend = t.CustID 
-			INNER JOIN CustBetSetting_Member st WITH(NOLOCK) ON c.custid = st.custid AND st.sporttype = 1 AND st.bettype = 1
+			INNER JOIN BetSetting_Member st WITH(NOLOCK) ON c.custid = st.custid AND st.sporttype = 1 AND st.bettype = 1
 		WHERE c.roleid = 1 AND c.Enabled = 1
 		GROUP BY t.CustID
 	)
