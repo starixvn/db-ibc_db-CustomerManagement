@@ -15,7 +15,7 @@ AS
 		- 20180429@Razor: init - [Readmine: #96025]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
-		
+		- 20240619@Elodie: Tune SP [Redmine: #206786]
 	Param's Explanation:	
 */
 BEGIN
@@ -50,25 +50,49 @@ BEGIN
 	SELECT exchangeID, Currency, OfferSite 
 	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
 
-	INSERT INTO @temp (
-		CustId
-		,UserName
-		,LimitDays
-		,MinDate
-		,RowNum
-		)
-	SELECT c.custId
-		,c.UserName
-		,l.LimitDays
-		,l.MinDate
-		,ROW_NUMBER() OVER (
-			ORDER BY c.UserName
-			) AS RowNum
-	FROM dbo.Age_CustDateLimit l WITH (NOLOCK)
-		INNER JOIN [dbo].[Customer] c WITH (NOLOCK) ON c.custId = l.custId
-	WHERE c.UserName LIKE '%' + @userName + '%'
-		AND c.Site NOT IN (SELECT Site FROM @tmp)
-		AND c.currency NOT IN (SELECT exchangeID FROM @tmpExchange)
+	IF @userName = ''
+	BEGIN
+		INSERT INTO @temp (
+			CustId
+			,UserName
+			,LimitDays
+			,MinDate
+			,RowNum
+			)
+		SELECT c.custId
+			,c.UserName
+			,l.LimitDays
+			,l.MinDate
+			,ROW_NUMBER() OVER (
+				ORDER BY c.UserName
+				) AS RowNum
+		FROM dbo.Age_CustDateLimit l WITH (NOLOCK)
+			INNER JOIN [dbo].[Customer] c WITH (NOLOCK) ON c.custId = l.custId
+		WHERE c.Site NOT IN (SELECT Site FROM @tmp)
+			AND c.currency NOT IN (SELECT exchangeID FROM @tmpExchange)
+	END
+	ELSE 
+	BEGIN
+		INSERT INTO @temp (
+			CustId
+			,UserName
+			,LimitDays
+			,MinDate
+			,RowNum
+			)
+		SELECT c.custId
+			,c.UserName
+			,l.LimitDays
+			,l.MinDate
+			,ROW_NUMBER() OVER (
+				ORDER BY c.UserName
+				) AS RowNum
+		FROM dbo.Age_CustDateLimit l WITH (NOLOCK)
+			INNER JOIN [dbo].[Customer] c WITH (NOLOCK) ON c.custId = l.custId
+		WHERE c.UserName LIKE @userName + '%'
+			AND c.Site NOT IN (SELECT Site FROM @tmp)
+			AND c.currency NOT IN (SELECT exchangeID FROM @tmpExchange)
+	END
 
 	SELECT UserName, CustId, MinDate, LimitDays
 	FROM @temp
