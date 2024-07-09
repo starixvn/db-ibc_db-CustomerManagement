@@ -6,9 +6,11 @@ CREATE PROCEDURE [dbo].[EAS_API_CheckSecretKeyUser]
   , @APISecretKey		VARCHAR(100)		
   , @CustID				INT			  = 0	OUTPUT
   , @SubAccID			INT			  = 0	OUTPUT
+  , @IsAuthenticated	BIT			  = 1	OUTPUT
+  , @Site				VARCHAR(10)	  = ''	OUTPUT
+  , @Currency			TINYINT		  = 0	OUTPUT
   , @ErrCode			INT			  = 0	OUTPUT
   , @ErrMsg				NVARCHAR(200) = ''  OUTPUT
-  , @IsAuthenticated	BIT			  = 1	OUTPUT
 AS
 /*
 	Created: Helios  
@@ -18,7 +20,7 @@ AS
 	Revisions:  
 		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
 		- 20230816@Tacy: EXT - Adjust API to support Live Casino for Headline [Redmine: #192805]
-
+		- 20240701@Tacy: EXT - API - Return Site & Currency [Redmine: #206055]
 	Parameter's Explanation:  
 		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
 		@IsAuthenticated:
@@ -52,7 +54,10 @@ BEGIN
 	SET @Srecommend = 0
 
 	-- Check user and password of Main Cust
-	SELECT @Srecommend = ISNULL(c.srecommend,0) , @CustID = C.custid
+	SELECT @Srecommend = ISNULL(c.srecommend,0)
+		, @CustID = C.custid
+		, @Site=c.site
+		, @Currency=c.currency
 	FROM dbo.customer c WITH (NOLOCK)    
 	WHERE (username = @UserName OR username2 = @UserName) 
 	AND c.userpwd = @UserPassword
@@ -69,6 +74,8 @@ BEGIN
 
 		-- Check user and password of Sub Cust
 		SELECT @Srecommend = ISNULL(c.srecommend,0)
+			, @Site=c.site
+			, @Currency=c.currency
 		FROM dbo.customer c WITH (NOLOCK)  
 		WHERE CustID = @CustID
 		AND c.roleid IN (2,3,4)	-- Just Check SMA	
