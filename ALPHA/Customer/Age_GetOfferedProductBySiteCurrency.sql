@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="wsv_alp,wsv_alpv" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_alp,wsv_alpv,wsv_xnap" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Age_GetOfferedProductBySiteCurrency]
 	@Site VARCHAR(50), 
 	@Currency INT,
@@ -14,6 +14,7 @@ AS
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 		- 20240111@Johnson: exclude saba casino from dummy products [redmine: #194591]
 		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960] 
+		- 20240701@Tacy: Grant permission on Ext NAP acc [Redmine: #206055] 
 	Examples:
 	
 */
