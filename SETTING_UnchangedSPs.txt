@@ -1,0 +1,1 @@
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerSelReferenceVirtualRateSetting.sql
