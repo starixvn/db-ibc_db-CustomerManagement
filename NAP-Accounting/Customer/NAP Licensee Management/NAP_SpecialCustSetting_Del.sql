@@ -19,6 +19,7 @@ AS
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 		- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
+		- 20240731@Johnson: Apply In-house Replication for Deposit Customer Setting [redmine:#207025]
 
 */
 BEGIN
@@ -83,7 +84,10 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		DELETE [Dep_CustBetLimit_Special] WITH(ROWLOCK,UPDLOCK) WHERE [Site] = @Licensee AND CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )
+		DELETE [Dep_CustBetLimit_Special] WITH(ROWLOCK,UPDLOCK) 
+		OUTPUT DELETED.keyid, dbo.f_GetDateTime2()
+		INTO Dep_CustBetLimit_Special_Del_InHouse(keyid,RepUpdateTime)
+		WHERE [Site] = @Licensee AND CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )
 	END
 
 	IF @@Error >0
