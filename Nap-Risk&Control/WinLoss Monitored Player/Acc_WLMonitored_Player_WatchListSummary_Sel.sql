@@ -76,9 +76,9 @@ SET NOCOUNT ON;
 	WHERE ci.recommend = @AgentID
 		AND ci.roleid = 1				
 	
-	SELECT @UnlimitedThresholdUsers		= STRING_AGG(UserName, ', ')
-		  ,@UnlimitedThresholdCustID	= STRING_AGG(CustID, ',')
-		  ,@UnlimitedThresholdCount		= COUNT(*)
+	SELECT @UnlimitedThresholdUsers		= STRING_AGG(CAST(UserName AS VARCHAR(MAX)), ', ')
+		  ,@UnlimitedThresholdCustID	= STRING_AGG(CAST(CustID AS VARCHAR(MAX)), ',')
+		  ,@UnlimitedThresholdCount		= COUNT(1)
 	FROM #Temp
 	WHERE IsExistedWatchList = 1 AND WinningThreshold IS NULL AND LosingThreshold IS NULL
 
