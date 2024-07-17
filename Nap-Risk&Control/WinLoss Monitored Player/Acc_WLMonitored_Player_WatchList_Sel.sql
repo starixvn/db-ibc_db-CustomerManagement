@@ -9,8 +9,8 @@ ALTER PROCEDURE dbo.Acc_WLMonitored_Player_WatchList_Sel
 	,@PageSize       INT     = 50
 	,@PageIndex      INT     = 1
 	,@TotalItems     INT     = 0 OUTPUT
-	,@AddedFromDate  DATETIME
-	,@AddedToDate	 DATETIME
+	,@AddedFromDate  DATETIME = NULL
+	,@AddedToDate	 DATETIME = NULL
 	,@Status		 VARCHAR(30) = ''
 	,@ProblemAccount TINYINT = 2
 AS  
@@ -167,8 +167,10 @@ SET NOCOUNT ON;
 	WHERE per.agentID = @AgentID
 		AND per.Sporttype = @Sporttype
 		AND ci.username LIKE  '%' + ISNULL(@Username,'') + '%'
-		AND per.CreatedDate >= @AddedFromDate
-		AND per.CreatedDate < @AddedToDate + 1
+		AND (
+				(per.CreatedDate >= @AddedFromDate AND per.CreatedDate < @AddedToDate + 1) 
+				OR (@AddedFromDate IS NULL AND @AddedToDate IS NULL)
+			)
 		AND (	CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 					WHEN cs.closed = 1 THEN 'Closed'
 					WHEN cs.reject = 1 THEN 'Suspended'
