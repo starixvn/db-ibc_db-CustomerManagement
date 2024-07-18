@@ -9,6 +9,10 @@ ALTER PROCEDURE dbo.Acc_WLMonitored_Player_WatchList_Sel
 	,@PageSize       INT     = 50
 	,@PageIndex      INT     = 1
 	,@TotalItems     INT     = 0 OUTPUT
+	,@AddedFromDate  DATETIME = NULL
+	,@AddedToDate	 DATETIME = NULL
+	,@Status		 VARCHAR(30) = ''
+	,@ProblemAccount TINYINT = 2
 AS  
 /*  
 	Created:	20220523@Eden
@@ -21,6 +25,7 @@ AS
 		- 20230327@Tacy: Alpha - Enhance to show First/Last name in reports [RedmineID: #185313]
 		- 20230420@Tacy: Alpha - Enhance My Watchlist & Problem Accounts to allow SMA control risk effectively [RedmineID: 185312]
 		- 20230626@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20240411@Kelvin: Alpha - Link WL Detail to My Watchlist [Redmine:#201733]
 
 	Param's Explanation:  	
 		- @SortType : ( order by)
@@ -31,9 +36,22 @@ AS
 			5: LosingThreshold
 			6: firstname/lastname
 			7: Problem Account
+			8: Added Date
 
 		- @ExportAll : 1 ~ no paging, get all
 					   0 ~ paging data
+
+		- @Status : 
+				Disabled
+				Closed
+				Suspended
+				Locked
+				Open
+
+		- @ProblemAccount : 
+				= 0: No
+				= 1: Yes
+				= 2: All
 	
 	Example:
 		DECLARE @TotalItems INT
@@ -45,9 +63,15 @@ AS
 				,@PageSize            = 50
 				,@PageIndex           = 1
 				,@TotalItems          = @TotalItems OUTPUT
+				,@AddedFromDate	= '2022/04/01'
+				,@AddedToDate	= '2024/04/12'
+				,@Status = ''
+				,@ProblemAccount = 2
 		SELECT @TotalItems
 */  
 BEGIN 
+SET NOCOUNT ON;
+
 	DECLARE @RowStart int, @RowEnd int
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1
 
@@ -56,7 +80,7 @@ BEGIN
 		username			VARCHAR(30),
 		username2			VARCHAR(50),		
 		firstlastname		NVARCHAR(110),
-		lastlogged			DATETIME,
+		lastlogged			DATETIME,		
 		Status				VARCHAR(10),
 		WinningThreshold	MONEY,
 		LosingThreshold		MONEY,
@@ -64,6 +88,7 @@ BEGIN
 		Locked				TINYINT,
 		ClosedReason		TINYINT,
 		IsPA				BIT,
+		AddedDate			DATETIME,
 		RowNumber			INT IDENTITY(1,1)
 	)
 
@@ -72,7 +97,7 @@ BEGIN
 		username			VARCHAR(30),	
 		username2			VARCHAR(50),		
 		firstlastname		NVARCHAR(110),
-		lastlogged			DATETIME,
+		lastlogged			DATETIME,		
 		Status				VARCHAR(10),
 		WinningThreshold	MONEY,
 		LosingThreshold		MONEY,
@@ -80,6 +105,7 @@ BEGIN
 		Locked				TINYINT,
 		ClosedReason		TINYINT,
 		IsPA				BIT,
+		AddedDate			DATETIME,
 		RowNumber			INT IDENTITY(1,1)
 	)
 
@@ -96,6 +122,7 @@ BEGIN
 		,Locked
 		,ClosedReason
 		,IsPA
+		,AddedDate
 	)
 	SELECT  
 		ci.custid,
@@ -105,7 +132,7 @@ BEGIN
 			 WHEN (c.firstname IS NULL	  OR c.firstname IN ('NULL',''))	 AND c.lastname IS NOT NULL AND c.lastname NOT IN ('NULL','')	THEN lastname
 			 ELSE ''
 		END firstlastname,
-		c.lastlogged,
+		c.lastlogged,		
 		CASE WHEN ci.Enabled = 0 THEN 'Disabled'
 			 WHEN cs.closed = 1 THEN 'Closed'
 			 WHEN cs.reject = 1 THEN 'Suspended'
@@ -117,14 +144,19 @@ BEGIN
 		ci.recommend,
 		ISNULL(cs.Locked,0),
 		ISNULL(lg.ClosedReason,0),
-		CASE WHEN p.custid IS NOT NULL AND cc.CustomerClass IS NOT NULL
-			 THEN 1 ELSE 0
-		END IsPA
+		ISNULL(pa.IsPA,0),
+		per.CreatedDate
 	FROM WLMonitored_Player per WITH(NOLOCK) 
 		INNER JOIN custInfo ci WITH(NOLOCK) ON per.custid = ci.custid AND ci.roleid = 1
 		INNER JOIN customer c WITH(NOLOCK) ON ci.custid = c.custid
-		LEFT JOIN ProblemAccountClassification p WITH(NOLOCK) ON per.custid = p.custid	--Problem Account
-		OUTER APPLY (SELECT TOP 1 cc.CustomerClass FROM CategoryConfig cc WITH (NOLOCK) WHERE cc.CustomerClass=ci.CustomerClass AND HiddenSite NOT IN (1,3)) cc
+		OUTER APPLY (SELECT TOP 1 cc.CustomerClass 
+					FROM CategoryConfig cc WITH (NOLOCK) 
+					WHERE cc.CustomerClass=ci.CustomerClass AND HiddenSite NOT IN (1,3)
+					) cc
+		OUTER APPLY (SELECT 1 AS IsPA
+					 FROM ProblemAccountClassification p WITH(NOLOCK) 
+					 WHERE per.custid = p.custid AND cc.CustomerClass IS NOT NULL
+					 ) pa	--Problem Account		
 		LEFT JOIN CustLoginInfo_Member lg WITH(NOLOCK) ON lg.CustID = ci.custid
 		CROSS APPLY  (	SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 							, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -135,6 +167,19 @@ BEGIN
 	WHERE per.agentID = @AgentID
 		AND per.Sporttype = @Sporttype
 		AND ci.username LIKE  '%' + ISNULL(@Username,'') + '%'
+		AND (
+				(per.CreatedDate >= @AddedFromDate AND per.CreatedDate < @AddedToDate + 1) 
+				OR (@AddedFromDate IS NULL AND @AddedToDate IS NULL)
+			)
+		AND (	CASE WHEN ci.Enabled = 0 THEN 'Disabled'
+					WHEN cs.closed = 1 THEN 'Closed'
+					WHEN cs.reject = 1 THEN 'Suspended'
+					WHEN cs.Locked > 0 THEN 'Locked'
+					ELSE 'Open'
+				END = @Status
+				OR ISNULL(@Status,'') = ''	
+			)
+		AND (ISNULL(pa.IsPA,0) = @ProblemAccount OR @ProblemAccount = 2)
 
 	INSERT INTO #Temp2(
 		 CustID				
@@ -142,26 +187,28 @@ BEGIN
 		,username	
 		,username2
 		,firstlastname			
-		,lastlogged			
+		,lastlogged		
 		,Status				
 		,WinningThreshold	
 		,LosingThreshold
 		,Locked
 		,ClosedReason
 		,IsPA
+		,AddedDate
 	)
 	SELECT t.CustID				
 		,t.recommend			
 		,t.username
 		,t.username2
 		,firstlastname
-		,lastlogged			
+		,lastlogged		
 		,Status				
 		,WinningThreshold	
 		,LosingThreshold	
 		,Locked
 		,ClosedReason
 		,IsPA
+		,AddedDate
 	FROM #Temp t
 	ORDER BY	CASE WHEN @SortType = 1 AND @IsDesc = 0 THEN t.username END ASC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 0 THEN lastlogged END ASC,
@@ -170,7 +217,7 @@ BEGIN
 				CASE WHEN @SortType = 5 AND @IsDesc = 0 THEN LosingThreshold END ASC,
 				CASE WHEN @SortType = 6 AND @IsDesc = 0 THEN firstlastname END ASC,
 				CASE WHEN @SortType = 7 AND @IsDesc = 0 THEN IsPA END ASC,
-
+				CASE WHEN @SortType = 8 AND @IsDesc = 0 THEN AddedDate END ASC,
 				-----------
 				CASE WHEN @SortType = 1 AND @IsDesc = 1 THEN t.username END DESC,
 				CASE WHEN @SortType = 2 AND @IsDesc = 1 THEN lastlogged END DESC,
@@ -179,6 +226,7 @@ BEGIN
 				CASE WHEN @SortType = 5 AND @IsDesc = 1 THEN LosingThreshold END DESC,
 				CASE WHEN @SortType = 6 AND @IsDesc = 1 THEN firstlastname END DESC,
 				CASE WHEN @SortType = 7 AND @IsDesc = 1 THEN IsPA END DESC,
+				CASE WHEN @SortType = 8 AND @IsDesc = 1 THEN AddedDate END DESC,
 				t.Username ASC
 
 	SELECT @TotalItems = COUNT(1) 
@@ -203,6 +251,7 @@ BEGIN
 			,Locked
 			,ClosedReason
 			,IsPA
+			,AddedDate
 			,RowNumber
 		FROM  #Temp2 t
 		WHERE RowNumber BETWEEN @rowstart AND @rowend
