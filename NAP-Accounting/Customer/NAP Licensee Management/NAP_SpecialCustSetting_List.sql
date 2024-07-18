@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_List]
 	,@ShowSportsBook BIT = 1
 	,@ShowNumberGame BIT = 1
 	,@ShowKeno BIT = 1
+	,@SettingStatus TINYINT = 0
 AS
 /*
 Created: Dom
@@ -22,6 +23,7 @@ Created: Dom
 			- 20221010@Johnson: Add Saba cricket [redmine: #175659]
 			- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
 			- 20240117@Tacy: LAP - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199521]
+			- 20240429@Tacy: Apply @SettingStatus [RedmineID: #201239]
 */
 
 BEGIN
@@ -51,21 +53,21 @@ BEGIN
 		SELECT @ProductID = 1
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,10)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,10,@SettingStatus)
 	END
 	IF(@ShowNumberGame=1)
 	BEGIN 
 		SELECT @ProductID = 3
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,12)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,12,@SettingStatus)
 	END
 	IF(@ShowKeno=1)
 	BEGIN 
 		SELECT @ProductID = 8
 		INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype,IsLive, SettingType)
 		SELECT @ProductID AS ProductID,SportType,Bettype,IsLive, SettingType 
-		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,2)
+		FROM dbo.f_Dep_CustSetting_SportBetTypeSettingSelect (@ProductID,2,@SettingStatus)
 	END
 
 	CREATE TABLE #Data(	Licensee NVARCHAR(100),CurrencyID INT, Currency NVARCHAR(50), AgentID INT, SportType INT, Bettype INT, AgentName NVARCHAR(50), SportName NVARCHAR(200), SportGameType NVARCHAR(200), MinBet MONEY, MaxBet MONEY, MaxPerMatch MONEY, MaxPerBall MONEY, MaxPayoutPerMatch MONEY)
