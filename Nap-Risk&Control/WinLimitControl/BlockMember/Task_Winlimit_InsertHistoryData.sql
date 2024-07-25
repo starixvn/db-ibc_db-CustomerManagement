@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Task_Winlimit_InsertHistoryData @XmlData NVARCHAR(MAX)
 AS
 /*   
@@ -11,6 +11,7 @@ AS
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 		- 20231004@Luke: Adjust filter condition [Redmine: #195051]
+		- 20240716@Winfred: Grand permission wsv_nap [Redmine: #202389]
 		
 	Param's Explanation:
 		
