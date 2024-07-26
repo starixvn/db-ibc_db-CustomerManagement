@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[Age_CustLastBetFilter_Ins]
 	, @SporttypeList VARCHAR(MAX)=''	-- none selection
 	, @IsLive		TINYINT
 	, @IsDefault	BIT=0
+	, @IsNotify		BIT
 	, @Language		VARCHAR(2) = 'E'
 	, @ErrCode		INT				= 0		OUTPUT
 	, @ErrMsg		NVARCHAR(200)	= ''	OUTPUT
@@ -24,6 +25,7 @@ AS
 
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20240223@Luke: Telegram Chatbot - Notify Member Last bets [Redmine: #193689]
 
 	Param's Explanation: 
 		- @IsLive : 0 ~ Non-Live
@@ -171,6 +173,22 @@ BEGIN
 		RETURN
 	END
 
+	--Check if enable Telegram notification for more than 3 filters 
+	IF @IsNotify = 1 
+		AND EXISTS (
+			SELECT COUNT(1) AS NotifyCount
+			FROM Cust_LastBetFilter WITH (NOLOCK)
+			WHERE CustID = @CustID AND SubAccID = @SubAccId AND IsNotify = 1
+			HAVING COUNT(1) > 2
+		)
+	BEGIN
+		SELECT @ErrCode = 90027
+				,@ErrMsg = CASE @Language WHEN 'E' THEN 'The number of notification filters has exceeded the maximum limit of 3.' 
+												 ELSE [dbo].[f_Get_MsgNamebyMsgID](90027,@Language)    
+												 END 
+		RETURN
+	END
+
 	SELECT @xml_SportList=CAST(@SporttypeList AS xml)
 
 	SELECT @FilterValue = CONVERT(VARCHAR(MAX),
@@ -199,8 +217,8 @@ BEGIN
 			WHERE CustID=@CustID AND SubAccId=@SubAccId AND IsDefault=1
 		END
 
-		INSERT INTO Cust_LastBetFilter ([CustID], [SubAccID], [FilterName], [FilterValue], [IsDefault])
-		SELECT @CustID, @SubAccId, @FilterName, @FilterValue, @IsDefault
+		INSERT INTO Cust_LastBetFilter ([CustID], [SubAccID], [FilterName], [FilterValue], [IsDefault], [IsNotify])
+		SELECT @CustID, @SubAccId, @FilterName, @FilterValue, @IsDefault, @IsNotify
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		
@@ -214,6 +232,7 @@ BEGIN
 			, @FilterName AS FilterName
 			, @FilterValue AS FilterValue
 			, @IsDefault AS IsDefault
+			, @IsNotify AS IsNotify
 			, COALESCE (CAST (@IP AS VARCHAR(20)), SPACE (1)) AS IP
 		FOR XML RAW('Root'))
 

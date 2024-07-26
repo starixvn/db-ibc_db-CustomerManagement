@@ -11,6 +11,7 @@ AS
 
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20240223@Luke: Telegram Chatbot - Notify Member Last bets [Redmine: #193689]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -49,7 +50,7 @@ BEGIN
 					FROM STRING_SPLIT(m.MemberList,',')) ci
 	INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.CustID
 
-	SELECT f.[FilterID], [FilterName], [FilterValue], [IsDefault], [CreatedDate]
+	SELECT f.[FilterID], [FilterName], [FilterValue], [IsDefault], [IsNotify], [CreatedDate]
 		, STUFF ((SELECT ',' + t.username
                 FROM @tbUsername t
 				WHERE t.FilterID=f.FilterID AND IsWatchList=1

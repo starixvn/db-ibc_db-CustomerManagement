@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Age_CustLastBetFilter_Upd]
 	, @FilterID		INT
 	, @FilterName	NVARCHAR(50)
 	, @IsDefault	BIT=0
+	, @IsNotify		BIT
 	, @Language		VARCHAR(2) = 'E'
 	, @ErrCode		INT				= 0		OUTPUT
 	, @ErrMsg		NVARCHAR(200)	= ''	OUTPUT
@@ -18,6 +19,7 @@ AS
 
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20240223@Luke: Telegram Chatbot - Notify Member Last bets [Redmine: #193689]
 
 	Param's Explanation: 
 */
@@ -67,6 +69,27 @@ BEGIN
 												 END 
 		RETURN
 	END
+
+	--Check if enable Telegram notification for more than 3 filters 
+	DECLARE @IsNotify_Old BIT = 0
+	SELECT @IsNotify_Old = IsNotify 
+	FROM Cust_LastBetFilter WITH (NOLOCK)
+	WHERE CustID = @CustID AND SubAccID = @SubAccId AND FilterID = @FilterID
+
+	IF @IsNotify = 1 AND @IsNotify <> @IsNotify_Old
+		AND EXISTS (
+			SELECT COUNT(1) AS NotifyCount
+			FROM Cust_LastBetFilter WITH (NOLOCK)
+			WHERE CustID = @CustID AND SubAccID = @SubAccId AND IsNotify = 1
+			HAVING COUNT(1) > 2
+		)
+	BEGIN
+		SELECT @ErrCode = 90027
+				,@ErrMsg = CASE @Language WHEN 'E' THEN 'The number of notification filters has exceeded the maximum limit of 3.'
+												 ELSE [dbo].[f_Get_MsgNamebyMsgID](90027,@Language)
+												 END
+		RETURN
+	END
 	
 	SELECT @logSpData_old = (
 		SELECT CustID
@@ -74,6 +97,7 @@ BEGIN
 			, FilterName
 			, FilterValue
 			, IsDefault
+			, IsNotify
 			, COALESCE (CAST (@IP AS VARCHAR(20)), SPACE (1)) AS IP
 		FROM Cust_LastBetFilter WITH (NOLOCK)
 		WHERE CustID=@CustID AND SubAccId=@SubAccId AND FilterID=@FilterID
@@ -89,7 +113,7 @@ BEGIN
 		END
 		
 		UPDATE Cust_LastBetFilter WITH (ROWLOCK, UPDLOCK)
-		SET FilterName=@FilterName, IsDefault=@IsDefault
+		SET FilterName=@FilterName, IsDefault=@IsDefault, IsNotify = @IsNotify
 		WHERE CustID=@CustID AND SubAccId=@SubAccId AND FilterID=@FilterID
 	END TRY
 	BEGIN CATCH
@@ -103,6 +127,7 @@ BEGIN
 			, FilterName
 			, FilterValue
 			, IsDefault
+			, IsNotify
 			, COALESCE (CAST (@IP AS VARCHAR(20)), SPACE (1)) AS IP
 		FROM Cust_LastBetFilter WITH (NOLOCK)
 		WHERE CustID=@CustID AND SubAccId=@SubAccId AND FilterID=@FilterID
