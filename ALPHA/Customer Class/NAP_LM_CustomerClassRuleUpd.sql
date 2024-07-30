@@ -17,12 +17,14 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 
 	Param's Explanation:
 	* @Rules:
 		'<ROOT><r 
 				RuleID=1 
 				CustomerClass="200" 
+				CustomerClassDetail="200" 
 				RuleTitle = "Rule 1" 
 				SportType = 99  
 				IsLive = 1 
@@ -42,7 +44,7 @@ AS
 				LeagueGroupIDs = '111,222,333,444,555'/> 
 		</ROOT>'
 
-	Example: NAP_LM_CustomerClassRuleUpd @Rules ='<ROOT><r RuleID=1 CustomerClass="200" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs = '111,222,333,444,555'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_LM_CustomerClassRuleUpd @Rules ='<ROOT><r RuleID=1 CustomerClass="200" CustomerClassDetail="300" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs = '111,222,333,444,555'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -59,12 +61,12 @@ BEGIN
 	IF @Rules IS NULL	OR @Rules = ''
 		RETURN
 	
-	CREATE TABLE #CustomerClassRule( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
+	CREATE TABLE #CustomerClassRule( RuleID INT, CustomerClass SMALLINT, CustomerClassDetail SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
 			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, LeagueGroupIDs VARCHAR(MAX), IsTest TINYINT)
-	CREATE TABLE #CustomerClassRule_History( RuleID INT, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
+	CREATE TABLE #CustomerClassRule_History( RuleID INT, CustomerClass SMALLINT, CustomerClassDetail SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
@@ -72,10 +74,11 @@ BEGIN
 	CREATE TABLE #CustomerClassRuleLeagueGroup_History( RuleID INT, LeagueGroupID SMALLINT)
 
 	BEGIN TRY
-		EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT,	@Rules;
+		EXECUTE	sp_xml_preparedocument	@iDoc OUTPUT, @Rules;
 
 		INSERT INTO	#CustomerClassRule (RuleID 					
-					 ,	CustomerClass 				
+					 ,	CustomerClass
+					 ,	CustomerClassDetail
 					 ,	RuleTitle 					    
 					 ,	SportType 					
 					 ,	IsLive 					
@@ -95,7 +98,8 @@ BEGIN
 					 ,	LeagueGroupIDs 
 					 ,	IsTest	)
 		SELECT	Data.RuleID 					
-			 ,	CASE WHEN Data.CustomerClass = '' THEN null ELSE  CAST(Data.CustomerClass AS SMALLINT) END AS CustomerClass				
+			 ,	CASE WHEN Data.CustomerClass = '' THEN 0 ELSE  CAST(Data.CustomerClass AS SMALLINT) END AS CustomerClass				
+			 ,	CASE WHEN Data.CustomerClassDetail = '' THEN null ELSE  CAST(Data.CustomerClassDetail AS SMALLINT) END AS CustomerClassDetail				
 			,	CASE WHEN Data.RuleTitle = '' THEN null ELSE  CAST(Data.RuleTitle AS VARCHAR(500)) END AS RuleTitle 					    
 			,	CASE WHEN Data.SportType = '' THEN null ELSE  CAST(Data.SportType AS SMALLINT) END AS SportType 					
 			,	CASE WHEN Data.IsLive = '' THEN null ELSE  CAST(Data.IsLive AS TINYINT) END AS IsLive  					
@@ -117,7 +121,8 @@ BEGIN
 		FROM OPENXML (@iDoc, '/ROOT/r', 1) 
 		WITH (
 			 RuleID 					INT,       
-			 CustomerClass 				SMALLINT,       
+			 CustomerClass 				VARCHAR(20),   
+			 CustomerClassDetail		VARCHAR(20),      
 			 RuleTitle 					VARCHAR(500),       
 			 SportType 					VARCHAR(20),       
 			 IsLive 					VARCHAR(3),       
@@ -199,6 +204,12 @@ BEGIN
 		RETURN
 	END	
 
+	IF 	EXISTS( SELECT TOP 1 1 FROM #CustomerClassRule WHERE ISNULL(CustomerClass,0) = 0 AND CustomerClassDetail IS NULL )	
+	BEGIN
+		SELECT @ErrCode = 108 , @ErrMsg = 'Please enter at least 1 of the 2 CC fields!' 
+		RETURN
+	END	
+
 	UPDATE a	
 	SET a.RuleTitle 				=   b.RuleTitle 				  
 		,a.SportType 				=   b.SportType 				
@@ -216,8 +227,10 @@ BEGIN
 		,a.DisableParlay 			=   b.DisableParlay 			 
 		,a.PeakHourSpreadAdjustment =   b.PeakHourSpreadAdjustment
 		,a.AgentBetInterval			=   b.AgentBetInterval
+		,a.CustomerClassDetail		=   b.CustomerClassDetail
 	OUTPUT	b.RuleID 					
 		,	b.CustomerClass 				
+		,	deleted.CustomerClassDetail 			
 		,	deleted.RuleTitle 					    
 		,	deleted.SportType 					
 		,	deleted.IsLive 					
@@ -236,7 +249,8 @@ BEGIN
 		,	deleted.AgentBetInterval 			  
 		,	deleted.IsTest 
 	INTO #CustomerClassRule_History(RuleID 					
-			 ,	CustomerClass 				
+			 ,	CustomerClass 						
+			 ,	CustomerClassDetail 		
 			 ,	RuleTitle 					    
 			 ,	SportType 					
 			 ,	IsLive 					
@@ -285,6 +299,7 @@ BEGIN
 					(
 						SELECT DISTINCT cs.RuleID					AS '@RuleID',
 							cs.CustomerClass					AS '@CustomerClass',
+							cs.CustomerClassDetail				AS '@CustomerClassDetail',
 							cs.RuleTitle						AS '@RuleTitle',
 							cs.SportType						AS '@SportType',
 							cs.IsLive							AS '@isLive',
@@ -319,6 +334,7 @@ BEGIN
 					(
 						SELECT DISTINCT cs.RuleID					AS '@RuleID',
 								cs.CustomerClass					AS '@CustomerClass',
+								cs.CustomerClassDetail				AS '@CustomerClassDetail',
 								cs.RuleTitle						AS '@RuleTitle',
 								cs.SportType						AS '@SportType',
 								cs.IsLive							AS '@isLive',

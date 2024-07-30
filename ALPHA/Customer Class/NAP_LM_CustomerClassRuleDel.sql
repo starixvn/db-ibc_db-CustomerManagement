@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassRuleDel] 
+ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleDel] 
 	  @RuleIDs		VARCHAR(MAX)
 	, @UserID		INT
 	, @IsTest		TINYINT	
@@ -16,7 +16,7 @@ AS
 
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
-
+		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679] 
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
 
@@ -43,17 +43,18 @@ BEGIN
 		RETURN
 	END	
 	
-	CREATE TABLE #CustomerClassRule_History( RuleID INT PRIMARY KEY, CustomerClass SMALLINT, RuleTitle VARCHAR(500),
+	CREATE TABLE #CustomerClassRule_History( RuleID INT PRIMARY KEY, CustomerClass SMALLINT, CustomerClassDetail SMALLINT, RuleTitle VARCHAR(500),
 			SportType SMALLINT, IsLive TINYINT, DiffBalanceRatio DECIMAL(9, 2), BetDelay DECIMAL(9, 2),
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
 			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, 
 			LeagueGroupIDs VARCHAR(MAX),Policies VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
 
-	INSERT INTO #CustomerClassRule_History( RuleID, CustomerClass, RuleTitle, SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval, SuperBetInterval, SiteBetInterval, 
+	INSERT INTO #CustomerClassRule_History( RuleID, CustomerClass, CustomerClassDetail, RuleTitle, SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval, SuperBetInterval, SiteBetInterval, 
 				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Policies, Enable, IsTest, LastModifiedUser, LastModifiedTime)
 	SELECT a.RuleID,
 			a.CustomerClass,
+			a.CustomerClassDetail,
 			a.RuleTitle,
 			a.SportType,
 			a.IsLive,
@@ -105,6 +106,7 @@ BEGIN
 					(
 						SELECT DISTINCT cs.RuleID					AS '@RuleID',
 							cs.CustomerClass					AS '@CustomerClass',
+							cs.CustomerClassDetail				AS '@CustomerClassDetail',
 							cs.RuleTitle						AS '@RuleTitle',
 							cs.SportType						AS '@SportType',
 							cs.IsLive							AS '@isLive',
