@@ -22,6 +22,7 @@ AS
 		Revisions:
 			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+			- 20240731@Tacy: Ext NAP - Grant permission of child functions and permission of parent functions [Redmine: #205415]
 
 		Parameter's Explanation:
 	*/ 
@@ -69,12 +70,6 @@ SET NOCOUNT ON
 		@OldAssigedGroupIDs = @AssigedGroupIDs
 	RETURN
 	
-	IF (ISNULL(@AssigedGroupIDs,'')	<>'')
-		INSERT INTO @Groups (GroupID)
-		SELECT value
-		FROM string_split (@AssigedGroupIDs,',')	
-		WHERE value <> ''
-		
 	UPDATE eaFunction WITH(UPDLOCK,ROWLOCK)
 	SET FuncName	= @FuncName,
 		ParentID = @ParentID,
@@ -94,6 +89,11 @@ SET NOCOUNT ON
 	--assgign policy
 	IF (ISNULL(@AssigedGroupIDs,'')	<>'')
 	BEGIN
+		INSERT INTO @Groups (GroupID)
+		SELECT value
+		FROM string_split (@AssigedGroupIDs,',')	
+		WHERE value <> ''
+
 		UPDATE gp WITH(UPDLOCK,ROWLOCK)
 		SET gp.Policy = CASE WHEN g.GroupID IS NOT NULL THEN 2 ELSE 0 END--host policy
 		FROM eaGroupPolicy gp 
@@ -105,6 +105,26 @@ SET NOCOUNT ON
 		FROM @Groups g
 			LEFT OUTER JOIN eaGroupPolicy gp WITH(NOLOCK) ON gp.groupID = g.GroupID  AND gp.FuncID = @FuncID
 		WHERE gp.FuncID IS NULL	
+
+		--UPDATE: permission of parent functions
+		IF @ParentID<>0
+		BEGIN
+			;WITH cte_ChildPolicy AS (
+				SELECT g.GroupID, f.ParentID, MAX(g.Policy) Max_ChildPolicy
+				FROM eaGroupPolicy g WITH (NOLOCK)
+				INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
+				INNER JOIN @Groups t ON t.GroupID=g.GroupID
+				WHERE f.ParentID=@ParentID
+				GROUP BY g.GroupID, f.ParentID
+			)
+			UPDATE gp 
+			SET gp.Policy = t.Max_ChildPolicy
+			FROM dbo.eaGroupPolicy gp WITH (ROWLOCK, UPDLOCK)
+			INNER JOIN cte_ChildPolicy t ON t.GroupID=gp.GroupID
+										AND t.ParentID=gp.FuncID
+			WHERE gp.Policy<>t.Max_ChildPolicy
+		END
+
 	END	
 		
 	

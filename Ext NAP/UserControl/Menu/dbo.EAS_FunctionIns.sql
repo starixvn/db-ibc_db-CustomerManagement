@@ -23,13 +23,18 @@ AS
 		Revisions:
 			- 20190426@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+			- 20240731@Tacy: Ext NAP - Grant permission of child functions and permission of parent functions [Redmine: #205415]
 
 		Parameter's Explanation:
 	*/ 
-SET NOCOUNT ON
+BEGIN
+	SET NOCOUNT ON
+	
 	DECLARE @startRun datetime  
 		,@endRun datetime  
 		,@duration int		
+	
+	DECLARE @Groups TABLE (GroupID INT)	
 	
 	SET @startRun=GETDATE()
 	
@@ -44,13 +49,6 @@ SET NOCOUNT ON
 				@ErrCode = 101
 		RETURN
 	END
-	
-	DECLARE @Groups TABLE (GroupID INT)	
-		IF (ISNULL(@AssigedGroupIDs,'')	<>'')
-			INSERT INTO @Groups (GroupID)
-			SELECT value
-			FROM string_split (@AssigedGroupIDs,',')
-			WHERE value <> ''
 	
 	INSERT INTO dbo.[eaFunction]
            ([FuncName]
@@ -94,10 +92,34 @@ SET NOCOUNT ON
 	--assgign policy
 	IF (ISNULL(@AssigedGroupIDs,'')	<>'')
 	BEGIN
+		INSERT INTO @Groups (GroupID)
+		SELECT value
+		FROM string_split (@AssigedGroupIDs,',')
+		WHERE value <> ''
+		
 		UPDATE gp WITH(UPDLOCK,ROWLOCK)
 		SET gp.Policy = 2 --host policy
 		FROM eaGroupPolicy gp 
 			INNER JOIN @Groups g ON gp.groupid = g.groupid AND gp.FuncID = @FuncID
+
+		--UPDATE: permission of parent functions
+		IF @ParentID<>0
+		BEGIN
+			;WITH cte_ChildPolicy AS (
+				SELECT g.GroupID, f.ParentID, MAX(g.Policy) Max_ChildPolicy
+				FROM eaGroupPolicy g WITH (NOLOCK)
+				INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
+				INNER JOIN @Groups t ON t.GroupID=g.GroupID
+				WHERE f.ParentID=@ParentID
+				GROUP BY g.GroupID, f.ParentID
+			)
+			UPDATE gp 
+			SET gp.Policy = t.Max_ChildPolicy
+			FROM dbo.eaGroupPolicy gp WITH (ROWLOCK, UPDLOCK)
+			INNER JOIN cte_ChildPolicy t ON t.GroupID=gp.GroupID
+										AND t.ParentID=gp.FuncID
+			WHERE gp.Policy<>t.Max_ChildPolicy
+		END
 	END		
 	
 	DECLARE @LogData NVARCHAR(500)
@@ -123,5 +145,5 @@ SET NOCOUNT ON
 		@TypeID = 2,
 		@actionid = 20100,
 		@duration = @duration
-
+END
 GO
