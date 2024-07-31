@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_AbnormalAgent_Unflag   
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
@@ -18,6 +18,7 @@ AS
 		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230710@Winfred: VR Auto Job - Update the Agent VR to follow UPLINE VR setting [Redmine: #185994]
+		- 20240530@Winfred: Auto adjusment for VR job - Update Lock status follow Upline Status [Redmine: #202848]
 		
 	Param's Explanation:  
 		@Type = 
@@ -36,8 +37,11 @@ BEGIN
 	DECLARE @endRun datetime  
 	DECLARE @duration int 
 	SET @startRun = getdate()
+	DECLARE @VRLockedStatus_Soccer_upline BIT = 0
+	DECLARE @VRLockedStatus_OS_upline BIT = 0
+	DECLARE @VRLockedStatus_Basketball_upline BIT = 0
 
-	DECLARE @AgentTbl TABLE ( CustID INT PRIMARY KEY, TotalWL DECIMAL (19, 4))
+	DECLARE @AgentTbl TABLE ( CustID INT PRIMARY KEY, TotalWL DECIMAL (19, 4), VRLockedStatus_Soccer_upline BIT, VRLockedStatus_OS_upline BIT, VRLockedStatus_Basketball_upline BIT)
 
 	DECLARE @DocHandler INT	
 
@@ -85,13 +89,23 @@ BEGIN
 		AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) <> 1
 
 	DELETE FROM @AgentTbl WHERE CustID  IN (SELECT custID FROM @temp)
+
+	UPDATE t
+	SET t.VRLockedStatus_Soccer_upline = CASE WHEN sc.Lock = 1 THEN 1 ELSE 0 END ,
+		t.VRLockedStatus_OS_upline = CASE WHEN os.Lock = 1 THEN 1 ELSE 0 END ,
+		t.VRLockedStatus_Basketball_upline = CASE WHEN bk.Lock = 1 THEN 1 ELSE 0 END
+	FROM @AgentTbl t
+		INNER JOIN custInfo c WITH(NOLOCK) ON c.CustID = t.CustID 
+		OUTER APPLY (SELECT 1 as Lock FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = c.mrecommend AND Type = 1) sc
+		OUTER APPLY (SELECT 1 as Lock FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = c.mrecommend AND Type = 2) os
+		OUTER APPLY (SELECT 1 as Lock FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = c.mrecommend AND Type = 3) bk
 	 --*/ END: Delete Agents list who have VR <> 0 
 
 	--get Agents and their dowlines need to update VR = Upline
-	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, mrecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
+	DECLARE @Update_CustTbl TABLE (CustID INT PRIMARY KEY, recommend INT, mrecommend INT, IsFinish BIT DEFAULT 0, IsLog BIT DEFAULT 0)
 
-	INSERT INTO @Update_CustTbl(CustID,mrecommend)
-	SELECT c.custid,c.mrecommend
+	INSERT INTO @Update_CustTbl(CustID, recommend,mrecommend)
+	SELECT c.custid, c.recommend,c.mrecommend
 	FROM @AgentTbl t
 		INNER JOIN custInfo c WITH(NOLOCK) ON c.recommend = t.CustID 
 	WHERE c.Enabled = 1
@@ -209,9 +223,12 @@ BEGIN
 		UPDATE TOP(1)  c
 		SET c.islog = 1,
 			@custID = c.CustID,
-			@TotalWL = a.TotalWL
+			@TotalWL = CASE WHEN a.CustID = c.CustID THEN a.TotalWL ELSE null END,
+			@VRLockedStatus_Soccer_upline = a.VRLockedStatus_Soccer_upline,
+			@VRLockedStatus_OS_upline = a.VRLockedStatus_OS_upline,
+			@VRLockedStatus_Basketball_upline = a.VRLockedStatus_Basketball_upline
 		FROM @Update_CustTbl c
-			LEFT JOIN @AgentTbl a ON c.CustID = a.CustID
+			LEFT JOIN @AgentTbl a ON c.recommend = a.CustID
 		WHERE c.Islog = 0
 
 		IF @@ROWCOUNT = 0 BREAK;
@@ -220,13 +237,15 @@ BEGIN
 		EXEC Acc_VRCustLockStatusUpd 
 			 @custid = @custid
 			,@UserID = 0
-			,@VRLockedStatus_Soccer = 0
-			,@VRLockedStatus_OS = 0
-			,@VRLockedStatus_Basketball = 0		
+			,@VRLockedStatus_Soccer = @VRLockedStatus_Soccer_upline
+			,@VRLockedStatus_OS = @VRLockedStatus_OS_upline
+			,@VRLockedStatus_Basketball = @VRLockedStatus_Basketball_upline		
 			,@IP = ''
 			,@UpdateBy = 'Agent profile check'
 
-		SELECT @NewLogData = '<R '
+		SELECT @NewLogData = '<R LockSoccerUpline="'+ coalesce(cast(@VRLockedStatus_Soccer_upline as varchar(1)),space(1)) + '" '
+							+' LockBasketballUpline="'+ coalesce(cast(@VRLockedStatus_Basketball_upline as varchar(1)),space(1)) + '" '
+							+' LockOSUpline="'+ coalesce(cast(@VRLockedStatus_OS_upline as varchar(1)),space(1)) + '" '
 							+ 'Type="'
 									+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 											ELSE space(1) 
