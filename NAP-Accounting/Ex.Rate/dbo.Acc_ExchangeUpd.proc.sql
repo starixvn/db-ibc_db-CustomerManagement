@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@exchangeid int,
@@ -42,6 +42,7 @@ AS
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
+		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -50,11 +51,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	If @ErrCode <> 0
-		RETURN
-	--end
+
 
 	DECLARE 
 		@LogData nvarchar(400),

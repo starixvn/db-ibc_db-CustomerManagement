@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ExchangeMultiBaseRateUpd]
 	@Exchange NVARCHAR(MAX),
 	@UserID INT,
@@ -17,6 +17,7 @@ AS
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 		- 20220914@Sophia: Update ActualRate of ExchangeDailyOanda [RedmineID: #175253] 
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
+		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
 
 	Param's Explanation:
 		. @Exhange 
@@ -27,10 +28,6 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	--Check permission for account site
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[ExchangeRate]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	IF @ErrCode <> 0
-		RETURN
 
 	DECLARE @XmlExchange XML = CONVERT(XML, @Exchange), @ExchangeId INT, @OldActualrate FLOAT, @NewActualrate FLOAT, @LogData NVARCHAR(MAX) = ''
 

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBTXN-bodb02" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBTXN-bodb02" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeRateIns]
 	@FromExchangeID int,
 	@ToExchangeID int,
@@ -17,17 +17,13 @@ AS
 	Revisions:
 		- 20100202@Jamie: Write log to bodb_CustomerLog 
 		- 20180808@Helen: Get Code from Production + DB05.DBPOLICY migration - move to DBTRANS for exchangeRate [Redmine:99462]
+		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
 
 */
 BEGIN
 		
 	SET NOCOUNT ON
 
-	--Check permission for account site: @phuc20080213
-	EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MinMaxExRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
 
 	IF exists(select 1 from Acc_ExchangeRate with(nolock) where FromExchangeID = @FromExchangeID and ToExchangeID = @ToExchangeID) 
 	BEGIN
@@ -121,6 +117,6 @@ BEGIN
 
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_ExchangeRateIns] TO [bodbAdminNet,wsv_nap]
+GRANT EXECUTE ON [dbo].[Acc_ExchangeRateIns] TO [wsv_nap]
 GO 
 GRANT VIEW DEFINITION ON [dbo].[Acc_ExchangeRateIns] TO [VNTeam]

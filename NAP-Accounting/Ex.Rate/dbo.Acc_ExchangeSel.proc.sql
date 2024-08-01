@@ -3,7 +3,8 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeSel]
 	@UserID INT = NULL,
 	@System varchar(50) = 'ACCOUNTING',
 	@IsTest BIT = 0 ,
-	@Mode	tinyint = 0	 -- 0: All, 1 : Credit, 2 :Deposit
+	@Mode	tinyint = 0,	 -- 0: All, 1 : Credit, 2 :Deposit
+	@DeniedList NVARCHAR(MAX)=NULL
 AS
 /*
 	DB: DBCUST/CUSTDB
@@ -26,8 +27,22 @@ BEGIN
 		DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
 		--get deny currency
-		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-		SELECT exchangeID, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+		IF ISNULL(@DeniedList,'')<>''
+		BEGIN
+			INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+			SELECT vl.[ID], vl.[Name], vl.[Opt]
+			FROM OPENJSON(@DeniedList) 
+					WITH (  [KeyName]	VARCHAR(30),
+							[Value]	NVARCHAR(MAX) AS JSON
+						) AS js
+			CROSS APPLY OPENJSON (js.[value])
+					WITH (  [ID]	INT,
+							[Name]	NVARCHAR(30),
+							[Opt]	TINYINT
+						) AS vl
+			WHERE js.[KeyName]='Exchange'
+		END
+
 
 		select 
 			ExchangeID, Currency,
