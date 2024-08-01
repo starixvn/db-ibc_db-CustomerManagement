@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.NAP_CWL_Update_Settings 
 	@ProductId INT, 
 	@GroupId   INT, 
@@ -21,6 +21,7 @@ AS
 				- 20220223@Johnson: Global setting by currency [#168583]
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
+				- 20240719@Tacy: Update setting by batch [redmine: #208200]
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -36,6 +37,42 @@ AS
 
     BEGIN
 	   SET NOCOUNT ON;
+
+	   DECLARE @tmpProductSettingDetail TABLE(
+				ProductID	TINYINT NOT NULL,
+				GroupID		SMALLINT NOT NULL,
+				ExchangeID	INT NOT NULL,
+				SiteID		INT NOT NULL,
+				LevelID		TINYINT NOT NULL,
+				MaxWinLimit MONEY NOT NULL,
+				MaxWinLimit_RM MONEY NULL,
+				PRIMARY KEY CLUSTERED 
+				(
+					ProductID ASC,
+					GroupID ASC,
+					ExchangeID ASC,
+					SiteID ASC,
+					LevelID ASC
+				)
+		)
+
+	   DECLARE @tmpProductSettingDetail_batch TABLE(
+				ProductID	TINYINT NOT NULL,
+				GroupID		SMALLINT NOT NULL,
+				ExchangeID	INT NOT NULL,
+				SiteID		INT NOT NULL,
+				LevelID		TINYINT NOT NULL,
+				MaxWinLimit MONEY NOT NULL,
+				MaxWinLimit_RM MONEY NULL,
+				PRIMARY KEY CLUSTERED 
+				(
+					ProductID ASC,
+					GroupID ASC,
+					ExchangeID ASC,
+					SiteID ASC,
+					LevelID ASC
+				)
+		)
 
 	   DECLARE 
 		   @LevelSettings TABLE
@@ -108,15 +145,16 @@ AS
 												AND currency <> 0
 												AND IsDeposit = @IsDeposit
 											)
-			 UPDATE psd
-			   SET 
-				  psd.MaxWinLimit_RM = l.Level, 
-				  psd.MaxWinlimit = CASE
-								    WHEN psd.ExchangeID = 20
-								    THEN l.Level
-								    ELSE ROUND(l.Level / e.actualrate, 2)
-								END
-			 FROM WinLimit_ProductSettingDetail AS psd WITH (ROWLOCK, UPDLOCK)
+			 
+			 INSERT INTO @tmpProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID, MaxWinLimit_RM, MaxWinLimit)
+			 SELECT psd.ProductID, psd.GroupID, psd.ExchangeID, psd.SiteID, psd.LevelID,
+					l.Level AS MaxWinLimit_RM, 
+					CASE
+						WHEN psd.ExchangeID = 20
+						THEN l.Level
+						ELSE ROUND(l.Level / e.actualrate, 2)
+					END AS MaxWinlimit
+			 FROM WinLimit_ProductSettingDetail AS psd WITH (NOLOCK)
 				 INNER JOIN @LevelSettings AS l ON psd.LevelID = l.LevelId
 				 INNER JOIN Exchange e WITH(NOLOCK) ON e.ExchangeId = psd.ExchangeID
 				 INNER JOIN  Site s WITH(NOLOCK) ON psd.SiteID = s.SiteID
@@ -132,7 +170,15 @@ AS
 												AND GroupID = @GroupId
 												AND IsDeposit = @IsDeposit
 												AND currency <> 0
-											);
+											)
+				--get Diff value only
+				  AND l.Level <> psd.MaxWinLimit_RM
+				  AND CASE
+						WHEN psd.ExchangeID = 20
+						THEN l.Level
+						ELSE ROUND(l.Level / e.actualrate, 2)
+					END <> psd.MaxWinlimit
+				;
 		  END;
 		  ELSE
 		  BEGIN
@@ -153,15 +199,15 @@ AS
 									INNER JOIN @tblCurrency c ON e.currency = c.Currency
 									)
 											
-			 UPDATE psd
-			   SET 
-				  psd.MaxWinLimit_RM = l.Level, 
-				  psd.MaxWinlimit = CASE
-								    WHEN psd.ExchangeID = 20
-								    THEN l.Level
-								    ELSE ROUND(l.Level / e.actualrate, 2)
-								END
-			 FROM WinLimit_ProductSettingDetail AS psd WITH (ROWLOCK, UPDLOCK)
+			 INSERT INTO @tmpProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID, MaxWinLimit_RM, MaxWinLimit)
+			 SELECT psd.ProductID, psd.GroupID, psd.ExchangeID, psd.SiteID, psd.LevelID,
+					l.Level AS MaxWinLimit_RM, 
+					CASE
+						WHEN psd.ExchangeID = 20
+						THEN l.Level
+						ELSE ROUND(l.Level / e.actualrate, 2)
+					END AS MaxWinlimit
+			 FROM WinLimit_ProductSettingDetail AS psd WITH (NOLOCK)
 				 INNER JOIN @LevelSettings AS l ON psd.LevelID = l.LevelId
 				 INNER JOIN Exchange e WITH(NOLOCK) ON e.ExchangeId = psd.ExchangeID
 				 INNER JOIN @tblCurrency c ON e.currency = c.Currency
@@ -173,8 +219,42 @@ AS
 				  AND ((s.isLicensee = 1 AND @IsDeposit = 1)
 						OR (s.isLicensee = 0 AND @IsDeposit = 0)
 						)
+				--get Diff value only
+				  AND l.Level <> psd.MaxWinLimit_RM
+				  AND CASE
+						WHEN psd.ExchangeID = 20
+						THEN l.Level
+						ELSE ROUND(l.Level / e.actualrate, 2)
+					END <> psd.MaxWinlimit
 		  END;
 
+		DECLARE @Batch INT = 2000;
+
+		WHILE (1=1)
+		BEGIN
+			DELETE FROM @tmpProductSettingDetail_batch
+
+			DELETE TOP (@Batch) T
+			OUTPUT deleted.ProductID, deleted.GroupID, deleted.ExchangeID, deleted.SiteID
+				, deleted.LevelID, deleted.MaxWinLimit_RM, deleted.MaxWinLimit
+				INTO @tmpProductSettingDetail_batch(ProductID, GroupID, ExchangeID, SiteID, LevelID, MaxWinLimit_RM, MaxWinLimit)
+			FROM @tmpProductSettingDetail T
+
+			IF @@ROWCOUNT=0
+				BREAK
+
+			UPDATE psd
+			SET psd.MaxWinLimit=t.MaxWinLimit
+				,psd.MaxWinLimit_RM=t.MaxWinLimit_RM
+			FROM WinLimit_ProductSettingDetail psd WITH (ROWLOCK, UPDLOCK)
+			INNER JOIN @tmpProductSettingDetail_batch t
+					ON t.ProductID=psd.ProductID
+					AND t.GroupID=psd.GroupID
+					AND t.ExchangeID=psd.ExchangeID
+					AND t.SiteID=psd.SiteID
+					AND t.LevelID=psd.LevelID
+
+			WAITFOR DELAY '00:00:0.200'
+		END
     END;
 GO
-

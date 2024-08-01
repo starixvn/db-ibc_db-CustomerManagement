@@ -1,2 +1,1 @@
-Nap-Risk&Control\WinLoss Monitored Player\Acc_WLMonitored_SMA_Adjust .sql
-Nap-Risk&Control\WinLoss Monitored Player\Acc_WLMonitored_Global_Adjust.sql
+Nap-Risk&Control\WinLimitControl\InitialSetting\NAP_CWL_Initialize_Settings.sql
