@@ -40,6 +40,7 @@ SET NOCOUNT ON
 		RETURN
 		
 	DECLARE @Groups TABLE (GroupID INT)	
+	DECLARE @AllGroups TABLE (GroupID INT)	
 
 	DECLARE @db_FuncName	VARCHAR(50),
 			@db_FuncDesc	VARCHAR(100),
@@ -109,11 +110,17 @@ SET NOCOUNT ON
 		--UPDATE: permission of parent functions
 		IF @ParentID<>0
 		BEGIN
+			INSERT INTO @AllGroups (GroupID)	
+			SELECT value
+			FROM string_split (@OldAssigedGroupIDs,',')	
+			WHERE value <> ''
+			UNION SELECT GroupID FROM @Groups
+
 			;WITH cte_ChildPolicy AS (
 				SELECT g.GroupID, f.ParentID, MAX(g.Policy) Max_ChildPolicy
 				FROM eaGroupPolicy g WITH (NOLOCK)
 				INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=g.FuncID
-				INNER JOIN @Groups t ON t.GroupID=g.GroupID
+				INNER JOIN @AllGroups t ON t.GroupID=g.GroupID
 				WHERE f.ParentID=@ParentID
 				GROUP BY g.GroupID, f.ParentID
 			)
@@ -124,7 +131,15 @@ SET NOCOUNT ON
 										AND t.ParentID=gp.FuncID
 			WHERE gp.Policy<>t.Max_ChildPolicy
 		END
-
+		ELSE --Function is Parent
+		BEGIN --un-assign child's policy
+			UPDATE gp WITH(UPDLOCK,ROWLOCK)
+			SET gp.Policy = 0
+			FROM eaGroupPolicy gp 
+				INNER JOIN eaFunction f WITH (NOLOCK) ON f.FuncID=gp.FuncID
+				LEFT JOIN @Groups g ON gp.groupid = g.groupid 
+			WHERE f.ParentID = @FuncID AND g.GroupID IS NULL
+		END
 	END	
 		
 	
