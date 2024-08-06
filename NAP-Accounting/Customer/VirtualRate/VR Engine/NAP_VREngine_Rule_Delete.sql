@@ -15,6 +15,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 
@@ -64,7 +65,11 @@ BEGIN
 		@DateOfWeekList_NotApply_Old VARCHAR(MAX),
 		@CurrencyIDList_Old VARCHAR(MAX),
 		@CurrencyIDList_NotApply_Old VARCHAR(MAX),
-		@AccumulatedBalance_Old BIT
+		@AccumulatedBalance_Old BIT,
+		@CustomerClassDetailList_Old VARCHAR(MAX) ,
+		@CustomerClassDetailList_NotApply_Old VARCHAR(MAX),
+		@CCSporttypeList_Old VARCHAR(MAX) ,
+		@CCSporttypeList_NotApply_Old VARCHAR(MAX)
 
 	SET @StartRun = GETDATE()
 
@@ -219,6 +224,36 @@ BEGIN
 									ORDER BY CurrencyID
 									FOR XML PATH ('')
 									),1,1,'')
+		,@CustomerClassDetailList_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CustomerClassDetailList_NotApply_Old = STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CustomerClassDetail <> 0
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CCSportTypeList_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CCSportTypeList_NotApply_Old = STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CCSporttype <> 0
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
+									FOR XML PATH ('')
+									),1,1,'')
 		,@AccumulatedBalance_Old = AccumulatedBalance
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
@@ -266,6 +301,8 @@ BEGIN
 																	WHEN @AdjustmentType_Old = 2 THEN @AdjustmentValue_Old * 100
 																END)
 															as varchar(10)),space(1)) + '" '
+						+ 'CCSporttype="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply_Old,'') = ''  THEN 'IN (' + @CCSportTypeList_Old + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply_Old + ')'  END ,space(1)) + '" ' 
+						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply_Old,'') = ''  THEN 'IN (' + @CustomerClassDetailList_Old + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'CurrencyID="'+ coalesce(CASE WHEN ISNULL(@CurrencyIDList_NotApply_Old,'') = ''  THEN 'IN (' + @CurrencyIDList_Old + ')'  ELSE 'NOT IN (' + @CurrencyIDList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance_Old as varchar(2)),space(1)) + '" '
 						+ 'Status="'+ coalesce(cast(@Status_Old as varchar(10)),space(1)) + '" '
