@@ -29,6 +29,8 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Update]
 	@Status TINYINT = 0, --0 PROD, 1: UAT, 2: Inactive
 	@AccumulatedBalance BIT = 0,
 	@CurrencyIDList VARCHAR(MAX) = NULL,
+	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
+	@CCSporttypeList VARCHAR(MAX) = NULL,
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -41,6 +43,7 @@ AS
 	Revisions:  
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
+	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -53,10 +56,12 @@ AS
 				<Row Criteria="CustomerClassList" Value="8,9,10" />	
 				<Row Criteria="DateOfWeekList" Value="" />	
 				<Row Criteria="CurrencyIDList" Value="" />
+				<Row Criteria="CCSporttypeList" Value="" />
+				<Row Criteria="CustomerClassDetailList" Value="" />
 			</Root>'	
 
 		@Enabled_Columns : Criteras is enabled on UI
-			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency'
+			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency,CCSporttype,CustomerClassDetail'
 			
 	Example: 
 	DECLARE @ErrorCode INT = 0 ,@ErrorMsg VARCHAR(MAX) = '' 
@@ -84,6 +89,9 @@ AS
 		@Status = 0,
 		@AccumulatedBalance = 0,
 		@CurrencyIDList = '0',
+		@CustomerClassList ='',
+		@CustomerClassDetailList ='',
+		@CCSporttypeList = '0',
 		@ErrorCode = @ErrorCode OUTPUT,
 		@ErrorMsg = @ErrorMsg OUTPUT
 	SELECT @ErrorCode,@ErrorMsg
@@ -98,7 +106,9 @@ BEGIN
 		@SiteIDList_NotApply VARCHAR(MAX),
 		@CustomerClassList_NotApply VARCHAR(MAX),
 		@DateOfWeekList_NotApply VARCHAR(MAX),
-		@CurrencyIDList_NotApply VARCHAR(MAX)
+		@CurrencyIDList_NotApply VARCHAR(MAX),
+		@CustomerClassDetailList_NotApply VARCHAR(MAX),
+		@CCSporttypeList_NotApply VARCHAR(MAX)
 
 	DECLARE @Priority_Old INT ,
 		@RuleName_Old VARCHAR(100) = '',
@@ -133,7 +143,12 @@ BEGIN
 		@DateOfWeekList_NotApply_Old VARCHAR(MAX),
 		@AccumulatedBalance_Old BIT,
 		@CurrencyIDList_Old VARCHAR(MAX),
-		@CurrencyIDList_NotApply_Old VARCHAR(MAX)
+		@CurrencyIDList_NotApply_Old VARCHAR(MAX),
+		@CustomerClassDetailList_Old VARCHAR(MAX),
+		@CustomerClassDetailList_NotApply_Old VARCHAR(MAX),
+		@CCSporttypeList_Old VARCHAR(MAX),
+		@CCSporttypeList_NotApply_Old VARCHAR(MAX)
+
 
 	SET @StartRun = GETDATE()
 
@@ -326,21 +341,53 @@ BEGIN
 									ORDER BY CurrencyID
 									FOR XML PATH ('')
 									),1,1,'')
+		,@CustomerClassDetailList_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CustomerClassDetailList_NotApply_Old = STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CustomerClassDetail)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CustomerClassDetail <> 0
+									GROUP BY CustomerClassDetail
+									ORDER BY CustomerClassDetail
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CCSportTypeList_Old =	STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
+									FOR XML PATH ('')
+									),1,1,'')
+		,@CCSportTypeList_NotApply_Old = STUFF(( SELECT ',' + CONVERT(VARCHAR,rd.CCSporttype)
+									FROM VRSettingRuleDetail_NotApply rd WITH(NOLOCK) 
+									WHERE rd.RuleID = r.ruleID
+										AND CCSporttype <> 0
+									GROUP BY CCSporttype
+									ORDER BY CCSporttype
+									FOR XML PATH ('')
+									),1,1,'')
 		,@AccumulatedBalance_Old = AccumulatedBalance
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
 
 	CREATE TABLE #ValidData
 	(
-		 Sporttype     SMALLINT, 
-		 Bettype       SMALLINT, 
-		 LeagueGroupID INT, 
-		 LeagueID      INT,
-		 SiteID        INT, 
-		 CustomerClass SMALLINT, 
-		 DateOfWeek    TINYINT,
-		 CurrencyID	   INT,
-		 IsApply	   BIT
+		 Sporttype		     SMALLINT, 
+		 Bettype		     SMALLINT, 
+		 LeagueGroupID	     INT, 
+		 LeagueID		     INT,
+		 SiteID			     INT, 
+		 CustomerClass	     SMALLINT, 
+		 DateOfWeek		     TINYINT,
+		 CurrencyID		     INT,
+		 IsApply		     BIT,
+		 CustomerClassDetail SMALLINT, 
+		 CCSporttype		 SMALLINT
 	)
 
 	SELECT @SporttypeList = ISNULL( @SporttypeList,'0')
@@ -351,6 +398,8 @@ BEGIN
 	SELECT @CustomerClassList = ISNULL( @CustomerClassList,'0')
 	SELECT @DateOfWeekList = ISNULL( @DateOfWeekList,'0')
 	SELECT @CurrencyIDList = ISNULL(@CurrencyIDList,'0')
+	SELECT @CustomerClassDetailList = ISNULL( @CustomerClassDetailList,'0')
+	SELECT @CCSporttypeList = ISNULL(@CCSporttypeList,'0')
 
 	IF @Criteria_NotApply <> ''
 	BEGIN
@@ -364,10 +413,12 @@ BEGIN
 			@SiteIDList_NotApply = CASE WHEN @SiteIDList = '0' AND Criteria = 'SiteIDList' THEN Value ELSE @SiteIDList_NotApply END,
 			@CustomerClassList_NotApply = CASE WHEN @CustomerClassList = '0' AND Criteria = 'CustomerClassList' THEN Value ELSE @CustomerClassList_NotApply END,
 			@DateOfWeekList_NotApply = CASE WHEN @DateOfWeekList = '0' AND Criteria = 'DateOfWeekList' THEN Value ELSE @DateOfWeekList_NotApply END,
-			@CurrencyIDList_NotApply = CASE WHEN @CurrencyIDList = '0' AND Criteria = 'CurrencyIDList' THEN Value ELSE @CurrencyIDList_NotApply END
+			@CurrencyIDList_NotApply = CASE WHEN @CurrencyIDList = '0' AND Criteria = 'CurrencyIDList' THEN Value ELSE @CurrencyIDList_NotApply END,
+			@CustomerClassDetailList_NotApply = CASE WHEN @CustomerClassDetailList = '0' AND Criteria = 'CustomerClassDetailList' THEN Value ELSE @CustomerClassDetailList_NotApply END,
+			@CCSporttypeList_NotApply = CASE WHEN @CCSporttypeList = '0' AND Criteria = 'CCSporttypeList' THEN Value ELSE @CCSporttypeList_NotApply END
 		FROM OPENXML (@DocHandler, '/Root/Row',1) 
 		WITH (
-			Criteria VARCHAR(20),
+			Criteria VARCHAR(40),
 			Value VARCHAR(8000)
 		) AS Data
 		WHERE ISNULL(Value,'') <> ''
@@ -392,6 +443,10 @@ BEGIN
 		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply, 
 		 @CurrencyIDList = @CurrencyIDList,
 		 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
+		 @CCSporttypeList = @CCSporttypeList, 
+		 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
+		 @CustomerClassDetailList = @CustomerClassDetailList, 
+		 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply, 
 		 @ErrorCode = @ErrorCode OUTPUT, 
 		 @ErrorMsg = @ErrorMsg OUTPUT
 
@@ -436,8 +491,10 @@ BEGIN
 		AND rd.LeagueID = t.LeagueID
 		AND rd.ruleID = @RuleID
 		AND rd.CurrencyID = t.CurrencyID
-	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID)
-						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID)
+		AND rd.CustomerClassDetail = t.CustomerClassDetail
+		AND rd.CCSporttype = t.CCSporttype
+	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CustomerClassDetail,CCSporttype)
+						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CustomerClassDetail,t.CCSporttype)
 	WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID
 		THEN DELETE; 
 	
@@ -453,8 +510,10 @@ BEGIN
 		AND rd.LeagueID = t.LeagueID
 		AND rd.ruleID = @RuleID
 		AND rd.CurrencyID = t.CurrencyID
-	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID)
-						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID)
+		AND rd.CustomerClassDetail = t.CustomerClassDetail
+		AND rd.CCSporttype = t.CCSporttype
+	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CustomerClassDetail,CCSporttype)
+						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CustomerClassDetail,t.CCSporttype)
 	WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID
 		THEN DELETE; 
 
@@ -493,6 +552,8 @@ BEGIN
 																END)
 															as varchar(10)),space(1)) + '" ' 
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance as varchar(2)),space(1)) + '" ' 
+						+ 'CCSportType="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply,'') = ''  THEN 'IN (' + @CCSportTypeList + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply + ')'  END ,space(1)) + '" ' 
+						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply,'') = ''  THEN 'IN (' + @CustomerClassDetailList + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />',
@@ -525,6 +586,8 @@ BEGIN
 																END)
 															as varchar(10)),space(1)) + '" '
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance_Old as varchar(2)),space(1)) + '" '
+						+ 'CCSportType="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply_Old,'') = ''  THEN 'IN (' + @CCSportTypeList_Old + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply_Old + ')'  END ,space(1)) + '" ' 
+						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply_Old,'') = ''  THEN 'IN (' + @CustomerClassDetailList_Old + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status_Old as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'
