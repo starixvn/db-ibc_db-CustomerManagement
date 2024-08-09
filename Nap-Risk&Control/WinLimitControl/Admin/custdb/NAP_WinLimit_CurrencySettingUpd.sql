@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingUpd] 
 	@xml	XML,
 	@UserID INT         = 0, 
@@ -18,7 +18,7 @@ Revisions:
 	- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 	- 20220623@Johnson: enhance flow update [redmine:#168458]
 	- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
-
+	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:	
    @xml = '<Root>
 				<r Product="1" Group="1" Currency="1" Site="1" Level="1" WinLimit="1000.0" PlaceBet="0" Transfer="0" Suspend="0"/>
@@ -136,7 +136,8 @@ BEGIN
 									   WHEN st.isDeposit = 1
 									   THEN 0
 									   ELSE @IsSuspendedAccount
-								    END
+								    END,
+				  s.RepUpdateTime = SYSDATETIME()											
 			 FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK, UPDLOCK)
 				 INNER JOIN dbo.Site st WITH(ROWLOCK) ON s.SiteID = st.siteid
 			 WHERE 

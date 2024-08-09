@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0" ></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Task_Winlimit_CustWinlostGameIns]
 	@xmlData XML
 AS
@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20220721@Johnson: Initial sp [Redmine: 175278]
 		- 20221201@Johnson: Put HOLDLOCK for merge statement [redmine: #181183]
+		- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 	Param's Explanation:
 		- @xmlData = '<Root>
 						<r id="1" d="2020-07-01" b="2001" wl="1000" />
@@ -41,8 +42,10 @@ BEGIN
 	USING #DataTmp as Source ON source.custid = target.custid
 								AND source.Bettype = target.Bettype
 								AND source.WinlostDate = target.WinlostDate
-	WHEN MATCHED AND source.Winlost <> target.Winlost THEN UPDATE SET target.Winlost = source.Winlost
-	WHEN NOT MATCHED THEN INSERT(custid,winlostdate,bettype,winlost) VALUES(source.custid,source.winlostdate,source.bettype,source.winlost);
+	WHEN MATCHED AND source.Winlost <> target.Winlost 
+			THEN UPDATE SET target.Winlost = source.Winlost,
+							target.RepUpdateTime = dbo.f_GetDateTime2()
+	WHEN NOT MATCHED THEN INSERT(custid,winlostdate,bettype,winlost,RepUpdateTime) VALUES(source.custid,source.winlostdate,source.bettype,source.winlost,dbo.f_GetDateTime2());
 	
 	DROP TABLE #DataTmp
 END	

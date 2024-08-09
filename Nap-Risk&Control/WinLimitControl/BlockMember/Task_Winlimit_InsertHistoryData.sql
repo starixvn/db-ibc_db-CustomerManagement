@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Task_Winlimit_InsertHistoryData @XmlData NVARCHAR(MAX)
 AS
 /*   
@@ -12,7 +12,7 @@ AS
 		- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 		- 20231004@Luke: Adjust filter condition [Redmine: #195051]
 		- 20240716@Winfred: Grand permission wsv_nap [Redmine: #202389]
-		
+		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 	Param's Explanation:
 		
 */
@@ -89,10 +89,11 @@ BEGIN
 	BEGIN
 
 		INSERT INTO dbo.WinLimit_CustGameMonitoring_History( CustId, ProductId,GroupID, MaxWinLimit, TotalWinAmt,WinAmt,LevelID,ActionID,ModifiedDate
-			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList, TransID)
+			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList, TransID, RepUpdateTime
+			)
 
 		SELECT CustId, ProductId,GroupID, MaxWinLimit, TotalWinAmt,t.WinAmt,LevelID,ActionID,ModifiedDate
-			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM, BettypeIDList AS BettypeIDList, TransID
+			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM, BettypeIDList AS BettypeIDList, TransID, dbo.f_GetDateTime2()
 		FROM #TempData t WITH (NOLOCK)
 			OUTER APPLY (SELECT TOP 1 h.WinAmt 
 						FROM WinLimit_CustGameMonitoring_History h WITH (NOLOCK)
@@ -111,10 +112,10 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO dbo.WinLimit_CustGameMonitoring_History( CustId, ProductId,GroupID, MaxWinLimit, TotalWinAmt,WinAmt,LevelID,ActionID,ModifiedDate
-			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList, TransID)
+			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList, TransID, RepUpdateTime)
 
 		SELECT CustId, ProductId,GroupID, MaxWinLimit, TotalWinAmt,WinAmt,LevelID,ActionID,ModifiedDate
-			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM, BettypeIDList AS BettypeIDList, TransID
+			, IsNotified, ModifiedBy, CreatedBy, WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM, BettypeIDList AS BettypeIDList, TransID, dbo.f_GetDateTime2()
 		FROM #TempData WITH (NOLOCK)
 		WHERE ActionID < 200
 	END

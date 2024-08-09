@@ -1,24 +1,5 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CustSettingDel]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CustSettingDel];
-GO
-USE [CustDB];
-GO
-
-/****** Object:  StoredProcedure [dbo].[NAP_WinLimit_CustSettingDel]    Script Date: 07/07/2015 16:09:41 ******/
-
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
-CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingDel] @CustID    INT,
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_WinLimit_CustSettingDel] @CustID    INT,
                                                      @ProductID TINYINT,
                                                      @GroupId   INT,
                                                      @UserID    INT         = 0,
@@ -35,12 +16,13 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:	
 
 Example: 	
 EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @UserId = 0, @IP = ''
 */
-
+BEGIN
      SET NOCOUNT ON;
      DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT;
      DECLARE @MaxWinLimitOld1 MONEY, @MaxWinLimitOld2 MONEY, @MaxWinLimitOld3 MONEY;
@@ -60,6 +42,8 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
      END;
      BEGIN -- Delete
          DELETE dbo.WinLimit_CustGameSetting
+		 OUTPUT DELETED.CustID, DELETED.ProductID, DELETED.GroupID, DELETED.LevelID, SYSDATETIME()
+		 INTO WinLimit_CustGameSetting_Del_Inhouse(CustID,ProductID,GroupID,LevelID,RepUpdateTime)
          WHERE CustID = @CustID
                AND ProductID = @ProductID
                AND GroupId = @GroupId;
@@ -100,8 +84,5 @@ EXEC [NAP_WinLimit_CustSettingDel] @CustId = 1, @ProductId = 1, @GroupId = 1, @U
          BEGIN CATCH
          END CATCH;
      END;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingDel] TO [bodbAdminNet,wsv_nap];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingDel] TO [vnteam];
+END
 GO

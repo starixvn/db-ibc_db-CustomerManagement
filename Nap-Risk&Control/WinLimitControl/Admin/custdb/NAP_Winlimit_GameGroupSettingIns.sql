@@ -1,6 +1,4 @@
-
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_Winlimit_GameGroupSettingIns] 
 	@ProductId  INT, 
 	@GroupId    INT, 
@@ -18,7 +16,7 @@ DB: DBCUST/CustDB
 
 Revisions:
     - 20220707@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
-
+	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:	    
  
 */
@@ -53,12 +51,14 @@ Parameters Explanation:
 		 (
 			ProductID, 
 			BetTypeID, 
-			GroupID
+			GroupID,
+			RepUpdateTime
 		 )
 			SELECT 
 				  @ProductId, 
 				  t.Bettype, 
-				  @GroupId
+				  @GroupId,
+				  SYSDATETIME()
 			FROM @Bettype t;
 
 
