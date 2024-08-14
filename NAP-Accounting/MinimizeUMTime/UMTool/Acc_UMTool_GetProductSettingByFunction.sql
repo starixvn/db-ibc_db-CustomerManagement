@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UMTool_GetProductSettingByFunction]
 AS
 BEGIN
@@ -14,6 +14,7 @@ Revisions:
 	- 20220929@Eddie:  Add 'My Watchlist' into option list [Redmine: #174852]
 	- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230720@Lewis: Add Funtion Type - Last Bets(New) [Redmine: #186142]
+	- 20240715@Lewis: Add new FunctionType - 'Member Betting Behavior' [Redmine: #207956]
 
 Param's Explanation:
 	FunctionType = : 
@@ -37,6 +38,7 @@ Param's Explanation:
 		215 : Group Bet List
 		216 : My Watchlist
 		217 : Last Bets(New)
+		218 : 'Member Betting Behavior'
 		
 Examples : 
 	EXEC [Acc_UMTool_GetProductSettingByFunction]
@@ -93,7 +95,9 @@ SET NOCOUNT ON
 	-- My Watchlist
 	SELECT 216,0,0,0 UNION ALL
 	-- Last Bets(New)
-	SELECT 217,0,0,0
+	SELECT 217,0,0,0 UNION ALL
+	-- Member Betting Behavior
+	SELECT 218,0,0,0
 
 	--Edit Setting (DCS)
 	INSERT INTO @ProductSportSettingType(FunctionType,ProductID,SportType,SettingType)

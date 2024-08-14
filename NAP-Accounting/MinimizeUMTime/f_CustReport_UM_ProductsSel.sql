@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" selecters="bodbAdminNet,wsv_nap" viewers="" isFunction="1"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" selecters="wsv_nap" viewers="" isFunction="1"></info>*/
 CREATE FUNCTION [dbo].[f_CustReport_UM_ProductsSel](@Functiontype	TINYINT)
 RETURNS TABLE
 AS
@@ -11,6 +11,7 @@ AS
 		- 20220929@Eddie: Add 'My Watchlist' into option list [Redmine: #174852]
 		- 20230103@Eddie: Change name 'My Watchlist' to 'Watchlist & Thresholds' [Redmine: #179067]
 		- 20230720@Lewis: Add new FunctionType - 'Last Bets (New)' [Redmine: #186142]
+		- 20240715@Lewis: Add new FunctionType - 'Member Betting Behavior' [Redmine: #207956]
 	Param's Explanation:
 		1   : 'Edit Setting'
 		2   : 'Add New Customer'
@@ -32,6 +33,7 @@ AS
 		215 : 'Group Bet List'
 		216 : 'Watchlist & Thresholds'
 		217 : 'Last Bets (New)'
+		218 : 'Member Betting Behavior'
 	Examples : 
 		SELECT * FROM [dbo].[f_CustReport_UM_ProductsSel](1)
 	*/
@@ -57,5 +59,6 @@ RETURN
 				WHEN @Functiontype = 215 THEN 'Group Bet List'
 				WHEN @Functiontype = 216 THEN 'Watchlist & Thresholds' 
 				WHEN @Functiontype = 217 THEN 'Last Bets (New)' 
+				WHEN @Functiontype = 218 THEN 'Member Betting Behavior' 
 	END [FunctionTypeName]
 GO

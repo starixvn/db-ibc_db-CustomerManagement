@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap, wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap, wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_CheckUM_ByReport]
 	@CustId 	INT = NULL
 	,@SiteID 	INT = 0
@@ -12,6 +12,7 @@ AS
 		- 20220816@Eddie: Initialize SPs [RedmineID: #174852]
 		- 20230208@Eddie: add parameter @SiteName and remove @MarketName [RedmineID: #182841]
 		- 20230720@Lewis: Add conditions [RedmineID: #186142]
+		- 20240715@Lewis: Remove Old SQL account [Redmine: #207956]
 	
 	Param's Explanation:
 

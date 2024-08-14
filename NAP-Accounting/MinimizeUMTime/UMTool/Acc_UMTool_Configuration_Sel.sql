@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Sel]
 	@FunctionType	TINYINT = 0
 	,@BeginTime		SMALLDATETIME = NULL
@@ -14,6 +14,7 @@ BEGIN
 		- 20220728@Eddie:  config UM for Reports/ Bet List [RedmineID: #174852]
 		- 20220817@Eddie:  change code by function 'f_CustReport_UM_ProductsSel' [RedmineID: #174852]
 		- 20230208@Eddie:  Remove SP: "Acc_UMTool_MarketSel" and Add parameters to using for filter conditions [RedmineID: #182841]
+		- 20240715@Lewis: Remove Old SQL account [Redmine: #207956]
 
 	Param's Explanation:   
 		
