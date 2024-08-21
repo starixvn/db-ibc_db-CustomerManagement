@@ -3,12 +3,7 @@
 CREATE PROCEDURE [dbo].[EAS_API_CheckSecretKeyUser]
 	@UserName			VARCHAR(50)		
   , @UserPassword		NVARCHAR(100)		
-  , @APISecretKey		VARCHAR(100)		
-  , @CustID				INT			  = 0	OUTPUT
-  , @SubAccID			INT			  = 0	OUTPUT
-  , @IsAuthenticated	BIT			  = 1	OUTPUT
-  , @Site				VARCHAR(10)	  = ''	OUTPUT
-  , @Currency			TINYINT		  = 0	OUTPUT
+  , @GroupNames			VARCHAR(MAX)
   , @ErrCode			INT			  = 0	OUTPUT
   , @ErrMsg				NVARCHAR(200) = ''  OUTPUT
 AS
@@ -21,43 +16,33 @@ AS
 		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
 		- 20230816@Tacy: EXT - Adjust API to support Live Casino for Headline [Redmine: #192805]
 		- 20240701@Tacy: EXT - API - Return Site & Currency [Redmine: #206055]
+		- 20240812@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+
 	Parameter's Explanation:  
 		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
-		@IsAuthenticated:
-			Pass : @IsAuthenticated = 1
-			Err  : @IsAuthenticated = 0
+		
 */
 BEGIN
 	SET NOCOUNT ON
 
-	SET @IsAuthenticated = 1
+	DECLARE @IsActive		BIT = 1
+		, @CustID			INT = 0	
+		, @SubAccID			INT	= 0	
 
-	DECLARE 
-		@GroupID		INT = 0
-	,	@GroupName		VARCHAR(50) = ''
-	,	@IsActive		BIT = 1
-	
 	CREATE TABLE #GroupName (GroupName VARCHAR(50))
 
-	-- Check SecrectKey
-	SELECT @GroupName = GroupName FROM [dbo].[f_API_CheckSecretKey] (@APISecretKey)
-	IF @GroupName IS NULL -- SecrectKey not found  
-	BEGIN
-		SELECT  @ErrMsg =  'Wrong SecretKey',  
-		@ErrCode = 101	,
-		@IsAuthenticated = 0
-			RETURN;
-	END
+	INSERT INTO #GroupName (GroupName)
+	SELECT value
+	FROM STRING_SPLIT(@GroupNames,',')
+	WHERE TRIM(value)<>''
 		
-	DECLARE @Srecommend		INT
+	DECLARE @Srecommend	INT
 
 	SET @Srecommend = 0
 
 	-- Check user and password of Main Cust
 	SELECT @Srecommend = ISNULL(c.srecommend,0)
 		, @CustID = C.custid
-		, @Site=c.site
-		, @Currency=c.currency
 	FROM dbo.customer c WITH (NOLOCK)    
 	WHERE (username = @UserName OR username2 = @UserName) 
 	AND c.userpwd = @UserPassword
@@ -74,8 +59,6 @@ BEGIN
 
 		-- Check user and password of Sub Cust
 		SELECT @Srecommend = ISNULL(c.srecommend,0)
-			, @Site=c.site
-			, @Currency=c.currency
 		FROM dbo.customer c WITH (NOLOCK)  
 		WHERE CustID = @CustID
 		AND c.roleid IN (2,3,4)	-- Just Check SMA	
@@ -83,9 +66,8 @@ BEGIN
 		IF @Srecommend = 0 -- user not found  
 		BEGIN 
 			SELECT  @ErrMsg =  'Wrong username or password.',    
-					@ErrCode = 103  ,  
-					@IsAuthenticated = 0  
-					RETURN;  
+					@ErrCode = 103
+			RETURN;  
 		END
 	END
 
@@ -109,31 +91,24 @@ BEGIN
 	IF @IsActive=0
 	BEGIN
 		SELECT  @ErrMsg =  'This account was closed.',    
-				@ErrCode = 104  ,  
-				@IsAuthenticated = 0  
-				RETURN;
+				@ErrCode = 104
+		RETURN;
 	END
-
-	SELECT @GroupID = GroupID 
-	FROM NAP_UserControl.dbo.eaGroup ea WITH (NOLOCK)  
-	WHERE GroupName = @GroupName
-
-	INSERT INTO #GroupName (GroupName)
-	SELECT @GroupName
-	UNION
-	SELECT GroupName FROM NAP_UserControl.dbo.eaGroup ea WITH (NOLOCK) WHERE ParentID = @GroupID
 
 	-- Check CustGroup
 	IF NOT EXISTS (SELECT 1
-	FROM Acc_CustGroup ac WITH (NOLOCK)  
-	WHERE ac.CustID = @Srecommend
-	AND ac.GroupName IN (SELECT GroupName From #GroupName))-- CustGroup not found  
+					FROM Acc_CustGroup ac WITH (NOLOCK)  
+					WHERE ac.CustID = @Srecommend
+					AND ac.GroupName IN (SELECT GroupName From #GroupName))-- CustGroup not found  
 	BEGIN
-	  SELECT  @ErrMsg =  'Wrong CustGroup',  
-		@ErrCode = 102 ,
-		@IsAuthenticated = 0
-			RETURN;
+		SELECT  @ErrMsg =  'Wrong CustGroup',  
+				@ErrCode = 102
+		RETURN;
 	END
 
+	SELECT custid, username, site, currency
+		, @SubAccID AS SubAccID
+	FROM Customer WITH (NOLOCK)
+	WHERE custid=@CustID
 END
 GO
