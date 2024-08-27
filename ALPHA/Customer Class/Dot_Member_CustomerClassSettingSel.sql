@@ -24,6 +24,7 @@ AS
 		- 20231101@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 		- 20240302@Elodie: Remove @CustId param [RedmineID: #201770] 
 		- 20240306@Winfred: [NAP CM] Customer Class - Tune the CM SP Integration [RedmineID: #201956] 
+		- 20240827@Winfred: [NAP CM] NAP CM - SP Dot_Member_CustomerClassSettingSel return data although rule is disabled [RedmineID: #209939] 
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSettingSel @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -91,7 +92,8 @@ BEGIN
 									AND cc.SportType = @SportType 
 									AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
 									AND cpm.IsTest = @IsTest 
-									AND cc.IsLive IN (2, @liveindicator))cc
+									AND cc.IsLive IN (2, @liveindicator)
+									AND cc.Enable = 1 )cc
 								
 		WHERE cm.Site IN ('All', @SiteNew, @Site)
 			AND cm.Currency IN (@Currency, 0)
@@ -145,7 +147,8 @@ BEGIN
 									AND cc.SportType = @SportType 
 									AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
 									AND cpm.IsTest = @IsTest 
-									AND cc.IsLive IN (2, @liveindicator))cc
+									AND cc.IsLive IN (2, @liveindicator)
+									AND cc.Enable = 1 )cc
 								
 		WHERE cm.Site IN ('All', @SiteNew, @Site)
 			AND cm.Currency IN (@Currency, 0)
