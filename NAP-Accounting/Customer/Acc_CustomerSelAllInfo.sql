@@ -1,6 +1,6 @@
 /*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelAllInfo]
-	@username VARCHAR(30),
+	@username VARCHAR(50),
 	@CheckCustId TINYINT = 0,
 	@UserId INT = 0,
 	@ErrCode INT = 0 OUTPUT,
@@ -125,7 +125,7 @@ Revisions:
 	- 20230421@Tacy: Remove columns and code used by Colossus Bets, GD product [RedmineID: #179132]
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS - Remove Old Structure Column DisableEsports [RedmineID: #193083]
 	- 20240417@Tacy: NAP - Incorporate Saba Coins [RedmineID: #204003]
-
+	- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
