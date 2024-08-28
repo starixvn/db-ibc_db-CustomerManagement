@@ -1,7 +1,7 @@
-/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB, DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02, DBCUST-CustDB, DBAGE-bodb02" executers="wsv_nap,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].[f_GetCustIDFromUsernameOrCustId]
 (
-	@Username varchar(30),
+	@Username VARCHAR(50),
 	@CheckCustId TINYINT = 0
 )
 RETURNS INT
@@ -18,6 +18,7 @@ Original:Accounting site
 		- 20200525@Malcolm: Add metadata [Redmine : #128128]
 		- 20210616@Winfred: NAP -Left Panel -Allow to search sub account nickname [Redmine: #155713]
 		- 20230421@Elodie: Deploy on DBAGE-bodb02 [Redmine: #169643]
+		- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
 */
 BEGIN
 	DECLARE @custID INT
