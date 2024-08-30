@@ -44,6 +44,7 @@ Revisions:
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR into OANDA service - [RedmineID: #197693]
 	- 20240401@Lewis: Support new currency SBC, DIA - [RedmineID: #202273] + [RedmineID: #203096]
 	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
+	- 20240828@Lewis: Support new currency BTS - [RedmineID: #209780]
 */
 /*
 declare @p3 nvarchar(200)
@@ -79,7 +80,7 @@ INSERT INTO @exchange (
 	)
 SELECT exchangeid
 	, MultipliedBy
-FROM exchange(NOLOCK)
+FROM exchange WITH (NOLOCK)
 WHERE Code = @Code
 
 IF @@ROWCOUNT > 0
@@ -99,7 +100,7 @@ BEGIN
 		--Check exist, if false then insert 
 		IF NOT EXISTS (
 				SELECT 1
-				FROM ExchangeDailyOanda(NOLOCK)
+				FROM ExchangeDailyOanda WITH (NOLOCK)
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
@@ -210,7 +211,7 @@ END
 -- Insert UUS
 IF NOT EXISTS (
 		SELECT 1
-		FROM ExchangeDailyOanda(NOLOCK)
+		FROM ExchangeDailyOanda WITH (NOLOCK)
 		WHERE ExchangeDate = @date
 			AND ExchangeId = 20
 			AND Code = 'UUS'
@@ -272,6 +273,71 @@ BEGIN
 		)
 END
 
+-- Insert BTS
+IF NOT EXISTS (
+		SELECT 1
+		FROM ExchangeDailyOanda WITH (NOLOCK)
+		WHERE ExchangeDate = @date
+			AND ExchangeId = 218
+			AND Code = 'BTS'
+		)
+BEGIN
+	INSERT INTO ExchangeDailyOanda (
+		ExchangeId
+		, ExchangeDate
+		, Code
+		, MYR
+		, USD
+		, EUR
+		, CNY
+		, IDR
+		, AUD
+		, CHF
+		, GBP
+		, SGD
+		, THB
+		, VND
+		, KRW
+		, JPY
+		, HKD
+		, TWD
+		, PHP
+		, BDT
+		, INR
+		, TRY
+		, NPR
+		, MXN
+		, NGN
+		)
+	VALUES (
+		218
+		, @date
+		, 'BTS'
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		, 2e-101
+		)
+END
+
 -- Insert YNG
 IF @Code = 'VND'
 BEGIN
@@ -282,7 +348,7 @@ BEGIN
 
 	IF NOT EXISTS (
 			SELECT 1
-			FROM ExchangeDailyOanda(NOLOCK)
+			FROM ExchangeDailyOanda WITH (NOLOCK)
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = 'YNG'
@@ -397,7 +463,7 @@ BEGIN
 
 	IF NOT EXISTS (
 			SELECT 1
-			FROM ExchangeDailyOanda(NOLOCK)
+			FROM ExchangeDailyOanda WITH (NOLOCK)
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = 'SBC'
@@ -512,7 +578,7 @@ BEGIN
 
 	IF NOT EXISTS (
 			SELECT 1
-			FROM ExchangeDailyOanda(NOLOCK)
+			FROM ExchangeDailyOanda WITH (NOLOCK)
 			WHERE ExchangeId = @ExchangeId
 				AND ExchangeDate = @date
 				AND Code = 'DIA'
