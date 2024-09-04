@@ -21,6 +21,7 @@ AS
 	- 20190826@Percy: Sort by bet type [RedmineID: #118699]
 	- 20240105@Johnson: Hide bettype SABA for site 777777 [redmine: #194591]
 	- 20230918@Eden: DCS Sportsbook Credit[redmine: #193083] 
+	- 20240717@Elodie: BaseBall AIO [Redmine: #207510]
 */
 
 BEGIN
@@ -45,7 +46,7 @@ BEGIN
 
 	;WITH CTE_bettype AS
 	(
-		SELECT DISTINCT ISNULL(g.GroupTypeId, bc.bettype) AS bettype, bc.CommGroup
+		SELECT DISTINCT CASE WHEN bc.bettype = 8827 THEN bc.bettype ELSE ISNULL(g.GroupTypeId, bc.bettype) END AS bettype, bc.CommGroup
 		FROM f_Bettype_CommGroup() bc
 			LEFT JOIN dbo.f_GroupBettype() g ON bc.bettype = g.Bettype AND g.Bettype <> g.GroupTypeId
 		WHERE
