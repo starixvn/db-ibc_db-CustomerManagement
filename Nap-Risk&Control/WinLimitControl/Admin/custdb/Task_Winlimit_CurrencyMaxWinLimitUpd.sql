@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCust-CustDB" executers="" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Task_Winlimit_CurrencyMaxWinLimitUpd] 
 (
 	@ProductId         INT = NULL,
