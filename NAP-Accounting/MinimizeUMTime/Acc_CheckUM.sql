@@ -21,7 +21,8 @@ Revisions:
 	- 20200629@Eden: Minimize UM Time - Lock Update Customer setting [Redmine: #136464]
 	- 20201005@Eden: Minimize UM Time Phase 2 [Redmine: #142115]
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
-	- 20240404@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960] 
+	- 20240404@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
+	- 20240521@Helios: Unify RNG Games - Use ProductSettingProfile Table instead of ProductSettingDetail table [Redmine: #204358] 
 
 Param's Explanation:
 	- @FunctionType : Affect funtion
@@ -142,7 +143,7 @@ SET NOCOUNT ON
 				AND nof.siteID IN (ft.SiteID, 0)
 				AND nof.Currency IN (ft.Currency, 0)
 		WHERE NOT EXISTS(	SELECT 1 
-							FROM ProductSettingDetail p WITH(NOLOCK) 
+							FROM ProductSettingProfile p WITH(NOLOCK) 
 							WHERE nof.SportType = p.SportType 
 								AND nof.BetType <> p.BetType 
 								AND p.SettingStatus = 0 
@@ -304,7 +305,7 @@ SET NOCOUNT ON
 			AND nof.siteID IN (ft.SiteID, 0)
 			AND nof.Currency IN (ft.Currency, 0)
 	WHERE NOT EXISTS(	SELECT 1 
-						FROM ProductSettingDetail p WITH(NOLOCK) 
+						FROM ProductSettingProfile p WITH(NOLOCK) 
 						WHERE nof.SportType = p.SportType 
 							AND nof.BetType <> p.BetType 
 							AND p.SettingStatus = 0 

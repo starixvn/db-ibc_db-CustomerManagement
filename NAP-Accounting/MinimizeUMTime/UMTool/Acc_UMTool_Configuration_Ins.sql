@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Ins]
 	 @UserId		INT = 0
 	,@IP			VARCHAR(15) = ''
@@ -27,6 +27,7 @@ BEGIN
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852]
 		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #182841]
+		- 20240521@Helios: Unify RNG Games - Use ProductSettingProfile Table instead of ProductSettingDetail table [Redmine: #204358]
 
 	Param's Explanation:   
 		
@@ -107,7 +108,7 @@ SET NOCOUNT ON
 	END
 
 	IF NOT EXISTS (	SELECT 1 
-					FROM ProductSettingDetail WITH(NOLOCK) 
+					FROM ProductSettingProfile WITH(NOLOCK) 
 					WHERE ProductID = @ProductID 
 						AND (SportType = @SportType OR @SportType = 0)
 						AND ( SettingType = @SettingType OR @SettingType = 0)

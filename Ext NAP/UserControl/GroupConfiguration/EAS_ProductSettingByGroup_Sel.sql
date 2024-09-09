@@ -18,6 +18,7 @@ AS
 		- 20230320@Eden: Migrate Number games to DCS structure [Redmine: #179711]
 		- 20230731@Eden: Simplify Live Casino Customer Setting - move from bodb02 to custdb [Redmine: #189389]
 		- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960] 
+		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -60,7 +61,7 @@ BEGIN
 	FROM @products p
 		INNER JOIN #ProductSettingDetail d WITH(NOLOCK)
 			ON p.ProductId = d.RealProductId
-	WHERE ISNULL(d.GroupID,0) <> 3
+	WHERE ISNULL(d.GroupID,0) NOT IN (2,3)
 
 	INSERT INTO #tmpProducts_Show(ProductId,Product_Type)
 	SELECT DISTINCT d.GroupID, 2 as Product_Type -- Product GroupID
@@ -69,7 +70,7 @@ BEGIN
 			ON mt.ProductID = d.ProductID 
 			AND mt.isLicensee = 0 AND mt.Site = 'ALL'
 		INNER JOIN @products p  ON p.ProductId = mt.RealProductId
-	WHERE d.GroupID IN (3)
+	WHERE d.GroupID IN (2,3)
 
 	SELECT ProductId,Product_Type
 	FROM #tmpProducts_Show 

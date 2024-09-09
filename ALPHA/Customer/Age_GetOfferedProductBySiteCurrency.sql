@@ -13,8 +13,9 @@ AS
 		- 20231031@Tacy: Create SP [Redmine: #196141] 
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 		- 20240111@Johnson: exclude saba casino from dummy products [redmine: #194591]
-		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960] 
+		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
 		- 20240701@Tacy: Grant permission on Ext NAP acc [Redmine: #206055] 
+		- 20240521@Helios: Unify RNG Games [Redmine: #204358]   
 	Examples:
 	
 */
@@ -95,14 +96,34 @@ BEGIN
 		AND p.ProductID NOT IN (11) -- AG Casino, offer for licensee only
 		AND p.Environment <= @SettingStatus
 
+	UNION ALL
+	-- Get Lottery (28) , Table Game (40) OF RNG Games (44)
+	SELECT p.ProductID, s.SportType, s.BetType, s.DummyProductID
+		,CASE WHEN dm.isHidden=0 THEN dbo.f_CustSetting_GetSportOfferStatusBySiteCurrency(@SiteID,@Currency,s.Sporttype,s.Bettype,@SettingStatus)
+				WHEN dm.isHidden=1 THEN dm.isHidden END AS isHidden
+	FROM f_CustSetting_Product (@SettingStatus) AS p 
+	OUTER APPLY (SELECT TOP 1 s.RealProductID, s.SportType, s.BetType,
+						CASE WHEN s.SportType IN (220, 222) THEN 44 END AS DummyProductID
+				 FROM SportNonOfferedSiteCurrency s WITH (NOLOCK)
+				 WHERE s.RealProductID=p.ProductID) s
+	LEFT JOIN #OfferProduct dm ON s.DummyProductID = dm.ProductID
+	WHERE Enabled=1
+		AND p.ProductID IN (28,40)
+		AND p.Environment <= @SettingStatus
+
+	-- Because Keno/Lottery migrate from RNG Keno and Show RNG Keno on UI. So refresh ProductId of RNG keno
+	UPDATE op SET ProductID = 8 FROM #OfferProduct op WHERE op.ProductID = 44
+
 	--Get data
 	SELECT DISTINCT p.ProductID, p.ProductName, isnull(r.isHidden,0) isHidden, p.EndOfSupportDate, p.OrderNo, p.[Type]
 	FROM (
+		-- Get RNG Keno (Keno/Lottery)
 		SELECT ProductID, isHidden FROM #OfferProduct
 		UNION 
-		SELECT 1, 0 --Sportbook always offer for all customer
-		--RNG Slot & Live CS
+		--Sportbook always offer for all customer
+		SELECT 1, 0 
 		UNION
+		-- Get Lottery (28) , Table Game (40) OF RNG Games (44) AND RNG Slot Live Casino
 		SELECT dm.RealProductId, dm.IsHidden FROM #SportBettypeDummy dm
 		) r
 		INNER JOIN #Products p WITH (NOLOCK) ON p.ProductID = r.ProductID
@@ -111,7 +132,7 @@ BEGIN
 			CASE WHEN dbo.f_Age_OfferedProductBySite(@Site)=1 THEN 0 ELSE 1 END isHidden, 
 			p.EndOfSupportDate, p.OrderNo, p.[Type]
 	FROM #Products p
-	WHERE ProductID=37
+	WHERE ProductID = 37
 	ORDER BY [Type], OrderNo
 
 	DROP TABLE #OfferProduct

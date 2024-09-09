@@ -15,6 +15,7 @@ Revisions:
 	- 20230323@Eden: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20230720@Lewis: Add Funtion Type - Last Bets(New) [Redmine: #186142]
 	- 20240715@Lewis: Add new FunctionType - 'Member Betting Behavior' [Redmine: #207956]
+	- 20240521@Helios: Unify RNG Games - Use ProductSettingProfile Table instead of ProductSettingDetail table [Redmine: #204358]
 
 Param's Explanation:
 	FunctionType = : 
@@ -102,19 +103,19 @@ SET NOCOUNT ON
 	--Edit Setting (DCS)
 	INSERT INTO @ProductSportSettingType(FunctionType,ProductID,SportType,SettingType)
 	SELECT DISTINCT 1 AS FunctionType, p.ProductID,p.SportType,p.SettingType
-	FROM ProductSettingDetail p WITH(NOLOCK)
+	FROM ProductSettingProfile p WITH(NOLOCK)
 	WHERE SettingStatus = 0
 	UNION ALL
 	SELECT DISTINCT 1 AS FunctionType, p.ProductID,p.SportType,0 AS SettingType
-	FROM ProductSettingDetail p WITH(NOLOCK)
+	FROM ProductSettingProfile p WITH(NOLOCK)
 	WHERE SettingStatus = 0
 	UNION ALL
 	SELECT DISTINCT 1 AS FunctionType, p.ProductID,0 AS SportType,p.SettingType
-	FROM ProductSettingDetail p WITH(NOLOCK)
+	FROM ProductSettingProfile p WITH(NOLOCK)
 	WHERE SettingStatus = 0
 	UNION ALL
 	SELECT DISTINCT 1 AS FunctionType, p.ProductID,0 AS SportType,0 AS SettingType
-	FROM ProductSettingDetail p WITH(NOLOCK)
+	FROM ProductSettingProfile p WITH(NOLOCK)
 	WHERE SettingStatus = 0
 
 	SELECT c.FunctionType,

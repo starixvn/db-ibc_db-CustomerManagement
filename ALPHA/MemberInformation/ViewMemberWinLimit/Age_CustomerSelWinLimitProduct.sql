@@ -27,6 +27,8 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231213@Tacy: Live Casino - Hide un-launched product from Member Win Loss Limit page [Redmine: #198317]
 		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
+		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
+
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
@@ -102,9 +104,11 @@ BEGIN
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
 	INNER JOIN	#SportBetype AS sbss
-			ON  CASE WHEN sbss.ProductId = 41 THEN 9911 ELSE sbss.SportType END = psp.Sporttype
-			AND	CASE WHEN sbss.BetType = 1021 THEN 1024 
-					 WHEN sbss.ProductId = 41 THEN 2400
+			ON  CASE WHEN sbss.ProductId = 41 THEN 9911 
+				   WHEN sbss.SportType IN (202,220,222) THEN 9919
+				ELSE sbss.SportType END = psp.Sporttype
+			AND	CASE WHEN sbss.ProductId = 41 THEN 2400
+				     WHEN sbss.BetType IN (1501,1021,4901) THEN 1501
 				ELSE sbss.BetType END = psp.Bettype
 	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
 			ON	p.ProductID = sbss.RealProductId

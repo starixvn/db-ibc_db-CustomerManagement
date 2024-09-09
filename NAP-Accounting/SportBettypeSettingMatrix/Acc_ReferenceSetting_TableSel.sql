@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE dbo.Acc_ReferenceSetting_TableSel
 		@TableType TINYINT = 0
 AS
@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+		- 20240520@Eden: Unify RNG Games [redmine: #204358]
 		
 	Param's Explanation:
 		- @TableType = 0 ~ All
@@ -36,6 +37,7 @@ BEGIN
 	--SELECT 'TableBetSetting' AS TableType, 'CustSetting'						AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustBetSetting3rd_Member'			AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustBetSetting_Member'				AS TableName,	0 AS OfferSite UNION ALL
+	SELECT 'TableBetSetting' AS TableType, 'BetSetting3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustStakeLevel_member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'Dep_CustBetSettingGameGroup_Member'	AS TableName,	1 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'Dep_CustStakeLevel_Member'			AS TableName,	1 AS OfferSite UNION ALL
