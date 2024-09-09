@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_MT_SportTypeSel]
  @SettingStatus TINYINT = 0
 AS 
@@ -23,7 +23,8 @@ AS
 		- 20221006@Winfred: Don't show setting of products which are not offered to a credit site [Redmine: #174744] 
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
-		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
+		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+		- 20240521@Helios: Unify RNG Games - Call SettingStatus Acc_SporttypeSel [Redmine: #204358]
 */
 	SET NOCOUNT ON
 
@@ -31,7 +32,7 @@ AS
 	DECLARE @tmp_Sports TABLE (SportType SMALLINT, SportName NVARCHAR(50))
 
 	INSERT INTO @tmp_Sports (SportType, SportName)
-	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1
+	EXEC DBACC.bodb02.dbo.Acc_SporttypeSel @Mode=1 , @SettingStatus = @SettingStatus
 
 	DELETE t 
 	FROM @tmp_Sports t

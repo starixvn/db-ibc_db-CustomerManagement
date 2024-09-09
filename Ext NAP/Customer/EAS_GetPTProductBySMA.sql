@@ -26,7 +26,8 @@ AS
 		- 20231113@Tacy: ExtNAP/Alpha - Return Offered product lists by site/currency [Redmine: #196141]
 		- 20231206@Tacy: offer Saba Promotion, exclude 789y, 777 [Redmine: #194981]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
-		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
+		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
+		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
 
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
@@ -68,6 +69,21 @@ BEGIN
 						AND s.SportType <> 242 --IBCBet Live Casino  
 				) s 
 	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0  
+	AND Environment <= @SettingStatus  
+
+	UNION ALL
+	--RNG Games
+	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID  
+	FROM f_CustSetting_Product (@SettingStatus) p   
+	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
+					, s.BetTypeRefPT AS BetType  
+					, s.ProductID AS DummyProductID  
+					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
+					WHERE s.ProductID = 44
+						AND s.RealProductId=p.ProductID  
+						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'
+				) s 
+	WHERE Enabled=1 AND GroupType=0  
 	AND Environment <= @SettingStatus  
 
 	INSERT INTO #SMATemp(CustID)
@@ -130,7 +146,7 @@ BEGIN
 
 	DELETE FROM #tblCustomer WHERE IsHidden = 1
 	
-	--Live & RNG Casino
+	--Live & RNG Casino , RNG Games
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,ValuePT,roleid)
 	SELECT ss.CustID, c.SportType, c.BetType, c.RealProductId, b.ValuePT, ss.roleid
 	FROM #SMATemp ss 
@@ -139,11 +155,11 @@ BEGIN
 		ON  c.ProductId = b.ProductID 
 		AND c.SportType = b.SportType 
 		AND c.Bettype	= b.BetType 
-	WHERE b.ProductID IN (41,53)
+	WHERE b.ProductID IN (41,53,44)
 	
 	SELECT a.CustID ,a.ValuePT,a.ProductID
 	FROM #tblCustomer a
-	WHERE a.ProductID NOT IN (41,53) -- Not show dummy product
+	WHERE a.ProductID NOT IN (41,53,44) -- Not show dummy product
 	UNION
 	SELECT s.CustID, 0 AS SuperPT, 37 AS ProductID
 	FROM #SMATemp s
