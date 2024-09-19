@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-bodb_Credit" executers="wsv_alp" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
 
 CREATE PROCEDURE DBA_InsertProfilePictureLibrary
 	@Image VARBINARY(MAX),
@@ -9,11 +9,12 @@ AS
 	Created by: ELodie
 	Date: 20191128
 	Task: Initial library profile picture [Redmine:#120726]
-	DB: DBCUST/bodb_Credit 	
+	DB: DBCUST/CustDB 	
 
 	Revisions:
 		- 20191003@Elodie: Force user to use profile picture [Redmine: #120726]
 		- 20230523@Helios: Migrate SP FROM DBAGE TO DBCUST [Redmine: #186502]
+		- 20240821@Helios: Scale Out DBCUST - Move CustProfilePicture and ProfilePicture to DBcust [Redmine: #209640]
 	Parameter's Explanation:
 
 
