@@ -1,10 +1,4 @@
-SET QUOTED_IDENTIFIER ON;
-GO
-SET ANSI_NULLS ON;
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_WinLimit_CustGameMonitoring_HistoryIns    Script Date: 4/5/2017 1:04:53 PM ******/
-
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] @CustId    INT,
                                                                    @ProductId INT,
                                                                    @GroupId   INT,
@@ -23,6 +17,7 @@ Revisions:
 	- 20170321@Jacob: Risk & Control - Phase 3A [#72604]. 
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332] 
 	- 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+	- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:	
 EXEC [NAP_WinLimit_CustGameMonitoring_HistoryIns] 
    @CustId = 662531, 
@@ -31,7 +26,7 @@ EXEC [NAP_WinLimit_CustGameMonitoring_HistoryIns]
    @ActionId =2,
    @UserId=1
 */
-
+BEGIN
      SET NOCOUNT ON;
      DECLARE @StartRun DATETIME, @EndRun DATETIME, @Duration INT, @LogSPData VARCHAR(300);
      SELECT @StartRun = GETDATE();
@@ -51,7 +46,8 @@ EXEC [NAP_WinLimit_CustGameMonitoring_HistoryIns]
       ModifiedDate,
       IsNotified,
       ModifiedBy,
-      CreatedBy
+      CreatedBy,
+	  RepUpdateTime
      )
             SELECT TOP 1 CustID,
                          ProductID,
@@ -68,19 +64,12 @@ EXEC [NAP_WinLimit_CustGameMonitoring_HistoryIns]
                          GETDATE(),
                          1,
                          @UserId,
-                         @UserId
+                         @UserId,
+						 SYSDATETIME()
             FROM dbo.WinLimit_CustGameMonitoring WITH (NOLOCK)
             WHERE CustId = @CustId
                   AND ProductId = @ProductId
                   AND GroupId = @GroupId
             ORDER BY ModifiedDate DESC;
-GO
-SET QUOTED_IDENTIFIER OFF;
-GO
-SET ANSI_NULLS ON;
-GO
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] TO [vnteam];
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameMonitoring_HistoryIns] TO [bodbAdminNet,wsv_nap];
+END
 GO

@@ -1,23 +1,4 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].NAP_WinLimit_CustSettingUpd')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].NAP_WinLimit_CustSettingUpd;
-GO
-USE [CustDB];
-GO
-
-/****** Object:  StoredProcedure [dbo].NAP_WinLimit_CustSettingUpd    Script Date: 07/07/2015 16:09:49 ******/
-
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].NAP_WinLimit_CustSettingUpd @CustID       INT,
                                                    @ProductID    INT,
                                                    @GroupId      INT,
@@ -37,6 +18,7 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:
 	
 	
@@ -56,11 +38,13 @@ Parameters Explanation:
      END;
      UPDATE dbo.WinLimit_CustGameSetting WITH(ROWLOCK, UPDLOCK)
 	   SET
-		   MaxWinLimit_RM = @MaxWinLimit
+		   MaxWinLimit_RM = @MaxWinLimit,
+		   RepUpdateTime = SYSDATETIME()
 	 WHERE CustID = @CustID
 		   AND ProductID = @ProductID
 		   AND Groupid = @GroupId
 		   AND LevelId = @LevelId;
+		   
 	 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd
 		  @IsCurrencySetting = 0,
 		  @CustID = @CustID,
@@ -101,8 +85,4 @@ Parameters Explanation:
          BEGIN CATCH
          END CATCH;
      END;
-GO
-GRANT EXECUTE ON [dbo].NAP_WinLimit_CustSettingUpd TO [bodbAdminNet,wsv_nap];
-GO
-GRANT VIEW DEFINITION ON [dbo].NAP_WinLimit_CustSettingUpd TO [vnteam];
 GO

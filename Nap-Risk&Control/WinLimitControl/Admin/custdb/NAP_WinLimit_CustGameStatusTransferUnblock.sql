@@ -1,20 +1,4 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CustGameStatusTransferUnblock]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock];
-GO
-USE [CustDB];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] @CustId    INT,
                                                                     @ProductId INT,
                                                                     @GroupId   INT,
@@ -32,6 +16,7 @@ DB: DBCust/CustDB
 Revisions:
 20170313@Jacob: Risk & Control - Phase 3A [#72604].
 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:	
 
     EXEC [NAP_WinLimit_CustGameStatusTransferUnblock]
@@ -52,7 +37,8 @@ Parameters Explanation:
            SET
                s.IsBlockedTransfer = 0,
                s.ActionId = 4,
-               s.ModifiedDate = GETDATE()
+               s.ModifiedDate = GETDATE(),
+			   s.RepUpdateTime = SYSDATETIME()
          FROM dbo.WinLimit_CustGameStatus s WITH (ROWLOCK, UPDLOCK)
               INNER JOIN dbo.Winlimit_GameGroupSetting g WITH (NOLOCK) ON s.BettypeID = g.BettypeID
                                                                           AND s.ProductID = g.ProductID
@@ -81,8 +67,4 @@ Parameters Explanation:
          BEGIN CATCH
          END CATCH;
      END;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] TO [bodbAdminNet,wsv_nap];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustGameStatusTransferUnblock] TO [vnteam];
 GO

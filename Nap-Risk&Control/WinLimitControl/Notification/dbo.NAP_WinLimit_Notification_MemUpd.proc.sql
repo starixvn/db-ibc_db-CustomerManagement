@@ -1,10 +1,4 @@
-SET QUOTED_IDENTIFIER ON;
-GO
-SET ANSI_NULLS ON;
-GO
-
-/****** Object:  Stored Procedure dbo.NAP_WinLimit_Notification_MemUpd    Script Date: 4/5/2017 1:04:54 PM ******/
-
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_WinLimit_Notification_MemUpd](@MemNotify XML,
                                                          @ErrCode   INT           = 0 OUTPUT,
                                                          @ErrMsg    NVARCHAR(200) = '' OUTPUT)
@@ -21,7 +15,7 @@ Revisions:
 	- 20160701@Robert: CWL - Phase 2 - Support RED and Yellow level - [Redmine: 57722]
 	- 20170329@Robert: CWL Phase 3A - email notification Enhancement - [Redmine: 72604]
 	- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
-	
+	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Param's Explanation:
 	• @ErrCode	:
 		= 0		: Transaction recorded successfully.
@@ -30,7 +24,7 @@ Param's Explanation:
 	• @MemNotify: XML.format(<notify><row custid = "1" productid="1" winlostdate="" bettypeid="" /></notify>)
 */
 
-     BEGIN
+BEGIN
          SET NOCOUNT ON;
          CREATE TABLE #tempMemNotify
          (custid      INT,
@@ -59,7 +53,8 @@ Param's Explanation:
              END;
          
          UPDATE g
-           SET  g.IsNotified = 1
+           SET  g.IsNotified = 1,
+				g.RepUpdateTime = dbo.f_GetDateTime2()
          FROM dbo.WinLimit_CustGameMonitoring_History g WITH (ROWLOCK, UPDLOCK)
               INNER JOIN WinLimit_GameGroupSetting GGS WITH (NOLOCK) ON g.GroupID = GGS.GroupID
               INNER JOIN #tempMemNotify t ON g.custid = t.custid
@@ -67,14 +62,5 @@ Param's Explanation:
                                              AND g.productid = t.productid
                                              AND g.GroupID = t.groupid
                                              AND g.LevelID = t.levelid
-     END;
-GO
-SET QUOTED_IDENTIFIER OFF;
-GO
-SET ANSI_NULLS ON;
-GO
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_Notification_MemUpd] TO [vnteam];
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_Notification_MemUpd] TO [bodbAdminNet,wsv_nap];
+END;
 GO

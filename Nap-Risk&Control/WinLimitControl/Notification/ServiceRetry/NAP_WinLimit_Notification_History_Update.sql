@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_WinLimit_Notification_History_Update]
 (
 	@LogID BIGINT,
@@ -14,7 +14,7 @@ AS
 	Revisions:
 		- 20210423@Helen: CWL - Support to add 2 columns IsNotified and LogID into CWL History Monitoring Page - [Redmine:153291]
 		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
-		
+		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]				 
 	Param's Explanation:
 	
 		
@@ -24,7 +24,8 @@ BEGIN
     SELECT @StartRun = GETDATE();
      
 	UPDATE w 
-		SET IsNotified = 0
+		SET IsNotified = 0,
+			RepUpdateTime = SYSDATETIME()
 	FROM WinLimit_CustGameMonitoring_History w WITH (ROWLOCK)
 	WHERE w.IsNotified = 1 AND w.LogID = @LogID AND w.ActionID < 200 
 	

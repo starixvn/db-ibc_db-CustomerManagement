@@ -19,7 +19,8 @@ AS
 		- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
 		- 20240516@Tacy: CWL - Change RNG slot/Casino from 18 to 53 (#198960) [RedmineID: #202670]
-
+		- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+		
 	Param's Explanation:
 	• @Mode: 1: deposit, 2: credit
 	• @currencies: list currency need to add for credit
@@ -62,8 +63,8 @@ BEGIN
 																		AND p.IsDeposit = 1
 		
 
-		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM)
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM
+		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM, RepUpdateTime)
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM, dbo.f_GetDateTime2()
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -72,7 +73,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0, 0,p.Level2 MaxWinLimit_RM
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0, 0,p.Level2 MaxWinLimit_RM, dbo.f_GetDateTime2()
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currency s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -81,7 +82,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, p.blockedTransferLvl3 IsBlockedTransfer
 				, 0 IsSuspendedAccount
 				,p.Level3 MaxWinLimit_RM
@@ -93,7 +94,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, 0 IsBlockedTransfer
 				, 0 IsSuspendedAccount
 				,p.Level101 MaxWinLimit_RM
@@ -105,7 +106,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, 0 IsBlockedTransfer
 				, 0 IsSuspendedAccount
 				,p.Level102 MaxWinLimit_RM
@@ -117,7 +118,8 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 
 		UPDATE PSD
-			SET MaxWinLimit = CASE WHEN psd.ExchangeID = 20 THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
+			SET MaxWinLimit = CASE WHEN psd.ExchangeID = 20 THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM dbo.WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK) 
 			INNER JOIN #site_currency s ON psd.productid = s.productid 
 											AND psd.groupID = s.groupID
@@ -180,8 +182,8 @@ BEGIN
 																		AND t.exchangeid = p.currency
 																		AND p.IsDeposit = 0
 
-		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM)
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM
+		INSERT INTO WinLimit_ProductSettingDetail (ProductID, GroupID, ExchangeID, SiteID, LevelID,  IsBlockedPlaceBet, IsBlockedTransfer, IsSuspendedAccount, MaxWinLimit_RM, RepUpdateTime)
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 1 a, 0 b, 0 c, 0,p.Level1 MaxWinLimit_RM, dbo.f_GetDateTime2()
 		FROM dbo.WinLimit_ProductGlobalSetting p WITH(NOLOCK)
 			INNER JOIN #site_currencyCredit s ON p.productid = s.productid 
 											AND p.groupID = s.groupID
@@ -191,7 +193,7 @@ BEGIN
 			
 		UNION ALL
 		
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 2, 0, 0, dbo.f_GetDateTime2()
 			,CASE WHEN pp.ProductId IS NOT NULL	-- RNG slot products
 					AND ss.SiteID IS NOT NULL AND s.ExchangeID<>20 -- not apply suspended account for UUS
 					THEN 1 ELSE 0 
@@ -207,7 +209,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END											
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 3, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, 0 IsBlockedTransfer
 				,CASE WHEN pp.ProductId IS NOT NULL	-- RNG slot products
 					AND ss.SiteID IS NOT NULL AND s.ExchangeID<>20 -- not apply suspended account for UUS
@@ -224,7 +226,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 101, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, 0 IsBlockedTransfer
 				, 0 IsSuspendedAccount
 				,p.Level101 MaxWinLimit_RM
@@ -236,7 +238,7 @@ BEGIN
 						WHEN s.isPrivate = 0 AND p.currency = 0 THEN 1 ELSE 0 END									
 		UNION ALL
 
-		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet
+		SELECT DISTINCT p.ProductID, p.GroupID, s.ExchangeID, s.SiteID, 102, 0 IsBlockedPlaceBet, dbo.f_GetDateTime2()
 				, 0 IsBlockedTransfer
 				, 0 IsSuspendedAccount
 				,p.Level102 MaxWinLimit_RM
@@ -249,7 +251,8 @@ BEGIN
 
 		--update exchange rate
 		UPDATE PSD
-			SET MaxWinLimit = CASE WHEN psd.ExchangeID = 20 THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
+			SET MaxWinLimit = CASE WHEN psd.ExchangeID = 20 THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM dbo.WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK) 	
 			INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
 		WHERE PSD.MaxWinLimit_RM IS NOT NULL 

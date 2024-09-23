@@ -22,6 +22,7 @@ AS
 				- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 				- 20240719@Tacy: Update setting by batch [redmine: #208200]
+				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -246,6 +247,7 @@ AS
 			UPDATE psd
 			SET psd.MaxWinLimit=t.MaxWinLimit
 				,psd.MaxWinLimit_RM=t.MaxWinLimit_RM
+				,psd.RepUpdateTime = dbo.f_GetDateTime2()
 			FROM WinLimit_ProductSettingDetail psd WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN @tmpProductSettingDetail_batch t
 					ON t.ProductID=psd.ProductID

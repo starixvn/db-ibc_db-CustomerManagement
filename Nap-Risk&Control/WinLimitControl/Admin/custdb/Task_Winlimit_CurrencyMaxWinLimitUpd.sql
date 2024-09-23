@@ -18,7 +18,7 @@ AS
 	Revisions:
 		- 20170515@Helen: NAP Risk & Control - CHANGE REQUEST [Redmine: 75332]
 		- 20240905@Elodie: New currency BTS [Redmine: 209780]
-		
+		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 	Param's Explanation:
 	
 	/* Debug
@@ -43,13 +43,15 @@ BEGIN
 	IF @IsCurrencySetting = - 1 -- run daily for both currency & cust setting
 	BEGIN
 		 UPDATE PSD
-			SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
+			SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()	
 		 FROM WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK)         
 			INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
 		WHERE PSD.MaxWinLimit_RM IS NOT NULL
 			
 		UPDATE PSD
-			SET MaxWinLimit = CASE WHEN CI.currency IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
+			SET MaxWinLimit = CASE WHEN CI.currency IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM WinLimit_CustGameSetting PSD WITH(ROWLOCK, UPDLOCK)         
 			INNER JOIN custInfo CI WITH (NOLOCK) ON CI.custid = PSD.CustID
 			INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = CI.currency
@@ -59,7 +61,8 @@ BEGIN
 	ELSE IF @IsCurrencySetting = 1 -- currency setting
 	BEGIN
 		UPDATE PSD
-			SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END
+			SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK)          
 			INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
 		WHERE PSD.MaxWinLimit_RM IS NOT NULL 
@@ -73,7 +76,8 @@ BEGIN
 	BEGIN
 	
 		UPDATE CGS 
-           SET  MaxWinLimit = CASE WHEN CI.currency IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(CGS.MaxWinLimit_RM / e.actualrate,2) END  
+           SET  MaxWinLimit = CASE WHEN CI.currency IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(CGS.MaxWinLimit_RM / e.actualrate,2) END,
+				RepUpdateTime = dbo.f_GetDateTime2()
         FROM dbo.WinLimit_CustGameSetting CGS WITH(ROWLOCK, UPDLOCK)         
 			INNER JOIN custInfo CI WITH (NOLOCK) ON CI.custid = CGS.CustID
 			INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = CI.currency

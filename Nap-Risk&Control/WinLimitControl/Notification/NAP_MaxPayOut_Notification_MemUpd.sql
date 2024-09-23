@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_MaxPayout_Notification_MemUpd]
 	@MemNotify	 XML
     , @ErrCode   INT           = 0 OUTPUT
@@ -12,6 +12,7 @@ Original:
 Revisions:
 	- 20230830@Luke: Implement Company Max Payout Notification [Redmine: #193288]
 					 Clone from NAP_WinLimit_Notification_MemUpd
+	- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]				 
 Param's Explanation:
 	• @ErrCode	:
 		= 0		: Transaction recorded successfully.
@@ -53,7 +54,8 @@ BEGIN
         END
          
     UPDATE g
-    SET  g.IsNotified = 1
+    SET  g.IsNotified = 1,
+		RepUpdateTime = dbo.f_GetDateTime2()
     FROM dbo.WinLimit_CustGameMonitoring_History g WITH (ROWLOCK)
 		INNER JOIN #tempMemNotify t ON g.logid = t.logid
 END

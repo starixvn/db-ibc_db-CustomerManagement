@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="vnteam" isFunction="0" isNested="0" ></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="" viewers="" isFunction="0" isNested="0" ></info>*/
 ALTER PROCEDURE [dbo].[Task_Winlimit_BlockedUser]
 AS
 /*   
@@ -22,6 +22,7 @@ AS
 		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
 		- 20231214@Tacy: Risk Control - Member was not suspended after reaching Yellow Level [Redmine: #198396]
 		- 20240307@Johnson: Enhance performance [redmine: #201794]
+		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 	Param's Explanation:
 	
 */
@@ -353,7 +354,7 @@ BEGIN
 		, MaxwinLimit = t.MaxWinLimit
 		, MaxWinLimitSetting = T.MaxWinLimitSetting
 		, BettypeIDList = t.BettypeIDList
-		
+		, RepUpdateTime = dbo.f_GetDateTime2()
 	OUTPUT inserted.CustId, inserted.ProductId,inserted.GroupID, inserted.MaxWinLimit, inserted.TotalWinAmt, inserted.WinAmt, inserted.LevelID  
 			, inserted.ModifiedDate, inserted.IsNotified,inserted.ModifiedBy, inserted.CreatedBy, inserted.WinlostDate,inserted.MaxWinLimitSetting ,inserted.TotalWinAmt_RM,inserted.BettypeIDList
 	INTO #HistoryData(CustId
@@ -396,6 +397,7 @@ BEGIN
 									ELSE  ROUND (e.actualrate * (g.TotalWinAmt -  g.WinAmt + t.TotalWinAmount),2)
 								END
 			, BettypeIDList = t.BettypeIDList
+			, RepUpdateTime = dbo.f_GetDateTime2()
 	OUTPUT inserted.CustId, inserted.ProductId,inserted.GroupID, inserted.MaxWinLimit, inserted.TotalWinAmt, inserted.WinAmt, inserted.LevelID  
 			, inserted.ModifiedDate, inserted.IsNotified,inserted.ModifiedBy, inserted.CreatedBy, inserted.WinlostDate, inserted.MaxWinLimitSetting,inserted.TotalWinAmt_RM 
 			, inserted.BettypeIDList 
@@ -485,7 +487,7 @@ BEGIN
 	
 	-- INSERT NEW
 	INSERT INTO dbo.WinLimit_CustGameMonitoring(CustId, ProductID, GroupID,LevelID, MaxWinLimit, WinAmt, TotalWinAmt
-		, IsNotified, CreatedBy,ModifiedDate ,WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList)
+		, IsNotified, CreatedBy,ModifiedDate ,WinlostDate,MaxWinLimitSetting,TotalWinAmt_RM,BettypeIDList, RepUpdateTime)
 	
 	OUTPUT inserted.CustId, inserted.ProductId,inserted.GroupID, inserted.MaxWinLimit, inserted.TotalWinAmt, inserted.WinAmt, inserted.LevelID  
 				, inserted.ModifiedDate, inserted.IsNotified,inserted.ModifiedBy, inserted.CreatedBy, inserted.WinlostDate,inserted.MaxWinLimitSetting,inserted.TotalWinAmt_RM,inserted.BettypeIDList  
@@ -507,6 +509,7 @@ BEGIN
 							
 	SELECT t.CustId, t.ProductId, t.GroupID,t.LevelID, t.MaxwinLimit, t.TotalWinAmount, t.TotalWinAmount, 0, NULL,@ReachedDate ,@WinlostDate,t.MaxWinLimitSetting
 			, CASE WHEN T.ExchangeID = 20 THEN t.TotalWinAmount ELSE ROUND(e.actualrate * t.TotalWinAmount,2) END AS TotalWinAmt_RM, t.BettypeIDList AS BettypeIDList
+			, dbo.f_GetDateTime2()
 	FROM #CustReachCWLList t WITH(NOLOCK)
 		LEFT JOIN dbo.WinLimit_CustGameMonitoring g WITH(NOLOCK) ON t.CustId = g.CustID AND t.WinlostDate = g.WinlostDate AND t.GroupID = g.GroupID
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID 
@@ -565,6 +568,7 @@ BEGIN
 								   WHEN PSD.IsBlockedTransfer = 1 THEN 3
 							   ELSE 0 END
 				, ModifiedDate = @ReachedDate
+				, RepUpdateTime = dbo.f_GetDateTime2()
 		FROM #CustReachCWLList T WITH(NOLOCK)
 			INNER JOIN #HistoryData H WITH(NOLOCK) ON T.CustId = H.CustId AND T.GroupID = H.GroupID AND T.ProductId = H.ProductId AND H.WinlostDate = T.WinlostDate
 			INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID AND T.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND psd.GroupID = T.GroupID			
@@ -572,7 +576,7 @@ BEGIN
 			INNER JOIN dbo.WinLimit_CustGameStatus CS WITH(NOLOCK) ON T.CustId = CS.CustId AND T.ProductId = CS.ProductID AND CS.BettypeID = GS.BetTypeID
 		
 		-- Insert New for Status	
-		INSERT INTO dbo.WinLimit_CustGameStatus (CustID,ProductID,BettypeID,IsBlockedPlaceBet,IsBlockedTransfer,ActionID,ModifiedDate)
+		INSERT INTO dbo.WinLimit_CustGameStatus (CustID,ProductID,BettypeID,IsBlockedPlaceBet,IsBlockedTransfer,ActionID,ModifiedDate,RepUpdateTime)
 		SELECT T.CustId,T.ProductId,GS.BettypeID
 				, PSD.IsBlockedPlaceBet
 				, PSD.IsBlockedTransfer
@@ -583,6 +587,7 @@ BEGIN
 						WHEN PSD.IsBlockedTransfer = 1 THEN 3
 						ELSE 0 END AS ActionID
 				,@ReachedDate AS ModifiedDate
+				,dbo.f_GetDateTime2()
 		FROM #CustReachCWLList T WITH(NOLOCK)
 			INNER JOIN #HistoryData H WITH(NOLOCK) ON T.CustId = H.CustId AND T.GroupID = H.GroupID AND T.ProductId = H.ProductId AND H.WinlostDate = T.WinlostDate
 			INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND T.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID

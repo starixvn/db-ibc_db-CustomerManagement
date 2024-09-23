@@ -1,20 +1,4 @@
-USE [CustDB];
-GO
-IF EXISTS
-(
-    SELECT *
-    FROM sys.objects
-    WHERE object_id = OBJECT_ID(N'[dbo].[NAP_WinLimit_CustSettingIns]')
-          AND type IN(N'P', N'PC')
-)
-    DROP PROCEDURE [dbo].[NAP_WinLimit_CustSettingIns];
-GO
-USE [CustDB];
-GO
-SET ANSI_NULLS ON;
-GO
-SET QUOTED_IDENTIFIER ON;
-GO
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingIns] @CustId      INT,
                                                      @ProductId   INT,
                                                      @GroupId     INT,
@@ -36,6 +20,7 @@ DB: DBCUST/CustDB
 Revisions:
 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 20170808@Jacob: Risk & Control - Phase 4 [#72870]
+20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 Parameters Explanation:
 
 Example:	
@@ -60,14 +45,16 @@ EXEC [NAP_WinLimit_CustSettingIns]
           ProductID,
           GroupId,
           LevelID,
-          MaxWinLimit_RM
+          MaxWinLimit_RM,
+		  RepUpdateTime 
          )
          VALUES
          (@CustId,
           @ProductId,
           @GroupId,
           @LevelId,
-          @MaxWinLimit
+          @MaxWinLimit,
+		  SYSDATETIME()
          );
          EXEC dbo.Task_Winlimit_CurrencyMaxWinLimitUpd
               @IsCurrencySetting = 0,
@@ -101,8 +88,4 @@ EXEC [NAP_WinLimit_CustSettingIns]
          BEGIN CATCH
          END CATCH;
      END;
-GO
-GRANT EXECUTE ON [dbo].[NAP_WinLimit_CustSettingIns] TO [bodbAdminNet,wsv_nap];
-GO
-GRANT VIEW DEFINITION ON [dbo].[NAP_WinLimit_CustSettingIns] TO [vnteam];
 GO

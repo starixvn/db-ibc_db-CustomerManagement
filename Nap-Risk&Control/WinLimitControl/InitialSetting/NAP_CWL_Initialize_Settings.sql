@@ -61,7 +61,7 @@ AS
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 				- 20231002@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 				- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
-
+				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -274,11 +274,13 @@ BEGIN
     INSERT INTO Winlimit_ProductSetting(ProductID
 							   , BettypeID
 							   , LevelID
-							   , SettingStatus)
+							   , SettingStatus
+							   , RepUpdateTime)
 		 SELECT b.ProductID
 			 , b.BetTypeID
 			 , l.LevelID
 			 , 0 AS SettingStatus
+			 , dbo.f_GetDateTime2()
 		 FROM
 		 (
 			SELECT ProductID
@@ -297,11 +299,13 @@ BEGIN
 
     INSERT INTO dbo.Winlimit_GameGroupSetting(ProductID
 								    , BetTypeID
-								    , GroupID)
+								    , GroupID
+									, RepUpdateTime)
 		 SELECT DISTINCT 
 			   t.ProductID
 			 , t.BetTypeID
 			 , t.GroupID
+			 , dbo.f_GetDateTime2()
 		 FROM #Temp AS t
 		 WHERE NOT EXISTS
 		 (
@@ -429,7 +433,8 @@ BEGIN
 									    , IsBlockedTransfer
 										, IsSuspendedAccount
 									    , MaxWinLimit_RM
-									    , MaxWinLimit)
+									    , MaxWinLimit
+										, RepUpdateTime)
 			 SELECT setting.ProductID
 				 , setting.GroupID
 				 , setting.exchangeid
@@ -444,6 +449,7 @@ BEGIN
 					  THEN setting.MaxWinLimit_RM
 					  ELSE ROUND(setting.MaxWinLimit_RM / setting.ActualRate, 2)
 				   END AS MaxWinLimit
+				 , dbo.f_GetDateTime2()  
 			 FROM
 			 (
 				SELECT ProductId
