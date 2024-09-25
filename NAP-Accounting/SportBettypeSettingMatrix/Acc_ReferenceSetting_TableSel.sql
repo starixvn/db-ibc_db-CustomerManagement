@@ -11,7 +11,8 @@ AS
 		- 20230301@Tacy: Create SP [Redmine: #184255]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240520@Eden: Unify RNG Games [redmine: #204358]
-		
+		- 20240925@Tacy: Non-sport Company Bet Limit Setting tables [redmine: #196256]
+
 	Param's Explanation:
 		- @TableType = 0 ~ All
 					   1 ~ TablePT
@@ -29,19 +30,20 @@ BEGIN
 	CREATE TABLE #RefTable (TableType VARCHAR(20), TableName VARCHAR(50), OfferSite TINYINT)
 
 	INSERT INTO #RefTable (TableType, TableName, OfferSite)
-	--SELECT 'TablePT' AS TableType, 'CustSetting'					AS TableName,	0 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'CustPTsetting3rd_Member'		AS TableName,	0 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TableComm' AS TableType, 'CustDiscount3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
-	--SELECT 'TableComm' AS TableType, 'CustSetting'							AS TableName,	0 AS OfferSite UNION ALL
+	SELECT 'TablePT' AS TableType, 'CustPTsetting3rd_Member'		AS TableName,	0 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TableComm' AS TableType, 'CustDiscount3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableComm' AS TableType, 'Dep_CustDiscountSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL
 	SELECT 'TableComm' AS TableType, 'Dep_CustDiscountGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL
 
-	--SELECT 'TableBetSetting' AS TableType, 'CustSetting'						AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustBetSetting3rd_Member'			AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustBetSetting_Member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'BetSetting3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'CustStakeLevel_member'				AS TableName,	0 AS OfferSite UNION ALL
+	SELECT 'TableBetSetting' AS TableType, 'ProductStakeLevelGroup'				AS TableName,	0 AS OfferSite UNION ALL
+
 	SELECT 'TableBetSetting' AS TableType, 'Dep_CustBetSettingGameGroup_Member'	AS TableName,	1 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'Dep_CustStakeLevel_Member'			AS TableName,	1 AS OfferSite UNION ALL
 	SELECT 'TableBetSetting' AS TableType, 'Dep_CustBetSetting_Member'			AS TableName,	1 AS OfferSite UNION ALL
+	SELECT 'TableBetSetting' AS TableType, 'Dep_ProductStakeLevelGroup'			AS TableName,	1 AS OfferSite UNION ALL
 
 	SELECT 'TableBettrans' AS TableType, 'bettransLC'		AS TableName,	2 AS OfferSite UNION ALL
 	SELECT 'TableBettrans' AS TableType, 'translog'			AS TableName,	2 AS OfferSite UNION ALL
