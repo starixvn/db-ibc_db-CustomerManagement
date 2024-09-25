@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_lap" viewers="vnteam" isFunction="0"></info>*/ 
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_lap" viewers="" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Add]
 	@Licensee NVARCHAR(100),
@@ -21,6 +21,7 @@ AS
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 		- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
+		- 20240731@Johnson: Apply In-house Replication for Deposit Customer Setting [redmine:#207025]
 */
 
 /*<Settings>
@@ -88,8 +89,9 @@ BEGIN
 
 	IF(EXISTS (SELECT TOP 1 1 FROM @HarcodeSetting))
 	BEGIN
-		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID,MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype)
-		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype FROM @HarcodeSetting
+		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID,MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype,RepUpdateTime)
+		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype, dbo.f_GetDateTime2()
+		FROM @HarcodeSetting
 	END
 	
 	IF(@@Error > 0)

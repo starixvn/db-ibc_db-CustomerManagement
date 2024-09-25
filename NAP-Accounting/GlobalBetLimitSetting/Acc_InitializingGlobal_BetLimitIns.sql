@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
@@ -23,7 +23,7 @@ AS
 		- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
 		- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
-
+		- 20240711@Johnson: Apply In-house Replication for Customer Setting [redmine:#207025]
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -396,8 +396,8 @@ BEGIN
 			-- Deposit Stake Level
 			SELECT @Dep_MaxSLID = MAX(StakeLevelID) FROM DEP_StakeLevel WITH(NOLOCK)
 		
-			INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,SiteID,StakeLevelID)
-			SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid)  
+			INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,SiteID,StakeLevelID,RepUpdateTime)
+			SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid), SYSDATETIME() 
 			FROM (
 				SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,0 AS GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake,SiteID
 				FROM #NewInputDateTbl a
@@ -434,17 +434,19 @@ BEGIN
 								g.MaxLabel = s.MaxLabel,
 								g.MinStake =  s.MinStake,
 								g.MaxStake =  s.MaxStake,
-								g.MaxGameStake = s.MaxGameStake
+								g.MaxGameStake = s.MaxGameStake,
+								g.RepUpdateTime = SYSDATETIME()
 
 			WHEN NOT MATCHED THEN 
-								INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
-								VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake,s.MaxGameStake)					
+								INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake,RepUpdateTime)
+								VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake,s.MaxGameStake,SYSDATETIME())					
 							
 								OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.MaxGameStake, GETDATE(), 1, 0
 									INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, MaxGameStake, UpdateTime, IsGroup, IsCredit)
 								;
 			UPDATE dst	
-			SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
+			SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet,
+				RepUpdateTime = SYSDATETIME()
 			OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.SiteID, GETDATE(), 0, 0
 				INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, SiteID, UpdateTime, IsGroup, IsCredit)
 			FROM Dep_StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
@@ -564,7 +566,8 @@ BEGIN
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
 				MaxPerMatch=CASE WHEN SettingType NOT IN (7,8,17,11) THEN NewMaxPerMatch ELSE MaxPerMatch END,
-				MaxPerBall=CASE WHEN t.SportType=161 THEN NewMaxPerBall ELSE MaxPerBall END
+				MaxPerBall=CASE WHEN t.SportType=161 THEN NewMaxPerBall ELSE MaxPerBall END,
+				RepUpdateTime = SYSDATETIME()
 			FROM Dep_ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 				INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
 											AND t.BetType=pbs.Bettype
@@ -579,10 +582,11 @@ BEGIN
 				AND IsCredit=0
 
 			--Insert new settings:
-			INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall])
+			INSERT INTO Dep_ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [MaxBet], [MaxPerMatch], [MaxPerBall], RepUpdateTime)
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, NewMaxBet, 
 					CASE WHEN SettingType NOT IN (7,8,17,11) THEN NewMaxPerMatch END NewMaxPerMatch, 
-					CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall
+					CASE WHEN SportType=161 THEN NewMaxPerBall END NewMaxPerBall,
+					SYSDATETIME()
 			FROM #NewInputDateTbl
 			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=0
 		END TRY

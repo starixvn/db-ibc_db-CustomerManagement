@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_lap" viewers="vnteam" isFunction="0"></info>*/ 
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_lap" viewers="" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE [dbo].[NAP_SpecialCustSetting_Upd]
 	@Licensee NVARCHAR(100),
@@ -20,6 +20,7 @@ AS
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 202202220@Elodie: Apply DCS for SB [RedmineID: #167898] 
 		- 20230224@Winfred: NAP LM - Enhance Bet Setting function for AM to use [redmine:#178105]
+		- 20240731@Johnson: Apply In-house Replication for Deposit Customer Setting [redmine:#207025]
 */
 
 /*<Settings>
@@ -152,13 +153,14 @@ BEGIN
 			,cbs.MaxPerMatch = hs.MaxPerMatch
 			,cbs.MaxPerBall = hs.MaxPerBall
 			,cbs.MaxPayoutPerMatch = hs.MaxPayoutPerMatch
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		FROM Dep_CustBetLimit_Special cbs WITH(ROWLOCK,UPDLOCK)
 		INNER JOIN @HarcodeSetting hs ON hs.sporttype = cbs.SportType and hs.Bettype=cbs.BetType
 		WHERE cbs.[site]=@Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR cbs.AgentID = @AgentID )
 
 		------------Insert Missing sporttype------------------------
-		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype)
-		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype 
+		INSERT INTO Dep_CustBetLimit_Special([Site], CurrencyID, SportType, AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype, RepUpdateTime)
+		SELECT @Licensee, @CurrencyID, SportType, @AgentID, MinBet, MaxBet, MaxPerMatch, MaxPerBall, MaxPayoutPerMatch, Bettype, dbo.f_GetDateTime2() 
 		FROM @HarcodeSetting
 		WHERE sporttype NOT IN (SELECT SportType FROM Dep_CustBetLimit_Special cbs WITH(NOLOCK) 
 								WHERE cbs.[Site] = @Licensee AND cbs.CurrencyID = @CurrencyID AND ( (@AgentID IS NULL AND AgentID IS NULL) OR AgentID = @AgentID )
