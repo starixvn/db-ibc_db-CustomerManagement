@@ -29,16 +29,16 @@ BEGIN
 
 	SET @ProductID = (SELECT TOP 1 (CASE WHEN ProductID = 18 THEN ProductID ELSE RealProductId END)
 	FROM SportBettypeSettingMatrix WITH(NOLOCK)
-	WHERE SportType = @SportType AND (RealProductId IN (3,8,28,40,63) OR ProductID = 18))
+	WHERE SportType = @SportType)-- AND (RealProductId IN (3,8,28,40,63) OR ProductID = 18))
 
-	IF @ProductID IS NULL
-	BEGIN
-		SELECT @CustomerClass AS ReturnedCustomerClass,
-			@siteID AS ReturnedSiteID, 
-			@SportType AS ReturnedSportType, 
-			NUll AS ReturnedMaxBet
-		RETURN
-	END
+	--IF @ProductID IS NULL
+	--BEGIN
+	--	SELECT @CustomerClass AS ReturnedCustomerClass,
+	--		@siteID AS ReturnedSiteID, 
+	--		@SportType AS ReturnedSportType, 
+	--		NUll AS ReturnedMaxBet
+	--	RETURN
+	--END
 
 	SET @AllProducts = CAST(@ProductID AS VARCHAR(10)) + ',' + @AllProducts
 
