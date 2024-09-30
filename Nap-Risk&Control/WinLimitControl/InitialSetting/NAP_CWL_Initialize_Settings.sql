@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
-ALTER PROC NAP_CWL_Initialize_Settings 
+ALTER PROC NAP_CWL_Initialize_Settings
 	@ProductID                              INT
    , @BetTypeID_Begin                        INT
    , @BetTypeID_End                          INT
@@ -63,6 +63,7 @@ AS
 				- 20231215@Tacy: CWL - Not apply suspended account for UUS [RedmineID: #195092]
 				- 20240917@Virgil: CWL - Get MaxWinLimit_RM for BTS (same as UUS) [RedmineID: #209780]
 				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+				- 20240927@Tacy: CWL - Check the existing GroupId / GroupName [RedmineID: #211460]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -81,6 +82,9 @@ AS
 
 BEGIN
     SET NOCOUNT ON;
+
+	DECLARE  @ErrMsg	NVARCHAR(1000)=NULL
+			,@ErrCode	INT=0
 
     CREATE TABLE #Currency_Deposit(
 	    siteid     INT
@@ -258,7 +262,39 @@ BEGIN
 
     DELETE FROM #Temp
     WHERE BetTypeID = 0;
+	
+	--Check: existing GroupID / GroupName
+	IF EXISTS (SELECT TOP 1 1 FROM #Temp t 
+				CROSS APPLY (SELECT TOP 1 GroupID, GroupName 
+							FROM Winlimit_Group g WITH (NOLOCK)
+							WHERE t.GroupID=g.GroupID
+							OR t.GroupName=g.GroupName) g
+				WHERE t.GroupID<>g.GroupID
+					OR t.GroupName<>g.GroupName)
+	BEGIN
+		SELECT @ErrCode=100
+				,@ErrMsg = 'The GroupID - ' + CAST(@GroupID AS varchar(5))
+						+ ' & GroupName - ' + @GroupName
+						+ ' is not correct. Please check again.'
+		GOTO SetErr
+	END
 
+	--Check: 1 Group ~ 1 Product (one - one)
+	IF EXISTS (SELECT TOP 1 1 FROM #Temp t 
+				CROSS APPLY (SELECT TOP 1 GroupID 
+							FROM Winlimit_GameGroupSetting g WITH (NOLOCK)
+							WHERE  t.ProductID <> g.ProductID
+							 AND t.GroupID = g.GroupID) g
+				)
+	BEGIN
+		SELECT @ErrCode=101
+				,@ErrMsg = 'The GroupID - ' + CAST(@GroupID AS varchar(5))
+						+ ' & GroupName - ' + @GroupName
+						+ ' has settings for another product. Please check again.'
+		GOTO SetErr
+	END
+
+	--Insert Settings
     INSERT INTO Winlimit_Group(GroupID
 					    , GroupName)
 		 SELECT DISTINCT 
@@ -548,5 +584,16 @@ BEGIN
     
     DROP TABLE #Temp;
     DROP TABLE #Currency_Deposit;
+	
+	IF @Errcode<>0
+	BEGIN
+		SetErr:
+			BEGIN
+				SELECT @ErrCode AS ErrCode
+					, @ErrMsg AS ErrMsg
+
+				RETURN
+			END
+	END
 END;
 GO
