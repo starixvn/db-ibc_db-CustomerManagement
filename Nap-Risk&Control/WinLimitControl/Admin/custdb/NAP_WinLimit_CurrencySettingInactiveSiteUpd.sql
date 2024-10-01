@@ -1,5 +1,5 @@
 
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingInactiveSiteUpd] 
 	@ProductId         INT, 
@@ -20,6 +20,7 @@ DB: DBCUST/CustDB
 
 Revisions:
     - 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
+	- 20240927@Tacy: New currency BTS [Redmine: 209780]
 
 Parameters Explanation:	
    @ProductId: Product ID.
@@ -43,7 +44,7 @@ Parameters Explanation:
 								ELSE @IsBlockedTransfer
 							 END, 
 		    s.MaxWinLimit = CASE
-						    WHEN s.ExchangeID = 20
+						    WHEN s.ExchangeID IN (20, 218)
 						    THEN @MaxWinLimit
 						    ELSE ROUND(@MaxWinLimit / e.actualrate, 2)
 						END

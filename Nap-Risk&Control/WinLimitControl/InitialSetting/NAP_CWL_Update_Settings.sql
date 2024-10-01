@@ -23,6 +23,7 @@ AS
 				- 20230914@Johnson: Add IsDeposit to separate credit & deposit global setting [redmine:#193708]
 				- 20240719@Tacy: Update setting by batch [redmine: #208200]
 				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+				- 20240927@Tacy: New currency BTS [Redmine: 209780]
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -151,7 +152,7 @@ AS
 			 SELECT psd.ProductID, psd.GroupID, psd.ExchangeID, psd.SiteID, psd.LevelID,
 					l.Level AS MaxWinLimit_RM, 
 					CASE
-						WHEN psd.ExchangeID = 20
+						WHEN psd.ExchangeID IN (20, 218)
 						THEN l.Level
 						ELSE ROUND(l.Level / e.actualrate, 2)
 					END AS MaxWinlimit
@@ -175,7 +176,7 @@ AS
 				--get Diff value only
 				  AND l.Level <> psd.MaxWinLimit_RM
 				  AND CASE
-						WHEN psd.ExchangeID = 20
+						WHEN psd.ExchangeID IN (20, 218)
 						THEN l.Level
 						ELSE ROUND(l.Level / e.actualrate, 2)
 					END <> psd.MaxWinlimit
@@ -204,7 +205,7 @@ AS
 			 SELECT psd.ProductID, psd.GroupID, psd.ExchangeID, psd.SiteID, psd.LevelID,
 					l.Level AS MaxWinLimit_RM, 
 					CASE
-						WHEN psd.ExchangeID = 20
+						WHEN psd.ExchangeID IN (20, 218)
 						THEN l.Level
 						ELSE ROUND(l.Level / e.actualrate, 2)
 					END AS MaxWinlimit
@@ -223,7 +224,7 @@ AS
 				--get Diff value only
 				  AND l.Level <> psd.MaxWinLimit_RM
 				  AND CASE
-						WHEN psd.ExchangeID = 20
+						WHEN psd.ExchangeID IN (20, 218)
 						THEN l.Level
 						ELSE ROUND(l.Level / e.actualrate, 2)
 					END <> psd.MaxWinlimit
