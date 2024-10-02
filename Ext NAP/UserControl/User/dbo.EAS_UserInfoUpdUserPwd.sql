@@ -17,6 +17,7 @@ AS
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
 			- 20130513@Lukas: fix bug - admin cannot reset his password because of checking permission
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+			- 20240812@Tacy: Remove check permission on function [redmineID: #208402]
 
 		Parameter's Explanation:
 	*/
@@ -27,13 +28,6 @@ SET NOCOUNT ON
 		,@duration int		
 	
 	SET @startRun=GETDATE()
-	
-	IF @UserID <> @CustID
-	BEGIN
-		EXEC NAP_UserControl.dbo.EAS_UserCheckPermission @UserID = @userID ,@FuncKey = 'ManageUser', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT	
-		IF @ErrCode > 0
-			RETURN
-	END
 
 	DECLARE @db_userpwd NVARCHAR(50)
 	

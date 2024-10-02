@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelBySubGroup]
 	@username  VARCHAR(50) = '',
 	@GroupName VARCHAR(50),
     @SubGroup	VARCHAR(MAX),
+    @ListGroups	VARCHAR(MAX),	-- All main Ext-Groups
 	@PageIndex	INT = 1 OUTPUT,
 	@PageSize	INT = 500,
 	@TotalRows	INT = 0 OUTPUT
@@ -18,7 +19,7 @@ AS
 		- 20201222@Johnson: Exclude disabled accounts [redmine:#147578]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
-
+		- 20240812@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Parameter's explanation:
 		- @GroupName: main group
 		- @SubGroup: list of sub groups of main group need to get super list to assign
@@ -31,14 +32,21 @@ BEGIN
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
 	
-	DECLARE @tmpGroup TABLE (GroupName VARCHAR(50))
+	DECLARE @tmpSubGroup TABLE (GroupName VARCHAR(50))
+	DECLARE @tmpMainGroup TABLE (GroupName VARCHAR(50))
+
 	CREATE TABLE #SuperList (custid INT, username VARCHAR(50), closed BIT, suspended BIT, Enabled BIT, SubGroup VARCHAR(1000), rn INT)
 	
-	INSERT INTO @tmpGroup (GroupName)
+	INSERT INTO @tmpSubGroup (GroupName)
 	SELECT value
 	FROM STRING_SPLIT (@SubGroup,',')
 	WHERE value <> ''
 	
+	INSERT INTO @tmpMainGroup (GroupName)
+	SELECT value
+	FROM STRING_SPLIT (@ListGroups,',')
+	WHERE value <> ''
+
 	INSERT INTO #SuperList(custid,username,closed,suspended,enabled)
 	SELECT ci.custid, 
 		ci.username, 
@@ -62,14 +70,13 @@ BEGIN
 	;WITH tmp AS(
 		SELECT custid,
 			STUFF((
-			SELECT ',' + GroupName 
-			FROM Acc_CustGroup WITH(NOLOCK)
-			WHERE CustID = t.custid
-				AND GroupName IN (SELECT GroupName 
-								FROM NAP_UserControl.dbo.eaGroup WITH(NOLOCK) 
-								WHERE ParentID > 0
-								)
-				FOR XML PATH('')),1,1,'') as SubGroup	
+					SELECT ',' + GroupName 
+					FROM Acc_CustGroup WITH(NOLOCK)
+					WHERE CustID = t.custid
+						AND GroupName NOT IN (SELECT GroupName FROM @tmpMainGroup)
+					FOR XML PATH('')
+				)
+				,1,1,'') as SubGroup	
 		FROM #SuperList t			
 	)
 	UPDATE t2
@@ -100,6 +107,6 @@ BEGIN
 	SELECT s.custid, GroupName
 	FROM #SuperList s
 		INNER JOIN Acc_CustGroup c WITH(NOLOCK) ON s.custid = c.custid
-	WHERE c.GroupName IN (SELECT GroupName FROM @tmpGroup)
+	WHERE c.GroupName IN (SELECT GroupName FROM @tmpSubGroup)
 		AND rn BETWEEN @RowStart AND @RowEnd
 END	

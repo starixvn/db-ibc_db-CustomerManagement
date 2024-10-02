@@ -1,4 +1,4 @@
-/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_xnap,wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GroupInfoSelAllGroup]
 	@Mode INT = 0
 AS
@@ -10,6 +10,7 @@ AS
 		Revisions:
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20200814@Johnson: add @mode to get main group only [redmine:#136501]
+			- 20240809@Tacy: Grant permission on NAP acc [Redmine: #208402] 
 		Parameter's Explanation:
 			@Mode = 0: get all groups
 					1: get main groups
