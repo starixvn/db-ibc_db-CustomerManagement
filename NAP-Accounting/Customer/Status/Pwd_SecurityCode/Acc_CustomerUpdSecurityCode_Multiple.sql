@@ -5,7 +5,6 @@
 	@isForcedChangeSecurityCode BIT = 1,
 	@language	VARCHAR(2) = 'E' ,
 	@IP			VARCHAR(20) = '',
-	@system		VARCHAR(50) = '',
 	@ErrMsg		NVARCHAR(MAX) = '' OUTPUT
  AS
 /*
@@ -16,6 +15,7 @@
 
 	Revisions: 
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Parameter's Explanation:
 		@CustIDList = <Root>
@@ -44,24 +44,7 @@ BEGIN
 	DECLARE @TempErrCode INT
 
 	SET @startRun = GETDATE()
-
-	IF @system = 'EXTERNAL'
-	BEGIN
-		--- no check permssion in case of calling from external accounting
-		SET @ErrMsg = ''
-	END
-	ELSE
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@TempErrCode output,@ErrMsg=@TempErrMsg output
-		If @TempErrCode <> 0
-			SET @ErrMsg = '<ROOT>'
-						+ '<Error CustID="' + CAST(@UserID AS VARCHAR(30))
-						+ '" ErrCode="' + CAST(ISNULL(@TempErrCode,'0') AS VARCHAR(5))
-						+ '" ErrMsg="' + ISNULL(@TempErrMsg,'') + '" />'
-						+ '</ROOT>'
-			RETURN
-	END
-
+	
 	SET @ErrMsg = '<ROOT>';
 	
 	DECLARE @tblCust TABLE (

@@ -1,7 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerInfo_MultiCheck]  
 	@GroupName	VARCHAR(50),
-	@UserID		INT,
     @SourceUser	VARCHAR(30)='', 
 	@DestUsers	VARCHAR(MAX),  
 	@IsCopy		BIT=NULL, 
@@ -16,7 +15,8 @@ AS
 	Revisions:  
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [Redmine: #186773]
 		- 20240312@Tacy: Ext NAP - Support Multiple Update Info for Super [Redmine: #201432]
-	
+		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+
 	Param's Explanation:
 		* @IsCopy : use for Edit Super Bet Setting function
 			= 1 ~ Tab Copy Bet Setting
@@ -28,8 +28,6 @@ AS
 */
 BEGIN
     SET NOCOUNT ON
-
-	DECLARE @GroupID INT
 
 	CREATE TABLE #DestUsers (CustID INT NULL, UserName VARCHAR(30))
 
@@ -50,25 +48,6 @@ BEGIN
 	FROM string_split(@DestUsers, ',') 
 	LEFT JOIN Customer c WITH (NOLOCK) ON c.username=TRIM(value)
 	WHERE TRIM(value)<>''
-
-	SELECT @GroupID=GroupID
-	FROM DBPOL.NAP_UserControl.dbo.eaUserInfo ui WITH (NOLOCK)
-	WHERE ui.UserID=@UserID
-
-	--check: headline (admin) belongs to current Group?
-	IF @GroupID NOT IN (1,2)	--IT/Finance 
-	AND
-		(NOT EXISTS (SELECT 1 FROM DBPOL.NAP_UserControl.dbo.eaUserInfo ui WITH (NOLOCK)
-					INNER JOIN DBPOL.NAP_UserControl.dbo.eagroup g WITH (NOLOCK) ON g.GroupID=ui.GroupID
-					WHERE ui.UserID=@UserID AND g.GroupName=@GroupName)
-		AND NOT EXISTS (SELECT 1 FROM DBPOL.NAP_UserControl.dbo.eaUserInfo ui WITH (NOLOCK)
-					INNER JOIN DBPOL.NAP_UserControl.dbo.eagroup g WITH (NOLOCK) ON g.ParentID=ui.GroupID
-					WHERE ui.UserID=@UserID AND g.GroupName=@GroupName))
-	BEGIN
-		SET @Errcode=98
-		SET @ErrMsg='This Headline does not belong to ' + @GroupName + ' group'
-		RETURN
-	END
 
 	-- Source username
 	IF @IsCopy=1
