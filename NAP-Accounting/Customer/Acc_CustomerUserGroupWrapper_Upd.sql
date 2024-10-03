@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUserGroupWrapper_Upd]
 	@username varchar(50), 
 	@ugroup varchar(3),
@@ -15,6 +15,7 @@ AS
 
 	Revisions:  
 		- 20190820@Johnson: initial sp [redmine: #116691]
+		- 20240909@Tacy: remove old SQL account [redmine: #208709]
 	
 	Param's Explanation:
 */

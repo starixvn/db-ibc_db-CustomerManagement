@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_CustomerUpdVirtualMultiplier   
 					@custid				INT
 				,	@EnableVirtualrate	BIT				= 0
@@ -53,6 +53,7 @@ AS
 		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649] 
 		- 20230721@Luke: Unlock VR for Soccer, Basketball, Other Sports [Redmine: #191162]
 		- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -105,16 +106,6 @@ BEGIN
 	DECLARE @DocHandler INT		
 
 	set @startRun = getdate()  
-	  
-	IF @IsLicenseeUser = 0 --accounting admin (licensee user will be ignored from this check)  
-	BEGIN  
-		--Check permission for account site: @phuc20080213  
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[VirtualRate]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output  
-		If @ErrCode <> 0  
-			RETURN  
-	END  
-	  
-	--end  
 	  
 	--Check disable user  
 	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output  

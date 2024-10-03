@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdClearCredit] 
 	@username varchar(40),
 	@userid int,
@@ -6,7 +6,6 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdClearCredit]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@IP varchar(15) = '',
-	@system VARCHAR(50) = '',
 	@TotalAmt MONEY = NULL
 AS
 
@@ -30,23 +29,10 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 */
 BEGIN
 	SET NOCOUNT ON
-
-	IF @system = 'EXTERNAL'
-	BEGIN
-		--- no check permssion in case of calling from external accounting
-		SET @ErrMsg = ''
-	END
-	ELSE
-	BEGIN
-		--Check permission for account site: @phuc20080213
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[Credit]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		If @ErrCode <> 0
-			RETURN
-		--end
-	END
 
 	declare @custid		int,
 			@roleid		tinyint,

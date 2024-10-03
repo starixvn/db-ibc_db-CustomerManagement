@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_OperatorDel]
 	@CustID INT, 
 	@Language VARCHAR (2)='E', 
@@ -22,6 +22,7 @@ AS
 		- 20130118@Elodie: Change link server DB03 to DBPOLICY	
 						   Write more log on DBTXN server in case of DBLOG server failure
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 */
 BEGIN
 
@@ -31,15 +32,7 @@ BEGIN
 	@End AS DATETIME, 
 	@Duration AS INT;
 	SET @Begin = GETDATE();
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = '[UserControl]', @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
-	IF @ErrCode <> 0
-		BEGIN
-			IF @ReturnErrCode = 0
-				RAISERROR (@ErrMsg, 16, 1);
-			RETURN;
-		END
-	--end
+
 	-------------------
 	--Thien@20080223: Not allow to delete operator since it's related to User Control in Admin.NET
 	SELECT @ErrMsg = 'Not allow to delete operator here! Please contact Thien''s team for information!',
@@ -81,8 +74,3 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_OperatorDel] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_OperatorDel] TO [vnteam]
-GO
-

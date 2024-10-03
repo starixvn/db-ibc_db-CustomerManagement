@@ -1,7 +1,10 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelDangerCust]
 	@username VARCHAR(30),
 	@UserId INT = 0,
+	@AdName	VARCHAR(30), -- UserID's username
+	@Permission	VARCHAR(20) = '1,2,3',
+	@DeniedList	NVARCHAR(MAX)=NULL,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(500) = '' OUTPUT
 AS
@@ -16,6 +19,7 @@ Revisions:
 	- 20200508@Tiara: NAP Enhance Dangerous Grouping function [#Redmine: 129306]
 	- 20210819@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
 	- 20220926@Tacy: Remove isBA column [RedmineID: #176518]
+	- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 Param's Explanation:
 	@username: username to get danger info
@@ -35,6 +39,9 @@ BEGIN
 	@UserID = @UserID	,		
 	@DangerType	= 0	,	
 	@DangerLevel =0	,
+	@AdName = @AdName,
+	@Permission	= @Permission,
+	@DeniedList	= @DeniedList,
 	@ErrCode = @ErrCode	OUTPUT,
 	@ErrMsg = @ErrMsg	OUTPUT	
 

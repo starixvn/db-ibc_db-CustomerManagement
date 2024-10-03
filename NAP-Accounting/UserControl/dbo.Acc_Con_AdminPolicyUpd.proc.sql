@@ -1,14 +1,12 @@
-﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminPolicyUpd]
 	@OldMemPolicys NVARCHAR(MAX)= '', 
 	@MemPolicys NVARCHAR(MAX)= '', 	
 	@CustID INT,
 	@UserID INT, 
-	@isABS BIT = 0,
 	@Language VARCHAR (2)='E', 
 	@ErrCode INT=0 OUTPUT, 
-	@ErrMsg NVARCHAR (200)='' OUTPUT, 
-	@System VARCHAR (50)='ACCOUNTING'
+	@ErrMsg NVARCHAR (200)='' OUTPUT
 AS
 /*
 Created: 
@@ -25,6 +23,7 @@ Revisions:
 					   Write more log on UserLog table in case of DBLOG server failure
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
 	- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+	- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 Param's Explanation:
 	Format of @MemPolicys @FuncID,@Policy@FuncID,@Policy ...
@@ -37,17 +36,6 @@ BEGIN
 			@Duration AS INT
 
 	SET @Begin = GETDATE()
-
-	IF @isABS = 1
-		SELECT @permission = '[ABSAdminUserControl]'
-	ELSE 
-		SELECT @permission = '[UserControl]'
-
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @UserID, @funcname = @permission, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
-	IF @ErrCode <> 0
-	   RETURN
-	--end
 
 	DECLARE @UserName AS NVARCHAR (200), @CustName AS NVARCHAR (200)
 	SELECT @UserName = UserName  
@@ -227,8 +215,3 @@ BEGIN
 	END CATCH
 END      
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminPolicyUpd] TO [vnteam]
-
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminPolicyUpd] TO [bodbAdminNet,wsv_nap]
-

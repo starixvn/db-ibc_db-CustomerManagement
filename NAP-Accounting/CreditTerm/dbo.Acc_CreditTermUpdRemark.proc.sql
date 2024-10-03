@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CreditTermUpdRemark]
 	@accountremark nvarchar(200),
 	@CustId int,
@@ -23,6 +23,7 @@ BEGIN
 			- 20130131@Elodie: Change link server DB03 to DBPOLICY
 							   Write more log on DBTXN server in case of DBLOG server failure
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 										   
 	*/
 
@@ -32,11 +33,6 @@ BEGIN
 	declare @duration int
 	set @startRun = getdate()
 	declare @old_accountremark nvarchar(200)
-
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
 
 	SELECT @accountremarkdate = CURRENT_TIMESTAMP
 
@@ -97,7 +93,3 @@ BEGIN
     
 END
 GO
-
-GRANT EXECUTE ON [dbo].Acc_CreditTermUpdRemark TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].Acc_CreditTermUpdRemark TO [vnteam]

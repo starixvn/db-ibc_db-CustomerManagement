@@ -12,7 +12,7 @@ ALTER PROCEDURE [dbo].[Acc_CustomerSelByGroupHeadline]
   , @Owner NVARCHAR(100) = ''
   , @HeadlineType VARCHAR(20) = ''
   , @IsTest BIT = 0
-  , @Userid INT=NULL
+  ,	@DeniedList	NVARCHAR(MAX)=NULL
 AS    
     
 /*    
@@ -33,6 +33,7 @@ AS
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
     Example: exec Acc_CustomerSelByGroupHeadline_UAT4 @siteid=default,@currency=0,@open=1,@suspended=0,@closed=1,@disabled=1,@roleid=0,@username=default,@groupheadline=default,@Owner='',@HeadlineType='1'
 
@@ -43,26 +44,36 @@ BEGIN
     DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
-    DECLARE @tmpUserid VARCHAR(50)
-    SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
-
-	DECLARE @SearchQuery varchar(1024), @SearchCurrency VARCHAR(1024)
-
-	--get deny site
-	SELECT @SearchQuery = 'SELECT * 
-	FROM OPENQUERY(DBPOL, 
-	''SELECT siteid , site,SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
-
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	EXECUTE(@SearchQuery)
-
-	--get deny currency
-    SELECT @SearchCurrency = 'SELECT * 
-	FROM OPENQUERY(DBPOL, 
-	''SELECT exchangeID, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + @tmpUserid + ''''')'')'
-
-	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-	EXECUTE(@SearchCurrency)
+    IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
     CREATE TABLE #tmpDirectCust 
     (
@@ -175,7 +186,7 @@ BEGIN
     --apply filter by site    
     DELETE #tmpDirectCust    
     WHERE (@siteid <> ''  AND     
-      (site NOT IN (SELECT [site] FROM [site] WHERE siteid IN (SELECT  val FROM dbo.strSplit(@siteid,','))) OR site IS NULL)) 
+      (site NOT IN (SELECT [site] FROM [site] WHERE siteid IN (SELECT value FROM string_split(@siteid,','))) OR site IS NULL)) 
        OR [site] NOT IN (SELECT [SITE] FROM [SITE] WHERE islicensee = 0 AND isactive=1)    
       
 	DELETE FROM #tmpDirectCust WHERE site='CN88'
@@ -233,11 +244,8 @@ BEGIN
 				, r.RoleID , r.HeadlineType , r.OwnerName, r.ClosedReason, e.currency AS CurrencyName
         FROM  #tmpResultAll r
             INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
-        WHERE @Userid IS NULL 
-		OR (@Userid IS NOT NULL 
-			AND site NOT IN (SELECT site FROM @tmp)
+        WHERE  site NOT IN (SELECT site FROM @tmp)
 			AND e.ExchangeId NOT IN (SELECT exchangeID FROM @tmpExchange)
-		)
         ORDER BY custheadlineid,custid    
     
      RETURN   
@@ -298,11 +306,8 @@ BEGIN
 							, r.RoleID , r.HeadlineType , r.OwnerName, r.ClosedReason , e.currency AS CurrencyName
     FROM  #tmpResult r
         INNER JOIN dbo.Exchange e WITH (NOLOCK) ON r.Currency = e.exchangeid
-    WHERE @Userid IS NULL 
-	OR (@Userid IS NOT NULL 
-		AND site NOT IN (SELECT site FROM @tmp)
+    WHERE site NOT IN (SELECT site FROM @tmp)
 		AND e.ExchangeId NOT IN (SELECT exchangeID FROM @tmpExchange)
-	)
     ORDER BY custheadlineid,custid   
 
 END

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROC [Acc_SiteSel_Credit]
 	@UserID INT = 0,
 	@Mode INT = 0
@@ -18,23 +18,17 @@ Revisions:
 	 - 20221808@Elodie: Get SiteDBGroupID [RedmineID: #158293]
 	 - 20230110@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 	 - 20231206@Johnson: check permission by UserID [RedmineID: #197160]
+	 - 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl and move to DBCUST [redmineID: #208402]
 */
 BEGIN
 	SET NOCOUNT ON
 	
 	DECLARE @tmp TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT )
-	DECLARE @tmpUserid VARCHAR(50)
-	DECLARE @SearchQuery varchar(MAX)
 	
 	IF @UserID > 0
 	BEGIN
-		SELECT @tmpUserid = CAST(@Userid AS VARCHAR(50))
-		SELECT @SearchQuery = 'SELECT * 
-		FROM OPENQUERY(DBPOL, 
-		''SELECT siteid , site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( ''''' + @tmpUserid + ''''')'')'
-
 		INSERT INTO  @tmp (siteid, site, SpecialGroup)
-		EXECUTE(@SearchQuery)
+		SELECT siteid , site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@UserID)
 	END
 	
 	SELECT SiteLabel, [siteid], [site] 

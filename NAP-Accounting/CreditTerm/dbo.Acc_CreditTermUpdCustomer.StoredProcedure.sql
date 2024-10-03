@@ -45,6 +45,7 @@ Original:
 		- 20200120@Tiara: Change message and allow to remove group which has 1 member [Redmine: #125991]
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -76,11 +77,6 @@ BEGIN
 			@New_HeadlineName VARCHAR(30),
 			@HeadlineID INT
 
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
 	--Check disable user
 		EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 		if @ErrCode <>0 return

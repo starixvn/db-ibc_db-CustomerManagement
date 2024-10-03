@@ -3,6 +3,7 @@ ALTER PROCEDURE Acc_CustomerLockSuspendUpd
 	@CustList	VARCHAR(MAX),
 	@Lock		BIT,
 	@UserID		INT, 
+	@DeniedList NVARCHAR(MAX)=NULL,
 	@IP			VARCHAR(15),
 	@ErrCode	INT	= 0 OUTPUT,	
 	@ErrMsg		VARCHAR(MAX) = '' OUTPUT 
@@ -17,6 +18,7 @@ AS
 		- 20210510@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Param's Explanation:
 		@CustIDList: id of customer
@@ -87,15 +89,36 @@ BEGIN
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
-	--get deny site
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
-		
-	--get deny currency
-	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-	SELECT exchangeID, Currency, OfferSite 
-	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
 	SELECT @WrongUserName = @WrongUserName + ', ' + t.username 
 	FROM #CustList t

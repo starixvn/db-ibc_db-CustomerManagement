@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,vnteam" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserName]
 	@oldname varchar(30), 
 	@newname varchar(30),
@@ -43,6 +43,7 @@ Revisions:
 	- 20200512@Johnson: check super's prefix for 789y's group [redmine:#133846]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220722@Eden: Scale Out DBTrans  [redmine: #158293]
+    - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -59,11 +60,6 @@ BEGIN
 		,@GroupName VARCHAR(50)
 		
 	set @startRun = getdate()
-
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
 
 	Declare @custid int, @IsExists BIT, @Site VARCHAR(10)
 	SELECT @custid = custid from custinfo with (nolock) where username = @oldname

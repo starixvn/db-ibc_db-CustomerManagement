@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupDel]
 	@CustID int,
 	@GroupName	VARCHAR(50),
@@ -22,6 +22,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
+		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 */
 
 BEGIN
@@ -32,17 +33,6 @@ BEGIN
 	DECLARE @duration	INT
 	
 	SET @startRun = GETDATE()
-	
-	-- Check permission for account site
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission
-		@CustID = @UserID,
-		@FuncName = '[Admin_ManageExAcc]',
-		@ErrCode = @ErrCode OUTPUT,
-		@ErrMsg = @ErrMsg OUTPUT,
-		@System = 'ACCOUNTING'
-	
-	IF @ErrCode <> 0
-		RETURN		
 	
 	IF NOT EXISTS (SELECT 1 FROM dbo.Acc_CustGroup WITH (NOLOCK) WHERE CustID = @CustID)
 	BEGIN
