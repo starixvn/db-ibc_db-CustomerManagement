@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdSelectedBetting]	
 	@CustID int,		
 	@SelectedBetting bit,	
@@ -21,6 +21,7 @@ Revisions:
    - 20110603@Amy: Write log Old value
    - 20130310@Lukas: change linked-server alias & add more log section
    - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+   - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
    
 Param's Explanation:
 • @ErrCode:
@@ -42,13 +43,6 @@ BEGIN
 	declare @isWritelog bit
 	set @startRun = getdate()
 	set @isWritelog = 1
-
-
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
-
 
 	DECLARE @roleid tinyint
 	DECLARE @OldSelectedBetting bit
@@ -249,8 +243,4 @@ BEGIN
 		END CATCH
 	END
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdSelectedBetting] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdSelectedBetting] TO [vnTeam] 

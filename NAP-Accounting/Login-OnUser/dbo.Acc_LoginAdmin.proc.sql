@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_LoginAdmin]
 	@UserName varchar(50) OUTPUT,
 	@UserPwd varchar(50),
@@ -45,6 +45,7 @@ Revisions:
 	- 20160105@Lukas: remove IP '202.78.231.x' in blocking section
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20221104@Tacy: NAP - Set Expired Time For Permission [RedmineID: #179323]
+	- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 Param's Explanation:
 */
 BEGIN
@@ -170,7 +171,7 @@ BEGIN
 	IF (@ErrMsg = '') AND (@LogData = '')
 	BEGIN
 		SELECT @closed = closed FROM dbo.custinfo with (nolock) WHERE custid = @CustID
-		SELECT @ExpiredDate=ExpiredDate FROM DBCUST.NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid = @CustID
+		SELECT @ExpiredDate=ExpiredDate FROM NAP_UserControl.dbo.AccCustomer WITH (NOLOCK) WHERE custid = @CustID
 
 		IF @closed = 1
 			SELECT  @ErrMsg = 'Your Account was Closed, Please contact your supervisor.',

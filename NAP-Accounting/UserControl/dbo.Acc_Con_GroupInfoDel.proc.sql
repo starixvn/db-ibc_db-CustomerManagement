@@ -1,11 +1,10 @@
-﻿/*<info serverAlias="DBCUST-NAP_UserControl" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_GroupInfoDel]
 	@GroupID int,
 	@Language VARCHAR(2)= 'E', 
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT ,
-	@UserID int,
-	@System nvarchar(50) = 'ACCOUNTING'
+	@UserID int
 AS
 /*
 	Created by: []
@@ -17,6 +16,7 @@ AS
 		- 20120604@Elodie: Modify the content of a log in User Control
 		- 20130125@Elodie: Write more log on UserLog table in case of DBLOG server failure
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
 */
 BEGIN
@@ -25,12 +25,6 @@ BEGIN
 	DECLARE @LogData nvarchar(200),@Begin	DATETIME,@End	DATETIME,@Duration	INT;
 	
 	SET @Begin = GETDATE();
-
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[UserControl]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output, @System = @System
-	If @ErrCode <> 0
-		RETURN
-	--end
 
 	IF exists (select 1 from AccCustomer with (NOLOCK) where GroupID = @GroupID) 
 	BEGIN
@@ -64,6 +58,3 @@ BEGIN
 		END CATCH
 END		
 GO 
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_GroupInfoDel] TO [vnteam]
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_GroupInfoDel] TO [bodbAdminNet,wsv_nap]

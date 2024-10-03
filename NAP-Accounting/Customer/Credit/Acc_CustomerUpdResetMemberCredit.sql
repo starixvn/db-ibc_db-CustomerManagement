@@ -1,12 +1,11 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdResetMemberCredit]
 	@agentID		INT,
 	@closedOnly		BIT = 1,
 	@UserID			INT,
 	@IP				VARCHAR(15)='',
 	@ErrCode		INT = 0 OUTPUT,
-	@ErrMsg			NVARCHAR(200) = '' OUTPUT,
-	@system VARCHAR(50) = ''
+	@ErrMsg			NVARCHAR(200) = '' OUTPUT
 AS
 /*	Created by: [Creator]
 	DB: DBCUST/CustDB
@@ -24,25 +23,12 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20210716@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 */
 BEGIN
 	SET NOCOUNT ON 
 	DECLARE @LogData VARCHAR(500), @AgentUserName VARCHAR(30), @isLicensee BIT = 0
 	SET @ErrCode = 0
-
-	IF @system = 'EXTERNAL'
-	BEGIN
-		--- no check permssion in case of calling from external accounting
-		SET @ErrMsg = ''
-	END
-	ELSE
-	BEGIN
-		--Check permission for account site: @phuc20080213
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[Credit]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-		IF @ErrCode <> 0
-			RETURN
-		--end
-	END
 
 	--Check disable user
 	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @agentID, @ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT

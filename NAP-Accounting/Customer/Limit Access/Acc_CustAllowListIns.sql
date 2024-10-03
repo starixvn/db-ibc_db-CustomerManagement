@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustAllowListIns]
 (
 	@UserName			VARCHAR(30),
@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20130310@Lukas: Change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
 	Param's Explanation:
 	
@@ -42,10 +43,6 @@ BEGIN
 	SELECT	@CustID = 0,
 			@RoleID = 0,
 			@Currency = 0
-	--Check permission
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	IF @ErrCode <> 0
-		RETURN
 
 	EXEC DBACC.bodb02.dbo.Acc_CustomerSelInfoByUsername 
 		@UserName = @UserName,
@@ -146,9 +143,4 @@ BEGIN
 			@Duration = @duration
 	END CATCH
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustAllowListIns] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustAllowListIns] TO [vnteam]

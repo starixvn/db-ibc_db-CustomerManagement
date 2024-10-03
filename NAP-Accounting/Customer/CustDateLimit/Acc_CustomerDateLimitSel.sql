@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerDateLimitSel] 
 	@userName VARCHAR(30) = ''
-	,@UserID INT
+	,@DeniedList NVARCHAR(MAX)=NULL
 	,@PageSize INT = 0
 	,@PageIndex INT = 0
 	,@TotalRecords INT = 0 OUTPUT
@@ -16,6 +16,7 @@ AS
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		- 20240619@Elodie: Tune SP [Redmine: #206786]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Param's Explanation:	
 */
 BEGIN
@@ -40,15 +41,36 @@ BEGIN
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
-	--get deny site
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
-		
-	--get deny currency
-	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-	SELECT exchangeID, Currency, OfferSite 
-	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
 	IF @userName = ''
 	BEGIN

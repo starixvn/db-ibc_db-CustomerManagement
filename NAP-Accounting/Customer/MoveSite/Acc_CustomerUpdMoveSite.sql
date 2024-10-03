@@ -1,11 +1,12 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMoveSite]
 	@UserId			INT,
 	@CustId			INT	,
 	@Site			varchar(50),
 	@ErrCode		INT OUTPUT,
 	@ErrMsg			varchar(200) OUTPUT,
-	@IP				varchar(50) = ''
+	@IP				varchar(50) = '',
+	@DeniedList		NVARCHAR(MAX)=NULL
 AS
 /*	Created by: [Khoa] 
 	Date: 20091224
@@ -32,6 +33,7 @@ AS
 		- 20230317@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230418@Tacy: allow Member move site [RedmineID: 181596]
 		- 20231219@Tacy: NAP - Move sites among 789y and other site labels with YNG currency for testing
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -54,26 +56,31 @@ BEGIN
 
 	SELECT @RoleId = ISNULL(roleid,0) FROM custinfo (NOLOCK) WHERE custid=@CustId
 
-	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
-	DECLARE @tmpUserid VARCHAR(50)
+	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT)
 	
-	SELECT @tmpUserid=CAST(@Userid AS VARCHAR(50))
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	END
 	
-	INSERT INTO  @tmp (siteid , site,SpecialGroup)
-	SELECT siteid , [site], SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser(@tmpUserid)
-	
-	IF (@site IN (SELECT site FROM @tmp ))
+	IF (@site IN (SELECT site FROM @tmp))
 	BEGIN
 		SELECT @ErrCode = 103, @ErrMsg ='You don''t have permission to access'
 		RETURN
 	END
 	
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[MoveSite]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
-
 	IF NOT EXISTS(SELECT 1 FROM Site (NOLOCK) WHERE SITE = @Site)
 	BEGIN
 		SELECT @ErrCode = 101, @ErrMsg = 'Do not exist any site name as ' + @Site + ' in the system.'

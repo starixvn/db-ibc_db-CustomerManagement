@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustDirectUpd]
 (
 	@CustID INT
@@ -25,6 +25,7 @@ Revisions:
 	- 20171026@Elodie:  Add MaxLoss of headline - [Redmine:82892]
 	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 */
 BEGIN
@@ -45,11 +46,6 @@ BEGIN
 		, @MaxLoss_OLD MONEY 
 		, @MaxLossHeadline_OLD MONEY 
     
-	--Check permission & Valid @MaxLoss
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@Creator,@funcname='[OtherCust]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	IF @ErrCode <> 0
-		RETURN
-		
 	IF (@MaxLoss IS NOT NULL AND @MaxLoss >= 0) OR (@MaxLossHeadline >= 0 AND @MaxLossHeadline IS NOT NULL)
 	BEGIN
 	   SELECT @ErrCode = 101, @ErrMsg = 'Max Loss should be negative!'
@@ -218,6 +214,3 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustDirectUpd] TO [bodbAdminNet,wsv_nap] AS [dbo]
-GO
-

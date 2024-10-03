@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
  ALTER PROCEDURE [dbo].[Acc_CustomerUpdSecurityCode]
 	@custid		INT,
 	@userid		INT,
@@ -7,8 +7,7 @@
 	@language	VARCHAR(2) = 'E' ,
 	@ErrCode	INT = 0 OUTPUT,
 	@ErrMsg		VARCHAR(200) = '' OUTPUT,
-	@IP			VARCHAR(20) = '',
-	@system VARCHAR(50) = ''
+	@IP			VARCHAR(20) = ''
  AS
 	/*
 		Created: Johnson
@@ -21,6 +20,7 @@
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 			- 20190529@Johnson: update SC for headline from NAP [redmine: #112225]
 			- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
+			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 		Parameter's Explanation:
 	*/
@@ -32,17 +32,6 @@ SET NOCOUNT ON
 			,@LogSPData VARCHAR(MAX)
 			
 	SET @startRun = GETDATE()
-	IF @system = 'EXTERNAL'
-	BEGIN
-		--- no check permssion in case of calling from external accounting
-		SET @ErrMsg = ''
-	END
-	ELSE
-	BEGIN
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[SecurityCode]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		If @ErrCode <> 0
-			RETURN
-	END
 	
 	--Check disable user
 	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CreditTermUpdIsRptConsol]
 	@CustId INT,
 	@IsRptConsol BIT,
@@ -17,6 +17,7 @@ BEGIN
 		
 		Revisions:
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 			
 		Example:	DECLARE @ErrCode INT, @ErrMsg NVARCHAR(200)
 					EXEC Acc_CreditTermUpdIsRptConsol @custId = 334521, @IsRptConsol = 1, @UserID = 8, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
@@ -29,10 +30,6 @@ BEGIN
 	DECLARE @duration INT
 	SET @startRun = getdate()
 	DECLARE @old_IsRptConsol BIT
-
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
 
 	if not exists(select 1 from custAccount with (nolock) where custid = @CustId AND IsGroupHeadLine = 1)
 	BEGIN
@@ -89,8 +86,4 @@ BEGIN
 			@duration = @duration
 	END CATCH    
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CreditTermUpdIsRptConsol] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CreditTermUpdIsRptConsol] TO [vnteam]

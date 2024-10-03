@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdAbnormal]
 	@CustID int,
 	@UpdateDownline bit = 0,
@@ -18,6 +18,7 @@ AS
 		- 20130306@Lukas: change linked-server alias & add more write log section
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
 	Param's Explanation:
 		@CustID: Id of member will be updated
@@ -29,12 +30,6 @@ Begin
 	declare @endRun datetime
 	declare @duration int, @roleid int
 	set @startRun = getdate()
-
-	--Check permission for account site:
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@userid,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
 
 	--Check disable user
 	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
@@ -111,8 +106,4 @@ Begin
 			@duration = @duration
 	END CATCH
 End
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdAbnormal] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdAbnormal] TO [vnteam]

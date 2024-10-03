@@ -2,7 +2,7 @@
 ALTER PROCEDURE [dbo].[Acc_CreditTermSelByGroupID]
 (
 	@GroupID INT = 0,
-	@UserId	INT
+	@DeniedList	NVARCHAR(MAX)=NULL
 )
 AS
 /*
@@ -18,36 +18,46 @@ Revisions:
 	- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 	- 20230608@Lewis: Add 3rd Party Pending transfer column - [Redmine: #188648]
 	- 20240521@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+	- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 Parameters Explanation:
-
+	* @DeniedList: output from [Acc_DeniedSiteCurrency_Sel]
 */
 BEGIN
 	SET NOCOUNT ON
-	
+
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
-	DECLARE @tmpUserid VARCHAR(50)
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
 	
-	SELECT @tmpUserid=CAST(@UserID AS VARCHAR(50))
-	
-	DECLARE @SearchQuery VARCHAR(1024), @SearchCurrency VARCHAR(1024)
-
-	--get deny site
-	SELECT @SearchQuery = 'SELECT * 
-		FROM OPENQUERY(DBPOL, 
-		''SELECT siteid, site, SpecialGroup FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser ( ''''' + @tmpUserid + ''''')'')'
-
-	INSERT INTO @tmp (siteid, site, SpecialGroup)
-	EXECUTE(@SearchQuery)
-	
-	--get deny currency
-    SELECT @SearchCurrency = 'SELECT * 
-	FROM OPENQUERY(DBPOL, 
-	''SELECT exchangeID, Currency, OfferSite FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser ( ''''' + @tmpUserid + ''''')'')'
-
-	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-	EXECUTE(@SearchCurrency)
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
 	DECLARE @CustIDList VARCHAR (MAX) = '',@TotalMaxLoss_RM MONEY
 	

@@ -1,7 +1,7 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
-	@Userid		INT			= NULL
+	@DeniedList	NVARCHAR(MAX)=NULL
 AS
 
 /*
@@ -20,6 +20,7 @@ AS
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
 		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 */
 
@@ -70,104 +71,90 @@ BEGIN
 	) AS tmp
 	WHERE RN > 1
 
-	IF @Userid IS NULL
-	BEGIN	
-		;WITH CTE AS
-		(
-			SELECT
-				c.CustID,
-				c.roleid,
-				c.GroupName,
-				CASE WHEN e.GroupName IS NULL THEN c.GroupName ELSE NULL END AS Normal,
-				CASE WHEN e.GroupName IS NULL THEN NULL ELSE
-					CASE WHEN s.GroupName IS NULL THEN e.GroupName + ',,0'
-						 ELSE s.GroupName + ',' + CONVERT(VARCHAR(10), s.EffectiveDate, 101) + ',' + CONVERT(VARCHAR(1), s.IsPrimary) END
-				END AS Extra
-			FROM
-				dbo.Acc_CustGroup c WITH(NOLOCK)
-				LEFT JOIN @GroupExtraPT e ON c.GroupName = e.GroupName
-				LEFT JOIN @GroupExtraPTSetting s ON c.CustID = s.SuperId AND c.GroupName = s.GroupName
-		)
-		SELECT a.CustID, c.username,c.firstname, c.lastname, a.roleid, a.GroupName , c.iplogin, NormalGroup, ExtraPTGroup
-		FROM
-		(
-			SELECT 
-				a.CustID, a.roleid, a.GroupName,
-				(SELECT STUFF((SELECT ';' + Normal FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS NormalGroup,
-				(SELECT STUFF((SELECT ';' + Extra  FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS ExtraPTGroup
-			FROM CTE a
-			WHERE a.GroupName = COALESCE(@GroupName,a.GroupName)
-			GROUP BY a.CustID, a.roleid, a.GroupName
-		) a
-		INNER JOIN dbo.customer c WITH(NOLOCK) ON a.CustID = c.CustID
-		ORDER BY GroupName, username
-	END
-	ELSE
-	BEGIN
-		DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
-		DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
+	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
+	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
 		--get deny site
-		INSERT INTO  @tmp (siteid , site,SpecialGroup)
-		SELECT siteid , site,SpecialGroup 
-		FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
-		
+		INSERT INTO @tmp (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	
 		--get deny currency
 		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-		SELECT exchangeID, Currency, OfferSite 
-		FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@UserId)
-	
-		CREATE TABLE #TempCustGroup(
-				CustID INT
-				,Username VARCHAR(50)
-				,Firstname NVARCHAR(50)
-				,Lastname NVARCHAR(50)
-				,RoleId TINYINT
-				,Groupname VARCHAR(50)
-				,iplogin NVARCHAR(20)
-				,site VARCHAR(10)
-				,currency INT
-		)
-
-		INSERT INTO #TempCustGroup(CustID, Username, Firstname, Lastname, RoleId, Groupname, iplogin, site, currency)
-		SELECT a.CustID, c.username, c.firstname, c.lastname, a.roleid, a.GroupName, c.iplogin, site, c.currency
-		FROM dbo.Acc_CustGroup a WITH (NOLOCK)
-			INNER JOIN dbo.Customer c WITH (NOLOCK) ON a.CustID = c.CustID
-		WHERE site NOT IN (SELECT site FROM @tmp)
-			AND currency NOT IN (SELECT exchangeID FROM @tmpExchange)
-		ORDER BY a.GroupName, c.username	
-
-		;WITH CTE AS
-		(
-			SELECT
-				c.CustID,
-				c.roleid,
-				c.GroupName,
-				CASE WHEN e.GroupName IS NULL THEN c.GroupName ELSE NULL END AS Normal,
-				CASE WHEN e.GroupName IS NULL THEN NULL ELSE
-					CASE WHEN s.GroupName IS NULL THEN e.GroupName + ',,0'
-						 ELSE s.GroupName + ',' + CONVERT(VARCHAR(10), s.EffectiveDate, 101) + ',' + CONVERT(VARCHAR(1), s.IsPrimary) END
-				END AS Extra
-			FROM
-				#TempCustGroup c
-				LEFT JOIN @GroupExtraPT e ON c.GroupName = e.GroupName
-				LEFT JOIN @GroupExtraPTSetting s ON c.CustID = s.SuperId AND c.GroupName = s.GroupName
-		)
-		SELECT a.CustID, c.username,c.firstname, c.lastname, a.roleid, a.GroupName , c.iplogin, NormalGroup, ExtraPTGroup
-		FROM
-		(
-			SELECT 
-				a.CustID, a.roleid, a.GroupName,
-				(SELECT STUFF((SELECT ';' + Normal FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS NormalGroup,
-				(SELECT STUFF((SELECT ';' + Extra  FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS ExtraPTGroup
-			FROM CTE a
-			WHERE a.GroupName = COALESCE(@GroupName,a.GroupName)
-			GROUP BY a.CustID, a.roleid, a.GroupName
-		) a
-			INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.CustID = c.CustID
-		ORDER BY GroupName, username
-
-		DROP TABLE #TempCustGroup
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
 	END
+	
+	CREATE TABLE #TempCustGroup(
+			CustID INT
+			,Username VARCHAR(50)
+			,Firstname NVARCHAR(50)
+			,Lastname NVARCHAR(50)
+			,RoleId TINYINT
+			,Groupname VARCHAR(50)
+			,iplogin NVARCHAR(20)
+			,site VARCHAR(10)
+			,currency INT
+	)
+
+	INSERT INTO #TempCustGroup(CustID, Username, Firstname, Lastname, RoleId, Groupname, iplogin, site, currency)
+	SELECT a.CustID, c.username, c.firstname, c.lastname, a.roleid, a.GroupName, c.iplogin, site, c.currency
+	FROM dbo.Acc_CustGroup a WITH (NOLOCK)
+		INNER JOIN dbo.Customer c WITH (NOLOCK) ON a.CustID = c.CustID
+	WHERE site NOT IN (SELECT site FROM @tmp)
+		AND currency NOT IN (SELECT exchangeID FROM @tmpExchange)
+	ORDER BY a.GroupName, c.username	
+
+	;WITH CTE AS
+	(
+		SELECT
+			c.CustID,
+			c.roleid,
+			c.GroupName,
+			CASE WHEN e.GroupName IS NULL THEN c.GroupName ELSE NULL END AS Normal,
+			CASE WHEN e.GroupName IS NULL THEN NULL ELSE
+				CASE WHEN s.GroupName IS NULL THEN e.GroupName + ',,0'
+						ELSE s.GroupName + ',' + CONVERT(VARCHAR(10), s.EffectiveDate, 101) + ',' + CONVERT(VARCHAR(1), s.IsPrimary) END
+			END AS Extra
+		FROM
+			#TempCustGroup c
+			LEFT JOIN @GroupExtraPT e ON c.GroupName = e.GroupName
+			LEFT JOIN @GroupExtraPTSetting s ON c.CustID = s.SuperId AND c.GroupName = s.GroupName
+	)
+	SELECT a.CustID, c.username,c.firstname, c.lastname, a.roleid, a.GroupName , c.iplogin, NormalGroup, ExtraPTGroup
+	FROM
+	(
+		SELECT 
+			a.CustID, a.roleid, a.GroupName,
+			(SELECT STUFF((SELECT ';' + Normal FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS NormalGroup,
+			(SELECT STUFF((SELECT ';' + Extra  FROM CTE WHERE custid = a.CustID FOR XML PATH('')), 1, 1, '')) AS ExtraPTGroup
+		FROM CTE a
+		WHERE a.GroupName = COALESCE(@GroupName,a.GroupName)
+		GROUP BY a.CustID, a.roleid, a.GroupName
+	) a
+		INNER JOIN dbo.Customer c WITH(NOLOCK) ON a.CustID = c.CustID
+	ORDER BY GroupName, username
+
+	DROP TABLE #TempCustGroup
 END
 GO

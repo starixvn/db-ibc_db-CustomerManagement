@@ -107,7 +107,7 @@ AS
 		- 20240417@Helios: ALPHA - IBC Indo: Saba virtual sport status checkbox is disappeared [RedmineID: #204040]
 		- 20240216@Helios: Unify Live RNG Casino [Redmine: #198960]
 		- 20240515@Helios: Unify RNG Games - Rollback Code RNG Casino And Enhance [Redmine: #204358] 
-
+		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT
@@ -200,20 +200,6 @@ BEGIN
 	*/								  
 
 	SELECT @IsAdminCanViewVNIP = 1
-	IF (@AdminID > 0) 
-	BEGIN
-		DECLARE @ErrCode INT
-		IF @system = 'NAP'
-		BEGIN
-			EXEC DBPOL.NAP_UserControl.dbo.Acc_Con_CheckPermission_All @custid=@AdminID,@funcname='[ViewIPVN]',@ErrCode=@ErrCode OUTPUT
-		END
-		ELSE IF @system = 'NAPEXT'
-		BEGIN
-			EXEC DBPOL.NAP_UserControl.dbo.EAS_UserCheckPermission_All @userid=@AdminID,@FuncKey='ViewVNIP',@ErrCode=@ErrCode OUTPUT
-		END
-		
-		IF @ErrCode<> 0 SELECT @IsAdminCanViewVNIP = 0 ELSE SELECT @IsAdminCanViewVNIP = 1     
-	END
 
 	-- Get BitmapOrder Of Dummy Product:
       DECLARE	

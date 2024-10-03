@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdInternal]	
 	@CustID int,	
 	@UserID int,	
@@ -23,6 +23,7 @@ AS
 		- 20101021@Henry: Record execution time
 		- 20130307@Lukas: change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
 	Param's Explanation:
 	• @ErrCode:
@@ -39,10 +40,6 @@ BEGIN
 	declare @duration int
 	set @startRun = getdate()
 
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
 	DECLARE @roleid tinyint, @Old_IsInternal bit, @UplineIsInternal bit, @uplineid int 
 	SELECT @roleid = roleid, @uplineid = CASE roleid WHEN 4 THEN custid	WHEN 3 THEN srecommend WHEN 2 THEN mrecommend ELSE recommend END			 
 	FROM custinfo WITH (nolock)
@@ -161,8 +158,4 @@ BEGIN
 			@duration = @duration
 	END CATCH
 END
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdInternal] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdInternal] TO [vnTeam]

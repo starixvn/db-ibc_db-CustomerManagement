@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdAutoSuspend]
 	@CustID			INT,
 	@AutoSuspend	BIT = NULL, -- Auto-suspend Soccer
@@ -36,10 +36,12 @@ AS
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckAllowedDownlines, Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20230308@Johnson: Add auto-suspend for Basketball [redmine:#184339]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Param's Explanation:
 		@IsUpdDownline: auto-suspended all downlines
 
 */
+BEGIN
 	SET NOCOUNT ON 
 	
 	declare @startRun datetime
@@ -47,10 +49,6 @@ AS
 	declare @duration int
 	set @startRun = getdate()
 	
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[AutoSuspend]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
 	--Check disable user
 	EXEC Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
 	if @ErrCode <>0 return
@@ -281,6 +279,5 @@ AS
 			@TrackingValue2 = @TrackingValueDB,
 			@duration = @duration 
 	END CATCH
-
-
+END
 GO

@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[Acc_CreditTermUpdAddToGroup]
 	@username varchar(30),
 	@groupID int,
 	@UserID int,
+	@DeniedList	NVARCHAR(MAX)=NULL,
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
 	@Language varchar(2)= 'E',
@@ -35,6 +36,7 @@ AS
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
 		- 20240528@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -53,11 +55,7 @@ BEGIN
 	
 	DECLARE @CustID_Headline INT, @NotificationInfo VARCHAR(MAX), @HeadlineName VARCHAR(30)
 	DECLARE @srecommend INT,@site VARCHAR(10),@siteHeadline VARCHAR(10),@srecommendHeadline INT, @Old_GroupId INT
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
+
 	Declare @Custid int, @SiteId int, @Currency int, @RoleId tinyint
 
 	select @custid = custid,@srecommend=srecommend,@site=Site,@Currency=currency, @RoleId = RoleId from customer with (nolock) where username = @username
@@ -80,15 +78,36 @@ BEGIN
 	DECLARE @tmpSite TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
 	
-	--get deny site
-	INSERT INTO  @tmpSite (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser( @Userid)
-		
-	--get deny currency
-	INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
-	SELECT exchangeID, Currency, OfferSite 
-	FROM NAP_UserControl.dbo.f_GetDeniedCurrencyByUser(@Userid)
+	IF ISNULL(@DeniedList,'')<>''
+	BEGIN
+		--get deny site
+		INSERT INTO @tmpSite (siteid, site, SpecialGroup)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Site'
+	
+		--get deny currency
+		INSERT INTO  @tmpExchange (exchangeID, Currency, OfferSite)
+		SELECT vl.[ID], vl.[Name], vl.[Opt]
+		FROM OPENJSON(@DeniedList) 
+				WITH (  [KeyName]	VARCHAR(30),
+						[Value]	NVARCHAR(MAX) AS JSON
+					) AS js
+		CROSS APPLY OPENJSON (js.[value])
+				WITH (  [ID]	INT,
+						[Name]	NVARCHAR(30),
+						[Opt]	TINYINT
+					) AS vl
+		WHERE js.[KeyName]='Exchange'
+	END
 
 	IF EXISTS (SELECT 1 FROM @tmpSite WHERE site=@site)
 	OR EXISTS (SELECT 1 FROM @tmpExchange WHERE exchangeID=@Currency)

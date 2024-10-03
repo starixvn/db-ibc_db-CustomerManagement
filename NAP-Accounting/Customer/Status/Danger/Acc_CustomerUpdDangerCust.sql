@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap, Dot_Member" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap, svc_tig" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@CustID int = NULL,
@@ -7,6 +7,9 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@DangerType tinyint,
 	@DangerLevel int=0,
 	@UserID int,
+	@AdName	VARCHAR(30)='', -- UserID's username
+	@Permission	VARCHAR(20) = '1,2,3',
+	@DeniedList	NVARCHAR(MAX)=NULL,
 	@Language varchar(2) = 'E',
 	@isBA INT=0 OUTPUT,
 	@system VARCHAR(50) = 'NAP',
@@ -45,6 +48,7 @@ AS
 		- 20210820@Johnson: Add 2 new Dangerous types for Basketball & Esports [redmine:#159551]
 		- 20211021@Johnson: Auto add & remove ABI Danger Level [redmine:#162834]
 		- 20220823@Tacy: update BA member's Danger follow upline [redmine:#176518]
+		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Param's Explanation:
 		@CustID: Id of member will be updated,
@@ -67,7 +71,9 @@ BEGIN
 			@DangerType	= @DangerType	,	
 			@DangerLevel =@DangerLevel	,	
 			@IP	=@IP			,	
-			@system = @system,
+			@AdName = @AdName,
+			@Permission	= @Permission,
+			@DeniedList	= @DeniedList,
 			@ErrCode = @ErrCode	OUTPUT,
 			@ErrMsg = @ErrMsg	OUTPUT	
 

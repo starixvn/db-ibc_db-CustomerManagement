@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdIPLimit]	
 	@CustID int,		
 	@LimitPerIP tinyint,	
@@ -21,6 +21,7 @@ AS
 	   - 20110603@Amy: Write log Old Value
 	   - 20130307@Lukas: change linked-server alias & add more write log section
 	   - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+	   - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	   
 	Param's Explanation:
 		• @ErrCode:
@@ -43,15 +44,10 @@ BEGIN
 	set @startRun = getdate()
 	set @isWritelog = 1
 
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
-
-
 	DECLARE @roleid tinyint
 	DECLARE @OldLimitPerIP tinyint
 	DECLARE @UplineLimitPerIP tinyint
+
 	SELECT @roleid = roleid FROM custinfo WITH (nolock)
 	WHERE custid = @custid
 
@@ -251,6 +247,3 @@ BEGIN
 	END
 END
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdIPLimit] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerUpdIPLimit] TO [vnTeam]

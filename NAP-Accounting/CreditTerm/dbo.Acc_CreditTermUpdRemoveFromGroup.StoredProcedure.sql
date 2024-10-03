@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 USE CustDB
 GO
 
@@ -13,7 +13,8 @@ ALTER PROCEDURE [dbo].[Acc_CreditTermUpdRemoveFromGroup]
 	@Case INT = 0 OUTPUT,
 	@Old_Headline INT = 0 OUTPUT,
 	@New_Headline INT = 0 OUTPUT,
-	@AffectedSupers	VARCHAR(MAX) = '' OUTPUT
+	@AffectedSupers	VARCHAR(MAX) = '' OUTPUT,
+	@GroupNames VARCHAR(MAX)
 AS
 --Original: ADMIN\account\creditterm_group_feed_add.asp
 /*	Created by: [Creator]		
@@ -32,6 +33,7 @@ AS
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto remove Super into External Group (follow Headline) [RedmineID: #146710]
 		- 20220510@Danny: Use String_split built-in function [RemineID: #171831]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -50,17 +52,16 @@ BEGIN
 	set @startRun = getdate()
 
 	declare @currentDate datetime = convert(date, getdate())
-	
-	--Check permission for account site: @phuc20080213
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname='[OtherCust]',@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-	If @ErrCode <> 0
-		RETURN
-	--end
 
 	CREATE TABLE #Super (CustId INT, GroupExtraPTId INT, GroupName VARCHAR(50), GroupTypeId TINYINT, DataType TINYINT DEFAULT(1), EffectiveDate DATETIME, EndDate DATETIME, PRIMARY KEY(CustId, GroupName))
 
 	-- Log for remove mapping
 	DECLARE @EaGroupHeadline TABLE (GroupName VARCHAR(100), SiteId INT, Site VARCHAR(50), ExchangeId INT, Currency VARCHAR(50), GroupTypeId TINYINT, EffectiveDate DATETIME, EndDate DATETIME)
+	DECLARE @eaGroup TABLE (GroupName VARCHAR(100))
+
+	INSERT INTO @eaGroup (GroupName)
+	SELECT TRIM(value) FROM STRING_SPLIT(@GroupNames, ',')
+	WHERE TRIM(value)<>''
 
 	DECLARE @CustIds TABLE (CustId INT)
 	INSERT INTO @CustIds (CustId)
@@ -175,7 +176,7 @@ BEGIN
 				,STUFF((
 					SELECT ', ' + cg.GroupName
 					FROM dbo.Acc_CustGroup cg WITH (NOLOCK)
-						INNER JOIN NAP_UserControl.dbo.EaGroup eg WITH (NOLOCK) ON cg.GroupName = eg.GroupName AND eg.ParentId = 0
+						INNER JOIN @EaGroup eg ON cg.GroupName = eg.GroupName
 						LEFT JOIN dbo.Acc_CustGroup_Queue q WITH (NOLOCK) ON cg.CustId = q.CustId AND cg.GroupName = q.GroupName 
 					WHERE cg.CustId = c.CustId AND q.CustId IS NULL
 					FOR XML PATH ('')), 1, 2, '') AS ExternalGroups
@@ -339,7 +340,7 @@ BEGIN
 				,STUFF((
 					SELECT ', ' + cg.GroupName
 					FROM dbo.Acc_CustGroup cg WITH (NOLOCK)
-						INNER JOIN NAP_UserControl.dbo.EaGroup eg WITH (NOLOCK) ON cg.GroupName = eg.GroupName AND eg.ParentId = 0
+						INNER JOIN @EaGroup eg ON cg.GroupName = eg.GroupName
 						LEFT JOIN dbo.Acc_CustGroup_Queue q WITH (NOLOCK) ON cg.CustId = q.CustId AND cg.GroupName = q.GroupName 
 					WHERE cg.CustId = c.CustId AND q.CustId IS NULL
 					FOR XML PATH ('')), 1, 2, '') AS ExternalGroups

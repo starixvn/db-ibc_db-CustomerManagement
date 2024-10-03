@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\NAP Licensee Management\NAP_SpecialCustSetting_Modify.sql
+NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql

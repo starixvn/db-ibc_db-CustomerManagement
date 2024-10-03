@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustAllowListDel]
 (
 	@CustID				INT,
@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20130310@Lukas: Change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		
 	Param's Explanation:
 	
@@ -32,11 +33,6 @@ BEGIN
 
 	SELECT	@ErrCode	= 0,
 			@ErrMsg		= ''
-
-	--Check permission
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@LastModifiedBy,@funcname='[ManageAgentSiteAccess]',@ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	IF @ErrCode <> 0
-		RETURN
 
 	IF NOT EXISTS (SELECT 1 FROM Acc_CustAllowList WITH (NOLOCK) WHERE CustID = @CustID)
 	BEGIN
@@ -82,14 +78,4 @@ BEGIN
 			@Duration = @duration
 	END CATCH
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustAllowListDel] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustAllowListDel] TO [vnteam]
-
-
-
-
- 

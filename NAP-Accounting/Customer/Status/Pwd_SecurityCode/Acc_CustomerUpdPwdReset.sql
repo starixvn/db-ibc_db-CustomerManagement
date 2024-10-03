@@ -1,10 +1,9 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdPwdReset]
 	@CustID int,
 	@UserPwd nvarchar(50),
 	@UserID int,
 	@isForcedChangePwd BIT = 1,
-	@isABS	BIT = 0,
 	@Language varchar(2) = 'E',
 	@LoginIP VARCHAR(15) ='',
 	@ErrCode int = 0 OUTPUT,
@@ -34,6 +33,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190611@Johnson: force change pwd for customer [Redmine:#114566]	
 		- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
+		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -43,19 +43,6 @@ BEGIN
 	declare @duration int
 	declare @funcname NVARCHAR(50)
 	set @startRun = getdate()
-
-	IF @UserID <> @CustID
-	BEGIN
-		--Check permission for account site: @phuc20080213
-		IF @isABS = 1 
-			SELECT @funcname = '[ABSAdminUserControl]'
-		ELSE 
-			SELECT @funcname = '[Password]'
-			
-		EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid=@UserID,@funcname=@funcname,@ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
-		If @ErrCode <> 0
-			RETURN
-	END
 
 	--Check disable user
 	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @custid, @ErrCode=@ErrCode output,@ErrMsg=@ErrMsg output
