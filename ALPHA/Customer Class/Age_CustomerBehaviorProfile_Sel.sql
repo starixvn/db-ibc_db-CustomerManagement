@@ -13,6 +13,7 @@ AS
   
 	Revisions:  
 	    - 20240424@Tacy: Alpha - Risk Management - Member Betting Behavior [Redmine:#204089]
+	    - 20240816@Tacy: Return CustomerClass [Redmine:#209412]
 
 	Param's Explanation:  	
 		
@@ -31,14 +32,10 @@ BEGIN
 	END
 
 	SELECT ci.custid, ci.username
-		, ISNULL(lg.CategoryID,0) AS CategoryID
+		, ci.CustomerClass
 		, CASE WHEN wl.CustID IS NOT NULL THEN 1 ELSE 0 END AS IsMonitoredMember
 		, CASE WHEN p.custid IS NOT NULL AND cc.CustomerClass IS NOT NULL THEN 1 ELSE 0 END AS IsProblemAccount
 	FROM custInfo ci WITH (NOLOCK)
-		OUTER APPLY (SELECT TOP 1 l.CategoryID
-					 FROM CustCategoryHistory l WITH (NOLOCK)
-					 WHERE l.custid=ci.custid AND L.CustomerClass=ci.CustomerClass
-					 ORDER BY l.CreatedDate DESC) lg
 		LEFT JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid
 		OUTER APPLY (SELECT TOP 1 cc.CustomerClass FROM CategoryConfig cc WITH (NOLOCK) 
 					 WHERE cc.CustomerClass=ci.CustomerClass
