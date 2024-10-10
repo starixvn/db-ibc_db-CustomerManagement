@@ -1,4 +1,5 @@
-﻿CREATE PROCEDURE [dbo].[Acc_CustomerSelSiteByUserNameMoveSite]
+﻿/*<info serverAlias="DBGLOB-GLOBCUSTDB" executers="wsv_nap,wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_CustomerSelSiteByUserNameMoveSite]
 	@username VARCHAR(50) = ''
 AS 
 /*	Created by: [Khoa] 
@@ -9,23 +10,18 @@ AS
 	Revisions:
 		- 20150610@Kos: Separate CustDB to DBCUST server (Move SP to DBCUST.CustDB)
 		- 20160114@Helen: Cricket - [Redmine: #50027]
+		- 20241010@Helen: move site for CREDIT - [Redmine:#212007]
+
 	Param's Explanation:
 */
 
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT site, roleid, custid 
-	FROM customer WITH (NOLOCK) 
+	SELECT site, roleid, custid, SiteDBGroupID 
+	FROM custinfoMini WITH (NOLOCK) 
 	WHERE username = @username AND [site] <> 'IMBC'
 	
 END
-
-
 GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [bodbAdminNet,wsv_nap]
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [wsv_xnap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CustomerSelSiteByUserNameMoveSite] TO [vnteam]
 
