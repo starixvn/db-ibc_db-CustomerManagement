@@ -44,6 +44,8 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20220722@Eden: Scale Out DBTrans  [redmine: #158293]
     - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+	- 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
+
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -53,6 +55,10 @@ Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON
+
+	SELECT @ErrMsg ='This function is not available now. Please contact IT for further support.', @ErrCode = 100
+	RETURN
+
 	DECLARE @roleid INT 
 		,@startRun DATETIME
 		,@endRun DATETIME

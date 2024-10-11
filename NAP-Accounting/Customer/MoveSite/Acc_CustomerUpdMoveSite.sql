@@ -35,6 +35,7 @@ AS
 		- 20231219@Tacy: NAP - Move sites among 789y and other site labels with YNG currency for testing
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
+		- 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -43,6 +44,9 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
+	SELECT @ErrMsg ='This function is not available now. Please contact IT for further support.', @ErrCode = 100
+	RETURN
+
 	declare @startRun datetime
 	declare @endRun datetime
 	declare @duration int
