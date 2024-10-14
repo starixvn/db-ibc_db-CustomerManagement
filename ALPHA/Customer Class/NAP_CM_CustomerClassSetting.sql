@@ -1,15 +1,17 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSetting] 
-	 @Site NVARCHAR(MAX) = NULL
-	,@CustomerClass VARCHAR(MAX)
-	,@CustomerClassDetail VARCHAR(MAX)
-	,@SportTypes VARCHAR(2000)
-	,@LeagueGroups VARCHAR(MAX)
-	,@Currencies VARCHAR(MAX)
-	,@IsTest TINYINT
-	,@PageSize INT = 500
-	,@PageIndex INT = 1
-	,@TotalItems INT = 1 OUTPUT
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassSetting] 
+	 @Site					NVARCHAR(MAX) = NULL
+	,@CustomerClass			VARCHAR(MAX)
+	,@CustomerClassDetail	VARCHAR(MAX)
+	,@SportTypes			VARCHAR(2000)
+	,@LeagueGroups			VARCHAR(MAX)
+	,@Currencies			VARCHAR(MAX) = NULL
+	,@IsTest				TINYINT
+	,@PageSize				INT = 500
+	,@PageIndex				INT = 1
+	,@TotalItems			INT = 1 OUTPUT
+	,@ErrCode				TINYINT				= 0	OUTPUT
+	,@ErrMsg				NVARCHAR(MAX)	= ''	OUTPUT
 AS
 /*
 	Created: Winfred
@@ -28,9 +30,10 @@ AS
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 		- 20240411@Winfred: [NAP CM] Customer Class Setting - Add filter condition Currency [201435]
 		- 20240605@Winfred: [NAP CM] Customer Class Setting - Update the way to get CC Management Settings [201770]
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassSetting @Site = 'BEST-ODDS', @CustomerClass = '200', @CustomerClassDetail = '204,300,500', @SportType = 2, @LeagueGroup = '1,2,4,5,6', @IsTest = 1	,
+	Example: NAP_CM_CustomerClassSetting @Site = 'BEST-ODDS', @CustomerClass = '200', @CustomerClassDetail = '204,300,500', @SportType = 2, @LeagueGroup = '1,2,4,5,6', @IsTest = 1	,
 										 @Currencies = '0'
 	* @LeagueGroup : 0 All
 */ 
@@ -96,7 +99,7 @@ BEGIN
 	FROM STRING_SPLIT(ISNULL(@SportTypes,''),',') 
 	WHERE VALUE <> ''
 
-	IF @Currencies <> '0'
+	IF @Currencies <> '0' AND ISNULL(@Currencies,'') <> ''
 	BEGIN
 		INSERT INTO #Currency(Currency) 
 		SELECT DISTINCT VALUE
@@ -128,7 +131,8 @@ BEGIN
 			SportType 	 SMALLINT
 	) AS Data;
 	EXECUTE	sp_xml_removedocument @iDoc;
-		
+	
+	BEGIN TRY
 	-- Get all PolicyID, RuleID 
 	INSERT INTO #PolicyRule( PolicyID, RuleID, RuleTitle, CustomerClass)
 	SELECT PolicyID, a.RuleID, r.RuleTitle, r.CustomerClass
@@ -141,6 +145,12 @@ BEGIN
 					AND
 					 (@CustomerClassDetail = ''  OR CustomerClassDetail IN ( SELECT CAST(VALUE AS SMALLINT) FROM STRING_SPLIT(@CustomerClassDetail,',')WHERE VALUE <> '') )
 					)) r
+					
+	END TRY
+	BEGIN CATCH
+		SELECT  @ErrMsg = N'Invalid CC'	, @ErrCode = 1 ;	
+		RETURN
+	END CATCH
 
 	INSERT INTO #Rule(RuleID)
 	SELECT Distinct a.RuleID
@@ -179,7 +189,8 @@ BEGIN
 		c.Enable,
 		c.LastModifiedUser,
 		c.LastModifiedTime ,
-		e.LeagueGroupNames
+		e.LeagueGroupNames,
+		c.TopPriority 
 	FROM CustomerClassRule c WITH(NOLOCK)
 		CROSS APPLY( SELECT TOP 1 RuleID FROM #Rule WHERE RuleID = c.RuleID AND RowNumber BETWEEN @RowStart AND @RowEnd ) a
 		CROSS APPLY(

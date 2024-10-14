@@ -1,7 +1,8 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleEnable] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassRuleEnable] 
 	  @RuleID INT
 	, @Enable BIT
+	, @TopPriority BIT
 	, @UserID		INT
 	, @IsTest		TINYINT	
 	, @IP			VARCHAR(50)		= ''
@@ -17,22 +18,25 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
 	* @RuleID: ID Rule
 
-	Example: NAP_LM_CustomerClassRuleEnable @RuleID = 11 , @Enable = 1 ,@ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_CM_CustomerClassRuleEnable @RuleID = 11 , @Enable = 1 ,@ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @StartRun	DATETIME
-		, @EndRun		DATETIME
-		, @Duration		INT
-		, @iDoc			INT
-		, @logSpData		 NVARCHAR(MAX)
-		, @logSpData_Old   NVARCHAR(MAX)
-		, @xml			 XML
+	DECLARE @StartRun		DATETIME
+		, @EndRun			DATETIME
+		, @Duration			INT
+		, @iDoc				INT
+		, @logSpData		NVARCHAR(MAX)
+		, @logSpData_Old	NVARCHAR(MAX)
+		, @xml				XML
+		, @Enable_Old		BIT
+		, @TopPriority_Old	BIT
   
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassRule a WITH(NOLOCK) WHERE a.IsTest <> @IsTest AND RuleID = @RuleID ) 
 	BEGIN
@@ -40,8 +44,12 @@ BEGIN
 		RETURN
 	END	
 
+	SELECT @Enable_Old = Enable, @TopPriority_Old = TopPriority 
+	FROM CustomerClassRule a WITH(NOLOCK) WHERE RuleID = @RuleID
+
 	UPDATE a	
-	SET a.Enable 				=   @Enable 
+	SET a.Enable 				=   @Enable ,
+		a.TopPriority			=   @TopPriority 
 	FROM CustomerClassRule a WITH (ROWLOCK, UPDLOCK)
 	WHERE a.RuleID = @RuleID
 	
@@ -52,6 +60,7 @@ BEGIN
 					@UserID						AS '@UserID',
 					@IP							AS '@IP',
 					@Enable						AS '@Enable',
+					@TopPriority				AS '@TopPriority',
 					@IsTest						AS '@IsTest',			
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
 					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'
@@ -63,8 +72,8 @@ BEGIN
 			SELECT	@RuleID						AS '@RuleID',	
 					@UserID						AS '@UserID',
 					@IP							AS '@IP',
-					CASE WHEN @Enable = 1 
-						THEN 0 ELSE 1 END		AS '@Enable',
+					@Enable_Old					AS '@Enable',
+					@TopPriority_Old			AS '@TopPriority',
 					@IsTest						AS '@IsTest',			
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
 					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'

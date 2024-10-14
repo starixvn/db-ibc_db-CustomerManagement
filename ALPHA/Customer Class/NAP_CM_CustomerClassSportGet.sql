@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSportGet] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassSportGet] 
 	@SportType SMALLINT,
 	@LeagueGroups VARCHAR(MAX),
 	@IsTest	TINYINT
@@ -16,9 +16,10 @@ AS
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368]
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]   
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassSportGet @SportType = 1, @IsTest = 1	
+	Example: NAP_CM_CustomerClassSportGet @SportType = 1, @IsTest = 1	
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -62,7 +63,8 @@ BEGIN
 			a.PeakHourSpreadAdjustment,
 			a.Enable,
 			a.LastModifiedUser,
-			a.LastModifiedTime, c.LeagueGroupNames 
+			a.LastModifiedTime, c.LeagueGroupNames ,
+			a.TopPriority 
 	FROM CustomerClassRule a WITH(NOLOCK)
 		CROSS APPLY(
 			SELECT STRING_AGG(CAST((CASE WHEN b.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames

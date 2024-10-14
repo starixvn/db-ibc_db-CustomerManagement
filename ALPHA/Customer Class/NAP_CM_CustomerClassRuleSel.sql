@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleSel] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassRuleSel] 
 	@RuleID INT, 
 	@IsTest TINYINT
 AS
@@ -14,9 +14,10 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassRuleSel @RuleID = 1	
+	Example: NAP_CM_CustomerClassRuleSel @RuleID = 1	
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -39,7 +40,9 @@ BEGIN
 			   a.DisableParlay,
 			   a.PeakHourSpreadAdjustment,
 			   a.AgentBetInterval,
-			   b.LeagueGroupIDs 
+			   b.LeagueGroupIDs ,
+			   a.TopPriority ,
+			   a.Enable
 		FROM CustomerClassRule a WITH(NOLOCK)
 		OUTER APPLY(
 				SELECT STRING_AGG(CAST(LeagueGroupID AS VARCHAR(20)), ',') WITHIN GROUP (ORDER BY LeagueGroupID)  AS LeagueGroupIDs
