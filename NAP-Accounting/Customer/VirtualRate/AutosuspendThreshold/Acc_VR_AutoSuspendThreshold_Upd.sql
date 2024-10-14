@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_AutoSuspendThreshold_Upd]
 	  @SportType		INT = 43
 	, @XML				VARCHAR(MAX)
@@ -14,6 +14,7 @@ AS
 	    
 	Revisions:    
 		- 20200305@Eden : First commit [Redmind: #128749]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:
 	•	@XML = 
@@ -114,7 +115,8 @@ BEGIN
 	
 	UPDATE h
 	SET h.VRAutoSuspendThresholdLive = tmp.VRAutoSuspendThresholdLive,
-		h.VRAutoSuspendThresholdNonLive = tmp.VRAutoSuspendThresholdNonLive
+		h.VRAutoSuspendThresholdNonLive = tmp.VRAutoSuspendThresholdNonLive,
+		h.RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM #NewAutoSuspendThresholdTbl tmp 
 		INNER JOIN VRSettingHierarchy h WITH(ROWLOCK) ON tmp.LevelID = h.LevelID
 	

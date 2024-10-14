@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_AutoSuspendUpd]
 	  @CustID			INT
 	, @SportType		INT = 43
@@ -19,6 +19,7 @@ AS
 		- 20211125@Eden: Override Auto Suspend [Redmine: #164888] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221103@Johnson: Change data type of CustSettingAutoSuspend [Redmine: #179782]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 	Param's Explanation:
 	• @AutoSuspendXML
 		<Root>
@@ -252,26 +253,30 @@ BEGIN
 		SET AutoSuspendLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(AutoSuspendLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive))) ,
 			AutoSuspendNonLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(AutoSuspendNonLive,@InitialBitMap), CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive))),
 			OverrideASLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(OverrideASLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive))),
-			OverrideASNonLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(OverrideASNonLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)))	
+			OverrideASNonLive = (SELECT bitmap FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (ISNULL(OverrideASNonLive,@InitialBitMap_0), CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)))	,	
+			RepUpdateTime = [dbo].[f_GetDateTime2]()
 		WHERE CustID = @CustID AND SportType = @SportType
 	END
 	ELSE
 	BEGIN
-		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive,Sporttype,OverrideASLive,OverrideASNonLive)
+		INSERT INTO CustSettingAutoSuspend (CustID,AutoSuspendLive,AutoSuspendNonLive,Sporttype,OverrideASLive,OverrideASNonLive,RepUpdateTime)
 		SELECT @CustID
 			,a1.bitmap
 			,a2.bitmap
 			,@SportType
 			,a3.bitmap
 			,a4.bitmap
+			, [dbo].[f_GetDateTime2]()
 		FROM dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendLive)) a1
 			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap, CONVERT(VARCHAR(MAX),@xmlStrAutoSuspendNonLive)) a2
 			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASLive)) a3
 			,dbo.f_VRCustSetting_GenerateProductStatus_multiple (@InitialBitMap_0, CONVERT(VARCHAR(MAX),@xmlStrOverrideASNonLive)) a4
 	END
 	
-	DELETE 
-	FROM CustSettingAutoSuspend WITH(ROWLOCK, UPDLOCK)
+	DELETE c
+	OUTPUT deleted.custid, deleted.SportType, [dbo].[f_GetDateTime2]() 
+	INTO CustSettingAutoSuspend_Del_Inhouse(custid,SportType,RepUpdateTime)
+	FROM CustSettingAutoSuspend c WITH(ROWLOCK, UPDLOCK)
 	WHERE CustID = @CustID
 		AND ISNULL(AutoSuspendLive,@InitialBitMap) = @InitialBitMap
 		AND ISNULL(AutoSuspendNonLive,@InitialBitMap) = @InitialBitMap

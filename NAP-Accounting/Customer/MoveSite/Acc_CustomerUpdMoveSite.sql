@@ -34,6 +34,7 @@ AS
 		- 20230418@Tacy: allow Member move site [RedmineID: 181596]
 		- 20231219@Tacy: NAP - Move sites among 789y and other site labels with YNG currency for testing
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -174,19 +175,19 @@ BEGIN
 		END	
 
 		--Add to [VRSettingManualUpdAcc]
-		INSERT INTO [VRSettingManualUpdAcc](CustID,SportType)		
-		SELECT @CustID,43 AS SportType
+		INSERT INTO [VRSettingManualUpdAcc](CustID,SportType,RepUpdateTime)		
+		SELECT @CustID,43 AS SportType, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 43)	
 
 		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR
-		EXEC [dbo].[Acc_CustomerInfo_Execrep_04] 
+		EXEC [dbo].[Acc_CustomerInfo_UpdVirtualRate] 
 			@custid = @custid
 			,@roleid = @roleid
 			,@action = 'DisableVR2Downline'
 			,@Sporttype = 2
 
 		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR, And set all member with Override AS = 1
-		EXEC [dbo].[Acc_CustomerInfo_Execrep_04] 
+		EXEC [dbo].[Acc_CustomerInfo_UpdVirtualRate] 
 			@custid = @custid
 			,@roleid = @roleid
 			,@action = 'DisableVR2Downline'

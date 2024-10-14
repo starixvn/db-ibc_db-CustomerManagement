@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_VRCustLockStatusUpd   
 					@custid							INT
 				,	@UserID							INT
@@ -22,6 +22,7 @@ AS
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
 		- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:  	
 	-@ErrCode:  
@@ -103,8 +104,8 @@ BEGIN
 		END
 		ELSE IF @RoleID = 1 -- insert directly for Member
 		BEGIN
-			INSERT INTO VRCustLockStatus(CustID,Type)
-			SELECT @custid,1
+			INSERT INTO VRCustLockStatus(CustID,Type,RepUpdateTime)
+			SELECT @custid,1, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 			WHERE NOT EXISTS (SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 1 )
 		END
 		ELSE --use execrep SP for SMA
@@ -123,12 +124,16 @@ BEGIN
 	BEGIN
 		IF @VRLockedStatus_OS = 0
 		BEGIN
-			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 2 
+			DELETE c
+			OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
+			INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+			FROM VRCustLockStatus c WITH(ROWLOCK) 
+			WHERE CustID = @custid AND Type = 2
 		END
 		ELSE IF @RoleID = 1 -- insert directly for Member
 		BEGIN
-			INSERT INTO VRCustLockStatus(CustID,Type)
-			SELECT @custid,2
+			INSERT INTO VRCustLockStatus(CustID,Type,RepUpdateTime)
+			SELECT @custid,2, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 			WHERE NOT EXISTS (SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 2 )
 		END
 		ELSE --use execrep SP for SMA
@@ -145,14 +150,18 @@ BEGIN
 
 	IF @IsUpdateVRLockedStatus_Basketball = 1																			
 	BEGIN																												
-		IF @VRLockedStatus_Basketball = 0																				
-		BEGIN																											
-			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 3 						
+		IF @VRLockedStatus_Basketball = 0																	
+		BEGIN	
+			DELETE c
+			OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
+			INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+			FROM VRCustLockStatus c WITH(ROWLOCK) 
+			WHERE CustID = @custid AND Type = 3 																	
 		END																											
 		ELSE IF @RoleID = 1 -- insert directly for Member															
 		BEGIN																											
-			INSERT INTO VRCustLockStatus(CustID,Type)																	
-			SELECT @custid,3																							
+			INSERT INTO VRCustLockStatus(CustID,Type,RepUpdateTime)											
+			SELECT @custid,3, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 			WHERE NOT EXISTS (SELECT 1 FROM VRCustLockStatus WITH(NOLOCK) WHERE custid = @custid AND Type = 3 )			
 		END																												
 		ELSE --use execrep SP for SMA																					
@@ -170,13 +179,17 @@ BEGIN
 	IF @IsUpdateVRAcc_Balance = 1																			
 	BEGIN																												
 		IF @VRAccumulate_Balance = 0																				
-		BEGIN																											
-			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 4						
+		BEGIN	
+			DELETE c
+			OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]()
+			INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+			FROM VRCustLockStatus c WITH(ROWLOCK) 
+			WHERE CustID = @custid AND Type = 4 															
 		END																											
 		ELSE														
 		BEGIN																											
-			INSERT INTO VRCustLockStatus(CustID,Type)																	
-			SELECT @custid,4																							
+			INSERT INTO VRCustLockStatus(CustID,Type,RepUpdateTime)	
+			SELECT @custid,4, [dbo].[f_GetDateTime2]() AS RepUpdateTime																							
 		END																																																					
 
 		SELECT @LogSPData_AB = '<R VRAccumulatedBalance="'+ coalesce(cast(@VRAccumulate_Balance as varchar(1)),space(1)) + '" '	
@@ -188,7 +201,7 @@ BEGIN
 	--Call SP execrep 
 	IF @IsCallExecrep_Soccer = 1 AND @IsCallExecrep_OS = 1 AND @IsCallExecrep_Basketball = 1
 	BEGIN
-		EXEC [Acc_CustomerInfo_Execrep_04]
+		EXEC [Acc_CustomerInfo_UpdVirtualRate]
 						@custid = @custid
 					,	@roleid = @roleid
 					,	@action = 'EnableVRLockStatus'
@@ -198,7 +211,7 @@ BEGIN
 	BEGIN
 		IF @IsCallExecrep_Soccer = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_Execrep_04]
+			EXEC [Acc_CustomerInfo_UpdVirtualRate]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'
@@ -206,7 +219,7 @@ BEGIN
 		END
 		IF @IsCallExecrep_OS = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_Execrep_04]
+			EXEC [Acc_CustomerInfo_UpdVirtualRate]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'
@@ -214,7 +227,7 @@ BEGIN
 		END
 		IF @IsCallExecrep_Basketball = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_Execrep_04]
+			EXEC [Acc_CustomerInfo_UpdVirtualRate]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'

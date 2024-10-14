@@ -19,6 +19,7 @@ AS
 		- 20230307@VN-Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20240701@Johnson: scale out DBCUST [redmine: #199915]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -193,7 +194,7 @@ BEGIN
 	BEGIN
 		DELETE FROM @tempUpdate_tbl
 
-		UPDATE TOP(3000) t
+		UPDATE TOP(2000) t
 		SET t.IsFinish = 1
 		OUTPUT inserted.CustID INTO @tempUpdate_tbl(CustID)
 		FROM @Update_CustTbl t
@@ -202,7 +203,8 @@ BEGIN
 		IF @@ROWCOUNT = 0 BREAK;
 		
 		UPDATE cvs
-			SET cvs.bitmapVirtual = bm.bitmap
+		SET  cvs.bitmapVirtual = bm.bitmap
+			,cvs.RepUpdateTime = [dbo].[f_GetDateTime2]()
 		FROM		CustVirtualSetting	AS cvs WITH(UPDLOCK, ROWLOCK)			
 			INNER JOIN	@virtualXML			AS tmp
 					ON	cvs.seqNo = tmp.seqNo
@@ -214,7 +216,8 @@ BEGIN
 
 	UPDATE v
 	SET v.Status = 2,
-		v.VR0_Date = GETDATE()
+		v.VR0_Date = GETDATE(),
+		v.RepUpdateTime = [dbo].[f_GetDateTime2]()	
 	FROM VRAgentAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type

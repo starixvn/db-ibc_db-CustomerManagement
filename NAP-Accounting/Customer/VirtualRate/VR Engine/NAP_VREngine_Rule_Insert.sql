@@ -30,6 +30,7 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Insert]
 	@CurrencyIDList VARCHAR(MAX) = NULL,
 	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
 	@CCSporttypeList VARCHAR(MAX) = NULL,
+	@JsonCheckData VARCHAR(MAX)	= '',
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -43,6 +44,7 @@ AS
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
+	- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -62,6 +64,9 @@ AS
 		@Enabled_Columns : Criteras is enabled on UI
 			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency,CCSporttype,CustomerClassDetail'
 			
+		- @JsonCheckData : Json Type
+		'[  { "Sporttype": "1", "Bettype": "1", "LeagueGroupID": "1", "LeagueID": "0", "SiteID": "50", "CustomerClass": "2", "DateOfWeek": "2", "CurrencyID": "1", "IsApply": "0", "CustomerClassDetail": "60", "CCSporttype": "60" }
+		]'
 	Example: 
 	DECLARE @ErrorCode INT = 0 ,@ErrorMsg VARCHAR(MAX) = '' 
 	EXEC NAP_VREngine_Rule_Insert 
@@ -204,29 +209,45 @@ BEGIN
 		EXEC sp_xml_removedocument @DocHandler
 	END
 
-	EXEC NAP_VREngine_CriteriaMatrix_Check 
-		 @SporttypeList = @SporttypeList, 
-		 @BettypeList = @BettypeList, 
-		 @LeagueGroupList = @LeagueGroupList, 
-		 @LeagueList = @LeagueList, 
-		 @SiteIDList = @SiteIDList, 
-		 @CustomerClassList = @CustomerClassList, 
-		 @DateOfWeekList = @DateOfWeekList, 
-		 @SporttypeList_NotApply = @SporttypeList_NotApply, 
-		 @BettypeList_NotApply = @BettypeList_NotApply, 
-		 @LeagueGroupList_NotApply = @LeagueGroupList_NotApply, 
-		 @LeagueList_NotApply = @LeagueList_NotApply, 
-		 @SiteIDList_NotApply = @SiteIDList_NotApply, 
-		 @CustomerClassList_NotApply = @CustomerClassList_NotApply, 
-		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply,
-		 @CurrencyIDList = @CurrencyIDList,
-		 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
-		 @CCSporttypeList = @CCSporttypeList, 
-		 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
-		 @CustomerClassDetailList = @CustomerClassDetailList, 
-		 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply,
-		 @ErrorCode = @ErrorCode OUTPUT, 
-		 @ErrorMsg = @ErrorMsg OUTPUT
+	--EXEC NAP_VREngine_CriteriaMatrix_Check 
+	--	 @SporttypeList = @SporttypeList, 
+	--	 @BettypeList = @BettypeList, 
+	--	 @LeagueGroupList = @LeagueGroupList, 
+	--	 @LeagueList = @LeagueList, 
+	--	 @SiteIDList = @SiteIDList, 
+	--	 @CustomerClassList = @CustomerClassList, 
+	--	 @DateOfWeekList = @DateOfWeekList, 
+	--	 @SporttypeList_NotApply = @SporttypeList_NotApply, 
+	--	 @BettypeList_NotApply = @BettypeList_NotApply, 
+	--	 @LeagueGroupList_NotApply = @LeagueGroupList_NotApply, 
+	--	 @LeagueList_NotApply = @LeagueList_NotApply, 
+	--	 @SiteIDList_NotApply = @SiteIDList_NotApply, 
+	--	 @CustomerClassList_NotApply = @CustomerClassList_NotApply, 
+	--	 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply,
+	--	 @CurrencyIDList = @CurrencyIDList,
+	--	 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
+	--	 @CCSporttypeList = @CCSporttypeList, 
+	--	 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
+	--	 @CustomerClassDetailList = @CustomerClassDetailList, 
+	--	 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply,
+	--	 @ErrorCode = @ErrorCode OUTPUT, 
+	--	 @ErrorMsg = @ErrorMsg OUTPUT
+
+	INSERT INTO #ValidData(Sporttype,Bettype,LeagueGroupID,LeagueID,SiteID,CustomerClass,DateOfWeek,CurrencyID,IsApply,CustomerClassDetail,CCSporttype)
+	SELECT sb.Sporttype, sb.Bettype, sb.LeagueGroupID, sb.LeagueID, sb.SiteID, sb.CustomerClass, sb.DateOfWeek, sb.CurrencyID, sb.IsApply, sb.CustomerClassDetail, sb.CCSporttype
+	FROM OPENJSON(@JsonCheckData )
+	WITH  (  Sporttype		     SMALLINT, 
+			 Bettype		     SMALLINT, 
+			 LeagueGroupID	     INT, 
+			 LeagueID		     INT,
+			 SiteID			     INT, 
+			 CustomerClass	     SMALLINT, 
+			 DateOfWeek		     TINYINT,
+			 CurrencyID		     INT,
+			 IsApply		     BIT,
+			 CustomerClassDetail SMALLINT, 
+			 CCSporttype		 SMALLINT ) AS sb
+	WHERE ISJSON(@JsonCheckData) > 0
 
 	IF NOT EXISTS (SELECT 1 FROM #ValidData)
 	BEGIN
@@ -256,6 +277,7 @@ BEGIN
 		,CreatedBy
 		,Enabled_Column
 		,AccumulatedBalance
+		,RepUpdateTime
 	)
 	SELECT  @RuleName
 		,@SiteType
@@ -276,6 +298,7 @@ BEGIN
 		,@UserID
 		,@Enabled_Columns
 		,@AccumulatedBalance
+		,[dbo].[f_GetDateTime2]()
 
 	SELECT @RuleID = SCOPE_IDENTITY()
 
@@ -290,6 +313,7 @@ BEGIN
 		,LeagueID
 		,CurrencyID
 		,CCSporttype
+		,RepUpdateTime
 		,CustomerClassDetail
 	)
 	SELECT  @RuleID
@@ -302,6 +326,7 @@ BEGIN
 		,LeagueID
 		,CurrencyID
 		,CCSporttype
+		,[dbo].[f_GetDateTime2]()
 		,CustomerClassDetail
 	FROM #ValidData
 	WHERE IsApply = 1
@@ -317,6 +342,7 @@ BEGIN
 		,LeagueID
 		,CurrencyID
 		,CCSporttype
+		,RepUpdateTime
 		,CustomerClassDetail
 	)
 	SELECT  @RuleID
@@ -329,6 +355,7 @@ BEGIN
 		,LeagueID
 		,CurrencyID
 		,CCSporttype
+		,[dbo].[f_GetDateTime2]()
 		,CustomerClassDetail
 	FROM #ValidData
 	WHERE IsApply = 0

@@ -16,6 +16,7 @@ AS
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
+	- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Parameter explanation:
 
@@ -258,16 +259,22 @@ BEGIN
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
 
-	DELETE 
-	FROM VRSettingRule WITH(ROWLOCK,UPDLOCK)
+	DELETE c
+	OUTPUT deleted.RuleID, [dbo].[f_GetDateTime2]() 
+	INTO VRSettingRule_Del_Inhouse(RuleID,RepUpdateTime)
+	FROM VRSettingRule c WITH(ROWLOCK,UPDLOCK)
 	WHERE RuleID = @RuleID
 
-	DELETE 
-	FROM VRSettingRuleDetail WITH(ROWLOCK,UPDLOCK)
+	DELETE c
+	OUTPUT deleted.DetailID, [dbo].[f_GetDateTime2]() 
+	INTO VRSettingRuleDetail_Del_Inhouse(DetailID,RepUpdateTime)
+	FROM VRSettingRuleDetail c WITH(ROWLOCK,UPDLOCK)
 	WHERE RuleID = @RuleID
 
-	DELETE 
-	FROM VRSettingRuleDetail_NotApply WITH(ROWLOCK,UPDLOCK)
+	DELETE c
+	OUTPUT deleted.DetailID, [dbo].[f_GetDateTime2]() 
+	INTO VRSettingRuleDetail_NotApply_Del_Inhouse(DetailID,RepUpdateTime) 
+	FROM VRSettingRuleDetail_NotApply c WITH(ROWLOCK,UPDLOCK)
 	WHERE RuleID = @RuleID
 
 	SET @EndRun = GETDATE()

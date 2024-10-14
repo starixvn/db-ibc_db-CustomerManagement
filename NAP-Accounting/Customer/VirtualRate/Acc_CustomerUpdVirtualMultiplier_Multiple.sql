@@ -1,9 +1,10 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE	[dbo].[Acc_CustomerUpdVirtualMultiplier_Multiple]
 					@VirtualMultiplier		VARCHAR(MAX)	= ''
 				,	@UserID					INT  
 				,	@IP						VARCHAR(15)		= ''
 				,	@SportType				SMALLINT		= 0
+				,	@JsonBACust				VARCHAR(MAX)	= ''
 				,	@ErrCode				INT				= 0			OUTPUT 
 				,	@ErrMsg					NVARCHAR(4000)	= ''		OUTPUT  
 AS  
@@ -25,6 +26,7 @@ AS
 		- 20210224@Eden: Implement Lock for VR update [Redmine:#149370]
 		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting [redmine: #207029]
 
 	Param's Explanation:  
 		- @SportType = 0 : All
@@ -34,6 +36,10 @@ AS
 									<Rate CustIds="1,2,3,4,5,6" VirtualMultiplier="0.7" />	
 									<Rate CustIds="11,22,33,44,55,66" VirtualMultiplier="1.5" />
 								</ROOT>'
+		- @JsonBACust : Json Type
+		'[  { "CustID": "1111" }, { "CustID": "2222" }, { "CustID": "3333" }, { "CustID": "4444" },
+			{ "CustID": "5555" }, { "CustID": "6666" }, { "CustID": "7777" }, { "CustID": "9999" }
+		]'
 */  
 BEGIN  
 	SET NOCOUNT ON;  
@@ -126,10 +132,17 @@ BEGIN
 			CROSS APPLY	string_split(tv.CustIDs, ',') AS ss
 		WHERE VirtualMultiplier = 3
 
+		--INSERT INTO #BACust(CustID)
+		--SELECT CustID
+		--FROM bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
+		--WHERE ba.Status = 'Running'
+
+		-- Parse Data Json
 		INSERT INTO #BACust(CustID)
-		SELECT CustID
-		FROM bodb_licensee.dbo.[LicenseeBAHistory] ba WITH (NOLOCK)
-		WHERE ba.Status = 'Running'
+		SELECT BAc.CustID
+		FROM OPENJSON(@JsonBACust )
+		WITH  (CustID INT ) AS BAc
+		WHERE ISJSON(@JsonBACust) > 0
 
 		SELECT @CustStr =  ISNULL(STUFF(( select ',' + CAST(c.custid AS VARCHAR(20))
 		FROM #CustList c

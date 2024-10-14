@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_ManualUpdAcc_Remove]
 	@SportType INT = NULL,
 	@CustIDs VARCHAR(MAX),
@@ -16,6 +16,7 @@ AS
 		- 20200310@Eden : First commit [Redmind: #128749]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029] 
 
 	Examples :
 		DECLARE @ErrMsg	NVARCHAR(MAX) = '', @ErrCode TINYINT = 0 
@@ -48,6 +49,8 @@ BEGIN
 		AND vr.CustID IN ( SELECT CustID FROM #CustIDs)
 
 	DELETE vr
+	OUTPUT deleted.CustID, deleted.Sporttype, [dbo].[f_GetDateTime2]()
+	INTO VRSettingManualUpdAcc_Del_Inhouse(CustID,Sporttype,RepUpdateTime)
 	FROM [dbo].[VRSettingManualUpdAcc] vr WITH(ROWLOCK)
 	WHERE vr.SportType = @SportType
 		AND vr.CustID IN ( SELECT CustID FROM #RealUpdateList)

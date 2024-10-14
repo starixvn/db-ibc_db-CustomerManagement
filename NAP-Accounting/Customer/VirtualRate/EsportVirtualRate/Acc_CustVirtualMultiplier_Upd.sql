@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_Upd]
 	@CustID INT
@@ -28,6 +28,7 @@ AS
 		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
 		- 20201009@Eden: NAP CM - Customize Logs of Virtual Rate [Redmine: #143201]
 		- 20220422@Eden: SQL Server Upgrade to 2019 Phase 5 [Redmine: #171831]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Mapping log columns:
 		, IsNew							AS C1
@@ -269,7 +270,7 @@ BEGIN
 	FROM #VRLineCustID
 	WHERE custid = @custid
 
-	EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
+	EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
 				@custid = @CustID
 				, @roleid = @RoleID
 				, @action = 'NewVRUpd'
@@ -277,8 +278,8 @@ BEGIN
 				, @SportType = @SportType
 
 	IF @IsManualUpdate = 1 AND NOT EXISTS ( SELECT TOP 1 1 FROM dbo.[VRSettingManualUpdAcc] WITH(NOLOCK) WHERE SportType = @SportType AND CustID = @CustID)
-		INSERT INTO dbo.[VRSettingManualUpdAcc](SportType, CustID) 
-		SELECT @SportType, @CustID
+		INSERT INTO dbo.[VRSettingManualUpdAcc](SportType, CustID,RepUpdateTime) 
+		SELECT @SportType, @CustID, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 
 	SELECT @EndRun = GETDATE()    
 	SELECT @Duration  = DATEDIFF (MILLISECOND,@startRun,@endRun)

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFirstBetDate   
 	@CustIDList VARCHAR(max)
 	,@Sporttype INT
@@ -15,6 +15,7 @@ AS
 	    - 20200805@Eden: First commit [#138168]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:  
 	Examples:
@@ -47,6 +48,7 @@ BEGIN
 	  
 	UPDATE v
 	SET v.FirstBetDate = @BetDate
+		,v.RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM VRCustAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @CustTbl t ON v.CustID = t.CustID
 	WHERE v.SportType = @Sporttype

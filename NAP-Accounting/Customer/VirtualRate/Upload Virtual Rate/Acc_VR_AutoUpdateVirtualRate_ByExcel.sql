@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_AutoUpdateVirtualRate_ByExcel]
 	 @SportType INT = 43
 	,@SessionID UNIQUEIDENTIFIER = NULL
