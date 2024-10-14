@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySel]
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicySel]
 	@IsTest	TINYINT,
 	@PolicyID		INT = 0,
 	@LeagueGroups VARCHAR(MAX),
@@ -20,9 +20,10 @@ AS
 		- 20240122@Winfred: NAPCM - Support for Saba [RedmineID: #193809]  
 		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
+	Example: NAP_CM_CustomerClassPolicySel @IsTest = 1,	@PolicyID = 0
 */ 
 BEGIN
 	SET NOCOUNT ON; 
@@ -74,6 +75,7 @@ BEGIN
 				,LastModifiedUser
 				,LastModifiedTime
 				,b.LeagueGroupNames
+				,a.TopPriority 
 		FROM CustomerClassRule a WITH(NOLOCK)
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames
@@ -115,6 +117,7 @@ BEGIN
 				,LastModifiedUser
 				,LastModifiedTime
 				,b.LeagueGroupNames
+				,a.TopPriority 
 		FROM CustomerClassRule a WITH(NOLOCK)
 			CROSS APPLY(
 				SELECT STRING_AGG(CAST((CASE WHEN lg.LeagueGroupID = -1 THEN 'All' ELSE ps.GroupName END) AS VARCHAR(200)), ',') WITHIN GROUP (ORDER BY GroupName)  AS LeagueGroupNames

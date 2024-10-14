@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleDel] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassRuleDel] 
 	  @RuleIDs		VARCHAR(MAX)
 	, @UserID		INT
 	, @IsTest		TINYINT	
@@ -17,10 +17,11 @@ AS
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679] 
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
 
-	Example: NAP_LM_CustomerClassRuleDel @@RuleIDs = '1,2,3,4,5,6,9,7,8,11' , @ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_CM_CustomerClassRuleDel @@RuleIDs = '1,2,3,4,5,6,9,7,8,11' , @ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -48,10 +49,10 @@ BEGIN
 			NextBetInterval SMALLINT, SuperBetInterval SMALLINT, SiteBetInterval SMALLINT,
 			MinBet INT, MaxBet INT, MaxPerMatch INT, RepeatedBets TINYINT, SeizeBetTicket TINYINT,
 			DisableParlay BIT, PeakHourSpreadAdjustment SMALLINT, AgentBetInterval SMALLINT, 
-			LeagueGroupIDs VARCHAR(MAX),Policies VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
+			LeagueGroupIDs VARCHAR(MAX),Policies VARCHAR(MAX), Enable BIT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME, TopPriority	bit)
 
 	INSERT INTO #CustomerClassRule_History( RuleID, CustomerClass, CustomerClassDetail, RuleTitle, SportType, IsLive, DiffBalanceRatio, BetDelay, NextBetInterval, SuperBetInterval, SiteBetInterval, 
-				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Policies, Enable, IsTest, LastModifiedUser, LastModifiedTime)
+				MinBet, MaxBet, MaxPerMatch, RepeatedBets, SeizeBetTicket, DisableParlay, PeakHourSpreadAdjustment, AgentBetInterval, LeagueGroupIDs, Policies, Enable, IsTest, LastModifiedUser, LastModifiedTime, TopPriority)
 	SELECT a.RuleID,
 			a.CustomerClass,
 			a.CustomerClassDetail,
@@ -76,7 +77,8 @@ BEGIN
 			a.Enable,
 			a.IsTest,
 			a.LastModifiedUser,
-			a.LastModifiedTime  
+			a.LastModifiedTime,
+			a.TopPriority
 	FROM CustomerClassRule a WITH(NOLOCK)
 		OUTER APPLY(
 				SELECT STRING_AGG(CAST(LeagueGroupID AS VARCHAR(MAX)), ',') WITHIN GROUP (ORDER BY LeagueGroupID)  AS LeagueGroupIDs
@@ -127,7 +129,8 @@ BEGIN
 							cs.IsTest							AS '@IsTest',
 							cs.LastModifiedUser		AS '@LastModifiedUser',
 							CONVERT(VARCHAR(10), cs.LastModifiedTime, 120) AS '@LastModifiedTime',	
-							cs.Enable							AS '@Enable'
+							cs.Enable							AS '@Enable',
+							cs.TopPriority							AS '@TopPriority'
 						FROM	#CustomerClassRule_History AS cs	
 						ORDER BY cs.RuleID
 						FOR XML PATH('ClassRule'),

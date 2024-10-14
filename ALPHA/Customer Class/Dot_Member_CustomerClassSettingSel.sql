@@ -27,6 +27,7 @@ AS
 		- 20240306@Winfred: [NAP CM] Customer Class - Tune the CM SP Integration [RedmineID: #201956] 
 		- 20240823@Winfred: [NAP CM] CCMgt - Integrate for Sport CC - Saba Sport [RedmineID: #209775] 
 		- 20240827@Winfred: [NAP CM] NAP CM - SP Dot_Member_CustomerClassSettingSel return data although rule is disabled [RedmineID: #209939] 
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSettingSel @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -36,7 +37,23 @@ AS
 */ 
 BEGIN
 	SET NOCOUNT ON;
-	DECLARE @ModeTest BIT, @SiteNew nvarchar(50), @n INT = 2000000
+	DECLARE @ModeTest BIT, @SiteNew nvarchar(50), @n INT = 2000000 ,
+		@ReturnedCustomerClass SMALLINT, 
+		@ReturnedSportsCC SMALLINT, 
+		@ReturnedDiffBalanceRatio DECIMAL(9, 2), 
+		@ReturnedBetDelay DECIMAL(9, 2),
+		@ReturnedNextBetInterval SMALLINT, 
+		@ReturnedSuperBetInterval SMALLINT, 
+		@ReturnedSiteBetInterval SMALLINT,
+		@ReturnedMinBet INT, 
+		@ReturnedMaxBet INT, 
+		@ReturnedMaxPerMatch INT, 
+		@ReturnedRepeatedBets TINYINT, 
+		@ReturnedSeizeBetTicket TINYINT,
+		@ReturnedDisableParlay BIT, 
+		@ReturnedPeakHourSpreadAdjustment SMALLINT, 
+		@ReturnedAgentBetInterval SMALLINT, 
+		@ReturnedLeagueGroupID SMALLINT
 	
 	SELECT  @SiteNew = CASE WHEN @IsDeposit = 0 THEN 'AllCredit' ELSE 'AllDeposit' END
 		
@@ -49,116 +66,167 @@ BEGIN
 
 	 IF @ModeTest = 1 
 	 BEGIN
-		SELECT
-			CASE WHEN MAX(LeagueGroupID) IS NOT NULL THEN @CustomerClass ELSE NULL END AS ReturnedCustomerClass,
-			CASE WHEN MAX(LeagueGroupID) IS NOT NULL THEN @SportsCC ELSE NULL END AS ReturnedSportsCC,
-			@site AS ReturnedSite, 
-			@Currency AS ReturnedCurrency, 
-			@Platform AS ReturnedPlatform, 
-			@SportType AS ReturnedSportType, 
-			ISNULL(MAX(cc.DiffBalanceRatio),1) AS ReturnedDiffBalanceRatio, 
-			ISNULL(Max(cc.BetDelay),1) AS ReturnedBetDelay,
-			Max(cc.NextBetInterval) AS ReturnedNextBetInterval, 
-			Max(cc.SuperBetInterval) AS ReturnedSuperBetInterval, 
-			Max(cc.SiteBetInterval) AS ReturnedSiteBetInterval,
-			Min(cc.RepeatedBets) AS ReturnedRepeatedBets,
-			MAX(CASE WHEN cc.DisableParlay  = 0 THEN 0 ELSE 1 END) AS ReturnedDisableParlay, 
-			MAX(cc.PeakHourSpreadAdjustment) AS ReturnedPeakHourSpreadAdjustment, 
-			Max(cc.SeizeBetTicket) AS ReturnedSeizeBetTicket,
-			Max(cc.MinBet) AS ReturnedMinBet, 
-			Min(cc.MaxBet) AS ReturnedMaxBet, 
-			Min(cc.MaxPerMatch) AS ReturnedMaxPerMatch,  
-			Max(cc.AgentBetInterval) AS ReturnedAgentBetInterval, 
-			MAX(LeagueGroupID) AS ReturnedLeagueGroupID
-		FROM 
-			[dbo].[CustomerClassSiteManagement_UAT] cm WITH(NOLOCK)
-			CROSS APPLY (SELECT TOP (@n) cc.DiffBalanceRatio, 
-								cc.BetDelay,
-								cc.NextBetInterval, 
-								cc.SuperBetInterval, 
-								cc.SiteBetInterval,
-								cc.RepeatedBets,
-								cc.DisableParlay, 
-								cc.PeakHourSpreadAdjustment, 
-								cc.SeizeBetTicket,
-								cc.MinBet, 
-								cc.MaxBet, 
-								cc.MaxPerMatch,  
-								cc.AgentBetInterval,
-								clg.LeagueGroupID
-							FROM CustomerClassRule_UAT cc WITH(NOLOCK) 
-								INNER JOIN CustomerClassPolicyRule_UAT cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
-								INNER JOIN CustomerClassPolicyManagement_UAT cpm WITH(NOLOCK) ON cp.RuleID = cc.RuleID 
-								INNER JOIN CustomerClassRuleLeagueGroup_UAT clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
-							WHERE cm.PolicyID = cpm.PolicyID
-									AND cc.CustomerClass IN ( @CustomerClass, 0)
-									AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
-									AND cc.SportType = @SportType 
-									AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
-									AND cpm.IsTest = @IsTest 
-									AND cc.IsLive IN (2, @liveindicator)
-									AND cc.Enable = 1 )cc
+		SELECT TOP 1	@ReturnedCustomerClass           =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @CustomerClass ELSE NULL END                     , 
+						@ReturnedSportsCC                =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @SportsCC ELSE NULL END                          , 
+						@ReturnedDiffBalanceRatio        =ReturnedDiffBalanceRatio					, 
+						@ReturnedBetDelay                =ReturnedBetDelay							, 
+						@ReturnedNextBetInterval         =ReturnedNextBetInterval                   , 
+						@ReturnedSuperBetInterval        =ReturnedSuperBetInterval                  ,
+						@ReturnedSiteBetInterval         =ReturnedSiteBetInterval                   , 
+						@ReturnedRepeatedBets            =ReturnedRepeatedBets                      , 
+						@ReturnedDisableParlay           =ReturnedDisableParlay                     , 
+						@ReturnedPeakHourSpreadAdjustment=ReturnedPeakHourSpreadAdjustment          , 
+						@ReturnedSeizeBetTicket          =ReturnedSeizeBetTicket                    , 
+						@ReturnedMinBet                  =ReturnedMinBet                            , 
+						@ReturnedMaxBet                  =ReturnedMaxBet                            , 
+						@ReturnedMaxPerMatch             =ReturnedMaxPerMatch                       , 
+						@ReturnedAgentBetInterval        =ReturnedAgentBetInterval                  , 
+						@ReturnedLeagueGroupID			 =ReturnedLeagueGroupID 
+		FROM (
+			SELECT
+				MAX(cc.DiffBalanceRatio) AS ReturnedDiffBalanceRatio, 
+				Max(cc.BetDelay) AS ReturnedBetDelay,
+				Max(cc.NextBetInterval) AS ReturnedNextBetInterval, 
+				Max(cc.SuperBetInterval) AS ReturnedSuperBetInterval, 
+				Max(cc.SiteBetInterval) AS ReturnedSiteBetInterval,
+				Min(cc.RepeatedBets) AS ReturnedRepeatedBets,
+				MAX(CASE WHEN cc.DisableParlay  = 0 THEN 0 ELSE 1 END) AS ReturnedDisableParlay, 
+				MAX(cc.PeakHourSpreadAdjustment) AS ReturnedPeakHourSpreadAdjustment, 
+				Max(cc.SeizeBetTicket) AS ReturnedSeizeBetTicket,
+				Max(cc.MinBet) AS ReturnedMinBet, 
+				Min(cc.MaxBet) AS ReturnedMaxBet, 
+				Min(cc.MaxPerMatch) AS ReturnedMaxPerMatch,  
+				Max(cc.AgentBetInterval) AS ReturnedAgentBetInterval, 
+				MAX(LeagueGroupID) AS ReturnedLeagueGroupID,
+				cc.TopPriority
+			FROM 
+				[dbo].[CustomerClassSiteManagement_UAT] cm WITH(NOLOCK)
+				CROSS APPLY (SELECT TOP (@n) cc.DiffBalanceRatio, 
+									cc.BetDelay,
+									cc.NextBetInterval, 
+									cc.SuperBetInterval, 
+									cc.SiteBetInterval,
+									cc.RepeatedBets,
+									cc.DisableParlay, 
+									cc.PeakHourSpreadAdjustment, 
+									cc.SeizeBetTicket,
+									cc.MinBet, 
+									cc.MaxBet, 
+									cc.MaxPerMatch,  
+									cc.AgentBetInterval,
+									clg.LeagueGroupID,
+									cc.TopPriority
+								FROM CustomerClassRule_UAT cc WITH(NOLOCK) 
+									INNER JOIN CustomerClassPolicyRule_UAT cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
+									INNER JOIN CustomerClassPolicyManagement_UAT cpm WITH(NOLOCK) ON cp.RuleID = cc.RuleID 
+									INNER JOIN CustomerClassRuleLeagueGroup_UAT clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
+								WHERE cm.PolicyID = cpm.PolicyID
+										AND cc.CustomerClass IN ( @CustomerClass, 0)
+										AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
+										AND cc.SportType = @SportType 
+										AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
+										AND cpm.IsTest = @IsTest 
+										AND cc.IsLive IN (2, @liveindicator)
+										AND cc.Enable = 1 )cc
 								
-		WHERE cm.Site IN ('All', @SiteNew, @Site)
-			AND cm.Currency IN (@Currency, 0)
-			AND cm.Platform IN (0, @Platform)
-		 OPTION(OPTIMIZE FOR (@n =1), FORCE ORDER)
+			WHERE cm.Site IN ('All', @SiteNew, @Site)
+				AND cm.Currency IN (@Currency, 0)
+				AND cm.Platform IN (0, @Platform)
+				GROUP BY cc.TopPriority) KQ
+		ORDER BY TopPriority DESC
+		OPTION(OPTIMIZE FOR (@n =1), FORCE ORDER)
 	 END
 	 ELSE
-	 BEGIN		
-		SELECT
-			CASE WHEN MAX(LeagueGroupID) IS NOT NULL THEN @CustomerClass ELSE NULL END AS ReturnedCustomerClass,
-			CASE WHEN MAX(LeagueGroupID) IS NOT NULL THEN @SportsCC ELSE NULL END AS ReturnedSportsCC,
-			@site AS ReturnedSite, 
-			@Currency AS ReturnedCurrency, 
-			@Platform AS ReturnedPlatform, 
-			@SportType AS ReturnedSportType, 
-			ISNULL(MAX(cc.DiffBalanceRatio),1) AS ReturnedDiffBalanceRatio, 
-			ISNULL(Max(cc.BetDelay),1) AS ReturnedBetDelay,
-			Max(cc.NextBetInterval) AS ReturnedNextBetInterval, 
-			Max(cc.SuperBetInterval) AS ReturnedSuperBetInterval, 
-			Max(cc.SiteBetInterval) AS ReturnedSiteBetInterval,
-			Min(cc.RepeatedBets) AS ReturnedRepeatedBets,
-			MAX(CASE WHEN cc.DisableParlay  = 0 THEN 0 ELSE 1 END) AS ReturnedDisableParlay, 
-			MAX(cc.PeakHourSpreadAdjustment) AS ReturnedPeakHourSpreadAdjustment, 
-			Max(cc.SeizeBetTicket) AS ReturnedSeizeBetTicket,
-			Max(cc.MinBet) AS ReturnedMinBet, 
-			Min(cc.MaxBet) AS ReturnedMaxBet, 
-			Min(cc.MaxPerMatch) AS ReturnedMaxPerMatch,  
-			Max(cc.AgentBetInterval) AS ReturnedAgentBetInterval, 
-			MAX(LeagueGroupID) AS ReturnedLeagueGroupID
-		FROM 
-			[dbo].[CustomerClassSiteManagement] cm WITH(NOLOCK)
-			CROSS APPLY (SELECT TOP (@n) cc.DiffBalanceRatio, 
-								cc.BetDelay,
-								cc.NextBetInterval, 
-								cc.SuperBetInterval, 
-								cc.SiteBetInterval,
-								cc.RepeatedBets,
-								cc.DisableParlay, 
-								cc.PeakHourSpreadAdjustment, 
-								cc.SeizeBetTicket,
-								cc.MinBet, 
-								cc.MaxBet, 
-								cc.MaxPerMatch,  
-								cc.AgentBetInterval,
-								clg.LeagueGroupID
-							FROM CustomerClassRule cc WITH(NOLOCK) 
-								INNER JOIN CustomerClassPolicyRule cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
-								INNER JOIN CustomerClassPolicyManagement cpm WITH(NOLOCK) ON cp.RuleID = cc.RuleID 
-								INNER JOIN CustomerClassRuleLeagueGroup clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
-							WHERE cm.PolicyID = cpm.PolicyID
-									AND cc.CustomerClass IN ( @CustomerClass, 0)
-									AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
-									AND cc.SportType = @SportType 
-									AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
-									AND cpm.IsTest = @IsTest 
-									AND cc.IsLive IN (2, @liveindicator)
-									AND cc.Enable = 1 )cc
+	 BEGIN	
+		SELECT TOP 1	@ReturnedCustomerClass           =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @CustomerClass ELSE NULL END                     , 
+						@ReturnedSportsCC                =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @SportsCC ELSE NULL END                          , 
+						@ReturnedDiffBalanceRatio        =ReturnedDiffBalanceRatio					, 
+						@ReturnedBetDelay                =ReturnedBetDelay							, 
+						@ReturnedNextBetInterval         =ReturnedNextBetInterval                   , 
+						@ReturnedSuperBetInterval        =ReturnedSuperBetInterval                  ,
+						@ReturnedSiteBetInterval         =ReturnedSiteBetInterval                   , 
+						@ReturnedRepeatedBets            =ReturnedRepeatedBets                      , 
+						@ReturnedDisableParlay           =ReturnedDisableParlay                     , 
+						@ReturnedPeakHourSpreadAdjustment=ReturnedPeakHourSpreadAdjustment          , 
+						@ReturnedSeizeBetTicket          =ReturnedSeizeBetTicket                    , 
+						@ReturnedMinBet                  =ReturnedMinBet                            , 
+						@ReturnedMaxBet                  =ReturnedMaxBet                            , 
+						@ReturnedMaxPerMatch             =ReturnedMaxPerMatch                       , 
+						@ReturnedAgentBetInterval        =ReturnedAgentBetInterval                  , 
+						@ReturnedLeagueGroupID			 =ReturnedLeagueGroupID 
+		FROM (
+			SELECT
+				MAX(cc.DiffBalanceRatio) AS ReturnedDiffBalanceRatio, 
+				Max(cc.BetDelay) AS ReturnedBetDelay,
+				Max(cc.NextBetInterval) AS ReturnedNextBetInterval, 
+				Max(cc.SuperBetInterval) AS ReturnedSuperBetInterval, 
+				Max(cc.SiteBetInterval) AS ReturnedSiteBetInterval,
+				Min(cc.RepeatedBets) AS ReturnedRepeatedBets,
+				MAX(CASE WHEN cc.DisableParlay  = 0 THEN 0 ELSE 1 END) AS ReturnedDisableParlay, 
+				MAX(cc.PeakHourSpreadAdjustment) AS ReturnedPeakHourSpreadAdjustment, 
+				Max(cc.SeizeBetTicket) AS ReturnedSeizeBetTicket,
+				Max(cc.MinBet) AS ReturnedMinBet, 
+				Min(cc.MaxBet) AS ReturnedMaxBet, 
+				Min(cc.MaxPerMatch) AS ReturnedMaxPerMatch,  
+				Max(cc.AgentBetInterval) AS ReturnedAgentBetInterval, 
+				MAX(LeagueGroupID) AS ReturnedLeagueGroupID,
+				cc.TopPriority
+			FROM 
+				[dbo].[CustomerClassSiteManagement] cm WITH(NOLOCK)
+				CROSS APPLY (SELECT TOP (@n) cc.DiffBalanceRatio, 
+									cc.BetDelay,
+									cc.NextBetInterval, 
+									cc.SuperBetInterval, 
+									cc.SiteBetInterval,
+									cc.RepeatedBets,
+									cc.DisableParlay, 
+									cc.PeakHourSpreadAdjustment, 
+									cc.SeizeBetTicket,
+									cc.MinBet, 
+									cc.MaxBet, 
+									cc.MaxPerMatch,  
+									cc.AgentBetInterval,
+									clg.LeagueGroupID,
+									cc.TopPriority
+								FROM CustomerClassRule cc WITH(NOLOCK) 
+									INNER JOIN CustomerClassPolicyRule cp WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID 
+									INNER JOIN CustomerClassPolicyManagement cpm WITH(NOLOCK) ON cp.RuleID = cc.RuleID 
+									INNER JOIN CustomerClassRuleLeagueGroup clg WITH(NOLOCK) ON clg.RuleID = cc.RuleID AND cc.IsTest = cpm.IsTest
+								WHERE cm.PolicyID = cpm.PolicyID
+										AND cc.CustomerClass IN ( @CustomerClass, 0)
+										AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
+										AND cc.SportType = @SportType 
+										AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
+										AND cpm.IsTest = @IsTest 
+										AND cc.IsLive IN (2, @liveindicator)
+										AND cc.Enable = 1 )cc
 								
-		WHERE cm.Site IN ('All', @SiteNew, @Site)
-			AND cm.Currency IN (@Currency, 0)
-			AND cm.Platform IN (0, @Platform)
-		 OPTION(OPTIMIZE FOR (@n =1), FORCE ORDER)
+			WHERE cm.Site IN ('All', @SiteNew, @Site)
+				AND cm.Currency IN (@Currency, 0)
+				AND cm.Platform IN (0, @Platform) 
+			GROUP BY cc.TopPriority) KQ
+		ORDER BY TopPriority DESC
+		OPTION(OPTIMIZE FOR (@n =1), FORCE ORDER)
 	END
+
+	SELECT @ReturnedCustomerClass              AS ReturnedCustomerClass            , 
+		   @ReturnedSportsCC                   AS ReturnedSportsCC                 , 
+		   @site							   AS ReturnedSite					   ,
+		   @Currency						   AS ReturnedCurrency                 , 
+		   @Platform						   AS ReturnedPlatform                 , 
+		   @SportType						   AS ReturnedSportType                , 
+		   ISNULL(@ReturnedDiffBalanceRatio,1) AS ReturnedDiffBalanceRatio         , 
+		   ISNULL(@ReturnedBetDelay,1)         AS ReturnedBetDelay                 , 
+		   @ReturnedNextBetInterval            AS ReturnedNextBetInterval          , 
+		   @ReturnedSuperBetInterval           AS ReturnedSuperBetInterval         ,
+		   @ReturnedSiteBetInterval            AS ReturnedSiteBetInterval          , 
+		   @ReturnedRepeatedBets               AS ReturnedRepeatedBets             , 
+		   @ReturnedDisableParlay              AS ReturnedDisableParlay            , 
+		   @ReturnedPeakHourSpreadAdjustment   AS ReturnedPeakHourSpreadAdjustment , 
+		   @ReturnedSeizeBetTicket             AS ReturnedSeizeBetTicket           , 
+		   @ReturnedMinBet                     AS ReturnedMinBet                   , 
+		   @ReturnedMaxBet                     AS ReturnedMaxBet                   , 
+		   @ReturnedMaxPerMatch                AS ReturnedMaxPerMatch              , 
+		   @ReturnedAgentBetInterval           AS ReturnedAgentBetInterval         , 
+		   @ReturnedLeagueGroupID			   AS ReturnedLeagueGroupID 
 END

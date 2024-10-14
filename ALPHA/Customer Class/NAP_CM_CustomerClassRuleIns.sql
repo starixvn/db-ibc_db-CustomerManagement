@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassRuleIns] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassRuleIns] 
 	@Rules  VARCHAR(MAX)
 	, @UserID		INT
 	, @IsTest		TINYINT	
@@ -18,6 +18,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
+		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
 
 	Param's Explanation:
 	* @Rules:
@@ -44,7 +45,7 @@ AS
 				LeagueGroupIDs ='1125,1126,1124,1128,1126'/> 
 		</ROOT>'
 
-	Example: NAP_LM_CustomerClassRuleIns @Rules ='<ROOT><r RuleID=1 CustomerClass="200" CustomerClassDetail="300" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs ='1125,1126,1124,1128,1126'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_CM_CustomerClassRuleIns @Rules ='<ROOT><r RuleID=1 CustomerClass="200" CustomerClassDetail="300" RuleTitle = "Rule 1" SportType = 99  IsLive = 1 DiffBalanceRatio = 12 BetDelay = 5  NextBetInterval =6  SuperBetInterval = 4 SiteBetInterval = 6 MinBet = 12  MaxBet = 8 MaxPerMatch =11 RepeatedBets =5  SeizeBetTicket = 9  DisableParlay = 1 PeakHourSpreadAdjustment = 5 AgentBetInterval = 6 LeagueGroupIDs ='1125,1126,1124,1128,1126'/> </ROOT>' ,@ErrCode =0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -219,9 +220,10 @@ BEGIN
 		,	PeakHourSpreadAdjustment 	
 		,	AgentBetInterval
 		,	Enable 	
+		,	TopPriority
 		,	IsTest
-		,  LastModifiedUser
-		,  LastModifiedTime)	
+		,	LastModifiedUser
+		,	LastModifiedTime)	
 		SELECT
 			CustomerClass 			
 			, CustomerClassDetail				
@@ -242,6 +244,7 @@ BEGIN
 			, PeakHourSpreadAdjustment 	
 			, AgentBetInterval
 			, Enable
+			, 0 AS TopPriority
 			, IsTest
 			, @UserID
 			, GETDATE()
