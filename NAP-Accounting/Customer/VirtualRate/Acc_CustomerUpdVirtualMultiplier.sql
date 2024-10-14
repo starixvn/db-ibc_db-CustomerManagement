@@ -54,6 +54,7 @@ AS
 		- 20230721@Luke: Unlock VR for Soccer, Basketball, Other Sports [Redmine: #191162]
 		- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -588,8 +589,10 @@ BEGIN
 	--UPDATE
 	--TODO: Step 1
 	--Unlock selected account's VR/ Enable selected account's VR+ if any
-	DELETE
-	FROM VRCustLockStatus WITH (ROWLOCK)
+	DELETE c
+	OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
+	INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+	FROM VRCustLockStatus c WITH (ROWLOCK)
 	WHERE custid = @custid 
 		AND 1 = CASE WHEN (@IsUpdate_VRLockedStatus_Soccer = 1 AND @VRLockedStatus_Soccer = 0 AND Type = 1) 
 						OR (@IsUpdate_VRLockedStatus_OS = 1 AND @VRLockedStatus_OS = 0 AND Type = 2)
@@ -600,15 +603,15 @@ BEGIN
 	
 	IF @IsUpdate_VRAccumulate_Balance = 1 AND @VRAccumulate_Balance = 1 
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type)
-		SELECT @custid, 4 AS Type
+		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		SELECT @custid, 4 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 
 	--TODO: Step 2
 	--Unlock downlines's VR/ Enable downlines's VR+ if any
 	IF @UnlockSCDownLine  = 1 OR @UnlockBBDownLine = 1 OR @UnlockOSDownLine = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04
+		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'UnlockVRDownline'
@@ -617,7 +620,7 @@ BEGIN
 
 	IF @EnableABDownline  = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04   
+		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'EnableABDownline'
@@ -632,29 +635,38 @@ BEGIN
 			,	@action = 'VirtualMultiplier'
 			,	@EnableVirtualrate = @EnableVirtualrate
 			,	@virtualmultiplier = @virtualmultiplier
+
+	EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
+				@custid = @custid
+			,	@roleid = @roleid
+			,	@action = 'VirtualMultiplier'
+			,	@EnableVirtualrate = @EnableVirtualrate
+			,	@virtualmultiplier = @virtualmultiplier
 		
 	--TODO: Step 4
 	--Lock selected account's VR/ Disable selected account's VR+ if any 
 	IF @IsUpdate_VRLockedStatus_Soccer = 1 AND @VRLockedStatus_Soccer = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type)
-		SELECT @custid, 1 AS Type
+		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		SELECT @custid, 1 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	IF @IsUpdate_VRLockedStatus_OS = 1 AND @VRLockedStatus_OS = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type)
-		SELECT @custid, 2 AS Type
+		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		SELECT @custid, 2 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	IF @IsUpdate_VRLockedStatus_Basketball = 1 AND @VRLockedStatus_BasketBall = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type)
-		SELECT @custid, 3 AS Type
+		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		SELECT @custid, 3 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	
 	IF @IsUpdate_VRAccumulate_Balance = 1 AND @VRAccumulate_Balance = 0
 	BEGIN
-		DELETE 
-		FROM VRCustLockStatus WITH (ROWLOCK)
+		DELETE c
+		OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
+		INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+		FROM VRCustLockStatus c WITH (ROWLOCK)
 		WHERE custid = @custid AND Type = 4
 	END
 
@@ -662,7 +674,7 @@ BEGIN
 	--Lock downlines's VR/ Disable downlines's VR+ if any 
 	IF @LockSCDownLine  = 1 OR @LockBBDownLine = 1 OR @LockOSDownLine = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04
+		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'LockVRDownline'
@@ -671,7 +683,7 @@ BEGIN
 
 	IF @DisableABDownline  = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_Execrep_04
+		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'DisableABDownline'

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_VR_CustomerUpdFollowParent
 	 @CustIDList VARCHAR(max)
 	,@Sporttype INT
@@ -18,6 +18,7 @@ AS
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20230307@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Param's Explanation:  
 	Examples:
@@ -180,6 +181,7 @@ BEGIN
 
 		UPDATE cvs
 		SET cvs.bitmapVirtual = bm.bitmap
+			,cvs.RepUpdateTime = [dbo].[f_GetDateTime2]()
 		FROM CustVirtualSetting	AS cvs WITH(UPDLOCK, ROWLOCK)			
 			INNER JOIN	@virtualXML	AS tmp
 					ON	cvs.seqNo = tmp.seqNo
@@ -191,6 +193,7 @@ BEGIN
 	--> Update Status = 3 : done update VR follow parent
 	UPDATE v
 	SET v.Status = 3
+		,v.RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM VRCustAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @Input_CustTbl t ON v.CustID = t.CustID
 	WHERE v.SportType = @Sporttype

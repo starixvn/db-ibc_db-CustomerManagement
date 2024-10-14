@@ -1,8 +1,9 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_VREngine_League_Sel] 
 	@Leaguename NVARCHAR(500) = '',
 	@LeagueGroupList VARCHAR(MAX) = NULL,
-	@LeagueGroupList_NotApply VARCHAR(MAX) = NULL
+	@LeagueGroupList_NotApply VARCHAR(MAX) = NULL,
+	@JsonSportList VARCHAR(MAX)	= ''
 AS
 /*
 	Created: 20210428@Eden
@@ -16,7 +17,10 @@ AS
 	- 20220610@Tacy: Alpha/NAP - Remove IsDeleted field in League Table [RedmineID: #171699]
 
 	Parameter explanation:
-
+		- Input -> @JsonSportList : Json Type
+		'[  { "Sporttype": "1" }, { "Sporttype": "2" }, { "Sporttype": "43" }, { "Sporttype": "99" },
+			{ "Sporttype": "5" }, { "Sporttype": "8" }, { "Sporttype": "9901" }, { "Sporttype": "9902" }
+		]'
 	Example: 
 	EXEC NAP_VREngine_League_Sel 
 		@Leaguename = 'Serie a',
@@ -36,9 +40,14 @@ BEGIN
 		SET @LeagueGroupList = '-1'
 	END
 
+	--SELECT Sporttype
+	--FROM OPENQUERY (DBTXN, 'SELECT DISTINCT r.Sporttype FROM bodb02.dbo.Sport_Bettype_Reference_VirtualRate r WITH(NOLOCK)')
+
 	INSERT INTO #SportVR(sporttype)
-	SELECT Sporttype
-	FROM OPENQUERY (DBTXN, 'SELECT DISTINCT r.Sporttype FROM bodb02.dbo.Sport_Bettype_Reference_VirtualRate r WITH(NOLOCK)')
+	SELECT sb.Sporttype
+	FROM OPENJSON(@JsonSportList )
+	WITH  (Sporttype smallint ) AS sb
+	WHERE ISJSON(@JsonSportList) > 0
 	UNION 
 	SELECT r.Sporttype
 	FROM dbo.VRSettingHierarchy r WITH(NOLOCK)

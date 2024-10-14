@@ -56,6 +56,7 @@ AS
 		- 20230918@Eden: DCS Sportsbook Credit[redmine: #193083]
 		- 20240628@Johnson: scale out DBCUST [redmine: #199915]
 		- 20240520@Eden: Unify RNG Games [redmine: #204358] 
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -545,8 +546,8 @@ BEGIN
 	END CATCH
 	
 	BEGIN TRY
-		INSERT INTO [dbo].[CustVirtualSetting] (custid, seqNo, bitmapVirtual)
-		SELECT custid, seqNo, bitmapVirtual FROM f_GenerateVirtualSettingBySite (@Site,@CustID)
+		INSERT INTO [dbo].[CustVirtualSetting] (custid, seqNo, bitmapVirtual,RepUpdateTime)
+		SELECT custid, seqNo, bitmapVirtual,[dbo].[f_GetDateTime2]() AS RepUpdateTime FROM f_GenerateVirtualSettingBySite (@Site,@CustID)
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrMsg = CASE @Language 
@@ -558,6 +559,7 @@ BEGIN
 		-- ROLLBACK MANUALLY			
 		EXEC Acc_CustomerInsSetting_Rollback @CustID = @CustID, @RoleID = 4
 		EXEC Acc_CustomerInsUserInfo_Rollback @CustID = @CustID
+		EXEC Acc_CustomerInsSetting_Rollback @CustID = @CustID, @roleid = @roleid
 		RETURN
 	END CATCH	
 	
@@ -616,6 +618,14 @@ BEGIN
 		-- ROLLBACK MANUALLY			
 		EXEC Acc_CustomerInsSetting_Rollback @CustID = @CustID, @RoleID = 4
 		EXEC Acc_CustomerInsUserInfo_Rollback @CustID = @CustID
+		--Inhouse Tables
+		--DELETE FROM CustVirtualSetting WITH(ROWLOCK) WHERE custId = @CustID
+
+		DELETE c
+		OUTPUT deleted.custid, deleted.seqNo, SYSDATETIME() 
+		INTO CustVirtualSetting_Del_Inhouse(custid,seqNo,RepUpdateTime)
+		FROM CustVirtualSetting c WITH(ROWLOCK) 
+		WHERE CustID = @CustID
 		RETURN
 	END CATCH	
 	

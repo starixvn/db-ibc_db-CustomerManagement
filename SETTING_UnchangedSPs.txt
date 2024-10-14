@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql

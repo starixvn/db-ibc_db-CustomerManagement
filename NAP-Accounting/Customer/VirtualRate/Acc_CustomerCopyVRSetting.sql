@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE	dbo.Acc_CustomerCopyVRSetting   
 					@Source_Username		VARCHAR(30)
 				,	@Dest_Usernames			VARCHAR(MAX)
@@ -19,6 +19,7 @@ AS
 		- 20230302@Johnson: Return Basketball VR to its original state [redmine:#184339]
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230711@Helios: VR Accumulate Balance [Redmine: #189649]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 	Param's Explanation:  	
 
 	EXEC Acc_CustomerCopyVRSetting 

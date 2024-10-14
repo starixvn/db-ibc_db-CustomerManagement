@@ -19,6 +19,7 @@ AS
 		- 20230427@Luke: Separate lock function for Basketball [Redmine: #185991]
 		- 20230710@Winfred: VR Auto Job - Update the Agent VR to follow UPLINE VR setting [Redmine: #185994]
 		- 20240530@Winfred: Auto adjusment for VR job - Update Lock status follow Upline Status [Redmine: #202848]
+		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 		
 	Param's Explanation:  
 		@Type = 
@@ -188,7 +189,7 @@ BEGIN
 	BEGIN
 		DELETE FROM @tempUpdate_tbl
 
-		UPDATE TOP(3000) t
+		UPDATE TOP(2000) t
 		SET t.IsFinish = 1
 		OUTPUT inserted.CustID INTO @tempUpdate_tbl(CustID)
 		FROM @Update_CustTbl t
@@ -198,6 +199,7 @@ BEGIN
 		
 		UPDATE cvs
 		SET cvs.bitmapVirtual = bm.bitmap
+			,cvs.RepUpdateTime = [dbo].[f_GetDateTime2]()
 		FROM CustVirtualSetting	AS cvs WITH(UPDLOCK, ROWLOCK)
 			INNER JOIN @tempUpdate_tbl t ON cvs.custid = t.CustID			
 			INNER JOIN	@virtualXML	AS tmp
@@ -210,7 +212,8 @@ BEGIN
 
 	--> Update Status = 3
 	UPDATE v
-	SET v.Status = 3
+	SET v.Status = 3,
+		v.RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM VRAgentAutoAdjustment v WITH(ROWLOCK)
 		INNER JOIN @AgentTbl t ON v.AgentID = t.CustID
 	WHERE v.Type = @Type

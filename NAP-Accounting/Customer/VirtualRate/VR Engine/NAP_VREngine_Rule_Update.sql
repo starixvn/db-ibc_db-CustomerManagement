@@ -31,6 +31,7 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Update]
 	@CurrencyIDList VARCHAR(MAX) = NULL,
 	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
 	@CCSporttypeList VARCHAR(MAX) = NULL,
+	@JsonCheckData VARCHAR(MAX)	= '',
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -44,6 +45,7 @@ AS
 	- 20210428@Eden: First commit [Redmine:#136423]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
+	- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -63,6 +65,9 @@ AS
 		@Enabled_Columns : Criteras is enabled on UI
 			'Site,CustomerClass,VRValue,VRStatus,Sporttype,Bettype,LiveIndicator,LeagueGroup,BetFrom,StakeRM,DateOfWeek,TicketTime,Currency,CCSporttype,CustomerClassDetail'
 			
+		- @JsonCheckData : Json Type
+		'[  { "Sporttype": "1", "Bettype": "1", "LeagueGroupID": "1", "LeagueID": "0", "SiteID": "50", "CustomerClass": "2", "DateOfWeek": "2", "CurrencyID": "1", "IsApply": "0", "CustomerClassDetail": "60", "CCSporttype": "60" }
+		]'	
 	Example: 
 	DECLARE @ErrorCode INT = 0 ,@ErrorMsg VARCHAR(MAX) = '' 
 	EXEC NAP_VREngine_Rule_Update 
@@ -426,29 +431,45 @@ BEGIN
 		EXEC sp_xml_removedocument @DocHandler
 	END
 
-	EXEC NAP_VREngine_CriteriaMatrix_Check 
-		 @SporttypeList = @SporttypeList, 
-		 @BettypeList = @BettypeList, 
-		 @LeagueGroupList = @LeagueGroupList, 
-		 @LeagueList = @LeagueList, 
-		 @SiteIDList = @SiteIDList, 
-		 @CustomerClassList = @CustomerClassList, 
-		 @DateOfWeekList = @DateOfWeekList, 
-		 @SporttypeList_NotApply = @SporttypeList_NotApply, 
-		 @BettypeList_NotApply = @BettypeList_NotApply, 
-		 @LeagueGroupList_NotApply = @LeagueGroupList_NotApply, 
-		 @LeagueList_NotApply = @LeagueList_NotApply, 
-		 @SiteIDList_NotApply = @SiteIDList_NotApply, 
-		 @CustomerClassList_NotApply = @CustomerClassList_NotApply, 
-		 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply, 
-		 @CurrencyIDList = @CurrencyIDList,
-		 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
-		 @CCSporttypeList = @CCSporttypeList, 
-		 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
-		 @CustomerClassDetailList = @CustomerClassDetailList, 
-		 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply, 
-		 @ErrorCode = @ErrorCode OUTPUT, 
-		 @ErrorMsg = @ErrorMsg OUTPUT
+	--EXEC NAP_VREngine_CriteriaMatrix_Check 
+	--	 @SporttypeList = @SporttypeList, 
+	--	 @BettypeList = @BettypeList, 
+	--	 @LeagueGroupList = @LeagueGroupList, 
+	--	 @LeagueList = @LeagueList, 
+	--	 @SiteIDList = @SiteIDList, 
+	--	 @CustomerClassList = @CustomerClassList, 
+	--	 @DateOfWeekList = @DateOfWeekList, 
+	--	 @SporttypeList_NotApply = @SporttypeList_NotApply, 
+	--	 @BettypeList_NotApply = @BettypeList_NotApply, 
+	--	 @LeagueGroupList_NotApply = @LeagueGroupList_NotApply, 
+	--	 @LeagueList_NotApply = @LeagueList_NotApply, 
+	--	 @SiteIDList_NotApply = @SiteIDList_NotApply, 
+	--	 @CustomerClassList_NotApply = @CustomerClassList_NotApply, 
+	--	 @DateOfWeekList_NotApply = @DateOfWeekList_NotApply, 
+	--	 @CurrencyIDList = @CurrencyIDList,
+	--	 @CurrencyIDList_NotApply = @CurrencyIDList_NotApply, 
+	--	 @CCSporttypeList = @CCSporttypeList, 
+	--	 @CCSporttypeList_NotApply = @CCSporttypeList_NotApply, 
+	--	 @CustomerClassDetailList = @CustomerClassDetailList, 
+	--	 @CustomerClassDetailList_NotApply = @CustomerClassDetailList_NotApply, 
+	--	 @ErrorCode = @ErrorCode OUTPUT, 
+	--	 @ErrorMsg = @ErrorMsg OUTPUT
+
+	INSERT INTO #ValidData(Sporttype,Bettype,LeagueGroupID,LeagueID,SiteID,CustomerClass,DateOfWeek,CurrencyID,IsApply,CustomerClassDetail,CCSporttype)
+	SELECT sb.Sporttype, sb.Bettype, sb.LeagueGroupID, sb.LeagueID, sb.SiteID, sb.CustomerClass, sb.DateOfWeek, sb.CurrencyID, sb.IsApply, sb.CustomerClassDetail, sb.CCSporttype
+	FROM OPENJSON(@JsonCheckData )
+	WITH  (  Sporttype		     SMALLINT, 
+			 Bettype		     SMALLINT, 
+			 LeagueGroupID	     INT, 
+			 LeagueID		     INT,
+			 SiteID			     INT, 
+			 CustomerClass	     SMALLINT, 
+			 DateOfWeek		     TINYINT,
+			 CurrencyID		     INT,
+			 IsApply		     BIT,
+			 CustomerClassDetail SMALLINT, 
+			 CCSporttype		 SMALLINT ) AS sb
+	WHERE ISJSON(@JsonCheckData) > 0
 
 	IF NOT EXISTS (SELECT 1 FROM #ValidData)
 	BEGIN
@@ -477,45 +498,60 @@ BEGIN
 		,Status				= @Status
 		,Enabled_Column		= @Enabled_Columns
 		,AccumulatedBalance = @AccumulatedBalance
+		,RepUpdateTime = [dbo].[f_GetDateTime2]()
 	WHERE RuleID = @RuleID
 
-	--> Refresh VRSettingRuleDetail
-	MERGE VRSettingRuleDetail rd
-	USING (SELECT * FROM #ValidData WHERE IsApply = 1)  t
-		ON  rd.Sporttype = t.Sporttype
-		AND rd.Bettype = t.Bettype 
-		AND rd.SiteID = t.SiteID
-		AND rd.CustomerClass = t.CustomerClass
-		AND rd.DateOfWeek = t.DateOfWeek
-		AND rd.LeagueGroupID = t.LeagueGroupID
-		AND rd.LeagueID = t.LeagueID
-		AND rd.ruleID = @RuleID
-		AND rd.CurrencyID = t.CurrencyID
-		AND rd.CustomerClassDetail = t.CustomerClassDetail
-		AND rd.CCSporttype = t.CCSporttype
-	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CustomerClassDetail,CCSporttype)
-						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CustomerClassDetail,t.CCSporttype)
-	WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID
-		THEN DELETE; 
-	
-	--> Refresh VRSettingRuleDetail_NotApply
-	MERGE VRSettingRuleDetail_NotApply rd
-	USING (SELECT * FROM #ValidData WHERE IsApply = 0)  t
-		ON  rd.Sporttype = t.Sporttype
-		AND rd.Bettype = t.Bettype 
-		AND rd.SiteID = t.SiteID
-		AND rd.CustomerClass = t.CustomerClass
-		AND rd.DateOfWeek = t.DateOfWeek
-		AND rd.LeagueGroupID = t.LeagueGroupID
-		AND rd.LeagueID = t.LeagueID
-		AND rd.ruleID = @RuleID
-		AND rd.CurrencyID = t.CurrencyID
-		AND rd.CustomerClassDetail = t.CustomerClassDetail
-		AND rd.CCSporttype = t.CCSporttype
-	WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CustomerClassDetail,CCSporttype)
-						VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CustomerClassDetail,t.CCSporttype)
-	WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID
-		THEN DELETE; 
+	--> Refresh VRSettingRuleDetail 
+ INSERT INTO VRSettingRuleDetail_Del_Inhouse(DetailID,RepUpdateTime)
+ SELECT x.DetailID, [dbo].[f_GetDateTime2]()
+ FROM (
+	 MERGE VRSettingRuleDetail rd  
+	 USING (SELECT * FROM #ValidData WHERE IsApply = 1)  t  
+	  ON  rd.Sporttype = t.Sporttype  
+	  AND rd.Bettype = t.Bettype   
+	  AND rd.SiteID = t.SiteID  
+	  AND rd.CustomerClass = t.CustomerClass  
+	  AND rd.DateOfWeek = t.DateOfWeek  
+	  AND rd.LeagueGroupID = t.LeagueGroupID  
+	  AND rd.LeagueID = t.LeagueID  
+	  AND rd.ruleID = @RuleID  
+	  AND rd.CurrencyID = t.CurrencyID  
+	  AND rd.CustomerClassDetail = t.CustomerClassDetail  
+	  AND rd.CCSporttype = t.CCSporttype  
+	 WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CCSporttype,CustomerClassDetail,RepUpdateTime)  
+		  VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CCSporttype,t.CustomerClassDetail,[dbo].[f_GetDateTime2]())  
+	 WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID  
+	  THEN DELETE   
+	  OUTPUT $action AS x_action, deleted.DetailID    
+	  ) X
+	  WHERE X.x_action = 'DELETE'
+	  ;      
+   
+ --> Refresh VRSettingRuleDetail_NotApply
+ INSERT INTO VRSettingRuleDetail_NotApply_Del_Inhouse(DetailID,RepUpdateTime)
+ SELECT x.DetailID, [dbo].[f_GetDateTime2]()
+ FROM (
+	 MERGE VRSettingRuleDetail_NotApply rd  
+	 USING (SELECT * FROM #ValidData WHERE IsApply = 0)  t  
+	  ON  rd.Sporttype = t.Sporttype  
+	  AND rd.Bettype = t.Bettype   
+	  AND rd.SiteID = t.SiteID  
+	  AND rd.CustomerClass = t.CustomerClass  
+	  AND rd.DateOfWeek = t.DateOfWeek  
+	  AND rd.LeagueGroupID = t.LeagueGroupID  
+	  AND rd.LeagueID = t.LeagueID  
+	  AND rd.ruleID = @RuleID  
+	  AND rd.CurrencyID = t.CurrencyID  
+	  AND rd.CustomerClassDetail = t.CustomerClassDetail  
+	  AND rd.CCSporttype = t.CCSporttype  
+	 WHEN NOT MATCHED THEN INSERT (RuleID,Sporttype,Bettype,SiteID,CustomerClass,DateOfWeek,LeagueGroupID,LeagueID,CurrencyID,CustomerClassDetail,CCSporttype,RepUpdateTime)  
+		  VALUES( @RuleID,t.Sporttype,t.Bettype,t.SiteID,t.CustomerClass,t.DateOfWeek,t.LeagueGroupID,t.LeagueID,t.CurrencyID,t.CustomerClassDetail,t.CCSporttype,[dbo].[f_GetDateTime2]())  
+	 WHEN NOT MATCHED BY SOURCE AND rd.RuleID = @RuleID  
+	  THEN DELETE  
+	  OUTPUT $action AS x_action, deleted.DetailID    
+	  ) X
+	  WHERE X.x_action = 'DELETE'
+	  ;   
 
 
 	SET @EndRun = GETDATE()
