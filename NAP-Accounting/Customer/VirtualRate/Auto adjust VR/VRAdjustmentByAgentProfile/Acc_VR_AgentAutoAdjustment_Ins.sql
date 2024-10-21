@@ -12,6 +12,7 @@ AS
 	    - 20200827@Eden: First commit [#140421]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
+		- 202401021@Winfred: Fix While Loop  [redmine: #212439]
 
 	Param's Explanation:  
 	Examples:
@@ -46,6 +47,7 @@ BEGIN
 		OUTPUT DELETED.CustID, DELETED.Type
 		INTO @tblCust_tmp(CustID,Type)
 		FROM @tblCust c	
+		WHERE isFinished = 0
 			
 		IF @@ROWCOUNT = 0 BREAK 
 
