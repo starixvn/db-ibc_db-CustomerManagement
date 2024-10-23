@@ -73,6 +73,7 @@ AS
 		- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
 		- 20240223@Luke: EXT - Support one more filter to filter "No Downline" Supers [Redmine: #201009]
 		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
+		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 
 	Explanation's Param:
 		@Status = 
@@ -245,8 +246,7 @@ BEGIN
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 3 THEN cda.Discount ELSE 0 END) AS groupb,
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 7 THEN cda.Discount ELSE 0 END) AS groupc,
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 8 THEN cda.Discount ELSE 0 END) AS groupd,
-			MAX(CASE WHEN cda.SportType = 2 and cda.BetType = 1 THEN 1		    ELSE 0 END) AS IsMyanmarOdds,
-			MAX(CASE WHEN cda.SportType = 2 and cda.BetType = 1 THEN cda.Discount ELSE 0 END) AS discountMyanmarOdds,
+			
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 5 THEN cda.Discount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 4 THEN cda.Discount ELSE 0 END) AS discountcs,
 			ISNULL(cps.Locked,0) AS Locked

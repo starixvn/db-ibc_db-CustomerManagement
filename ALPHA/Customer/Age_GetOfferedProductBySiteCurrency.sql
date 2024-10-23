@@ -15,7 +15,8 @@ AS
 		- 20240111@Johnson: exclude saba casino from dummy products [redmine: #194591]
 		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
 		- 20240701@Tacy: Grant permission on Ext NAP acc [Redmine: #206055] 
-		- 20240521@Helios: Unify RNG Games [Redmine: #204358]   
+		- 20240521@Helios: Unify RNG Games [Redmine: #204358]  
+		- 20241115@Johnson: hardcode to show product list non-offer(bitcoin) on report 
 	Examples:
 	
 */
@@ -74,6 +75,8 @@ BEGIN
 	SELECT p.RealProductId,p.SportType,p.Bettype
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
 		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
+	UNION
+	SELECT 69,175,7901 --bitcoin
 	
 	INSERT INTO #OfferProduct (ProductID, IsHidden)
 	SELECT DISTINCT ft.ProductID, 

@@ -66,7 +66,7 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
-	
+	- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 	Explanation's Param:
 	@Status = 
 		0: All
@@ -205,10 +205,6 @@ BEGIN
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount,
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discountcs,
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount1x2,
-
-			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN 1				ELSE 0 END)    AS IsMyanmarOdds,
-			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountMyanmarOdds,
-			MAX(CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discountMyanmarOdds,
 
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount,
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountcs,
