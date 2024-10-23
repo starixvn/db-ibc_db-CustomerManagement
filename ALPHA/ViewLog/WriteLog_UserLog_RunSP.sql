@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv,Dot_Admin,wsv_lap" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv,Dot_Admin,wsv_lap,asv_cust" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@UserID INT,
 		@CustID INT = 0,
@@ -21,7 +21,7 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		- 20110519@Johnson: add new column TrackingValue2
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
-		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]      
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action
@@ -40,7 +40,7 @@ BEGIN
 			@LogDate DATETIME = GETDATE()
 	CREATE TABLE #AffectedDownlines(CustID INT)
 
-	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','DB233','DB230\SQLSERVER2008R2')
+	IF @@SERVERNAME IN ('DBCUST','SITDBCUST','TESTDBCUST','DB-60\DevDBcust')
 	BEGIN
 		SELECT @Site = Site FROM CustDB.dbo.Customer WITH (NOLOCK) WHERE custid = @CustID
 	END
