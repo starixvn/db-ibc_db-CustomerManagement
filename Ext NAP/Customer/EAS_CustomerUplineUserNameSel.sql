@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerUplineUserNameSel]
-	@UserName NVARCHAR(50),
+	@UserName VARCHAR(30),
 	@GroupName VARCHAR(50)
 AS
 /*
@@ -12,6 +12,8 @@ AS
 	Revisions:
 		- 20200406@Johnson: initial sp [redmine:#130647]
 		- 20200512@Johnson: check super's prefix for 789y's group [redmine:#133846]
+		- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:#206823]
+
 	Param's Explanation:
 		@Username: @Username want to get upline's username
 		@GroupName: external group need to check customer belongs to or not
@@ -19,11 +21,12 @@ AS
 BEGIN
     SET NOCOUNT ON
     
-    DECLARE @RoleID INT, @currency INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT,
+    DECLARE @RoleID INT, @currency INT, @MemberID INT, @AgentID INT, @SuperID INT, @MasterID INT, @CustID INT,
 			@MemberUserName NVARCHAR(50), @AgentUserName NVARCHAR(50), @SuperUserName NVARCHAR(50), 
 			@MasterUserName NVARCHAR(50), @isExistGroup BIT = 0, @isValidSuperPrefix BIT = 1
-       
-    SELECT @RoleID = roleID, @SuperID = srecommend, @currency = currency
+			, @site VARCHAR(10)
+
+    SELECT @RoleID = roleID, @SuperID = srecommend, @currency = currency, @site = site, @CustID = CustID
 	FROM customer WITH(NOLOCK)
 	WHERE username = @UserName
 		AND site <> 'CN88'
@@ -55,13 +58,13 @@ BEGIN
 	
 	IF @RoleID IS NULL OR @RoleID > 4
 	BEGIN
-		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+		SELECT NULL AS CustId,NULL AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+		SELECT NULL AS CustId,NULL AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+		SELECT NULL AS CustId,NULL AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 		UNION ALL 
-		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+		SELECT NULL AS CustId,NULL AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 		RETURN
 	END
     ELSE IF @RoleID = 1
@@ -72,7 +75,7 @@ BEGIN
 				@SuperID = ci.srecommend,
 				@MemberUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
-		WHERE ci.username = @Username
+		WHERE ci.custid = @CustID
 
 		SELECT @AgentUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
@@ -95,7 +98,7 @@ BEGIN
 				@MemberUserName = NULL,
 				@AgentUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
-		WHERE ci.username = @Username
+		WHERE ci.custid = @CustID
 
 		SELECT @MasterUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
@@ -115,7 +118,7 @@ BEGIN
 				@AgentUserName = NULL,
 				@MasterUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
-		WHERE ci.username = @Username
+		WHERE ci.custid = @CustID
 
 		SELECT @SuperUserName = ci.username 
 		FROM dbo.custInfo ci WITH (NOLOCK)
@@ -132,16 +135,16 @@ BEGIN
 				@MasterUserName = NULL,
 				@SuperUserName = ci.username
 		FROM dbo.custInfo ci WITH (NOLOCK)
-		WHERE ci.username = @Username
+		WHERE ci.custid = @CustID
 
 	END
 	
-	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+	SELECT @MemberID AS CustId,@MemberUserName AS UserName, 1 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 	UNION ALL
-	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+	SELECT @AgentID AS CustId,@AgentUserName AS UserName, 2 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 	UNION ALL
-	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+	SELECT @MasterID AS CustId,@MasterUserName AS UserName, 3 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 	UNION ALL
-	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix
+	SELECT @SuperID AS CustId,@SuperUserName AS UserName, 4 AS RoleId, @isExistGroup isExistGroup, @currency currency, @isValidSuperPrefix isValidSuperPrefix, @site site
 	   
 END

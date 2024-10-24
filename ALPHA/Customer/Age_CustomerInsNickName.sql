@@ -21,58 +21,33 @@ Revisions:
     - 20141117@Johnson: write log IP
 	- 20181002@Dominic: Check existing username/username2 in archived DB  [Redmine:99882]
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
+	- 20240704@Louisa: Scaleout DBCUST [Redmine:#199915]
+
 Param's Explanation:
 • @custid: custid that need to be update.   
 */
 
+BEGIN
 SET NOCOUNT ON
 
------******* Create Nickname
-DECLARE @Username2 varchar(50)
-
-SELECT @Username2 = ISNULL(Username2,'') FROM Customer WITH (NOLOCK) WHERE CustID =@CustID
-
-IF @Username2 =''
-BEGIN 
-
----Check duplicate Nickname
-DECLARE @IsExists BIT 
-EXEC Age_CustomerCheckExists @username = @Nickname, @IsExists = @IsExists OUTPUT
-
-IF @IsExists = 1
-BEGIN 
-    SELECT  @ErrMsg = CASE @language
-                          WHEN 'E' THEN 'Nickname is not available'
-                          ELSE [dbo].[f_Get_MsgNamebyMsgID](40006,@Language)
-                        END ,
-            @ErrCode = 102
-    RETURN
-END  
-
-
 ------ Create Nickname
-
-SET @ErrCode = 0
-SET @ErrMsg = ''
-
-UPDATE  Customer WITH (ROWLOCK)
-SET     Username2 = @Nickname
-WHERE   custid = @custid and ISNULL(Username2,'') = ''
+	BEGIN TRY
+		UPDATE  Customer WITH (ROWLOCK)
+		SET     Username2 = @Nickname, RepUpdateTime = SYSDATETIME()
+		WHERE   custid = @custid and ISNULL(Username2,'') = ''
  
-	
-----Error return
-    IF ( @@error <> 0 ) 
-        BEGIN
+	END TRY
+	BEGIN CATCH
             SELECT  @ErrMsg = CASE @language
                                   WHEN 'E' THEN 'Failed to create username. Please try again.'
                                   ELSE [dbo].[f_Get_MsgNamebyMsgID](40007,@Language)
                                 END ,
                     @ErrCode = 105 
             RETURN
-        END
+     END CATCH
 
----------- 
---Write log Nickname
+	---------- 
+	--Write log Nickname
     DECLARE @LogSPData NVARCHAR(4000)
 
     SELECT  @LogSPData = '<Age_CustomerInsNickname CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" '
@@ -81,31 +56,26 @@ WHERE   custid = @custid and ISNULL(Username2,'') = ''
 						+ 'ErrCode="' + COALESCE(CAST(@ErrCode AS VARCHAR(50)), SPACE(1)) + '" ' 
 						+ 'ErrMsg="' + COALESCE(CAST(@ErrMsg AS VARCHAR(400)), SPACE(1)) + '" />' 
 
-BEGIN TRY
-	/*621	Age_CustomerUpdNickname	Update downline's info*/
-	EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-		@UserID = @CustID,
-		@CustID = @CustID, 
-		@ActionID = 621, 
-		@TrackingValue = @LogSPData 
-END TRY
-BEGIN CATCH
-    SELECT  @LogSPData = '<Age_CustomerInsNickname CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" '
-					+ 'Username2="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@Nickname AS  VARCHAR(50)), SPACE(1))) + '" '
-					+ 'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' 
-					+ 'ErrCode="' + COALESCE(CAST(ERROR_NUMBER() AS VARCHAR(50)), SPACE(1)) + '" ' 
-					+ 'ErrMsg="' + COALESCE(CAST(ERROR_MESSAGE() AS VARCHAR(2000)), SPACE(1)) + '" />'
+	BEGIN TRY
+		/*621	Age_CustomerUpdNickname	Update downline's info*/
+		EXEC DBLOG.bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+			@UserID = @CustID,
+			@CustID = @CustID, 
+			@ActionID = 621, 
+			@TrackingValue = @LogSPData 
+	END TRY
+	BEGIN CATCH
+		SELECT  @LogSPData = '<Age_CustomerInsNickname CustID="' + COALESCE(CAST(@CustID AS VARCHAR(50)), SPACE(1)) + '" '
+						+ 'Username2="'+ dbo.f_EncodeXMLValue(COALESCE(CAST(@Nickname AS  VARCHAR(50)), SPACE(1))) + '" '
+						+ 'IP="' + COALESCE(CAST(@IP AS VARCHAR(50)), SPACE(1)) + '" ' 
+						+ 'ErrCode="' + COALESCE(CAST(ERROR_NUMBER() AS VARCHAR(50)), SPACE(1)) + '" ' 
+						+ 'ErrMsg="' + COALESCE(CAST(ERROR_MESSAGE() AS VARCHAR(2000)), SPACE(1)) + '" />'
 						
-	EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
-		@UserID = @CustID,
-		@CustID = @CustID, 
-		@ActionID = 621, 
-		@TrackingValue = @LogSPData 
-END CATCH
+		EXEC bodb_CustomerLog.dbo.WriteLog_UserLog_RunSP 
+			@UserID = @CustID,
+			@CustID = @CustID, 
+			@ActionID = 621, 
+			@TrackingValue = @LogSPData 
+	END CATCH
 END 
-
-
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerInsNickName] TO [wsv_alp]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerInsNickName] TO [vnteam]

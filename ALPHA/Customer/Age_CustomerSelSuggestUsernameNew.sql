@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerSelSuggestUsernameNew] 
 	@prefix		VARCHAR(50),	
 	@roleid		INT,
@@ -16,6 +16,8 @@ AS
 			- 20230414@Johnson: initial sp [redmine:#183697] 
 			- 20230420@Johnson: check username2 [redmine:#187266]
 			- 20230808@Helios: Add Errorlog, ErrMsg [Redmine: #190167]
+			- 20240704@Helen: Scale out dbcust - [Redmine:206823]
+
 		Parameter's Explanation:			
 			- @prefix: prefix's name of new member
 			- @roleid: roleid of upline
@@ -31,18 +33,13 @@ BEGIN
 					WHEN @roleid = 2 THEN 1 ELSE 0 END
 	AND NOT exists (
 		SELECT top 1 1
-		FROM dbo.customer WITH(NOLOCK)			
+		FROM dbo.CustInfoMini WITH(NOLOCK)			
 		WHERE @prefix + SeqName  = username OR @prefix + SeqName  = username2
 		)
 	AND NOT exists (
 		SELECT top 1 1
-		FROM dbo.custsub WITH(NOLOCK)			
+		FROM dbo.CustSubMini WITH(NOLOCK)			
 		WHERE @prefix + SeqName  = username OR @prefix + SeqName = username2
-		)
-	AND NOT exists (
-		SELECT top 1 1
-		FROM dbo.Dep_Customer_Archived WITH(NOLOCK)			
-		WHERE @prefix + SeqName  = username OR @prefix + SeqName  = username2
 		)
 	ORDER BY SeqName ASC
 

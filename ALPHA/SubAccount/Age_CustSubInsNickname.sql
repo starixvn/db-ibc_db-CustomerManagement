@@ -15,47 +15,31 @@ AS
 
 	Revisions:    
 		- 20190515@Kan: Initial SP [Redmine:#112287]
+		- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:199915]
 
 	Param's Explanation:
 */
 BEGIN
     SET NOCOUNT ON
-
     --- Precondition: Username2 is not assigned
     IF EXISTS (SELECT 1 FROM [dbo].custSub WITH (NOLOCK) WHERE subaccid = @subaccid AND CustID = @custid AND ISNULL(Username2, '') = '')
     BEGIN
-        --- Check duplicate Nickname  
-        DECLARE @IsExists BIT
-        EXEC [dbo].Age_CustomerCheckExists @username = @Nickname, @IsExists = @IsExists OUTPUT
+        BEGIN TRY
+			--- Create Nickname
+			UPDATE [dbo].custSub WITH (ROWLOCK)  
+			SET Username2 = @Nickname, RepUpdateTime = SYSDATETIME()  
+			WHERE subaccid = @subaccid AND CustID = @custid AND ISNULL(Username2, '') = ''
 
-        IF @IsExists = 1  
-        BEGIN
-            SELECT @ErrMsg =
-                CASE @language
-                    WHEN 'E' THEN 'Nickname is not available'
-                    ELSE [dbo].[f_Get_MsgNamebyMsgID](40006, @Language)
-                END,
-                @ErrCode = 102
-            RETURN
-        END
-
-        --- Create Nickname
-        UPDATE [dbo].custSub WITH (ROWLOCK)  
-        SET Username2 = @Nickname  
-        WHERE subaccid = @subaccid AND CustID = @custid AND ISNULL(Username2, '') = ''
-
-        --- Error return  
-        IF @@error <> 0
-        BEGIN
-            SELECT @ErrMsg =
-                CASE @language
-                    WHEN 'E' THEN 'Failed to create Nickname. Please try again.'
-                    ELSE [dbo].[f_Get_MsgNamebyMsgID](40007, @Language)
-                END,
-                @ErrCode = 105   
-            RETURN
-        END
-
+		END TRY
+		BEGIN CATCH
+				SELECT @ErrMsg =
+					CASE @language
+						WHEN 'E' THEN 'Failed to create Nickname. Please try again.'
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](40007, @Language)
+					END,
+					@ErrCode = 105   
+				RETURN
+		END CATCH
         --- Write log Nickname  
         DECLARE @LogSPData NVARCHAR(4000)
         SELECT @LogSPData = '<Age_CustSubInsNickname CustID="' + COALESCE(CAST(@custid AS VARCHAR(50)), SPACE(1)) + '" '

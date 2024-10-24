@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubIns]
-	@subaccid int OUTPUT,
+(
+	@subaccid int,
 	@custid int, -- agentid or masterid or superid
 	@username varchar(30),
 	@userpwd varchar(40),
@@ -14,6 +15,7 @@ ALTER PROCEDURE [dbo].[Age_CustSubIns]
 	@UserID int=0,
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(4000) = '' OUTPUT
+)
 AS
 /*
 Created: 20080508
@@ -39,6 +41,8 @@ Revisions:
 	- 20190422@Elodie: Offer unique nickname for CN88 [Redmine:112287]
 	- 20200602@Johnson: set max sub-acc = 30 for IBCIndo site [redmine:#135198]
 	- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
+	- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:#206823]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -86,19 +90,6 @@ SELECT @PwdExpiry = DATEADD(DD, 30, GETDATE())
 
 select @success = 0, @username = LTRIM(RTRIM(@username))
 
---check duplicate username
-DECLARE @IsExists BIT 
-EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
-
-IF @IsExists = 1
-BEGIN
-	select @ErrMsg = case @Language 
-			when 'E' then 'This user name is not available.'
-			ELSE [dbo].[f_Get_MsgNamebyMsgID](40001,@Language)
-		end	,@ErrCode=102		
-	return	
-END
-
 --check no of subacc (must <= @MaxOfSubAcc)
 select @NoOfSubAcc = count(*) from custsub with (nolock) where custid = @custid
 
@@ -118,93 +109,69 @@ BEGIN
 END
 
 --Insert data to db
-Insert into custsub
-(
-    custid,
-	username,
-	userpwd,
-	firstname,
-	lastname,
-	PageAccess,
-	createdate			
-)
-VALUES
-(
-    @custid,
-	@username,			
-	@userpwd,
-	@firstname,
-	@lastname,
-	@PageAccess,
-	getdate()
-)
-			
-Select @subaccid = @@IDENTITY
-
-if @@error <> 0
-BEGIN
-	SELECT @ErrMsg = CASE @Language 
-			           WHEN 'E' then 'Create sub-account failed. Please try again.'
-			           ELSE [dbo].[f_Get_MsgNamebyMsgID](40009,@Language)
-		             END
-		 , @ErrCode = 104
-	RETURN	
-END
-
---EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Ins @custid, @subaccid, 0, @ErrCode, @ErrMsg
+BEGIN TRY
+	EXEC dbo.Age_CustSubIns_Detail
+		 @subaccid	= @subaccid	
+		,@custid	= @custid	
+		,@username	= @username	
+		,@userpwd	= @userpwd	
+		,@firstname = @firstname 
+		,@lastname	= @lastname	
+		,@PageAccess= @PageAccess
+		,@Language	= 'E'	
 	
---IF @ErrCode <>0
---BEGIN
---		SELECT @ErrMsg = CASE @Language 
---							WHEN 'E' THEN 'Create sub-account failed. Please try again.'
---							ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
---						END
---			, @ErrCode = 106
---	 -- ROLLBACK MANUALLY
---		DELETE FROM custsub WITH(ROWLOCK) WHERE subaccid = @subaccid
-		
---		RETURN
---END
+		,@ErrCode	= @ErrCode OUTPUT
+		,@ErrMsg	= @ErrMsg OUTPUT
 	
-DECLARE	@UplineSecurityCode			VARCHAR(50)
-	  , @isForcedChangeSecurityCode	BIT
+	IF ISNULL(@ErrCode,0) > 0 
+	BEGIN
+		SELECT @ErrMsg = CASE @Language 
+						   WHEN 'E' then 'Create sub-account failed. Please try again.'
+						   ELSE [dbo].[f_Get_MsgNamebyMsgID](40009,@Language)
+						 END
+			 , @ErrCode = 104
+		RETURN	
+	END
 
-SELECT @UplineSecurityCode		   = NULL,
-       @isForcedChangeSecurityCode = 0
 
-SELECT @UplineSecurityCode = SecurityCode
-     , @isForcedChangeSecurityCode = isForcedChangeSecurityCode
-  FROM dbo.CustLoginInfo WITH(NOLOCK)
- WHERE CustID = @CustID
+	DECLARE	@UplineSecurityCode			VARCHAR(50)
+		  , @isForcedChangeSecurityCode	BIT
 
-IF @UplineSecurityCode IS NOT NULL OR @isForcedChangeSecurityCode = 1
-	SELECT @isForcedChangeSecurityCode = 1
+	SELECT @UplineSecurityCode		   = NULL,
+		   @isForcedChangeSecurityCode = 0
 
-INSERT INTO dbo.CustLoginInfoSub
-(
-    SubAccID, CustID, OldUserPwd, PwdExpiry, LastChangedPwdDate, isFirstLogin,
-    SecurityCodeCount, SecurityCode, isForcedChangeSecurityCode, LastChangedSecurityCodeDate
-)
-VALUES
-(   
-    @subaccid, @CustID, NULL, @PwdExpiry, GETDATE(), 1,
-    0, NULL, @isForcedChangeSecurityCode, NULL
-)
+	SELECT @UplineSecurityCode = SecurityCode
+		 , @isForcedChangeSecurityCode = isForcedChangeSecurityCode
+	  FROM dbo.CustLoginInfo WITH(NOLOCK)
+	 WHERE CustID = @CustID
+
+	IF @UplineSecurityCode IS NOT NULL OR @isForcedChangeSecurityCode = 1
+		SELECT @isForcedChangeSecurityCode = 1
+
+	INSERT INTO dbo.CustLoginInfoSub
+	(
+		SubAccID, CustID, OldUserPwd, PwdExpiry, LastChangedPwdDate, isFirstLogin,
+		SecurityCodeCount, SecurityCode, isForcedChangeSecurityCode, LastChangedSecurityCodeDate
+	)
+	VALUES
+	(   
+		@subaccid, @CustID, NULL, @PwdExpiry, GETDATE(), 1,
+		0, NULL, @isForcedChangeSecurityCode, NULL
+	)
 	
-if @@ERROR <> 0
-BEGIN
+END TRY
+BEGIN CATCH
 	DELETE FROM custsub WITH(ROWLOCK)
-	      WHERE subaccid = @subaccid
-	--EXEC DBMSG.bodb_Message.dbo.Age_MsgCustReadStatus_Del @custid,@subaccid
+			WHERE subaccid = @subaccid
 	
 	SELECT @ErrMsg = CASE @Language 
-					   WHEN 'E' THEN 'Create sub-account failed. Please try again.'
-			           ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
-		             END
-		 , @ErrCode = 105
+						WHEN 'E' THEN 'Create sub-account failed. Please try again.'
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](40009, @Language)
+						END
+			, @ErrCode = 105
 
 	RETURN
-END
+END CATCH
 
 SELECT @Success = 1
 DECLARE @LogSPData varchar(5000)

@@ -1,17 +1,19 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[Acc_Con_AdminIns]
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_Con_AdminIns]
+(
 	@FirstName NVARCHAR (50), 
 	@LastName NVARCHAR (50), 
 	@UserName NVARCHAR (50), 
 	@UserPwd NVARCHAR (50)='', 
-	@CustID INT OUTPUT, 
+	@CustID INT, 
 	@UserID INT, 
-	@GroupID INT, 
-	@isABS	BIT = 0,	
+	@GroupID INT, 	
 	@System VARCHAR (50)='ACCOUNTING', 
-	@Language VARCHAR (2)='E', 
+	@Language VARCHAR (2)='E',
+	@GroupName	NVARCHAR(500),
 	@ErrCode INT=0 OUTPUT, 
 	@ErrMsg NVARCHAR (200)='' OUTPUT
+)
 AS
 /*
 Created: 
@@ -38,6 +40,8 @@ Revisions:
 	- 20220517@Winfred: Insert new OTP Login requried for VPN's users [redmine:170994]
 	- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+	- 20240704@Louisa: Scale out DBCUST [Redmine:#199915]
+
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -52,81 +56,50 @@ BEGIN
 	DECLARE @Begin AS DATETIME;
 	SET @Begin = GETDATE();
 	--Check permission for account site: @phuc20080213
-	DECLARE @funcname VARCHAR(50)
 
-	IF @isABS = 1 
-		SELECT @funcname = '[ABSAdminUserControl]'
-	ELSE 
-		SELECT @funcname = '[UserControl]'
-
-		
-	EXEC NAP_UserControl.dbo.Acc_Con_CheckPermission @custid = @userid, @funcname = @funcname, @System = @System, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT;
-	IF @ErrCode <> 0
-		RETURN;
 	DECLARE @pwdexpiry AS DATETIME, @roleid AS INT, @closed AS BIT
 	SELECT @RoleID = 6,
 		   @pwdexpiry = DATEADD(month, 1, CURRENT_TIMESTAMP),
 		   @closed = 0
-
-	--check duplicate username
-	DECLARE @IsExists BIT 
-	EXEC Age_CustomerCheckExists @username = @username, @IsExists = @IsExists OUTPUT
-
-	IF @IsExists = 1
-	BEGIN
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'This username is not available. ' WHEN 'CS' THEN N'This username is not available. ' WHEN 'J' THEN N'This username is not available. ' ELSE N'This username is not available. ' END,
-				@ErrCode = 102;
-		RETURN;
-	END
-
-	BEGIN TRANSACTION;
-	INSERT  INTO customer (username, userpwd, roleid, firstname, lastname, creator, pwdexpiry)
-	VALUES               (@username, @userpwd, @roleid, @firstname, @lastname, @UserID, @pwdexpiry);
-	SELECT @CustID = @@IDENTITY;
-	INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed])
-	VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
-	IF @@ERROR <> 0
-		BEGIN
-			ROLLBACK;
-			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END,
-				   @ErrCode = 103;
-			RETURN;
-		END
-	COMMIT TRANSACTION;
-
-	/* Insert data to AdminSiteUser */ 	
+	
 	BEGIN TRY
-		IF(@roleid >4)
-			EXEC DBPRO.bodb02.dbo.Dot_Admin_Add_AdminSiteUser @custid, @username, @userpwd, @UserID
+		EXEC Acc_CustomerIns
+			@FirstName	= @FirstName	
+			,@LastName	= @LastName	
+			,@UserName	= @UserName	
+			,@UserPwd	= @UserPwd	
+			,@pwdexpiry = @pwdexpiry 
+			,@roleid	= @roleid	
+			,@closed	= @closed	
+			,@CustID	= @CustID	
+			,@creator	= @UserID
+			,@ErrCode	= @ErrCode OUTPUT
+			,@ErrMsg	= @ErrMsg OUTPUT
+	
+			IF ISNULL(@ErrCode,0) > 0
+			BEGIN
+				EXEC Acc_CustomerInsUserInfo_Rollback @CustID = @CustID
+				RETURN;
+			END
+
+		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed])
+		VALUES  (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
 	END TRY
-	BEGIN CATCH
-		DELETE FROM Customer WHERE custid = @custid
-		DELETE FROM custInfo WHERE custid = @custid
-		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END;
-			RETURN;
+	BEGIN CATCH	
+		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END,
+				@ErrCode = 103;
+
+		EXEC Acc_CustomerInsUserInfo_Rollback @CustID = @CustID
+
+		RETURN;
 	END CATCH
 
-	EXEC NAP_UserControl.dbo.Acc_Con_AdminPolicyIns @CustID = @Custid, @Userid = @UserID, @GroupID = @GroupID, @System = @System;
 
-	EXEC NAP_UserControl.dbo.NAP_Admin_OTPIns 
-		@CustId			= @CustId,
-		@System			= 'NAP',
-		@UserId			= @UserID,
-		@ErrCode		= @ErrCode OUTPUT,
-		@ErrMsg			= @ErrMsg OUTPUT
-
-	IF @@ERROR <> 0
-	BEGIN
-		SELECT @ErrCode = @ErrCode, @ErrMsg = @ErrMsg
-		RETURN
-	END
 	/**************Write to Log table ********************/
 	DECLARE @LogData AS NVARCHAR (500), 
 	@End AS DATETIME, 
 	@Duration AS INT;
-	--Get Group Name from DB03.BODB02
-	DECLARE @GroupName NVARCHAR(50)
-	EXEC @GroupName = NAP_UserControl.dbo.f_Get_GroupNameByGroupID @GroupID
+	
 	SELECT @LogData = '<Acc_Con_AdminIns>'+
 							'<FirstName>' + ISNULL([dbo].[f_EncodeXMLValue](@firstname),'') + '</FirstName>'+
 							'<LastName>' + ISNULL([dbo].[f_EncodeXMLValue](@lastname),'') + '</LastName>'+
