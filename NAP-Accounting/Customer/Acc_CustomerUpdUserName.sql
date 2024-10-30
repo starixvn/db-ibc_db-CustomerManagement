@@ -48,7 +48,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220722@Eden: Scale Out DBTrans  [redmine: #158293]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-	- 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
+	    - 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
 		- 20241010@Helen:edit username for CREDIT - [Redmine:#212007]
 
 	Param's Explanation:

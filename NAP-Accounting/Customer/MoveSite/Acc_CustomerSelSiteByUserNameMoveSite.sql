@@ -18,7 +18,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	SELECT site, roleid, custid, SiteDBGroupID 
+	SELECT site, roleid, custid 
 	FROM custinfoMini WITH (NOLOCK) 
 	WHERE username = @username AND [site] <> 'IMBC'
 	
