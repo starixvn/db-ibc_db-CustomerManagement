@@ -3,11 +3,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerEditUserName_Register]
 (
 	@oldname varchar(30), 
 	@newname varchar(30),
-	@isRollback BIT = 0,
 	@custId INT OUTPUT,
 	@roleid TINYINT OUTPUT,
-	@site VARCHAR(10) OUTPUT,
-	@sitedbgroupid SMALLINT = 0 OUTPUT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg NVARCHAR(200) = '' OUTPUT
 )
@@ -27,17 +24,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 
-	IF @isRollback = 1 AND @custId IS NOT NULL
-	BEGIN
-		UPDATE c	
-			SET username = @oldname, RepUpdateTime = SYSDATETIME ()
-		FROM CustInfoMini c WITH (ROWLOCK,UPDLOCK)
-		WHERE custid = @custId
-
-		RETURN
-	END
-
-	SELECT @custId = custid, @site = site, @roleid = roleid 
+	SELECT @custId = custid, @roleid = roleid 
 	FROM CustInfoMini WITH (NOLOCK) 
 	WHERE username = @oldname
 
