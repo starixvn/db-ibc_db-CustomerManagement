@@ -92,7 +92,8 @@ BEGIN
 	
 			BEGIN TRY
 				UPDATE C 
-					SET C.[site] = @site
+				SET C.[site] = @site
+				  , C.RepUpdateTime = dbo.f_GetDateTime2()
 				FROM #SMAList_Update mu
 					INNER JOIN CustinfoMini C WITH (ROWLOCK, UPDLOCK) ON mu.CustID = C.custid
 			END TRY
@@ -116,7 +117,9 @@ BEGIN
 		IF @@ROWCOUNT = 0 BREAK
 	
 		BEGIN TRY
-			UPDATE C SET C.[site] = @site
+			UPDATE C 
+			SET C.[site] = @site
+			  , C.RepUpdateTime = dbo.f_GetDateTime2()
 			FROM #MemberUpdated mu
 				INNER JOIN CustinfoMini C WITH (ROWLOCK, UPDLOCK) ON mu.CustID = C.custid
 		END TRY 
