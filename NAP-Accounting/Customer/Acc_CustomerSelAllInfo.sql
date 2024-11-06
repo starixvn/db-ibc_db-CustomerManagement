@@ -126,6 +126,7 @@ Revisions:
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS - Remove Old Structure Column DisableEsports [RedmineID: #193083]
 	- 20240417@Tacy: NAP - Incorporate Saba Coins [RedmineID: #204003]
 	- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
+	- 20241106@Tacy: Credit - change data source to get SMA CC [Redmine: #212681]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -698,7 +699,9 @@ BEGIN
 		,ISNULL(cps.Locked,0) Locked
 		,@ProtectionMode AS IsProtectedMode
 		,@DisableAutoMPT AS DisableAutoMPT
-		,ISNULL(CAST(ci.CustomerClass AS VARCHAR),'-') AS CustomerClass
+		,CASE WHEN @IsDeposit=0 AND c.roleid>1 THEN ISNULL(CAST(ag.CustomerClass AS VARCHAR),'-') 
+			ELSE ISNULL(CAST(ci.CustomerClass AS VARCHAR),'-') 
+		END AS CustomerClass
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
@@ -719,6 +722,7 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid AND @IsDeposit = 0
 								) AS cps	
+		LEFT JOIN CustomerClassSetting_Agent ag WITH (NOLOCK) ON ag.custid=c.custid AND ag.SportType=0
     WHERE c.custid = @custid
     
 	

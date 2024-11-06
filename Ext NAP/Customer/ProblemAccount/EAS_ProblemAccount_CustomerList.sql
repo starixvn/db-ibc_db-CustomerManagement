@@ -24,6 +24,7 @@ AS
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 		- 20221017@Tacy: Hide Display for Credit Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
+		- 20241118@Tacy: New CC for SMA [Redmine: #212681]
 
 	Parameter's Explanation:
 		@GroupName: ext group
@@ -44,6 +45,37 @@ BEGIN
 	DECLARE @UplineID INT
 	CREATE TABLE #tempProblemAccount (custId INT, username NVARCHAR(50), firstname NVARCHAR(50), lastname NVARCHAR(50), username2 NVARCHAR(50), numberOfDownline INT, createdDate DATETIME, 
 									  isReviewed BIT, ClosedReason TINYINT, Locked TINYINT)
+	
+	CREATE TABLE #tmpCategoryConfig (
+			CategoryID		INT,
+			CustomerClass	INT,
+			HiddenSite		TINYINT
+	)
+
+	INSERT INTO #tmpCategoryConfig(CustomerClass, CategoryID, HiddenSite)
+	SELECT c.CustomerClass
+		,CategoryID = CASE c.CategoryID --temp mapping
+							WHEN 32700 THEN 120100
+							WHEN 32701 THEN 120200
+							WHEN 32702 THEN 120300
+							WHEN 32703 THEN 120400
+							WHEN 32704 THEN 120500
+							WHEN 32705 THEN 120600
+							WHEN 32706 THEN 120800
+							WHEN 32707 THEN 121100
+							WHEN 32708 THEN 125100
+							WHEN 32709 THEN 125200
+							WHEN 32710 THEN 125300
+							WHEN 32711 THEN 125400
+							WHEN 32712 THEN 125500
+							WHEN 32713 THEN 125600
+							WHEN 32714 THEN 125800
+							WHEN 32715 THEN 126100
+							ELSE c.CategoryID
+						END
+		,c.HiddenSite
+	FROM CategoryConfig c WITH (NOLOCK)
+
 	DECLARE @tmpSuper TABLE (custid INT PRIMARY KEY)
 	
 	INSERT INTO @tmpSuper(custid)
@@ -62,20 +94,22 @@ BEGIN
 	BEGIN
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason, Locked)
 		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0) ClosedReason, ISNULL(ps.Locked,0) Locked
-		FROM  dbo.custinfo ci WITH (NOLOCK)
-			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid																				
+		FROM  dbo.CustomerClassSetting_Agent ca WITH (NOLOCK)
+			INNER JOIN #tmpCategoryConfig t ON t.CategoryID=ca.CategoryID AND ca.CustomerClass=t.CustomerClass
+			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ca.custid = p.custid																				
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON c.custid = ps.CustID
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
-			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
+			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON c.srecommend=cs.custid
 		WHERE c.srecommend IN (SELECT custId 
 								FROM @tmpSuper
 								WHERE 1 = CASE WHEN (@UplineID IS NOT NULL AND custId= @UplineID) OR @UplineID IS NULL THEN 1 ELSE 0 END
 								)
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))	--DEPOSIT
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))	--CREDIT
+					(cs.custid IS NOT NULL	AND t.HiddenSite NOT IN (2,3))	--DEPOSIT
+				OR	(cs.custid IS NULL		AND t.HiddenSite NOT IN (1,3))	--CREDIT
 				)
+			AND ca.SportType=0
 			AND c.roleid = 3
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
@@ -84,38 +118,44 @@ BEGIN
 			
 		SELECT @TotalRows = @@ROWCOUNT
 
+		;WITH CTE_PAdownlines AS (
+			SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
+			FROM dbo.custInfo ci WITH (NOLOCK)
+				INNER JOIN dbo.CustomerClassSetting_Agent ca WITH (NOLOCK) ON ca.custid=ci.custid AND ca.Sporttype=0
+				INNER JOIN #tmpCategoryConfig tc ON tc.CategoryID=ca.CategoryID AND ca.CustomerClass=tc.CustomerClass
+				INNER JOIN #tempProblemAccount t ON ci.mrecommend = t.custid 
+				LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
+			WHERE ci.roleID=2
+				AND (
+					(cs.custid IS NOT NULL	AND tc.HiddenSite NOT IN (2,3))		
+				OR	(cs.custid IS NULL		AND tc.HiddenSite NOT IN (1,3))
+				)			
+			GROUP BY ci.mrecommend
+		) 
 		UPDATE t 
 		SET t.numberOfDownline = pa.numberOfDownline
 		FROM #tempProblemAccount t 			
-			CROSS APPLY (SELECT ci.mrecommend, COUNT(1) AS numberOfDownline
-						FROM dbo.custInfo ci WITH (NOLOCK)
-							LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
-						WHERE ci.mrecommend = t.custid 
-							AND ci.roleid = 2
-							AND (
-									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
-								)
-							--AND pa.ReasonId IS NOT NULL
-						GROUP BY ci.mrecommend) AS pa		
+			INNER JOIN CTE_PAdownlines pa ON pa.mrecommend=t.custId	
 	END
 	ELSE IF @SearchRoleId = 2 	
 	BEGIN
 		INSERT INTO #tempProblemAccount(custId, username, firstname, lastname, username2, createdDate, isReviewed, ClosedReason, Locked)
 		SELECT c.custid, c.username, c.firstname, c.lastname, c.username2, p.ModifiedDate, p.IsReviewed, ISNULL(cl.ClosedReason,0) ClosedReason, ISNULL(ps.Locked,0) Locked
-		FROM  dbo.custinfo ci WITH (NOLOCK)
-			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ci.custid = p.custid
+		FROM  dbo.CustomerClassSetting_Agent ca WITH (NOLOCK)
+			INNER JOIN #tmpCategoryConfig tc ON tc.CategoryID=ca.CategoryID AND ca.CustomerClass=tc.CustomerClass
+			INNER JOIN ProblemAccountClassification p WITH(NOLOCK) ON ca.custid = p.custid
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 			LEFT JOIN dbo.CustLoginInfo cl WITH (NOLOCK) ON cl.CustId = c.CustId
-			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
+			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON c.srecommend=cs.custid
 		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.mrecommend = @UplineID) THEN 1 ELSE 0 END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 2
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
+					(cs.custid IS NOT NULL	AND tc.HiddenSite NOT IN (2,3))		
+				OR	(cs.custid IS NULL		AND tc.HiddenSite NOT IN (1,3))
 				)
+			AND ca.SportType=0
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			--AND p.ReasonId IS NOT NULL
@@ -132,8 +172,8 @@ BEGIN
 						WHERE ci.recommend = t.custid 
 							AND ci.roleid = 1
 							AND (
-									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
+									(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM #tmpCategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+								OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM #tmpCategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
 								)
 						GROUP BY ci.recommend) AS pa	
 	END
@@ -154,8 +194,8 @@ BEGIN
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
 			AND (@ReviewStatusId = 2 OR p.IsReviewed = @ReviewStatusId)
 			AND (
-					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
-				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
+					(cs.custid IS NOT NULL	AND ci.CustomerClass IN (SELECT CustomerClass FROM #tmpCategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (2,3)))		
+				OR	(cs.custid IS NULL		AND ci.CustomerClass IN (SELECT CustomerClass FROM #tmpCategoryConfig WITH(NOLOCK) WHERE HiddenSite NOT IN (1,3)))
 				)
 			--AND p.ReasonId IS NOT NULL
 			AND c.username LIKE '%' + ISNULL(@SearchUsername, '') + '%'
@@ -180,5 +220,5 @@ BEGIN
 	) AS Result
 	WHERE RowId BETWEEN ((@PageIndex - 1) * @PageSize + 1) AND (@PageSize * @PageIndex)
 
-	DROP TABLE #tempProblemAccount
+	DROP TABLE #tempProblemAccount, #tmpCategoryConfig
 END
