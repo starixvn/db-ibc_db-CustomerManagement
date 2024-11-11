@@ -28,6 +28,7 @@ RETURN
 		UNION SELECT APISecretKey =  'Ma2qf6VhH5@5ZP2X23nHmH!U^Vk^V$kfWZKSDoAhDi^!HZfaGPYUe5!9yQfi!u'	, GroupName = 'ACCYEN789'
 		UNION SELECT APISecretKey =  '5dNgFW3sYAyjRv7nc6EARVvBL#VnaHoybv3Zs&xTrxVs762biPqGkk3zBUt%d#'	, GroupName = 'ACCYEN889'
 		UNION SELECT APISecretKey =  '7<sZ4=9A]t_<h{BczlgK.hVuu:d;Pr{%f]T!~J,~0AL3>l0Gw@+26vzT~&Z&C9'	, GroupName = 'ACCYEN789'
+		UNION SELECT APISecretKey =  'indY*&gU&Th>?Z~7q]w3xzsIm$}c)hB1,*Iy=Z#N<r^65d8{<.:}&>nUT&ifPvQ'	, GroupName = 'ACCYNG'
 		UNION SELECT APISecretKey =  '1234aa', GroupName = 'ACCTEST'
 	)
 	SELECT APISecretKey, GroupName
