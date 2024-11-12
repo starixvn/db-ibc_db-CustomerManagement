@@ -12,6 +12,8 @@ AS
 		- 20230825@Tacy: Add APISecretKey for ACCYEN789 [Redmine: #192805]
 		- 20230926@Tacy: Add APISecretKey for ACCYEN789 [Redmine: #194326]
 		- 20240408@Tacy: Add APISecretKey for ACCYEN789 [Redmine: #203559]
+		- 20241112@Tacy: Add APISecretKey for ACCYNG [Redmine: #213508]
+		
 */  
 RETURN  
 
@@ -27,6 +29,7 @@ RETURN
    WHEN @APISecretKey =  'Ma2qf6VhH5@5ZP2X23nHmH!U^Vk^V$kfWZKSDoAhDi^!HZfaGPYUe5!9yQfi!u' THEN 'ACCYEN789'
    WHEN @APISecretKey =  '5dNgFW3sYAyjRv7nc6EARVvBL#VnaHoybv3Zs&xTrxVs762biPqGkk3zBUt%d#' THEN 'ACCYEN889'
    WHEN @APISecretKey =  '7<sZ4=9A]t_<h{BczlgK.hVuu:d;Pr{%f]T!~J,~0AL3>l0Gw@+26vzT~&Z&C9' THEN 'ACCYEN789'
+   WHEN @APISecretKey =  'indY*&gU&Th>?Z~7q]w3xzsIm$}c)hB1,*Iy=Z#N<r^65d8{<.:}&>nUT&ifPvQ' THEN 'ACCYNG'
    WHEN @APISecretKey =  '1234aa' THEN 'ACCTEST'
 
   END GroupName  
