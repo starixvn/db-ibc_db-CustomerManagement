@@ -23,6 +23,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto]
 	, @NPR FLOAT
 	, @MXN FLOAT
 	, @NGN FLOAT
+	, @BRL FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -37,6 +38,8 @@ Revisions:
 	- 20221115@Evan: Extend datatype @Code to varchar(12) [Redmine: #180168]  
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR - [RedmineID: #197693]
 	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
+	- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
+
 */
 BEGIN
 
@@ -116,6 +119,7 @@ BEGIN
 					, NPR
 					, MXN
 					, NGN
+					, BRL
 					, ActualRate
 					)
 				VALUES (
@@ -144,8 +148,8 @@ BEGIN
 					, @NPR * @MultipliedBy
 					, @MXN * @MultipliedBy
 					, @NGN * @MultipliedBy
-					, @MYR * @MultipliedBy
-
+					, @BRL * @MultipliedBy
+					, @MYR * @MultipliedBy	--ActualRate				
 					)
 			END
 			ELSE
@@ -173,6 +177,7 @@ BEGIN
 					, NPR = @NPR * @MultipliedBy
 					, MXN = @MXN * @MultipliedBy
 					, NGN = @NGN * @MultipliedBy
+					, BRL = @BRL * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date

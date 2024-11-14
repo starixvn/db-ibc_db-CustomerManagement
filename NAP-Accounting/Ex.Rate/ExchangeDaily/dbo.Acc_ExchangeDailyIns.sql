@@ -24,6 +24,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 	, @NPR FLOAT
 	, @MXN FLOAT
 	, @NGN FLOAT
+	, @BRL FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -48,6 +49,7 @@ AS
 		- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 		- 20240828@Lewis: Support new currency BTS - [RedmineID: #209780]
 		- 20241001@Eddie: Update exchange code of HKK and remove this hard code after done [RedmineID: #211537]
+		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
 		
 	Parameter's Explaination:
 	/*
@@ -130,6 +132,7 @@ BEGIN
 					, NPR
 					, MXN
 					, NGN
+					, BRL
 				)
 				VALUES (
 					@ExchangeId
@@ -157,6 +160,7 @@ BEGIN
 					, @NPR * @MultipliedBy
 					, @MXN * @MultipliedBy
 					, @NGN * @MultipliedBy
+					, @BRL * @MultipliedBy
 				)
 			END
 			ELSE
@@ -184,6 +188,7 @@ BEGIN
 					, NPR = @NPR * @MultipliedBy
 					, MXN = @MXN * @MultipliedBy
 					, NGN = @NGN * @MultipliedBy
+					, BRL = @BRL * @MultipliedBy
 				WHERE ExchangeId = @ExchangeId
 				  AND ExchangeDate = @date
 				  AND Code = @Code
@@ -234,11 +239,13 @@ BEGIN
 			, NPR
 			, MXN
 			, NGN
+			, BRL
 		)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -297,11 +304,13 @@ BEGIN
 			, NPR
 			, MXN
 			, NGN
+			, BRL
 		)
 		VALUES (
 			218
 			, @date
 			, 'BTS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -367,6 +376,7 @@ BEGIN
 				, NPR
 				, MXN
 				, NGN
+				, BRL
 			)
 			VALUES (
 				@ExchangeId
@@ -394,6 +404,7 @@ BEGIN
 				, @NPR * @MultipliedBy
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
+				, @BRL * @MultipliedBy
 			)
 		END
 		ELSE
@@ -421,6 +432,7 @@ BEGIN
 				, NPR = @NPR * @MultipliedBy
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
+				, BRL = @BRL * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'YNG'
@@ -475,6 +487,7 @@ BEGIN
 				, NPR
 				, MXN
 				, NGN
+				, BRL
 			)
 			VALUES (
 				@ExchangeId
@@ -502,6 +515,7 @@ BEGIN
 				, @NPR * @MultipliedBy
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
+				, @BRL * @MultipliedBy
 			)
 		END
 		ELSE
@@ -529,6 +543,7 @@ BEGIN
 				, NPR = @NPR * @MultipliedBy
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
+				, BRL = @BRL * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'SBC'
@@ -583,6 +598,7 @@ BEGIN
 				, NPR
 				, MXN
 				, NGN
+				, BRL
 			)
 			VALUES (
 				@ExchangeId
@@ -610,6 +626,7 @@ BEGIN
 				, @NPR * @MultipliedBy
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
+				, @BRL * @MultipliedBy
 			)
 		END
 		ELSE
@@ -637,6 +654,7 @@ BEGIN
 				, NPR = @NPR * @MultipliedBy
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
+				, BRL = @BRL * @MultipliedBy
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'DIA'
