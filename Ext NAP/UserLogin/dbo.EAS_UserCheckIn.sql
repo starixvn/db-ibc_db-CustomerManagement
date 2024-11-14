@@ -19,7 +19,7 @@ AS
 SET NOCOUNT ON 
 
 UPDATE eaOn_User WITH(UPDLOCK,ROWLOCK) 
-SET iskickedout = 1 
+SET iskickedout = 1, reload_time = GETDATE()
 WHERE custid = @custid
 
 INSERT INTO eaOn_User (custid, NetSessionID, isKickedOut, IP) 
