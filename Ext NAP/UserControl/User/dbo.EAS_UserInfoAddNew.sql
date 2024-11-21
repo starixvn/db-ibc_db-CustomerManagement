@@ -28,6 +28,7 @@ AS
 			- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 			- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 			- 20240704@Louisa: Scaleout DBCUST [Redmine:#199915]
+			- 20241119@Eden: set srecommend = 0 [Redmine:#206823]
 
 		Parameter's Explanation:
 	*/
@@ -60,6 +61,7 @@ SET NOCOUNT ON
 			,@creator	= @userID
 			,@ErrCode	= @ErrCode OUTPUT
 			,@ErrMsg	= @ErrMsg OUTPUT
+			,@srecommend = 0 
 	
 			IF ISNULL(@ErrCode,0) > 0
 			BEGIN
@@ -67,8 +69,8 @@ SET NOCOUNT ON
 				RETURN;
 			END
 
-		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed])
-		VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed);
+		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed],srecommend)
+		VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed,0);
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrMsg ='Add user failed.',
