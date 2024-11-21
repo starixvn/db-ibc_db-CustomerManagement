@@ -23,6 +23,7 @@ AS
 		- 20220228@Johnson: add new category for good/bad robot[redmine:#167726]
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20241118@Tacy: New CC for SMA [Redmine: #212681]
 	Param's Explanation:		
 		@RoleId: roleid of downlines
 		@CustomerList: list of downline id
@@ -76,9 +77,17 @@ BEGIN
 	FROM #Downlines d
 		INNER JOIN custInfo ci WITH(NOLOCK) ON ci.custid = d.custid
 		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
-	WHERE pa.IsReviewed = 0 
+	WHERE pa.IsReviewed = 0  AND ci.roleid=1
 		--AND (pa.ReasonId IS NOT NULL OR pa.IsAbnormalMember = 1)
 		AND ci.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
+	UNION ALL 
+	SELECT d.custid
+	FROM #Downlines d
+		INNER JOIN custInfo ci WITH(NOLOCK) ON d.custid = ci.custid
+		INNER JOIN dbo.ProblemAccountClassification pa WITH (NOLOCK) ON d.CustId = pa.CustId
+		INNER JOIN CustomerClassSetting_Agent ca WITH (NOLOCK) ON ca.custid=d.CustId AND ca.SportType=0
+	WHERE pa.IsReviewed = 0 AND ci.roleid BETWEEN 2 AND 4
+		AND ca.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 
 	UPDATE pa
 	SET pa.IsReviewed = 1
