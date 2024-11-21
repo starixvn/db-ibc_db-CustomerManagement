@@ -54,6 +54,7 @@ Revisions:
 	- 20240227@Johnson: Add ACCHHRM,ACCCH1,ACCMG7,ACCNV1,ACCA951 [redmine: #201332]
 	- 20240227@Johnson: Add ACCTW1,ACCSB1 [redmine: #201452]
 	- 20240321@Johnson: Add ACCDS17,ACCS359M,ACC801AH,ACCC1,ACCS222H,ACCD77M,ACCAHM,ACCWT,ACC222,ACCHPO,ACCKKM [redmine: #202663]
+	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -195,7 +196,7 @@ BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)		
 		SELECT 51 --INH		
 	END	
-	ELSE IF(@System IN ('ACCThaiSK'))
+	ELSE IF(@System IN ('ACCThaiSK', 'ACCPBTH'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
