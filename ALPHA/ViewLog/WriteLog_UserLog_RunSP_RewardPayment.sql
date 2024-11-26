@@ -8,6 +8,8 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP_RewardPayment]
 
 	Revisions:
 		- 20240918@Lewis: Initialize SP [RedmineId: #208503]
+
+
 */
 AS
 BEGIN
