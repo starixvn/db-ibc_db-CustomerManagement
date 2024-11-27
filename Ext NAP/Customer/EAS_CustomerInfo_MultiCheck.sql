@@ -16,6 +16,7 @@ AS
 		- 20230515@Tacy: EXT NAP - Allow headlines update Bet Settings on multiple supers [Redmine: #186773]
 		- 20240312@Tacy: Ext NAP - Support Multiple Update Info for Super [Redmine: #201432]
 		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241021@Tacy: Ext NAP - Manage Super Bet Setting [redmine: #206291]
 
 	Param's Explanation:
 		* @IsCopy : use for Edit Super Bet Setting function
@@ -198,6 +199,43 @@ BEGIN
 							  FOR XML PATH('')),1,1,'')
 		RETURN
 	END
+
+	--check: not the same line
+	IF EXISTS (SELECT TOP 1 1 FROM #DestUsers d  
+				INNER JOIN Customer c WITH (NOLOCK) ON d.custid=c.custid
+				CROSS APPLY (SELECT s.site, s.currency FROM Customer s WITH (NOLOCK) 
+							 WHERE s.username=@SourceUser) s
+				WHERE c.currency<>s.currency OR c.site<>s.site)
+		AND @IsCopy=1
+	BEGIN
+		SET @Errcode=114
+		SET @ErrMsg='The following accounts are not the same site and currency with the source account: ' 
+					+ STUFF ((SELECT ', ' + d.UserName
+							  FROM #DestUsers d  
+							  INNER JOIN Customer c WITH (NOLOCK) ON d.custid=c.custid
+							  CROSS APPLY (SELECT s.site, s.currency FROM Customer s WITH (NOLOCK) 
+											WHERE s.username=@SourceUser) s
+							  WHERE c.currency<>s.currency OR c.site<>s.site
+							  ORDER BY d.UserName
+							  FOR XML PATH('')),1,1,'')
+		RETURN
+	END
+
+	--Tab Edit Bet Setting: not the same SITE/CURSRENCY
+	;WITH cte_DiffSiteCurrency AS (
+		SELECT c.site, c.currency FROM #DestUsers d  
+		INNER JOIN Customer c WITH (NOLOCK) ON d.custid=c.custid
+		WHERE @IsCopy=0
+		GROUP BY c.site, c.currency
+	)
+	SELECT TOP 1 
+		@Errcode=115
+		, @ErrMsg='The function can only edit bet setting of Supers with same site and currency.'
+	FROM cte_DiffSiteCurrency
+	HAVING COUNT (1) > 1
+
+	IF @Errcode <> 0
+		RETURN
 
 	--check: the number of the destination accounts exceeds 50
 	IF EXISTS (SELECT 1 FROM #DestUsers HAVING COUNT(1)>50)

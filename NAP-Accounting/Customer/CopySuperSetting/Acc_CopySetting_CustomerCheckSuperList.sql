@@ -1,8 +1,7 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CopySetting_CustomerCheckSuperList] 
 	@username VARCHAR(50),
 	@SuperList VARCHAR(MAX) = '',
-	@custid		INT = 0 OUTPUT,
 	@ProductList VARCHAR(MAX) = '',
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg  NVARCHAR(1000)='' OUTPUT,
@@ -23,6 +22,8 @@ AS
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20240316@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
+		- 20241010@Tacy: NAP - Manage super settings [redmine: #206291]
+
 	Parameter's Explanation:
 		@custid: output source custid
 		@username: source custid
@@ -31,10 +32,8 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @strUsername  NVARCHAR(100)	= '',			
-			@site VARCHAR(50),
-			@currency INT
-			
+	DECLARE @CustID INT
+
 	CREATE TABLE #tblCust(custid INT, username VARCHAR(50),bitmapIsHidden BINARY(32) )
 	CREATE NONCLUSTERED INDEX IX_tblCust_custid ON #tblCust(custid ASC)
 	
@@ -43,81 +42,15 @@ BEGIN
 	FROM STRING_SPLIT(@SuperList,',')
 	WHERE value <> ''
 		
-	IF NOT EXISTS(SELECT 1 FROM custinfo WITH(NOLOCK) 
-				WHERE username = @username
-					AND roleid = 4
-					AND Enabled = 1
-					AND custid NOT IN (SELECT custid FROM Dep_CustSuper WITH(NOLOCK))
-					AND custid > 100--dummy account
-				)
-	BEGIN
-		SELECT @ErrCode = 100,
-			@ErrMsg = 'Invalid source super account.'
-		RETURN;
-	END	
-	
-	SELECT @strUsername = ''
-	;WITH t AS(
-		SELECT t.username, c.custid, c.roleid, c.enabled
-		FROM #tblCust t 
-			LEFT JOIN custinfo c WITH(NOLOCK) ON c.username = t.username
-	)
-	SELECT @strUsername = @strUsername +','+ username
-	FROM t
-	WHERE custid IS NULL
-		OR custid <= 100
-		OR roleid <> 4
-		OR enabled = 0
-		OR custid IN (SELECT custid FROM Dep_CustSuper WITH(NOLOCK))
-
-	IF @strUsername <> ''
-	BEGIN
-		SELECT @strUsername = STUFF(@strUsername,1,1,'')
-		SELECT @ErrCode = 101,
-				@ErrMsg = 'Invalid super account(s): ' + @strUsername
-		RETURN;		
-	END
-	
-	IF EXISTS (SELECT 1 FROM #tblCust WHERE username = @username)
-	BEGIN
-		SELECT @strUsername = STUFF(@strUsername,1,1,'')
-		SELECT @ErrCode = 102,
-				@ErrMsg = 'Source account is found among copied accounts. You cannot copy an account setting to itself.'
-		RETURN;	
-	END
-	
-	IF (SELECT COUNT(1) FROM #tblCust) > 500
-	BEGIN		
-		SELECT @ErrCode = 103,
-				@ErrMsg = 'The function can only copy up to 500 accounts per request.'
-		RETURN;		
-	END
-		
-	SELECT @site = site,
-			@currency = currency,
-			@custid = custid
-	FROM customer WITH(NOLOCK) 
-	WHERE username = @username
-	
-	SELECT @strUsername = ''
-	SELECT @strUsername = @strUsername +','+ username
-	FROM customer WITH(NOLOCK)
-	WHERE username IN (SELECT username FROM #tblCust)
-		AND (site <> @site OR currency <> @currency)
-		
-	IF @strUsername <> ''
-	BEGIN
-		SELECT @strUsername = STUFF(@strUsername,1,1,'')
-		SELECT @ErrCode = 104,
-				@ErrMsg = 'The following accounts are not the same site and currency with the source account: ' + @strUsername
-		RETURN;		
-	END
-		
 	UPDATE t
 	SET t.custid = c.custid
 	FROM #tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
-		
+
+	SELECT @custid = custid
+	FROM customer WITH(NOLOCK) 
+	WHERE username = @username
+
 	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT, GroupID tinyint)
 	DECLARE @tblProduct_hidden TABLE (productID TINYINT, SportType SMALLINT)	
 	CREATE TABLE #SportBettypeFilter(ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, BitmapOrder TINYINT, GroupID tinyint)
@@ -240,8 +173,6 @@ BEGIN
 	END
 	
 	SELECT productID,SportType,GroupID FROM @tblProduct	
-	
-	SELECT distinct custid,username FROM #tblCust 
 
 	DROP TABLE #MatrixRefWL
 	DROP TABLE #SportBettypeFilter
