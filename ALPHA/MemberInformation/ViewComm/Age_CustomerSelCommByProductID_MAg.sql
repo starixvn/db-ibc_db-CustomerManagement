@@ -22,7 +22,7 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
-
+		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 
@@ -91,11 +91,6 @@ BEGIN
 		    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount  ELSE 0 END) * 100	AS discount1x2
 		    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.PlayerDiscount ELSE 0 END) * 100	AS playerdiscount1x2
 
-		    --Myanmar Odds
-		    , MAX (CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.MasterDiscount ELSE 0 END) * 100	AS adiscountMyanmarOdds
-		    , MAX (CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.AgentDiscount  ELSE 0 END) * 100	AS discountMyanmarOdds
-		    , MAX (CASE WHEN cdm.SportType = 2 AND cdm.BetType = 1 THEN cdm.PlayerDiscount ELSE 0 END) * 100	AS playerdiscountMyanmarOdds
-	    
 			-- Cricket
 		    , ISNULL ( cdm_Cricket.MasterDiscount , 0 ) * 100  adiscount_cricket
 		    , ISNULL ( cdm_Cricket.AgentDiscount  , 0 ) * 100  discount_cricket

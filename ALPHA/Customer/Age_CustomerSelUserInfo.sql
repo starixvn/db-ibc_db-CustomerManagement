@@ -70,6 +70,7 @@ Revisions:
 	- 20230628@Tacy: NG2 - Remove Setting [Redmine: #189762]
 	- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 	- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+	- 20241022@Johnson: remove bitcoin [redmine: #201396]
 
 Param's Explanation:
 	@custid: custid that need to be viewed.   
@@ -169,8 +170,7 @@ BEGIN
 		,	@bitmapOrder_SportsLottery	INT 
 		--VGaming
 		,	@bitmapOrder_VGaming		INT
-		--Bitcoin
-		,	@bitmapOrder_Bitcoin		INT 
+		
 		,   @bitmapOrder_SabaCasino		INT 
 		,   @bitmapOrder_LiveCasino		INT 
 		 
@@ -184,8 +184,7 @@ BEGIN
 	SET @bitmapOrder_TableGames = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 222 AND Bettype = 4901)
 	SET @bitmapOrder_RNGWar = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 224 AND Bettype = 5500)
 	SET @bitmapOrder_SportsLottery = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)	
-	SET @bitmapOrder_VGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 171 AND Bettype = 3801)
-	SET @bitmapOrder_Bitcoin = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
+	SET @bitmapOrder_VGaming = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 171 AND Bettype = 3801)	
 	SET @bitmapOrder_SabaCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 208 AND Bettype = 2101)
 	SET @bitmapOrder_LiveCasino = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9911 AND Bettype = 2400)
     
@@ -200,8 +199,7 @@ BEGIN
 		,	@IsHidden_TableGames	INT = 1
 		,	@IsHidden_RNGWar		INT = 1
 		,	@IsHidden_SportsLottery	INT = 1
-		,	@IsHidden_VGaming		INT = 1
-		,	@IsHidden_Bitcoin		INT = 1
+		,	@IsHidden_VGaming		INT = 1		
 		,	@IsHidden_SabaCasino	INT = 1
 
 		--Live Casino
@@ -244,7 +242,6 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 224, @IsHide = @IsHidden_RNGWar OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 44, @SettingStatus = @SettingStatus, @Sporttype = 169, @IsHide = @IsHidden_SportsLottery OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 66, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_VGaming OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_LiveCasino OUTPUT
 
@@ -380,9 +377,6 @@ BEGIN
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_VGaming)), 1) AS DisableVGaming,		
 			CAST(CASE WHEN @IsHidden_VGaming = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VGaming)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVGaming,
 			--end VGaming
-			-- For Bitcoin
-			(SELECT value FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Bitcoin)) AS DisableBitcoin,			
-			CAST(CASE WHEN @IsHidden_Bitcoin = 0 AND	ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Bitcoin)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideBitcoin,	
 			-- For SabaCasino
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaCasino)), 1) AS DisableSabaCasino,		
 			CAST(CASE WHEN @IsHidden_SabaCasino = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaCasino)), 1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideSabaCasino,

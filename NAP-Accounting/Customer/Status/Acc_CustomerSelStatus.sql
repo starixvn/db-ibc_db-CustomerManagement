@@ -108,6 +108,7 @@ AS
 		- 20240216@Helios: Unify Live RNG Casino [Redmine: #198960]
 		- 20240515@Helios: Unify RNG Games - Rollback Code RNG Casino And Enhance [Redmine: #204358] 
 		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241022@Johnson: remove bitcoin/MyanmarOdds [redmine: #201396]
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT
@@ -119,7 +120,6 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @agentid INT, @roleid TINYINT, @IsInternal BIT, @IsAdminCanViewVNIP BIT,  @LimitPerIP tinyint, @SelectedBetting bit
-			,@IsMyanmarOdds BIT = 0
 			,@srecommend INT = 0
 			,@ClosedReason TINYINT
 			,@IsDeposit BIT=0
@@ -146,8 +146,6 @@ BEGIN
 			@SelectedBetting =  isnull(SelectedBetting, 0),
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 		FROM custSuper WITH (NOLOCK) WHERE custid = @custid
-		-- Myanmar Odds
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@custid)		
 	END
 	ELSE IF @roleid = 3 --master
 	BEGIN
@@ -160,9 +158,7 @@ BEGIN
 		SELECT
 			@IsAllDayBalTransfer = ISNULL(IsAllDayBalTransfer, 0)
 		FROM dbo.CustMaster WITH (NOLOCK)
-		WHERE custid = @custid
-		-- Myanmar Odds
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
+		WHERE custid = @custid		
 	END
 	ELSE IF @roleid = 2 --agent
 	BEGIN
@@ -176,18 +172,13 @@ BEGIN
 			@IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
 	    FROM dbo.CustMaster WITH(NOLOCK)
 		WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
-		-- Myanmar Odds
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)	
-			
+		
 	END
 	ELSE IF @roleid = 1 --member
 	BEGIN
 		SELECT 
 			@IsInternal = isnull(IsInternal, 0) 
-		FROM custAgent WITH (NOLOCK) WHERE custid = @agentid
-		-- Myanmar Odds
-		SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)		
-			
+		FROM custAgent WITH (NOLOCK) WHERE custid = @agentid			
 	END
 	
 	--Get Internal status
@@ -216,8 +207,7 @@ BEGIN
 		--,	@bitmapOrder_OtherRNGCasino	INT
 		
 	-- Don't Changed
-		,	@bitmapOrder_SabaVirtualSport INT
-		,	@bitmapOrder_Bitcoin		INT  
+		,	@bitmapOrder_SabaVirtualSport INT		
 		,	@bitmapOrder_CashOut		INT  
 
 	SET @bitmapOrder_SportsLottery	= (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 169 AND Bettype = 3611)		
@@ -229,7 +219,6 @@ BEGIN
 	SET @bitmapOrder_RNGCasino		= (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9906 AND Bettype = 4001)
 	
 	SET @bitmapOrder_SabaVirtualSport   = (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 98 AND Bettype = 1)
-	SET @bitmapOrder_Bitcoin		= (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 175 AND Bettype = 7901)
 	SET @bitmapOrder_CashOut		= (SELECT bitmapOrder FROM ProductStatusProfile WITH (NOLOCK) WHERE Sporttype = 9903 AND Bettype = 1)
 	-- Check DummyProducts Is Show or Hidden in Profile Setting:
 	DECLARE	
@@ -245,8 +234,7 @@ BEGIN
 	,	@IsHidden_RNGCasino		INT = 1
 
 		-- Don't Change
-	,	@IsHidden_SabaVirtualSport	INT = 1
-	,	@IsHidden_Bitcoin			INT = 1
+	,	@IsHidden_SabaVirtualSport	INT = 1	
 	,	@IsHidden_Cashout			INT = 1
 
 
@@ -263,7 +251,6 @@ BEGIN
 
 	-- Don't Change
 	EXEC Acc_CheckShowProduct @ProductID = 54, @SettingStatus = @SettingStatus, @Sporttype = 98, @IsHide = @IsHidden_SabaVirtualSport OUTPUT
-	EXEC Acc_CheckShowProduct @ProductID = 69, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Bitcoin OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 25, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_Cashout OUTPUT
 
 
@@ -303,11 +290,7 @@ BEGIN
 		, @Disable_SabaVirtualSport			BIT
 		, @Hide_SabaVirtualSport			BIT
 		, @Sync_SabaVirtualSport			BIT = 1
-
-		, @Disable_Bitcoin				BIT
-		, @Hide_Bitcoin					BIT
-		, @Sync_Bitcoin					BIT = 1
-
+		
 		, @Disable_Cashout				BIT
 		, @Hide_Cashout					BIT
 		, @Sync_Cashout					BIT = 1
@@ -455,8 +438,7 @@ BEGIN
 		ISNULL(mrecommend, 0) AS MRecommend,
 		ISNULL(recommend, 0) AS ARecommend,
 		ISNULL(@IsAdminCanViewVNIP,1) AS IsAdminCanViewVNIP,
-		ISNULL(DoubleCommLosing,0) AS DoubleCommLosing,		
-		ISNULL(@IsMyanmarOdds,0) AS IsMyanmarOdds,
+		ISNULL(DoubleCommLosing,0) AS DoubleCommLosing,				
 		ISNULL(DisableSuperLive,1) AS DisableSuperLive,
 		ISNULL(@IsAllDayBalTransfer, 0) IsAllDayBalTransfer,
 		@LimitPerIP AS LimitPerIP,
@@ -592,12 +574,6 @@ BEGIN
 		ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_SabaVirtualSport)),1)				AS DisableSabaVirtualSport,
 		CAST(CASE WHEN ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_SabaVirtualSport)),1) = 0 
 																				THEN 0 ELSE 1 END AS BIT)	AS HideSabaVirtualSport,
-
-		-- Bitcoin
-		ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_Bitcoin)), 1)					AS DisableBitcoin,		
-		CAST(CASE WHEN @IsHidden_Bitcoin = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_Bitcoin)), 1) = 0 
-																				THEN 0 ELSE 1 END AS BIT)	AS HideBitcoin,
-		ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_Bitcoin)), 0)					AS SyncedBitcoin,
 		
 		-- Cashout
 		ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsDisabled, @bitmapOrder_CashOut)), 1)					AS DisableCashout,		
