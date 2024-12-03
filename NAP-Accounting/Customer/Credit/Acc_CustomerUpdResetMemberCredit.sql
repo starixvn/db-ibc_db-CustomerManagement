@@ -24,6 +24,7 @@ AS
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20210716@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241217@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON 
@@ -49,13 +50,17 @@ BEGIN
 	BEGIN
 		IF (@isLicensee = 1)
 		BEGIN
-			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
+			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+			SET credit = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
 			WHERE roleid = 1 AND closed=1 AND recommend = @agentID AND Credit != 0 
 		END
 		ELSE
 		BEGIN
-			UPDATE ci  SET credit = 0 
+			UPDATE ci  
+			SET credit = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
 			FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
 				INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
@@ -66,7 +71,9 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		UPDATE custinfo WITH (ROWLOCK,UPDLOCK) SET credit = 0 
+		UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+		SET credit = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
 		WHERE roleid = 1 AND recommend = @agentID AND Credit != 0 
 		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines'

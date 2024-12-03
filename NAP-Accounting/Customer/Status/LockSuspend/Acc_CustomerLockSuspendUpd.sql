@@ -19,7 +19,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-
+		- 20241125@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]	
 	Param's Explanation:
 		@CustIDList: id of customer
 		@Lock: 1:Lock, 2:Unlock
@@ -230,7 +230,8 @@ BEGIN
 			IF @isDirectSuspend = 0
 			BEGIN
 				UPDATE	cs 
-				SET	SuspendInfo = (SELECT suspendinfo FROM dbo.f_GenerateSuspendInfo(@roleid,1,ISNULL(SuspendInfo,0)))	
+				SET	SuspendInfo = (SELECT suspendinfo FROM dbo.f_GenerateSuspendInfo(@roleid,1,ISNULL(SuspendInfo,0))),
+					RepUpdateTime = dbo.f_GetDateTime2()
 				FROM CustProductStatus cs WITH (ROWLOCK, UPDLOCK)			
 				WHERE custid = @CustIdLog
 	

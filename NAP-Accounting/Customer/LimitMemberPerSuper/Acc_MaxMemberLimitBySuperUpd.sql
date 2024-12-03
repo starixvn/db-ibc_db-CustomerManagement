@@ -22,7 +22,7 @@ AS
 		- 20240122@Johnson: check permission for 777 [redmineID: #197160]	
 		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-
+		- 20241125@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 	- @SuperName: Searched Super's name
 	- @MaxMemberLimit: Max Member Limit
@@ -135,7 +135,8 @@ BEGIN
 	
 	UPDATE cs WITH (ROWLOCK, UPDLOCK)
 	SET cs.MaxMember		= @MaxMemberLimit,
-		cs.MaxMemberRemark	= @Remark
+		cs.MaxMemberRemark	= @Remark,
+		RepUpdateTime 		= dbo.f_GetDateTime2()
 	OUTPUT 
 		deleted.CustId, 
 		deleted.MaxMember		AS MaxMemberLimit_Old, 

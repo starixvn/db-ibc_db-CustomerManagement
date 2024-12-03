@@ -50,6 +50,7 @@ AS
 		- 20220823@Tacy: update BA member's Danger follow upline [redmine:#176518]
 		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241024@Johnson: Danger Setting - Update ABI 33/46 to ORI 33/46 [redmineID: #208301]
+		- 20241128@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -155,7 +156,8 @@ BEGIN
 		IF (@DangerType=1)
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
-			SET Danger = @DangerLevel 
+			SET Danger = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 2
@@ -166,25 +168,29 @@ BEGIN
 							WHEN @DangerLevel = 16 THEN 49
 							ELSE Danger4 END,
 				Danger = CASE WHEN @DangerLevel IN (30,33,39,46) THEN @DangerLevel
-							ELSE Danger END
+							ELSE Danger END,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 3
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
-			SET Danger3 = @DangerLevel 
+			SET Danger3 = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 4
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
-			SET Danger4 = @DangerLevel 
+			SET Danger4 = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 5
 		BEGIN
 			UPDATE custInfo with (UPDLOCK,ROWLOCK)
-			SET Danger5 = @DangerLevel 
+			SET Danger5 = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END
 	END

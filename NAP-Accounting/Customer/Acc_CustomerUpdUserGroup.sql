@@ -32,7 +32,7 @@ Revisions:
 	- 20200918@Winfred: Reinsert MyanmarOdds [Redmine: #141926]	
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
     - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-
+	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 */
 BEGIN
@@ -137,12 +137,14 @@ BEGIN
 		, cdm.MasterDiscount	= @MasterDiscount
 		, cdm.AgentDiscount	= @AgentDiscount
 		, cdm.PlayerDiscount	=  CASE WHEN cdm.PlayerDiscount > @AgentDiscount THEN @AgentDiscount ELSE cdm.PlayerDiscount END
+		, RepUpdateTime = dbo.f_GetDateTime2()
 	FROM CustDiscount3rd_Member cdm WITH (ROWLOCK , UPDLOCK)
 	WHERE cdm.custid = @CustID AND cdm.SportType = 1 AND cdm.bettype NOT IN (4 , 5)
 
 	-- Changed uGroup Customer
 	UPDATE Customer WITH (ROWLOCK , UPDLOCK)
-	SET ugroup = @ugroup
+	SET ugroup = @ugroup,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid=@custid
 
 	declare @LogSPData varchar(5000)

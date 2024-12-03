@@ -22,7 +22,7 @@ AS
 	Revisions:
 		- 20200521@Johnson: initial sp [redmine:#133846]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-	
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Parameter's explaination:
 		- @roleid: role of login account
 */		
@@ -175,9 +175,15 @@ BEGIN
 		BEGIN
 			IF @SubAccIDIndirect = 0
 			BEGIN
-				UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET locked = 2 WHERE custid = @custidIndirect 
+				UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) 
+				SET locked = 2,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE custid = @custidIndirect 
 				
-				UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @custidIndirect 
+				UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+				SET logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE custid = @custidIndirect 
 				
 				SELECT @LogSPData = '<R '
 									+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
@@ -192,7 +198,11 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @SubAccIDIndirect
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET closed = 1, 
+					logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE subaccid = @SubAccIDIndirect
 					    
 				SELECT @LogSPData = '<R ' 
 									+CASE WHEN @SubAccID > 0 THEN 'UplineSubAccount="'  + @UplineUserName +'" ' ELSE '' END 
@@ -211,13 +221,15 @@ BEGIN
 			IF @SubAccIDIndirect = 0
 			BEGIN
 				UPDATE	customer WITH (ROWLOCK, UPDLOCK) 
-				SET		logincount = @failedcount 
+				SET		logincount = @failedcount,
+						RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE	custid = @custidIndirect
 			END
 			ELSE
 			BEGIN
 				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
-				SET logincount = @failedcount
+				SET logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE subaccid = @SubAccIDIndirect
 			END
 		END	
@@ -266,13 +278,15 @@ BEGIN
 	IF @SubAccIDIndirect > 0
 	BEGIN
 		UPDATE custSub with (rowlock, updlock) 
-		SET logincount = 0 
+		SET logincount = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE subaccid = @SubAccIDIndirect 
 	END
 	ELSE 
 	BEGIN
 		UPDATE customer with (rowlock, updlock)  
-		SET logincount = 0
+		SET logincount = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid = @CustIDIndirect
 	END
 	

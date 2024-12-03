@@ -12,6 +12,7 @@ TASk : Splitting Super Profile
 DB: DBCUST/CustDB
 Revisions:  
 	- 20180731@Razor: Splitting Super Profile [#86934]
+	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -38,8 +39,8 @@ BEGIN
 					)
 				)
 		BEGIN
-			INSERT INTO [dbo].[CustSuperProfile] (custid)
-			VALUES (@custid)
+			INSERT INTO [dbo].[CustSuperProfile] (custid,RepUpdateTime)
+			VALUES (@custid,dbo.f_GetDateTime2())
 		END
 	END TRY
 

@@ -37,6 +37,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20230308@Johnson: Add auto-suspend for Basketball [redmine:#184339]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241129@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 	Param's Explanation:
 		@IsUpdDownline: auto-suspended all downlines
 
@@ -185,7 +186,8 @@ BEGIN
 	UPDATE	custinfo WITH (ROWLOCK, UPDLOCK)	
 	SET	autosuspend = @Autosuspend	,
 		autosuspend2 = @AutoSuspendOther,
-		autosuspend3 = @Autosuspend3
+		autosuspend3 = @Autosuspend3,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	custid = @custID 
 
 	IF @@ERROR <> 0

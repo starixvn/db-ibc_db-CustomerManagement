@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdAbnormal]
 	@CustID int,
 	@UpdateDownline bit = 0,
@@ -19,7 +19,7 @@ AS
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-		
+		- 20241204@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		@CustID: Id of member will be updated
 		@@AbnormalLevel: new abnormal level value
@@ -47,13 +47,15 @@ Begin
 		if @roleid = 2 and @updateDownline = 1 
 		BEGIN
 			update custinfo with(UPDLOCK,ROWLOCK)
-			set Abnormal = @AbnormalLevel
+			set Abnormal = @AbnormalLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			where recommend= @custid
 		END
 		else
 		BEGIN
 			update custInfo with (UPDLOCK,ROWLOCK)
-			set Abnormal = @AbnormalLevel
+			set Abnormal = @AbnormalLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			where custid = @custid
 		END					
 	END

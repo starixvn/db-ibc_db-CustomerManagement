@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustDirectUpd]
 (
 	@CustID INT
@@ -26,7 +26,7 @@ Revisions:
 	- 20171114@Elodie: Some fields cannot decode Chinese words - [Redmine:86612]
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-
+	- 20241128@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 */
 BEGIN
 	DECLARE @startRun DATETIME
@@ -165,7 +165,8 @@ BEGIN
 		SET @IsUpdDirectAccount = 1	
 		
 		UPDATE C
-			SET mobilephone = @Mobilephone
+			SET mobilephone = @Mobilephone,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM Customer c WITH(ROWLOCK,UPDLOCK) 
 		WHERE C.CUSTID = @custid 
 		 

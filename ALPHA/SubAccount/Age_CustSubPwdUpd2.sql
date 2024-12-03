@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,VNTeam" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustSubPwdUpd2]
 	@CustID int,
 	@SubAccID int,	
@@ -25,7 +25,7 @@ Revisions:
 	- 20130328@Jamie: Update Old pwd and Last Changed Pwd 
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
-
+	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -60,7 +60,10 @@ BEGIN
 
 		IF @failedcount > 5 --Lock accounts after 5 logins failed */
 		BEGIN
-			UPDATE custSub WITH (ROWLOCK,UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @SubAccID and custid = @CustID
+			UPDATE custSub WITH (ROWLOCK,UPDLOCK) 
+			SET closed = 1, logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE subaccid = @SubAccID and custid = @CustID
 		
 			SET @endRun = getdate()
 			SET @duration  = datediff (millisecond,@startRun,@endRun)
@@ -98,7 +101,8 @@ BEGIN
 		ELSE IF @failedcount <=5
 		BEGIN 			
 			UPDATE custSub WITH(UPDLOCK,ROWLOCK)
-			SET logincount = @failedcount
+			SET logincount = @failedcount,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE subaccid = @SubAccID and custid = @custid
 
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Old password is incorrect.'
@@ -114,7 +118,8 @@ BEGIN
 
 	UPDATE custsub WITH (ROWLOCK, UPDLOCK)
 	SET userpwd = @UserPwd,
-		@SubAccname = username
+		@SubAccname = username,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE subaccid = @SubAccID and custid = @CustID
 
 	UPDATE	CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)

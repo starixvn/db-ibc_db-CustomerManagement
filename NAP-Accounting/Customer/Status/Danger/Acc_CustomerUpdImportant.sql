@@ -23,6 +23,7 @@ AS
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -47,7 +48,8 @@ BEGIN
 			RETURN
 
 		update customer with (ROWLOCK) 
-		set Important = @Important
+		set Important = @Important,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		where custid = @custid	
 	END
 	else

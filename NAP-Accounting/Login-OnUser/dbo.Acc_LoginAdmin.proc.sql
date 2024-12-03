@@ -46,6 +46,7 @@ Revisions:
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20221104@Tacy: NAP - Set Expired Time For Permission [RedmineID: #179323]
 	- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 */
 BEGIN
@@ -126,7 +127,10 @@ BEGIN
 	--	IF @failedcount <= 6
 		IF (@failedcount <= 255) -- max of tinyint
 		BEGIN
-			UPDATE customer with (rowlock, updlock) SET logincount = @failedcount WHERE custid = @custid
+			UPDATE customer with (rowlock, updlock) 
+			SET logincount = @failedcount,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @custid
 		END
 	END
 
@@ -184,7 +188,10 @@ BEGIN
 		ELSE
 		BEGIN
 			UPDATE customer with (rowlock, updlock)
-			SET logincount = 0, iplogin = @LoginIP, lastlogged = CURRENT_TIMESTAMP, on_sessionid = 0
+			SET logincount = 0, iplogin = @LoginIP, 
+				lastlogged = CURRENT_TIMESTAMP, 
+				on_sessionid = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 
 			SET @LogData = 'Admin:' + @username + ' Logged in to ACCOUNT SITE' + ' - ' + 'Result:Success From:' + @From

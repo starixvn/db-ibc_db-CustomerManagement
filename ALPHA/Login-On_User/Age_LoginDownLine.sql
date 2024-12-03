@@ -72,7 +72,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
-
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @NicknameLoginOnly: Value of the option Set login option by nickname only
@@ -696,9 +696,15 @@ BEGIN
 		/* START --Jamie@20130327 Close accounts after 5 logins failed */
 		IF @failedcount > 5
 		BEGIN
-			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) 
+			SET Locked = 2,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+			UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+			SET logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 			--log data to UserLog_RunSP 
 			SELECT @LogData = '<Age_LoginDownline IP="'+ @inputLoginIP + '" />'		    
 			
@@ -733,7 +739,8 @@ BEGIN
 
 		BEGIN
 			UPDATE	customer with (rowlock, updlock) 
-			SET		logincount = @failedcount 
+			SET		logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE	custid = @db_custid 
 		END
 
@@ -786,7 +793,10 @@ BEGIN
 	  
 	  
 	UPDATE customer with (rowlock, updlock)  
-	SET logincount = 0, iplogin = case when @db_loginip<>'' then @inputLoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 
+	SET logincount = 0, 
+		iplogin = case when @db_loginip<>'' then @inputLoginIP else '' end, 
+		lastlogged = CURRENT_TIMESTAMP,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @db_custid  
 	  
 	-- Don't write log for AdminLogin

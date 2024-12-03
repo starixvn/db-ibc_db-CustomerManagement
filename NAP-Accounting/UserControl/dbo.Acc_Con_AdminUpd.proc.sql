@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminUpd]
 	@CustID INT, 
 	@FirstName NVARCHAR (50), 
@@ -27,6 +27,7 @@ AS
 						   Write more log on DBTXN server in case of DBLOG server failure					
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
 		- 20221104@Tacy: NAP - Set Expired Time For Permission + add param @ExpiredDate [RedmineID: #179323]
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		
 */
 BEGIN
@@ -73,7 +74,8 @@ BEGIN
 	Begin
 		UPDATE  customer WITH (ROWLOCK, UPDLOCK)
 			SET firstname = @FirstName,
-				LastName  = @LastName
+				LastName  = @LastName,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE   custid = @CustID;
 		IF @@ERROR <> 0
 			BEGIN

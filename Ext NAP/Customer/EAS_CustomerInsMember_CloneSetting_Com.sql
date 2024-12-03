@@ -60,6 +60,7 @@ AS
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 		- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:199915]
 		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
 
 	Parameter's Explaination:
@@ -166,8 +167,8 @@ BEGIN
 		SELECT @MaxMember = CASE WHEN @SiteLabel = '789y' THEN 20000 ELSE -1 END
 		SELECT @MaxMemberLog = CASE WHEN @SiteLabel = '789y' THEN '20000' ELSE 'Unlimited' END
 
-		INSERT INTO CustSuper(custId,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer,SiteDBGroupID)  
-		SELECT	@CustID, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer,@SiteDBGroupID
+		INSERT INTO CustSuper(custId,IsInternal, TransferOption, LimitPerIP, SelectedBetting,MaxMember, IsAllDayBalTransfer,SiteDBGroupID,RepUpdateTime)  
+		SELECT	@CustID, 0, TransferOption, LimitPerIP, SelectedBetting, @MaxMember, IsAllDayBalTransfer,@SiteDBGroupID, dbo.f_GetDateTime2()
 		FROM CustSuper WITH(NOLOCK)
 		WHERE custid=@ExistingCustid	
 		
@@ -210,6 +211,7 @@ BEGIN
 				,DisableOutright				
 				,DoubleCommLosing	
 				,DisableSuperLive
+				,RepUpdateTime
 				)
 		 SELECT
 				@CustID
@@ -228,6 +230,7 @@ BEGIN
 				,DisableOutright				
 				,doubleCommLosing		
 				,DisableSuperLive
+				,dbo.f_GetDateTime2()
 		FROM dbo.custinfo WITH(NOLOCK)
 		WHERE custid=@ExistingCustid  
 		
@@ -473,8 +476,9 @@ BEGIN
            ,[phone]
            ,[mobilephone]
            ,[fax]
+		   ,RepUpdateTime
            )
-	VALUES (@custid,@firstname,@lastname,@phone,@mobilephone,@fax)
+	VALUES (@custid,@firstname,@lastname,@phone,@mobilephone,@fax,dbo.f_GetDateTime2())
 	
 	DECLARE @transferType TINYINT,
 			@MinDate SMALLDATETIME,

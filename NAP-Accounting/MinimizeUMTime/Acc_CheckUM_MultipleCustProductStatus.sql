@@ -18,7 +18,7 @@ Revisions:
 	- 20220627@Eden: Implement the dependency between Macau Games Product Status and Jackpot Status [Redmine: #171715]
 	- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
 	- 20240514@Eden: HotFix - UM for Live and RNG casino product [Redmine: #205044]
-
+	- 20241216@Johnson: Change to use ProductSettingProfile [RedmineID: #212684]	
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -92,7 +92,7 @@ SET NOCOUNT ON
 			AND nof.siteID IN (ft.SiteID, 0)
 			AND nof.Currency IN (ft.Currency, 0)
 	WHERE NOT EXISTS(	SELECT 1 
-						FROM ProductSettingDetail p WITH(NOLOCK) 
+						FROM ProductSettingProfile p WITH(NOLOCK) 
 						WHERE nof.SportType = p.SportType 
 							AND nof.BetType <> p.BetType 
 							AND p.SettingStatus = 0 

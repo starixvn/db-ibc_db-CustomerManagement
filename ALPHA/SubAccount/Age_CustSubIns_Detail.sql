@@ -22,7 +22,7 @@ AS
 		
 	Revisions:
 		- 20240704@Louisa: initial Redmine:#199915
-
+		- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Parameter's Explanation:
 
 */
@@ -38,7 +38,8 @@ BEGIN
 			firstname,
 			lastname,
 			PageAccess,
-			createdate			
+			createdate,
+			RepUpdateTime
 		)
 		VALUES
 		(
@@ -49,7 +50,8 @@ BEGIN
 			@firstname,
 			@lastname,
 			@PageAccess,
-			getdate()
+			getdate(),
+			dbo.f_GetDateTime2()
 		)
 		SET IDENTITY_INSERT custsub OFF
 	END TRY

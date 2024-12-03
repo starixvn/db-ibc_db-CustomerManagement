@@ -33,6 +33,7 @@ AS
 		- 20200623@Johnson: revert to not allow negative given credit [redmine:#132994]
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -105,7 +106,8 @@ BEGIN
 	END
 
 	UPDATE dbo.custInfo WITH (ROWLOCK)
-	SET credit = @CreditAmt
+	SET credit = @CreditAmt,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE CustID = @CustID
 	
 	-- Write Log

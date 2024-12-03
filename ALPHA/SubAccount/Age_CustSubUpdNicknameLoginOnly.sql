@@ -17,7 +17,7 @@ AS
     Revisions:
         - 20190515@Kan: Initial SP [Redmine:#112287]
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
-
+		- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
     Param's Explanation:
 */
 BEGIN
@@ -27,7 +27,8 @@ BEGIN
 	SET @startRun = GETDATE()
 
     UPDATE dbo.custSub WITH (ROWLOCK, UPDLOCK)
-    SET NicknameLoginOnly = @NicknameLoginOnly 
+    SET NicknameLoginOnly = @NicknameLoginOnly,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE subaccid = @subaccid AND CustID = @custid
 
     --- Error return

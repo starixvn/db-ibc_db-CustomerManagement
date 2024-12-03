@@ -17,7 +17,7 @@
 		Revisions:
 		-- 20170619@Winnie: Apply color for closed Accounts RedmineID: #74494
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-
+		- 202412110@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		Parameter's Explanation:
 			- @CheckedSecurityCode: = 1: check security code success
 								= 0: failed security code
@@ -79,7 +79,8 @@ SET NOCOUNT ON
 		ELSE 
 		BEGIN
 			UPDATE CustProductStatus WITH(UPDLOCK,ROWLOCK)
-			SET Locked = 1 
+			SET Locked = 1,
+				RepUpdateTime = dbo.f_GetDateTime2()	
 			WHERE custid = @custid
 			
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)

@@ -16,7 +16,7 @@ AS
 
 	Revisions: 
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
-
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		• @ErrMsg: Error description.
 			@ErrMsg = <Root>
@@ -117,7 +117,8 @@ BEGIN
 
 		UPDATE  customer WITH (ROWLOCK, UPDLOCK)
 		SET     userpwd = @UserPwd ,
-				pwdexpiry = @PwdExpiry
+				pwdexpiry = @PwdExpiry,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE   custid = @CustID
     
 		IF @roleid <> 1

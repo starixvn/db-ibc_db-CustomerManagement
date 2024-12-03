@@ -29,7 +29,7 @@ AS
 			- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 			- 20240704@Louisa: Scaleout DBCUST [Redmine:#199915]
 			- 20241119@Eden: set srecommend = 0 [Redmine:#206823]
-
+			- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -69,8 +69,8 @@ SET NOCOUNT ON
 				RETURN;
 			END
 
-		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed],srecommend)
-		VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed,0);
+		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed],srecommend,RepUpdateTime)
+		VALUES                   (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed,0,dbo.f_GetDateTime2());
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrMsg ='Add user failed.',

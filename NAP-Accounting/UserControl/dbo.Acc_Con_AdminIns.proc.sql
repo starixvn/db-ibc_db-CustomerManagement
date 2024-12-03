@@ -42,7 +42,7 @@ Revisions:
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20240704@Louisa: Scale out DBCUST [Redmine:#199915]
 	- 20241024@Eden: set srecommend = 0 [Redmine:#206823]
-
+	- 20241126@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 Param's Explanation:
 - @ErrCode:
     = 0: super create master successfully.
@@ -84,8 +84,8 @@ BEGIN
 				RETURN;
 			END
 
-		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed],[srecommend])
-		VALUES  (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed,0);
+		INSERT  INTO dbo.custinfo (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled], [closed],[srecommend],RepUpdateTime)
+		VALUES  (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, @closed,0,dbo.f_GetDateTime2());
 	END TRY
 	BEGIN CATCH	
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Add customer failed.' WHEN 'CS' THEN N'Add customer failed.' WHEN 'J' THEN N'Add customer failed.' ELSE N'Add customer failed.' END,

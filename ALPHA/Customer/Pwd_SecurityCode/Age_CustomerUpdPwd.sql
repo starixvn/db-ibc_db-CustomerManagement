@@ -33,7 +33,7 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
-
+	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 
 • @ErrCode:
@@ -103,7 +103,8 @@ BEGIN
 
     UPDATE  customer WITH (ROWLOCK, UPDLOCK)
     SET     userpwd = @UserPwd ,
-            pwdexpiry = @PwdExpiry
+            pwdexpiry = @PwdExpiry,
+			RepUpdateTime = dbo.f_GetDateTime2()
     WHERE   custid = @CustID
     
 	IF @roleid <> 1

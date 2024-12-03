@@ -18,7 +18,7 @@ AS
 			- 20130513@Lukas: fix bug - admin cannot reset his password because of checking permission
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20240812@Tacy: Remove check permission on function [redmineID: #208402]
-
+			- 20241210@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -48,7 +48,9 @@ SET NOCOUNT ON
 	SELECT @pwdexpiry = DATEADD(dd, 30, GETDATE())
 
 	UPDATE customer  with (ROWLOCK, UPDLOCK)
-	SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 
+	SET userpwd=@UserPwd, 
+		pwdexpiry=@PwdExpiry,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid=@CustID
 		
 	DECLARE @LogData NVARCHAR(MAX)

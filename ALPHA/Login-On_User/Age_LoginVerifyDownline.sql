@@ -69,6 +69,7 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20211019@Winfred: Add log Alpha Support Dark Mode [Redmine: #151816]
 		- 20230207@Tacy: Alpha/NAP - Split 789y site [RedmineID:#181596]
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -483,7 +484,11 @@ BEGIN
 			/* START --Jamie@20130327 Close accounts after 5 logins failed */			
 			IF @failedcount > 5
 			BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @subaccid 
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET closed = 1, 
+					logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE subaccid = @subaccid 
 					    
 				SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" '
 										+'SubAccount="'  + @SubUserName +'" ' +
@@ -499,7 +504,10 @@ BEGIN
 			
 			IF (@failedcount <=5)
 			BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = @failedcount WHERE subaccid = @subaccid 
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE subaccid = @subaccid 
 			END		
 
 			SELECT  @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
@@ -539,7 +547,10 @@ BEGIN
 			SELECT @ActionID = 1304 
 		 END
 
-		UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = 0 WHERE subaccid = @subaccid 
+		UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+		SET logincount = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE subaccid = @subaccid 
 		
 		--Get username, password from customer table to login in the context of agent    
 		SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @Site = c.site, @UserName = username, @UserPwd = userpwd,
@@ -1094,9 +1105,15 @@ BEGIN
 		
 		IF @failedcount > 5 	
 		BEGIN
-			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) 
+			SET Locked = 2,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+			UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+			SET logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 			
 	    	SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
@@ -1111,7 +1128,8 @@ BEGIN
 		IF (@failedcount <= 5) 
 		BEGIN
 			UPDATE	customer WITH (ROWLOCK, UPDLOCK) 
-			SET		logincount = @failedcount 
+			SET		logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE	custid = @db_custid  
 		END
 	  
@@ -1157,7 +1175,8 @@ BEGIN
 	UPDATE customer WITH (ROWLOCK, UPDLOCK)  
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
 		iplogin = @inputLoginIP, 		
-		lastlogged = CURRENT_TIMESTAMP 
+		lastlogged = CURRENT_TIMESTAMP,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @db_custid  
 	
 	IF ISNULL(CAST(@IsDarkMode AS INT),-1)  = 1 

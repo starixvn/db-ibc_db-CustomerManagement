@@ -33,6 +33,7 @@ Revisions:
 					   Write more log on DBTXN server in case of DBLOG server failure
 	- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
 	- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 					   
 Param's Explanation:
 • @ErrCode:
@@ -104,7 +105,8 @@ BEGIN
 			email       = @email,
 			roleid      = @roleid,
 			postal      = @postal,
-			city        = @city
+			city        = @city,
+			RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE   custid = @custid;
 
 	/**** Write to log table ***/

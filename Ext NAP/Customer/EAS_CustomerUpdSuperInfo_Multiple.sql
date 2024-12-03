@@ -18,7 +18,7 @@ AS
 
 	Revisions: 
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
-
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Parameter's Explanation:
 	• @ErrMsg: Error description.
 		@ErrMsg = <Root>
@@ -97,6 +97,7 @@ BEGIN
 				,[lastname] = ISNULL(@lastname,@oldLastName)
 				,[phone] = ISNULL(@phone,@oldPhone)
 				,[mobilephone] = ISNULL(@mobilephone, @oldMobilephone)
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @CustId
 		END TRY
 

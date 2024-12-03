@@ -19,7 +19,7 @@ AS
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
 			- 20240812@Tacy: Remove check permission on function [redmineID: #208402]
-			
+			- 20241210@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -60,7 +60,8 @@ SET NOCOUNT ON
 	BEGIN				
 		UPDATE Customer WITH(UPDLOCK,ROWLOCK)
 		SET firstname = @firstname,
-			lastname = @lastname 
+			lastname = @lastname,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustID = @CustID
 	END	
 	

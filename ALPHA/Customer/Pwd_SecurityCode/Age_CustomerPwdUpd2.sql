@@ -28,7 +28,7 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
-
+	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 - @ErrCode:
     = 0: Transaction recorded successfully.
@@ -75,9 +75,15 @@ BEGIN
 
 		IF @failedcount > 5 --Lock accounts after 5 logins failed */
 		BEGIN
-			UPDATE CustProductStatus WITH (ROWLOCK,UPDLOCK) SET Locked = 2 WHERE custid = @CustID 
+			UPDATE CustProductStatus WITH (ROWLOCK,UPDLOCK) 
+			SET Locked = 2,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @CustID 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @CustID 
+			UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+			SET logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @CustID 
 
 			SET	@endRun = GETDATE() 
 			SET @Duration = DATEDIFF(millisecond,@startRun,@endRun)
@@ -115,7 +121,8 @@ BEGIN
 		ELSE IF @failedcount <=5
 		BEGIN 			
 			UPDATE Customer WITH(UPDLOCK,ROWLOCK)
-			SET logincount = @failedcount
+			SET logincount = @failedcount,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			
 			SET	@endRun = GETDATE() 
@@ -135,7 +142,8 @@ BEGIN
     UPDATE  customer WITH ( ROWLOCK, UPDLOCK )
     SET     userpwd = @UserPwd ,
             pwdexpiry = @PwdExpiry ,
-            iplogin = @LoginIP
+            iplogin = @LoginIP,
+			RepUpdateTime = dbo.f_GetDateTime2()
     WHERE   custid = @CustID
     
     UPDATE	CustLoginInfo WITH (UPDLOCK,ROWLOCK)

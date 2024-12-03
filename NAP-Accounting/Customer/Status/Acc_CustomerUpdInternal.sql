@@ -24,7 +24,7 @@ AS
 		- 20130307@Lukas: change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-		
+		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 	• @ErrCode:
 		= 0: Transaction recorded successfully.
@@ -75,15 +75,24 @@ BEGIN
 
 	IF(@RoleID = 4)
 	BEGIN
-		Update CustSuper WITH(ROWLOCK,UPDLOCK) Set IsInternal = @IsInternal WHERE CustID = @CustID
+		Update CustSuper WITH(ROWLOCK,UPDLOCK) 
+		Set IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE CustID = @CustID
 	END
 	ELSE IF(@RoleID = 3)
 	BEGIN
-		Update CustMaster WITH(ROWLOCK,UPDLOCK) Set IsInternal = @IsInternal WHERE CustID = @CustID
+		Update CustMaster WITH(ROWLOCK,UPDLOCK) 
+		Set IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE CustID = @CustID
 	END
 	ELSE
 	BEGIN
-		Update CustAgent WITH(ROWLOCK,UPDLOCK) Set IsInternal = @IsInternal WHERE CustID = @CustID
+		Update CustAgent WITH(ROWLOCK,UPDLOCK) 
+		Set IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE CustID = @CustID
 	END
 
 	IF (@@error <> 0)
@@ -94,14 +103,20 @@ BEGIN
 
 	IF @roleid = 4
 	BEGIN
-		UPDATE custMaster WITH (ROWLOCK, UPDLOCK) SET IsInternal = @IsInternal WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE srecommend = @custid and roleid = 3)
+		UPDATE custMaster WITH (ROWLOCK, UPDLOCK) 
+		SET IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE srecommend = @custid and roleid = 3)
 		IF (@@error <> 0)
 		BEGIN
 			SELECT @ErrMsg = N'Update process is unsuccessful !', @ErrCode = 102
 		RETURN
 		END
 		
-		UPDATE custAgent WITH (ROWLOCK, UPDLOCK) SET IsInternal = @IsInternal WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE srecommend = @custid and roleid = 2)
+		UPDATE custAgent WITH (ROWLOCK, UPDLOCK) 
+		SET IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE srecommend = @custid and roleid = 2)
 		IF (@@error <> 0)
 		BEGIN
 			SELECT @ErrMsg = N'Update process is unsuccessful !', @ErrCode = 102
@@ -111,7 +126,10 @@ BEGIN
 
 	ELSE IF @roleid = 3
 	BEGIN
-		UPDATE custAgent WITH (ROWLOCK, UPDLOCK) SET IsInternal = @IsInternal WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE mrecommend = @custid and roleid = 2)
+		UPDATE custAgent WITH (ROWLOCK, UPDLOCK) 
+		SET IsInternal = @IsInternal,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE custid IN (SELECT custid FROM custinfo WITH (NOLOCK) WHERE mrecommend = @custid and roleid = 2)
 		IF (@@error <> 0)
 		BEGIN
 			SELECT @ErrMsg = N'Update process is unsuccessful !', @ErrCode = 102
