@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerIsAllowedAccess]
 	@UserID INT, 
 	@UserName VARCHAR(30),		--Admin's username
@@ -27,6 +27,7 @@ AS
 		- 20240412@Tacy: NAP - Permission controls on real currency [redmine: #202523]
 		- 20240425@Johnson: add starix104 to access 789y [redmine: #204395]
 		- 20240809@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241001@Tacy: Not call on Ext-NAP - Remove wsv_xnap account [redmineID: #206918]
 	Param's Explanation:
 */
 BEGIN

@@ -14,6 +14,7 @@ ALTER PROCEDURE EAS_CustomerSelProtectionModeList
 	Revisions:
 		- 20210824@Elodie: Initial sp [Redmine: #160151]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 
 	Parameter's Explanation:
 
@@ -22,7 +23,7 @@ ALTER PROCEDURE EAS_CustomerSelProtectionModeList
 */ 
 BEGIN	
 	SET NOCOUNT ON
-	DECLARE @IsInternalAdmin BIT = 0
+
 	DECLARE @CustListTmp TABLE (CustId INT)
 
 	INSERT INTO @CustListTmp (CustId)
@@ -38,21 +39,6 @@ BEGIN
 	BEGIN
 		RETURN
 	END
-
-	EXEC dbo.Acc_CustomerIsInternalAdmin @CustId = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
-
-	--Check special site
-	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	INSERT INTO  @DenySite (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
-
-	IF (@IsInternalAdmin = 1 
-		AND EXISTS (SELECT 1 
-					FROM @DenySite s
-						INNER JOIN Customer c WITH (NOLOCK) ON s.site = c.site 
-						INNER JOIN @CustListTmp t ON t.custid = c.custid))
-		RETURN
 
 	SELECT ci.custid, ci.username, ci.roleid, ISNULL(IsProtectedMode,0) AS IsProtectedMode
 	FROM CustLoginInfo cl WITH(NOLOCK)

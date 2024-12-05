@@ -15,6 +15,7 @@ AS
 	Revisions:
         - 20240325@Tacy: Create SP [redmine: #202501]
         - 20240424@Tacy: HF - Show headline have Extra PT group mapping [redmine: #205723]
+		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 		
 	Param's Explanation:
 		* @Status : 0 ~ All
@@ -44,17 +45,6 @@ BEGIN
 	IF NOT EXISTS (SELECT TOP 1 1 FROM @tblUserInfo WHERE GroupID IN (1,2)) AND
 		NOT EXISTS (SELECT TOP 1 1 FROM @tblUserInfo WHERE GroupName=@GroupName)
 		RETURN
-
-	--Get special site
-	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	
-	INSERT INTO  @DenySite (siteid, site, SpecialGroup)
-	SELECT siteid, site, SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserID)
-	
-	DECLARE @IsInternalAdmin BIT = 0
-	
-	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT	
 	
 	-----------------------------------------------------------------------------------------------------------------------
 	-----------------------------------------------------------------------------------------------------------------------
@@ -165,8 +155,7 @@ BEGIN
 		, ClosedReason
     FROM #tmpResultAll r
 	INNER JOIN Customer c WITH (NOLOCK) ON c.custid=r.CustID
-    WHERE (@IsInternalAdmin=0 OR c.site NOT IN (SELECT site FROM @DenySite))
-		AND CASE 
+    WHERE  CASE 
 				WHEN @Status = 0									THEN 1	--Status = 'All'
 				WHEN @Status = 1 AND IsSuspend = 0 AND IsClosed = 0	THEN 1	--Status = 'Open'
 				WHEN @Status = 2 AND IsSuspend = 1 AND IsClosed =0	THEN 1	--Status = 'Suspended'

@@ -1,7 +1,6 @@
 ﻿/*<info serverAlias="DBCust-CustDB" executers="wsv_nap,wsv_xnap" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelSiteByUserName]
-	@username VARCHAR(50) = '',
-	@Userid INT=NULL,
+	@username VARCHAR(30) = '',
 	@DeniedList	NVARCHAR(MAX)=NULL
 AS 
 /*	Created by: [Khoa] 
@@ -15,8 +14,9 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration  [Redmine:99462]
 		- 20191029@Andy: Include checking special permission for internal admins only [Redmine: 121712]
 		- 20240419@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
+		- 20240621@Tacy: Ext NAP - Not check Permission on Site/Currency [redmineID: #206918]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-		
+
 	Param's Explanation:
 */
 
@@ -25,13 +25,8 @@ BEGIN
 
 	DECLARE @tmp TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
 	DECLARE @tmpExchange TABLE (exchangeID INT, Currency NVARCHAR(50), OfferSite TINYINT)
-
-	DECLARE @IsInternalAdmin BIT = 0
-
-	IF @Userid IS NOT NULL
-		EXEC Acc_CustomerIsInternalAdmin @CustID = @Userid, @IsInternalAdmin = @IsInternalAdmin OUTPUT
-		
-	IF @IsInternalAdmin = 1 AND ISNULL(@DeniedList,'')<>''
+	
+	IF ISNULL(@DeniedList,'')<>''
 	BEGIN
 		--get deny site
 		INSERT INTO @tmp (siteid, site, SpecialGroup)
