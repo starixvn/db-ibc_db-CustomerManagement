@@ -66,6 +66,7 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
+	- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 	- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 	Explanation's Param:
 	@Status = 
@@ -82,97 +83,84 @@ BEGIN
     SET NOCOUNT ON  
 
     DECLARE @tmpMemberList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
-	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0, @AgentSite VARCHAR(10)
+	DECLARE @UplineDoubleCommLosing BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT,@srecommend		INT
 	 --DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0,@srecommend		INT	
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
 	 
-	
-	-- get data for filtered customers		
-	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
-	SELECT siteid , site, SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
-
-	SELECT @AgentSite = site,@srecommend = srecommend  FROM Customer WITH (NOLOCK) WHERE custid = @recommend
-	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
-
-	 -- MyanmarOdds
+	-- MyanmarOdds
 	--SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
 	--IF @IsMyanmarOdds = 1
 	--SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 1)
 	
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	IF @IsInternalAdmin = 0 OR @AgentSite NOT IN (SELECT site FROM @DenySite )
+	IF @UserName IS NULL
 	BEGIN
-		IF @UserName IS NULL
-		BEGIN
-			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
-			SELECT ci.custID, ci.username,
-				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
-			FROM dbo.custinfo ci WITH(NOLOCK)
-				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
-				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
-										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
-										, Locked
-									FROM dbo.CustProductStatus  WITH(NOLOCK)
-									WHERE CustID = ci.custid
-								) AS cps
-				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
-			WHERE ci.recommend = @recommend
-				AND ci.roleid = 1
-				AND 1 = CASE WHEN @Currencies = '' 
-								OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
-												)
-								THEN 1 ELSE 0 END				
-				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
-											 WHEN @Status = 4 THEN 0 ELSE enabled END
+		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
+		SELECT ci.custID, ci.username,
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+		FROM dbo.custinfo ci WITH(NOLOCK)
+			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, Locked
+								FROM dbo.CustProductStatus  WITH(NOLOCK)
+								WHERE CustID = ci.custid
+							) AS cps
+			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+		WHERE ci.recommend = @recommend
+			AND ci.roleid = 1
+			AND 1 = CASE WHEN @Currencies = '' 
+							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
+											)
+							THEN 1 ELSE 0 END				
+			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
+											WHEN @Status = 4 THEN 0 ELSE enabled END
 
-				AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-											 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
+			AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-				AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
-											 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
-				AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
+			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 			
 
-			SELECT @TotalRows = @@ROWCOUNT
-		END
-		ELSE
-		BEGIN
-			INSERT INTO @tmpMemberList(CustID, username, RowNumber)
-			SELECT ci.custID, ci.username,
-				ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
-			FROM dbo.custinfo ci WITH(NOLOCK)
-				INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
-				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
-										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
-										, Locked
-									FROM dbo.CustProductStatus  WITH(NOLOCK)
-									WHERE CustID = ci.custid
-								) AS cps
-				LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
-			WHERE ci.recommend = @recommend
-				AND ci.roleid = 1
-				AND 1 = CASE WHEN @Currencies = '' 
-								OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
-												)
-								THEN 1 ELSE 0 END		
-				AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
-											 WHEN @Status = 4 THEN 0 ELSE enabled END
+		SELECT @TotalRows = @@ROWCOUNT
+	END
+	ELSE
+	BEGIN
+		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
+		SELECT ci.custID, ci.username,
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+		FROM dbo.custinfo ci WITH(NOLOCK)
+			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
+			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, Locked
+								FROM dbo.CustProductStatus  WITH(NOLOCK)
+								WHERE CustID = ci.custid
+							) AS cps
+			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+		WHERE ci.recommend = @recommend
+			AND ci.roleid = 1
+			AND 1 = CASE WHEN @Currencies = '' 
+							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
+											)
+							THEN 1 ELSE 0 END		
+			AND enabled =			CASE WHEN @Status IN (1,2,3) THEN 1
+											WHEN @Status = 4 THEN 0 ELSE enabled END
 
-				AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
-											 WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
+			AND ISNULL(cps.closed, 0) =	CASE WHEN @Status IN (1,2) THEN 0 
+											WHEN @Status = 3 THEN 1 ELSE ISNULL(cps.closed, 0) END
 
-				AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
-											 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
-				AND c.username LIKE @UserName + '%'
-				AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
+											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
+			AND c.username LIKE @UserName + '%'
+			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 
-			SELECT @TotalRows = @@ROWCOUNT
-		END
+		SELECT @TotalRows = @@ROWCOUNT
 	END
 
 	IF @RowStart > @TotalRows

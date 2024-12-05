@@ -66,7 +66,9 @@ AS
 		- 20240103@Johnson: Support Multiple Currencies [RedmineID: #196959]
 		- 20240223@Luke: EXT - Support one more filter to filter "No Downline" Supers [Redmine: #201009]
 		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
+		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
+
 	Explanation's Param:
 		@Status = 
 			0: All
@@ -81,19 +83,12 @@ BEGIN
     SET NOCOUNT ON  
 
 	DECLARE @tmpMasterList TABLE (custID INT, Downlines INT, username VARCHAR(30), RowNumber INT)
-	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	DECLARE @IsInternalAdmin BIT = 0, @UplineDoubleCommLosing BIT = 0
+	DECLARE @UplineDoubleCommLosing BIT = 0
 	DECLARE @RowStart INT, @RowEnd INT--,@IsMyanmarOdds			BIT = 0	
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
 
-	-- get data for filtered customers		
-	INSERT INTO  @DenySite (siteid , site, SpecialGroup)
-	SELECT siteid , site, SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
-
-	EXEC dbo.Acc_CustomerIsInternalAdmin @Custid = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT	
 	-- MyanmarOdds
 	--SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds(@srecommend)
 			
@@ -130,7 +125,6 @@ BEGIN
 
 			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
-			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1
 						WHEN @IsNoDownlines = 1 AND Downlines = 0 THEN 1
@@ -170,7 +164,6 @@ BEGIN
 
 			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
 										 WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
-			AND (@IsInternalAdmin = 0 OR site NOT IN (SELECT site FROM @DenySite ))
 			AND c.username LIKE @UserName + '%'
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
 			AND 1 = CASE WHEN @IsNoDownlines = 0 THEN 1

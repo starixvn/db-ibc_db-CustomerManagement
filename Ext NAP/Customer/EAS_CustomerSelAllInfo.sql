@@ -17,6 +17,8 @@ Revisions:
 	- 20210824@Elodie: Fix issue no data in CustSuperProfile [Redmine:#160682]
 	- 20230602@Eden: Ext Nap - Archive Super level [Redmine:#183447]
 	- 20240220@Luke: Ext Nap - Support to show Headline's username on left panel [Redmine: #200995]
+	- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
+
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
 */
@@ -33,7 +35,6 @@ BEGIN
 			@MasterName						NVARCHAR(50),
 			@AgentName						NVARCHAR(50),		 		
 			@UplineHasSecurityCode			BIT = 0,
-			@IsInternalAdmin				BIT = 0,
 			@ClosedReason					TINYINT,
 			@CustGroupHeadlineID			INT,
 			@UplineID						INT
@@ -60,18 +61,7 @@ BEGIN
 		SET @IsCheckSuperArchived = 1
 		GOTO CheckSuperArchived;
 	END
-
-	EXEC dbo.Acc_CustomerIsInternalAdmin @CustId = @UserID, @IsInternalAdmin = @IsInternalAdmin OUTPUT
-
-	--Check special site
-	DECLARE @DenySite TABLE (siteid INT, site NVARCHAR(50), SpecialGroup TINYINT)
-	INSERT INTO  @DenySite (siteid , site,SpecialGroup)
-	SELECT siteid , site,SpecialGroup 
-	FROM NAP_UserControl.dbo.f_GetDeniedSiteByUser (@UserId)
-
-	IF (@IsInternalAdmin = 1 AND EXISTS (SELECT 1 FROM @DenySite WHERE site = @Site))
-		RETURN
-
+	
 	SELECT @SuperName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @srecommend
 	SELECT @MasterName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @mrecommend
 	SELECT @AgentName	= username FROM dbo.custinfo WITH (NOLOCK) WHERE custid = @recommend
