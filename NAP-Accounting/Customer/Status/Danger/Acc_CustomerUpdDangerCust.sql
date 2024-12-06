@@ -49,7 +49,7 @@ AS
 		- 20211021@Johnson: Auto add & remove ABI Danger Level [redmine:#162834]
 		- 20220823@Tacy: update BA member's Danger follow upline [redmine:#176518]
 		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-
+		- 20241024@Johnson: Danger Setting - Update ABI 33/46 to ORI 33/46 [redmineID: #208301]
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
@@ -93,13 +93,15 @@ BEGIN
 		,@oldvalue2 AS VARCHAR(10)
 		,@DangerLevel2 INT 
 		,@UpdateDanger2 BIT
-		
+				
 	--Auto add & remove ABI Danger Level	
 	IF @DangerType = 2
 	BEGIN
 		SELECT @DangerLevel2 = CASE WHEN @DangerLevel= 11 THEN 15 
-								 WHEN @DangerLevel= 16 THEN 49 END,
-			@UpdateDanger2 = CASE WHEN @DangerLevel IN (11,16) THEN 1 ELSE 0 END
+								 WHEN @DangerLevel= 16 THEN 49 
+								 WHEN @DangerLevel IN (30,33,39,46) THEN @DangerLevel 
+								 END,
+			@UpdateDanger2 = CASE WHEN @DangerLevel IN (11,16,30,33,39,46) THEN 1 ELSE 0 END
 	END	
 	
 	SELECT @roleid = roleid FROM custinfo (NOLOCK) WHERE custid = @CustID
@@ -111,13 +113,17 @@ BEGIN
 	END
 	ELSE IF (@DangerType=2)
 	BEGIN 
+		SELECT @dangerfield='Danger2',
+			@dangerfield2= CASE WHEN @DangerLevel IN (11,16) THEN 'Danger4'
+								WHEN @DangerLevel IN (30,33,39,46) THEN 'Danger' END
+			
 		SELECT @oldvalue= Danger2,
-			@oldvalue2= Danger4
+			@oldvalue2= CASE WHEN @dangerfield2 = 'Danger4' THEN Danger4
+							WHEN @dangerfield2 = 'Danger' THEN Danger END
 		FROM custInfo (NOLOCK) 
 		WHERE custid=@CustID
 		
-		SELECT @dangerfield='Danger2',
-			@dangerfield2='Danger4'
+		
 	END	
 	ELSE IF (@DangerType=3)
 	BEGIN 
@@ -158,7 +164,9 @@ BEGIN
 			SET Danger2 = @DangerLevel,
 				Danger4 = CASE WHEN @DangerLevel = 11 THEN 15
 							WHEN @DangerLevel = 16 THEN 49
-							ELSE Danger4 END
+							ELSE Danger4 END,
+				Danger = CASE WHEN @DangerLevel IN (30,33,39,46) THEN @DangerLevel
+							ELSE Danger END
 			WHERE custid = @custid
 		END
 		ELSE IF @DangerType= 3
