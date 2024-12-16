@@ -55,6 +55,8 @@ AS
 		- 20231129@Luke: NAP - Virtual rate - Enhance VR [Redmine: #194939]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
+		- 20241101@Winfred: HF  - NAP- Cannot updating VR value for licensee super line with big downline member (over 500000 members downline)  [redmine: #213009]
+		- 20241101@Winfred: HF - NAP- Enhance Get all locked VR/enable VR+ status and VR value bitmap of downlines [redmine: #213009]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -183,18 +185,21 @@ BEGIN
 	--Get all locked VR/enable VR+ status and VR value bitmap of downlines
 	CREATE TABLE #tempCustID(custid INT, roleid TINYINT, type TINYINT PRIMARY KEY(custid, type))
 	CREATE TABLE #downlinesVRValue(custid INT, seqNo TINYINT, bitmapVirtual BINARY(64))
+	Declare @BatchStatus TINYINT = 3
+	Declare @BatchConfDownLine TINYINT = 3
+
 	IF @roleid = 4
 	BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.srecommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN CustVirtualSetting cvs WITH (NOLOCK) ON c.custid = cvs.custid 
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
 		WHERE c.srecommend = @custid AND c.roleid IN (1,2,3)
 	END
 	ELSE IF @roleid = 3
@@ -202,13 +207,13 @@ BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.mrecommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN CustVirtualSetting cvs WITH (NOLOCK) ON c.custid = cvs.custid 
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
 		WHERE c.mrecommend = @custid AND c.roleid IN (1,2)
 	END
 	ELSE IF @roleid = 2
@@ -216,13 +221,13 @@ BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.recommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN CustVirtualSetting cvs WITH (NOLOCK) ON c.custid = cvs.custid 
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs  
 		WHERE c.recommend = @custid AND c.roleid = 1
 	END
 	ELSE
@@ -230,7 +235,7 @@ BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
 		FROM custinfo c WITH (NOLOCK)
-			INNER JOIN VRCustLockStatus s WITH (NOLOCK) ON c.custid = s.CustID
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.custid = @custid 		
 	END
 
@@ -611,7 +616,7 @@ BEGIN
 	--Unlock downlines's VR/ Enable downlines's VR+ if any
 	IF @UnlockSCDownLine  = 1 OR @UnlockBBDownLine = 1 OR @UnlockOSDownLine = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
+		EXECUTE	dbo.Acc_CustomerInfo_Execrep_05
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'UnlockVRDownline'
@@ -620,7 +625,7 @@ BEGIN
 
 	IF @EnableABDownline  = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
+		EXECUTE	dbo.Acc_CustomerInfo_Execrep_05   
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'EnableABDownline'
@@ -636,7 +641,7 @@ BEGIN
 			,	@EnableVirtualrate = @EnableVirtualrate
 			,	@virtualmultiplier = @virtualmultiplier
 
-	EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
+	EXECUTE	dbo.Acc_CustomerInfo_Execrep_05   
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'VirtualMultiplier'
@@ -674,7 +679,7 @@ BEGIN
 	--Lock downlines's VR/ Disable downlines's VR+ if any 
 	IF @LockSCDownLine  = 1 OR @LockBBDownLine = 1 OR @LockOSDownLine = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
+		EXECUTE	dbo.Acc_CustomerInfo_Execrep_05
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'LockVRDownline'
@@ -683,7 +688,7 @@ BEGIN
 
 	IF @DisableABDownline  = 1
 	BEGIN
-		EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate
+		EXECUTE	dbo.Acc_CustomerInfo_Execrep_05
 				@custid = @custid
 			,	@roleid = @roleid
 			,	@action = 'DisableABDownline'
@@ -705,8 +710,8 @@ BEGIN
 	IF EXISTS(
 			SELECT TOP 1 1
 			FROM #DownlinesVRValue t
-				CROSS APPLY CustVirtualSetting cvs WITH (NOLOCK)
-			WHERE t.custid = cvs.custid AND t.seqNo = cvs.seqNo AND t.bitmapVirtual <> cvs.bitmapVirtual
+				CROSS APPLY (SELECT TOP 1 bitmapVirtual FROM CustVirtualSetting WITH (NOLOCK) WHERE t.custid = custid AND t.seqNo = seqNo)cvs
+			WHERE  t.bitmapVirtual <> cvs.bitmapVirtual
 	)
 	SET @IsUpdateVRDownlines = 1
 
