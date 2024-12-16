@@ -1,2 +1,1 @@
-ALPHA\Customer\Age_CustomerSelAllStatus.sql
-Ext NAP\Customer\EAS_CustomerSelAllStatus.sql
+NAP-Accounting\Customer\VirtualRate\Upload Virtual Rate\Acc_VR_AutoUpdateVirtualRate_ByExcel.sql

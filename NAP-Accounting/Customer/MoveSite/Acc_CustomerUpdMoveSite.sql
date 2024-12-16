@@ -36,6 +36,7 @@ AS
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 		- 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
 		- 20241010@Helen: move site for CREDIT - [Redmine:#212007]
+		- 20241101@Winfred: HF  - NAP- Cannot updating VR value for licensee super line with big downline member (over 500000 members downline)  [redmine: #213009]
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -110,14 +111,14 @@ BEGIN
 		WHERE NOT EXISTS (SELECT 1 FROM VRSettingManualUpdAcc WHERE custid = @CustId AND SportType = 43)	
 
 		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR
-		EXEC [dbo].[Acc_CustomerInfo_UpdVirtualRate] 
+		EXEC [dbo].[Acc_CustomerInfo_Execrep_05] 
 			@custid = @custid
 			,@roleid = @roleid
 			,@action = 'DisableVR2Downline'
 			,@Sporttype = 2
 
 		--Call sp execrep in order to add all downline to VRSettingManualUpdAcc, and remove all downline's private VR, And set all member with Override AS = 1
-		EXEC [dbo].[Acc_CustomerInfo_UpdVirtualRate] 
+		EXEC [dbo].[Acc_CustomerInfo_Execrep_05] 
 			@custid = @custid
 			,@roleid = @roleid
 			,@action = 'DisableVR2Downline'

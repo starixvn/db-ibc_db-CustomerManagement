@@ -270,7 +270,7 @@ BEGIN
 	FROM #VRLineCustID
 	WHERE custid = @custid
 
-	EXECUTE	dbo.Acc_CustomerInfo_UpdVirtualRate   
+	EXECUTE	dbo.Acc_CustomerInfo_Execrep_05   
 				@custid = @CustID
 				, @roleid = @RoleID
 				, @action = 'NewVRUpd'

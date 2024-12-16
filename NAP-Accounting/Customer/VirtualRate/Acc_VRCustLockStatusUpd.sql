@@ -100,7 +100,11 @@ BEGIN
 	BEGIN
 		IF @VRLockedStatus_Soccer = 0
 		BEGIN
-			DELETE FROM VRCustLockStatus WITH(ROWLOCK) WHERE custid = @custid AND Type = 1 
+			DELETE c
+			OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
+			INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+			FROM VRCustLockStatus c WITH(ROWLOCK) 
+			WHERE CustID = @custid AND Type = 1 
 		END
 		ELSE IF @RoleID = 1 -- insert directly for Member
 		BEGIN
@@ -201,7 +205,7 @@ BEGIN
 	--Call SP execrep 
 	IF @IsCallExecrep_Soccer = 1 AND @IsCallExecrep_OS = 1 AND @IsCallExecrep_Basketball = 1
 	BEGIN
-		EXEC [Acc_CustomerInfo_UpdVirtualRate]
+		EXEC [Acc_CustomerInfo_Execrep_05]
 						@custid = @custid
 					,	@roleid = @roleid
 					,	@action = 'EnableVRLockStatus'
@@ -211,7 +215,7 @@ BEGIN
 	BEGIN
 		IF @IsCallExecrep_Soccer = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_UpdVirtualRate]
+			EXEC [Acc_CustomerInfo_Execrep_05]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'
@@ -219,7 +223,7 @@ BEGIN
 		END
 		IF @IsCallExecrep_OS = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_UpdVirtualRate]
+			EXEC [Acc_CustomerInfo_Execrep_05]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'
@@ -227,7 +231,7 @@ BEGIN
 		END
 		IF @IsCallExecrep_Basketball = 1
 		BEGIN
-			EXEC [Acc_CustomerInfo_UpdVirtualRate]
+			EXEC [Acc_CustomerInfo_Execrep_05]
 							@custid = @custid
 						,	@roleid = @roleid
 						,	@action = 'EnableVRLockStatus'
