@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE dbo.Acc_ReferenceSetting_Check
 	-- Add the parameters for the stored procedure here
 	 @InputData		VARCHAR(MAX)	= ''
@@ -18,6 +18,7 @@ AS
 		- 20230301@Tacy: Create SP [Redmine: #184255]
 		- 20230522@Tacy: Enhance function - Do not validate Bettype value [Redmine: #184255] 
 		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
+		- 20241219@Tacy: remove old sqlAcc [redmine: #196256]
 		
 	Param's Explanation:
 		* @IsNew : 1 ~ Insert new reference setting
@@ -662,7 +663,7 @@ BEGIN
 		SET @ErrCode=121
 		SELECT @ErrMsg='Row ' + STUFF((SELECT ', ' + CAST(RowID AS NVARCHAR(50)) 
 										FROM #RowDuplicate tmp
-										ORDER BY RowID
+										ORDER BY RowID ASC
 										FOR XML PATH('')), 1, 1, '') 
 							  + ': SportType - BetType - isLicensee - isLive - Site of rows can not be the same!' 
 		RETURN

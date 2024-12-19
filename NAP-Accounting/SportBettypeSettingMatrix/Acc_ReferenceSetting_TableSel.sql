@@ -30,7 +30,11 @@ BEGIN
 	CREATE TABLE #RefTable (TableType VARCHAR(20), TableName VARCHAR(50), OfferSite TINYINT)
 
 	INSERT INTO #RefTable (TableType, TableName, OfferSite)
-	SELECT 'TablePT' AS TableType, 'CustPTsetting3rd_Member'		AS TableName,	0 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TablePT' AS TableType, 'Dep_CustPTSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL	SELECT 'TableComm' AS TableType, 'CustDiscount3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
+	SELECT 'TablePT' AS TableType, 'CustPTsetting3rd_Member'		AS TableName,	0 AS OfferSite UNION ALL
+	SELECT 'TablePT' AS TableType, 'Dep_CustPTGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL
+	SELECT 'TablePT' AS TableType, 'Dep_CustPTSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL
+
+	SELECT 'TableComm' AS TableType, 'CustDiscount3rd_Member'				AS TableName,	0 AS OfferSite UNION ALL
 	SELECT 'TableComm' AS TableType, 'Dep_CustDiscountSetting_Member'		AS TableName,	1 AS OfferSite UNION ALL
 	SELECT 'TableComm' AS TableType, 'Dep_CustDiscountGroupSetting_Member'	AS TableName,	1 AS OfferSite UNION ALL
 
