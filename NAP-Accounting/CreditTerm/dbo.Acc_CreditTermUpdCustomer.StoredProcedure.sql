@@ -47,6 +47,8 @@ Original:
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
+		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
+
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -213,6 +215,7 @@ BEGIN
 				
 				UPDATE GS
 					SET CustID = @CustID
+					  , RepUpdateTime = dbo.f_GetDateTime2()
 				FROM dbo.TOControl_GlobalSetting GS WITH (ROWLOCK,UPDLOCK)
 				WHERE GS.CustID = @CustID_oldGroupHeadline AND GS.IsGroupHeadLine = 1
 				
