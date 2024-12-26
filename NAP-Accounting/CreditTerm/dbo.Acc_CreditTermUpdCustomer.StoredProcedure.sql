@@ -46,6 +46,7 @@ Original:
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20210301@Percy: Auto add Super into External Group (follow Headline) [RedmineID: #146710]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -285,7 +286,9 @@ BEGIN
 		@accountremark = @accountremark,
 		@groupID = @groupID,
 		@IsGroupHeadline = @IsGroupHeadline,
-		@checker = @checker
+		@checker = @checker,
+		@UserID = @UserID, 
+		@IP = @IP
 
 	-- Auto add External Group (follow Headline)
 	BEGIN
