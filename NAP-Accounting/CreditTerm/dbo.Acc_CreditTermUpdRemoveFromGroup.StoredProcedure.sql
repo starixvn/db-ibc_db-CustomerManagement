@@ -34,6 +34,7 @@ AS
 		- 20210301@Percy: Auto remove Super into External Group (follow Headline) [RedmineID: #146710]
 		- 20220510@Danny: Use String_split built-in function [RemineID: #171831]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -120,6 +121,15 @@ BEGIN
 		FROM (SELECT value AS custid FROM STRING_SPLIT(@CustIDList, ',')) AS tmp
 
 		SELECT @Case = 1, @New_Headline = 0, @Old_Headline = @CustID_Headline
+	END
+
+	--Update: GroupID for WhiteLabel
+	BEGIN
+		EXEC Acc_WhiteLabelSetting_UpdGroup	
+			@CustIDList	= @CustIDList
+			,@GroupID	= 0 
+			,@UserID	= @UserID
+			,@IP		= @IP
 	END
 
 	-- List Super are removed

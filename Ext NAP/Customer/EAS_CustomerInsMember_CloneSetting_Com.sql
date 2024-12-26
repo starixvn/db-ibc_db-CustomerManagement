@@ -59,6 +59,7 @@ AS
 		- 20240520@Eden: Unify RNG Games [redmine: #204358] 
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 		- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:199915]
+		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -437,7 +438,9 @@ BEGIN
 			@installmentdate = @installmentdate,
 			@accountremark = @accountremark,
 			@groupID = @groupID,
-			@isgroupheadline = 0
+			@isgroupheadline = 0,
+			@UserID = @creator, 
+			@IP = @IP
 		
 	    SELECT @Case = 1, @Old_Headline = 0
 		
