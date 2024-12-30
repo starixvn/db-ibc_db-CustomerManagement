@@ -15,6 +15,7 @@ AS
 
 	Revisions:  
 		- 20230525@Tacy: Ext NAP - Function for Headline to provide customer class based on their knowledge [Redmine:#188025]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	
 	Param's Explanation:
 
@@ -31,8 +32,8 @@ BEGIN
 	SET @StartRun=GETDATE()
 	
 	BEGIN TRY
-		INSERT INTO Acc_CustType (CustID, TypeID, Remark)
-		SELECT @CustID, @TypeID, @Remark
+		INSERT INTO Acc_CustType (CustID, TypeID, Remark, RepUpdateTime)
+		SELECT @CustID, @TypeID, @Remark, dbo.f_GetDateTime2()
 	END TRY
 	BEGIN CATCH
 		SELECT @ErrCode = @@ERROR, @ErrMsg = ERROR_MESSAGE()
