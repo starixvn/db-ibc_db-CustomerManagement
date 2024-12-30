@@ -20,6 +20,8 @@ AS
 	-- 20170619@Winnie: Apply color for closed accounts RedmineID: #74494
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 202412110@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 	Param's Explanation:
 		- @CheckedOTP:	= 1: check OTP success
 						= 0: failed OTP code
@@ -46,6 +48,7 @@ BEGIN
 			BEGIN 			
 				UPDATE CustLoginInfoSub WITH(UPDLOCK, ROWLOCK)
 				SET VerifyOTPCount = @VerifyOTPCount
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID AND SubAccID = @SubAccID
 			
 				SELECT  @ErrCode = 100,
@@ -89,6 +92,7 @@ BEGIN
 			
 				UPDATE CustLoginInfoSub WITH(UPDLOCK, ROWLOCK)
 				SET VerifyOTPCount = 0
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			
 				SELECT	@ErrCode = 200,
@@ -128,6 +132,7 @@ BEGIN
 			BEGIN
 				UPDATE CustLoginInfoSub WITH(UPDLOCK,ROWLOCK)
 				SET VerifyOTPCount = 0
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID AND SubAccID = @SubAccID
 			END 
 		END
@@ -144,6 +149,7 @@ BEGIN
 			BEGIN 			
 				UPDATE CustLoginInfo WITH(UPDLOCK, ROWLOCK)
 				SET VerifyOTPCount = @VerifyOTPCount
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			
 				SELECT  @ErrCode = 100,
@@ -187,6 +193,7 @@ BEGIN
 			
 				UPDATE CustLoginInfo WITH(UPDLOCK, ROWLOCK)
 				SET VerifyOTPCount = 0
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			
 				SELECT	@ErrCode = 200,
@@ -224,6 +231,7 @@ BEGIN
 			BEGIN
 				UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
 				SET VerifyOTPCount = 0
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			END 
 		END

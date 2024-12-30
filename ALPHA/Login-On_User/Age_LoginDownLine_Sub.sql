@@ -69,6 +69,8 @@ Revisions:
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 Param's Explanation:
 • @LastChangedPwdDate: If = NULL: Login current pass, <> NULL : Login old Pass 
 • @ErrCode:
@@ -854,6 +856,7 @@ BEGIN
 
 			UPDATE cl
 			SET IsProtectedMode = 1, @IsKickOut = 1
+			   ,RepUpdateTime = dbo.f_GetDateTime2()
 			FROM CustLoginInfo cl WITH (ROWLOCK)
 			WHERE custid = @CustID
 

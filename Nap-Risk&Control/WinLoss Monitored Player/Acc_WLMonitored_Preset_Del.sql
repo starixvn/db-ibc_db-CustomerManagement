@@ -14,6 +14,7 @@ AS
   
 	Revisions:  
 	    - 20220523@Eden: Alpha - My Monitor Accounts for Risk & Control [Redmine:#170467]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:  	
 
@@ -57,6 +58,8 @@ BEGIN
 	END
 
 	DELETE g 
+	OUTPUT DELETED.ID, DELETED.SiteDBGroupID, dbo.f_GetDateTime2()
+	INTO WLMonitored_PersonalPreset_Del_Inhouse(ID,SiteDBGroupID,RepUpdateTime)
 	FROM WLMonitored_PersonalPreset g WITH(ROWLOCK,UPDLOCK) 
 	WHERE AgentID = @AgentID 
 		AND Sporttype = @Sporttype

@@ -18,6 +18,8 @@ ALTER PROCEDURE Age_CustomerUpdSecurityFunctionInfo
 		
 	Revisions:
 		- 20210812@Elodie: Initial sp [Redmine: #159628]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 
 	Parameter's Explanation:
 	Example: EXEC Age_CustomerUpdSecurityFunctionInfo @Custid = 838203, @Function = 'Statement', @IsOn = 0, @SubAccId = 29183
@@ -69,7 +71,8 @@ BEGIN
 	IF @SubAccID = 0
 	BEGIN			
 		UPDATE cl 
-		SET cl.FunctionInfo = f.FunctionInfo
+		SET  cl.FunctionInfo = f.FunctionInfo
+			,cl.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfo cl WITH(ROWLOCK)
 			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid
@@ -77,7 +80,8 @@ BEGIN
 	ELSE
 	BEGIN			
 		UPDATE cl 
-		SET cl.FunctionInfo = f.FunctionInfo
+		SET  cl.FunctionInfo = f.FunctionInfo
+			,cl.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfoSub cl WITH(ROWLOCK)
 			CROSS APPLY (SELECT FunctionInfo FROM f_GenerateSecurityFunctionInfo(@BitOrder, @IsOn, ISNULL(cl.FunctionInfo,0))) f
 		WHERE custid = @custid AND SubAccID = @SubAccID

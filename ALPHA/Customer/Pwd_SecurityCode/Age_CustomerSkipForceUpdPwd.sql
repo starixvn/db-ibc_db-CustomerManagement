@@ -17,6 +17,7 @@ Revisions:
     - 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 	- 20200424@Eden: HotFix - Sub acc click skip then kicked out [#133141]					   
 	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 • @ErrCode:
     = 0: Transaction recorded successfully.
     > 0: Specific Error.
@@ -91,6 +92,7 @@ BEGIN
 
 		UPDATE  CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)
 		SET		PwdExpiry			= @PwdExpiry
+			   ,RepUpdateTime		= dbo.f_GetDateTime2()
 		WHERE	subaccid = @subaccid and custid = @custid
 	END
 	

@@ -26,6 +26,9 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
+
 */
 BEGIN
 	SET NOCOUNT ON
@@ -127,6 +130,7 @@ BEGIN
 			,PwdExpiry			= @PwdExpiry
 			,LastChangedPwdDate	= GETDATE()
 			,isFirstLogin		= 0 
+			,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	SubAccID = @SubAccID and CustID = @CustID
 
 	--904	Age_CustSubPwdUpd2	Sub-account changed his own password

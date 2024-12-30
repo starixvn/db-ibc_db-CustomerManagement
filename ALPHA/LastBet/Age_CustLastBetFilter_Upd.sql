@@ -20,6 +20,7 @@ AS
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
 		- 20240223@Luke: Telegram Chatbot - Notify Member Last bets [Redmine: #193689]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
 */
@@ -109,11 +110,12 @@ BEGIN
 		BEGIN
 			UPDATE Cust_LastBetFilter WITH (ROWLOCK, UPDLOCK)
 			SET IsDefault=0
+			   ,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE CustID=@CustID AND SubAccId=@SubAccId AND IsDefault=1
 		END
 		
 		UPDATE Cust_LastBetFilter WITH (ROWLOCK, UPDLOCK)
-		SET FilterName=@FilterName, IsDefault=@IsDefault, IsNotify = @IsNotify
+		SET FilterName=@FilterName, IsDefault=@IsDefault, IsNotify = @IsNotify,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustID=@CustID AND SubAccId=@SubAccId AND FilterID=@FilterID
 	END TRY
 	BEGIN CATCH

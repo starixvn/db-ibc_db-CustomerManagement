@@ -16,6 +16,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub]
 		
 		Revisions:
 			- 20250109@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		
 		Parameter's Explanation:
 			- @CheckedSecurityCode = 1: checked security code success
 								= 0: wrong security code
@@ -40,6 +42,7 @@ SET NOCOUNT ON
 		BEGIN 			
 			UPDATE CustLoginInfoSub WITH(UPDLOCK,ROWLOCK)
 			SET SecurityCodeCount = @SecurityCodeCount
+			   ,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE subAccID = @subAccID AND custid = @custid 
 			
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your provided Security Code is not correct. Please try again'
@@ -83,6 +86,7 @@ SET NOCOUNT ON
 						
 			UPDATE CustLoginInfoSub WITH(UPDLOCK,ROWLOCK)
 			SET SecurityCodeCount = 0
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE subAccID = @subAccID AND custid = @custid 
 			
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'We''re sorry, your account is closed because you provided wrong SC over 5 times. Please contact CSD or your upline to reopen.'
@@ -119,7 +123,8 @@ SET NOCOUNT ON
 		IF @SecurityCodeCount > 0
 		BEGIN
 			UPDATE CustLoginInfoSub WITH(UPDLOCK,ROWLOCK)
-			SET SecurityCodeCount = 0
+			SET  SecurityCodeCount = 0
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE SubAccID = @SubAccID AND custid = @custid
 		END 
 	END

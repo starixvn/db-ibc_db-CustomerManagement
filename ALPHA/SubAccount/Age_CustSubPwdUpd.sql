@@ -26,6 +26,8 @@ Revisions:
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 	- 20200421@Eden: Alpha - Removing force change password [Redmine:#132012]
 	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -89,6 +91,7 @@ BEGIN
 	SET		OldUserPwd			= @OldUserPwd
 			,PwdExpiry			= CASE WHEN @RoleID <> 1 THEN '01/01/1900' ELSE DATEADD(dd,-1,GETDATE()) END --force change pwd
 			,LastChangedPwdDate	= GETDATE()
+			,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	subaccid = @subaccid and custid = @custid
 
 	Declare @LogData varchar(5000)

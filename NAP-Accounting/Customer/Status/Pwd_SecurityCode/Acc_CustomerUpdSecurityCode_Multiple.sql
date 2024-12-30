@@ -16,6 +16,7 @@
 	Revisions: 
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Parameter's Explanation:
 		@CustIDList = <Root>
@@ -109,6 +110,7 @@ BEGIN
 			SET SecurityCode = @SecurityCode
 				,isForcedChangeSecurityCode = @isForcedChangeSecurityCode
 				,LastChangedSecurityCodeDate = GETDATE()		
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 	
 			IF @@Error > 0
@@ -140,8 +142,8 @@ BEGIN
 		BEGIN	
 			IF NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE custid = @custid)
 			BEGIN
-				INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate])
-				VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE())
+				INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate],[RepUpdateTime])
+				VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE(),dbo.f_GetDateTime2())
 			END
 			ELSE
 			BEGIN
@@ -150,6 +152,7 @@ BEGIN
 					,IP = @IP
 					,LastChangedID = @userID
 					,LastChangedDate = GETDATE()
+					,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE custid = @custid
 
 				IF @@Error > 0

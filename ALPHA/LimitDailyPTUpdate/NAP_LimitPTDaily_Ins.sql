@@ -23,6 +23,7 @@ AS
 			- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
 			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	*/
 BEGIN
@@ -125,7 +126,7 @@ BEGIN
 			RETURN
 		END	
 		--exclude the already added accounts from the input accounts
-		DELETE tc FROM @tblCust tc 
+		DELETE tc FROM @tblCust tc
 		INNER JOIN LimitPTDailySetting t  WITH (NOLOCK)  ON tc.CustID = t.CustID 
 		WHERE t.ProductID IN ( SELECT ProductID FROM #Product) AND t.Type = 1
 		
@@ -148,14 +149,14 @@ BEGIN
 	BEGIN TRY
 		IF @Type = 1
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus)
-			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus,RepUpdateTime)
+			SELECT b.ProductID ,t.CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus, dbo.f_GetDateTime2()
 			FROM @tblCust t , #Product b
 		END
 		ELSE
 		BEGIN
-			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus)
-			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus
+			INSERT INTO LimitPTDailySetting(ProductID,CustID,Currency,SiteID,MaxCount,Type,LimitNewAccUpdPT,SettingStatus,RepUpdateTime)
+			SELECT ProductID , 0 AS CustID, @Currency,@SiteID, 1 AS MaxCount, @Type, @LimitNewAccUpdPT, @SettingStatus, dbo.f_GetDateTime2()
 			FROM #Product
 		END 
 	END TRY

@@ -17,6 +17,7 @@
 		Task: Main-account/upline update Security code of sub-account
 		Revisions:
 			- 20190618@Elodie: Input metadata
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		Parameter's Explanation:
 	*/
 SET NOCOUNT ON
@@ -54,6 +55,7 @@ SET NOCOUNT ON
 	SET SecurityCode = @SecurityCode
 		,isForcedChangeSecuritycode = @isForcedChangeSecuritycode
 		,LastChangedSecurityCodeDate = GETDATE()
+		,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE SubAccID = @SubAccId and custid = @custid
 
 	IF @@Error > 0

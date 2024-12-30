@@ -1,12 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdSecurityCode]    Script Date: 06/11/2015 12:46:37 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdSecurityCode    Script Date: 10/14/2014 1:37:32 AM ******/
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdSecurityCode    Script Date: 10/13/2014 10:29:50 AM ******/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode]
 	@custid		INT,
 	@userid		INT,
@@ -30,6 +22,7 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCode]
 			- 20141008@Johnson: write log in case of updating own security code
 			- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 			- 20160613@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		Parameter's Explanation:
 	*/
 BEGIN	
@@ -115,7 +108,8 @@ BEGIN
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
 			SET SecurityCode = @SecurityCode
 				,isForcedChangeSecurityCode = @isForcedChangeSecurityCode
-				,LastChangedSecurityCodeDate = GETDATE()		
+				,LastChangedSecurityCodeDate = GETDATE()	
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			
 			IF @@Error > 0
@@ -165,8 +159,8 @@ BEGIN
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE custid = @custid)
 			BEGIN 
-				INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate])
-				VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE())
+				INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate],[RepUpdateTime])
+				VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE(), dbo.f_GetDateTime2())
 			END
 			ELSE
 			BEGIN 
@@ -175,6 +169,7 @@ BEGIN
 					,IP = @IP 
 					,LastChangedID = @userid
 					,LastChangedDate = GETDATE()
+					,RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE custid = @custid
 				
 				IF @@Error > 0

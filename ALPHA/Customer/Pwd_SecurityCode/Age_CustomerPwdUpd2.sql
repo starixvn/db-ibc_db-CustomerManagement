@@ -29,6 +29,8 @@ Revisions:
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
 	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 Param's Explanation:
 - @ErrCode:
     = 0: Transaction recorded successfully.
@@ -150,6 +152,7 @@ BEGIN
     SET		OldUserPwd				= @OldPwd
 			,LastChangedPwdDate		= GETDATE()
 			,isFirstLogin			= 0
+			,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	CustID = @CustID
 
     SELECT  @LogSPData =  '<Age_CustomerPwdUpd2 UserID="'

@@ -18,6 +18,7 @@ AS
 		Original: 
 		Revisions:
 			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 		Parameter explanation:
 		@ErrCode =: 
@@ -109,7 +110,8 @@ BEGIN
 	
 	BEGIN TRY
 		UPDATE l
-		SET l.LimitNewAccUpdPT = @LimitNewAccUpdPT
+		SET  l.LimitNewAccUpdPT = @LimitNewAccUpdPT
+			,l.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM LimitPTDailySetting l WITH (ROWLOCK, UPDLOCK)
 		WHERE	Type = @Type 
 				AND ProductID = @ProductID

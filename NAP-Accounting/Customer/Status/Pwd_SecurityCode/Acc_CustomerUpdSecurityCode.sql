@@ -21,6 +21,7 @@
 			- 20190529@Johnson: update SC for headline from NAP [redmine: #112225]
 			- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 		Parameter's Explanation:
 	*/
@@ -55,6 +56,7 @@ SET NOCOUNT ON
 		SET SecurityCode = @SecurityCode
 			,isForcedChangeSecurityCode = @isForcedChangeSecurityCode
 			,LastChangedSecurityCodeDate = GETDATE()		
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid = @custid
 	
 		IF @@Error > 0
@@ -85,8 +87,8 @@ SET NOCOUNT ON
 	BEGIN	
 		IF NOT EXISTS (SELECT 1 FROM dbo.CustLoginInfo_Member WITH(NOLOCK) WHERE custid = @custid)
 		BEGIN
-			INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate])
-			VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE())
+			INSERT INTO [CustLoginInfo_Member]([CustID],[SecurityCode],[IP],[LastChangedID],[LastChangedDate],[RepUpdateTime])
+			VALUES(@custid,@SecurityCode,@IP,@userid,GETDATE(),dbo.f_GetDateTime2())
 		END
 		ELSE
 		BEGIN
@@ -95,6 +97,7 @@ SET NOCOUNT ON
 				,IP = @IP
 				,LastChangedID = @userID
 				,LastChangedDate = GETDATE()
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 
 			IF @@Error > 0

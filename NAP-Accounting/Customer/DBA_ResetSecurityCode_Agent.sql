@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[DBA_ResetSecurityCode_Agent]
 	@custid		INT,
 	@userid		INT,
@@ -18,6 +18,7 @@ ALTER PROCEDURE [dbo].[DBA_ResetSecurityCode_Agent]
 		Revisions:
 			- Daniel@20150622: Separated custDB to server DBCUST
 			- 20180808@Helen: DB05.DBPOLICY migration - [Redmine:99462]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 			
 		Parameter's Explanation:
 	*/
@@ -56,7 +57,8 @@ BEGIN
 		UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
 		SET SecurityCode = @SecurityCode
 			,isForcedChangeSecurityCode = @isForcedChangeSecurityCode
-			,LastChangedSecurityCodeDate = GETDATE()		
+			,LastChangedSecurityCodeDate = GETDATE()	
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid = @custid
 	
 		IF @@Error > 0
@@ -113,6 +115,7 @@ BEGIN
 				,IP = @IP
 				,LastChangedID = @userID
 				,LastChangedDate = GETDATE()
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 
 			IF @@Error > 0

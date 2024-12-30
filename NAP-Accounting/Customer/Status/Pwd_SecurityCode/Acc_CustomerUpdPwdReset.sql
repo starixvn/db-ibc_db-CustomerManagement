@@ -35,6 +35,7 @@ AS
 		- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -101,6 +102,7 @@ BEGIN
 		UPDATE	CustLoginInfo WITH (UPDLOCK,ROWLOCK)
 		SET		OldUserPwd			=	@OldUserPwd
 				,LastChangedPwdDate	=	GETDATE()
+				,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE	CustID = @CustID
 
 	END
@@ -108,6 +110,7 @@ BEGIN
 	BEGIN
 		UPDATE	CustLoginInfo_Member WITH (UPDLOCK,ROWLOCK)
 		SET		gesture 			= NULL
+			   ,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE	CustID = @CustID
 	END
 	

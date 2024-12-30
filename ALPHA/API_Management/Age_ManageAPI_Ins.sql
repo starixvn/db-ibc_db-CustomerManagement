@@ -19,6 +19,7 @@ AS
 	Original: 
 	Revisions:
 		- 20221026@Tacy: Create SP [Redmine: #171247]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
 		- @ScopeIDList:	1 - Outstanding Report
@@ -63,8 +64,8 @@ BEGIN
 	END
 
 	BEGIN TRY
-		INSERT INTO APIInfo ([CustID], [APIName], [CreatedDate], [ExpiredDate], [ScopeIDList], [APIKey], [APISecret], [Passphrase])
-		SELECT @CustID, @APIName, GETDATE(), @ExpiredDate, @ScopeIDList, @APIkey, @APIsecret, @PassPhrase
+		INSERT INTO APIInfo ([CustID], [APIName], [CreatedDate], [ExpiredDate], [ScopeIDList], [APIKey], [APISecret], [Passphrase],RepUpdateTime)
+		SELECT @CustID, @APIName, GETDATE(), @ExpiredDate, @ScopeIDList, @APIkey, @APIsecret, @PassPhrase, dbo.f_GetDateTime2()
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE();		

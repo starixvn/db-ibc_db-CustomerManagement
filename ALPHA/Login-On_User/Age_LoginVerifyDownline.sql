@@ -70,6 +70,7 @@ AS
 		- 20211019@Winfred: Add log Alpha Support Dark Mode [Redmine: #151816]
 		- 20230207@Tacy: Alpha/NAP - Split 789y site [RedmineID:#181596]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -526,6 +527,7 @@ BEGIN
 
 				UPDATE cl
 				SET IsProtectedMode = 1, @IsKickOut = 1
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				FROM CustLoginInfo cl WITH (ROWLOCK)
 				WHERE custid = @CustID 
 
@@ -1150,6 +1152,7 @@ BEGIN
 
 				UPDATE cl
 				SET IsProtectedMode = 1, @IsKickOut = 1
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				FROM CustLoginInfo cl WITH (ROWLOCK)
 				WHERE custid = @CustID 
 

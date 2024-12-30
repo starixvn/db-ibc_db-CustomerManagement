@@ -17,6 +17,7 @@ AS
 	Original: 
 	Revisions:
 		- 20221026@Tacy: Create SP [Redmine: #171247]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
 		- @ScopeIDList:	1 - Outstanding Report
@@ -66,6 +67,7 @@ BEGIN
 		SET	  APIName=@APIName
 			, ExpiredDate=@ExpiredDate
 			, ScopeIDList=@ScopeIDList
+			, RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE APIKey=@APIkey
 	END TRY
 	BEGIN CATCH

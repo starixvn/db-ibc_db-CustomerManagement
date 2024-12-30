@@ -43,6 +43,8 @@ Revisions:
 	- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
 	- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:#206823]
 	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -151,12 +153,14 @@ BEGIN TRY
 	INSERT INTO dbo.CustLoginInfoSub
 	(
 		SubAccID, CustID, OldUserPwd, PwdExpiry, LastChangedPwdDate, isFirstLogin,
-		SecurityCodeCount, SecurityCode, isForcedChangeSecurityCode, LastChangedSecurityCodeDate
+		SecurityCodeCount, SecurityCode, isForcedChangeSecurityCode, LastChangedSecurityCodeDate,
+		RepUpdateTime
 	)
 	VALUES
 	(   
 		@subaccid, @CustID, NULL, @PwdExpiry, GETDATE(), 1,
-		0, NULL, @isForcedChangeSecurityCode, NULL
+		0, NULL, @isForcedChangeSecurityCode, NULL,
+		dbo.f_GetDateTime2()
 	)
 	
 END TRY
