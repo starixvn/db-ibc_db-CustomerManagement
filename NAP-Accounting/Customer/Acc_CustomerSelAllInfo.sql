@@ -128,6 +128,8 @@ Revisions:
 	- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
 	- 20241106@Tacy: Credit - change data source to get SMA CC [Redmine: #212681]
 	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
+	- 20241230@Tacy: SabaCoins - Phase 02 [redmine: #215807]
+
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -261,10 +263,8 @@ BEGIN
 										      ELSE 0 END												  									  										  							  
     -------------------------------------------------------------------------
     DECLARE @IsDeposit BIT --Identify deposit customer
-		, @IsSabaCoins BIT
-		, @ShadowCustID INT
 	    
-	SELECT @IsDeposit = 0, @IsSabaCoins = 0
+	SELECT @IsDeposit = 0
 
 
     IF @roleid in (2,3,4)
@@ -297,12 +297,6 @@ BEGIN
 						      AND isLicensee =1)
 		BEGIN
 			SET @IsDeposit =1
-			
-			SELECT @IsSabaCoins=1
-				, @ShadowCustID=c.custid
-			FROM dbo.Customer c WITH(NOLOCK)
-			WHERE username2 = 'SabaCoins$' + CAST(@custid AS varchar(30))
-				AND currency IN (213,72)
 		END
 
 	    SELECT @LastChangedSecurityCodeDate = LastChangedDate,@ClosedReason=ClosedReason
@@ -713,8 +707,8 @@ BEGIN
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
 	    @IsDeposit IsDeposit, 
-		@IsSabaCoins IsSabaCoins,
-		@ShadowCustID ShadowCustID,
+		sb.CustType,
+		sb.SabaID,
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
 		s.sitelabel,
 	    c.site AS site,
@@ -766,6 +760,7 @@ BEGIN
 									WHERE CustID = ci.custid AND @IsDeposit = 0
 								) AS cps	
 		LEFT JOIN CustomerClassSetting_Agent ag WITH (NOLOCK) ON ag.custid=c.custid AND ag.SportType=0
+		LEFT JOIN Dep_CustSabaInfo sb WITH (NOLOCK) ON sb.CustID=c.custid AND @IsDeposit = 1
     WHERE c.custid = @custid
     
 	
