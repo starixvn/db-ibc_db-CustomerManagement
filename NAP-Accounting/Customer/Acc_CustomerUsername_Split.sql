@@ -11,7 +11,7 @@ AS
 		
 	Revisions:
 		- 20240704@Tacy: Create SP [Redmine: #206291]
-		
+		- 20241231@Tacy: Support new pattern [Redmine: #206291]
 	Parameter's Explanation:
 */
 
@@ -21,13 +21,27 @@ BEGIN
 	DECLARE @tmpUser TABLE (custid INT, username VARCHAR(200), roleid TINYINT)
 	DECLARE @tmpResult TABLE (username VARCHAR(100), ErrMsg VARCHAR(100), ErrCode TINYINT)
 
+	-- split usernames
 	INSERT INTO @tmpUser(username)
 	SELECT DISTINCT username
 	FROM STRING_SPLIT(@username,'#') ss
 	CROSS APPLY dbo.f_Acc_UserNameSplit (TRIM(ss.value),'-',',',';')
+		
+	-- gen continuous usernames
+	INSERT INTO @tmpUser(username)
+	SELECT DISTINCT f.UserName
+	FROM @tmpUser t
+	CROSS APPLY dbo.f_Acc_UserNameSplit_Con (t.username,'>') f
+	LEFT JOIN @tmpUser u ON u.username=f.UserName
+	WHERE CHARINDEX('>',t.username)<>0
+		AND u.username IS NULL
+	--
+	DELETE FROM @tmpUser
+	WHERE CHARINDEX('>',username)<>0
 
 	UPDATE t
-	SET t.custid = c.custid, t.roleid = c.roleid
+	SET t.username=ISNULL(c.username, t.username)
+		, t.custid = c.custid, t.roleid = c.roleid
 	FROM @tmpUser t
 		LEFT JOIN dbo.Customer c WITH (NOLOCK) ON t.username = c.username
 
