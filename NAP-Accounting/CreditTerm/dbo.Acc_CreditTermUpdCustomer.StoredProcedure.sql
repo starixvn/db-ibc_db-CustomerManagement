@@ -232,7 +232,7 @@ BEGIN
 				EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1003,@NotificationInfo = @NotificationInfo, @CreateDate = @startRun
 					
 				--select @checker = isnull(checker,0) from custaccount where groupid = @groupID and isgroupheadline =1 
-				update custAccount set isgroupheadline = 0, checker = 0 where groupid = @groupID and custid <> @custid		
+				update custAccount WITH (ROWLOCK, UPDLOCK) set isgroupheadline = 0, checker = 0, RepUpdateTime = dbo.f_GetDateTime2() where groupid = @groupID and custid <> @custid		
 			END
 	END
 	else if @NotFound = 0 and @IsGroupHeadline = 0

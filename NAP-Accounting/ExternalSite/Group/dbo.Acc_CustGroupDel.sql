@@ -23,6 +23,7 @@ AS
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
 		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
 		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 
 BEGIN
@@ -67,6 +68,8 @@ BEGIN
 	END
 
 	DELETE dbo.Acc_CustGroup WITH (ROWLOCK,UPDLOCK)
+	OUTPUT DELETED.custid, DELETED.GroupName, dbo.f_GetDateTime2()
+	INTO Acc_CustGroup_Del_Inhouse(custid,GroupName,RepUpdateTime)
 	WHERE CustID = @CustID AND GroupName = @GroupName
 	
 	-- Write log data
