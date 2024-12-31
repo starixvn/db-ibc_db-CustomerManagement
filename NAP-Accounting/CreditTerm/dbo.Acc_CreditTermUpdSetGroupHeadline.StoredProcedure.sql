@@ -71,13 +71,14 @@ BEGIN
 
 	SELECT @UserName = Username FROM dbo.Customer WITH(NOLOCK) WHERE custid = @CustID
 
-	UPDATE custAccount SET Isgroupheadline = 0 ,checker = 0 WHERE groupid = @groupID
+	UPDATE custAccount SET Isgroupheadline = 0 ,checker = 0, RepUpdateTime = dbo.f_GetDateTime2() WHERE groupid = @groupID
 
-	UPDATE custAccount SET Isgroupheadline = 1, checker = @oldchecker WHERE custid = @CustID
+	UPDATE custAccount SET Isgroupheadline = 1, checker = @oldchecker, RepUpdateTime = dbo.f_GetDateTime2() WHERE custid = @CustID
 
 	UPDATE dbo.CustGroupHeadline WITH (ROWLOCK, UPDLOCK) 
 	SET CustID = @CustID,
-		OwnerName = ''
+		OwnerName = '',
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE GroupID = @groupID
 
 	SELECT @Case = 3, @New_Headline = @CustID_oldGroupHeadline, @Old_Headline = @CustID_oldGroupHeadline
