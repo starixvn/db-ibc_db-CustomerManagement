@@ -62,7 +62,8 @@ AS
 		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
-
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -236,8 +237,8 @@ BEGIN
 		
 		IF @CreditRM > 300000
 		BEGIN
-			INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2)
-			SELECT @CustId, 1, 0
+			INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2, RepUpdateTime)
+			SELECT @CustId, 1, 0, dbo.f_GetDateTime2()
 		END
 
 		DECLARE @ProductProfile VARCHAR(MAX) = ''

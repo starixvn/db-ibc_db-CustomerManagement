@@ -1,22 +1,23 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-
-ALTER PROCEDURE [dbo].[NAP_GameRoundBetLimitSettingUpd] @ProductID         INT,
-                                                          @SportType         INT,
-                                                          @BetType           INT,
-                                                          @GameRoundBetLimit MONEY,
-                                                          @UserID            INT         = 0,
-                                                          @IP                VARCHAR(20) = ''
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_GameRoundBetLimitSettingUpd] 
+	@ProductID         INT,
+    @SportType         INT,
+    @BetType           INT,
+    @GameRoundBetLimit MONEY,
+    @UserID            INT         = 0,
+    @IP                VARCHAR(20) = ''
 AS
 
 /*
-Created: Jacob	
-Date: 2019-03-12
-Task: #109866 - Implement Game Ground Bet Limit Control
+	Created: Jacob	
+	Date: 2019-03-12
+	Task: #109866 - Implement Game Ground Bet Limit Control
 
-DB: DBCUST/CustDB
+	DB: DBCUST/CustDB
 
-Revisions:
-20190312@Jacob: Implement Game Ground Bet Limit Control [#109866].
+	Revisions:
+		- 20190312@Jacob: Implement Game Ground Bet Limit Control [#109866].
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 
      SET NOCOUNT ON;
@@ -37,13 +38,16 @@ Revisions:
              WHERE ProductID = @ProductId
                    AND SportType = @SportType
                    AND BetType = @BetType;
-             UPDATE dbo.GameRoundBetLimitSettings WITH(ROWLOCK)
+            
+			UPDATE dbo.GameRoundBetLimitSettings WITH(ROWLOCK)
                SET
                    GameRoundBetLimit = @GameRoundBetLimit
-             WHERE ProductID = @ProductId
+                  ,RepUpdateTime = dbo.f_GetDateTime2()
+			 WHERE ProductID = @ProductId
                    AND SportType = @SportType
                    AND BetType = @BetType;
-             SELECT @EndRun = GETDATE(),
+             
+			 SELECT @EndRun = GETDATE(),
                     @Duration = DATEDIFF(millisecond, @StartRun, @EndRun);
              SET @TrackingValue1 = '<NAP_GameRoundBetLimitSettingUpd ';
              SET @TrackingValue1 = @TrackingValue1+'" ProductID ="'+CONVERT(VARCHAR(20), @ProductId);
