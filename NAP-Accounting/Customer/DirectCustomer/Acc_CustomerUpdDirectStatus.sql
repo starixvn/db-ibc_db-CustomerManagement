@@ -249,15 +249,6 @@ BEGIN
         FROM @affectedList
     END
 END
-
-
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-GO 
- GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
 GO 

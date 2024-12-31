@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_xnap,wsv_alpv" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdUserSearch]
 	@userid int,
 	@search varchar(30),
@@ -25,6 +25,7 @@ AS
 		- 20181122@Elodie: DB053/bodb_Age Migration [Redmine:#104770]
 		- 20190508@Elodie: Allow to search nickname [Redmine: #113044]
 		- 20221012@Eden: Enhance searching customer account [Redmine: #178984]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 		• @userid: userid that currently login.
@@ -57,12 +58,13 @@ BEGIN
 			, lastname = CASE WHEN @lastname IS NULL THEN lastname ELSE @lastname END
 			, currency = @Currency
 			, username2 = CASE WHEN @system = 'ACCOUNTING' THEN @username2 ELSE username2 END
+			, RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE userid = @userid AND username=@search
 	END
 	ELSE
 	BEGIN
-		INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2)
-		SELECT @userid, @search, 0, @firstname, @lastname, @Currency, @username2	
+		INSERT INTO custsearch(userid, username, searchcount, firstname, lastname, currency, username2, RepUpdateTime)
+		SELECT @userid, @search, 0, @firstname, @lastname, @Currency, @username2, dbo.f_GetDateTime2()	
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM custsearch WITH(UPDLOCK,HOLDLOCK)  WHERE userid = @userid AND username=@search)
 	END
 END
