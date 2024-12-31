@@ -28,6 +28,7 @@ AS
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		- 20240613@Tacy: Rollback check permission [redmineID: #202523]
 		- 20240621@Tacy: Ext NAP - Not check Permission on Site/Currency [redmineID: #206918]
+		- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		
 	Param's Explanation:	
 	@Choice=1: None
@@ -172,21 +173,26 @@ BEGIN
 
 	IF (@Choice = 1)
 	BEGIN
-		DELETE a
+		DELETE a WITH (ROWLOCK)
+		OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+		INTO Custinfo_Del_Inhouse(custid,RepUpdateTime)
 		FROM dbo.Age_CustDateLimit a
-			INNER JOIN @tempCust t ON a.CustID = t.CustID
+		INNER JOIN @tempCust t ON a.CustID = t.CustID
+		WHERE a.CustId = @CustID
 		
 		SELECT @ErrCode = @@ERROR, @EffectedRow = @@ROWCOUNT
 	END
 	ELSE IF (@Choice = 2)
 	BEGIN
-		UPDATE a
+		UPDATE a WITH (ROWLOCK, UPDLOCK)
 		SET a.LimitDays = @TimePeriod
 			,a.MinDate = NULL
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		FROM dbo.Age_CustDateLimit a WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN @tempCust t ON a.CustID = t.CustID
 		WHERE a.LimitDays <> @TimePeriod
 			OR a.LimitDays IS NULL
+			AND a.CustId = @CustID
 		
 		SELECT @EffectedRow = @@ROWCOUNT
 		
