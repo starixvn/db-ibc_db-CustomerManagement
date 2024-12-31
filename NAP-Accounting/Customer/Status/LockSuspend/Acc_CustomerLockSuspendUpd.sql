@@ -195,8 +195,8 @@ BEGIN
 
 		DELETE CustSuspendLockUpd WITH (ROWLOCK)
 		OUTPUT DELETED.custid, dbo.f_GetDateTime2()
-		INTO Custinfo_Del_Inhouse(custid,RepUpdateTime)
-		WHERE custid IN (SELECT custid FROM #CustLog t) 
+		INTO CustSuspendLockUpd_Del_Inhouse(custid,RepUpdateTime)
+		WHERE custid IN (SELECT custid FROM #CustLog t)
 	END
 
 	IF(@@ERROR<>0)

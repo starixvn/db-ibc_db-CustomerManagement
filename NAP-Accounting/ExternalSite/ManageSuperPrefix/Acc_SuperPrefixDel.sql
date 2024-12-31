@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20200511@Johnson: initial sp [redmine:#133846]
+		- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -43,6 +44,8 @@ BEGIN
 	END
 	
 	DELETE Acc_SuperPrefix WITH(UPDLOCK,ROWLOCK)
+	OUTPUT DELETED.GroupName, DELETED.Prefix, dbo.f_GetDateTime2()
+	INTO Acc_SuperPrefix_Del_Inhouse(GroupName,Prefix,RepUpdateTime)
 	WHERE GroupName = @GroupName
 		AND Prefix = @Prefix
 		
