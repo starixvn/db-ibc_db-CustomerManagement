@@ -1,13 +1,10 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerOTPIns]
 	@CustID		INT,
 	@SubAccID	INT = 0,
 	@SecretKey	VARCHAR(50),
 	@DeviceId	NVARCHAR(100),
 	@DeviceInfo NVARCHAR(2000),
-
 	@Language	VARCHAR(2) = 'E',
 	@IP			NVARCHAR(200),
 	@ErrCode	INT = 0 OUTPUT,
@@ -20,6 +17,7 @@ AS
 	Task: Insert secret key
 
 	Revisions:
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 */
@@ -44,26 +42,26 @@ BEGIN
 			SELECT @IsInsert = 0, @CreateDate = CreatedDate FROM dbo.CustOTP WITH(NOLOCK) WHERE CustID = @CustID AND SubAccId = @SubAccID
 
 			UPDATE dbo.CustOTP WITH(ROWLOCK, UPDLOCK)
-			SET [Enabled] = 0, SecretKey = @SecretKey, IsDelete = 0, CreatedDate = @startRun
+			SET [Enabled] = 0, SecretKey = @SecretKey, IsDelete = 0, CreatedDate = @startRun, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE CustID = @CustID AND SubAccId = @SubAccID
 		END
 		ELSE
 		BEGIN
 			SELECT @IsInsert = 1
 
-			INSERT INTO dbo.CustOTP (CustID, SubAccId, [Enabled], IsDelete, SecretKey, CreatedDate)
-			VALUES (@CustID, @SubAccID, 0, 0, @SecretKey, @startRun)
+			INSERT INTO dbo.CustOTP (CustID, SubAccId, [Enabled], IsDelete, SecretKey, CreatedDate, RepUpdateTime)
+			VALUES (@CustID, @SubAccID, 0, 0, @SecretKey, @startRun, dbo.f_GetDateTime2())
 		END
 
-		INSERT INTO dbo.CustOTPDetail (CustID, SubAccId, DeviceId, DeviceInfo, LastVerifiedDate)
-		VALUES (@CustID, @SubAccID, @DeviceId, @DeviceInfo, @startRun)
+		INSERT INTO dbo.CustOTPDetail (CustID, SubAccId, DeviceId, DeviceInfo, LastVerifiedDate, RepUpdateTime)
+		VALUES (@CustID, @SubAccID, @DeviceId, @DeviceInfo, @startRun, dbo.f_GetDateTime2())
 
 		IF @SubAccID = 0
 		BEGIN
 			IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo WITH(NOLOCK) WHERE CustID = @CustID)
 			BEGIN
 				UPDATE CustLoginInfo WITH(ROWLOCK, UPDLOCK)
-				SET VerifyOTPCount = 0
+				SET VerifyOTPCount = 0, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			END
 		END
@@ -72,7 +70,7 @@ BEGIN
 			IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfoSub WITH(NOLOCK) WHERE CustID = @CustID)
 			BEGIN
 				UPDATE CustLoginInfoSub WITH(ROWLOCK, UPDLOCK)
-				SET VerifyOTPCount = 0
+				SET VerifyOTPCount = 0, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID AND SubAccID = @SubAccID
 			END
 		END
@@ -84,13 +82,15 @@ BEGIN
 		-- rollback --
 		IF @IsInsert = 1 -- just insert main table
 		BEGIN
-			DELETE dbo.CustOTP WITH(ROWLOCK, UPDLOCK)
+			DELETE dbo.CustOTP WITH(ROWLOCK)
+				OUTPUT DELETED.CustID, DELETED.SubAccId, dbo.f_GetDateTime2()
+				INTO CustOTP_Del_Inhouse(CustID, SubAccId, RepUpdateTime)
 			WHERE CustID = @CustID AND SubAccId = @SubAccID
 		END
 		ELSE -- just update main table
 		BEGIN
 			UPDATE dbo.CustOTP WITH(ROWLOCK, UPDLOCK)
-			SET IsDelete = 1, CreatedDate = @CreateDate
+			SET IsDelete = 1, CreatedDate = @CreateDate, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE CustID = @CustID AND SubAccId = @SubAccID
 		END
 
