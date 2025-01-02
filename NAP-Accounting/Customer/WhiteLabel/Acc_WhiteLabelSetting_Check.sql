@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20240827@Tacy: Create SP [Redmine: #209807]
+		- 20241226@Tacy: Change ErrMsg when validate roleID [RedmineID: #215888]
 
 	Param's Explanation:
 		* @IsNew=1 : add new setting
@@ -64,10 +65,10 @@ BEGIN
 	END
 
 	--Check disable user
-    IF EXISTS (SELECT TOP 1 1 FROM custInfo WITH (NOLOCK) WHERE custid=@CustID AND roleid NOT IN (2,3,4))
+    IF EXISTS (SELECT TOP 1 1 FROM custInfo WITH (NOLOCK) WHERE custid=@CustID AND roleid<>2)
 	BEGIN
 		SELECT @ErrCode=104
-			, @ErrMsg='This account is member level.'
+			, @ErrMsg='This account is not Agent level.'
 
 		RETURN			
 	END
