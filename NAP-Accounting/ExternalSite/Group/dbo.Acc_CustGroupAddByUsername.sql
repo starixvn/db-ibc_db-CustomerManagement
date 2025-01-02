@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_CustGroupAddByUsername]
 	@Username	varchar(50),
 	@GroupName	varchar(50),
