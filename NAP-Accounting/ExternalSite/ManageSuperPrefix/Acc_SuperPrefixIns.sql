@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20200511@Johnson: initial sp [redmine:#133846]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -45,8 +46,8 @@ BEGIN
 		RETURN
 	END	
 	
-	INSERT INTO Acc_SuperPrefix(GroupName,Prefix,AllowNewSuper)
-	SELECT @GroupName,@Prefix,1
+	INSERT INTO Acc_SuperPrefix(GroupName,Prefix,AllowNewSuper,RepUpdateTime)
+	SELECT @GroupName,@Prefix,1,dbo.f_GetDateTime2()
 	
 	-- Write log data
 	DECLARE @LogData NVARCHAR(1000)

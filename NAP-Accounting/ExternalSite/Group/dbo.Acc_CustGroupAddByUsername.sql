@@ -28,6 +28,7 @@ AS
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration - move to DBCUST [Redmine: 104770]
 		- 20200512@Johnson: check super's prefix before adding into 789y's group [redmine:#133846]
 		- 20210426@Sol: Alpha/NAP - Migrate from DBACC to DBCust - [Redmine: #154041]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 
 BEGIN
@@ -107,14 +108,15 @@ BEGIN
 	END		
 	
 	
-	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName)
-	VALUES (@CustID, @RoleID, @GroupName)
+	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName, RepUpdateTime)
+	VALUES (@CustID, @RoleID, @GroupName, dbo.f_GetDateTime2())
 
 	-- Check Extra PT Group
 	IF EXISTS (SELECT 1 FROM dbo.Acc_DWLList_ExtraPT WITH(NOLOCK) WHERE GroupName = @GroupName)
 	BEGIN
 		UPDATE dbo.Acc_CustGroup WITH(ROWLOCK, UPDLOCK)
 		SET IsPayout = 1
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustID = @CustID AND GroupName = @GroupName
 		
 		DECLARE @today DATETIME

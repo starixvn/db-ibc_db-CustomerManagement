@@ -27,6 +27,7 @@ Revisions:
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	- 20241128@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
+	- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN
 	DECLARE @startRun DATETIME
@@ -153,6 +154,7 @@ BEGIN
 				, Boss = @Boss
 				, RequestedBy = @RequestedBy
 				, ApprovedBy = @ApprovedBy
+				, RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustDirectAccount CDA WITH (ROWLOCK,UPDLOCK)
 		WHERE CDA.CustID = @CustID
 	END

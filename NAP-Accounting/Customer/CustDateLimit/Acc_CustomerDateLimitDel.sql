@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbDownlineNet,bodbDownlineNetView" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerDateLimitDel] @userId INT
 	,@custId INT
 	,@ErrCode INT = 0 OUTPUT
@@ -12,6 +12,7 @@ AS
 	Revisions:
 		-20180529@Razor: init - [Readmine: #96025]
 		- 20181123@Helen: DB053.bodb_AGE/BODB02 & DB052.bodb_Summary Migration [Redmine: 104770]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		
 	Param's Explanation:		
 */
@@ -43,8 +44,9 @@ BEGIN
 			)
 	BEGIN
 		BEGIN TRY
-			DELETE
-			FROM dbo.Age_CustDateLimit
+			DELETE dbo.Age_CustDateLimit WITH (ROWLOCK)
+			OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+			INTO Age_CustDateLimit_Del_Inhouse(custid,RepUpdateTime)
 			WHERE CustId = @custID
 		END TRY
 

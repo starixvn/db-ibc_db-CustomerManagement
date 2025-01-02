@@ -20,6 +20,7 @@ AS
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20190528@Winnie: NAP - Support CN88 Headline RedmineID: #112999
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -46,11 +47,12 @@ BEGIN
 	
 	UPDATE  CustGroupHeadline WITH (ROWLOCK, UPDLOCK) 
 	SET		OwnerName = @OwnerName
+			,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	CustID = @HeadlineID
 	
 	IF @@ROWCOUNT = 0
-		INSERT INTO dbo.CustGroupHeadline( CustID, GroupID, HeadlineType, OwnerName)
-		SELECT @HeadlineID, 0, NULL, @OwnerName
+		INSERT INTO dbo.CustGroupHeadline( CustID, GroupID, HeadlineType, OwnerName, RepUpdateTime)
+		SELECT @HeadlineID, 0, NULL, @OwnerName, dbo.f_GetDateTime2()
 	
 	---Write log 
 	DECLARE @LogSPData NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
