@@ -1,3 +1,0 @@
-NAP-Accounting\Customer\WhiteLabel\Acc_WhiteLabelSetting_Ins.sql
-NAP-Accounting\Customer\WhiteLabel\Acc_WhiteLabelSetting_Upd.sql
-NAP-Accounting\Customer\WhiteLabel\Acc_WhiteLabel_SelCustInfo.sql

@@ -24,6 +24,7 @@ AS
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20241118@Tacy: New CC for SMA [Redmine: #212681]
+		- 20240807@Helios: Scale Out DBCUST - Apply Inhouse replication for tables of problem account [Redmine:#209747]
 	Param's Explanation:
 		@UserId: Customer login
 		@SubAccId: SubAccount Id
@@ -99,7 +100,7 @@ BEGIN
 		AND ca.CustomerClass IN (SELECT CustomerClass FROM CategoryConfig WITH(NOLOCK))
 
 	UPDATE pa
-	SET pa.IsReviewed = 1
+	SET pa.IsReviewed = 1  , pa.RepUpdateTime=[dbo].[f_GetDateTime2]()
 	FROM dbo.ProblemAccountClassification pa WITH (NOLOCK)
 		INNER JOIN #tempCust t ON pa.CustId = t.CustId
 	
