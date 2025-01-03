@@ -7,6 +7,8 @@ ALTER FUNCTION [dbo].[f_Acc_UserNameSplit_Con]
 RETURNS @res TABLE 
 ( 
 	UserName VARCHAR(100)
+	,ErrCode INT
+	,ErrMsg VARCHAR(2000)
 )
 AS
 /*
@@ -24,32 +26,41 @@ AS
 BEGIN
 	DECLARE @subName VARCHAR(100)
 		,@pos INT, @i INT = 1
-		,@iStart INT, @IsNum BIT
+		,@iNumStart INT, @IsNum BIT
 		,@MinChar SMALLINT, @MaxChar SMALLINT
+
+	SELECT @pos=CHARINDEX('>', @string)
+		, @IsNum = ISNUMERIC(SUBSTRING(@string, @pos+1, LEN(@string)))
+
+	SET @iNumStart = PATINDEX('%[0-9]%', @string)
+
+	IF @IsNum=0 AND (CAST(PATINDEX('%[0-9]%',SUBSTRING(@string, @pos+1, LEN(@string))) AS BIT)=1 OR @iNumStart<>0)
+	BEGIN	
+		INSERT INTO @res(UserName,ErrCode, ErrMsg)
+		SELECT @string, 11, 'Cannot generate sequence. Please use format like ''AA1>5'' or ''AAA>C'''
+		RETURN
+	END
+
+	SELECT @MinChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos-1, 1))) 
+						 ELSE SUBSTRING(@string, @iNumStart, @pos-@iNumStart)
+					END
+		, @MaxChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos+1, 1))) 
+						 ELSE SUBSTRING(@string, @pos+1, @pos-@iNumStart)
+					END
+
+	IF @MinChar>@MaxChar
+	BEGIN	
+		INSERT INTO @res(UserName,ErrCode, ErrMsg)
+		SELECT @string, 11, 'Cannot generate sequence. Please use format like ''AA1>5'' or ''AAA>C'''
+		RETURN
+	END
 
 	INSERT INTO @res (UserName)
 	SELECT TOP 1 TRIM(value) 
 	FROM STRING_SPLIT(@string,@splitter)
 	WHERE TRIM(value)<>''
 
-	SELECT @pos=CHARINDEX('>', @string)
-		, @IsNum = ISNUMERIC(SUBSTRING(@string, @pos+1, LEN(@string)))
-
-	IF @IsNum=0 AND CAST(PATINDEX('%[0-9]%',SUBSTRING(@string, @pos+1, LEN(@string))) AS BIT)=1
-		RETURN
-	
-	IF @IsNum=1	
-		SET @iStart = PATINDEX('%[0-9]%', @string)
-
-	SELECT @MinChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos-1, 1))) 
-						 ELSE SUBSTRING(@string, @iStart, @pos-@iStart)
-					END
-		, @MaxChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos+1, 1))) 
-						 ELSE SUBSTRING(@string, @pos+1, @pos-@iStart)
-					END
-
-	SELECT @MaxChar = CASE WHEN @MinChar > @MaxChar THEN @MinChar ELSE @MaxChar END
-		, @i += @MinChar
+	SELECT @i += @MinChar
 
 	-- Representative Username
 	SELECT @subName=SUBSTRING(t.UserName, 1, LEN(t.UserName)-LEN(CASE WHEN @IsNum = 0 THEN CHAR(@MinChar) ELSE CAST(@MinChar AS varchar(5)) END))

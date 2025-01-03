@@ -27,6 +27,16 @@ BEGIN
 	FROM STRING_SPLIT(@username,'#') ss
 	CROSS APPLY dbo.f_Acc_UserNameSplit (TRIM(ss.value),'-',',',';')
 		
+	--get error format	
+	INSERT INTO @tmpResult (username, ErrCode, ErrMsg)
+	SELECT DISTINCT f.UserName, f.ErrCode, f.ErrMsg
+	FROM @tmpUser t
+	CROSS APPLY dbo.f_Acc_UserNameSplit_Con (t.username,'>') f
+	WHERE CHARINDEX('>',t.username)<>0 AND ISNULL(f.ErrCode,0) <> 0
+
+	IF EXISTS (SELECT 1 FROM @tmpResult)
+		GOTO Result
+
 	-- gen continuous usernames
 	INSERT INTO @tmpUser(username)
 	SELECT DISTINCT f.UserName
@@ -112,8 +122,9 @@ BEGIN
 	END
 
 	/* ===== Return result ===== */
-	SELECT username, ErrMsg, ErrCode 
-	FROM @tmpResult
-	ORDER BY ErrCode, username
+	Result:
+		SELECT username, ErrMsg, ErrCode 
+		FROM @tmpResult
+		ORDER BY ErrCode, username
 END
 GO
