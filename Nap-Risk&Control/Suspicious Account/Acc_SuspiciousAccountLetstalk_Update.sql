@@ -1,5 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_SuspiciousAccountLetstalk_Update(
 	@MemNotify    XML)
 /*
@@ -10,7 +9,8 @@ ALTER PROCEDURE dbo.Acc_SuspiciousAccountLetstalk_Update(
  Original:
  Revisions:
 	- 20200305@Robert: #129119 - [NAP] Auto notify newly created suspicious account
-  
+	- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
  Param's Explanation:
  
  */
@@ -36,6 +36,7 @@ AS
 			SET 
 			    s.NotifyStatus1 = t.NotifyStatus1
 			  , s.NotifyStatus2 = t.NotifyStatus2
+			  , s.RepUpdateTime = dbo.f_GetDateTime2()
 	   FROM dbo.SuspiciousCust s
 		  INNER JOIN #tempMemNotify t ON s.CustID = t.CustID;
     END;
