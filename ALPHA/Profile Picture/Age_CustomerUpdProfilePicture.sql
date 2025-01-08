@@ -3,7 +3,7 @@ CREATE PROCEDURE Age_CustomerUpdProfilePicture
 	@custid INT,
 	@Mode TINYINT, 
 	@ImageID INT = NULL, --Use for picture library
-	@Image VARBINARY(MAX) = NULL, --Use for picture of customer
+	@Image VARBINARY(MAX) = NULL OUTPUT, --Use for picture of customer
 	@isDefault BIT = 0, -- Add default picture when user first login
 	@IsMainServer BIT, 
 
@@ -50,7 +50,8 @@ BEGIN
 
 		IF @@ROWCOUNT = 0
 			RETURN
-
+		
+		SELECT @Image = Image FROM ProfilePicture WITH (NOLOCK) WHERE ImageId = @ImageID
 		SET @ActionID = 697
 	END	
 	ELSE
