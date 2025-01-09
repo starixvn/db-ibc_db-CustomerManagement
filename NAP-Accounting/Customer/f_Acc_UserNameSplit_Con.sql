@@ -25,33 +25,47 @@ AS
 */
 BEGIN
 	DECLARE @subName VARCHAR(100)
-		,@pos INT, @i INT = 1
-		,@iNumStart INT, @IsNum BIT
+		,@pos INT, @i INT
+		,@iNumStart INT
+		,@IsNum_Bf BIT, @IsNum_Af BIT	--value before/after splitter is all numberic?
 		,@MinChar SMALLINT, @MaxChar SMALLINT
 
 	SELECT @pos=CHARINDEX('>', @string)
-		, @IsNum = ISNUMERIC(SUBSTRING(@string, @pos+1, LEN(@string)))
+	
+	SELECT @IsNum_Bf = ISNUMERIC(SUBSTRING(@string, @pos-1, 1))
+		, @IsNum_Af = ISNUMERIC(SUBSTRING(@string, @pos+1, LEN(@string)))
 
-	SET @iNumStart = PATINDEX('%[0-9]%', @string)
-
-	IF @IsNum=0 AND (CAST(PATINDEX('%[0-9]%',SUBSTRING(@string, @pos+1, LEN(@string))) AS BIT)=1 OR @iNumStart<>0)
+	IF @IsNum_Bf<>@IsNum_Af
 	BEGIN	
 		INSERT INTO @res(UserName,ErrCode, ErrMsg)
 		SELECT @string, 11, 'Cannot generate sequence. Please use format like ''AA1>5'' or ''AAA>C'''
 		RETURN
 	END
 
-	SELECT @MinChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos-1, 1))) 
+	IF @IsNum_Bf=1
+	BEGIN
+		SET @i=@pos-1
+		SET @iNumStart = @i
+
+		WHILE ISNUMERIC(SUBSTRING(@string, @i, 1))=1
+		BEGIN
+			SET @iNumStart = @i
+			SET @i-=1
+		END
+	END
+
+	SELECT @MinChar=CASE WHEN @IsNum_Bf=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos-1, 1))) 
 						 ELSE SUBSTRING(@string, @iNumStart, @pos-@iNumStart)
 					END
-		, @MaxChar=CASE WHEN @IsNum=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos+1, 1))) 
-						 ELSE SUBSTRING(@string, @pos+1, @pos-@iNumStart)
+		, @MaxChar=CASE WHEN @IsNum_Bf=0 THEN ASCII(UPPER(SUBSTRING(@string, @pos+1, 1))) 
+						 ELSE SUBSTRING(@string, @pos+1, LEN(@string) - @pos)
 					END
+		, @i=0
 
 	IF @MinChar>@MaxChar
 	BEGIN	
 		INSERT INTO @res(UserName,ErrCode, ErrMsg)
-		SELECT @string, 11, 'Cannot generate sequence. Please use format like ''AA1>5'' or ''AAA>C'''
+		SELECT @string, 12, 'Cannot generate sequence. Please use format like ''AA1>5'' or ''AAA>C'''
 		RETURN
 	END
 
@@ -63,15 +77,18 @@ BEGIN
 	SELECT @i += @MinChar
 
 	-- Representative Username
-	SELECT @subName=SUBSTRING(t.UserName, 1, LEN(t.UserName)-LEN(CASE WHEN @IsNum = 0 THEN CHAR(@MinChar) ELSE CAST(@MinChar AS varchar(5)) END))
+	SELECT @subName=SUBSTRING(t.UserName, 1, LEN(t.UserName)-LEN(CASE WHEN @IsNum_Af = 0 THEN CHAR(@MinChar) ELSE CAST(@MinChar AS varchar(5)) END))
 	FROM @res t 
 
 	WHILE (@i<=@MaxChar)
 	BEGIN
-		INSERT INTO @res (UserName)
-		SELECT @subName 
-			+ CASE WHEN @IsNum = 0 THEN CHAR(@i) ELSE CAST(@i AS varchar(5)) END
-			
+		IF @IsNum_Bf = 0
+			INSERT INTO @res (UserName)
+			SELECT @subName + CHAR(@i)
+		ELSE
+			INSERT INTO @res (UserName)
+			SELECT @subName + CAST(@i AS varchar(5))
+
 		SET @i += 1
 	END
 	
