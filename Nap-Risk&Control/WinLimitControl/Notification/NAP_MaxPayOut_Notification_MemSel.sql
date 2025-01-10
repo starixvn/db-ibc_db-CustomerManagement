@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_MaxPayout_Notification_MemSel]
 	@ProductId	TINYINT		= 0
    , @Username	VARCHAR(50)	= ''
@@ -12,6 +12,7 @@ Revisions:
 	- 20230829@Luke: Implement Company Max Payout Notification [Redmine: #193288]
 					 Clone from NAP_WinLimit_Notification_MemSel
 	- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
+	- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 
 Param's Explanation:
 	� @ErrCode:
@@ -29,8 +30,8 @@ BEGIN
 		, e.currency
 		, wl.BettypeIDList
 		, CASE WHEN s.isLicensee = 0 AND SiteLabel IS NOT NULL
-				THEN ag.site + ' (' + s.SiteLabel + ')' 
-				ELSE ag.site
+				THEN c.site + ' (' + s.SiteLabel + ')' 
+				ELSE c.site
 			END AS site 
 		, wl.TransID AS TicketRefNo
 		, wl.WinlostDate AS TransactionTime
@@ -42,8 +43,7 @@ BEGIN
 	INTO #tmp
 	FROM WinLimit_CustGameMonitoring_History AS wl WITH (NOLOCK)
 		INNER JOIN Customer AS c WITH (NOLOCK) ON c.custid = wl.CustID
-		INNER JOIN Customer AS ag WITH (NOLOCK) ON ag.custid = c.recommend
-		INNER JOIN Site AS s WITH (NOLOCK) ON s.site = ag.site
+		INNER JOIN Site AS s WITH (NOLOCK) ON s.site = c.site
 		INNER JOIN exchange AS e WITH (NOLOCK) ON c.currency = e.exchangeid
 		CROSS APPLY(SELECT TOP 1 RealProductID as ProductID
 					FROM SportBettypeSettingMatrix s WITH (NOLOCK)

@@ -25,6 +25,7 @@ AS
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
+		- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 		- 20250225@Virgil: CWL - Support export data in Win Loss Limit Monitor [Redmine: #217147]
 
 	Parameters Explanation:   
@@ -103,7 +104,7 @@ BEGIN
 			BettypeIDList
         )
             SELECT cm.CustID,
-                    ci.username,
+                    c.username,
                     cm.ProductID,
                     cm.GroupID,
                     cm.LevelID,
@@ -146,8 +147,7 @@ BEGIN
                         AND cm.WinlostDate = cmh.WinlostDate
 						AND cmh.ActionID IN (6,7)
             ) AS cmh_suspended
-                    INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON cm.CustID = ci.CustID
-                    INNER JOIN dbo.Customer c WITH (NOLOCK) ON c.custid = ci.recommend
+                    INNER JOIN dbo.Customer c WITH (NOLOCK) ON c.custid = cm.CustID
                     INNER JOIN dbo.Site s WITH (NOLOCK) ON s.site = c.site
                     INNER JOIN @Levels l ON cm.LevelID = l.LevelId
 					CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss 
@@ -155,12 +155,12 @@ BEGIN
                     AND (@ProductId = 0
                         OR cm.ProductID = @ProductId)
                     AND (@CurrencyId = 0
-                        OR ci.currency = @CurrencyId)
+                        OR c.currency = @CurrencyId)
                     AND (@ExcludeTestData = 0
-                        OR ci.currency NOT IN(20, 72)) -- UUS & YNG  
-                    AND ci.roleid = 1
+                        OR c.currency NOT IN(20, 72)) -- UUS & YNG  
+                    AND c.roleid = 1
                     AND (LEN(@UserName) = 0
-                        OR ci.username = @UserName);
+                        OR c.username = @UserName);
     END;
 
     BEGIN -- Query data  
