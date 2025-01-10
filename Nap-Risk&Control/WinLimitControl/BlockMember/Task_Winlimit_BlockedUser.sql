@@ -23,6 +23,7 @@ AS
 		- 20231214@Tacy: Risk Control - Member was not suspended after reaching Yellow Level [Redmine: #198396]
 		- 20240307@Johnson: Enhance performance [redmine: #201794]
 		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+		- 20250110@Tacy: Offer direct member for super/master [Redmine: #215809]
 	Param's Explanation:
 	
 */
@@ -123,8 +124,8 @@ BEGIN
 				,TotalWinAmt	MONEY
 				,ProductID		TINYINT
 				,GroupID		INT 
-				,recommend		INT
-				,rUsername		VARCHAR(30)
+				,UplineID		INT
+				,UplineName		VARCHAR(30)
 	)
 	
 	SELECT @WinlostDate = CAST(GETDATE() AS DATE)
@@ -171,8 +172,7 @@ BEGIN
 		, SiteID = s.siteid
 		, IsPrivateSetting = CASE WHEN CGS.CustID IS NOT NULL THEN 1 ELSE 0 END 
 	FROM #DataTmp t 
-		INNER JOIN dbo.custInfo CI WITH (NOLOCK) ON t.CustId = ci.custid
-		INNER JOIN dbo.Customer cc WITH (NOLOCK) ON cc.custid = ci.recommend
+		INNER JOIN dbo.Customer cc WITH (NOLOCK) ON cc.custid = t.CustId
 		INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = cc.site
 		-- just need one row returned, so checking level1 is fine to know whether this customer has private setting or not
 		LEFT JOIN dbo.WinLimit_CustGameSetting CGS WITH (NOLOCK) ON CGS.CustID = T.CustId AND CGS.GroupID =  T.GroupID AND CGS.LevelID = 1
@@ -333,12 +333,18 @@ BEGIN
 						AND g.LevelID BETWEEN 2 AND @WinlimitLevel_max) gm
 		
 	--Get: SuspendList, exclude: change setting IsSuspendedAccount 0 --> 1 only
-	INSERT INTO @tbl_SuspendList (CustId, Username, recommend, rUsername, TotalWinAmt, ProductID, GroupID)
-	SELECT DISTINCT T.CustId, c.username, C.recommend, ag.username, t.TotalWinAmount, t.ProductId, t.GroupID
+	INSERT INTO @tbl_SuspendList (CustId, Username, UplineID, UplineName, TotalWinAmt, ProductID, GroupID)
+	SELECT DISTINCT T.CustId, c.username, up.custid, up.username, t.TotalWinAmount, t.ProductId, t.GroupID
 	FROM #CustReachCWLList T 
 		INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID=t.CustId
 		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=T.CustId
-		INNER JOIN Customer ag WITH (NOLOCK) ON ag.custid=c.recommend
+		CROSS APPLY (SELECT custid, username	
+					 FROM Customer sma WITH (NOLOCK)
+					 WHERE sma.custid = CASE WHEN c.recommend=-4 THEN c.srecommend
+											WHEN c.recommend=-3 THEN c.mrecommend
+											ELSE c.recommend 
+										END
+					) up
 		LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON cs.custid=c.srecommend	
 		LEFT JOIN WinLimit_CustGameMonitoring g WITH (NOLOCK) ON g.CustID=t.CustId AND g.ProductID=t.ProductId AND g.GroupID=t.GroupID AND g.LevelID=t.LevelID AND g.WinlostDate=t.WinlostDate --change setting only
 		INNER JOIN dbo.WinLimit_ProductSettingDetail psd WITH (NOLOCK) ON T.ProductId = psd.ProductId AND t.ExchangeID = psd.ExchangeID	 AND t.SiteID = PSD.SiteID AND T.LevelID = psd.LevelID AND PSD.GroupID = T.GroupID
@@ -533,8 +539,8 @@ BEGIN
 									(SELECT Username	AS '@Username'
 										, TotalWinAmt	AS '@TotalWinAmt'
 										, ProductID		AS '@ProductID'
-										, recommend		AS '@recommend'
-										, rUsername		AS '@rUsername'
+										, UplineID		AS '@recommend'
+										, UplineName	AS '@rUsername'
 									FROM @tbl_SuspendList
 									WHERE CustId=@CustID 
 										AND ProductID=@ProductID
