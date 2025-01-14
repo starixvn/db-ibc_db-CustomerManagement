@@ -39,7 +39,7 @@ Revisions:
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR - [RedmineID: #197693]
 	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 	- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
-
+	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 */
 BEGIN
 
@@ -121,6 +121,7 @@ BEGIN
 					, NGN
 					, BRL
 					, ActualRate
+					, RepUpdateTime
 					)
 				VALUES (
 					@ExchangeId
@@ -150,6 +151,7 @@ BEGIN
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
 					, @MYR * @MultipliedBy	--ActualRate				
+					, dbo.f_GetDateTime2()
 					)
 			END
 			ELSE
@@ -179,6 +181,7 @@ BEGIN
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
+					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
 					AND ExchangeDate = @date
 					AND Code = @Code
@@ -197,8 +200,8 @@ BEGIN
 						FROM ExchangeDaily_Crypto WITH(NOLOCK) 
 						WHERE ExchangeId = @ExchangeId AND ExchangeDate = @date)
 			BEGIN
-				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT)
-				SELECT	@date AS ExchangeDate, ExchangeId, USDT 
+				INSERT INTO ExchangeDaily_Crypto (ExchangeDate, ExchangeId, USDT, RepUpdateTime)
+				SELECT	@date AS ExchangeDate, ExchangeId, USDT, dbo.f_GetDateTime2()
 				FROM	ExchangeDaily_Crypto WITH(NOLOCK)
 				WHERE	ExchangeId = @ExchangeId AND ExchangeDate = DATEADD(dd,-1,@date)
 			END		
@@ -209,7 +212,7 @@ BEGIN
 
 	-- Update ExchangeDailyOanda.MYR to Exchange.ActualRate
 	UPDATE	a
-	SET		a.actualrate = b.MYR
+	SET		a.actualrate = b.MYR, a.RepUpdateTime = dbo.f_GetDateTime2()
 	FROM	exchange a WITH(ROWLOCK) 
 			INNER JOIN ExchangeDailyOanda b WITH(NOLOCK) on a.ExchangeId = b.exchangeid  
 	WHERE	b.ExchangeDate = @date AND a.Code = @Code
