@@ -178,7 +178,6 @@ BEGIN
 		INTO Age_CustDateLimit_Del_Inhouse(custid,RepUpdateTime)
 		FROM dbo.Age_CustDateLimit a
 		INNER JOIN @tempCust t ON a.CustID = t.CustID
-		WHERE a.CustId = @CustID
 		
 		SELECT @ErrCode = @@ERROR, @EffectedRow = @@ROWCOUNT
 	END
@@ -192,7 +191,6 @@ BEGIN
 			INNER JOIN @tempCust t ON a.CustID = t.CustID
 		WHERE a.LimitDays <> @TimePeriod
 			OR a.LimitDays IS NULL
-			AND a.CustId = @CustID
 		
 		SELECT @EffectedRow = @@ROWCOUNT
 		
@@ -223,7 +221,6 @@ BEGIN
 			INNER JOIN @tempCust t ON a.CustID = t.CustID
 		WHERE a.MinDate <> @MinDate
 			OR a.MinDate IS NULL
-			AND a.CustId = @custid; 
 
 		SELECT @EffectedRow = @@ROWCOUNT
 		
