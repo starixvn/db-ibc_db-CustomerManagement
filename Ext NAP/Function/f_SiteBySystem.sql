@@ -58,6 +58,7 @@ Revisions:
 	- 20240227@Johnson: Add ACCTW1,ACCSB1 [redmine: #201452]
 	- 20240321@Johnson: Add ACCDS17,ACCS359M,ACC801AH,ACCC1,ACCS222H,ACCD77M,ACCAHM,ACCWT,ACC222,ACCHPO,ACCKKM [redmine: #202663]
 	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
+	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -76,7 +77,7 @@ BEGIN
 		FROM [Site] WITH (NOLOCK)
 		WHERE isLicensee = 0 AND isActive = 1
 	END
-	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCPBTH'))
+	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCPBTH','ACCTHAI9TA'))
 	BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 22 --755555,...
