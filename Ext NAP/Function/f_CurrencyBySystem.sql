@@ -56,6 +56,7 @@ Revisions:
 	- 20240321@Johnson: Add ACCDS17,ACCS359M,ACC801AH,ACCC1,ACCS222H,ACCD77M,ACCAHM,ACCWT,ACC222,ACCHPO,ACCKKM [redmine: #202663]
 	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
 	- 20241119@Elodie: Add $US for ACCPBTH - [Redmine: #213893]
+	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -67,7 +68,7 @@ BEGIN
 		SELECT ExchangeID 
 		FROM Exchange WITH (NOLOCK)
 	END	
-	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCThaiSK'))
+	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCThaiSK','ACCTHAI9TA'))
 	BEGIN
 		Insert Into @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
