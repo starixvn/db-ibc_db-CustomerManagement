@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDaily_ActualRateUpd]
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT
@@ -6,7 +6,7 @@ AS
 /*
 Created: Henry
 Task : Daily update ActualRate of ExchangeDaily
-DB: DBTRANS.BODB02 
+DB: DBGLOB-GlobCustDB
 Revisions:
 	- 20120427@Henry: get data from ExchangeDailyOanda instead of ExchangeDaily
 	- 20120516@Henry: raise error when a currency got more than 1 actual rate in bettrans table
@@ -14,6 +14,7 @@ Revisions:
 	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
 	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
 	- 20220915@Evan: Support crypto  [Redmine: #177481]  
+	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870] 
 
 */		
 SET NOCOUNT ON

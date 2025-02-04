@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_ExchangeUpd]
 	@exchangeid int,
@@ -24,7 +24,7 @@ AS
 	Created: ?
 	Task : Update ex rate
 
-	DB: DBCUST.CustDB
+	DB: DBGLOB-GlobCustDB
 	Original: 
 
 	Revisions: 
@@ -43,6 +43,7 @@ AS
 		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
+		- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -50,8 +51,6 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-
-
 
 	DECLARE 
 		@LogData nvarchar(400),
@@ -123,14 +122,6 @@ BEGIN
 		IsActive = @IsActive,
 		RepUpdateTime = SYSDATETIME()
 	WHERE exchangeid=@exchangeid
-
-	IF @old_minbet <> @minbet OR @old_minbetlive <> @minbetlive 
-	BEGIN
-		--Sync minbet of SB to CS_ProductBetSetting for CN88
-		UPDATE dbo.CS_ProductBetSetting 
-		SET minbet = CASE WHEN islive = 0 THEN @minbet ELSE @minbetlive END
-		WHERE Currency = @exchangeid AND (SportType BETWEEN 1 AND 99 OR SportType = 9999)
-	END
 
 	Select @LogData = 'Update exchange rate:'
 		+  ' currencyName=' + @currency 

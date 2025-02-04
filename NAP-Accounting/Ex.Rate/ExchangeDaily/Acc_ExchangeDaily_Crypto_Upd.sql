@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_ExchangeDaily_Crypto_Upd
     @File NVARCHAR(MAX),
     @EffectiveDate DATE = NULL,
@@ -11,11 +11,13 @@ AS
 /*              
 Created: 20221108@Evan            
 Task :  NAP»  Ex. Rate»  OANDA Exchange Rate» Import USDT Rate  [Redmine: #177844]       
-DB:   DBCUST-CustDB            
+DB:   DBGLOB-GlobCustDB          
 
 Revisions:     
     - 20221108@Evan: Create new SP [Redmine: #177844]    
     - 20230306@Evan: Fix bug code write log (overflow error) [Redmine: #184723]    
+	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
+
 Param's Explanation:            
  - @Fie:              
   <ROOT><File Currency = "ADA" USDT = "0.468612343423212" /></ROOT>          

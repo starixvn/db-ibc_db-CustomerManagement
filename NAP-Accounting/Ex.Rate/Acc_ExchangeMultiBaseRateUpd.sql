@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ExchangeMultiBaseRateUpd]
 	@Exchange NVARCHAR(MAX),
 	@UserID INT,
@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[Acc_ExchangeMultiBaseRateUpd]
 AS
 /*
 	Created: 20211229@Malcolm
-	DB: DBCUST-CUSTDB
+	DB: DBGLOB-GlobCustDB
 	Task: NAP Accouting Site - Ex.Rate - Edit Base rate
 
 	Revisions:
@@ -18,6 +18,7 @@ AS
 		- 20220914@Sophia: Update ActualRate of ExchangeDailyOanda [RedmineID: #175253] 
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
+		- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
 
 	Param's Explanation:
 		. @Exhange 

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeIns]	
 	@exchangeid INT OUTPUT,
 	@actualrate FLOAT,
@@ -22,7 +22,7 @@ AS
 /*
 Created: 
 Task : Insert new currency
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 Original:
 
 Revisions:
@@ -36,6 +36,7 @@ Revisions:
 	- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 	- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 	- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
+	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
 Param's Explanation:
 	• @actualrate: specIFy exchange-rate of the currency
 	• @minbet: specIFy minbet of the currency
