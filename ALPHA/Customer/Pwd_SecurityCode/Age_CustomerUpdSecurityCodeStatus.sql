@@ -125,7 +125,8 @@ SET NOCOUNT ON
 		IF @securityCodeCount > 0
 		BEGIN
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = 0
+			SET  securityCodeCount = 0
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END 
 	END
