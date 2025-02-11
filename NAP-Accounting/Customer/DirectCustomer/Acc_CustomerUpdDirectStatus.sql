@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDirectStatus]
 (
     @custid  	INT
@@ -22,6 +22,7 @@ AS
 		- 20181107@Louis: Credit Collection [Redmine: #98621]
 		- 20200114@Malcolm: Separate setting and notification into Live/Non-Live and bettypes [Redmine : 125076]
 		- 20191024@Eden: Hofix - removed dummy acc from table CustDirectAccount [Redmine:83206]
+		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
 
     Param's Explanation:
     • @ErrCode:
@@ -125,7 +126,7 @@ BEGIN
 										
 		FROM @affectedList
 		 
-		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine, ProfileID)
+		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
 		SELECT al.custid
 				-- Since there are many kinds of currency default setting, default setting will be converted to RM before convert to orginal curency
 				, CASE 
@@ -135,7 +136,7 @@ BEGIN
 						ELSE  CONVERT(MONEY,(TO_tmp.MaxTurnOver * E.actualrate)/E1.actualrate)
 				END AS MaxTurnOver
 				, TO_tmp.Sporttype, 0, TO_tmp.ProfileID
-        
+				, dbo.f_GetDateTime2()
 		FROM @affectedList al
 			INNER JOIN dbo.Customer c WITH (NOLOCK) ON al.custid = c.custid 
 			CROSS APPLY 
@@ -164,7 +165,9 @@ BEGIN
 	
 	IF @roleid = 3
 	BEGIN
-		DELETE TOControl_GlobalSetting
+		DELETE TOControl_GlobalSetting WITH (ROWLOCK)
+			OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
+			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
 		WHERE CustID = @srecommend
 		
 		DELETE TOControl_Setting
@@ -172,7 +175,9 @@ BEGIN
 	END
 	ELSE IF @roleid = 2
 	BEGIN
-		DELETE TOControl_GlobalSetting
+		DELETE TOControl_GlobalSetting WITH (ROWLOCK)
+			OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
+			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
 		WHERE CustID IN (@srecommend,@mrecommend)
 		
 		DELETE TOControl_Setting
@@ -180,7 +185,9 @@ BEGIN
 	END
 	ELSE IF @roleid = 1
 	BEGIN
-			DELETE dbo.TOControl_GlobalSetting
+			DELETE dbo.TOControl_GlobalSetting WITH (ROWLOCK)
+				OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
+				INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
 			WHERE CustID IN (@srecommend,@mrecommend,@recommend)
 			
 			DELETE dbo.TOControl_Setting
@@ -253,5 +260,5 @@ SET ANSI_NULLS ON
 GO
 
 GO 
- GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [bodbAdminNet,wsv_nap]
+ GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
 GO 
