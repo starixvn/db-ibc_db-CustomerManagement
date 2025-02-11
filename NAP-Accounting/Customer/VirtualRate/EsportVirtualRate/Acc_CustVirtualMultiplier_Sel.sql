@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplier_Sel]
 	@CustID INT
 	, @SportType INT
@@ -19,6 +19,7 @@ AS
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221103@Johnson: Change data type of CustSettingAutoSuspend [Redmine: #179782]
 		- 20221028@Johnson: order by LeagueGroup [redmine: #177594]
+		- 20241216@Winfred: Credit - Direct Member for Super/Master [RedmineID: #214585]
 */ 
 BEGIN
 	SELECT @ErrCode = 0, @ErrMsg = ''
@@ -58,7 +59,20 @@ BEGIN
 	END
 
 	IF @RoleID = 1
-		SELECT @UplineCustID = @recommend
+	BEGIN
+		IF @recommend = -3
+		BEGIN
+			SELECT @UplineCustID = @mrecommend
+		END
+		ELSE IF @recommend = -4
+		BEGIN
+			SELECT @UplineCustID = @srecommend
+		END
+		ELSE
+		BEGIN
+			SELECT @UplineCustID = @recommend
+		END
+	END
 	ELSE IF @RoleID = 2
 		SELECT @UplineCustID = @mrecommend
 	ELSE IF @RoleID = 3
