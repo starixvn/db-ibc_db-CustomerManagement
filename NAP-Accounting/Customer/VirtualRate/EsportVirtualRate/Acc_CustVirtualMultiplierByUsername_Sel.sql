@@ -1,5 +1,5 @@
 
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustVirtualMultiplierByUsername_Sel]
 	@Username NVARCHAR(50)
@@ -14,6 +14,7 @@ AS
 	    
 	Revisions:    
 		- 20190626@Dominic : First commit
+		- 20241216@Winfred: Credit - Direct Member for Super/Master [RedmineID: #214585]
   
 */ 
 BEGIN
