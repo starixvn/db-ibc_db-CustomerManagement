@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [Acc_ExchangeDailySel_Crypto] 
 	@Code VARCHAR(12)
 	, @RunDate DATE = NULL
@@ -11,11 +11,12 @@ AS
 /*
 Created: Evan
 Task : Get rate for inactive crypto currency
-DB: DBCUST.CustDB
+DB: DBGLOB-GlobCustDB
 Revisions:
 	- 20221115@Evan: Initialize sp  [Redmine: #180168]  
 	- 20230807@Evan: Support EUR rate  [Redmine: #192369]  
-	- 20240128@Evan: Support USD rate  [Redmine: #200341]  
+	- 20240128@Evan: Support USD rate  [Redmine: #200341]
+	- 20250114@Lewis: Migrate to DBGLOB.globcustdb [RedmineID: #215883]  
 
 Note: In case if coinmarketcap does not have the rate of the currency, the web will call this SP to get the latest rate in table ExchangeDailyOanda to call API keep running. 
 

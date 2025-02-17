@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 (
 	@Code VARCHAR(12)
@@ -33,7 +33,7 @@ AS
 /*
 	Created: Henry
 	Task : Insert the rate daily
-	DB: DBCUST.CustDB
+	DB: DBGLOB-GlobCustDB
 	Revisions:
 		- 20110215@Henry: add to insert currency UUS to exchangedaily
 		- 20110322@Henry: add one more base currency: CNY
@@ -49,7 +49,8 @@ AS
 		- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 		- 20240828@Lewis: Support new currency BTS - [RedmineID: #209780]
 		- 20241001@Eddie: Update exchange code of HKK and remove this hard code after done [RedmineID: #211537]
-		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
+		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]  
+		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 		
 	Parameter's Explaination:
 	/*
@@ -133,6 +134,7 @@ BEGIN
 					, MXN
 					, NGN
 					, BRL
+					, RepUpdateTime
 				)
 				VALUES (
 					@ExchangeId
@@ -161,6 +163,7 @@ BEGIN
 					, @MXN * @MultipliedBy
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
+					, dbo.f_GetDateTime2()
 				)
 			END
 			ELSE
@@ -189,6 +192,7 @@ BEGIN
 					, MXN = @MXN * @MultipliedBy
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
+					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
 				  AND ExchangeDate = @date
 				  AND Code = @Code
@@ -240,6 +244,7 @@ BEGIN
 			, MXN
 			, NGN
 			, BRL
+			, RepUpdateTime
 		)
 		VALUES (
 			20
@@ -268,6 +273,7 @@ BEGIN
 			, 2e-101
 			, 2e-101
 			, 2e-101
+			, dbo.f_GetDateTime2()
 		)
 	END
 
@@ -305,6 +311,7 @@ BEGIN
 			, MXN
 			, NGN
 			, BRL
+			, RepUpdateTime
 		)
 		VALUES (
 			218
@@ -333,6 +340,7 @@ BEGIN
 			, 2e-101
 			, 2e-101
 			, 2e-101
+			, dbo.f_GetDateTime2()
 		)
 	END
 
@@ -377,6 +385,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, RepUpdateTime
 			)
 			VALUES (
 				@ExchangeId
@@ -405,6 +414,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, dbo.f_GetDateTime2()
 			)
 		END
 		ELSE
@@ -433,6 +443,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'YNG'
@@ -488,6 +499,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, RepUpdateTime
 			)
 			VALUES (
 				@ExchangeId
@@ -516,6 +528,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, dbo.f_GetDateTime2()
 			)
 		END
 		ELSE
@@ -544,6 +557,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'SBC'
@@ -599,6 +613,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, RepUpdateTime
 			)
 			VALUES (
 				@ExchangeId
@@ -627,6 +642,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, dbo.f_GetDateTime2()
 			)
 		END
 		ELSE
@@ -655,6 +671,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
 			  AND Code = 'DIA'
