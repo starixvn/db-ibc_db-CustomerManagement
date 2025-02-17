@@ -1,4 +1,4 @@
-/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto] 
 	@Code VARCHAR(12)
 	, @MYR FLOAT
@@ -31,7 +31,7 @@ AS
 /*
 Created: Evan
 Task : Insert the rate daily
-DB: DBGLOB-GlobCustDB
+DB: DBCUST.CustDB
 Original: Acc_ExchangeDailyIns
 Revisions:
 	- 20220908@Evan: Support crypto  [Redmine: #177481]  
@@ -39,7 +39,6 @@ Revisions:
 	- 20240112@Evan: Add 2 more base currencies TRY & NPR - [RedmineID: #197693]
 	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 	- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
-	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
 
 */
 BEGIN

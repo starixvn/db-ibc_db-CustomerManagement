@@ -43,7 +43,7 @@ AS
 		- 20221109@Eddie: Change datatype of @MultipliedBy to Decimal  [RedmineID: #180318]
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
-		- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
+		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 
 	Param's Explanation:
 	• @actualrate: new rate to update
@@ -120,7 +120,7 @@ BEGIN
 		CurrencyType = @CurrencyType,
 		stakerate = @CoinMarketCapID,
 		IsActive = @IsActive,
-		RepUpdateTime = SYSDATETIME()
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE exchangeid=@exchangeid
 
 	Select @LogData = 'Update exchange rate:'

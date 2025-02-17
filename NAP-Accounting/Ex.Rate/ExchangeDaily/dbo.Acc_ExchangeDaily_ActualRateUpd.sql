@@ -13,8 +13,8 @@ Revisions:
 	- 20131108@Elodie: Splitting bodb02 into CustDB (call bettrans by link database)
 	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
 	- 20140625@Jim: fix bug Conversion failed when converting character string to smalldatetime data type. (hot fix #18216)
-	- 20220915@Evan: Support crypto  [Redmine: #177481]  
-	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870] 
+	- 20220915@Evan: Support crypto  [Redmine: #177481]     
+	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 
 */		
 SET NOCOUNT ON
@@ -26,7 +26,7 @@ set @date = CONVERT(VARCHAR(10), CURRENT_TIMESTAMP, 120)
 
 -- update ExchangeDaily actualrate from table exchange for today
 UPDATE e
-SET e.actualrate = ex.actualrate
+SET e.actualrate = ex.actualrate, e.RepUpdateTime = dbo.f_GetDateTime2()
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate = @date
@@ -34,7 +34,7 @@ WHERE ex.CurrencyType <> 1
 
 -- update ExchangeDaily actualrate from table exchange for tomorrow
 UPDATE e
-SET e.actualrate = ex.actualrate
+SET e.actualrate = ex.actualrate, e.RepUpdateTime = dbo.f_GetDateTime2()
 FROM
     ExchangeDailyOanda e WITH (ROWLOCK,UPDLOCK)
     INNER JOIN exchange ex (NOLOCK) ON e.ExchangeId = ex.exchangeid AND e.ExchangeDate =DATEADD(dd,1,@date)

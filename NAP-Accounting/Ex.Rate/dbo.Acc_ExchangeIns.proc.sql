@@ -36,7 +36,7 @@ Revisions:
 	- 20200802@Elodie: Add 2 more columns into Exchange table to identify Currency Status & Site [RedmineID: #136023]
 	- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
 	- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
-	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
+	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 Param's Explanation:
 	• @actualrate: specIFy exchange-rate of the currency
 	• @minbet: specIFy minbet of the currency
@@ -93,13 +93,13 @@ BEGIN
 		END
 	END
 
-	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, CurrencyType, stakerate, IsActive)
-	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, @CurrencyType,@CoinMarketCapID, 1)
+	INSERT INTO exchange(exchangeid, actualrate, creator, currency, minbet, minbetlive, GBPRate, EURORate, US$Rate, Description, MultipliedBy, Code, OfferSite, CurrencyType, stakerate, IsActive, RepUpdateTime)
+	VALUES (@exchangeid, @actualrate, @UserID, @currency, @minbet, @minbetlive, @GBPRate, @EURORate, @US$Rate, @Description, @MultipliedBy, @Code, @OfferSite, @CurrencyType,@CoinMarketCapID, 1, dbo.f_GetDateTime2())
 
 	IF @CurrencyType = 1
 	BEGIN 
-		INSERT INTO ExchangeDaily_Crypto (ExchangeDate,ExchangeId,USDT)
-		SELECT CONVERT(SMALLDATETIME,@Today),@exchangeid,@USDT
+		INSERT INTO ExchangeDaily_Crypto (ExchangeDate,ExchangeId,USDT,RepUpdateTime)
+		SELECT CONVERT(SMALLDATETIME,@Today),@exchangeid,@USDT,dbo.f_GetDateTime2()
 	END
 
 	DECLARE @LogData NVARCHAR(200)

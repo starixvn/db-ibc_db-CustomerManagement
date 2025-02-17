@@ -16,7 +16,7 @@ DB:   DBGLOB-GlobCustDB
 Revisions:     
     - 20221108@Evan: Create new SP [Redmine: #177844]    
     - 20230306@Evan: Fix bug code write log (overflow error) [Redmine: #184723]    
-	- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
+	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 
 Param's Explanation:            
  - @Fie:              
@@ -143,7 +143,7 @@ BEGIN
             BEGIN TRY
                 
                 UPDATE a
-                SET a.USDT = b.USDT_After
+                SET a.USDT = b.USDT_After, a.RepUpdateTime = dbo.f_GetDateTime2()
                 OUTPUT DELETED.ExchangeId, DELETED.USDT, DELETED.ExchangeDate INTO @ExchangeDaily_Crypto
                 FROM ExchangeDaily_Crypto a WITH(ROWLOCK) 
                     INNER JOIN #inputTmp b ON a.ExchangeId = b.ExchangeId
@@ -157,7 +157,7 @@ BEGIN
                         @ErrMsg = ERROR_MESSAGE();
                 --Manually rollback
                 UPDATE a
-                SET a.USDT = b.USDT
+                SET a.USDT = b.USDT, a.RepUpdateTime = dbo.f_GetDateTime2()
                 FROM ExchangeDaily_Crypto a WITH(ROWLOCK) 
                     INNER JOIN @ExchangeDaily_Crypto b ON a.ExchangeId = b.ExchangeId AND a.ExchangeDate = b.ExchangeDate  
                 RETURN;

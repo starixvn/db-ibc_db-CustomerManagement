@@ -17,8 +17,8 @@ AS
 		- 20220401@Evan: In-house Replication (RepUpdateTime) [RedmineID: #170752]
 		- 20220914@Sophia: Update ActualRate of ExchangeDailyOanda [RedmineID: #175253] 
 		- 20221107@Evan: Support Crypto Currency [RedmineID: #177844]
-		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895]
-		- 20250204@Lewis: Move from DBCUST-CustDB to DBGLOB-GlobCustDB  [Redmine: #216870]
+		- 20240729@Lewis: Scale Out DBCust - Remove Linked Server [Redmine : #206895] 
+		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 
 	Param's Explanation:
 		. @Exhange 
@@ -50,7 +50,7 @@ BEGIN
 	BEGIN TRY
 		UPDATE e WITH(ROWLOCK)
 			SET e.actualrate = ex.Actualrate,
-				e.RepUpdateTime = SYSDATETIME()
+				e.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM dbo.Exchange e 
 			INNER JOIN #Exchange ex ON e.ExchangeId = ex.ExchangeId
 		WHERE e.CurrencyType = 0
