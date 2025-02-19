@@ -20,6 +20,7 @@ Revisions:
 	- 20240521@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 	- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	- 20240918@Bobby: SabaWallet - Reward Program [Redmine: #209191]
+	- 20250219@Bobby: Reward Payment - Headline [Redmine: #218091]
 	
 Parameters Explanation:
 	* @DeniedList: output from [Acc_DeniedSiteCurrency_Sel]
@@ -77,6 +78,7 @@ BEGIN
 		, RewardBalance_RM MONEY
 		, RewardCurrency VARCHAR(10)
 		, RewardMaxTransId BIGINT
+		, CollectionAmount MONEY
 	);
 	
 	INSERT INTO #Cust_tmp (CustID,username,isgroupheadline,groupid,Currency,MaxLoss,actualrate)	
@@ -107,7 +109,7 @@ BEGIN
 	SELECT @balanceUpDay = BalanceUpDay, @moveBetDay = MoveBetsDay FROM @tblMoveBetBalanceUp
 
 	INSERT INTO #CustBalance_tmp (CustID, TotalBalance, TotalBalance_RM, YesterdayTotalBalance, YesterdayTotalBalance_RM, PendingTransfer3rd,PendingTransfer3rd_RM
-		,RewardPending, RewardPending_RM, RewardBalance, RewardBalance_RM, RewardCurrency, RewardMaxTransId
+		,RewardPending, RewardPending_RM, RewardBalance, RewardBalance_RM, RewardCurrency, RewardMaxTransId, CollectionAmount
 	)	
 	EXEC dbo.Acc_CustomerSelBalanceInfo @CustIdList =@CustIDList, @MoveBetDay = @moveBetDay, @BalanceUpDay = @balanceUpDay
 	
@@ -118,6 +120,7 @@ BEGIN
 			ISNULL(cb.RewardBalance,0) AS RewardBalance,
 			ISNULL(cb.RewardCurrency,'') AS RewardCurrency,
 			ISNULL(cb.RewardMaxTransId,0) AS RewardMaxTransId,
+			cb.CollectionAmount	AS CollectionAmount
 			-----------------
 			ISNULL(cb.YesterdayTotalBalance,0) + ISNULL(cb.RewardBalance,0) AS Total_YesterdayBalance_Reward
 	FROM #Cust_tmp c
