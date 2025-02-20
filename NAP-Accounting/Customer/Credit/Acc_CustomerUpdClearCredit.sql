@@ -30,6 +30,7 @@ AS
 		- 20181102@Johnson: Apply service broker for logging [Redmine: #103547]
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241204@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -72,21 +73,27 @@ BEGIN
 	if @roleid = 4
 	BEGIN
 		Select @custLine =' all lines of super '
-		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
+		Update custinfo with (ROWLOCK, UPDLOCK) 
+		set credit = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
 		where srecommend = @custid AND Credit != 0  
 	END
 	else if @roleid = 3
 	BEGIN
 		Select @custLine =' all lines of master '
-		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
+		Update custinfo with (ROWLOCK, UPDLOCK) 
+		set credit = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
 		where mrecommend = @custid AND Credit != 0 
 	END
 	else if @roleid = 2
 	BEGIN
 		Select @custLine =' all lines of agent '
-		Update custinfo with (ROWLOCK, UPDLOCK) set credit = 0 
+		Update custinfo with (ROWLOCK, UPDLOCK) 
+		set credit = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
 		where recommend = @custid AND Credit != 0 
 	END
@@ -97,7 +104,8 @@ BEGIN
 		SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 			
 		Update custinfo with (ROWLOCK, UPDLOCK) 
-		set credit = case when @TotalAmt >= 0 then 0 else abs(@TotalAmt) end
+		set credit = case when @TotalAmt >= 0 then 0 else abs(@TotalAmt) end,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		output deleted.custid, deleted.Credit into @tmpCust(custid, Credit)
 		where custid = @custid AND Credit != 0 
 	END

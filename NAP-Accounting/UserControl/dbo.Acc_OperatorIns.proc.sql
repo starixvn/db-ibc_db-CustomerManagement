@@ -46,7 +46,7 @@ Revisions:
 	- 20221013@Eden: Remove unused columns from Custinfo table [RedmineID: #179014]
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
 	- 20240704@Louisa: Scaleout DBCUST [Redmine:#199915]
-
+	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: super create master successfully.
@@ -74,14 +74,14 @@ SELECT @pwdexpiry = dateadd(dd, 30, getdate());
 BEGIN TRANSACTION;
 	SET IDENTITY_INSERT Customer ON
 
-	INSERT  INTO customer (custid, username, firstname, lastname, phone, mobilephone, fax, email, address, city, state, country, postal, userpwd, roleid, pwdexpiry, Creatdate, creator)
-	VALUES               (@custid, @username, @firstname, @lastname, @phone, @mobilephone, @fax, @email, @address, @city, @state, @country, @postal, @userpwd, @roleid, @pwdexpiry, getdate(), @creator);
+	INSERT  INTO customer (custid, username, firstname, lastname, phone, mobilephone, fax, email, address, city, state, country, postal, userpwd, roleid, pwdexpiry, Creatdate, creator, RepUpdateTime)
+	VALUES               (@custid, @username, @firstname, @lastname, @phone, @mobilephone, @fax, @email, @address, @city, @state, @country, @postal, @userpwd, @roleid, @pwdexpiry, getdate(), @creator, dbo.f_GetDateTime2());
 	
 	SET IDENTITY_INSERT Customer OFF
 	--SELECT @CustID = @@Identity;
 
-	INSERT  INTO [dbo].[custinfo] (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [closed], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled])
-	VALUES                       (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+	INSERT  INTO [dbo].[custinfo] (username, [custid], [currency], [roleid], [mrecommend], [recommend], [dangercust], [autosuspend], [reject], [credit], [closed], [MatchLimit], [VirtualMultiplier], [DisableOutright], [danger], [danger2], [danger3], [Enabled],RepUpdateTime)
+	VALUES                       (@username, @custid, NULL, @roleid, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, dbo.f_GetDateTime2());
 	IF @@ERROR <> 0
 		BEGIN
 			ROLLBACK;

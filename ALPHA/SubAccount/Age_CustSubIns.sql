@@ -42,7 +42,7 @@ Revisions:
 	- 20200602@Johnson: set max sub-acc = 30 for IBCIndo site [redmine:#135198]
 	- 20221122@Johnson: move sp Age_MsgCustReadStatus_Ins to web [RedmineID: #180730]
 	- 20240704@Helen: Revise code for scaleout dbcust - [Redmine:#206823]
-
+	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: Login successfully.
@@ -162,7 +162,9 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
 	DELETE FROM custsub WITH(ROWLOCK)
-			WHERE subaccid = @subaccid
+	OUTPUT DELETED.subaccid, dbo.f_GetDateTime2()
+	INTO custsub_Del_Inhouse(subaccid,RepUpdateTime)
+	WHERE subaccid = @subaccid
 	
 	SELECT @ErrMsg = CASE @Language 
 						WHEN 'E' THEN 'Create sub-account failed. Please try again.'

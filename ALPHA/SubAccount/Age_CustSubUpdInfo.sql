@@ -28,6 +28,7 @@ Revisions:
 	- 20110606@Amy: Write log Old values
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
 	- 20180404@Razor: Security in Jan 2018 - Issue #5:Customer's ID & Username disclosure [RedmineID: #91896]
+	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -85,7 +86,8 @@ BEGIN
 	Update custsub with (rowlock, updlock)
 	set firstname = @firstname,
 		lastname = @lastname,
-		closed = @closed
+		closed = @closed,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	where subaccid = @subaccid and custid = @custid
 
 	Declare @LogSPData varchar(max)
@@ -166,8 +168,4 @@ END
 
 
 GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [wsv_alp]
-GO
-GRANT  EXECUTE  ON [dbo].[Age_CustSubUpdInfo]  TO [wsv_alpv]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustSubUpdInfo] TO [vnteam]
+

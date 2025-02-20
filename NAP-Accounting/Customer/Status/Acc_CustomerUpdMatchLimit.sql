@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdMatchLimit]
 	@custid int,
 	@matchlimit smallmoney,
@@ -23,6 +23,7 @@ AS
 		- 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241217@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -54,17 +55,23 @@ BEGIN
 
 	if @roleid = 4
 	BEGIN
-		update custinfo with (ROWLOCK, UPDLOCK) set matchlimit = @matchlimit
+		update custinfo with (ROWLOCK, UPDLOCK) 
+		set matchlimit = @matchlimit,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		where srecommend = @custid
 	END
 	else if @roleid = 3
 	BEGIN
-		update custinfo with (ROWLOCK, UPDLOCK) set matchlimit = @matchlimit
+		update custinfo with (ROWLOCK, UPDLOCK) 
+		set matchlimit = @matchlimit,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		where mrecommend = @custid
 	END
 	else if @roleid = 2
 	BEGIN
-		update custinfo with (ROWLOCK, UPDLOCK) set matchlimit = @matchlimit
+		update custinfo with (ROWLOCK, UPDLOCK) 
+		set matchlimit = @matchlimit,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		where recommend = @custid
 	END
 

@@ -22,7 +22,7 @@ AS
 	   - 20130307@Lukas: change linked-server alias & add more write log section
 	   - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 	   - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-	   
+	   - 20241122@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		• @ErrCode:
 			= 0: Transaction recorded successfully.
@@ -65,7 +65,8 @@ BEGIN
 		IF @OldLimitPerIP <> @LimitPerIP
 		BEGIN
 			Update CustSuper WITH(ROWLOCK,UPDLOCK) 
-			Set LimitPerIP = @LimitPerIP
+			Set LimitPerIP = @LimitPerIP,	
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE 
 				custid = @custid
 
@@ -79,7 +80,9 @@ BEGIN
 		IF (@LimitPerIP > 0 OR (@LimitPerIP = 0 AND @RemoveDownlines = 1) )  
 		BEGIN
 		
-			Update CustMaster WITH(ROWLOCK,UPDLOCK) SET LimitPerIP = @LimitPerIP
+			Update CustMaster WITH(ROWLOCK,UPDLOCK) 
+			SET LimitPerIP = @LimitPerIP,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT mrecommend FROM custinfo WITH (nolock)  
@@ -94,7 +97,9 @@ BEGIN
 				RETURN
 			END
 
-			Update CustAgent WITH(ROWLOCK,UPDLOCK) SET LimitPerIP = @LimitPerIP
+			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
+			SET LimitPerIP = @LimitPerIP,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT recommend FROM custinfo WITH (nolock)  
@@ -126,7 +131,8 @@ BEGIN
 		IF @OldLimitPerIP <> @LimitPerIP AND isnull(@UplineLimitPerIP,0) = 0
 		BEGIN
 			Update CustMaster WITH(ROWLOCK,UPDLOCK) 
-			Set LimitPerIP = @LimitPerIP
+			Set LimitPerIP = @LimitPerIP,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			IF (@@error <> 0)
 			BEGIN
@@ -137,7 +143,9 @@ BEGIN
 		
 		IF ((@LimitPerIP > 0 OR (@LimitPerIP = 0 AND @RemoveDownlines = 1)) AND isnull(@UplineLimitPerIP,0) = 0  )
 		BEGIN
-			Update CustAgent WITH(ROWLOCK,UPDLOCK) SET LimitPerIP = @LimitPerIP
+			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
+			SET LimitPerIP = @LimitPerIP,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT recommend FROM custinfo WITH (nolock)  
@@ -170,7 +178,8 @@ BEGIN
 		IF @OldLimitPerIP <> @LimitPerIP AND isnull(@UplineLimitPerIP,0) = 0
 		BEGIN
 			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
-			Set LimitPerIP = @LimitPerIP
+			Set LimitPerIP = @LimitPerIP,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			IF (@@error <> 0)
 			BEGIN

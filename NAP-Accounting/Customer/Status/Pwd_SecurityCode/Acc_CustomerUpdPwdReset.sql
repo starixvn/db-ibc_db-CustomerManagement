@@ -34,6 +34,7 @@ AS
 		- 20190611@Johnson: force change pwd for customer [Redmine:#114566]	
 		- 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -76,7 +77,9 @@ BEGIN
 	WHERE	custid = @CustID 
 	 
 	UPDATE customer  with (ROWLOCK, UPDLOCK)
-	SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 
+	SET userpwd=@UserPwd, 
+		pwdexpiry=@PwdExpiry,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	where custid=@CustID	
 	BEGIN TRY 			
 			IF(@RoleID >4)
@@ -84,7 +87,9 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		UPDATE customer  with (ROWLOCK, UPDLOCK)
-		SET userpwd=@OldUserPwd, pwdexpiry = @OldPwdExpiry
+		SET userpwd=@OldUserPwd, 
+			pwdexpiry = @OldPwdExpiry,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		where custid=@CustID
  		select @ErrMsg = 'Update password does not successfully.'
  		RETURN

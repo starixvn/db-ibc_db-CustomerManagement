@@ -23,6 +23,7 @@ AS
 						   Write more log on DBTXN server in case of DBLOG server failure
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 
@@ -44,8 +45,13 @@ BEGIN
 						'</Acc_OperatorDel>'	
 
 	DELETE Customer WITH (ROWLOCK)
+	OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+	INTO Customer_Del_Inhouse(custid,RepUpdateTime)
 	WHERE  CustID = @CustID;
+	
 	DELETE CustInfo WITH (ROWLOCK)
+	OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+	INTO Custinfo_Del_Inhouse(custid,RepUpdateTime)
 	WHERE  CustID = @CustID;
 	/**** Write to log table ***/
 	SET @End = GETDATE();

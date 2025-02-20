@@ -16,6 +16,7 @@ Original:
 Revisions:
     - 20200417@Eden: Alpha - Removing force change password [Redmine:#132012]
 	- 20200424@Eden: HotFix - Sub acc click skip then kicked out [#133141]					   
+	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 • @ErrCode:
     = 0: Transaction recorded successfully.
     > 0: Specific Error.
@@ -66,7 +67,8 @@ BEGIN
 		END
 	
 		UPDATE  customer WITH (ROWLOCK, UPDLOCK)
-		SET     pwdexpiry = @PwdExpiry
+		SET     pwdexpiry = @PwdExpiry,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE   custid = @CustID
 	END
 

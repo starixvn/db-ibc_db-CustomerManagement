@@ -22,7 +22,7 @@ Revisions:
    - 20130310@Lukas: change linked-server alias & add more log section
    - 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
    - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-   
+   - 20241125@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -65,7 +65,8 @@ BEGIN
 		IF @OldSelectedBetting <> @SelectedBetting
 		BEGIN
 			Update CustSuper WITH(ROWLOCK,UPDLOCK) 
-			Set SelectedBetting = @SelectedBetting
+			Set SelectedBetting = @SelectedBetting,
+				RepUpdateTime=dbo.f_GetDateTime2()
 			WHERE 
 				custid = @custid
 				
@@ -80,7 +81,9 @@ BEGIN
 
 		IF (@SelectedBetting = 1 OR (@SelectedBetting = 0 AND @RemoveDownlines = 1)) 
 		BEGIN
-			Update CustMaster WITH(ROWLOCK,UPDLOCK) SET SelectedBetting = @SelectedBetting
+			Update CustMaster WITH(ROWLOCK,UPDLOCK) 
+			SET SelectedBetting = @SelectedBetting,
+				RepUpdateTime=dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT mrecommend FROM custinfo WITH (nolock)  
@@ -95,7 +98,9 @@ BEGIN
 				RETURN
 			END
 
-			Update CustAgent WITH(ROWLOCK,UPDLOCK) SET SelectedBetting = @SelectedBetting
+			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
+			SET SelectedBetting = @SelectedBetting,
+				RepUpdateTime=dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT recommend FROM custinfo WITH (nolock)  
@@ -125,7 +130,8 @@ BEGIN
 		IF @OldSelectedBetting <> @SelectedBetting and isnull(@UplineSelectedBetting,0) = 0
 		BEGIN
 			Update CustMaster WITH(ROWLOCK,UPDLOCK) 
-			Set SelectedBetting = @SelectedBetting
+			Set SelectedBetting = @SelectedBetting,
+				RepUpdateTime=dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			IF (@@error <> 0)
 			BEGIN
@@ -136,7 +142,9 @@ BEGIN
 		
 		IF ((@SelectedBetting = 1 OR (@SelectedBetting = 0 AND @RemoveDownlines = 1)) and isnull(@UplineSelectedBetting,0) = 0  )
 		BEGIN
-			Update CustAgent WITH(ROWLOCK,UPDLOCK) SET SelectedBetting = @SelectedBetting
+			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
+			SET SelectedBetting = @SelectedBetting,
+				RepUpdateTime=dbo.f_GetDateTime2()
 			WHERE 
 			custid IN (
 						SELECT  recommend FROM custinfo WITH (nolock)  
@@ -169,7 +177,8 @@ BEGIN
 		IF @OldSelectedBetting <> @SelectedBetting and isnull(@UplineSelectedBetting,0) = 0
 		BEGIN
 			Update CustAgent WITH(ROWLOCK,UPDLOCK) 
-			Set SelectedBetting = @SelectedBetting
+			Set SelectedBetting = @SelectedBetting,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			IF (@@error <> 0)
 			BEGIN

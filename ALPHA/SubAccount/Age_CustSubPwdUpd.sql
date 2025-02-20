@@ -25,6 +25,7 @@ Revisions:
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
 	- 20190611@Johnson: force change pwd if upline reset pwd [redmine: #114566]
 	- 20200421@Eden: Alpha - Removing force change password [Redmine:#132012]
+	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -80,7 +81,8 @@ BEGIN
 	WHERE	subaccid = @subaccid and custid = @custid
 
 	Update	custsub with (rowlock, updlock)
-	set		userpwd = @UserPwd
+	set		userpwd = @UserPwd,
+			RepUpdateTime = dbo.f_GetDateTime2()
 	where	subaccid = @subaccid and custid = @custid
 
 	UPDATE CustLoginInfoSub WITH (UPDLOCK,ROWLOCK)

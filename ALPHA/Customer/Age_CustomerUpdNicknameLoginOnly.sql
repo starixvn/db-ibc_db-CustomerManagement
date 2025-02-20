@@ -18,6 +18,7 @@ Revisions:
     - 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language
     - 20130311@Dan: Write more log on DBTXN server in case of DBLOG server failure
     - 20141117@Johnson: write log IP
+	- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @custid: custid that need to be update.   
 
@@ -36,11 +37,20 @@ SET @ErrCode = 0
 SET @ErrMsg = ''
 
 IF @RoleID = 2
-UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) SET NicknameLoginOnly = @NicknameLoginOnly  WHERE custid = @custid    
+	UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) 
+	SET NicknameLoginOnly = @NicknameLoginOnly ,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE custid = @custid    
 ELSE IF @RoleID = 3  
-UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) SET NicknameLoginOnly = @NicknameLoginOnly  WHERE custid = @custid  
+	UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) 
+	SET NicknameLoginOnly = @NicknameLoginOnly,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE custid = @custid  
 ELSE IF @RoleID = 4  
-UPDATE CustSuper WITH (ROWLOCK, UPDLOCK) SET NicknameLoginOnly = @NicknameLoginOnly  WHERE custid = @custid  
+	UPDATE CustSuper WITH (ROWLOCK, UPDLOCK) 
+	SET NicknameLoginOnly = @NicknameLoginOnly,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE custid = @custid  
 
 
 

@@ -1,12 +1,4 @@
-﻿USE [CustDB]
-GO
-/****** Object:  StoredProcedure [dbo].[Age_CustomerUpdUserInfo]    Script Date: 06/11/2015 12:53:25 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdUserInfo    Script Date: 6/3/2014 3:25:38 AM ******/
-/****** Object:  Stored Procedure dbo.Age_CustomerUpdUserInfo    Script Date: 6/3/2014 11:33:37 AM ******/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_CustomerUpdUserInfo]  
     @custid         int , --customer to be updated  
     @firstname      nvarchar(50),
@@ -30,24 +22,24 @@ DB: DBCUST/CUSTDB
 Original:  
   
 Revisions:  
-    - 20090318@Hanh: add Korean language  
- - 20090729@Phuc: Write log subaccname instead of subaccid.  
- - 20090818@Phuc: check page access and check upline closed first(call Age_CustSubCheckPageAccess)  
- - 20090917@Phuc: write log into DBLOG.  
- - 20091008@Kiwi: Remove WriteLog_UserLog  
- - 20091125@Terry: Check disable casino  
- - 20100108@Lewin: Change SP format  
- - 20100917@Kiwi: Correct "convert wrong datatype when writing log"  
- - 20101021@Henry: Record execution time  
- - 20110606@Amy: Write log old values  
- - 20110907@Sophia: Change Linked Server from DB052 to DB053   
- - 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language  
- - 20130311@Dan: Change linked server DB053 to DBAGE; Write more log on DBTXN server in case of DBLOG server failure  
- - 20140520@Logan:   1.Update remark for SAg, MAg, Ag and member.  
-                     2.Code aligning  
- - 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
- - 20160614@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]
-                      
+	- 20090318@Hanh: add Korean language  
+	- 20090729@Phuc: Write log subaccname instead of subaccid.  
+	- 20090818@Phuc: check page access and check upline closed first(call Age_CustSubCheckPageAccess)  
+	- 20090917@Phuc: write log into DBLOG.  
+	- 20091008@Kiwi: Remove WriteLog_UserLog  
+	- 20091125@Terry: Check disable casino  
+	- 20100108@Lewin: Change SP format  
+	- 20100917@Kiwi: Correct "convert wrong datatype when writing log"  
+	- 20101021@Henry: Record execution time  
+	- 20110606@Amy: Write log old values  
+	- 20110907@Sophia: Change Linked Server from DB052 to DB053   
+	- 20121128@Elodie: Get an error message from f_Get_MsgNameByMsgID function by language  
+	- 20130311@Dan: Change linked server DB053 to DBAGE; Write more log on DBTXN server in case of DBLOG server failure  
+	- 20140520@Logan:   1.Update remark for SAg, MAg, Ag and member.  
+					 2.Code aligning  
+	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
+	- 20160614@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]
+	- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:  
 • @custid: custid that need to be viewed.     
 */  
@@ -143,34 +135,39 @@ BEGIN
 		   phone = @phone,
 		   mobilephone = @mobilephone,
 		   email = @email,
-		   fax = @fax
+		   fax = @fax,
+		   RepUpdateTime = dbo.f_GetDateTime2()
 	 WHERE custid = @custid
 	 
 	if @roleid = 1
 	begin
 		update customer with(rowlock, updlock)
-		   set remark = case when @remark is null then remark else SUBSTRING(@remark, 1, 50) end
+		   set 	remark = case when @remark is null then remark else SUBSTRING(@remark, 1, 50) end,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		 where custid = @custid
 	end
 
 	if @roleid = 2
 	begin
 		update CustAgent with(rowlock, updlock)
-		   set creationRemark = case when @remark is null then creationRemark else @remark end
+		   set  creationRemark = case when @remark is null then creationRemark else @remark end,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		 where custid = @custid
 	end
 
 	if @roleid = 3
 	begin
 		update CustMaster with(rowlock, updlock)
-		   set creationRemark = case when @remark is null then creationRemark else @remark end
+		   set  creationRemark = case when @remark is null then creationRemark else @remark end,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		 where custid = @custid
 	end
 
 	if @roleid = 4
 	begin
 		update CustSuper with(rowlock, updlock)
-		   set creationRemark = case when @remark is null then creationRemark else @remark end
+		   set  creationRemark = case when @remark is null then creationRemark else @remark end,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		 where custid = @custid
 	end
 
@@ -275,8 +272,3 @@ BEGIN
 	END CATCH
 END
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [wsv_alp] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdUserInfo] TO [wsv_xnap] AS [dbo]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Age_CustomerUpdUserInfo] TO [vnteam] AS [dbo]

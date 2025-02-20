@@ -27,6 +27,7 @@ Revisions:
 	- 20111228@Sophia: Change the type of @Old_UpdPageAccess up to 50 character
 	- 20120315@Lukas: Change the way update pages access, replace all pages access by new ones
 	- 20130218@Dan: Write more log on DBTXN server in case of DBLOG server failure
+	- 20241213@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 • @ErrCode:
     = 0: Transaction recorded successfully.
@@ -86,7 +87,8 @@ IF @Old_UpdPageAccess = @UpdPageAccess RETURN
 --	and custid = @custid
 
 UPDATE custsub WITH(ROWLOCK,UPDLOCK)
-SET PageAccess = @UpdPageAccess
+SET PageAccess = @UpdPageAccess,
+	RepUpdateTime = dbo.f_GetDateTime2()
 WHERE custid = @custid AND subaccid = @subaccid
 
 Declare @LogSPData varchar(5000)

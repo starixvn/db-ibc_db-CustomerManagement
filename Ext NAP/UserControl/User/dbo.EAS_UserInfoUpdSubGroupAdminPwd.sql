@@ -15,7 +15,7 @@ AS
 		Revisions:
 			- 20201112@Johnson: initial sp [redmine:#145199]	
 			- 20240812@Tacy: Remove check permission on function [redmineID: #208402]
-
+			- 20241210@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		Parameter's Explanation:
 	*/
 BEGIN
@@ -66,7 +66,9 @@ BEGIN
 	SELECT @pwdexpiry = DATEADD(dd, 30, GETDATE())
 
 	UPDATE customer  with (ROWLOCK, UPDLOCK)
-	SET userpwd=@UserPwd, pwdexpiry=@PwdExpiry 
+	SET userpwd=@UserPwd, 
+		pwdexpiry=@PwdExpiry,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid=@CustID
 		
 	DECLARE @LogData NVARCHAR(MAX)

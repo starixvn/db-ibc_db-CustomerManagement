@@ -46,6 +46,7 @@ AS
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
+		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 SET NOCOUNT ON
@@ -360,13 +361,15 @@ SET NOCOUNT ON
 	END
 
 	UPDATE	dbo.custInfo WITH (ROWLOCK, UPDLOCK) 
-	SET		credit = @NewCredit
+	SET		credit = @NewCredit,
+			RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE	custid = @custid
 
 	IF ISNULL(@MaxCredit, 0) <> ISNULL(@OldMaxCredit, 0)
 	BEGIN
 		UPDATE	dbo.CustAgent WITH (ROWLOCK, UPDLOCK)
-		SET		MaxCredit = ISNULL(@MaxCredit, MaxCredit)
+		SET		MaxCredit = ISNULL(@MaxCredit, MaxCredit),
+				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE	custid = @custid AND @roleid = 2
 	END
 

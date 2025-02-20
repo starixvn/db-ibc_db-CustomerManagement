@@ -22,6 +22,7 @@ DB: DBCUST/CustDB
 Revisions:  
 	- 20180731@Razor: Splitting Super Profile [#86934]
 	- 20181018@Razor: Write log to DBCust when write log has exception [redmine:#103415]
+	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -62,6 +63,7 @@ BEGIN
 			,[fax] = @fax
 			,[email] = @email
 			,[remark] = @remark
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid = @CustId
 	END TRY
 

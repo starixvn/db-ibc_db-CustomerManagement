@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangerCustList]
 	@CustList			VARCHAR(MAX) = '',	
 	@DangerType			TINYINT,
@@ -19,6 +19,7 @@ Revisions:
 	- 20171124@Winnie: Update Danger, Danger2, Danger3 fields , and write log content [RedmineID:#86627]
 	- 20181130@Winnie: Stop updating dangerous level of SMA when evidence is updated on FPS [RedmineID:#105604]
 	- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+	- 20241217@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 	@CustList: List usernames of members will be updated,
 	@DangerType:  type of danger,
@@ -110,7 +111,8 @@ BEGIN
 	BEGIN 
 		
 		UPDATE c
-			SET danger = @DangerLevel	
+			SET danger = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM custinfo c WITH(UPDLOCK,ROWLOCK) 
 			INNER JOIN @tmpCust t ON c.custid=t.CustID			
 		WHERE t.RoleID=1
@@ -121,7 +123,8 @@ BEGIN
 	BEGIN 
 
 		UPDATE c
-			SET danger2 = @DangerLevel	
+			SET danger2 = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM custinfo c WITH(UPDLOCK,ROWLOCK) 
 			INNER JOIN @tmpCust t ON c.custid=t.CustID			
 		WHERE t.RoleID=1
@@ -132,7 +135,8 @@ BEGIN
 	BEGIN 
 		
 		UPDATE c
-			SET danger3 = @DangerLevel	
+			SET danger3 = @DangerLevel,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM custinfo c WITH(UPDLOCK,ROWLOCK) 
 			INNER JOIN @tmpCust t ON c.custid=t.CustID			
 		WHERE t.RoleID=1 	

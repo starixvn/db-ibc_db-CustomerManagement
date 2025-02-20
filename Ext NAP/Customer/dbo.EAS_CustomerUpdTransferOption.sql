@@ -19,7 +19,7 @@ Original: [Acc_CustomerUpdTransferOption]
 Revisions:
         - 20150606@Elodie: Separate CustDB to DBCUST server (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB)
         - 20231102@Luke: Alpha - Enhance auto transfer function (phase 2) [Redmine: #195135]
-
+		- 20241125@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 Param's Explanation:
 */
 
@@ -58,15 +58,21 @@ BEGIN
 		RETURN
 	END
     --Update Super himself
-    UPDATE CustSuper WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustSuper WITH (ROWLOCK, UPDLOCK) 	
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid = @custid
         
     --Update Master Level
-    UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) 
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid IN (SELECT custid FROM custinfo (NOLOCK) WHERE srecommend = @custid AND roleid = 3)
 
     --Update Agent Level
-    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) 
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid IN (SELECT custid FROM custinfo (NOLOCK) WHERE srecommend = @custid AND roleid = 2)
         
     IF @TransferOption_dec <> 0
@@ -95,11 +101,15 @@ BEGIN
 	END
 
     --Update Master himself
-    UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustMaster WITH (ROWLOCK, UPDLOCK) 
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid = @custid
 
     --Update Agent Level
-    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) 
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid IN (SELECT custid FROM custinfo (NOLOCK) WHERE mrecommend = @custid AND roleid = 2)
         
     IF @TransferOption_dec <> 0
@@ -128,7 +138,9 @@ BEGIN
 		RETURN
 	END
 
-    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) SET TransferOption = @TransferOption_dec
+    UPDATE CustAgent WITH (ROWLOCK, UPDLOCK) 
+	SET TransferOption = @TransferOption_dec,
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE custid = @custid
 
     IF @TransferOption_dec <> 0

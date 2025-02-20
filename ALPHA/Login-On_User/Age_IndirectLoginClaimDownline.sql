@@ -46,7 +46,7 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20230214@Helios: Enhance language part [RedmineID: #183700]
-
+		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:		
 	*/
 BEGIN
@@ -362,17 +362,21 @@ BEGIN
 	IF @SubAccID = 0
 	BEGIN
 		UPDATE customer WITH (ROWLOCK, UPDLOCK)  
-		SET logincount = 0, lastlogged = CURRENT_TIMESTAMP 
+		SET logincount = 0, 
+			lastlogged = CURRENT_TIMESTAMP,
+			RepUpdateTime = dbo.f_GetDateTime2()		
 		WHERE custid = @CustID
 	END
 	ELSE 
 	BEGIN 
 		UPDATE custsub WITH(UPDLOCK,ROWLOCK)
-		SET logincount = 0
+		SET logincount = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE subAccID = @SubAccID
 		
 		UPDATE customer WITH (ROWLOCK, UPDLOCK)  
-		SET lastlogged = CURRENT_TIMESTAMP 
+		SET lastlogged = CURRENT_TIMESTAMP,
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid = @CustID
 	END
 	

@@ -1,4 +1,5 @@
-﻿  ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub]
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub]
 	@custid		INT,
 	@subAccID	INT,
 	@CheckedSecurityCode BIT = 1,
@@ -14,7 +15,7 @@
 		DB: DBTXN/bodb02
 		
 		Revisions:
-		
+			- 20250109@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 		Parameter's Explanation:
 			- @CheckedSecurityCode = 1: checked security code success
 								= 0: wrong security code
@@ -76,7 +77,8 @@ SET NOCOUNT ON
 		ELSE
 		BEGIN
 			UPDATE CustSub WITH(UPDLOCK,ROWLOCK)
-			SET closed = 1 
+			SET closed = 1,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE subAccID = @SubAccID AND custid = @custid
 						
 			UPDATE CustLoginInfoSub WITH(UPDLOCK,ROWLOCK)
@@ -124,6 +126,3 @@ SET NOCOUNT ON
 
 
 GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [wsv_alp]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCodeStatus_Sub] TO [wsv_alpv]

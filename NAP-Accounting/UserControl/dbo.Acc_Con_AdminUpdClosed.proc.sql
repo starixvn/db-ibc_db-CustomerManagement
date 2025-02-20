@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_Con_AdminUpdClosed]
 	@CustID INT, 
 	@Closed BIT, 
@@ -25,7 +25,7 @@ Revisions:
 	- 20130118@Elodie: Change link server DB03 to DBPOLICY			  
 					   Write more log on DBTXN server in case of DBLOG server failure	
 	- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]				   				
-	
+	- 20241128@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
 Param's Explanation:
 
 */
@@ -62,14 +62,16 @@ BEGIN
 	IF(@Old_Closed <> @Closed)
 	Begin
 		UPDATE  custinfo WITH (ROWLOCK, UPDLOCK)
-			SET Closed = @Closed
+			SET Closed = @Closed,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE   custid = @CustID;
 
 		IF (@Old_Closed = 1
 			AND @Closed = 0
 			AND @LoginCount > 5)
 			UPDATE  customer WITH (ROWLOCK, UPDLOCK)
-				SET logincount = 0
+				SET logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE   custid = @custid;
 		    
 		/**** Write to log table ***/
@@ -101,7 +103,4 @@ BEGIN
 	End
 END
 GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_Con_AdminUpdClosed] TO [vnteam];
-GO
-GRANT EXECUTE ON [dbo].[Acc_Con_AdminUpdClosed] TO [bodbAdminNet,wsv_nap];
 

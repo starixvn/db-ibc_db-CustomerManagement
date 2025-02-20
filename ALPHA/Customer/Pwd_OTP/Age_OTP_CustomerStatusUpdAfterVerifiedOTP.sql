@@ -19,7 +19,7 @@ AS
 	Revisions:
 	-- 20170619@Winnie: Apply color for closed accounts RedmineID: #74494
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
-
+	- 202412110@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	Param's Explanation:
 		- @CheckedOTP:	= 1: check OTP success
 						= 0: failed OTP code
@@ -83,7 +83,8 @@ BEGIN
 			ELSE 
 			BEGIN
 				UPDATE CustSub WITH(UPDLOCK, ROWLOCK)
-				SET closed = 1 
+				SET closed = 1,
+					RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE SubAccId = @SubAccID AND CustID = @CustID
 			
 				UPDATE CustLoginInfoSub WITH(UPDLOCK, ROWLOCK)
@@ -180,7 +181,8 @@ BEGIN
 			ELSE 
 			BEGIN
 				UPDATE CustProductStatus WITH(UPDLOCK, ROWLOCK)
-				SET Locked = 1 
+				SET Locked = 1,
+					RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE CustID = @CustID
 			
 				UPDATE CustLoginInfo WITH(UPDLOCK, ROWLOCK)
