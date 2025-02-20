@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingUpd] 
 	@xml	XML,
 	@UserID INT         = 0, 
@@ -10,7 +10,7 @@ Created: Franklin
 Date: 2016-06-22
 Task: #57722 - Implement Game Win Limit Control phase2
 
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 
 Revisions:
 	- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
@@ -19,6 +19,7 @@ Revisions:
 	- 20220623@Johnson: enhance flow update [redmine:#168458]
 	- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+	- 20250228@Johnson: move sp to GlobCustDB [redmine: #216870]
 Parameters Explanation:	
    @xml = '<Root>
 				<r Product="1" Group="1" Currency="1" Site="1" Level="1" WinLimit="1000.0" PlaceBet="0" Transfer="0" Suspend="0"/>
@@ -147,14 +148,18 @@ BEGIN
 				  AND s.LevelID = @LevelId
 				  AND s.SiteID = @SiteId;
 
-
-			 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd 
-				 @IsCurrencySetting = 1, 
-				 @ProductID = @ProductId, 
-				 @GroupId = @GroupId, 
-				 @CurrencyId = @CurrencyId, 
-				 @LevelID = @LevelId, 
-				 @SiteId = @SiteId;
+			UPDATE PSD
+				SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+					RepUpdateTime = dbo.f_GetDateTime2()
+			FROM WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK)          
+				INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
+			WHERE PSD.MaxWinLimit_RM IS NOT NULL 
+					AND PSD.ProductID = @ProductId
+					AND PSD.GroupId = @GroupId
+					AND PSD.ExchangeID = @CurrencyId
+					AND PSD.SiteID = @SiteId
+					AND PSD.LevelID = @LevelId
+		
 			 BEGIN -- Write Log
 
 				SELECT 
@@ -223,13 +228,19 @@ BEGIN
 				   @IsBlockedTransfer,
 				   @IsSuspendedAccount
 				  );
-			 EXEC Task_Winlimit_CurrencyMaxWinLimitUpd 
-				 @IsCurrencySetting = 1, 
-				 @ProductID = @ProductId, 
-				 @GroupId = @GroupId, 
-				 @CurrencyId = @CurrencyId, 
-				 @LevelID = @LevelId, 
-				 @SiteId = @SiteId;
+				  
+			UPDATE PSD
+				SET MaxWinLimit = CASE WHEN psd.ExchangeID IN (20, 218) THEN MaxWinLimit_RM ELSE ROUND(MaxWinLimit_RM / e.actualrate,2) END,
+					RepUpdateTime = dbo.f_GetDateTime2()
+			FROM WinLimit_ProductSettingDetail PSD WITH(ROWLOCK, UPDLOCK)          
+				INNER JOIN Exchange e WITH (NOLOCK)  ON e.ExchangeId = psd.ExchangeID
+			WHERE PSD.MaxWinLimit_RM IS NOT NULL 
+					AND PSD.ProductID = @ProductId
+					AND PSD.GroupId = @GroupId
+					AND PSD.ExchangeID = @CurrencyId
+					AND PSD.SiteID = @SiteId
+					AND PSD.LevelID = @LevelId				
+			
 			 BEGIN -- Write log
 
 				SELECT 

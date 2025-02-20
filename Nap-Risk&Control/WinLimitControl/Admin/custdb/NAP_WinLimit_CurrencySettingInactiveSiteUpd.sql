@@ -1,6 +1,4 @@
-
-/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingInactiveSiteUpd] 
 	@ProductId         INT, 
 	@GroupId           INT, 
@@ -16,12 +14,12 @@ Created: Robert
 Date: 2022-06-07
 Task: 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 
 Revisions:
     - 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 	- 20240927@Tacy: New currency BTS [Redmine: 209780]
-
+	- 20250228@Johnson: move sp to GlobCustDB [redmine: #216870]
 Parameters Explanation:	
    @ProductId: Product ID.
    @GroupId: Bettype ID.      
@@ -47,7 +45,8 @@ Parameters Explanation:
 						    WHEN s.ExchangeID IN (20, 218)
 						    THEN @MaxWinLimit
 						    ELSE ROUND(@MaxWinLimit / e.actualrate, 2)
-						END
+						END,
+			RepUpdateTime = dbo.f_GetDateTime2()
 	   FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK, UPDLOCK)
 		   INNER JOIN dbo.Site st WITH(ROWLOCK) ON s.SiteID = st.siteid
 		   INNER JOIN dbo.exchange e WITH(NOLOCK) ON e.ExchangeId = s.ExchangeID

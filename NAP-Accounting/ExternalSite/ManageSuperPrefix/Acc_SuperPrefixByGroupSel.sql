@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE  [dbo].[Acc_SuperPrefixByGroupSel]
 	@GroupName	VARCHAR(50) = NULL,
 	@Prefix		VARCHAR(10)	= NULL,
@@ -8,11 +8,12 @@ AS
 /*
 	Created: 20200511@Johnson	
 	Task: Select the list super/master of Acc_CustGroup
-	DB: DBCUST-CUSTDB
+	DB: DBGLOB-GlobCustDB
 	
 	Revisions:
 		- 20200511@Johnson: initial sp [redmine:#133846]
 		- 20201008@Winfred : New Super - Prefix Warning [Redmine: #142239]
+		- 20250226@Johnson: move sp to GlobCustDB [redmine: #216870]
 */
 BEGIN
 	SET NOCOUNT ON

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Upd]
 	 @UserId		INT = 0
 	,@IP			VARCHAR(15) = ''
@@ -14,11 +14,11 @@ BEGIN
 /*
 	Created: 20201002@Eden
 	Task :  Update UMConfig
-	DB: DBCUST.CustDB
+	DB: DBGLOB/GlobCustDB
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220824@Eddie: Add default for @ShowTime [RedmineID: #174852]
-
+		- 20250226@Johnson: move sp to GlobCustDB [redmine: #216870]
 	Param's Explanation:   
 		
 	Examples : 

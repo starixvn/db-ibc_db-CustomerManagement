@@ -1,6 +1,4 @@
-
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
-
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_WinLimit_GameGroupSettingSel] 
 	@ProductID INT
 AS  
@@ -10,10 +8,11 @@ Created: Robert
 Date: 2022-05-18
 Task: #168458 - CWL - Enhance Currency Win Limit Setting page
 
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 
 Revisions:
-20220518@Robert: Enhance Currency Win Limit Setting page [168458]
+	- 20220518@Robert: Enhance Currency Win Limit Setting page [168458]
+	- 20250227@Johnson: move sp to GlobCustDB [redmine: #216870]
 Parameters Explanation:     
      
 Example:

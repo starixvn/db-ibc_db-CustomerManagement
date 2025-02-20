@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_UMTool_Configuration_Ins]
 	 @UserId		INT = 0
 	,@IP			VARCHAR(15) = ''
@@ -20,7 +20,7 @@ BEGIN
 /*
 	Created: 20201002@Eden
 	Task :  Insert UMConfig
-	DB: DBCUST.CustDB
+	DB: DBGLOB/GlobCustDB
 	Revisions:	
 		- 20201002@Eden: Minimize UM Time - Backend UM tool [Redmine: #142142]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
@@ -28,7 +28,7 @@ BEGIN
 		- 20220727@Eddie: Avoid error 'Invalid Site' with new Dropdownlist "Function Type" [RedmineID: #174852]
 		- 20230116@Eddie: Check "Invalid Site" with all "Function Type" [RedmineID: #182841]
 		- 20240521@Helios: Unify RNG Games - Use ProductSettingProfile Table instead of ProductSettingDetail table [Redmine: #204358]
-
+		- 20250225@Johnson: move sp to GlobCustDB [redmine: #216870]
 	Param's Explanation:   
 		
 	Examples : 
@@ -142,7 +142,7 @@ SET NOCOUNT ON
 				t.S_Currency = c.currency,
 				t.S_SiteID = s.siteid
 		FROM @SuperTbl t
-			INNER JOIN Customer c WITH(NOLOCK) ON t.UserName = c.username AND c.roleid = 4
+			INNER JOIN CustInfoMini c WITH(NOLOCK) ON t.UserName = c.username AND c.roleid = 4
 			INNER JOIN Site s WITH(NOLOCK) ON s.site = c.site 
 
 		DELETE t

@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_ManageCansee_Ins] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)
@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Acc_ManageCansee_Ins]
 AS
 /*
 	Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
-	DB: DBCUST/CustDB
+	DB: DBGLOB-GlobCustDB
 	Original: 
 	Revisions:
 		- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
@@ -18,6 +18,7 @@ AS
 		- 20230113@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230308@Tacy: NAP - Enhance CanSee (not allow: both site=0 and currency=0) [RedmineID: #183826]
 		- 20250108@Virgil: Scale Out DBCUST - Apply In-house replication for profile setting tables [redmine: #214117]
+		- 20250218@Johnson: move sp to GlobCustDB [redmine: #216870]
 */
 BEGIN
 	SET NOCOUNT ON;

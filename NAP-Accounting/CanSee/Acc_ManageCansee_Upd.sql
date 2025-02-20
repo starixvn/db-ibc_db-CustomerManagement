@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Acc_ManageCansee_Upd] 
 	-- Add the parameters for the stored procedure here
 	  @FileSetting	VARCHAR(MAX)
@@ -11,11 +11,12 @@ AS
 BEGIN
 	/*
 		Task : NAP -  Manage ProductLaunchSiteCurrency - CanSee
-		DB: DBCUST/CustDB
+		DB: DBGLOB-GlobCustDB
 		Original: 
 		Revisions:
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
 			- 20250108@Virgil: Scale Out DBCUST - Apply In-house replication for profile setting tables [Redmine: #214117]
+			- 20250218@Johnson: move sp to GlobCustDB [redmine: #216870]
 	*/
 	SET NOCOUNT ON;
 	--SportType,BetType,Currency,SiteID,IsLaunched,IsTest,LaunchedLevel

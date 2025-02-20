@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[NAP_Winlimit_GameGroupSettingIns] 
 	@ProductId  INT, 
 	@GroupId    INT, 
@@ -12,11 +12,12 @@ Created: Robert
 Date: 2022-07-07
 Task: 20220707@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 
 Revisions:
     - 20220707@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+	- 20250227@Johnson: move sp to GlobCustDB [redmine: #216870]
 Parameters Explanation:	    
  
 */

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.NAP_CWL_Update_Settings 
 	@ProductId INT, 
 	@GroupId   INT, 
@@ -14,7 +14,7 @@ AS
 /*	
     Creator	 : 20180531@Robert
 	Task		 : Update CWL Settings [#91762]
-	DB		 : DBCUST.CustDB
+	DB		 : DBGLOB-GlobCustDB
 	
 	Revisions	 : 
 				- 20180531@Robert: Update CWL Settings				
@@ -24,6 +24,7 @@ AS
 				- 20240719@Tacy: Update setting by batch [redmine: #208200]
 				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 				- 20240927@Tacy: New currency BTS [Redmine: 209780]
+				- 20250227@Johnson: move sp to GlobCustDB [redmine: #216870]
      Ex		 :
 
      EXEC NAP_CWL_Update_Settings 
@@ -135,7 +136,8 @@ AS
 				Level2 = @Level2, 
 				level3 = @Level3, 
 				Level101 = @Level101, 
-				Level102 = @Level102
+				Level102 = @Level102,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
 			WHERE 
 				ProductID = @ProductId
@@ -190,7 +192,8 @@ AS
 				Level2 = @Level2, 
 				level3 = @Level3, 
 				Level101 = @Level101, 
-				Level102 = @Level102
+				Level102 = @Level102,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			FROM Winlimit_ProductGlobalSetting g WITH (ROWLOCK, UPDLOCK)
 			WHERE 
 				ProductID = @ProductId

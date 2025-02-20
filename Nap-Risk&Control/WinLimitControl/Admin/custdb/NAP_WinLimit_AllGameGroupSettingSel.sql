@@ -1,8 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
-
-USE [CustDB];
-GO
-
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.NAP_WinLimit_AllGameGroupSettingSel
 AS
 /*
@@ -10,12 +6,12 @@ Created: Franklin
 Date: 2016-06-22
 Task: #57722 - Implement Game Win Limit Control phase2
 
-DB: DBCUST/CustDB
+DB: DBGLOB-GlobCustDB
 
 Revisions:
-		  - 20160923@Jacob: Risk & Control - Phase 3 [#61220].
-		  - 20181120@Robert: CWL - Happy 5 Integration [#103496]
-
+		- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
+		- 20181120@Robert: CWL - Happy 5 Integration [#103496]
+		- 20250227@Johnson: move sp to GlobCustDB [redmine: #216870]
 Parameters Explanation:	
 
 Example: 
@@ -49,9 +45,11 @@ BEGIN
 		 SET
 			g.SportId = sb.SportType
     FROM #GameGroupSetting AS g
-	   INNER JOIN dbtxn.bodb02.dbo.SportBettypeMatrix AS sb ON g.ProductID = sb.ProductId
+	   INNER JOIN SportBettypeSettingMatrix AS sb ON g.ProductID = sb.RealProductId
 												    AND g.BetTypeID = sb.BetType
-    WHERE sb.ProductId = 3
+													AND sb.isLicensee = 0
+													AND sb.isActive=1
+    WHERE sb.RealProductId = 3
 		AND sb.SportType = 164;
 
     SELECT ProductId
@@ -62,10 +60,4 @@ BEGIN
 
     DROP TABLE #GameGroupSetting;
 END;
-GO
-
-GRANT EXECUTE ON dbo.NAP_WinLimit_AllGameGroupSettingSel TO [bodbAdminNet,wsv_nap];
-GO
-
-GRANT VIEW DEFINITION ON dbo.NAP_WinLimit_AllGameGroupSettingSel TO [vnteam];
 GO

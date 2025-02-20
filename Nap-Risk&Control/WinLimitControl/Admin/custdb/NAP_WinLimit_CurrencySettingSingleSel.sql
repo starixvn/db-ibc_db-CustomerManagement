@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingSingleSel] @ProductId  INT,
                                                                @SiteId     INT,
@@ -10,12 +10,12 @@ AS
 	Date: 2016-06-22
 	Task: #57722 - Implement Game Win Limit Control phase2
 
-	DB: DBCUST/CustDB
+	DB: DBGLOB-GlobCustDB
 
 	Revisions:
 		- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
-
+		- 20250228@Johnson: move sp to GlobCustDB [redmine: #216870]
 	Parameters Explanation:
 	   @ProductId: Product ID
 	   @SiteId	: Site or Licensee ID

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROC NAP_CWL_Initialize_Settings
 	@ProductID                              INT
@@ -49,7 +49,7 @@ AS
 
 /*	Creator	 : 20180319@Robert
 	Task		 : Initialize CWL Settings [#91762]
-	DB		 : DBCUST/CustDB
+	DB		 : DBGLOB-GlobCustDB
 	
 	Revisions	 : 
 				- 20180319@Robert: Initialize CWL Settings
@@ -64,6 +64,7 @@ AS
 				- 20240917@Virgil: CWL - Get MaxWinLimit_RM for BTS (same as UUS) [RedmineID: #209780]
 				- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 				- 20240927@Tacy: CWL - Check the existing GroupId / GroupName [RedmineID: #211460]
+				- 20250227@Johnson: move sp to GlobCustDB [redmine: #216870]
      Ex		 :
 
      EXEC NAP_CWL_Initialize_Settings 
@@ -296,10 +297,12 @@ BEGIN
 
 	--Insert Settings
     INSERT INTO Winlimit_Group(GroupID
-					    , GroupName)
+					    , GroupName
+						, RepUpdateTime)
 		 SELECT DISTINCT 
 			   t.GroupID
 			 , t.GroupName
+			 , dbo.f_GetDateTime2()
 		 FROM #Temp AS t
 		 WHERE NOT EXISTS
 		 (
@@ -364,7 +367,8 @@ BEGIN
 								    , Level102
 								    , blockedTransferLvl3
 									, Currency
-									, IsDeposit)
+									, IsDeposit
+									, RepUpdateTime)
 		 SELECT DISTINCT t.ProductID
 			 , t.BetTypeID
 			 , t.GroupID
@@ -377,6 +381,7 @@ BEGIN
 			 , @IsBlockedTransfer_DepositSite_Level3 AS BlockedTransferLv3
 			 , c.Currency
 			 , @IsDeposit
+			 , dbo.f_GetDateTime2()
 		 FROM #Temp AS t
 			CROSS APPLY @tmpCurrency c
 		 WHERE t.BetTypeID =
