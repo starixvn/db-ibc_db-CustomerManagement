@@ -28,6 +28,7 @@ AS
 		- 20240823@Winfred: [NAP CM] CCMgt - Integrate for Sport CC - Saba Sport [RedmineID: #209775] 
 		- 20240827@Winfred: [NAP CM] NAP CM - SP Dot_Member_CustomerClassSettingSel return data although rule is disabled [RedmineID: #209939] 
 		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
+		- 2050224@Winfred: [NAP CM] Risk Setting - Sportsbook CC Management - No Restriction on Other Sports [218259]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSettingSel @Site = '766666', @Currency = 20 , @IsTest=1, @CustomerClass =901, @SportType=1,
@@ -37,7 +38,7 @@ AS
 */ 
 BEGIN
 	SET NOCOUNT ON;
-	DECLARE @ModeTest BIT, @SiteNew nvarchar(50), @n INT = 2000000 ,
+	DECLARE @ModeTest BIT, @SiteNew nvarchar(50), @n INT = 2000000 ,@SportTypeSetting SMALLINT = @SportType,
 		@ReturnedCustomerClass SMALLINT, 
 		@ReturnedSportsCC SMALLINT, 
 		@ReturnedDiffBalanceRatio DECIMAL(9, 2), 
@@ -66,6 +67,16 @@ BEGIN
 
 	 IF @ModeTest = 1 
 	 BEGIN
+		
+		IF EXISTS (SELECT TOP 1 1 FROM CustomerClassPolicyManagement_UAT cc WITH (NOLOCK) WHERE SportType = @SportType)
+		BEGIN
+			SET @SportTypeSetting = @SportType
+		END
+		ELSE IF @SportType <= 99 AND @SportType NOT IN (13, 52, 54, 55, 56)
+		BEGIN
+			SET @SportTypeSetting = 99
+		END
+
 		SELECT TOP 1	@ReturnedCustomerClass           =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @CustomerClass ELSE NULL END                     , 
 						@ReturnedSportsCC                =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @SportsCC ELSE NULL END                          , 
 						@ReturnedDiffBalanceRatio        =ReturnedDiffBalanceRatio					, 
@@ -123,7 +134,7 @@ BEGIN
 								WHERE cm.PolicyID = cpm.PolicyID
 										AND cc.CustomerClass IN ( @CustomerClass, 0)
 										AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
-										AND cc.SportType = @SportType 
+										AND cc.SportType = @SportTypeSetting 
 										AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
 										AND cpm.IsTest = @IsTest 
 										AND cc.IsLive IN (2, @liveindicator)
@@ -137,7 +148,18 @@ BEGIN
 		OPTION(OPTIMIZE FOR (@n =1), FORCE ORDER)
 	 END
 	 ELSE
-	 BEGIN	
+	 BEGIN
+		
+		IF EXISTS (SELECT TOP 1 1 FROM CustomerClassPolicyManagement cc WITH (NOLOCK) WHERE SportType = @SportType)
+		BEGIN
+			SET @SportTypeSetting = @SportType
+		END
+		ELSE IF @SportType <= 99 AND @SportType NOT IN (13, 52, 54, 55, 56)
+		BEGIN
+			SET @SportTypeSetting = 99
+		END
+
+			
 		SELECT TOP 1	@ReturnedCustomerClass           =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @CustomerClass ELSE NULL END                     , 
 						@ReturnedSportsCC                =CASE WHEN ReturnedLeagueGroupID IS NOT NULL THEN @SportsCC ELSE NULL END                          , 
 						@ReturnedDiffBalanceRatio        =ReturnedDiffBalanceRatio					, 
@@ -195,7 +217,7 @@ BEGIN
 								WHERE cm.PolicyID = cpm.PolicyID
 										AND cc.CustomerClass IN ( @CustomerClass, 0)
 										AND ISNULL(cc.CustomerClassDetail,0) IN ( @SportsCC, 0)
-										AND cc.SportType = @SportType 
+										AND cc.SportType = @SportTypeSetting 
 										AND clg.LeagueGroupID IN (@LeagueGroupID, -1)
 										AND cpm.IsTest = @IsTest 
 										AND cc.IsLive IN (2, @liveindicator)
