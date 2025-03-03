@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE NAP_WinLimit_MonitorSel @FromDate			DATETIME,
                                         @ToDate				DATETIME,
                                         @ProductId			INT         = 0,
@@ -25,6 +25,7 @@ AS
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		- 20230829@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 		- 20231101@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
+		- 20250225@Virgil: CWL - Support export data in Win Loss Limit Monitor [Redmine: #217147]
 
 	Parameters Explanation:   
 	   @FromDate: From date  
@@ -67,35 +68,39 @@ BEGIN
 		END
 	END;
     BEGIN -- #WinLimitMonitor  
-        CREATE TABLE #WinLimitMonitor
-        (CustId             INT,
-        UserName           NVARCHAR(50),
-        ProductId          INT,
-        GroupId            INT,
-        ReachedLimitLevel  SMALLINT,
-        TotalWinAmount     MONEY,
-        TotalWinAmountRM   MONEY,
-        ModifiedDate       DATETIME,
-        CurrencyId         INT,
-        SiteId             INT,
-        IsNotified         BIT,
-        IsSuspendedAccount BIT,
-        MaxWinLimitSetting XML
+        CREATE TABLE #WinLimitMonitor (
+			CustId				INT,
+			UserName			NVARCHAR(50),
+			ProductId			INT,
+			GroupId				INT,
+			ReachedLimitLevel	SMALLINT,
+			TotalWinAmount		MONEY,
+			TotalWinAmountRM	MONEY,
+			ModifiedDate		DATETIME,
+			CurrencyId			INT,
+			SiteId				INT,
+			IsNotified			BIT,
+			IsSuspendedAccount	BIT,
+			MaxWinLimitSetting	XML,
+			MaxWinLimit_RM		MONEY,
+			BettypeIDList		VARCHAR(1024)
         );
-        INSERT INTO #WinLimitMonitor
-        (CustId,
-        UserName,
-        ProductId,
-        GroupId,
-        ReachedLimitLevel,
-        TotalWinAmount,
-        TotalWinAmountRM,
-        ModifiedDate,
-        CurrencyId,
-        SiteId,
-        IsNotified,
-		IsSuspendedAccount,
-        MaxWinLimitSetting
+        INSERT INTO #WinLimitMonitor (
+			CustId,
+			UserName,
+			ProductId,
+			GroupId,
+			ReachedLimitLevel,
+			TotalWinAmount,
+			TotalWinAmountRM,
+			ModifiedDate,
+			CurrencyId,
+			SiteId,
+			IsNotified,
+			IsSuspendedAccount,
+			MaxWinLimitSetting,
+			MaxWinLimit_RM,
+			BettypeIDList
         )
             SELECT cm.CustID,
                     ci.username,
@@ -109,7 +114,15 @@ BEGIN
                     s.siteid,
                     cmh_notified.IsNotified,
 					CASE WHEN cmh_suspended.IsSuspended IS NOT NULL THEN 1 ELSE 0 END IsSuspendedAccount,
-                    cm.MaxWinLimitSetting
+                    cm.MaxWinLimitSetting,
+					CASE
+						WHEN cm.Levelid = 1 THEN cm.MaxWinLimitSetting.value ('(/MaxWinLimitSetting/@Level1)[1]', 'MONEY')
+						WHEN cm.LevelID = 2 THEN cm.MaxWinLimitSetting.value ('(/MaxWinLimitSetting/@Level2)[1]', 'MONEY')
+						WHEN cm.LevelID = 3 THEN cm.MaxWinLimitSetting.value ('(/MaxWinLimitSetting/@Level3)[1]', 'MONEY')
+						WHEN cm.LevelID = 101 THEN cm.MaxWinLimitSetting.value ('(/MaxWinLimitSetting/@Level101)[1]', 'MONEY')
+						WHEN cm.LevelID = 102 THEN cm.MaxWinLimitSetting.value ('(/MaxWinLimitSetting/@Level102)[1]', 'MONEY')
+					END AS MaxWinLimit_RM,
+					cm.BettypeIDList
             FROM WinLimit_CustGameMonitoring cm WITH (NOLOCK)
                     CROSS APPLY
             (
@@ -149,8 +162,8 @@ BEGIN
                     AND (LEN(@UserName) = 0
                         OR ci.username = @UserName);
     END;
-    BEGIN -- Query data  
 
+    BEGIN -- Query data  
         SELECT m.CustId,
             m.UserName,
             m.SiteId,
@@ -181,7 +194,9 @@ BEGIN
                 WHEN cm.ModifiedDate IS NOT NULL
                 THEN 1
                 ELSE 0
-            END AS IsEnableUnBlock
+            END AS IsEnableUnBlock,
+			MaxWinLimit_RM,
+			BettypeIDList
         FROM #WinLimitMonitor m
             CROSS APPLY
         (
@@ -208,6 +223,7 @@ BEGIN
                 AND cm.GroupID = m.GroupId
         ORDER BY ReachedLimitTime DESC;
     END;
+
     DROP TABLE #WinLimitMonitor;
 END;
 GO
