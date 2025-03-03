@@ -41,7 +41,7 @@ AS
 */  
 BEGIN  
 	DECLARE @ErrorTbl TABLE (Username VARCHAR(500),ErrorCode INT , ErrorMsg VARCHAR(200))
-	DECLARE @CustTbl TABLE (CustID INT, Username VARCHAR(30), FirstBetDate DATE, WLStatus tinyint, IsFinished BIT default 0)
+	DECLARE @CustTbl TABLE (CustID INT, Username VARCHAR(500), FirstBetDate DATE, WLStatus tinyint, IsFinished BIT default 0)
 
 	INSERT INTO @CustTbl(Username)
 	SELECT DISTINCT LTRIM(RTRIM(p.value))
