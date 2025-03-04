@@ -18,6 +18,7 @@ BEGIN
 		Revisions:
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+			- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 			
 		Example:	DECLARE @ErrCode INT, @ErrMsg NVARCHAR(200)
 					EXEC Acc_CreditTermUpdIsRptConsol @custId = 334521, @IsRptConsol = 1, @UserID = 8, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
@@ -41,7 +42,9 @@ BEGIN
 
 	SELECT @old_IsRptConsol = IsRptConsol FROM custAccount WITH (NOLOCK) WHERE custid = @CustId and IsGroupHeadLine = 1
 
-	UPDATE CustAccount SET IsRptConsol = @IsRptConsol 
+	UPDATE CustAccount WITH (ROWLOCK, UPDLOCK)
+	SET IsRptConsol = @IsRptConsol 
+		,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @CustId and IsGroupHeadLine = 1
 	IF (@@ERROR <>0)
 	BEGIN

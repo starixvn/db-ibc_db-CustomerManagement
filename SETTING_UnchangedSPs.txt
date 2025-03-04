@@ -1,6 +1,8 @@
-Ext NAP\Customer\MarkAccount\EAS_AccountType_Multiple_Ins.sql
-NAP-Accounting\UserControl\dbo.Acc_Con_AdminIns.proc.sql
-Ext NAP\UserControl\User\dbo.EAS_UserInfoAddNew.sql
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermUpdSetGroupHeadline.StoredProcedure.sql
+NAP-Accounting/ExternalSite/Group/dbo.Acc_CustGroupAddByUsername_Multiple.sql
+NAP-Accounting\Customer\MoveSite\Acc_CustomerUpdMoveSite.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
+NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
 NAP-Accounting\CreditTerm\dbo.Acc_CreditTermUpdCustomer.StoredProcedure.sql
 NAP-Accounting\CreditTerm\dbo.Acc_CreditTermUpdAddToGroup.StoredProcedure.sql
+
+NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql

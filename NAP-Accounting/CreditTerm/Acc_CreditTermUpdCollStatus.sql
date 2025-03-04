@@ -20,6 +20,7 @@ AS
 
 	Revisions:
 		--20181105@Louis: Credit Collection Summary  [RedmineID: #98621]
+		- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	Parameter's explaination: 		
 		• @Mode: 			1: Customer Not in any group then assign to groupId <> 0 and not check headline		=> reset status to 0
 							2: Set headline from non-headline customer of group g1 <> 0 to group g2 <> 0		=> reset status of old headline to 0, customer has status of old headline
@@ -46,6 +47,7 @@ BEGIN
 	BEGIN
 		UPDATE CustDirectAccount WITH(ROWLOCK, UPDLOCK)
 		SET Coll_Status = 0
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustId = @CustId;
 	
 		SELECT @LogData = '<Acc_CreditTermUpdCollStatus ' 
@@ -91,10 +93,12 @@ BEGIN
 		 		
 		UPDATE CustDirectAccount WITH(ROWLOCK, UPDLOCK)
 		SET Coll_Status = @oldColl_StatusHeadline
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustId = @CustId;		
 		
 		UPDATE CustDirectAccount WITH(ROWLOCK, UPDLOCK)
 		SET Coll_Status = 0
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustId = @CustId_Headline;		
 		
 		SELECT @LogData = '<Acc_CreditTermUpdCollStatus ' 
@@ -166,6 +170,7 @@ BEGIN
 			
 		UPDATE CustDirectAccount WITH(ROWLOCK, UPDLOCK)
 		SET Coll_Status = 0
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustId = @CustId;
 			
 		SELECT @LogData = '<Acc_CreditTermUpdCollStatus ' 

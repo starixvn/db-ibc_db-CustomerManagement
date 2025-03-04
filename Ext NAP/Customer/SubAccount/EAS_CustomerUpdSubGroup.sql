@@ -15,7 +15,8 @@ AS
 	Revisions:  
 		- 20200804@Johnson: initial sp [redmine:#136501]
 		- 20201229@Johnson: Exclude disabled accounts [redmine:#147578]
-		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Parameter's explanation:
 		- @GroupName: sub group need to assign supers
@@ -54,13 +55,15 @@ BEGIN
 	
 	IF @isCheck = 1
 	BEGIN
-		INSERT INTO Acc_CustGroup(custid,roleid,GroupName)
-		SELECT custid, roleid, @GroupName
+		INSERT INTO Acc_CustGroup(custid,roleid,GroupName,RepUpdateTime)
+		SELECT custid, roleid, @GroupName, dbo.f_GetDateTime2()
 		FROM @tmpCust
 	END
 	ELSE
 	BEGIN
 		DELETE Acc_CustGroup WITH(UPDLOCK,ROWLOCK)
+		OUTPUT DELETED.custid, DELETED.GroupName, dbo.f_GetDateTime2()
+		INTO Acc_CustGroup_Del_Inhouse(custid,GroupName,RepUpdateTime)
 		WHERE custid IN (SELECT custid FROM @tmpCust)
 			AND GroupName = @GroupName
 	END

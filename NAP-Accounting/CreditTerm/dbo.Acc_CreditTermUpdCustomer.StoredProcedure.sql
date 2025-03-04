@@ -48,6 +48,7 @@ Original:
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240911@Tacy: add param - update CustAccount [Redmine: #209807]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -232,7 +233,7 @@ BEGIN
 				EXEC dbo.NAP_Email_NotificationInfoInsert @ActionID = 1003,@NotificationInfo = @NotificationInfo, @CreateDate = @startRun
 					
 				--select @checker = isnull(checker,0) from custaccount where groupid = @groupID and isgroupheadline =1 
-				update custAccount set isgroupheadline = 0, checker = 0 where groupid = @groupID and custid <> @custid		
+				update custAccount WITH (ROWLOCK, UPDLOCK) set isgroupheadline = 0, checker = 0, RepUpdateTime = dbo.f_GetDateTime2() where groupid = @groupID and custid <> @custid		
 			END
 	END
 	else if @NotFound = 0 and @IsGroupHeadline = 0

@@ -20,6 +20,7 @@ AS
 		- 20240529@Tacy: NAP - Permission controls on real currency [redmineID: #202523]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241125@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]	
+		- 20241231@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	Param's Explanation:
 		@CustIDList: id of customer
 		@Lock: 1:Lock, 2:Unlock
@@ -175,8 +176,8 @@ BEGIN
 								) AS cs
 		WHERE NOT EXISTS (SELECT 1 FROM CustSuspendLockUpd cs WHERE cs.custid = ci.custid)
 
-		INSERT INTO CustSuspendLockUpd (CustId)
-		SELECT t.custid
+		INSERT INTO CustSuspendLockUpd (CustId,RepUpdateTime)
+		SELECT t.custid, dbo.f_GetDateTime2()
 		FROM #CustLog t			
 	END
 	ELSE
@@ -192,7 +193,9 @@ BEGIN
 									WHERE CustID = ci.custid
 								) AS cps
 
-		DELETE CustSuspendLockUpd
+		DELETE CustSuspendLockUpd WITH (ROWLOCK)
+		OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+		INTO CustSuspendLockUpd_Del_Inhouse(custid,RepUpdateTime)
 		WHERE custid IN (SELECT custid FROM #CustLog t)
 	END
 

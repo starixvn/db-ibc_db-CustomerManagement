@@ -24,6 +24,7 @@ BEGIN
 							   Write more log on DBTXN server in case of DBLOG server failure
 			- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 			- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
+			- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 										   
 	*/
 
@@ -43,7 +44,8 @@ BEGIN
 	UPDATE CustAccount 
 	SET 
 		accountremark = @accountremark, 
-		accountremarkdate = @accountremarkdate
+		accountremarkdate = @accountremarkdate,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @CustId
 	IF (@@ERROR <>0)
 	BEGIN

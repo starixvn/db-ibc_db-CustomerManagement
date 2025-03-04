@@ -22,6 +22,7 @@ AS
 		- 20160607@Elodie: Add headline type and their owner [Redmine:#51923]
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 */
 BEGIN 
 	DECLARE @NotificationInfo VARCHAR(MAX), @CreateDate DATETIME, @CustID_Headline INT
@@ -29,19 +30,23 @@ BEGIN
 	
 	IF @isgroupheadline = 0
 	BEGIN
-		DELETE dbo.CustGroupHeadline WHERE CustID = @custid
+		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
+		OUTPUT DELETED.custid, dbo.f_GetDateTime2()
+		INTO CustGroupHeadline_Del_Inhouse(custid,RepUpdateTime)
+		WHERE CustID = @custid
 	END
 	ELSE
 	BEGIN
 	
 		UPDATE dbo.CustGroupHeadline WITH (ROWLOCK, UPDLOCK) 
 		SET CustID = @CustID,
-			OwnerName = ''
+			OwnerName = '',
+			RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE GroupID = @groupID
 
 		IF @@ROWCOUNT = 0
-			INSERT INTO CustGroupHeadline (CustID,GroupID, HeadlineType, OwnerName)
-			SELECT @custid, @groupID, 0, NULL
+			INSERT INTO CustGroupHeadline (CustID,GroupID, HeadlineType, OwnerName, RepUpdateTime)
+			SELECT @custid, @groupID, 0, NULL, dbo.f_GetDateTime2()
 	END
 
 	UPDATE dbo.custAccount WITH (ROWLOCK, UPDLOCK) SET
@@ -53,12 +58,13 @@ BEGIN
 		accountremark = @accountremark,
 		groupid = @groupid,
 		isgroupheadline = @isgroupheadline,
-		checker = isnull(@checker,0)
+		checker = isnull(@checker,0),
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @custid
 	
 	IF @@ROWCOUNT = 0
-		INSERT INTO dbo.custAccount (custid, creditgrade, installmentdate, installmentamount, preagreeamount, accountremark, accountremarkdate,groupid,isgroupheadline,checker)
-		VALUES (@custid, @creditgrade, @installmentdate, @installmentamount, @preagreeamount, @accountremark, CURRENT_TIMESTAMP, @groupid,@isgroupheadline,isnull(@checker,0))
+		INSERT INTO dbo.custAccount (custid, creditgrade, installmentdate, installmentamount, preagreeamount, accountremark, accountremarkdate,groupid,isgroupheadline,checker,RepUpdateTime)
+		VALUES (@custid, @creditgrade, @installmentdate, @installmentamount, @preagreeamount, @accountremark, CURRENT_TIMESTAMP, @groupid,@isgroupheadline,isnull(@checker,0),dbo.f_GetDateTime2())
 
 	--Update: GroupID for WhiteLabel
 	BEGIN

@@ -31,6 +31,7 @@ AS
 		- 20200717@Malcolm : Integrate Credit Term & Staff/Boss Management [RedmineID : #137144]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
+		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -71,13 +72,14 @@ BEGIN
 
 	SELECT @UserName = Username FROM dbo.Customer WITH(NOLOCK) WHERE custid = @CustID
 
-	UPDATE custAccount SET Isgroupheadline = 0 ,checker = 0 WHERE groupid = @groupID
+	UPDATE custAccount SET Isgroupheadline = 0 ,checker = 0, RepUpdateTime = dbo.f_GetDateTime2() WHERE groupid = @groupID
 
-	UPDATE custAccount SET Isgroupheadline = 1, checker = @oldchecker WHERE custid = @CustID
+	UPDATE custAccount SET Isgroupheadline = 1, checker = @oldchecker, RepUpdateTime = dbo.f_GetDateTime2() WHERE custid = @CustID
 
 	UPDATE dbo.CustGroupHeadline WITH (ROWLOCK, UPDLOCK) 
 	SET CustID = @CustID,
-		OwnerName = ''
+		OwnerName = '',
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE GroupID = @groupID
 
 	SELECT @Case = 3, @New_Headline = @CustID_oldGroupHeadline, @Old_Headline = @CustID_oldGroupHeadline
