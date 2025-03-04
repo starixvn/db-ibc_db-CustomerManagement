@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_DormantDownlineListByHeadline_Sel] (
 	@FilterUsername VARCHAR(30) = NULL, 
 	@FilterHeadlineType  TINYINT   = NULL, 
@@ -24,6 +24,7 @@ AS
 	Revisions:  
 	- 20210622@Eden: All sites - Dormant SMA Account List [RedmineID: #155969]
 	- 20230823@Eden : Archive super level 789y (Stage 3 and Stage 4) [Redmine: #183447]
+	- 20250303@Eden : Archiving direct member [redmine: #215533]
 
 
 	Parameter Definition
@@ -229,7 +230,8 @@ BEGIN
 	IF @Cust_RoleID = 4
 	BEGIN
 		INSERT INTO #Exclude(recommend,mrecommend)
-		SELECT a.recommend,a.mrecommend
+		SELECT  NULLIF(NULLIF(a.recommend,-3),-4) AS recommend
+			,a.mrecommend
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
@@ -237,27 +239,31 @@ BEGIN
 		WHERE a.srecommend = @CustID_ByUserName AND a.RoleID IN(2,3,4)
 			AND cps.CloseInfo = 0
 		UNION
-		SELECT a.custid,MAX(a.mrecommend) as mrecommend
+		-- Agents have just create new downlines
+		SELECT a.custid, a.mrecommend
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.recommend = a.custid AND dl.roleid = 1
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.recommend = a.custid AND dl.custid <> a.custid
+						) downline
 		WHERE a.srecommend = @CustID_ByUserName 
 			AND a.roleid = 2
-		GROUP BY a.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			AND c.TotalDownline < downline.Cnt
 		UNION
-		SELECT 0,a.custid
+		-- Masters have just create new downlines
+		SELECT NULL, a.mrecommend
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.mrecommend = a.custid AND dl.roleid IN (1,2)
-		WHERE a.srecommend = @CustID_ByUserName
-			AND a.roleid = 3 
-		GROUP BY a.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.mrecommend = a.custid AND dl.custid <> a.custid
+						) downline
+		WHERE a.srecommend = @CustID_ByUserName 
+			AND a.roleid = 3
+			AND c.TotalDownline < downline.Cnt
 
 		INSERT INTO #Warning(recommend,mrecommend)
 		SELECT DISTINCT a.custid,a.mrecommend
@@ -303,20 +309,23 @@ BEGIN
 			   bc.SettingDeletedDate,
 			   IsWarningTicket = CASE WHEN w.recommend IS NOT NULL THEN 1 
 									  WHEN wm.mrecommend IS NOT NULL THEN 1
+									  WHEN wdrm.mrecommend IS NOT NULL THEN 1
 									ELSE 0 END
 		FROM Cust_ArchiveAccount bc WITH(NOLOCK)
 			 INNER JOIN custInfo ci WITH(NOLOCK) ON bc.CustID = ci.custid
 			 INNER JOIN Customer c WITH(NOLOCK) ON bc.custid = c.custid
 			 LEFT JOIN #Warning w ON ci.recommend = w.recommend
 			 LEFT JOIN #Warning wm ON ci.custid = wm.mrecommend
+			 LEFT JOIN #Warning wdrm ON ci.mrecommend = wdrm.mrecommend AND ci.recommend = -3 -- Direct master
 		WHERE ci.roleid = CASE WHEN ISNULL(@FilterRoleID,0) <> 0 THEN @FilterRoleID ELSE ci.roleid END 
 			  AND bc.StageID = CASE WHEN ISNULL(@FilterStageID,0) = 0 THEN bc.StageID ELSE @FilterStageID END 
 			  AND bc.srecommend = @CustID_ByUserName
 			  AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ci.recommend = recommend AND ci.roleid IN (1,2))
 			  AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ci.custid = mrecommend)
+			  AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ci.mrecommend = mrecommend AND ci.recommend = -3) -- exclude master direct members if exclude their masters
 			  AND ci.custid <> @CustID_ByUserName
 			  AND bc.StageID <> 4
-		ORDER BY bc.StageID, ci.Username
+		ORDER BY bc.StageID ASC, ci.Username ASC
 
 		--> Get data for S4
 		INSERT INTO #Cust_ArchiveAccount_Temp(
@@ -353,13 +362,14 @@ BEGIN
 			  AND bc.srecommend = @CustID_ByUserName
 			  AND bc.custid <> @CustID_ByUserName
 			  AND bc.StageID = 4
-		ORDER BY bc.Username
+		ORDER BY bc.Username ASC
 
 	END
 	IF @Cust_RoleID = 3
 	BEGIN
 		INSERT INTO #Exclude(recommend,mrecommend)
-		SELECT a.recommend,a.mrecommend
+		SELECT NULLIF(a.recommend,-3) AS recommend
+			,a.mrecommend
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
@@ -367,16 +377,18 @@ BEGIN
 		WHERE a.mrecommend = @CustID_ByUserName AND a.RoleID IN(2,3)
 			AND cps.CloseInfo = 0
 		UNION
-		SELECT a.custid,MAX(a.mrecommend) as mrecommend
+		-- Agents have just create new downlines
+		SELECT a.custid, a.mrecommend
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.recommend = a.custid AND dl.roleid = 1
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.recommend = a.custid AND dl.custid <> a.custid
+						) downline
 		WHERE a.mrecommend = @CustID_ByUserName 
 			AND a.roleid = 2
-		GROUP BY a.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			AND c.TotalDownline < downline.Cnt
 
 		INSERT INTO #Warning(recommend,mrecommend)
 		SELECT DISTINCT a.custid,a.mrecommend
@@ -432,7 +444,7 @@ BEGIN
 			  AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ci.recommend = recommend  AND ci.roleid IN (1,2))
 			  AND ci.custid <> @CustID_ByUserName
 			  AND bc.StageID <> 4
-		ORDER BY bc.StageID, ci.Username
+		ORDER BY bc.StageID ASC, ci.Username ASC
 
 		--> Get data for S4
 		INSERT INTO #Cust_ArchiveAccount_Temp(
@@ -469,7 +481,7 @@ BEGIN
 			  AND bc.mrecommend = @CustID_ByUserName
 			  AND bc.custid <> @CustID_ByUserName
 			  AND bc.StageID = 4
-		ORDER BY bc.Username
+		ORDER BY bc.Username ASC
 	END
 	IF @Cust_RoleID = 2
 	BEGIN
@@ -482,15 +494,17 @@ BEGIN
 		WHERE a.custid = @CustID_ByUserName
 			AND cps.CloseInfo = 0
 		UNION
+		-- Agents have just create new downlines
 		SELECT a.custid
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.recommend = a.custid AND dl.roleid = 1
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.recommend = a.custid AND dl.custid <> a.custid
+						) downline
 		WHERE a.custid = @CustID_ByUserName 
-		GROUP BY a.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			AND c.TotalDownline < downline.Cnt
 
 		INSERT INTO #Warning(recommend)
 		SELECT DISTINCT a.custid
@@ -545,7 +559,7 @@ BEGIN
 			  AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ci.recommend = recommend  AND ci.roleid IN (1,2))
 			  AND ci.custid <> @CustID_ByUserName
 			  AND bc.StageID <> 4
-		ORDER BY bc.StageID, ci.Username
+		ORDER BY bc.StageID ASC, ci.Username ASC
 
 		--> Get data for S4
 		INSERT INTO #Cust_ArchiveAccount_Temp(
@@ -582,7 +596,7 @@ BEGIN
 			  AND bc.recommend = @CustID_ByUserName
 			  AND bc.custid <> @CustID_ByUserName
 			  AND bc.StageID = 4
-		ORDER BY bc.Username
+		ORDER BY bc.Username ASC
 	END
 	IF @Cust_RoleID = 1
 	BEGIN
@@ -599,11 +613,13 @@ BEGIN
 		FROM custInfo a WITH(NOLOCK) 
 			INNER JOIN Cust_ArchiveAccount c WITH(NOLOCK) 
 				ON a.custid = c.CustID
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.recommend = a.custid AND dl.roleid = 1
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.recommend = a.custid AND dl.custid <> a.custid
+						) downline
 		WHERE a.custid = @recommend 
-		GROUP BY a.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			AND a.roleid = 2
+			AND c.TotalDownline < downline.Cnt
 
 		INSERT INTO #Warning(recommend)
 		SELECT DISTINCT a.custid
@@ -658,7 +674,7 @@ BEGIN
 				  AND bc.StageID = CASE WHEN ISNULL(@FilterStageID,0) = 0 THEN bc.StageID ELSE @FilterStageID END
 				  AND bc.CustID = @CustID_ByUserName
 				  AND bc.StageID <> 4
-			ORDER BY bc.StageID, ci.Username
+			ORDER BY bc.StageID ASC, ci.Username ASC
 		END
 
 		--> Get data for S4
@@ -695,7 +711,7 @@ BEGIN
 			  AND bc.StageID = CASE WHEN ISNULL(@FilterStageID,0) = 0 THEN bc.StageID ELSE @FilterStageID END
 			  AND bc.CustID = @CustID_ByUserName
 			  AND bc.StageID = 4
-		ORDER BY bc.Username
+		ORDER BY bc.Username ASC
 	END
 	
 	IF @FilterDateType = 0
@@ -855,6 +871,7 @@ BEGIN
 		,IsWarningTicket   = 0  
 		,RowNumber			= 0
 		,AccountDeletedDate = ar.AccountDeletedDate
+		,ISNULL(ci.recommend,ar.recommend) as recommend
 	FROM (VALUES(@CustID_ByUserName)) t(CustID)
 		LEFT JOIN custinfo ci WITH(NOLOCK) ON t.CustID = ci.custid
 		LEFT JOIN customer c WITH(NOLOCK) ON t.CustID = c.custid
@@ -879,23 +896,26 @@ BEGIN
 	WHERE (@TotalItems > 0 OR (ar.TotalDownline = 0 AND ISNULL(cps.CloseInfo,1) > 0))
 		AND ISNULL(@FilterRoleID,0) = 0 AND @Cust_RoleID  <> 1
 	UNION ALL
-	SELECT  CustID                
-		,Username              
-		,RoleID              
-		,StatusID              
-		,StageID          
-		,ToBeClearedGivenCredit
-		,ClearedGivenCredit    
-		,lastlogged                    
-		,ClosedDate            
-		,DisabledDate          
-		,SettingDeletedDate
-		,IsWarningTicket     
-		,RowNumber 
-		,AccountDeletedDate
-	FROM #Cust_ArchiveAccount
+	SELECT  t.CustID                
+		,t.Username              
+		,t.RoleID              
+		,t.StatusID              
+		,t.StageID          
+		,t.ToBeClearedGivenCredit
+		,t.ClearedGivenCredit    
+		,t.lastlogged                    
+		,t.ClosedDate            
+		,t.DisabledDate          
+		,t.SettingDeletedDate
+		,t.IsWarningTicket     
+		,t.RowNumber 
+		,t.AccountDeletedDate
+		,ISNULL(ci.recommend,ar.recommend) as recommend
+	FROM #Cust_ArchiveAccount t
+		LEFT JOIN custinfo ci WITH(NOLOCK) ON t.CustID = ci.custid
+		LEFT JOIN Cust_ArchiveAccount ar WITH(NOLOCK) ON t.CustID = ar.custid
 	WHERE RowNumber BETWEEN @rowstart AND @rowend 
-	ORDER BY RowNumber		
+	ORDER BY RowNumber	ASC	
 
 	--get yesterday balance
 	DECLARE @CustIdList VARCHAR(MAX) = ''

@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_DormantAccountListByHeadline_Sel]
 (
 	@FilterHeadlineType  TINYINT     = NULL, 
@@ -27,6 +27,7 @@ AS
 		- 20220504@Elodie: Tuning SP [RedmineID: #172311]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20230823@Eden : Archive super level 789y (Stage 3 and Stage 4) [Redmine: #183447]
+		- 20250303@Eden : Archiving direct member [redmine: #215533]
 
 	Parameter Definition
 		-@FilterStageID: apply for headline dirrect acccounts
@@ -278,27 +279,32 @@ BEGIN
 	IF @FilterDateType IN(0,1) --include filter Closed Stage
 	BEGIN
 		INSERT INTO #Exclude(recommend,mrecommend,srecommend)
-		SELECT c.custid,MAX(c.mrecommend) as mrecommend,MAX(c.srecommend) as srecommend
-		FROM #ArchiveSMA c WITH(NOLOCK) 		
-			INNER JOIN custInfo dl WITH(NOLOCK) ON dl.recommend = c.custid AND dl.roleid = 1
+		SELECT c.custid,c.mrecommend,c.srecommend
+		FROM #ArchiveSMA c WITH(NOLOCK) 
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.recommend = c.custid AND dl.custid <> c.custid
+						) downline
 		WHERE c.RoleID = 2
-		GROUP BY c.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			AND c.TotalDownline < downline.Cnt
 		UNION
-		SELECT 0,c.custid,MAX(c.srecommend) as srecommend
+		SELECT NULL, c.CustID,c.srecommend
 		FROM #ArchiveSMA c WITH(NOLOCK) 
-			INNER JOIN custInfo dl WITH(NOLOCK) ON dl.mrecommend = c.custid AND dl.roleid IN (1,2)
-		WHERE c.roleid = 3
-		GROUP BY c.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
-		UNION 
-		SELECT 0,0,c.custid as srecommend
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.mrecommend = c.custid AND dl.custid <> c.custid
+						) downline
+		WHERE c.RoleID = 3
+			AND c.TotalDownline < downline.Cnt
+		UNION
+		SELECT NULL, NULL ,c.CustID
 		FROM #ArchiveSMA c WITH(NOLOCK) 
-			INNER JOIN custInfo dl WITH(NOLOCK) 
-				ON dl.srecommend = c.custid AND dl.roleid IN (1,2,3)
-		WHERE c.roleid = 4
-		GROUP BY c.custid
-		HAVING COUNT(dl.custid) > MAX(c.TotalDownline)
+			CROSS APPLY(	SELECT COUNT(1) AS Cnt
+							FROM  custInfo dl WITH(NOLOCK) 
+							WHERE dl.srecommend = c.custid AND dl.custid <> c.custid
+						) downline
+		WHERE c.RoleID = 4
+			AND c.TotalDownline < downline.Cnt
 	END
 
 	--> Get Archived downlines info
@@ -324,6 +330,8 @@ BEGIN
 			AND (ar.StageID >= 2 
 					OR (NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.custID IN (ex.mrecommend,ex.srecommend) AND ar.RoleID > 2)
 						AND NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.recommend = ex.recommend AND ar.RoleID <= 2)
+						AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.mrecommend = mrecommend AND ar.recommend = -3) -- exclude master direct members if exclude their masters
+						AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.srecommend = srecommend AND ar.recommend = -4) -- exclude super direct members if exclude their supers
 					)
 				)
 
@@ -406,6 +414,7 @@ BEGIN
 									AND (ar.StageID >= 2 
 											OR (NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.custID IN (ex.mrecommend) AND ar.RoleID > 2)
 												AND NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.recommend = ex.recommend AND ar.RoleID <= 2)
+												AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.mrecommend = mrecommend AND ar.recommend = -3) -- exclude master direct members if exclude their masters
 											)
 										)
 								HAVING COUNT(1) > 0
@@ -486,10 +495,10 @@ BEGIN
 								) arc
 			WHERE t.RoleId = 1
 			) temp
-		ORDER BY CASE WHEN CustHeadlineID <> 0 THEN 0 ELSE 1 END,
+		ORDER BY CASE WHEN CustHeadlineID <> 0 THEN 0 ELSE 1 END ASC,
 			    CASE WHEN @SortType = 1 THEN HeadlineGroup END ASC ,
 				CASE WHEN @SortType = 2 THEN HeadlineGroup END DESC,
-				UserName
+				UserName ASC
 	END
 	ELSE
 	BEGIN
@@ -516,6 +525,8 @@ BEGIN
 			AND (ar.StageID >= 2 
 					OR (NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.custID IN (ex.mrecommend,ex.srecommend) AND ar.RoleID > 2)
 						AND NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.recommend = ex.recommend AND ar.RoleID <= 2)
+						AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.mrecommend = mrecommend AND ar.recommend = -3) -- exclude master direct members if exclude their masters
+						AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.srecommend = srecommend AND ar.recommend = -4) -- exclude super direct members if exclude their supers
 					)
 				)
 
@@ -601,6 +612,7 @@ BEGIN
 									AND (ar.StageID >= 2 
 											OR (NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.custID IN (ex.mrecommend) AND ar.RoleID > 2)
 												AND NOT EXISTS ( SELECT 1 FROM #Exclude ex WHERE ar.recommend = ex.recommend AND ar.RoleID <= 2)
+												AND NOT EXISTS( SELECT 1 FROM #Exclude WHERE ar.mrecommend = mrecommend AND ar.recommend = -3) -- exclude master direct members if exclude their masters												
 											)
 										)
 								HAVING COUNT(1) > 0
@@ -687,10 +699,10 @@ BEGIN
 								) arc
 			WHERE t.RoleId = 1
 			) temp
-		ORDER BY CASE WHEN CustHeadlineID <> 0 THEN 0 ELSE 1 END,
+		ORDER BY CASE WHEN CustHeadlineID <> 0 THEN 0 ELSE 1 END ASC,
 				CASE WHEN @SortType = 1 THEN HeadlineGroup END ASC ,
 				CASE WHEN @SortType = 2 THEN HeadlineGroup END DESC,
-				UserName
+				UserName ASC
 	END
 
 	SELECT @TotalItems = COUNT(1) 
@@ -723,13 +735,14 @@ BEGIN
 		,t.Cnt_Stage1Member,t.Cnt_Stage2Member,t.Cnt_Stage3Member,t.Cnt_Stage4Member
 		,t.Cnt_Stage1Agent,t.Cnt_Stage2Agent,t.Cnt_Stage3Agent,t.Cnt_Stage4Agent
 		,t.Cnt_Stage1Master,t.Cnt_Stage2Master,t.Cnt_Stage3Master,t.Cnt_Stage4Master
+		,ISNULL(ci.recommend, ar.recommend) AS recommend
 	FROM #CustHeadline_Archived t
 		LEFT JOIN custinfo ci WITH(NOLOCK) ON t.CustID = ci.custid
 		LEFT JOIN customer c WITH(NOLOCK) ON t.CustID = c.custid
 		LEFT JOIN CustProductStatus cps WITH(NOLOCK) ON t.CustID = cps.custid
 		LEFT JOIN Cust_ArchiveAccount ar WITH(NOLOCK) ON t.CustID = ar.custid
 	WHERE t.RN BETWEEN @rowstart AND @rowend 	
-	ORDER BY t.RN
+	ORDER BY t.RN ASC
 
 	--get yesterday balance
 	DECLARE @CustIdList VARCHAR(MAX) = ''
@@ -758,6 +771,7 @@ BEGIN
 	DROP TABLE #CustHeadline_Archived
 	DROP TABLE #Exclude
 	DROP TABLE #TmpSuper_Archive
+	DROP TABLE #ArchiveSMA
 END
 GO
 
