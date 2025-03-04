@@ -35,6 +35,7 @@ AS
 		- 20220510@Danny: Use String_split built-in function [RemineID: #171831]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -97,9 +98,14 @@ BEGIN
 	BEGIN
 		UPDATE custAccount WITH (ROWLOCK, UPDLOCK) 
 		SET groupID = 0, IsGroupHeadLine = 0
+			, RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 
-		DELETE dbo.CustGroupHeadline WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
+		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2()
+			INTO dbo.CustGroupHeadline_Del_InHouse(CustID, RepUpdateTime)
+		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
+		
 		SELECT @ErrMsg = 'Group of ' + COALESCE(CAST(@UsernameHL AS NVARCHAR(300)), SPACE(1)) + ' has been removed.'
 
 		SET @Case = 2
@@ -108,16 +114,16 @@ BEGIN
 	BEGIN
 		UPDATE custAccount WITH (ROWLOCK, UPDLOCK) 
 		SET groupid = 0 
+		  , RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 			AND isgroupheadline <> 1
 			-- TO Control: Email Notification
-		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
+		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID, RepUpdateTime)
 		SELECT '<GroupHeadline custid="'+ COALESCE(CAST(custid AS VARCHAR(300)), SPACE(1)) + '" ' +
 						'GroupID="'+ COALESCE(CAST(@groupID AS VARCHAR(50)),SPACE(1))  + '" />'  AS NotificationInfo
 			, @startRun AS CreatedDate
-			
 			, 1002 AS ActionID		
-									
+			, dbo.f_GetDateTime2()						
 		FROM (SELECT value AS custid FROM STRING_SPLIT(@CustIDList, ',')) AS tmp
 
 		SELECT @Case = 1, @New_Headline = 0, @Old_Headline = @CustID_Headline
@@ -276,6 +282,8 @@ BEGIN
 
 		-- Remove supers from old normal groups
 		DELETE c WITH (ROWLOCK, UPDLOCK)
+			OUTPUT DELETED.CustID, DELETED.GroupName, dbo.f_GetDateTime2()
+			INTO dbo.Acc_CustGroup_Del_InHouse(CustID, GroupName, RepUpdateTime)
 		FROM dbo.Acc_CustGroup c
 			INNER JOIN #Super s ON c.CustId = s.CustId AND c.GroupName = s.GroupName
 		WHERE s.DataType = 1

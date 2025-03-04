@@ -15,6 +15,7 @@ AS
 
 	Revisions:  
 		- 20230525@Tacy: Ext NAP - Function for Headline to provide customer class based on their knowledge [Redmine:#188025]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	
 	Param's Explanation:
 
@@ -62,6 +63,7 @@ BEGIN
 		UPDATE ct
 		SET TypeID=@TypeID
 			,Remark=@Remark
+			,RepUpdateTime = dbo.f_GetDateTime2()
 		FROM Acc_CustType ct WITH (ROWLOCK, UPDLOCK)
 		WHERE CustID=@CustID
 	END TRY

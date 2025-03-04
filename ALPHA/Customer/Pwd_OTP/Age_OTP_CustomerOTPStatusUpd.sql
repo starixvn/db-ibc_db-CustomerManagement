@@ -1,12 +1,9 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerOTPStatusUpd]
 	@UserID INT,
 	@CustID INT,
 	@SubAccID INT = 0,
 	@Enable BIT = 0,
-
 	@Language VARCHAR(2) = 'E',
 	@IP NVARCHAR(200),
 	@ErrCode INT = 0 OUTPUT,
@@ -19,7 +16,8 @@ AS
 	Task: Enable/disable secret key
 
 	Revisions:
-
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		
 	Param's Explanation:
 */
 BEGIN
@@ -49,7 +47,7 @@ BEGIN
 
 	BEGIN TRY
 		UPDATE dbo.CustOTP WITH(ROWLOCK, UPDLOCK)
-		SET [Enabled] = @Enable
+		SET [Enabled] = @Enable, RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustID = @CustID AND SubAccId = @SubAccID
 	END TRY
 	BEGIN CATCH

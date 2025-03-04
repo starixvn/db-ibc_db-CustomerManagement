@@ -47,6 +47,8 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
 		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20250220@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		
 */
 BEGIN
 SET NOCOUNT ON
@@ -356,8 +358,8 @@ SET NOCOUNT ON
 	IF @NewCreditRM > 300000 
 		AND NOT EXISTS (SELECT 1 FROM SuspiciousCust WITH (NOLOCK) WHERE CustID = @CustId)
 	BEGIN
-		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2)
-		SELECT @CustId, 1, 0
+		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2, RepUpdateTime)
+		SELECT @CustId, 1, 0, dbo.f_GetDateTime2() 
 	END
 
 	UPDATE	dbo.custInfo WITH (ROWLOCK, UPDLOCK) 

@@ -13,6 +13,7 @@ AS
 
 	Revisions:  
 		- 20230525@Tacy: Ext NAP - Function for Headline to provide customer class based on their knowledge [Redmine:#188025]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	
 	Param's Explanation:
 
@@ -40,6 +41,8 @@ BEGIN
 	
 	BEGIN TRY
 		DELETE FROM Acc_CustType WITH (ROWLOCK)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2()
+			INTO dbo.Acc_CustType_Del_InHouse(CustID, RepUpdateTime)
 		WHERE CustID=@CustID
 	END TRY
 	BEGIN CATCH

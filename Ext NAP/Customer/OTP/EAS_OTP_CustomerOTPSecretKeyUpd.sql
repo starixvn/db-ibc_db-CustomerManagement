@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20180516@David: Update OTP Secret key [Redmine:#94192]
 		- 20180524@David: Only update OTP Secret key in enable case [Redmine:#94192]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 */
@@ -38,7 +39,8 @@ BEGIN
     UPDATE [dbo].[EASCustOTP] WITH (ROWLOCK, UPDLOCK)
     SET [Enabled] = @Enabled,
         [ModifiedDate] = GETDATE(),
-		[SecretKey] = (CASE WHEN @Enabled = 1 AND @SecretKey <> '' THEN @SecretKey ELSE [SecretKey] END)
+		[SecretKey] = (CASE WHEN @Enabled = 1 AND @SecretKey <> '' THEN @SecretKey ELSE [SecretKey] END),
+		RepUpdateTime = dbo.f_GetDateTime2()
     WHERE dbo.EASCustOTP.CustID = @CustID
   END TRY
   BEGIN CATCH

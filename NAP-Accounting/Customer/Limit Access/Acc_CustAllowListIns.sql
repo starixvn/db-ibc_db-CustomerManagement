@@ -20,7 +20,8 @@ AS
 		- 20130310@Lukas: Change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-		
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 	Param's Explanation:
 	
 */
@@ -92,7 +93,8 @@ BEGIN
 			isAllowed, 
 			Creator,
 			CreatedDate,
-			Remark			
+			Remark,
+			RepUpdateTime
 		)
 	VALUES
 		(		
@@ -101,7 +103,8 @@ BEGIN
 			1, 
 			@Creator,
 			GETDATE(),						
-			@Remark
+			@Remark,
+			dbo.f_GetDateTime2()
 		)
 	
 	IF @@ERROR <> 0

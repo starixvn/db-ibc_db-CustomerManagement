@@ -1,12 +1,9 @@
-USE [CustDB]
-GO
-
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_OTP_CustomerOTPDel]
 	@UserID		INT,
 	@CustID		INT,
 	@SubAccID	INT = 0,
 	@DeviceInfo	NVARCHAR(2000) = '',
-
 	@Language	VARCHAR(2) = 'E',
 	@IP			NVARCHAR(200),
 	@ErrCode	INT = 0 OUTPUT,
@@ -19,6 +16,7 @@ AS
 	Task: Delete secret key
 
 	Revisions:
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation:
 */
@@ -53,7 +51,7 @@ BEGIN
 
 	BEGIN TRY
 		UPDATE dbo.CustOTP WITH(ROWLOCK, UPDLOCK)
-		SET IsDelete = 1, [Enabled] = 0
+		SET IsDelete = 1, [Enabled] = 0, RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE CustID = @CustID AND SubAccId = @SubAccID
 	END TRY
 	BEGIN CATCH
@@ -68,7 +66,7 @@ BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfo WITH(NOLOCK) WHERE CustID = @CustID)
 		BEGIN
 			UPDATE CustLoginInfo WITH(ROWLOCK, UPDLOCK)
-			SET VerifyOTPCount = 0
+			SET VerifyOTPCount = 0, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE CustID = @CustID
 		END
 	END
@@ -77,7 +75,7 @@ BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM dbo.CustLoginInfoSub WITH(NOLOCK) WHERE CustID = @CustID)
 		BEGIN
 			UPDATE CustLoginInfoSub WITH(ROWLOCK, UPDLOCK)
-			SET VerifyOTPCount = 0
+			SET VerifyOTPCount = 0, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE CustID = @CustID AND SubAccID = @SubAccID
 		END
 	END

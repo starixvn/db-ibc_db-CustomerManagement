@@ -19,7 +19,8 @@ AS
 		- 20130310@Lukas: Change linked-server alias & add more write log section
 		- 20180808@Helen: DB05.DBPOLICY migration - Move to DBCUST [Redmine:99462]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
-		
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 	Param's Explanation:
 	
 */
@@ -41,7 +42,10 @@ BEGIN
 		RETURN
 	END
 
-	DELETE Acc_CustAllowList  WITH (ROWLOCK) WHERE CustID = @CustID
+	DELETE Acc_CustAllowList WITH (ROWLOCK) 
+		OUTPUT DELETED.CustID, dbo.f_GetDateTime2()
+		INTO dbo.Acc_CustAllowList_Del_InHouse(CustID, RepUpdateTime)
+	WHERE CustID = @CustID
 			
 	IF @@ERROR <> 0
 	BEGIN

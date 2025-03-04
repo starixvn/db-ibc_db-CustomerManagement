@@ -23,6 +23,7 @@ AS
 		- 20200114@Malcolm: Separate setting and notification into Live/Non-Live and bettypes [Redmine : 125076]
 		- 20191024@Eden: Hofix - removed dummy acc from table CustDirectAccount [Redmine:83206]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
+		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
     Param's Explanation:
     • @ErrCode:
@@ -79,8 +80,8 @@ BEGIN
     IF @@ROWCOUNT > 0
         RETURN
 
-    INSERT INTO dbo.Acc_CustDirect(custid, roleid)
-    VALUES(@upline, @roleid + 1)
+    INSERT INTO dbo.Acc_CustDirect(custid, roleid, RepUpdateTime)
+    VALUES(@upline, @roleid + 1, dbo.f_GetDateTime2())
 
     IF @@ERROR <> 0
     BEGIN
@@ -100,12 +101,14 @@ BEGIN
       , @mode = 1
 	
 	--[72339]:Add Extra information for Direct Accounts
-	INSERT INTO CustDirectAccount (CustID, Coll_Status)
-	SELECT C.custid, NULL AS Coll_Status
+	INSERT INTO CustDirectAccount (CustID, Coll_Status, RepUpdateTime)
+	SELECT C.custid, NULL AS Coll_Status, dbo.f_GetDateTime2() AS RepUpdateTime
 	FROM @affectedList C 
 
 	--> Rmove upline from CustDirectAccount
 	DELETE CustDirectAccount WITH(ROWLOCK,UPDlOCK)
+		OUTPUT DELETED.CustID, dbo.f_GetDateTime2()
+		INTO CustDirectAccount_Del_Inhouse(CustID, RepUpdateTime)
 	WHERE custid = @upline
 	
 	EXEC dbo.Acc_CreditCollStatusInit @custid = @custid, @UserId = @creator, @IP = @IP
@@ -114,16 +117,14 @@ BEGIN
 	IF @roleid IN (2,3,4)
 	BEGIN
 		
-		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID)
-		
+		INSERT INTO dbo.EmailNotification (NotificationInfo, CreatedDate, ActionID, RepUpdateTime)
 		SELECT '<NewDirectCustomer  custid="'+ COALESCE(CAST(CustID AS VARCHAR(300)), SPACE(1)) + '" />'  AS NotificationInfo
 				, @CreateDate AS CreatedDate
-				
 				, CASE	WHEN @roleid = 4 THEN 600
 						WHEN @roleid = 3 THEN 601
 						WHEN @roleid = 2 THEN 602
 				  END AS ActionID		
-										
+				, dbo.f_GetDateTime2() AS RepUpdateTime						
 		FROM @affectedList
 		 
 		INSERT INTO dbo.TOControl_GlobalSetting (CustID, MaxTurnOver, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
@@ -194,8 +195,6 @@ BEGIN
 			WHERE CustID IN (@srecommend,@mrecommend,@recommend)
 	END
 		
-	--DELETE dbo.CustDirectAccount WHERE CustID = @upline
-		
     DECLARE @affCust INT
     
     SELECT @affCust = MIN(custid)
@@ -250,15 +249,6 @@ BEGIN
         FROM @affectedList
     END
 END
-
-
 GO
-
-SET QUOTED_IDENTIFIER OFF 
-GO
-SET ANSI_NULLS ON 
-GO
-
-GO 
- GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
+GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
 GO 
