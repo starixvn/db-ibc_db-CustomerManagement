@@ -16,6 +16,7 @@ AS
 
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
 */
@@ -55,6 +56,8 @@ BEGIN
 
 	BEGIN TRY
 		DELETE FROM Cust_LastBetFilter WITH (ROWLOCK)
+		OUTPUT DELETED.custid,DELETED.SubAccID,DELETED.FilterID, dbo.f_GetDateTime2()
+		INTO Cust_LastBetFilter_Del_Inhouse(custid,SubAccID,FilterID,RepUpdateTime)
 		WHERE CustID=@CustID AND SubAccID=@SubAccId AND FilterID=@FilterID
 	END TRY
 	BEGIN CATCH

@@ -19,6 +19,7 @@ AS
 			- 20211027@Winfred: NAP CM -  Limit Daily PT Update [Redmine: #162476]
 			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
+			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	*/
 BEGIN
@@ -71,8 +72,10 @@ BEGIN
 	BEGIN TRY
 		SELECT @SettingStatus = SettingStatus, @LimitNewAccUpdPT = LimitNewAccUpdPT FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
 		WHERE CustID = @CustID and ProductID = @ProductID AND SiteID = @SiteID AND Currency = @Currency AND Type  = @Type
-		
+
 		DELETE t
+		OUTPUT DELETED.ProductID,DELETED.CustID,DELETED.Currency,DELETED.SiteID, dbo.f_GetDateTime2()
+		INTO LimitPTDailySetting_Del_Inhouse(ProductID,CustID,Currency,SiteID,RepUpdateTime)
 		FROM LimitPTDailySetting t WITH(ROWLOCK,UPDLOCK)
 		WHERE CustID = @CustID and ProductID = @ProductID AND SiteID = @SiteID AND Currency = @Currency AND Type  = @Type
  	

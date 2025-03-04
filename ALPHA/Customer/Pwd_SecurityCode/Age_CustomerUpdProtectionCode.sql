@@ -17,6 +17,7 @@ ALTER PROCEDURE Age_CustomerUpdProtectionCode
 		
 	Revisions:
 		- 20210824@Elodie: Initial sp [Redmine: #160151]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Parameter's Explanation:
 	Example: EXEC Age_CustomerUpdProtectionCode @Custid = 838203, @ProtectionCode = '123456', @SubAccId = 29183
@@ -66,6 +67,7 @@ BEGIN
 	BEGIN			
 		UPDATE cl 
 		SET cl.ProtectionCode = @ProtectionCode
+		   ,cl.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfo cl WITH(ROWLOCK)
 		WHERE custid = @custid
 	END
@@ -73,6 +75,7 @@ BEGIN
 	BEGIN			
 		UPDATE cl 
 		SET cl.ProtectionCode = @ProtectionCode
+		   ,cl.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfoSub cl WITH(ROWLOCK)
 		WHERE custid = @custid AND SubAccID = @SubAccID
 	END				

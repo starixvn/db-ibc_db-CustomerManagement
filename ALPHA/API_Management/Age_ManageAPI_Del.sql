@@ -13,6 +13,7 @@ AS
 	Original: 
 	Revisions:
 		- 20221026@Tacy: Create SP [Redmine: #171247]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
 		- @ScopeList:	1 - Outstanding Report
@@ -45,7 +46,10 @@ BEGIN
 	BEGIN TRY
 		IF EXISTS (SELECT 1 FROM APIInfo WITH (NOLOCK) WHERE APIKey=@APIkey)
 		BEGIN
-			DELETE FROM APIInfo WITH (ROWLOCK) WHERE APIKey=@APIkey
+			DELETE APIInfo WITH (ROWLOCK)
+			OUTPUT DELETED.KeyID, DELETED.SiteDBGroupID, dbo.f_GetDateTime2()
+			INTO APIInfo_Del_Inhouse(KeyID,SiteDBGroupID,RepUpdateTime)
+			WHERE  APIKey = @APIkey
 		END
 	END TRY
 	BEGIN CATCH

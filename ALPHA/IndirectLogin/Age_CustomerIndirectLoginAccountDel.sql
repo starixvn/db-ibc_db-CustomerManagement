@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20200526@Johnson: initial sp [redmine:#133846]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	
 	Parameter's explaination:		
 */		
@@ -44,10 +45,13 @@ BEGIN
 	END
 
 	DELETE CustInDirectLogin WITH(UPDLOCK,ROWLOCK)
+	OUTPUT DELETED.custid,DELETED.SubAccID,DELETED.CustIDIndirect,DELETED.SubAccIDIndirect, dbo.f_GetDateTime2()
+	INTO CustInDirectLogin_Del_Inhouse(custid,SubAccID,CustIDIndirect,SubAccIDIndirect,RepUpdateTime)
 	WHERE custid = @custid
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect
 		AND SubAccIDIndirect = @SubAccIDIndirect
+
 	
 	DECLARE @LogSPData VARCHAR(4000)
 	

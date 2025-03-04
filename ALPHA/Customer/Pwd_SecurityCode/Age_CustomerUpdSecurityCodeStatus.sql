@@ -18,6 +18,9 @@
 		-- 20170619@Winnie: Apply color for closed Accounts RedmineID: #74494
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 202412110@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
+
 		Parameter's Explanation:
 			- @CheckedSecurityCode: = 1: check security code success
 								= 0: failed security code
@@ -41,7 +44,8 @@ SET NOCOUNT ON
 		IF @securityCodeCount <=5
 		BEGIN 			
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = @securityCodeCount
+			SET  securityCodeCount = @securityCodeCount
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your provided Security Code is not correct. Please try again'
@@ -84,7 +88,8 @@ SET NOCOUNT ON
 			WHERE custid = @custid
 			
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = 0
+			SET  securityCodeCount = 0
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 			
 			SELECT @ErrMsg = CASE WHEN @Language = 'E' THEN 'Your account has been locked due to multiple failed security check. Please contact your upline to unlock.'
@@ -120,7 +125,8 @@ SET NOCOUNT ON
 		IF @securityCodeCount > 0
 		BEGIN
 			UPDATE CustLoginInfo WITH(UPDLOCK,ROWLOCK)
-			SET securityCodeCount = 0
+			SET  securityCodeCount = 0
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END 
 	END

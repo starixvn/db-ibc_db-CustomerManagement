@@ -26,6 +26,8 @@ AS
 		- 20200526@Johnson: initial sp [redmine:#133846]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20250109@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+	
 	Parameter's explaination:
 		- @isSkipPWD = 1: not check pwd, just write log login
 */		
@@ -197,7 +199,8 @@ BEGIN
 	END
 	
 	UPDATE CustInDirectLogin WITH(UPDLOCK,ROWLOCK)
-	SET LastVerifyPwd = GETDATE()
+	SET  LastVerifyPwd = GETDATE()
+		,RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @custid
 		AND SubAccID = @subAccID
 		AND CustIDIndirect = @CustIDIndirect

@@ -23,6 +23,8 @@ AS
 		- 20200521@Johnson: initial sp [redmine:#133846]
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+	
 	Parameter's explaination:
 		- @roleid: role of login account
 */		
@@ -272,8 +274,8 @@ BEGIN
 		RETURN
 	END
 	
-	INSERT INTO CustInDirectLogin(CustID, SubAccID,CustIDIndirect, SubAccIDIndirect,LastVerifyPwd)
-	SELECT @custid, @SubAccID, @CustIDIndirect, @SubAccIDIndirect,GETDATE()
+	INSERT INTO CustInDirectLogin(CustID, SubAccID,CustIDIndirect, SubAccIDIndirect,LastVerifyPwd,RepUpdateTime)
+	SELECT @custid, @SubAccID, @CustIDIndirect, @SubAccIDIndirect,GETDATE(),dbo.f_GetDateTime2()
 	
 	IF @SubAccIDIndirect > 0
 	BEGIN

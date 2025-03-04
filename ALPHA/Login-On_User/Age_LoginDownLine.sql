@@ -73,6 +73,8 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @NicknameLoginOnly: Value of the option Set login option by nickname only
@@ -759,7 +761,8 @@ BEGIN
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 
 			UPDATE cl
-			SET IsProtectedMode = 1, @IsKickOut = 1
+			SET  IsProtectedMode = 1, @IsKickOut = 1
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			FROM CustLoginInfo cl WITH (ROWLOCK)
 			WHERE custid = @CustID
 

@@ -18,6 +18,7 @@ CREATE PROCEDURE Age_CustomerUpdProtectedMode
 		
 	Revisions:
 		- 20210824@Elodie: Initial sp [Redmine: #160151]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Parameter's Explanation:
 	Example: EXEC Age_CustomerUpdProtectedMode @Custid = 838203, @IsProtectionMode = 1, @SubAccId = 29183
@@ -63,6 +64,7 @@ BEGIN
 
 	UPDATE cl 
 	SET cl.IsProtectedMode = @IsProtectionMode
+	   ,cl.RepUpdateTime = dbo.f_GetDateTime2()
 	FROM CustLoginInfo cl WITH(ROWLOCK)
 	WHERE custid = @custid
 		

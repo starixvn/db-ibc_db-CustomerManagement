@@ -13,6 +13,7 @@ AS
 	Revisions:
 	- 20230214@Helios: Enhance language part [RedmineID: #183700]
 	- 20230310@Helios: Insert Log Changed [RedmineID: #184858]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 0 , 'EN'
 EXEC  [dbo].[Age_CustLanguageUsageUpd] 2000003763, 1722384 , 'TH'
@@ -40,13 +41,17 @@ ELSE
 
 IF  @SubAccID > 0
 	BEGIN
-		UPDATE custSub Set LanguageUsage = @LanguageUsage
+		UPDATE custSub 
+		Set LanguageUsage = @LanguageUsage
+		   ,RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfoSub custsub WITH (ROWLOCK ,UPDLOCK)
 		WHERE CustID = @CustID and SubAccID = @SubAccID
 	END
 ELSE
 	BEGIN
-		UPDATE cust Set LanguageUsage = @LanguageUsage
+		UPDATE cust 
+		Set LanguageUsage = @LanguageUsage
+		    ,RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CustLoginInfo cust WITH (ROWLOCK ,UPDLOCK)
 		WHERE CustID = @CustID
 	END
