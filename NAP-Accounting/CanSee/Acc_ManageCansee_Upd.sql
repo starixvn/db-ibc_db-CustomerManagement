@@ -15,6 +15,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
+			- 20250108@Virgil: Scale Out DBCUST - Apply In-house replication for profile setting tables [Redmine: #214117]
 	*/
 	SET NOCOUNT ON;
 	--SportType,BetType,Currency,SiteID,IsLaunched,IsTest,LaunchedLevel
@@ -126,9 +127,9 @@ BEGIN
 		
 		BEGIN TRY
 			UPDATE p
-			SET 
-				P.IsTest = CASE WHEN @ColumnMode = 1 THEN  i.IsTest ELSE p.IsTest  END,
-				p.LaunchedLevel = CASE WHEN @ColumnMode = 2 THEN  i.LaunchedLevel ELSE p.LaunchedLevel  END
+			SET P.IsTest = CASE WHEN @ColumnMode = 1 THEN  i.IsTest ELSE p.IsTest  END,
+				p.LaunchedLevel = CASE WHEN @ColumnMode = 2 THEN  i.LaunchedLevel ELSE p.LaunchedLevel  END,
+				p.RepUpdateTime = SYSDATETIME()
 			FROM ProductLaunchedSiteCurrency p
 			INNER JOIN #Data_Input i on i.SiteID = p.SiteID  AND i.Currency = p.Currency 
 						AND i.SportType = p.SportType   AND i.BetType = p.BetType

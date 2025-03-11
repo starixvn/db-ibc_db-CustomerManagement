@@ -17,6 +17,7 @@ AS
 		- 20221117@Tacy: HotFix - NAP - Manage Product Setting - CANSEE - Error when uploaded excel file [RedmineID: #180627]
 		- 20230113@Tacy: Alpha/NAP - Split 789y Site [RedmineID: #181596]
 		- 20230308@Tacy: NAP - Enhance CanSee (not allow: both site=0 and currency=0) [RedmineID: #183826]
+		- 20250108@Virgil: Scale Out DBCUST - Apply In-house replication for profile setting tables [redmine: #214117]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -267,8 +268,8 @@ BEGIN
 	BEGIN
 		SELECT @CurrentRow= @CurrentRow + 1, @startRun = GETDATE()
 		BEGIN TRY
-			INSERT INTO ProductLaunchedSiteCurrency (SiteID,Currency,SportType,IsLaunched,IsTest,BetType,LaunchedLevel)
-			SELECT SiteID,Currency,SportType,IsLaunched,IsTest,BetType,LaunchedLevel
+			INSERT INTO ProductLaunchedSiteCurrency (SiteID,Currency,SportType,IsLaunched,IsTest,BetType,LaunchedLevel, RepUpdateTime)
+			SELECT SiteID,Currency,SportType,IsLaunched,IsTest,BetType,LaunchedLevel, SYSDATETIME()
 			FROM #Data_Input
 			WHERE ID = @CurrentRow
 			

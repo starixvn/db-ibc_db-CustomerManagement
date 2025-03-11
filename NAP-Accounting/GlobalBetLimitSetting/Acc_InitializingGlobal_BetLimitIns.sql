@@ -24,6 +24,8 @@ AS
 		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
 		- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 		- 20240711@Johnson: Apply In-house Replication for Customer Setting [redmine:#207025]
+		- 20250108@Virgil: Apply In-house replication for profile setting tables [RedmineID: #214117]
+
 	Param's Explanation:
 		• @pInputData : 
 		<ROOT>
@@ -271,8 +273,8 @@ BEGIN
 	BEGIN
 		BEGIN TRY
 			-- Credit Group Stake Level
-			INSERT INTO StakeLevel(GameTypeID,ExchangeId,GameGroupID)
-			SELECT DISTINCT a.OrgBetType AS GameTypeID,ExchangeId,GameGroupID
+			INSERT INTO StakeLevel(GameTypeID,ExchangeId,GameGroupID, RepUpdateTime)
+			SELECT DISTINCT a.OrgBetType AS GameTypeID,ExchangeId,GameGroupID, SYSDATETIME()
 			FROM #NewInputDateTbl a 
 			WHERE a.IsCredit =  1 AND SettingType IN (8) 
 			AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
@@ -300,18 +302,19 @@ BEGIN
 								g.MaxLabel = s.MaxLabel,
 								g.MinStake = s.MinStake,
 								g.MaxStake = s.MaxStake,
-								g.MaxGameStake = s.MaxGameStake
+								g.MaxGameStake = s.MaxGameStake,
+								g.RepUpdateTime = SYSDATETIME()
 
 			WHEN NOT MATCHED THEN 
-								INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake)
-								VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake, s.MaxGameStake)					
+								INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake, RepUpdateTime)
+								VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake, s.MaxGameStake, SYSDATETIME())					
 							
 								OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.MaxGameStake, GETDATE(), 1, 1
 									INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, MaxGameStake, UpdateTime, IsGroup, IsCredit);
 
 			-- Credit Stake Level
-			INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId)
-			SELECT DISTINCT a.BetType AS GameTypeID,MinLabel,MaxLabel,NewMinBet,NewMaxBet, ExchangeId
+			INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId, RepUpdateTime)
+			SELECT DISTINCT a.BetType AS GameTypeID,MinLabel,MaxLabel,NewMinBet,NewMaxBet, ExchangeId, SYSDATETIME()
 			FROM #NewInputDateTbl a 
 			WHERE a.IsCredit =  1 AND SettingType IN (7,17) 
 			AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
@@ -320,7 +323,7 @@ BEGIN
 			ORDER BY a.BetType
 		
 			UPDATE dst	
-			SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet
+			SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet, dst.RepUpdateTime = SYSDATETIME()
 			OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, GETDATE(), 0, 1
 				INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, UpdateTime, IsGroup, IsCredit)
 			FROM StakeLevel dst	 WITH (ROWLOCK, UPDLOCK)
@@ -530,7 +533,8 @@ BEGIN
 			--update new settings if exists row:
 			UPDATE pbs
 			SET MinBet=NewMinBet, MaxBet=NewMaxBet, 
-				MaxPerMatch=CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch ELSE MaxPerMatch END
+				MaxPerMatch=CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch ELSE MaxPerMatch END,
+				RepUpdateTime = SYSDATETIME()
 			FROM ProductBetSetting pbs WITH (UPDLOCK, ROWLOCK)
 				INNER JOIN #NewInputDateTbl t ON t.SportType=pbs.Sporttype
 											AND t.BetType=pbs.Bettype
@@ -546,9 +550,9 @@ BEGIN
 								AND t.IsCredit=1)
 
 			--Insert new settings:
-			INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch])
+			INSERT INTO ProductBetSetting ([Sporttype], [Bettype], [Currency], [MinBet], [IsDep], [MaxBet], [MaxPerMatch], RepUpdateTime)
 			SELECT	SportType, BetType, ExchangeId, NewMinBet, 0, NewMaxBet,
-					CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch END NewMaxPerMatch
+					CASE WHEN SettingType NOT IN (7,8,17) THEN NewMaxPerMatch END NewMaxPerMatch, SYSDATETIME()
 			FROM #NewInputDateTbl
 			WHERE (SettingType NOT IN (7,8,17) OR SettingType IS NULL) AND IsCredit=1
 		END TRY

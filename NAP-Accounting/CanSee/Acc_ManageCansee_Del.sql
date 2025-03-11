@@ -14,6 +14,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200617@Winfred: NAP -  Manage ProductLaunchSiteCurrency / CanSee [Redmine: #131241]
+			- 20250108@Virgil: Scale Out DBCUST - Apply In-house replication for profile setting tables [Redmine: #214117]
 	*/
 	SET NOCOUNT ON;
 	--SportType,BetType,Currency,SiteID
@@ -57,13 +58,16 @@ BEGIN
 			FOR XML RAW('File'))
 		
 		SET  @logSpData = '<ROOT>' + @logSpData + '</ROOT>'
+
 		-- Delete row IsTest = 1
 		DELETE plsc
+		OUTPUT deleted.SiteID, deleted.Currency, deleted.SportType, deleted.BetType, deleted.LaunchedLevel, [dbo].[f_GetDateTime2]() 
+		INTO dbo.ProductLaunchedSiteCurrency_Del_InHouse(SiteID, Currency, SportType, BetType, LaunchedLevel, RepUpdateTime)
 		FROM dbo.ProductLaunchedSiteCurrency plsc WITH(ROWLOCK)
 			INNER JOIN #File_Temp a on a.SiteID = plsc.SiteID  AND a.Currency = plsc.Currency 
 						AND a.SportType = plsc.SportType   AND a.BetType = plsc.BetType
 						--AND a.LaunchedLevel = plsc.LaunchedLevel
-		WHERE 	plsc.IsTest = 1	
+		WHERE plsc.IsTest = 1	
 				
 	END TRY
 	BEGIN CATCH
