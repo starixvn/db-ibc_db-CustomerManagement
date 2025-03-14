@@ -16,6 +16,7 @@ AS
 		- 20240123@Lewis: Add 2 more base currencies NPR & TRY [RedmineID: #200163]
 		- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
+		- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -49,7 +50,8 @@ BEGIN
 		TRY,
 		MXN,
 		NGN,
-		BRL
+		BRL,
+		PKR
 	FROM (
 		SELECT 
 			edo.ExchangeDate,
@@ -81,6 +83,7 @@ BEGIN
 			edo.MXN,
 			edo.NGN,
 			edo.BRL,
+			edo.PKR,
 			ROW_NUMBER() OVER(
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC
