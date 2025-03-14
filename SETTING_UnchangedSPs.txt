@@ -1,0 +1,2 @@
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
+ALPHA\Customer\Age_GetOfferedProductBySiteCurrency.sql
