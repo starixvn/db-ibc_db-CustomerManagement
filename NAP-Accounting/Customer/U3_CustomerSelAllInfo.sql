@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBAGE-bodb02" executers="wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[U3_CustomerSelAllInfo]
 	@username VARCHAR(30),
 	@CheckCustId TINYINT = 0,
@@ -96,6 +96,7 @@ Revisions:
 	- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210805@Tina: Cannot search licensee on Nap U3 [Redmine: #158886]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20250314@Virgil: Drop BA functions [RedmineID: #216882]
 
 Param's Explanation:
 	- @username: username want to get all info related
@@ -552,7 +553,6 @@ BEGIN
 		ISNULL(ci.HideColossusBet,1) AS HideColossusBet,
 		ISNULL(ci.DisableSuperLive,1) AS DisableSuperLive,
 	    ci.Enabled,
-		0 AS IsBA,
 	    @IsDeposit IsDeposit, 
 	    c.phone, c.mobilephone, c.fax, c.creatdate as createdate,
 	    c.site,

@@ -1,3 +1,4 @@
+/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="wsv_nap" isFunction="0" isNested="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,7 +9,6 @@ ALTER PROCEDURE [dbo].[NAP_UserLog_UpdateVirtualRateSettings]
 	 @PunterVRSettingsDoc		VARCHAR(MAX),	 
 	 @ServiceName				VARCHAR(15),	     
 	 @AdjustDate				DATETIME,
-
 	 @ErrCode					INT = 0 OUTPUT,    
 	 @ErrMsg					NVARCHAR(200) = '' OUTPUT  
 AS
@@ -25,11 +25,12 @@ AS
 		- 20170522@Elodie:	When the [VR Auto Adjustment] job runs to update members to +200%, update VR = 0 for the BA accounts with margin >= 4% [RedmineID:#76701]
 		- 20170927@Thai:	Add ServiceName & AdjustDate (Feature #82312)
 		- 20181003@Long:	Remove the step of getting BA Info (Feature #102609)
+		- 20250314@Virgil:  Drop BA functions [RedmineID: #216882]
 
 	Param's Explanation:  
 		- @PunterVRSettingsDoc = '<ROOT>
-									<Rate CustID="123456" ReportDate="2016-04-04" SiteID="22" SRecommend="123" MRecommend="456" Recommend="789" OldVirtualRate="0.2" NewVirtualRate="0.8" IsBA="1" />	
-									<Rate CustID="7891011" ReportDate="2016-04-05" SiteID="122" SRecommend="21123" MRecommend="11456" Recommend="12789" OldVirtualRate="0.5" NewVirtualRate="0.7" IsBA="0" />	
+									<Rate CustID="123456" ReportDate="2016-04-04" SiteID="22" SRecommend="123" MRecommend="456" Recommend="789" OldVirtualRate="0.2" NewVirtualRate="0.8"/>	
+									<Rate CustID="7891011" ReportDate="2016-04-05" SiteID="122" SRecommend="21123" MRecommend="11456" Recommend="12789" OldVirtualRate="0.5" NewVirtualRate="0.7"/>	
 								</ROOT>'
 */
 
@@ -47,13 +48,12 @@ BEGIN
 		,	Recommend		INT
 		,	OldVirtualRate	SMALLMONEY
 		,	NewVirtualRate	SMALLMONEY
-		,	IsBA			BIT
 	);
 
 	--Create an internal representation of the XML document.
 	EXEC sp_xml_preparedocument @idoc OUTPUT, @PunterVRSettingsDoc;
 
-	INSERT INTO #UserLog(CustID, ReportDate, SiteID, SRecommend, MRecommend, Recommend, OldVirtualRate, NewVirtualRate, IsBA)
+	INSERT INTO #UserLog(CustID, ReportDate, SiteID, SRecommend, MRecommend, Recommend, OldVirtualRate, NewVirtualRate)
 	SELECT Data.CustID
 		,	ReportDate
 		,	SiteID
@@ -62,7 +62,6 @@ BEGIN
 		,	Recommend
 		,	OldVirtualRate
 		,	NewVirtualRate
-		,	IsBA
 	FROM OPENXML (@idoc, '/ROOT/Rate', 1)
 		WITH (CustID		INT
 		,	ReportDate		DATE
@@ -71,10 +70,9 @@ BEGIN
 		,	MRecommend		INT											
 		,	Recommend		INT
 		,	OldVirtualRate	SMALLMONEY
-		,	NewVirtualRate	SMALLMONEY
-		,	IsBA			BIT) AS Data;
+		,	NewVirtualRate	SMALLMONEY) AS Data;
 	
-	INSERT INTO dbo.UserLog_VirtualRateSettings(CreatorID, CustID, AdjustDate, ReportDate, SiteID, SRecommend, MRecommend, Recommend, OldVirtualRate, NewVirtualRate, IsBA, ServiceName)
+	INSERT INTO dbo.UserLog_VirtualRateSettings(CreatorID, CustID, AdjustDate, ReportDate, SiteID, SRecommend, MRecommend, Recommend, OldVirtualRate, NewVirtualRate, ServiceName)
 	SELECT	@CreatorId
 		,	ul.CustID
 		,	@AdjustDate
@@ -85,7 +83,6 @@ BEGIN
 		,	ul.Recommend
 		,	ul.OldVirtualRate
 		,	ul.NewVirtualRate
-		,	ul.IsBA
 		,	@ServiceName
 	FROM #UserLog ul WITH(NOLOCK);
 
@@ -102,4 +99,3 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBLOG-bodb_CustomerLog" executers="bodbAdminNet,wsv_nap" isFunction="0" isNested="0"></info>*/

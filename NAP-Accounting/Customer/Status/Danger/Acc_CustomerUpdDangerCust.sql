@@ -11,7 +11,6 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdDangercust]
 	@Permission	VARCHAR(20) = '1,2,3',
 	@DeniedList	NVARCHAR(MAX)=NULL,
 	@Language varchar(2) = 'E',
-	@isBA INT=0 OUTPUT,
 	@system VARCHAR(50) = 'NAP',
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg nvarchar(200) = '' OUTPUT,
@@ -51,6 +50,8 @@ AS
 		- 20240816@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241024@Johnson: Danger Setting - Update ABI 33/46 to ORI 33/46 [redmineID: #208301]
 		- 20241128@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
+		- 20250314@Virgil: Drop BA functions [RedmineID: #216882]
+
 	Param's Explanation:
 		@CustID: Id of member will be updated,
 		@DangerType: type of danger,
