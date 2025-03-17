@@ -24,7 +24,8 @@ AS
 		- 20191024@Eden: Hofix - removed dummy acc from table CustDirectAccount [Redmine:83206]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
 		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
-
+		- 20250317@July: Scale Out DBCUST - Change unique key table TOControl_GlobalSetting [Redmine: #215627]
+		
     Param's Explanation:
     • @ErrCode:
         = 0:  Successful update.
@@ -167,8 +168,8 @@ BEGIN
 	IF @roleid = 3
 	BEGIN
 		DELETE TOControl_GlobalSetting WITH (ROWLOCK)
-			OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
-			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
+			OUTPUT DELETED.ID, dbo.f_GetDateTime2()
+			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(ID, RepUpdateTime)
 		WHERE CustID = @srecommend
 		
 		DELETE TOControl_Setting
@@ -177,8 +178,8 @@ BEGIN
 	ELSE IF @roleid = 2
 	BEGIN
 		DELETE TOControl_GlobalSetting WITH (ROWLOCK)
-			OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
-			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
+			OUTPUT DELETED.ID, dbo.f_GetDateTime2()
+			INTO dbo.TOControl_GlobalSetting_Del_Inhouse(ID, RepUpdateTime)
 		WHERE CustID IN (@srecommend,@mrecommend)
 		
 		DELETE TOControl_Setting
@@ -187,8 +188,8 @@ BEGIN
 	ELSE IF @roleid = 1
 	BEGIN
 			DELETE dbo.TOControl_GlobalSetting WITH (ROWLOCK)
-				OUTPUT DELETED.CustID, DELETED.Sporttype, DELETED.IsGroupHeadLine, DELETED.ProfileID, dbo.f_GetDateTime2()
-				INTO dbo.TOControl_GlobalSetting_Del_Inhouse(CustID, Sporttype, IsGroupHeadLine, ProfileID, RepUpdateTime)
+				OUTPUT DELETED.ID, dbo.f_GetDateTime2()
+				INTO dbo.TOControl_GlobalSetting_Del_Inhouse(ID, RepUpdateTime)
 			WHERE CustID IN (@srecommend,@mrecommend,@recommend)
 			
 			DELETE dbo.TOControl_Setting
