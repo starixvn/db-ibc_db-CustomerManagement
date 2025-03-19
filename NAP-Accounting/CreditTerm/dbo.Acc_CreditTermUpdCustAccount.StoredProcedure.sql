@@ -32,8 +32,8 @@ BEGIN
 	IF @isgroupheadline = 0
 	BEGIN
 		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
-		OUTPUT DELETED.ID, dbo.f_GetDateTime2()
-		INTO CustGroupHeadline_Del_Inhouse(ID, RepUpdateTime)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2(), DELETED.ID
+			INTO CustGroupHeadline_Del_Inhouse (CustID, RepUpdateTime, ID)
 		WHERE CustID = @custid
 	END
 	ELSE

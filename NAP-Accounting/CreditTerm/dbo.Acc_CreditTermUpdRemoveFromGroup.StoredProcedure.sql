@@ -104,8 +104,8 @@ BEGIN
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 
 		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
-			OUTPUT DELETED.ID, dbo.f_GetDateTime2()
-			INTO dbo.CustGroupHeadline_Del_InHouse(ID, RepUpdateTime)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2(), DELETED.ID
+			INTO CustGroupHeadline_Del_Inhouse (CustID, RepUpdateTime, ID)
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 		
 		SELECT @ErrMsg = 'Group of ' + COALESCE(CAST(@UsernameHL AS NVARCHAR(300)), SPACE(1)) + ' has been removed.'
