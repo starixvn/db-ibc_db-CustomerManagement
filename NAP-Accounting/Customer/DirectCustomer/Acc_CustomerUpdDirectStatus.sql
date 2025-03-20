@@ -250,6 +250,3 @@ BEGIN
         FROM @affectedList
     END
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CustomerUpdDirectStatus] TO [wsv_nap]
-GO 

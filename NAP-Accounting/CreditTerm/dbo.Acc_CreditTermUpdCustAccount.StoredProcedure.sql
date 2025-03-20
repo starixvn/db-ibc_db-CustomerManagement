@@ -76,7 +76,3 @@ BEGIN
 			,@IP		= @IP
 	END
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CreditTermUpdCustAccount] TO [wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CreditTermUpdCustAccount] TO [vnteam]
