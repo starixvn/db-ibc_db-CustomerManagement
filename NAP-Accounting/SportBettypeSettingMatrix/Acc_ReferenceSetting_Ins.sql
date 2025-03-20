@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE dbo.Acc_ReferenceSetting_Ins 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
@@ -9,12 +9,13 @@ ALTER PROCEDURE dbo.Acc_ReferenceSetting_Ins
 AS
 /*
 	Task : NAP - New function to manage SportBettypeSettingMatrix table
-	DB: DBCUST/bodb02
+	DB: DBGLOB-GlobCustDB
 	Original: 
 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255]
 		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
+		- 20250120@Tacy: Move to GlobCustDB [RedmineID: #216870]
 		
 	Param's Explanation:
 		 @pInputData : 
@@ -186,7 +187,7 @@ BEGIN
 				, s.TableBettrans=t.TableBettrans
 				, s.RealProductId=t.RealProductId
 				, s.ProductID=t.DummyProductId
-				, s.[RepUpdateTime]=sysdatetime()
+				, s.[RepUpdateTime]=dbo.f_GetDateTime2()
 				, s.isDeleted=0
 			FROM SportBettypeSettingMatrix s WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN #NewReferenceSettingTbl t 
@@ -212,8 +213,8 @@ BEGIN
 		IF EXISTS (SELECT TOP 1 1 FROM #NewReferenceSettingTbl t)
 		BEGIN
 			INSERT INTO SportBettypeSettingMatrix
-					([SportType], [BetType], [IsLicensee], [IsLive], [Site], [isActive], [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], [IsLiveComm], [IsLiveBetSetting], [TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [ProductId])
-			SELECT	 [SportType], [BetType], [IsLicensee], [IsLive], [Site], 1,			 [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], 0,			0,					[TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [DummyProductId]
+					([SportType], [BetType], [IsLicensee], [IsLive], [Site], [isActive], [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], [IsLiveComm], [IsLiveBetSetting], [TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [ProductId], [RepUpdateTime])
+			SELECT	 [SportType], [BetType], [IsLicensee], [IsLive], [Site], 1,			 [SportTypeRefPT], [BetTypeRefPT], [IsLivePT], [TablePT], [SportTypeRefComm], [BetTypeRefComm], [TableComm], [SportTypeRefBetSetting], [BetTypeRefBetSetting], [TableBetSetting], 0,			0,					[TableBettrans], [SporttypeRefWinlossLimit], [BettypeRefWinlossLimit], [RealProductId], [DummyProductId], dbo.f_GetDateTime2()
 			FROM #NewReferenceSettingTbl
 		END
 

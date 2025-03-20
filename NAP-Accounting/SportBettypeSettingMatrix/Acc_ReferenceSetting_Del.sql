@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE dbo.Acc_ReferenceSetting_Del 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
@@ -9,11 +9,12 @@ ALTER PROCEDURE dbo.Acc_ReferenceSetting_Del
 AS
 /*
 	Task : NAP - New function to manage SportBettypeSettingMatrix table
-	DB: DBACC/bodb02
+	DB: DBGLOB-GlobCustDB
 	Original: 
 	Revisions:
 		- 20230301@Tacy: Create SP [Redmine: #184255] 
 		- 20230803@Tacy: NAP - Manage SportBettypeSettingMatrix - Add more fields [Redmine: #192732]
+		- 20250120@Tacy: Move to GlobCustDB [RedmineID: #216870]
 		
 	Param's Explanation:
 		 @pInputData : 
@@ -78,7 +79,7 @@ BEGIN
 	--DELETE:
 	BEGIN TRY
 		UPDATE s
-		SET s.[RepUpdateTime]=sysdatetime(),
+		SET s.[RepUpdateTime]=dbo.f_GetDateTime2(),
 			s.[isDeleted]=1
 		FROM SportBettypeSettingMatrix s  WITH (ROWLOCK,UPDLOCK)
 		INNER JOIN #NewReferenceSettingTbl t 
