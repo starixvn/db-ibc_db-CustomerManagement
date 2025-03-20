@@ -1,6 +1,3 @@
-NAP-Accounting\Customer\Status\AutoSuspend\Acc_CustomerUpdAutoSuspend.proc.sql
-NAP-Accounting\Customer\Status\LockSuspend\Acc_CustomerLockSuspendUpd.sql
-NAP-Accounting\Customer\VirtualRate\Acc_CustomerCopyVRSetting.sql
-NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier.sql
-NAP-Accounting\Customer\VirtualRate\Acc_CustomerUpdVirtualMultiplier_Multiple.sql
-Nap-Risk&Control\WinLimitControl\BlockMember\Task_Winlimit_BlockedUser.sql
+NAP-Accounting/ExternalSite/Group/dbo.Acc_CustGroupDel.sql
+NAP-Accounting/CreditTerm/dbo.Acc_CreditTermUpdCustomer.StoredProcedure.sql
+NAP-Accounting/CreditTerm/dbo.Acc_CreditTermUpdAddToGroup.StoredProcedure.sql

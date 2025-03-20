@@ -36,6 +36,7 @@ AS
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 
 	Param's Explanation:
 		@Case = 0 : No change
@@ -122,8 +123,8 @@ BEGIN
 		SELECT '<GroupHeadline custid="'+ COALESCE(CAST(custid AS VARCHAR(300)), SPACE(1)) + '" ' +
 						'GroupID="'+ COALESCE(CAST(@groupID AS VARCHAR(50)),SPACE(1))  + '" />'  AS NotificationInfo
 			, @startRun AS CreatedDate
-			, 1002 AS ActionID		
-			, dbo.f_GetDateTime2()						
+			, 1002 AS ActionID			
+			, dbo.f_GetDateTime2()
 		FROM (SELECT value AS custid FROM STRING_SPLIT(@CustIDList, ',')) AS tmp
 
 		SELECT @Case = 1, @New_Headline = 0, @Old_Headline = @CustID_Headline
@@ -214,7 +215,10 @@ BEGIN
 		FROM dbo.EaGroupHeadline WITH (NOLOCK)
 		WHERE GroupHeadlineId = @GroupId
 
-		DELETE dbo.EaGroupHeadline WITH (ROWLOCK, UPDLOCK) WHERE GroupHeadlineId = @GroupId
+		DELETE dbo.EaGroupHeadline WITH (ROWLOCK, UPDLOCK) 
+			OUTPUT DELETED.GroupHeadlineId, DELETED.GroupId, DELETED.GroupName, DELETED.SiteId, DELETED.ExchangeId, [dbo].[f_GetDateTime2]()
+			INTO EaGroupHeadline_Del_Inhouse (GroupHeadlineId, GroupId, GroupName, SiteId, ExchangeId, RepUpdatetime)
+		WHERE GroupHeadlineId = @GroupId
 	END
 
 	-- Extra PT Setting
@@ -228,6 +232,8 @@ BEGIN
 
 		-- Remove future setting
 		DELETE e WITH (ROWLOCK, UPDLOCK)
+			OUTPUT deleted.ID, [dbo].[f_GetDateTime2]()
+			INTO Acc_GroupExtraPTSetting_Del_InHouse (ID, RepUpdateTime)
 		FROM dbo.Acc_GroupExtraPTSetting e
 			INNER JOIN #Super s ON e.SuperId = s.CustId AND e.GroupId = s.GroupExtraPTId
 		WHERE s.GroupTypeId = 2
@@ -238,6 +244,8 @@ BEGIN
 			)
 
 		DELETE e WITH (ROWLOCK, UPDLOCK)
+			OUTPUT deleted.ID, [dbo].[f_GetDateTime2]()
+			INTO Acc_GroupExtraPT2Setting_Del_InHouse (ID, RepUpdateTime)
 		FROM dbo.Acc_GroupExtraPT2Setting e
 			INNER JOIN #Super s ON e.SuperId = s.CustId AND e.GroupId = s.GroupExtraPTId
 		WHERE s.GroupTypeId = 2
@@ -249,14 +257,14 @@ BEGIN
 		
 		-- Close current setting
 		UPDATE e WITH (ROWLOCK)
-		SET e.ToDate = DATEADD(DAY, -1, EffectiveDate)
+		SET e.ToDate = DATEADD(DAY, -1, EffectiveDate), e.RepUpdateTime = [dbo].[f_GetDateTime2]()
 		FROM dbo.Acc_GroupExtraPTSetting e
 			INNER JOIN #Super s ON e.SuperId = s.CustId AND e.GroupId = s.GroupExtraPTId
 		WHERE s.GroupTypeId = 2
 			AND e.ToDate >= @currentDate
 
 		UPDATE e WITH (ROWLOCK)
-		SET e.ToDate = DATEADD(DAY, -1, EffectiveDate)
+		SET e.ToDate = DATEADD(DAY, -1, EffectiveDate), e.RepUpdateTime = [dbo].[f_GetDateTime2]()
 		FROM dbo.Acc_GroupExtraPT2Setting e
 			INNER JOIN #Super s ON e.SuperId = s.CustId AND e.GroupId = s.GroupExtraPTId
 		WHERE s.GroupTypeId = 2

@@ -87,7 +87,31 @@ BEGIN
     
     --get Direct account (direct account: not belong to any ext group)     
 	INSERT INTO #tmpDirectCust (custid, ClosedReason)
-        SELECT cs.custid, cl.ClosedReason        FROM dbo.CustSuper cs WITH (NOLOCK)  			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cs.custid=cl.CustID  		WHERE cs.IsInternal = 0	UNION        SELECT a.custid, cl.ClosedReason        FROM dbo.f_GetDirectAgency(4) a            INNER JOIN dbo.CustMaster cm WITH(NOLOCK) ON cm.custid = a.custid			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON a.custid=cl.CustID  		WHERE cm.isInternal = 0     UNION            SELECT a.custid, cl.ClosedReason        FROM dbo.f_GetDirectAgency(3) a            CROSS APPLY (SELECT TOP 1 IsInternal FROM dbo.CustAgent ca WITH(NOLOCK) WHERE ca.custid = a.custid) ca			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON a.custid=cl.CustID  		WHERE ca.IsInternal = 0    UNION            SELECT a.custid, cl.ClosedReason        FROM dbo.f_GetDirectAgency(2) a			OUTER APPLY (SELECT TOP 1 ca.custid 						 FROM dbo.CustAgent ca WITH(NOLOCK) 						 WHERE ca.custid=a.recommend							AND ca.IsInternal = 1) ca			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON a.custid=cl.CustID       		WHERE ca.custid IS NULL
+        SELECT cs.custid, cl.ClosedReason
+        FROM dbo.CustSuper cs WITH (NOLOCK)  
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON cs.custid=cl.CustID  
+		WHERE cs.IsInternal = 0
+	UNION
+        SELECT a.custid, cl.ClosedReason
+        FROM dbo.f_GetDirectAgency(4) a
+            INNER JOIN dbo.CustMaster cm WITH(NOLOCK) ON cm.custid = a.custid
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON a.custid=cl.CustID  
+		WHERE cm.isInternal = 0 
+    UNION    
+        SELECT a.custid, cl.ClosedReason
+        FROM dbo.f_GetDirectAgency(3) a
+            CROSS APPLY (SELECT TOP 1 IsInternal FROM dbo.CustAgent ca WITH(NOLOCK) WHERE ca.custid = a.custid) ca
+			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON a.custid=cl.CustID  
+		WHERE ca.IsInternal = 0
+    UNION    
+        SELECT a.custid, cl.ClosedReason
+        FROM dbo.f_GetDirectAgency(2) a
+			OUTER APPLY (SELECT TOP 1 ca.custid 
+						 FROM dbo.CustAgent ca WITH(NOLOCK) 
+						 WHERE ca.custid=a.recommend
+							AND ca.IsInternal = 1) ca
+			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON a.custid=cl.CustID       
+		WHERE ca.custid IS NULL
 
     --Get Headline
     INSERT INTO #tmpGroupHeadline(CustHeadlineID, GroupHeadline, GroupHeadlineID)    
