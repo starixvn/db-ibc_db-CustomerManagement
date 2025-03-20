@@ -25,6 +25,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 	, @MXN FLOAT
 	, @NGN FLOAT
 	, @BRL FLOAT
+	, @PKR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -51,6 +52,7 @@ AS
 		- 20241001@Eddie: Update exchange code of HKK and remove this hard code after done [RedmineID: #211537]
 		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]  
 		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
+		- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
 		
 	Parameter's Explaination:
 	/*
@@ -134,6 +136,7 @@ BEGIN
 					, MXN
 					, NGN
 					, BRL
+					, PKR
 					, RepUpdateTime
 				)
 				VALUES (
@@ -163,6 +166,7 @@ BEGIN
 					, @MXN * @MultipliedBy
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
+					, @PKR * @MultipliedBy
 					, dbo.f_GetDateTime2()
 				)
 			END
@@ -192,6 +196,7 @@ BEGIN
 					, MXN = @MXN * @MultipliedBy
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
+					, PKR = @PKR * @MultipliedBy
 					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
 				  AND ExchangeDate = @date
@@ -244,12 +249,14 @@ BEGIN
 			, MXN
 			, NGN
 			, BRL
+			, PKR
 			, RepUpdateTime
 		)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -311,12 +318,14 @@ BEGIN
 			, MXN
 			, NGN
 			, BRL
+			, PKR
 			, RepUpdateTime
 		)
 		VALUES (
 			218
 			, @date
 			, 'BTS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -385,6 +394,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, PKR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -414,6 +424,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, @PKR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -443,6 +454,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, PKR = @PKR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
@@ -499,6 +511,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, PKR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -528,6 +541,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, @PKR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -557,6 +571,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, PKR = @PKR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
@@ -613,6 +628,7 @@ BEGIN
 				, MXN
 				, NGN
 				, BRL
+				, PKR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -642,6 +658,7 @@ BEGIN
 				, @MXN * @MultipliedBy
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
+				, @PKR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -671,6 +688,7 @@ BEGIN
 				, MXN = @MXN * @MultipliedBy
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
+				, PKR = @PKR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date

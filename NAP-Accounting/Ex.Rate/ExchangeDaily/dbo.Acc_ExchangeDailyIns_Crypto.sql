@@ -24,6 +24,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto]
 	, @MXN FLOAT
 	, @NGN FLOAT
 	, @BRL FLOAT
+	, @PKR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -40,6 +41,7 @@ Revisions:
 	- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 	- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
 	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
+	- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
 */
 BEGIN
 
@@ -120,6 +122,7 @@ BEGIN
 					, MXN
 					, NGN
 					, BRL
+					, PKR
 					, ActualRate
 					, RepUpdateTime
 					)
@@ -150,6 +153,7 @@ BEGIN
 					, @MXN * @MultipliedBy
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
+					, @PKR * @MultipliedBy
 					, @MYR * @MultipliedBy	--ActualRate				
 					, dbo.f_GetDateTime2()
 					)
@@ -180,6 +184,7 @@ BEGIN
 					, MXN = @MXN * @MultipliedBy
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
+					, PKR = @PKR * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
 					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
