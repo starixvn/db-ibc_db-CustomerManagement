@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns] 
 	-- Add the parameters for the stored procedure here
 	 @InputData	VARCHAR(MAX)	= ''
@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitIns]
 AS
 /*
 	Task : NAP -  Flexible Initializing Global Stake Level/Bet Limit
-	DB: DBCUST/CustDB
+	DB: DBGLOB-GlobCustDB
 	Original: 
 	Revisions:
 		- 20220210@Winfred: NAP -  Flexible Initializing insert Stake Level [Redmine: #167128]
@@ -25,6 +25,7 @@ AS
 		- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
 		- 20240711@Johnson: Apply In-house Replication for Customer Setting [redmine:#207025]
 		- 20250108@Virgil: Apply In-house replication for profile setting tables [RedmineID: #214117]
+		- 20250120@Tacy: Move to GlobCustDB [RedmineID: #216870]
 
 	Param's Explanation:
 		• @pInputData : 
@@ -272,46 +273,6 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #NewInputDateTbl WHERE SettingType IN (7,8,17))
 	BEGIN
 		BEGIN TRY
-			-- Credit Group Stake Level
-			INSERT INTO StakeLevel(GameTypeID,ExchangeId,GameGroupID, RepUpdateTime)
-			SELECT DISTINCT a.OrgBetType AS GameTypeID,ExchangeId,GameGroupID, SYSDATETIME()
-			FROM #NewInputDateTbl a 
-			WHERE a.IsCredit =  1 AND SettingType IN (8) 
-			AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
-							WHERE tmp.GameTypeID = a.OrgBetType AND a.ExchangeId = tmp.ExchangeId 
-								  AND a.GameGroupID = tmp.GameGroupID)
-			ORDER BY a.OrgBetType
-		
-			;WITH STAKE_TEMP AS (
-				SELECT t.StakeLevelID,s.BetType AS GameTypeID,
-						s.MinLabel,s.MaxLabel,
-						s.NewMinBet AS MinStake,
-						s.NewMaxBet AS MaxStake, 
-						s.NewMaxGameStake AS MaxGameStake,
-						s.ExchangeId,s.GameGroupID
-				FROM #NewInputDateTbl s 
-				CROSS APPLY (
-					SELECT StakeLevelID  FROM StakeLevel WITH(NOLOCK) WHERE GameTypeID = s.OrgBetType AND ExchangeId = s.ExchangeId AND GameGroupID = s.GameGroupID
-				) t
-				WHERE s.IsCredit =  1 AND SettingType IN (8)
-			)
-			MERGE StakeLevelGroupDetail as g 
-			USING STAKE_TEMP s on g.StakeLevelID = s.StakeLevelID AND g.GameTypeID = s.GameTypeID
-			WHEN MATCHED THEN UPDATE SET 
-								g.MinLabel = s.MinLabel,
-								g.MaxLabel = s.MaxLabel,
-								g.MinStake = s.MinStake,
-								g.MaxStake = s.MaxStake,
-								g.MaxGameStake = s.MaxGameStake,
-								g.RepUpdateTime = SYSDATETIME()
-
-			WHEN NOT MATCHED THEN 
-								INSERT (StakeLevelID,GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,MaxGameStake, RepUpdateTime)
-								VALUES (s.StakeLevelID,s.GameTypeID,s.MinLabel,s.MaxLabel,s.MinStake,s.MaxStake, s.MaxGameStake, SYSDATETIME())					
-							
-								OUTPUT deleted.StakeLevelID, deleted.GameTypeID, deleted.MaxLabel, deleted.MaxStake, deleted.MaxGameStake, GETDATE(), 1, 1
-									INTO @History_StakeLevelTbl(StakeLevelID, GameTypeID, MaxLabel, MaxStake, MaxGameStake, UpdateTime, IsGroup, IsCredit);
-
 			-- Credit Stake Level
 			INSERT INTO StakeLevel(GameTypeID, MinLabel, MaxLabel, MinStake, MaxStake,ExchangeId, RepUpdateTime)
 			SELECT DISTINCT a.BetType AS GameTypeID,MinLabel,MaxLabel,NewMinBet,NewMaxBet, ExchangeId, SYSDATETIME()
@@ -339,14 +300,6 @@ BEGIN
 										AND sl.MaxLabel=his.MaxLabel
 			WHERE IsGroup=0
 
-			DELETE his
-			FROM @History_StakeLevelTbl his
-				INNER JOIN StakeLevelGroupDetail slg ON slg.StakeLevelID=his.StakeLevelID
-													AND slg.GameTypeID=his.GameTypeID
-													AND slg.MaxStake=his.MaxStake
-													AND slg.MaxLabel=his.MaxLabel
-			WHERE IsGroup=1
-
 			DELETE @History_StakeLevelTbl WHERE StakeLevelID IS NULL
 
 			--CREDIT: Insert history of update global StakeLevel
@@ -365,26 +318,6 @@ BEGIN
 									)
 
 				EXEC Task_DetectBet_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=0, @ErrMsg=@ErrMsg OUTPUT
-
-				IF @ErrMsg<>''
-					RETURN
-			END
-
-			IF EXISTS (SELECT 1 FROM @History_StakeLevelTbl WHERE IsGroup=1 AND IsCredit=1)
-			BEGIN
-				SET @SettingList = (SELECT	StakeLevelID	AS '@StakeLevelID',
-											GameTypeID		AS '@GameTypeID',
-											MaxLabel		AS '@MaxLabel',
-											MaxStake		AS '@MaxStake',
-											MaxGameStake	AS '@MaxGameStake',
-											'NULL'			AS '@SiteID',
-											UpdateTime		AS '@UpdateTime'	
-									FROM @History_StakeLevelTbl
-									WHERE IsGroup=1 AND IsCredit=1
-									FOR XML PATH('r') , ROOT('root')
-									)
-
-				EXEC Task_DetectBet_StakeLevelHistory_Insert @SettingList=@SettingList, @IsGroup=1, @ErrMsg=@ErrMsg OUTPUT
 
 				IF @ErrMsg<>''
 					RETURN
