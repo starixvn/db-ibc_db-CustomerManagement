@@ -19,6 +19,8 @@ Revisions:
 	- 20220623@Johnson: enhance flow update [redmine:#168458]
 	- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 	- 20240809@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
+	- 20250321@July: Can not update all setting in currency win loss limit setting page - Change NOLOCK [redmine: #221279]
+
 Parameters Explanation:	
    @xml = '<Root>
 				<r Product="1" Group="1" Currency="1" Site="1" Level="1" WinLimit="1000.0" PlaceBet="0" Transfer="0" Suspend="0"/>
@@ -139,7 +141,7 @@ BEGIN
 								    END,
 				  s.RepUpdateTime = SYSDATETIME()											
 			 FROM dbo.WinLimit_ProductSettingDetail s WITH (ROWLOCK, UPDLOCK)
-				 INNER JOIN dbo.Site st WITH(ROWLOCK) ON s.SiteID = st.siteid
+				 INNER JOIN dbo.Site st WITH(NOLOCK) ON s.SiteID = st.siteid
 			 WHERE 
 				  s.ProductID = @ProductId
 				  AND s.GroupId = @GroupId
