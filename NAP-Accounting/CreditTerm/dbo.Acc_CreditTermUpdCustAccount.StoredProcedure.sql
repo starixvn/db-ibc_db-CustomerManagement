@@ -23,7 +23,7 @@ AS
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
-		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #215627]
+		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #221252]
 */
 BEGIN 
 	DECLARE @NotificationInfo VARCHAR(MAX), @CreateDate DATETIME, @CustID_Headline INT

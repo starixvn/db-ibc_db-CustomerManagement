@@ -37,7 +37,7 @@ AS
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
-		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #215627]
+		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #221252]
 		
 	Param's Explanation:
 		@Case = 0 : No change
