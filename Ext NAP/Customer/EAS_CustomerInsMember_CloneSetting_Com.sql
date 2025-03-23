@@ -63,7 +63,8 @@ AS
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241225@July: Scale out DB - In-house Replicator - Support change for SMA TO Control [Redmine: #207042]
 		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
-		
+		- 202503230@Elodie: Hotfix-Apply Inhouse replication [Redmine: #221349]
+
 	Parameter's Explaination:
 		@Case = 0 : No change 
 		      = 1 : IsGroupHeadline 0-> 0, the User change group
@@ -463,13 +464,13 @@ BEGIN
 
 	--add external group
 	INSERT INTO dbo.Acc_CustGroup (CustID, RoleID, GroupName, RepUpdateTime)
-	SELECT @CustID, @RoleID, GroupName, dbo.f_GetDateTime2()
-	FROM Acc_CustGroup WITH(NOLOCK)
-	WHERE custid = @ExistingCustid
-		AND GroupName IN (SELECT f.[value] AS GroupName FROM STRING_SPLIT(@GroupName, ',') AS f )
-	UNION 
-	SELECT @CustID, @RoleID,
-		CASE WHEN @currency = 20 THEN 'ACCUUS2' ELSE 'ACCUSD' END, dbo.f_GetDateTime2()
+	SELECT a.CustId, a.RoleID, a.GroupName, dbo.f_GetDateTime2()
+	FROM (SELECT @CustID CustId, @RoleID RoleID, GroupName
+		FROM Acc_CustGroup WITH(NOLOCK)
+		WHERE custid = @ExistingCustid
+			AND GroupName IN (SELECT f.[value] AS GroupName FROM STRING_SPLIT(@GroupName, ',') AS f )
+		UNION 
+		SELECT @CustID, @RoleID, CASE WHEN @currency = 20 THEN 'ACCUUS2' ELSE 'ACCUSD' END) a
 
 	
 	INSERT INTO [CustDB].[dbo].[CustSuperProfile]
