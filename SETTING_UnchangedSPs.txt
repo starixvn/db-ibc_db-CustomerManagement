@@ -1,3 +1,0 @@
-NAP-Accounting/ExternalSite/Group/dbo.Acc_CustGroupDel.sql
-NAP-Accounting/CreditTerm/dbo.Acc_CreditTermUpdCustomer.StoredProcedure.sql
-NAP-Accounting/CreditTerm/dbo.Acc_CreditTermUpdAddToGroup.StoredProcedure.sql
