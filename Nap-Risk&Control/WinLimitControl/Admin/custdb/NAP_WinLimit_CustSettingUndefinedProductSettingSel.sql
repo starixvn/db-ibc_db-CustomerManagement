@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username VARCHAR(100) = ''
 AS
@@ -14,6 +14,7 @@ Revisions:
 	20160923@Jacob: Risk & Control - Phase 3 [#61220].
 	20180921@Jacob: Migrate some of Licensee Setting tables (LRF System) from DB052.bodb_Licensee to DBCust.bodb_Licensee [#99855]
 	20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
+	20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 
 Parameters Explanation:
 
@@ -41,34 +42,15 @@ EXEC [NAP_WinLimit_CustSettingUndefinedProductSettingSel] @Username = 'SPONUUS01
                      INNER JOIN dbo.WinLimit_GameGroupSetting s ON p.ProductId = s.ProductId;
      END;
      BEGIN -- @CustID, @CurrencyID.
-         DECLARE @CustID INT, @CurrencyID INT, @AgentId INT, @SuperId INT;
+         DECLARE @CustID INT, @CurrencyID INT, @SiteId INT, @IsDeposit INT;
          SELECT @CustID = c.custid,
                 @CurrencyID = c.currency,
-                @AgentId = c.recommend,
-                @SuperId = c.srecommend
+                @SiteId = s.siteid,
+                @IsDeposit = s.isDeposit
          FROM dbo.Customer c WITH (NOLOCK)
+			INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
          WHERE c.username = @Username
                AND c.roleid = 1;
-     END;
-     BEGIN -- @SiteId
-         DECLARE @SiteId INT;
-         SELECT @SiteId = s.siteid
-         FROM dbo.Customer c WITH (NOLOCK)
-              INNER JOIN dbo.[Site] s WITH (NOLOCK) ON c.site = s.site
-         WHERE CustId = @AgentId;
-     END;
-     BEGIN-- @IsDeposit
-         DECLARE @IsDeposit INT;
-         SELECT @IsDeposit = CASE
-                                 WHEN EXISTS
-         (
-             SELECT 1
-             FROM f_DepSuper_1('All')
-             WHERE CustId = @SuperId
-         )
-                                 THEN 1
-                                 ELSE 0
-                             END;
      END;
      BEGIN -- @OfferProducts
          DECLARE @OfferProducts TABLE

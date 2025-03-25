@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/ 
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/ 
 
 ALTER PROCEDURE [dbo].[NAP_WinLimit_CustomerSiteSel] @UserNameList NVARCHAR(MAX) = ''
 AS
@@ -12,6 +12,7 @@ AS
 	Revisions:
 		- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]  
+		- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 	Parameters Explanation:
 
 	Example: 
@@ -27,9 +28,8 @@ BEGIN
 	WHERE value <> ''
 
      SELECT c.username,
-            a.[site] SiteName
-     FROM dbo.custInfo c WITH (NOLOCK)
+            c.[site] SiteName
+     FROM dbo.Customer c WITH (NOLOCK)
           INNER JOIN @User u ON c.username = u.Username
-          INNER JOIN dbo.Customer a WITH (NOLOCK) ON c.recommend = a.custid
 END
 GO

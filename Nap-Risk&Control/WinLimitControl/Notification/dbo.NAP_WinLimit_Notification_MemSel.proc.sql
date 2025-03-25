@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[NAP_WinLimit_Notification_MemSel]
 	@ProductId    TINYINT     = 0
@@ -28,6 +28,7 @@ Revisions:
 	- 20230830@Luke: Apply Company Max Payout rules per ticket [Redmine: #193014]
 	- 20230829@Luke: Implement Company Max Payout Notification [Redmine: #193288]
 	- 20231031@Tacy: CWL - Support to show suspend information for suspended members [Redmine: #196155]
+	- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 
 Param's Explanation:
 	� @ErrCode:
@@ -48,8 +49,8 @@ BEGIN
 			ELSE e.currency
 		 END AS               code
 	    , CASE WHEN s.isLicensee=0 AND SiteLabel IS NOT NULL
-				THEN ag.site + ' (' + s.SiteLabel + ')' 
-				ELSE ag.site
+				THEN c.site + ' (' + s.SiteLabel + ')' 
+				ELSE c.site
 		END AS site
 	    , s.isLicensee AS      IsDeposit
 	    , wl.ProductID
@@ -82,8 +83,7 @@ BEGIN
 	INTO #tmp
     FROM WinLimit_CustGameMonitoring_History AS wl WITH (NOLOCK)
 	   INNER JOIN Customer AS c WITH (NOLOCK) ON c.custid = wl.CustID
-	   INNER JOIN Customer AS ag WITH (NOLOCK) ON ag.custid = c.recommend
-	   INNER JOIN Site AS S WITH (NOLOCK) ON S.site = ag.site
+	   INNER JOIN Site AS S WITH (NOLOCK) ON S.site = c.site
 	   INNER JOIN Winlimit_LevelSetting AS l WITH (NOLOCK) ON l.LevelId = wl.LevelId
 	   INNER JOIN exchange AS e WITH (NOLOCK) ON c.currency = e.exchangeid
     WHERE CASE

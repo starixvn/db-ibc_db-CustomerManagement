@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CustSettingSel] @UserName  NVARCHAR(100) = '',
                                                     @MultiSite	VARCHAR(Max)  = '0',
@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20160923@Jacob: Risk & Control - Phase 3 [#61220].
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
+		- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
 
 	Parameters Explanation:
 		@MultiSite	: 0 ~ all site; <>0 ~ Site
@@ -65,10 +66,8 @@ BEGIN
         FROM dbo.WinLimit_CustGameSetting cs WITH (NOLOCK)
             INNER JOIN @Products p ON cs.ProductId = p.ProductId
                                     AND cs.LevelId = p.LevelId
-            INNER JOIN dbo.custInfo c WITH (NOLOCK) ON cs.CustID = c.custid
-            INNER JOIN dbo.customer a WITH (NOLOCK) ON a.custid = c.recommend
-                                                        AND a.roleid = 2
-            INNER JOIN dbo.[Site] s WITH (NOLOCK) ON s.[site] = a.[site]
+            INNER JOIN dbo.customer c WITH (NOLOCK) ON cs.CustID = c.custid
+            INNER JOIN dbo.[Site] s WITH (NOLOCK) ON s.[site] = c.[site]
 			CROSS APPLY (SELECT 1 val FROM @Site ss WHERE ss.siteID=s.siteid) ss
         WHERE(@UserName = ''
             OR c.username = @UserName)
