@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_AutoUpdateVirtualRate_ByExcel]
 	 @SportType INT = 43
-	,@SessionID UNIQUEIDENTIFIER = NULL
+	,@SessionIDString VARCHAR(50) = NULL
 	,@UserID INT = NULL
 	,@IP VARCHAR(15) = ''
 	,@ErrCode INT = 0 OUTPUT
@@ -17,7 +17,7 @@ AS
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20221207@Johnson: update setting for sub-bettype for Esport is 'Follow parent' [redmine: #177594]
 		- 20230111@Johnson: HF upload VR for Esports [redmine: #182744]
-		
+		- 20250325@Helios: NAP CM - Apply Database Vault [RedmineID: #214797]		
 	Param's Explanation:
 	
 */
@@ -26,6 +26,17 @@ BEGIN
 
 	CREATE TABLE #Tmp1 (CustID INT, LevelID INT, ValueIDLive TINYINT, ValueIDNonLive TINYINT)
 	CREATE TABLE #VRUpdated (CustID INT, VirtualMultiplier VARCHAR(MAX), IsProcessed BIT)
+
+	DECLARE @SessionID UNIQUEIDENTIFIER
+
+	IF ISNULL(@SessionIDString, '') = '' OR TRY_CONVERT(UNIQUEIDENTIFIER, @SessionIDString) IS NULL
+	BEGIN
+		SET @SessionID = NULL
+	END
+	ELSE
+	BEGIN
+		SET @SessionID = CONVERT(UNIQUEIDENTIFIER, @SessionIDString)
+	END
 
 	IF EXISTS ( SELECT TOP 1 1
 				FROM VRSetting_AutoUpdate_ByExcel vv WITH(NOLOCK)

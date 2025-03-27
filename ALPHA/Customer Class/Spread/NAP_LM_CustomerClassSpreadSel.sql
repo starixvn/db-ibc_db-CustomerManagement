@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSpreadSel]
 	, @SportTypes VARCHAR(2000)
 	, @Sites 			VARCHAR(MAX)=''
 	, @Currencies 		VARCHAR(MAX)=''
-	, @Spread 			DECIMAL(4,2)
+	, @Spread 			DECIMAL(4,2)= NULL
 	, @IsTest TINYINT
 AS
 /*
@@ -18,7 +18,7 @@ AS
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20240115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
 		- 20240314@Winfred: [NAP CM] Customer Class - Grant permission for each Sport type [RedmineID: #199465] 
-
+		- 20250325@Helios: NAP CM - Apply Database Vault [RedmineID: #214797] 
 	Param's Explanation:
 
 	Example: exec NAP_LM_CustomerClassSpreadSel @CustomerClasses = '', @Sites = '0', @Currencies = '0', @Spread = 0, @IsTest = 1
