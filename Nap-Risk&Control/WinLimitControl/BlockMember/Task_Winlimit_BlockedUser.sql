@@ -24,7 +24,7 @@ AS
 		- 20240307@Johnson: Enhance performance [redmine: #201794]
 		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 		- 20250110@Tacy: Offer direct member for super/master [Redmine: #215809]
-		- 20250328@Lani: [TVS] Upgrade ExchangeID data type [Redmine: #222191]
+		- 20250328@Lani: [TVS] Upgrade ExchangeID data type [Redmine: #222190]
 
 	Param's Explanation:
 	

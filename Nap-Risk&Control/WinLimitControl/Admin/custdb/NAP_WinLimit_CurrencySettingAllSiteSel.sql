@@ -19,6 +19,8 @@ AS
 		- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
+		- 20250401@Lani: [TVS] Extend ExchangeID data type from TINYINT TO SMALLINT [Redmine: #222191]
+
 	Parameters Explanation:
 	   @ProductId: Product ID
    
@@ -77,7 +79,7 @@ AS
 				 (
 		   ProductId    TINYINT, 
 		   SiteId       SMALLINT, 
-		   CurrencyId   TINYINT, 
+		   CurrencyId   SMALLINT, 
 		   IsCreditSite BIT
 				 );
 	   INSERT INTO #ProductSiteCurrencySetting
