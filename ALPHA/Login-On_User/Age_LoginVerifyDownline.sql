@@ -24,8 +24,10 @@ ALTER PROCEDURE Age_LoginVerifyDownline
 	@IsKickOut BIT = 0 OUTPUT, 
 	@IsDarkMode BIT = NULL,
 	@ErrCode INT = 0 OUTPUT,  
-	@ErrMsg NVARCHAR(4000) = '' OUTPUT	,
-	@failedcount	INT		= 0 OUTPUT
+	@ErrMsg NVARCHAR(4000) = '' OUTPUT,
+	@failedcount	INT		= 0 OUTPUT,
+	@UplineId INT = 0 OUTPUT,
+	@UplineName VARCHAR(30) = '' OUTPUT
 AS
 /*
 	Created: 20090829@Don
@@ -72,6 +74,8 @@ AS
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20250312@Helios: Alpha - Reset Password Notification [Redmine: #219803] 
+		- 20250320@Elodie: Login Process Amenment - Solution 3 - Output @UpLineID [RedmineID: #220522]
+
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -909,8 +913,16 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @db_enabled = ISNULL(enabled,0), @superid = srecommend
-	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
+	SELECT @db_enabled = ISNULL(enabled,0), @superid = srecommend,
+		@UplineId = CASE WHEN (roleid = 1 AND recommend = -4) OR roleid = 3 THEN srecommend
+						WHEN (roleid = 1 AND recommend = -3) OR roleid = 2 THEN mrecommend
+						WHEN roleid = 1 AND recommend NOT IN (-3, -4) THEN recommend END
+	FROM custinfo WITH (NOLOCK) 
+	WHERE custid = @db_custid	
+
+	SELECT @UplineName = username
+	FROM customer c WITH (NOLOCK) 
+	WHERE CustID = @UplineId
 
 	SELECT @Locked = CASE WHEN @IsSubAccount = 1 THEN 0 ELSE CPS.Locked END, 
 		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
