@@ -4,7 +4,6 @@ CREATE PROCEDURE API_LoginNotifyInfoSel
 	@CustName		NVARCHAR(50)		OUTPUT,
 	@UpLineID		INT					OUTPUT,
 	@UpLineName		NVARCHAR(50)		OUTPUT,
-	@LastChangedPwdDate DATETIME = NULL OUTPUT,
 	@FailedCount	INT = 0				OUTPUT
 AS
 /*
@@ -35,24 +34,18 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	SELECT
-		@UpLineID = CASE WHEN (roleid = 1 AND recommend = -4) OR roleid = 3 THEN srecommend
-			WHEN (roleid = 1 AND recommend = -3) OR roleid = 2 THEN mrecommend
-			WHEN roleid = 1 AND recommend NOT IN (-3, -4) THEN recommend END,
+	
+	SELECT	
+		@FailedCount = ISNULL(logincount,0),
+		@UpLineID = CASE WHEN recommend = -4 THEN srecommend
+						WHEN  recommend = -3 THEN mrecommend
+						WHEN recommend NOT IN (-3, -4) THEN recommend END,
 		@CustName = username
-	FROM	dbo.custinfo WITH (NOLOCK) 
-	WHERE	custid = @CustID;
+	FROM	dbo.customer WITH (NOLOCK)
+	WHERE	custid = @CustID AND roleid = 1;
 
 	SELECT	@UpLineName = username
 	FROM	dbo.custinfo WITH (NOLOCK)
 	WHERE	custid = @UpLineID;
-
-	SELECT	@LastChangedPwdDate	= LastChangedPwdDate
-	FROM	dbo.CustLoginInfo WITH (NOLOCK)
-	WHERE	CustID = @CustID;
-
-	SELECT	@FailedCount = ISNULL(logincount,0)
-	FROM	dbo.customer
-	WHERE	custid = @CustID;
 
 END
