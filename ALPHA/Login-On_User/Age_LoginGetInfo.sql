@@ -1,10 +1,11 @@
 /*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE Age_LoginGetInfo
-	@CustID		INT,
-	@CustName	NVARCHAR(50)			OUTPUT,
-	@UpLineID	INT						OUTPUT,
-	@UpLineName	NVARCHAR(50)			OUTPUT,
-	@LastChangedPwdDate DATETIME = NULL OUTPUT
+ALTER PROCEDURE Age_LoginGetInfo
+	@CustID			INT,
+	@CustName		NVARCHAR(50)		OUTPUT,
+	@UpLineID		INT					OUTPUT,
+	@UpLineName		NVARCHAR(50)		OUTPUT,
+	@LastChangedPwdDate DATETIME = NULL OUTPUT,
+	@FailedCount	INT = 0				OUTPUT
 AS
 /*
 	Created: 20250401@Dave
@@ -20,14 +21,17 @@ AS
 		DECLARE 	@CustName	NVARCHAR(50)		,
 			@UpLineID	INT					,
 			@UpLineName	NVARCHAR(50)		,
-			@LastChangedPwdDate DATETIME ;
+			@LastChangedPwdDate DATETIME ,
+			@failedcount INT;
 		EXECUTE Age_LoginGetInfo 
 			@CustID		= 48681637,
 			@CustName	= @CustName OUTPUT,
 			@UpLineID	= @UpLineID OUTPUT,
 			@UpLineName	= @UpLineName OUTPUT,
-			@LastChangedPwdDate = @LastChangedPwdDate OUTPUT
-		SELECT @CustName, @UpLineID, @UpLineName, @LastChangedPwdDate
+			@LastChangedPwdDate = @LastChangedPwdDate OUTPUT,
+			@failedcount = @failedcount OUTPUT
+		SELECT @CustName, @UpLineID, @UpLineName, @LastChangedPwdDate, @failedcount;
+
 */
 BEGIN
 	SET NOCOUNT ON
@@ -46,5 +50,9 @@ BEGIN
 	SELECT	@LastChangedPwdDate	= LastChangedPwdDate
 	FROM	dbo.CustLoginInfo WITH (NOLOCK)
 	WHERE	CustID = @CustID;
+
+	SELECT	@FailedCount = ISNULL(logincount,0)
+	FROM	dbo.customer
+	WHERE	custid = @CustID;
 
 END
