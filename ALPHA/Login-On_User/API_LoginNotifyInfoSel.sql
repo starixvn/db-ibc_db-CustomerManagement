@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCUST-CustDB" executers="wsv_alp" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE Age_LoginGetInfo
+CREATE PROCEDURE API_LoginNotifyInfoSel
 	@CustID			INT,
 	@CustName		NVARCHAR(50)		OUTPUT,
 	@UpLineID		INT					OUTPUT,
@@ -23,7 +23,7 @@ AS
 			@UpLineName	NVARCHAR(50)		,
 			@LastChangedPwdDate DATETIME ,
 			@failedcount INT;
-		EXECUTE Age_LoginGetInfo 
+		EXECUTE API_LoginNotifyInfoSel 
 			@CustID		= 48681637,
 			@CustName	= @CustName OUTPUT,
 			@UpLineID	= @UpLineID OUTPUT,
