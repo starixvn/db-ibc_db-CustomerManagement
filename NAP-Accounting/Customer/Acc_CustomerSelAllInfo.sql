@@ -127,6 +127,7 @@ Revisions:
 	- 20240417@Tacy: NAP - Incorporate Saba Coins [RedmineID: #204003]
 	- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
 	- 20241106@Tacy: Credit - change data source to get SMA CC [Redmine: #212681]
+	- 202450404@Elodie: Fix SP temporary [Redmine: #223181]
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -243,10 +244,12 @@ BEGIN
 	    RETURN
     -----------------------------	
 										      
-	SELECT @DisableDownlinesSuperLive = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableSuperLive = 1)
-										      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableSuperLive = 1) 											 
-										      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid  AND DisableSuperLive = 1) 											 
-										      ELSE 0 END												  									  										  							  
+	--SELECT @DisableDownlinesSuperLive = CASE @roleid WHEN 4 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE srecommend = @custid AND DisableSuperLive = 1)
+	--									      WHEN 3 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE mrecommend = @custid  AND DisableSuperLive = 1) 											 
+	--									      WHEN 2 THEN (SELECT TOP 1 ISNULL(DisableSuperLive,0) FROM custInfo WITH(NOLOCK) WHERE recommend  = @custid  AND DisableSuperLive = 1) 											 
+	--									      ELSE 0 END		
+	
+	SELECT @DisableDownlinesSuperLive = 1
     -------------------------------------------------------------------------
     DECLARE @IsDeposit BIT --Identify deposit customer
 		, @IsSabaCoins BIT
@@ -782,8 +785,8 @@ BEGIN
 		EXEC Acc_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid, @SettingStatus = @SettingStatus
 	END
 	ELSE  -- deposit
-	BEGIN
-		EXEC DBACC.bodb02.dbo.Acc_Dep_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
+	BEGIN		
+		EXEC DBTP10C.bodb02.dbo.Acc_Dep_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
 	END
 	
 END
