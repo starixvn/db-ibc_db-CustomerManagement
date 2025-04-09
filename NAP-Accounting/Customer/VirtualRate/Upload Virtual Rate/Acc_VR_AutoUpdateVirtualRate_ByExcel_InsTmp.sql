@@ -1,7 +1,7 @@
-/*<info serverAlias="DBCUST-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_VR_AutoUpdateVirtualRate_ByExcel_InsTmp]
 	 @SportType INT = 43
-	,@SessionID UNIQUEIDENTIFIER = NULL
+	,@SessionIDString VARCHAR(50) = NULL
 	,@UserID INT = NULL
 	,@XML VARCHAR(MAX) = NULL
 	,@ErrCode INT = 0 OUTPUT
@@ -14,8 +14,8 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20200310@Eden: Initial version [Redmine:#128749]
-		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978] 
-		
+		- 20200610@Eden: Virtual Rate for Basketball [Redmine: #134978]
+		- 20250325@Helios: NAP CM - Apply Database Vault [RedmineID: #214797]		
 	Param's Explanation:
 		@XML = '<Rt>
 					<R UN="master1" Cell="A2" Mul="0.5" LId="1" BTGId="-1" BTId="9001" Live="1" />
@@ -24,6 +24,18 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
+
+	DECLARE @SessionID UNIQUEIDENTIFIER
+
+	IF ISNULL(@SessionIDString, '') = '' OR TRY_CONVERT(UNIQUEIDENTIFIER, @SessionIDString) IS NULL
+	BEGIN
+		SET @SessionID = NULL
+	END
+	ELSE
+	BEGIN
+		SET @SessionID = CONVERT(UNIQUEIDENTIFIER, @SessionIDString)
+	END
+
 	-- Delete trash data
 	DELETE FROM VRSetting_AutoUpdate_ByExcel WITH(ROWLOCK) WHERE SessionID <> @SessionID AND ImportedBy = @UserID AND SportType = @SportType
 
