@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_MT_GetPT] 
 	@UserName varchar(30),
 	@Sporttype smallint = 1,
@@ -45,7 +45,7 @@ Revisions:
 	- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 	- 20220301@Eden: Deposit - Sportsbook - Revise customer settings [Redmine: #167898] 
 	- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
-
+	- 20250410@Johnson: change datatype for ExchangeID[redmine: #223630]
 Param's Explanation:
 • @HasComm: view Comm or view PT
 	+ 0: View PT (default)
@@ -154,7 +154,7 @@ Begin
 	@curSporttype smallint,  
 	@curtypename varchar(20),  
 	@curSportname varchar(50),
-	@currency tinyint   
+	@currency int   
 
 
 	Create table #tmpresult

@@ -19,6 +19,7 @@ Revisions:
 	- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
 	- 20240514@Eden: HotFix - UM for Live and RNG casino product [Redmine: #205044]
 	- 20241216@Johnson: Change to use ProductSettingProfile [RedmineID: #212684]	
+	- 20250410@Johnson: change datatype for ExchangeID[redmine: #223630]
 Param's Explanation:
 	- @FunctionType : Affect funtion
 		1. Edit
@@ -42,7 +43,7 @@ SET NOCOUNT ON
 			EndTime			SMALLDATETIME,
 			Time_Stamp		VARBINARY(8),
 			SiteID			INT,
-			currency		TINYINT
+			currency		INT
 	)
 
 	CREATE TABLE #Products([ProductID] [tinyint])
