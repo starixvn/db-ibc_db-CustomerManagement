@@ -24,6 +24,7 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250408@Elodie: HF - SMA only add direct account for indirect login [RedmineID: #223236]
 	
 	Parameter's explaination:
 		- @roleid: role of login account
@@ -52,7 +53,7 @@ BEGIN
 			@failedcount = ISNULL(logincount,0)
 		FROM customer WITH(NOLOCK) 
 		WHERE (username = @username OR username2 = @username)
-			AND srecommend = @custid
+			AND srecommend = @custid and roleid IN (2, 3)
 		
 		IF @CustIDIndirect IS NULL
 		BEGIN
@@ -65,7 +66,7 @@ BEGIN
 			FROM custSub s WITH(NOLOCK) 
 				INNER JOIN customer c WITH(NOLOCK) ON s.custid = c.custid
 			WHERE (s.username = @username OR s.username2 = @username)
-				AND c.srecommend = @custid
+				AND c.srecommend = @custid and roleid IN (2, 3)
 		END
 	END	
 	ELSE IF @roleid = 3
@@ -77,7 +78,7 @@ BEGIN
 			@failedcount = ISNULL(logincount,0)
 		FROM customer WITH(NOLOCK) 
 		WHERE (username = @username OR username2 = @username)
-			AND mrecommend = @custid
+			AND mrecommend = @custid and roleid = 2
 		
 		IF @CustIDIndirect IS NULL
 		BEGIN
@@ -90,7 +91,7 @@ BEGIN
 			FROM custSub s WITH(NOLOCK) 
 				INNER JOIN customer c WITH(NOLOCK) ON s.custid = c.custid
 			WHERE (s.username = @username OR s.username2 = @username)
-				AND c.mrecommend = @custid
+				AND c.mrecommend = @custid and roleid = 2
 		END
 	END	
 	
