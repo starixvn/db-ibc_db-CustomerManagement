@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCust-CustDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 
 CREATE PROCEDURE [dbo].[NAP_WinLimit_CurrencySettingSel] 
 	@ProductId    INT, 
@@ -21,6 +21,7 @@ AS
 		- 20220522@Robert: #168458 - CWL - Enhance Currency Win Limit Setting page
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
+		- 20250401@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
 		
 	Parameters Explanation:
 		@ProductId	: Product ID
@@ -88,7 +89,7 @@ BEGIN
 					(
 			ProductId  TINYINT, 
 			SiteId     SMALLINT, 
-			CurrencyId TINYINT,
+			CurrencyId SMALLINT,
 			IsCreditSite BIT
 					);
 		IF @IsCreditSite = 0
