@@ -1,4 +1,4 @@
-/*<info serverAlias="DBAGE-bodb02, DBACC-bodb02" executers="" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBAGE-bodb02, DBACC-bodb02, DBCUST-CustDB" executers="" viewers="" isFunction="1" isNested="1"></info>*/
 
 ALTER FUNCTION dbo.f_Age_OfferedProductBySite(@Site VARCHAR(50))
 RETURNS BIT
@@ -6,7 +6,7 @@ AS
 /*
 	Created: 20231206@Tacy
 	Task: check offered Saba Promotion by site 
-	DB: DBAGE-bodb02, DBACC-bodb02
+	DB: DBAGE-bodb02, DBACC-bodb02, DBCUST-CustDB
 	
 	Revisions:
 		- 20231206@Tacy: Create function [RedmineID: #194981]
