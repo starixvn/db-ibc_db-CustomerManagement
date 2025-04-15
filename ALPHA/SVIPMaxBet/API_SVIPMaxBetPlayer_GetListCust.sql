@@ -1,0 +1,29 @@
+/*<info serverAlias="DBCUST-CUSTDB" executers="asv_cust" viewers="" isFunction="0"></info>*/
+CREATE PROCEDURE [dbo].[API_BetLimitIncrease_GetListCust] 
+	@siteid INT = 0,
+	@IsTest BIT = 0
+AS
+/*
+	Created: Winfred
+	Date: 20250224
+	Task : [NAP CM] Customer - Increase Bet Limit
+	DB: DBCUST/CustDB
+	Original:
+
+	Revisions:
+		- 20250224@Winfred: [NAP CM] Customer - Increase Bet Limit [RedmineID: #218073] 
+
+	Param's Explanation:
+		@siteid : 0 = All
+		@IsTest : 0 = Pro, 1 =  Test
+
+	Example: exec API_SVIPMaxBetPlayer_GetListCust  @siteid = 909
+*/ 
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT Custid, Multiplier 
+	FROM SVIPMaxBetPlayer WITH(NOLOCK)
+	WHERE SiteID = @SiteID AND IsTest = @IsTest
+END
+GO
