@@ -23,7 +23,7 @@ AS
 		- 20181227@Phillip: Add new Credit Site [Redmine: #105338]
 		- 20220615@Tacy: Hot modify Select Into statement to avoid dump [Redmine: #174035]
 		- 20230320@Tacy: Hotfix - [NAP] Cannot search headline 789y [RedmineID: #185352]
-
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 		1. NAP & ExtNAP: search left panel -> If (@IsSpecialSite = 1 OR @IsSpecialHeadline = 1) AND admin have special site permission then show customer on left panel, else then show access denied
 		2. Alpha: Consolidation report -> bet list -> show NG2 ticket if @IsSpecialHeadline of login SMA = 1 (only check on link i1; i7 & i9 default show NG2 ticket)
@@ -43,39 +43,39 @@ BEGIN
 	SET NOCOUNT ON
 
 	SELECT @IsSpecialSite = 0, @IsSpecialHeadline = 0
-	DECLARE @CustID INT, @RoleID TINYINT, @recommend INT, @GroupID SMALLINT = NULL
+	DECLARE @CustID INT, @GroupID SMALLINT = NULL
 
 	EXEC @CustID = DBACC.bodb02.dbo.f_GetCustIDFromUsernameOrCustId @UserName,@CheckCustId
 	IF @CustID IS NULL 
 		RETURN
-	SELECT @RoleID = roleID, @recommend = recommend, @site = Site FROM dbo.customer WITH (NOLOCK) WHERE custid = @CustID
+	SELECT @site = Site FROM dbo.customer WITH (NOLOCK) WHERE custid = @CustID
 
 	SELECT @GroupID = groupID FROM dbo.custAccount WITH (NOLOCK) WHERE custid = @CustID AND IsGroupHeadLine = 1
 
 	--check if customer is special site
-	IF @RoleID = 1
-	BEGIN
-		SELECT @Site = NULL
+	--IF @RoleID = 1
+	--BEGIN
+	--	SELECT @Site = NULL
 
-		SELECT @Site = c.site 
-		FROM dbo.Customer c WITH (NOLOCK)
-			INNER JOIN dbo.Site s WITH (NOLOCK) ON c.site = s.site
-		WHERE c.custid = @recommend AND s.SpecialGroup = 1
+	--	SELECT @Site = c.site 
+	--	FROM dbo.Customer c WITH (NOLOCK)
+	--		INNER JOIN dbo.Site s WITH (NOLOCK) ON c.site = s.site
+	--	WHERE c.custid = @recommend AND s.SpecialGroup = 1
 
-		IF @Site IS NOT NULL 
-		BEGIN
-			SELECT @IsSpecialSite = 1			
-		END
-	END
-	ELSE
+	--	IF @Site IS NOT NULL 
+	--	BEGIN
+	--		SELECT @IsSpecialSite = 1			
+	--	END
+	--END
+	--ELSE
+	--BEGIN
+	IF EXISTS (	SELECT 1 
+				FROM dbo.Site s WITH (NOLOCK)
+				WHERE s.site = @site AND s.SpecialGroup = 1)
 	BEGIN
-		IF EXISTS (	SELECT 1 
-					FROM dbo.Site s WITH (NOLOCK)
-					WHERE s.site = @site AND s.SpecialGroup = 1)
-		BEGIN
-			SELECT @IsSpecialSite = 1			
-		END
+		SELECT @IsSpecialSite = 1			
 	END
+	--END
 	
 	--Check Special Headline
 	IF @GroupID IS NOT NULL -- Headline

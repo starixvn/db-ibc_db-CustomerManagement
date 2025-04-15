@@ -1,6 +1,7 @@
-﻿/*<info serverAlias="DBCust-CustDB" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCust-CustDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="vnteam" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelList]
 	@custid int,
+	@isDirectDownline BIT,
 	@PageSize int = 500,
 	@PageIndex int = 1,
 	@TotalPages int = 1 output
@@ -21,9 +22,12 @@ AS
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20220620@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20221101@Elodie: Enhance SP [RedmineID: #179269]
-
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 	Explanation: 
-			
+		
+		@isDirectDownline : 
+			0 - Just get Master or Agent Downline
+			1 - Get Direct Member Downline
 	Example: EXEC Acc_CustomerSelList @CustID=24471545
 */
 BEGIN
@@ -83,10 +87,15 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
 								) AS cps
-		WHERE c.roleid = 2 and c.mrecommend = @custid
+		WHERE c.mrecommend = @custid
+		AND c.roleid = CASE 
+					WHEN @isDirectDownline = 0 AND c.roleid = 2 THEN  2						-- GET AGENT
+					WHEN @isDirectDownline = 1 AND c.roleid = 1 AND c.recommend = -3 THEN  1		-- GET MASTER DIRECT MEMBER
+					END
 	END
 	ELSE IF @roleid = 4
 	BEGIN
+		
 		INSERT INTO @CustList(username,Custid,[Enabled],Closed,Reject)	
 		SELECT c.username,c.Custid, c.Enabled, ISNULL(cps.closed, c.closed), ISNULL(cps.reject,c.reject)
 		FROM custinfo  c WITH (NOLOCK)
@@ -95,7 +104,11 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
 								) AS cps
-		WHERE c.roleid = 3 and c.srecommend = @custid
+		WHERE c.srecommend = @custid
+		AND c.roleid = CASE 
+						WHEN @isDirectDownline = 0 AND c.roleid = 3 THEN  3						-- GET MASTER
+						WHEN @isDirectDownline = 1 AND c.roleid = 1 AND c.recommend = -4 THEN  1		-- GET SUPER DIRECT MEMBER
+					   END
 	END
 
 	--Paging
@@ -122,11 +135,33 @@ BEGIN
 	IF @roleid = 2
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
-			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+			INNER JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 	ELSE IF @roleid IN (0,3,4)
-		SELECT UserName,cl.ClosedReason
-		FROM #tmpList c
-			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+	BEGIN
+		IF @isDirectDownline = 0
+		BEGIN
+			SELECT UserName,cl.ClosedReason
+			FROM #tmpList c
+			INNER JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+		END
+		IF @isDirectDownline = 1
+		BEGIN
+			SELECT UserName,clogin.ClosedReason
+			FROM #tmpList c
+			CROSS APPLY (
+				SELECT TOP 1 ClosedReason
+				FROM CustLoginInfo cl WITH (NOLOCK)
+				WHERE c.CustID = cl.CustID
+			
+				UNION ALL
+			
+				SELECT TOP 1 ClosedReason
+				FROM CustLoginInfo_Member clm WITH (NOLOCK)
+				WHERE c.CustID = clm.CustID	
+			) AS clogin
+		END
+
+	END
 	
 	DROP TABLE #tmpList
 END

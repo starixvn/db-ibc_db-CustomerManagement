@@ -31,6 +31,7 @@ AS
 		- 20230630@Elodie: Enhance SP [Redmine:#190527]
 		- 20240410@Kelvin: Alpha - Link WL Detail to My Watchlist [Redmine:#201733]
 		- 20241118@Tacy: New CC for SMA [Redmine: #212681]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 		@CustId: Customer login
 		@SubAccId: SubAccount Id
@@ -242,7 +243,7 @@ BEGIN
 						INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 						INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 						LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
-						CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
+						--CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 					WHERE c.roleid = 1
 						AND c.mrecommend = @_CustId
 						AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
@@ -260,7 +261,7 @@ BEGIN
 						INNER JOIN dbo.Customer c WITH (NOLOCK) ON p.CustId = c.CustId
 						INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 						LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
-						CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
+						--CROSS APPLY (SELECT username FROM dbo.custInfo ci WITH (NOLOCK) WHERE ci.custid = c.recommend) AS u
 					WHERE c.roleid = 1
 						AND c.srecommend = @_CustId
 						AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
@@ -294,11 +295,12 @@ BEGIN
 
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked, IsExistedWatchList
+	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked, IsExistedWatchList, AgentID 
 	FROM (
 		SELECT t.custId, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, t.ClosedReason,
 			CASE WHEN ci.Enabled = 1 THEN CASE WHEN cs.closed = 1 THEN 3 WHEN cs.reject = 1 THEN 2 ELSE 1 END ELSE 4 END AS Status,
-			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId, Locked, IsExistedWatchList
+			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed, t.username) AS RowId, Locked, IsExistedWatchList,
+			CASE WHEN ci.roleid = 1 AND ci.recommend IN (-3,-4) THEN ci.recommend ELSE 0 END AS AgentID
 		FROM #tempProblemAccount t
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.custId
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed

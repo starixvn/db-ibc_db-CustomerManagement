@@ -68,6 +68,7 @@ AS
 		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 
 	Explanation's Param:
 		@Status = 
@@ -109,7 +110,8 @@ BEGIN
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			CROSS APPLY (SELECT COUNT(1) Downlines 
 							FROM custInfo cif WITH (NOLOCK)
-							WHERE cif.mrecommend = ci.custID AND cif.roleid = 2 
+							WHERE cif.mrecommend = ci.custID
+							AND ((cif.roleid = 2) OR (cif.roleid = 1 AND cif.recommend = -3))
 						) d
 		WHERE ci.srecommend = @srecommend
 			AND ci.roleid = 3
@@ -148,7 +150,8 @@ BEGIN
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
 			CROSS APPLY (SELECT COUNT(1) Downlines 
 							FROM custInfo cif WITH (NOLOCK)
-							WHERE cif.mrecommend = ci.custID AND cif.roleid = 2 
+							WHERE cif.mrecommend = ci.custID
+							AND ((cif.roleid = 2) OR (cif.roleid = 1 AND cif.recommend = -3))
 						) d
 		WHERE ci.srecommend = @srecommend
 			AND ci.roleid = 3

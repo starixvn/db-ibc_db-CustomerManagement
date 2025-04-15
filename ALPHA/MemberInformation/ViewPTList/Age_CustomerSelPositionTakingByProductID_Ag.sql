@@ -2,7 +2,7 @@
 ALTER PROCEDURE [dbo].[Age_CustomerSelPositionTakingByProductID_Ag]
 (
 	@ProductID	TINYINT,
-	@Recommend	INT,
+	@UplineID	INT,
 	@PageIndex	INT = 1,
 	@PageSize	INT = 100,
 	@TotalPages	INT = 0 OUTPUT,
@@ -29,13 +29,13 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
-
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 	- @Recommend: Agent ID
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @SportType INT, @BetType INT
+	DECLARE @SportType INT, @BetType INT, @IsDirectMember INT = 0
 	CREATE TABLE #SportBettype
 	(	SportType INT, 
 		BetType INT, 
@@ -55,13 +55,12 @@ BEGIN
 	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,28,@SettingStatus)
 
 
-	SELECT  @TotalPages = COUNT(ci.custid),
-            @TotalPages = @TotalPages / @PageSize 
-                        + CASE WHEN @TotalPages % @PageSize > 0 THEN 1 ELSE 0 END
-	FROM    custInfo AS ci WITH(NOLOCK)		
-	WHERE   ci.Recommend = @Recommend 
-      AND   ci.roleid = 1
+	-- Chek Isdirect Member
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.srecommend = @UplineID AND i.recommend = -4 AND i.roleid = 1
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.mrecommend = @UplineID AND i.recommend = -3 AND i.roleid = 1
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.recommend = @UplineID  AND i.recommend NOT IN (-3,-4) AND i.roleid = 1
 
+	
 	UPDATE sb	
 	SET sb.RealProductID = m.RealProductId
 	FROM #SportBettype sb
@@ -73,83 +72,224 @@ BEGIN
 
 	DELETE FROM #SportBettype WHERE ISNULL(RealProductID , 0) <> @ProductID 
 
-	SELECT	*
-	FROM (
-		SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
-											    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
-											    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
-											                                   ELSE 0 
-										        END, 
-                                           ci.username) AS RowNumber,
-			    ps.closed, 
-                ci.enabled, 
-			    ISNULL(ps.reject,0) AS suspended,
-			    ci.username, 
-				c.firstname,
-				c.lastname,
-			    ci.custid,
-				ISNULL(cl.ClosedReason,0) AS ClosedReason,
-				ISNULL(ps.Locked,0) Locked
-		FROM custInfo AS ci WITH(NOLOCK)
-			INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
-			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
-							, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
-							, Locked
-						FROM dbo.CustProductStatus  WITH(NOLOCK)
-						WHERE CustID = ci.custid
-					) AS ps
-			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
-		WHERE   ci.Recommend = @Recommend 
-          AND   ci.roleid = 1
-		GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
-	) info
-	CROSS APPLY (
-		SELECT 2 AS roleid
-		UNION ALL
-		SELECT 3 AS roleid
-		UNION ALL 
-		SELECT 4 AS roleid
-	) r
-	CROSS APPLY (
-		SELECT		cptgs3.SportType,
-					cptgs3.BetType,
-					cptgs3.IsLive,
-					CASE WHEN roleid = 2 THEN cptgs3.AgentPT
-						  WHEN roleid = 3 THEN cptgs3.MasterPT
-						  WHEN roleid = 4 THEN cptgs3.SuperPT
-										  ELSE NULL
-				   END  AS positiontaking
-		FROM		CustSettingMode3rd				AS csm3 WITH(NOLOCK)
-		INNER JOIN	CustPTGroupSetting3rd_Member	AS cptgs3 WITH(NOLOCK)
-				ON	cptgs3.AgentID = @Recommend
-				AND	csm3.IsGrouped = 1
-		INNER JOIN	#SportBettype AS sbt
-				ON	cptgs3.SportType = sbt.SportType
-				AND	cptgs3.BetType = sbt.BetType
-				AND	cptgs3.IsLive = sbt.IsLive
-		WHERE csm3.CustID = info.custid
+	-- Super Direct Member
+	IF @IsDirectMember = -4
+	BEGIN
+		SELECT  @TotalPages = COUNT(ci.custid),
+			@TotalPages = @TotalPages / @PageSize 
+					+ CASE WHEN @TotalPages % @PageSize > 0 THEN 1 ELSE 0 END
+		FROM    custInfo AS ci WITH(NOLOCK)		
+		WHERE   ci.roleid = 1
+		AND ci.srecommend = @UplineID
+		AND ci.recommend = -4
+
+		SELECT	*
+		FROM (
+			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
+												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
+												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
+																	     ELSE 0 
+												  END, 
+								 ci.username) AS RowNumber,
+				    ps.closed, 
+			    ci.enabled, 
+				    ISNULL(ps.reject,0) AS suspended,
+				    ci.username, 
+					c.firstname,
+					c.lastname,
+				    ci.custid,
+					ISNULL(cl.ClosedReason,0) AS ClosedReason,
+					ISNULL(ps.Locked,0) Locked,
+					4 AS roleid
+			FROM custInfo AS ci WITH(NOLOCK)
+				INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
+								, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
+								, Locked
+							FROM dbo.CustProductStatus  WITH(NOLOCK)
+							WHERE CustID = ci.custid
+						) AS ps
+				LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
+			WHERE  ci.roleid = 1
+			AND ci.srecommend = @UplineID 
+			AND ci.recommend = -4
+			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
+		) info
+		CROSS APPLY (
+				SELECT	sbt.SportType
+					,	sbt.BetType
+					,	CASE WHEN sbt.SportType = 9915 THEN 1 ELSE sbt.IsLive END AS Islive
+					,	cpts3.SuperPT AS positiontaking
+				FROM		#SportBettype AS sbt
+				INNER JOIN	CustPTSetting3rd_Member AS cpts3 WITH(NOLOCK)
+						ON	sbt.SportType = cpts3.SportType
+						AND	sbt.BetType = cpts3.BetType
+						AND	sbt.IsLive = cpts3.IsLive
+				INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
+						ON 	csm3.CustID = cpts3.CustID
+						AND	csm3.IsGrouped = 0
+				WHERE	csm3.CustID = info.custid
+		) pt
+		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
+		ORDER BY RowNumber, islive, SportType, BetType
+	END
+	-- Master Direct Member
+	ELSE IF @IsDirectMember = -3
+	BEGIN
+		SELECT  @TotalPages = COUNT(ci.custid),
+			@TotalPages = @TotalPages / @PageSize 
+					+ CASE WHEN @TotalPages % @PageSize > 0 THEN 1 ELSE 0 END
+		FROM    custInfo AS ci WITH(NOLOCK)		
+		WHERE   ci.roleid = 1
+		AND ci.mrecommend = @UplineID
+		AND ci.recommend = -3
+
+		SELECT	*
+		FROM (
+			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
+												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
+												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
+																	     ELSE 0 
+												  END, 
+								 ci.username) AS RowNumber,
+				    ps.closed, 
+			    ci.enabled, 
+				    ISNULL(ps.reject,0) AS suspended,
+				    ci.username, 
+					c.firstname,
+					c.lastname,
+				    ci.custid,
+					ISNULL(cl.ClosedReason,0) AS ClosedReason,
+					ISNULL(ps.Locked,0) Locked
+			FROM custInfo AS ci WITH(NOLOCK)
+				INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
+								, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
+								, Locked
+							FROM dbo.CustProductStatus  WITH(NOLOCK)
+							WHERE CustID = ci.custid
+						) AS ps
+				LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
+			WHERE  ci.roleid = 1
+			AND ci.mrecommend = @UplineID 
+			AND ci.recommend = -3
+			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
+		) info
+		CROSS APPLY (
+			SELECT 3 AS roleid
+			UNION ALL 
+			SELECT 4 AS roleid
+		) r
+		CROSS APPLY (
+				SELECT	sbt.SportType
+					,	sbt.BetType
+					,	CASE WHEN sbt.SportType = 9915 THEN 1 ELSE sbt.IsLive END AS Islive
+					,	CASE	
+								WHEN roleid = 3 THEN cpts3.MasterPT
+								WHEN roleid = 4  THEN cpts3.SuperPT
+								ELSE NULL
+						END AS positiontaking
+				FROM		#SportBettype AS sbt
+				INNER JOIN	CustPTSetting3rd_Member AS cpts3 WITH(NOLOCK)
+						ON	sbt.SportType = cpts3.SportType
+						AND	sbt.BetType = cpts3.BetType
+						AND	sbt.IsLive = cpts3.IsLive
+				INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
+						ON 	csm3.CustID = cpts3.CustID
+						AND	csm3.IsGrouped = 0
+				WHERE	csm3.CustID = info.custid
+		) pt
+		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
+		ORDER BY RowNumber, islive, SportType, BetType, roleid
+	END
+	-- Normal Member
+	ELSE
+	BEGIN
+		SELECT  @TotalPages = COUNT(ci.custid),
+			@TotalPages = @TotalPages / @PageSize 
+					+ CASE WHEN @TotalPages % @PageSize > 0 THEN 1 ELSE 0 END
+		FROM    custInfo AS ci WITH(NOLOCK)		
+		WHERE   ci.roleid = 1
+		AND ci.recommend = @UplineID
+
+		SELECT	*
+		FROM (
+			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
+												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
+												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
+																	     ELSE 0 
+												  END, 
+								 ci.username) AS RowNumber,
+				    ps.closed, 
+			    ci.enabled, 
+				    ISNULL(ps.reject,0) AS suspended,
+				    ci.username, 
+					c.firstname,
+					c.lastname,
+				    ci.custid,
+					ISNULL(cl.ClosedReason,0) AS ClosedReason,
+					ISNULL(ps.Locked,0) Locked
+			FROM custInfo AS ci WITH(NOLOCK)
+				INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
+				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
+								, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
+								, Locked
+							FROM dbo.CustProductStatus  WITH(NOLOCK)
+							WHERE CustID = ci.custid
+						) AS ps
+				LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
+			WHERE   ci.Recommend = @UplineID 
+		    AND   ci.roleid = 1
+			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
+		) info
+		CROSS APPLY (
+			SELECT 2 AS roleid
+			UNION ALL
+			SELECT 3 AS roleid
+			UNION ALL 
+			SELECT 4 AS roleid
+		) r
+		CROSS APPLY (
+			SELECT		cptgs3.SportType,
+						cptgs3.BetType,
+						cptgs3.IsLive,
+						CASE WHEN roleid = 2 THEN cptgs3.AgentPT
+							  WHEN roleid = 3 THEN cptgs3.MasterPT
+							  WHEN roleid = 4 THEN cptgs3.SuperPT
+											  ELSE NULL
+					   END  AS positiontaking
+			FROM		CustSettingMode3rd				AS csm3 WITH(NOLOCK)
+			INNER JOIN	CustPTGroupSetting3rd_Member	AS cptgs3 WITH(NOLOCK)
+					ON	cptgs3.AgentID = @UplineID
+					AND	csm3.IsGrouped = 1
+			INNER JOIN	#SportBettype AS sbt
+					ON	cptgs3.SportType = sbt.SportType
+					AND	cptgs3.BetType = sbt.BetType
+					AND	cptgs3.IsLive = sbt.IsLive
+			WHERE csm3.CustID = info.custid
 		
-		UNION ALL
+			UNION ALL
 		
-		SELECT	sbt.SportType
-			,	sbt.BetType
-			,	CASE WHEN sbt.SportType = 9915 THEN 1 ELSE sbt.IsLive END AS Islive
-			,	CASE	WHEN roleid = 2 THEN cpts3.AgentPT
-						WHEN roleid = 3 THEN cpts3.MasterPT
-						WHEN roleid = 4 THEN cpts3.SuperPT
-						ELSE NULL
-				END AS positiontaking
-		FROM		#SportBettype AS sbt
-		INNER JOIN	CustPTSetting3rd_Member AS cpts3 WITH(NOLOCK)
-				ON	sbt.SportType = cpts3.SportType
-				AND	sbt.BetType = cpts3.BetType
-				AND	sbt.IsLive = cpts3.IsLive
-		INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
-				ON 	csm3.CustID = cpts3.CustID
-				AND	csm3.IsGrouped = 0
-		WHERE	csm3.CustID = info.custid
-	) pt
-	WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-	ORDER BY RowNumber, islive, SportType, BetType, roleid
+			SELECT	sbt.SportType
+				,	sbt.BetType
+				,	CASE WHEN sbt.SportType = 9915 THEN 1 ELSE sbt.IsLive END AS Islive
+				,	CASE	WHEN roleid = 2 THEN cpts3.AgentPT
+							WHEN roleid = 3 THEN cpts3.MasterPT
+							WHEN roleid = 4 THEN cpts3.SuperPT
+							ELSE NULL
+					END AS positiontaking
+			FROM		#SportBettype AS sbt
+			INNER JOIN	CustPTSetting3rd_Member AS cpts3 WITH(NOLOCK)
+					ON	sbt.SportType = cpts3.SportType
+					AND	sbt.BetType = cpts3.BetType
+					AND	sbt.IsLive = cpts3.IsLive
+			INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
+					ON 	csm3.CustID = cpts3.CustID
+					AND	csm3.IsGrouped = 0
+			WHERE	csm3.CustID = info.custid
+		) pt
+		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
+		ORDER BY RowNumber, islive, SportType, BetType, roleid
+	END
 END	
 GO

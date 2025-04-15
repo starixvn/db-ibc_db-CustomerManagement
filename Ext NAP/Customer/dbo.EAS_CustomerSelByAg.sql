@@ -1,10 +1,10 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
-    @recommend		INT,  
-    @UserName		VARCHAR(30) = NULL,
-    @Status			TINYINT = 0,
+	@UplineID		INT,  
+	@UserName		VARCHAR(30) = NULL,
+	@Status		TINYINT = 0,
 	@Currencies 	VARCHAR(MAX) = '',
-	@UserID			INT,
+	@UserID		INT,
 	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
 	@TotalRows		INT = 0 OUTPUT
@@ -68,6 +68,7 @@ Revisions:
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 	- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 	- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
+	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Explanation's Param:
 	@Status = 
 		0: All
@@ -84,24 +85,28 @@ BEGIN
 
     DECLARE @tmpMemberList TABLE (custID INT, username VARCHAR(30), RowNumber INT)
 	DECLARE @UplineDoubleCommLosing BIT = 0
-	DECLARE @RowStart INT, @RowEnd INT,@srecommend		INT
-	 --DECLARE @IsMyanmarOdds BIT = 0,@discountMyanmarOdds DECIMAL (9,8) = 0,@srecommend		INT	
+	DECLARE @RowStart INT, @RowEnd INT, @srecommend	INT
 	 
 	SELECT @RowStart = @PageSize * (@PageIndex - 1)  + 1
 	SELECT @RowEnd = @RowStart + @PageSize - 1 
-	 
-	-- MyanmarOdds
-	--SET @IsMyanmarOdds = dbo.fn_IsMyanmarOdds (@srecommend)
-	--IF @IsMyanmarOdds = 1
-	--SET @discountMyanmarOdds = (SELECT commrate FROM AgentCommRate WITH (NOLOCK) WHERE custid = @Recommend AND Sporttype = 1 AND Bettype = 1)
 	
+	CREATE TABLE #CollectDownline  (custid INT ,  [Enabled] BIT , username NVARCHAR(50) , currency INT, PRIMARY KEY CLUSTERED  (custid))
+
+	--Since the CustInfo table in the Select statement cannot use an index[recommend, mrecommend, srecommend], so data must be collected beforehand 
+	INSERT INTO #CollectDownline (custid , [Enabled] , username , currency)
+	SELECT CustID , i.Enabled , i.username , currency FROM custInfo i WITH (NOLOCK) WHERE i.recommend = @UplineID AND i.roleid = 1
+	UNION ALL
+	SELECT CustID , i.Enabled , i.username , currency FROM custInfo i WITH (NOLOCK) WHERE i.mrecommend = @UplineID AND i.roleid = 1 AND i.recommend = -3
+	UNION ALL
+	SELECT CustID , i.Enabled , i.username , currency FROM custInfo i WITH (NOLOCK) WHERE i.srecommend = @UplineID AND i.roleid = 1 AND i.recommend = -4
+
 	--@Status: 0: All, 1: Open, 2:Suppended, 3: Closed, 4: Disabled
 	IF @UserName IS NULL
 	BEGIN
 		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 		SELECT ci.custID, ci.username,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
-		FROM dbo.custinfo ci WITH(NOLOCK)
+		FROM #CollectDownline ci
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -110,9 +115,7 @@ BEGIN
 								WHERE CustID = ci.custid
 							) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
-		WHERE ci.recommend = @recommend
-			AND ci.roleid = 1
-			AND 1 = CASE WHEN @Currencies = '' 
+		WHERE 1 = CASE WHEN @Currencies = '' 
 							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
 											)
 							THEN 1 ELSE 0 END				
@@ -125,7 +128,7 @@ BEGIN
 			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
 											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
-			
+		
 
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -134,7 +137,7 @@ BEGIN
 		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 		SELECT ci.custID, ci.username,
 			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
-		FROM dbo.custinfo ci WITH(NOLOCK)
+		FROM #CollectDownline ci
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -143,9 +146,7 @@ BEGIN
 								WHERE CustID = ci.custid
 							) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
-		WHERE ci.recommend = @recommend
-			AND ci.roleid = 1
-			AND 1 = CASE WHEN @Currencies = '' 
+		WHERE 1 = CASE WHEN @Currencies = '' 
 							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
 											)
 							THEN 1 ELSE 0 END		
@@ -159,7 +160,7 @@ BEGIN
 											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND c.username LIKE @UserName + '%'
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
-
+	
 		SELECT @TotalRows = @@ROWCOUNT
 	END
 
@@ -170,7 +171,7 @@ BEGIN
 		SELECT @RowEnd = @RowStart + @PageSize - 1 
 	END
 
-	SELECT @UplineDoubleCommLosing = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @recommend
+	SELECT @UplineDoubleCommLosing = DoubleCommLosing FROM dbo.Custinfo WITH(NOLOCK) WHERE custid = @UplineID
 
 	SELECT	c.custid,
 			c.username,
@@ -190,9 +191,26 @@ BEGIN
 			ci.DoubleCommLosing,
 			ISNULL(cl.ClosedReason,0) AS ClosedReason,			
 
-			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount,
-			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discountcs,
-			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount	ELSE 0 END)	   AS discount1x2,
+			MAX(CASE 
+					WHEN cdm.SportType = 1 AND cdm.BetType = 1 AND c.recommend NOT IN (-3,-4)	THEN cdm.AgentDiscount	
+					WHEN cdm.SportType = 1 AND cdm.BetType = 1 AND c.recommend = -3			THEN cdm.MasterDiscount	
+					WHEN cdm.SportType = 1 AND cdm.BetType = 1 AND c.recommend = -4			THEN cdm.SuperDiscount
+					ELSE 0 
+			    END)	AS discount,
+
+			MAX(CASE	
+					WHEN cdm.SportType = 1 AND cdm.BetType = 4 AND c.recommend NOT IN (-3,-4)	THEN cdm.AgentDiscount
+					WHEN cdm.SportType = 1 AND cdm.BetType = 4 AND c.recommend = -3			THEN cdm.MasterDiscount
+					WHEN cdm.SportType = 1 AND cdm.BetType = 4 AND c.recommend = -4			THEN cdm.SuperDiscount
+					ELSE 0 
+			    END)	AS discountcs,
+			
+			MAX(CASE	
+					WHEN cdm.SportType = 1 AND cdm.BetType = 5 AND c.recommend NOT IN (-3,-4)	THEN cdm.AgentDiscount	
+					WHEN cdm.SportType = 1 AND cdm.BetType = 5 AND c.recommend = -3			THEN cdm.MasterDiscount
+					WHEN cdm.SportType = 1 AND cdm.BetType = 5 AND c.recommend = -4			THEN cdm.SuperDiscount
+					ELSE 0 
+			    END)    AS discount1x2,
 
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount,
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountcs,
@@ -214,7 +232,7 @@ BEGIN
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			cl.SecurityCode, ml.RowNumber  ,cps.Locked
+			cl.SecurityCode, ml.RowNumber  ,cps.Locked,c.recommend
 	
 	ORDER BY RowNumber
 

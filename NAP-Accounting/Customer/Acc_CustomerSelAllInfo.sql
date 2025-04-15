@@ -127,6 +127,7 @@ Revisions:
 	- 20240417@Tacy: NAP - Incorporate Saba Coins [RedmineID: #204003]
 	- 20240828@Elodie: Can not search account that having nickname > 30 characters [RedmineID: #210008]
 	- 20241106@Tacy: Credit - change data source to get SMA CC [Redmine: #212681]
+	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
 Param's Explanation:
 	@username: username want to get all info related
 	@SettingStatus: 0: Pro, 1: UAT
@@ -135,58 +136,69 @@ Param's Explanation:
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @custid INT
-          , @uplineid INT		  
-          , @roleid TINYINT
-          , @UsedCredit MONEY     
-          --, @DisableDownlinesNumber BIT
+    DECLARE
+	@custid			     INT
+    , @uplineid			     INT
+    , @roleid			     TINYINT
+    , @UsedCredit			     MONEY
+    , @DownlinesSelectedBetting    BIT
+    , @DisableDownlinesSuperLive   BIT
+    , @IsInternal			     BIT
+    , @LimitPerIP			     TINYINT
+    , @SelectedBetting		     BIT
+    , @NicknameLoginOnly	     BIT
+    , @LastChangedSecurityCodeDate DATETIME
+    , @HasDownline		     BIT	     = 0
+    , @ClosedReason		     TINYINT
+    , @UplineHasSecurityCode	     BIT	     = 0
+    , @HeadlineName		     VARCHAR(50)
+    , @HeadlineID			     INT
+    , @HeadlineEnabled		     BIT
+    , @Site				     VARCHAR(10)
+    , @srecommend			     INT
+    , @SabaClubPlayerID3rd	     VARCHAR(50) = '-'
+    , @ProtectionMode		     BIT
+    , @DisableAutoMPT		     BIT
+    , @IsDirectMember		     INT
+    , @membersite			     VARCHAR(10)
+   
+   DECLARE
+	@TotalMAgentActive	    INT
+    , @TotalMAgentClosed	    INT
+    , @TotalMAgentSuspended	    INT
+    , @TotalMAgentViewOnly	    INT
+    , @TotalMAgentInactive	    INT
 
-          , @DownlinesSelectedBetting BIT		  
-	  
-		  , @DisableDownlinesSuperLive BIT
-          , @IsInternal BIT
-          , @LimitPerIP TINYINT
-          , @SelectedBetting BIT
-          , @NicknameLoginOnly BIT
-          , @LastChangedSecurityCodeDate DATETIME
-		  , @HasDownline BIT = 0
-		  , @ClosedReason TINYINT
-		  ,	@UplineHasSecurityCode	BIT=0
-		  , @HeadlineName VARCHAR(50)
-		  , @HeadlineID INT
-		  , @HeadlineEnabled BIT
-		  , @Site varchar(10)
-		  , @srecommend INT
-		  , @SabaClubPlayerID3rd VARCHAR(50) ='-'
-		  , @ProtectionMode BIT
-		  , @DisableAutoMPT BIT 
+    , @TotalAgentActive		    INT
+    , @TotalAgentClosed		    INT
+    , @TotalAgentSuspended	    INT
+    , @TotalAgentViewOnly	    INT
+    , @TotalAgentInactive	    INT
 
-    DECLARE @membersite VARCHAR(10)
-    DECLARE @TotalMAgentActive INT,
-			@TotalMAgentClosed INT,
-		    @TotalMAgentSuspended INT,
-		    @TotalMAgentViewOnly INT,
-			@TotalMAgentInactive INT,
-		    @TotalAgentActive INT,
-			@TotalAgentClosed INT,
-		    @TotalAgentSuspended INT,
-		    @TotalAgentViewOnly INT,
-			@TotalAgentInactive INT,
-		    @TotalMemberActive INT,
-			@TotalMemberClosed INT,
-		    @TotalMemberSuspended INT,
-		    @TotalMemberViewOnly INT,
-			@TotalMemberInactive INT,
-			@IsAllDayBalTransfer BIT,
-			@IsShowAllDayBalTransfer BIT,
-			@TotalSAgentActive INT,
-		    @TotalSAgentViewOnly INT,
-		    @TotalSAgentSuspended INT,
-			@TotalSAgentInactive INT,
-			@IsAutoEnableADBMaster BIT
+    , @TotalMemberActive	    INT
+    , @TotalMemberClosed	    INT
+    , @TotalMemberSuspended	    INT
+    , @TotalMemberViewOnly	    INT
+    , @TotalMemberInactive	    INT
 
 
+    , @TotalSAgentActive	    INT
+    , @TotalSAgentViewOnly	    INT
+    , @TotalSAgentSuspended	    INT
+    , @TotalSAgentInactive	    INT
 
+    , @IsAllDayBalTransfer	    BIT
+    , @IsShowAllDayBalTransfer    BIT
+    , @IsAutoEnableADBMaster	    BIT
+
+    , @TotalDirectMemberActive    INT
+    , @TotalDirectMemberClosed    INT
+    , @TotalDirectMemberSuspended INT
+    -- use CN88
+    --, @TotalDirectMemberViewOnly  INT
+    --, @TotalDirectMemberInactive  INT
+
+    	
     DECLARE @IsHideDirectStatus BIT = 0
           , @IsCheckedDirectStatus BIT = 0
           , @IsDisabledDirectStatus BIT = 0
@@ -272,7 +284,10 @@ BEGIN
     --Get member site
     IF @roleid = 1
     BEGIN
-		SELECT @membersite=site, @uplineid=recommend
+		SELECT @membersite=site, @uplineid= CASE WHEN recommend = -4 THEN srecommend
+									WHEN recommend = -3 THEN mrecommend
+									ELSE recommend END
+						, @IsDirectMember = recommend
 		FROM Customer WITH (NOLOCK)
 		WHERE custid=@custid
     	
@@ -319,7 +334,7 @@ BEGIN
 	IF @roleid = 4 --super
     BEGIN
 		SELECT @UplineHasSecurityCode=1
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND (roleid = 3) OR (c.roleid = 1 AND c.recommend = -4)
 
 	    SELECT @IsInternal = ISNULL(IsInternal, 0)
 	         , @LimitPerIP = ISNULL(LimitPerIP, 0)
@@ -403,21 +418,43 @@ BEGIN
 						   )
 				 , @TotalMemberActive =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
+								  WHEN RoleID = 1 AND ci.recommend <> -4 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMemberClosed =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
+								  WHEN RoleID = 1 AND ci.recommend <> -4 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
 								  ELSE 0
 								END
 							   ), 0
 						   )
 				 , @TotalMemberSuspended =
 					 ISNULL(SUM(CASE
-								  WHEN RoleID = 1 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
+								  WHEN RoleID = 1 AND ci.recommend <> -4 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
+								  ELSE 0
+								END
+							   ), 0
+						   )
+
+				, @TotalDirectMemberActive =
+					 ISNULL(SUM(CASE
+								  WHEN RoleID = 1 AND ci.recommend = -4 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 0 THEN 1
+								  ELSE 0
+								END
+							   ), 0
+						   )
+				 , @TotalDirectMemberClosed =
+					 ISNULL(SUM(CASE
+								  WHEN RoleID = 1 AND ci.recommend = -4 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1
+								  ELSE 0
+								END
+							   ), 0
+						   )
+				 , @TotalDirectMemberSuspended =
+					 ISNULL(SUM(CASE
+								  WHEN RoleID = 1 AND ci.recommend = -4 AND ISNULL(ISNULL(cs.reject,ci.reject), 0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1
 								  ELSE 0
 								END
 							   ), 0
@@ -433,7 +470,7 @@ BEGIN
     END								  
     ELSE IF @roleid = 3 --master
     BEGIN
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND (roleid = 2) OR (c.roleid = 1 AND c.recommend = -3)
 		SELECT	@uplineid = srecommend    FROM	custinfo ci WITH(NOLOCK)    WHERE ci.custid = @custid
 		
 	
@@ -477,9 +514,13 @@ BEGIN
 				@TotalAgentClosed = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
 				@TotalAgentSuspended = ISNULL(SUM(CASE WHEN RoleID = 2 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0),
     	
-				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
-				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
-				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0)
+				@TotalMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend NOT IN (-3,-4) AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
+				@TotalMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend NOT IN (-3,-4) AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
+				@TotalMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend NOT IN (-3,-4) AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0),
+
+				@TotalDirectMemberActive = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend = -3 AND ISNULL(cs.Closed,ci.closed) = 0 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 0 THEN 1 ELSE 0 END), 0),
+				@TotalDirectMemberClosed = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend = -3 AND ISNULL(cs.Closed,ci.closed) = 1 THEN 1 ELSE 0 END), 0),
+				@TotalDirectMemberSuspended = ISNULL(SUM(CASE WHEN RoleID = 1 AND ci.recommend = -3 AND ISNULL(ISNULL(cs.reject,ci.reject),0) = 1 AND ISNULL(cs.Closed,ci.closed) = 0 THEN 1 ELSE 0 END), 0)
 			FROM Custinfo ci WITH(NOLOCK)
 				OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
@@ -540,14 +581,16 @@ BEGIN
     END
     ELSE IF @roleid = 1 --member
     BEGIN		
-	    SELECT 
-		    @IsInternal = ISNULL(IsInternal, 0)
-	    FROM custAgent WITH(NOLOCK) WHERE custid = @uplineid
-		  --------------
-		  SELECT 
-			 @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
-	      FROM dbo.CustMaster WITH(NOLOCK)
-		  WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
+		SELECT  @IsInternal = CASE @IsDirectMember
+								WHEN -4 THEN (SELECT ISNULL(IsInternal, 0) FROM CustSuper WITH(NOLOCK)  WHERE custid = @uplineid)
+								WHEN -3 THEN (SELECT ISNULL(IsInternal, 0) FROM CustMaster WITH(NOLOCK) WHERE custid = @uplineid)
+								ELSE         (SELECT ISNULL(IsInternal, 0) FROM custAgent WITH(NOLOCK)  WHERE custid = @uplineid)
+							
+					    END
+		--------------
+		SELECT  @IsAllDayBalTransfer=ISNULL(IsAllDayBalTransfer, 0)
+		FROM dbo.CustMaster WITH(NOLOCK)
+		WHERE custid = (SELECT mrecommend FROM Customer WITH(NOLOCK) WHERE Custid= @custid)
     END
     
     --Direct Customer Status
@@ -736,7 +779,7 @@ BEGIN
 					    WHEN 2 THEN ISNULL(m.autosuspend,0) 
 					    WHEN 3 THEN ISNULL(s.autosuspend,0) 
 					    ELSE 0 END uplineAutosuspend,							    		
-	    a.custid as agentID,
+	    ISNULL(a.custid , c.recommend) as agentID,
 	    a.username as agentName,	
 	    a.Enabled as agentEnabled,
 	    m.custid as masterID,
@@ -756,25 +799,33 @@ BEGIN
 	    c.custid = @custid
   
 	 
-    SELECT  @TotalSAgentActive SAgentActive,
-		    @TotalSAgentViewOnly SAgentViewOnly,
-		    @TotalSAgentSuspended SAgentSuspended,
-			@TotalSAgentInactive SAgentInactive,
-			@TotalMAgentActive MAgentActive,
-			@TotalMAgentClosed MAgentClosed,
-		    @TotalMAgentSuspended MAgentSuspended,
-		    @TotalMAgentViewOnly MAgentViewOnly,
-			@TotalMAgentInactive MAgentInactive,
-		    @TotalAgentActive AgentActive,
-			@TotalAgentClosed AgentClosed,
-		    @TotalAgentSuspended AgentSuspended,
-		    @TotalAgentViewOnly AgentViewOnly,
-			@TotalAgentInactive AgentInactive,
-		    @TotalMemberActive MemberActive,
-			@TotalMemberClosed MemberClosed,
-		    @TotalMemberSuspended MemberSuspended,
-		    @TotalMemberViewOnly MemberViewOnly,
-		    @TotalMemberInactive MemberInactive
+	SELECT
+		  @TotalSAgentActive			SAgentActive
+		, @TotalSAgentViewOnly			SAgentViewOnly
+		, @TotalSAgentSuspended			SAgentSuspended
+		, @TotalSAgentInactive			SAgentInactive
+
+		, @TotalMAgentActive			MAgentActive
+		, @TotalMAgentClosed			MAgentClosed
+		, @TotalMAgentSuspended			MAgentSuspended
+		, @TotalMAgentViewOnly			MAgentViewOnly
+		, @TotalMAgentInactive			MAgentInactive
+
+		, @TotalAgentActive			AgentActive
+		, @TotalAgentClosed			AgentClosed
+		, @TotalAgentSuspended			AgentSuspended
+		, @TotalAgentViewOnly			AgentViewOnly
+		, @TotalAgentInactive			AgentInactive
+
+		, @TotalMemberActive			MemberActive
+		, @TotalMemberClosed			MemberClosed
+		, @TotalMemberSuspended			MemberSuspended
+		, @TotalMemberViewOnly			MemberViewOnly
+		, @TotalMemberInactive			MemberInactive
+
+		, @TotalDirectMemberActive		DirectMemberActive
+		, @TotalDirectMemberClosed		DirectMemberClosed
+		, @TotalDirectMemberSuspended		DirectMemberSuspended
 
 	-- For sportbook2
 	IF @IsDeposit = 0 -- credit
@@ -785,7 +836,6 @@ BEGIN
 	BEGIN
 		EXEC DBACC.bodb02.dbo.Acc_Dep_CustSetting_StatusSettingSelect @CustID = @custid,@roleid = @roleid      
 	END
-	
 END
 
 GO

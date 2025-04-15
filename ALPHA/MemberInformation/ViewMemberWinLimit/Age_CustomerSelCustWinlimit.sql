@@ -11,7 +11,8 @@ ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 				,	@PageSize		INT				= 500
 				,	@PageIndex		INT				= 1
 				,	@TotalRows		INT				= 0			OUTPUT
-				,   @SettingStatus TINYINT = 0
+				,     @SettingStatus    TINYINT = 0
+				,	@isDirectDownline BIT
 AS
 /*
 	Create:	20150715@Patrick
@@ -32,6 +33,7 @@ AS
 		- 20230905@Eden: Enhance BBIN display [Redmine: #193539]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 
 	Param's Explanation:
 		- @CustID: SAgentID
@@ -70,31 +72,65 @@ BEGIN
 
 	IF @RoleId = 4
 	BEGIN
-		INSERT INTO #MemberBalance(CustId)
-		SELECT c.custid
-		FROM dbo.CustInfo c WITH(NOLOCK)
-		WHERE c.srecommend = @CustId
-			AND roleid = 1
-			AND c.mrecommend = @mrecommend
-			AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
-			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
-			AND c.Enabled = 1
-		GROUP BY c.custid
+		IF @isDirectDownline = 0			-- Get Normal Member
+		BEGIN
+			INSERT INTO #MemberBalance(CustId)
+			SELECT c.custid
+			FROM dbo.CustInfo c WITH(NOLOCK)
+			WHERE c.srecommend = @CustId
+				AND roleid = 1
+				AND c.mrecommend = @mrecommend
+				AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
+				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
+				AND c.Enabled = 1
+			GROUP BY c.custid
+		END
+		ELSE							-- Get Super Direct Member
+		BEGIN
+			INSERT INTO #MemberBalance(CustId)
+			SELECT c.custid
+			FROM dbo.CustInfo c WITH(NOLOCK)
+			WHERE c.srecommend = @CustID
+				AND c.recommend = -4
+				AND roleid = 1
+				AND (@recommend = 0 OR (@recommend <> 0 AND c.recommend = @recommend))
+				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
+				AND c.Enabled = 1
+			GROUP BY c.custid
+		END
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
-		INSERT INTO #MemberBalance(CustId)
-		SELECT c.custid
-		FROM dbo.CustInfo c WITH(NOLOCK)
-		WHERE c.mrecommend = @CustId
-			AND roleid = 1
-			AND c.srecommend = @srecommend 
-			AND c.recommend = @recommend
-			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
-			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
-			AND c.Enabled = 1
-		GROUP BY c.custid
+		IF @isDirectDownline = 0			-- Get Normal Member
+		BEGIN
+			INSERT INTO #MemberBalance(CustId)
+			SELECT c.custid
+			FROM dbo.CustInfo c WITH(NOLOCK)
+			WHERE c.mrecommend = @CustId
+				AND roleid = 1
+				AND c.srecommend = @srecommend 
+				AND c.recommend = @recommend
+				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
+				AND c.Enabled = 1
+			GROUP BY c.custid
+		END
+		ELSE							-- Get Master Direct Member
+		BEGIN
+			INSERT INTO #MemberBalance(CustId)
+			SELECT c.custid
+			FROM dbo.CustInfo c WITH(NOLOCK)
+			WHERE c.mrecommend = @CustId
+				AND roleid = 1
+				AND c.srecommend = @srecommend 
+				AND c.recommend = -3
+				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
+				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
+				AND c.Enabled = 1
+			GROUP BY c.custid
+		END
 	END
 	ELSE IF @RoleId = 2
 	BEGIN

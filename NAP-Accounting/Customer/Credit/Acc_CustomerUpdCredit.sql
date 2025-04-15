@@ -1,5 +1,4 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_xnap" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@CustId		INT,
 	@NewCredit	MONEY,
@@ -48,6 +47,7 @@ AS
 		- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
 		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20250220@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]    
 		
 */
 BEGIN
@@ -62,7 +62,9 @@ SET NOCOUNT ON
 			@OldMaxCredit MONEY,
 			@AgentCredit MONEY,
 			@Credit_AllOtherMember MONEY,
-			@matchlimit SMALLMONEY
+			@matchlimit SMALLMONEY,
+			@Credit_AllSuperDirectMember MONEY , 
+			@Credit_AllMasterDirectMember MONEY
 
 	SELECT	@username = username,
 			@roleid = roleid,
@@ -102,31 +104,6 @@ SET NOCOUNT ON
 
 	IF @roleid = 1
 	BEGIN
-		SELECT @uplineId = @recommend
-
-		SELECT @Credit_AllOtherMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
-		FROM dbo.custInfo WITH (NOLOCK) 
-		WHERE recommend = @recommend AND roleid = 1 AND CustID <> @CustID
-
-		DECLARE @AgentMaxCredit MONEY, @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
-
-		SELECT	@AgentCredit = ISNULL(Credit, 0)
-		FROM dbo.custInfo WITH (NOLOCK) 
-		WHERE CustID = @recommend
-	
-		SELECT	@AgentMaxCredit = ISNULL(maxcredit, 0)
-		FROM dbo.CustAgent WITH (NOLOCK)
-		WHERE CustID = @recommend
-
-		SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember
-		SELECT @Credit_Mem_Max		= CASE
-										WHEN @AgentMaxCredit = 0 THEN @Agent_Credit_Bal
-										WHEN @AgentMaxCredit > @Agent_Credit_Bal THEN @Agent_Credit_Bal
-										ELSE @AgentMaxCredit END
-
-		
-		SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
-				
 		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 100,
@@ -134,16 +111,8 @@ SET NOCOUNT ON
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
 			RETURN	
 		END
-		
-		IF @NewCredit + @Credit_AllOtherMember > @AgentCredit 
-		BEGIN
-			SELECT	@ErrCode = 101
-			SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
-												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
-											END  
-											, '{number}', FORMAT(@AgentCredit - @Credit_AllOtherMember, '#,#0.####'))
-			RETURN
-		END
+
+		SELECT @TotalAmt = ISNULL(@TotalAmt, 0)
 
 		IF @TotalAmt + @NewCredit < 0
 		BEGIN
@@ -155,14 +124,102 @@ SET NOCOUNT ON
 			RETURN 
 		END
 
-		IF @NewCredit > @Credit_Mem_Max
+		IF @recommend NOT IN (-3,-4)
 		BEGIN
-			SELECT	@ErrCode = 101
-			SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the maximum Member credit set by upline ({number}).'
-												ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
-											END  
-											, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
-			RETURN
+			SELECT @uplineId = @recommend
+
+			SELECT @Credit_AllOtherMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE recommend = @recommend AND roleid = 1 AND CustID <> @CustID
+
+			DECLARE @AgentMaxCredit MONEY, @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
+
+			SELECT	@AgentCredit = ISNULL(Credit, 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE CustID = @recommend
+	
+			SELECT	@AgentMaxCredit = ISNULL(maxcredit, 0)
+			FROM dbo.CustAgent WITH (NOLOCK)
+			WHERE CustID = @recommend
+
+			SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember
+			SELECT @Credit_Mem_Max		= CASE
+											WHEN @AgentMaxCredit = 0 THEN @Agent_Credit_Bal
+											WHEN @AgentMaxCredit > @Agent_Credit_Bal THEN @Agent_Credit_Bal
+											ELSE @AgentMaxCredit END
+
+			IF @NewCredit + @Credit_AllOtherMember > @AgentCredit 
+			BEGIN
+				SELECT	@ErrCode = 101
+				SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												END  
+												, '{number}', FORMAT(@AgentCredit - @Credit_AllOtherMember, '#,#0.####'))
+				RETURN
+			END
+			
+			IF @NewCredit > @Credit_Mem_Max
+			BEGIN
+				SELECT	@ErrCode = 101
+				SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the maximum Member credit set by upline ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
+												END  
+												, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
+				RETURN
+			END
+		END
+		ELSE IF @recommend = -4			--Super Direct Member
+		BEGIN
+			DECLARE @Credit_AllNormalMaster MONEY , @SuperCredit MONEY
+
+			SELECT	@SuperCredit = ISNULL(Credit, 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE CustID = @srecommend
+
+			SELECT @Credit_AllSuperDirectMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE srecommend = @srecommend AND roleid = 1 AND CustID <> @CustId AND recommend = -4
+
+			SELECT @Credit_AllNormalMaster = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE srecommend = @srecommend AND roleid = 3
+
+			IF @NewCredit + @Credit_AllSuperDirectMember + @Credit_AllNormalMaster > @SuperCredit
+			BEGIN
+				SELECT	@ErrCode = 201
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												END  
+												, '{number}', FORMAT(@SuperCredit - (@Credit_AllSuperDirectMember + @Credit_AllNormalMaster), '#,#0.####'))
+				RETURN
+			END
+		END
+
+		ELSE IF @recommend = -3			--Master Direct Member	
+		BEGIN
+			DECLARE @Credit_AllNormalAgent MONEY , @MasterCredit MONEY
+
+			SELECT	@MasterCredit = ISNULL(Credit, 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE CustID = @mrecommend
+
+			SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE mrecommend = @mrecommend AND roleid = 1 AND CustID <> @CustId AND recommend = -3
+
+			SELECT @Credit_AllNormalAgent = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+			FROM dbo.custInfo WITH (NOLOCK) 
+			WHERE mrecommend = @mrecommend AND roleid = 2
+
+			IF @NewCredit + @Credit_AllMasterDirectMember + @Credit_AllNormalAgent > @MasterCredit
+			BEGIN
+				SELECT	@ErrCode = 201
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												END  
+												, '{number}', FORMAT(@MasterCredit - (@Credit_AllMasterDirectMember + @Credit_AllNormalAgent), '#,#0.####'))
+				RETURN
+			END
 		END
 	END
 	ELSE IF @roleid = 2
@@ -206,6 +263,10 @@ SET NOCOUNT ON
 			RETURN	
 		END
 		
+		SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK)
+		WHERE mrecommend = @mrecommend AND roleid = 1 AND recommend = -3
+
 		SELECT @Credit_AllOtherAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE mrecommend = @mrecommend AND roleid = 2 and CustID <> @CustID
@@ -213,14 +274,14 @@ SET NOCOUNT ON
 		SELECT @Credit_MAg = ISNULL(credit, 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE custid = @mrecommend
-
-		IF @Credit_AllOtherAgent + @NewCredit > @Credit_MAg
+		
+		IF @Credit_AllOtherAgent + @NewCredit + @Credit_AllMasterDirectMember > @Credit_MAg
 		BEGIN
 			SELECT	@ErrCode = 201
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_MAg - @Credit_AllOtherAgent, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_MAg - (@Credit_AllOtherAgent + @Credit_AllMasterDirectMember), '#,#0.####'))
 			RETURN
 		END
 		
@@ -249,11 +310,20 @@ SET NOCOUNT ON
 								ELSE [dbo].[f_Get_MsgNamebyMsgID](70025, @Language) END
 			RETURN	
 		END
+
+		SELECT @Credit_AllSuperDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK)
+		WHERE srecommend = @srecommend AND RoleID = 1 AND recommend = -4
+
+		SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK)
+		WHERE mrecommend = @mrecommend AND RoleID = 1 AND recommend = -3
 		
 		SELECT @Credit_AllOtherMaster = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @srecommend AND RoleID = 3 AND CustID <> @CustID
 	
+		-- Normal & direct Member 
 		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE mrecommend = @CustID AND RoleID = 1
@@ -268,16 +338,17 @@ SET NOCOUNT ON
 
 		IF @srecommend > 100
 		BEGIN
-			IF @Credit_AllOtherMaster + @NewCredit > @Credit_SAg
+			
+			IF @Credit_AllSuperDirectMember + @Credit_AllOtherMaster + @NewCredit > @Credit_SAg
 			BEGIN
 				SELECT	@ErrCode = 301
 				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
-												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language)
 											END  
-											, '{number}', FORMAT(@Credit_SAg - @Credit_AllOtherMaster, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_SAg - (@Credit_AllSuperDirectMember + @Credit_AllOtherMaster) , '#,#0.####'))
 				RETURN
 			END
-			
+
 			IF @Credit_AllMember > @NewCredit
 			BEGIN
 				SELECT	@ErrCode = 302
@@ -287,7 +358,7 @@ SET NOCOUNT ON
 											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
 				RETURN
 			END
-			
+						
 			IF @Credit_AllAgent > @NewCredit
 			BEGIN
 				SELECT	@ErrCode = 303
@@ -296,6 +367,16 @@ SET NOCOUNT ON
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70036,@Language) 
 											END  
 											, '{number}', FORMAT(@Credit_AllAgent, '#,#0.####'))
+				RETURN
+			END
+
+			IF @Credit_AllMasterDirectMember + @Credit_AllAgent > @NewCredit
+			BEGIN
+				SELECT	@ErrCode = 304
+				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit must be greater than or equal to ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70037,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMasterDirectMember + @Credit_AllAgent, '#,#0.####'))
 				RETURN
 			END
 		END
@@ -312,6 +393,10 @@ SET NOCOUNT ON
 			RETURN	
 		END
 		
+		SELECT @Credit_AllSuperDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK)
+		WHERE srecommend = @CustID AND RoleID = 1 AND recommend = -4
+
 		SELECT @Credit_AllMaster = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 3
@@ -330,7 +415,7 @@ SET NOCOUNT ON
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+											, '{number}', FORMAT((@Credit_AllMember), '#,#0.####'))
 			RETURN
 		END
 
@@ -353,13 +438,23 @@ SET NOCOUNT ON
 											, '{number}', FORMAT(@Credit_AllMaster, '#,#0.####'))
 			RETURN
 		END
+
+		IF (@Credit_AllSuperDirectMember + @Credit_AllMaster) > @NewCredit 
+		BEGIN
+			SELECT	@ErrCode = 404
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit must be greater than or equal to ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70038,@Language) 
+											END  
+											, '{number}', FORMAT((@Credit_AllSuperDirectMember + @Credit_AllMaster), '#,#0.####'))
+			RETURN
+		END
 	END
 
 	IF @NewCreditRM > 300000 
 		AND NOT EXISTS (SELECT 1 FROM SuspiciousCust WITH (NOLOCK) WHERE CustID = @CustId)
 	BEGIN
-		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2, RepUpdateTime)
-		SELECT @CustId, 1, 0, dbo.f_GetDateTime2() 
+		INSERT INTO SuspiciousCust (CustID, NotifyStatus1, NotifyStatus2,RepUpdateTime)
+		SELECT @CustId, 1, 0 , dbo.f_GetDateTime2()
 	END
 
 	UPDATE	dbo.custInfo WITH (ROWLOCK, UPDLOCK) 

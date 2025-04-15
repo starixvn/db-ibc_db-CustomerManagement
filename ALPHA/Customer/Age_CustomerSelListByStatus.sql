@@ -5,7 +5,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelListByStatus]
 	@Status TINYINT,
 	@PageSize INT = 500,
 	@PageIndex INT = 1, 
-	@TotalPages INT = 0
+	@TotalPages INT = 0,
+	@IsDirectMember	BIT = 0
 AS
 /*
 	Creator: 20181108@Elodie
@@ -17,12 +18,15 @@ AS
 	Revisions:	
 		- 20181108@Elodie: Get downline list by status in left panel [RedmineID: #58776]
 		- 20210513@Tina: Lock account & indirect close account [redmine: #148600]	
-
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 	Explanation: 
 		@Status:1: Active
 				2: Closed
 				3: Suppend
 
+		@IsDirectMember:
+				0: Normal Account
+				1: Direct Account
 	Example: EXEC Age_CustomerSelListByStatus @CustID=24471545, @RoleId = 4, @Status = 1
 */
 BEGIN
@@ -32,6 +36,7 @@ BEGIN
 	SELECT @PageIndex = @PageIndex - 1, @RowStart = @PageSize * @PageIndex + 1, @RowEnd = @RowStart + @PageSize - 1 
 
 	DECLARE @CustList TABLE (Username NVARCHAR(30), CustId INT, [Enabled] BIT, CLosed BIT, Reject BIT)		
+
 
 	IF @RoleId = 2
 	BEGIN	
@@ -87,8 +92,12 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
 								) AS cps
-			WHERE c.roleid = 2 and c.mrecommend = @custid
-				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 0
+			WHERE  c.mrecommend = @custid
+			AND c.roleid = CASE 
+						WHEN @IsDirectMember = 0 AND c.roleid = 2 THEN  2					-- GET AGENT
+						WHEN @IsDirectMember = 1 AND c.roleid = 1 AND c.recommend = -3 THEN  1		-- GET MASTER DIRECT MEMBER
+						END
+			AND cps.closed = 0 AND ISNULL(cps.reject,0) = 0
 		END
 		ELSE IF @Status = 2 --Closed
 		BEGIN
@@ -100,8 +109,13 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
 								) AS cps
-			WHERE c.roleid = 2 and c.mrecommend = @custid
+			WHERE c.mrecommend = @custid
+				AND c.roleid = CASE 
+						WHEN @IsDirectMember = 0 AND c.roleid = 2 THEN  2					-- GET AGENT
+						WHEN @IsDirectMember = 1 AND c.roleid = 1 AND c.recommend = -3 THEN  1		-- GET MASTER DIRECT MEMBER
+						END
 				AND cps.closed = 1
+
 		END
 		ELSE IF @Status = 3 --Suppend
 		BEGIN
@@ -113,11 +127,16 @@ BEGIN
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = c.custid
 								) AS cps
-			WHERE c.roleid = 2 and c.mrecommend = @custid
+			WHERE c.mrecommend = @custid
+				AND c.roleid = CASE 
+						WHEN @IsDirectMember = 0 AND c.roleid = 2 THEN  2					-- GET AGENT
+						WHEN @IsDirectMember = 1 AND c.roleid = 1 AND c.recommend = -3 THEN  1		-- GET MASTER DIRECT MEMBER
+						END
 				AND cps.closed = 0 AND ISNULL(cps.reject,0) = 1
 		END
-	END	
-
+	END
+	
+	
 	--Paging
 	IF @TotalPages = 0
 	BEGIN
@@ -143,10 +162,19 @@ BEGIN
 		FROM #tmpList c
 			LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 	ELSE IF @RoleId = 3
-		SELECT UserName,cl.ClosedReason
+		SELECT UserName, clogin.ClosedReason AS ClosedReason
 		FROM #tmpList c
-			LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
-	
+		CROSS APPLY (
+			SELECT TOP 1 ClosedReason
+			FROM CustLoginInfo cl WITH (NOLOCK)
+			WHERE c.CustID = cl.CustID
+			
+			UNION ALL
+			
+			SELECT TOP 1 ClosedReason
+			FROM CustLoginInfo_Member clm WITH (NOLOCK)
+			WHERE c.CustID = clm.CustID	
+		) AS clogin
 END
 
 GO

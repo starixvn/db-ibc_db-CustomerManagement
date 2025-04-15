@@ -39,7 +39,7 @@ Revisions:
 					 2.Code aligning  
 	- 20150611@Kathy: Migrate custDB to new server DBCust (Move Acc_CustomerSelCheckEnable to DBCUST.CustDB) [Redmine:#36216]
 	- 20160614@Helen: Security Prevention Step 1 - Cross level update -  [Redmine:55377]
-	- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684] 
 Param's Explanation:  
 • @custid: custid that need to be viewed.     
 */  

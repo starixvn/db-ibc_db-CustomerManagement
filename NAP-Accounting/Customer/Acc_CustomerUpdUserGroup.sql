@@ -33,6 +33,8 @@ Revisions:
 	- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
     - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241107@Eden: Offer Direct Member for Super/Master [redmine: #211969]
+
 Param's Explanation:
 */
 BEGIN
@@ -133,10 +135,12 @@ BEGIN
 	
 	-- Changed Commission of member Follow uGroup
 	UPDATE cdm
-		SET cdm.SuperDiscount	= @SuperDiscount
-		, cdm.MasterDiscount	= @MasterDiscount
-		, cdm.AgentDiscount	= @AgentDiscount
-		, cdm.PlayerDiscount	=  CASE WHEN cdm.PlayerDiscount > @AgentDiscount THEN @AgentDiscount ELSE cdm.PlayerDiscount END
+	SET   @PlayerDiscount		= CASE WHEN cdm.PlayerDiscount > COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount)
+										THEN COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount) ELSE cdm.PlayerDiscount END
+		, cdm.SuperDiscount		= @SuperDiscount
+		, cdm.MasterDiscount	= COALESCE(@MasterDiscount,cdm.PlayerDiscount)
+		, cdm.AgentDiscount		= COALESCE(@AgentDiscount,cdm.PlayerDiscount)
+		, cdm.PlayerDiscount	= @PlayerDiscount
 		, RepUpdateTime = dbo.f_GetDateTime2()
 	FROM CustDiscount3rd_Member cdm WITH (ROWLOCK , UPDLOCK)
 	WHERE cdm.custid = @CustID AND cdm.SportType = 1 AND cdm.bettype NOT IN (4 , 5)

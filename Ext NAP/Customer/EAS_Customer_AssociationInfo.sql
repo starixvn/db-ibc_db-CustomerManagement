@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20200721@winfred: initial sp [redmine: #137009]
 		- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 
 	Parameter's Explanation:
 		- @AssociationList
@@ -38,7 +39,8 @@ BEGIN
 			reject BIT,
 			closed BIT,
 			[Enabled] BIT,
-			[Date] SMALLDATETIME )
+			[Date] SMALLDATETIME ,
+			AgentID INT DEFAULT(0))
 	CREATE TABLE #Input (CustId INT,CustSubId INT,[Date] SMALLDATETIME)
 	
 	DECLARE @rowstart INT,@rowend INT, @iDoc			INT
@@ -67,7 +69,7 @@ BEGIN
 	SELECT @TotalAccount = COUNT(1)
 	FROM #Input
 	-- Check Data not Sub 
-	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
+	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date],AgentID)
 	SELECT DISTINCT
 	i.CustID
 	,c.username
@@ -76,6 +78,7 @@ BEGIN
 	,cps.closed
 	,c.Enabled
 	,i.[Date]
+	,CASE WHEN c.recommend IN (-3,-4) THEN c.recommend ELSE 0 END AS AgentID
 	FROM #Input i WITH(NOLOCK)
 		INNER JOIN Custinfo c WITH(NOLOCK) on i.custid = c.custid
 		INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
@@ -86,7 +89,7 @@ BEGIN
 								) AS cps
 	WHERE ca.GroupName = @GroupName AND  i.CustSubId = 0
 	-- Check Data Sub 
-	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date])
+	INSERT INTO #Result (CustId,username,Roleid,reject,closed,[Enabled],[Date],AgentID)
 	SELECT  DISTINCT
 	i.CustID
 	,c.username
@@ -95,6 +98,7 @@ BEGIN
 	,cps.closed
 	,c.Enabled
 	,i.[Date]
+	,CASE WHEN c.recommend IN (-3,-4) THEN c.recommend ELSE 0 END AS AgentID
 	FROM #Input i WITH(NOLOCK)
 	INNER JOIN Custinfo c WITH(NOLOCK) on i.CustSubId = c.custid
 	INNER JOIN Acc_CustGroup ca WITH (NOLOCK) on c.srecommend = ca.custid
@@ -108,7 +112,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #Result
 	
-	SELECT custid,username,roleid,reject  AS suspended,closed,enabled,[date]
+	SELECT custid,username,roleid,reject  AS suspended,closed,enabled,[date],AgentID
 	FROM #Result
 	WHERE ID BETWEEN @RowStart AND @RowEnd
 	ORDER BY [Enabled] desc,closed,reject,username
