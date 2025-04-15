@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySuper] 
 	-- Add the parameters for the stored procedure here
 	@Supers VARCHAR(MAX),
@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[EAS_GetPTProductBySuper]
 AS
 /*
 	Created: 20201020@Winfred
-	DB: DBACC-bodb02
+	DB: DBACC-bodb02, DBCUST-CustDB
 	Task: Get value PT setting product for customer
 
 	Revisions:
