@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd_Manual   
 		@Usernames	VARCHAR(MAX)
 	,	@UserID		INT
@@ -16,6 +16,7 @@ AS
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 		ErrorCode table Return:
 			Validate Code

@@ -20,6 +20,7 @@ AS
 		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100] 
 		- 20231101@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -52,7 +53,7 @@ BEGIN
 	  , @logSpData_Old  NVARCHAR(MAX)  
 	  , @RuleIDs    VARCHAR(MAX)  
 	  , @xml     XML  
-	  , @Threshold	INT = 5000
+	  , @Threshold	INT = 2000
    
 	 --Check if XML is null or empty  
 	 IF @PolicySites IS NULL OR @PolicySites = ''  
@@ -348,8 +349,8 @@ BEGIN
 			
 		IF @@ROWCOUNT = 0 BREAK 
 
-		INSERT INTO CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, LastModifiedUser, LastModifiedTime)   
-		SELECT a.PolicyID, a.Site, a.Currency, a.Platform, @UserID AS LastModifiedUser, GETDATE() AS LastModifiedTime  
+		INSERT INTO CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, LastModifiedUser, LastModifiedTime, RepUpdateTime)   
+		SELECT a.PolicyID, a.Site, a.Currency, a.Platform, @UserID AS LastModifiedUser, GETDATE() AS LastModifiedTime, [dbo].[f_GetDateTime2]()  
 		FROM #tempPS a  
 		WHERE NOT EXISTS(SELECT TOP 1 1 
 						FROM CustomerClassSiteManagement WITH(NOLOCK)  
@@ -372,7 +373,10 @@ BEGIN
 			
 			IF @@ROWCOUNT = 0 BREAK 
 
-			DELETE a FROM CustomerClassSiteManagement a WITH (ROWLOCK)
+			DELETE a 
+			OUTPUT DELETED.PolicyID, DELETED.Site, DELETED.Currency, DELETED.Platform, [dbo].[f_GetDateTime2]() 
+			INTO CustomerClassSiteManagement_Del_InHouse(PolicyID, Site, Currency, Platform, RepUpdateTime )
+			FROM CustomerClassSiteManagement a WITH (ROWLOCK)
 			INNER JOIN #tempPS b ON a.PolicyID = b.PolicyID AND a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform 
 
 			TRUNCATE TABLE #tempPS	
@@ -410,7 +414,10 @@ BEGIN
 			
 			IF @@ROWCOUNT = 0 BREAK 
 
-			DELETE a FROM CustomerClassSiteManagement a WITH (ROWLOCK)
+			DELETE a 
+			OUTPUT DELETED.PolicyID, DELETED.Site, DELETED.Currency, DELETED.Platform, [dbo].[f_GetDateTime2]() 
+			INTO CustomerClassSiteManagement_Del_InHouse(PolicyID, Site, Currency, Platform, RepUpdateTime )
+			FROM CustomerClassSiteManagement a WITH (ROWLOCK)
 			INNER JOIN #tempPS b ON a.PolicyID = b.PolicyID AND a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform 
 
 			TRUNCATE TABLE #tempPS	

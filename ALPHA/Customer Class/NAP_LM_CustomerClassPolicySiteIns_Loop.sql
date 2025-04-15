@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
 		- 20240315@Winfred: [NAP CM] - CCMgt - Enhance SP call loop for updating policies [RedmineID: #201256] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -114,7 +115,7 @@ BEGIN
 			) d
 	)
 	
-	INSERT INTO CustomerClassSMQueue (UserID, IsTest, IsOverwrite, ActionID, IP, LastModifiedTime, Status, ErrCode, BatchID, PolicySites)
+	INSERT INTO CustomerClassSMQueue (UserID, IsTest, IsOverwrite, ActionID, IP, LastModifiedTime, Status, ErrCode, BatchID, PolicySites, RepUpdateTime)
 	SELECT  @UserID AS UserID, @IsTest AS IsTest, @IsOverwrite AS IsOverwrite, @ActionID, 
 			@IP AS IP, GETDATE() AS LastModifiedTime, 0 AS Status, 0 AS ErrCode, c.BatchID ,CAST((
 				SELECT	PolicyID	AS '@PolicyID',
@@ -125,7 +126,7 @@ BEGIN
 				WHERE BatchID = c.BatchID  
 				ORDER BY STT
 				FOR XML PATH('r'),ROOT ('ROOT'),
-				TYPE ) AS NVARCHAR(MAX)) AS PolicySites
+				TYPE ) AS NVARCHAR(MAX)) AS PolicySites, [dbo].[f_GetDateTime2]()
 	from Tmp c
 	WHERE RowBatch = 1
 

@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @RuleID: ID Rule
@@ -49,7 +50,8 @@ BEGIN
 
 	UPDATE a	
 	SET a.Enable 				=   @Enable ,
-		a.TopPriority			=   @TopPriority 
+		a.TopPriority			=   @TopPriority , 
+		a.RepUpdateTime			=	[dbo].[f_GetDateTime2]() 
 	FROM CustomerClassRule a WITH (ROWLOCK, UPDLOCK)
 	WHERE a.RuleID = @RuleID
 	

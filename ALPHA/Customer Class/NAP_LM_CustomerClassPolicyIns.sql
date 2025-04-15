@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @PolicyID=1 
@@ -61,16 +62,17 @@ BEGIN
 
 	INSERT INTO CustomerClassPolicyManagement(
 			PolicyTitle 
-		,  SportType
-		,  IsTest
-		,  LastModifiedUser
-		,  LastModifiedTime)	
-	SELECT @PolicyTitle, @SportType, @IsTest, @UserID, GETDATE()
+		,	SportType
+		,	IsTest
+		,	LastModifiedUser
+		,	LastModifiedTime
+		,	RepUpdateTime)	
+	SELECT @PolicyTitle, @SportType, @IsTest, @UserID, GETDATE(), [dbo].[f_GetDateTime2]()
 		
 	SET @PolicyID = SCOPE_IDENTITY()
 
-	INSERT INTO CustomerClassPolicyRule(PolicyID ,  RuleID)	
-	SELECT @PolicyID ,RuleID 
+	INSERT INTO CustomerClassPolicyRule(PolicyID, RuleID, RepUpdateTime)	
+	SELECT @PolicyID ,RuleID, [dbo].[f_GetDateTime2]() 
 	FROM #CustomerClassRule
 	
 	-- Log new updated data

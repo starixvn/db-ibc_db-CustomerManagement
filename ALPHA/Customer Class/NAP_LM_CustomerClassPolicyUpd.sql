@@ -19,6 +19,7 @@ AS
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -82,10 +83,11 @@ BEGIN
 	END	
 	
 	UPDATE a	
-	SET a.PolicyTitle 		= @PolicyTitle 
+	SET  a.PolicyTitle 		= @PolicyTitle 
 		,a.LastModifiedUser = @UserID
 		,a.LastModifiedTime = @LastModifiedTime
-		,a.SportType	= @SportType
+		,a.SportType		= @SportType
+		,a.RepUpdateTime	= [dbo].[f_GetDateTime2]() 
 	OUTPUT	deleted.PolicyTitle 				
 		,	deleted.LastModifiedUser 					    
 		,	deleted.LastModifiedTime 
@@ -97,15 +99,16 @@ BEGIN
 	FROM CustomerClassPolicyManagement a WITH (ROWLOCK, UPDLOCK)
 	WHERE a.PolicyID = @PolicyID
 	
-	DELETE FROM CustomerClassPolicyRule WITH (ROWLOCK)
-	OUTPUT	deleted.PolicyID,	deleted.RuleID 
-	INTO #CustomerClassPolicyRule_History(PolicyID, RuleID )
+	INSERT INTO #CustomerClassPolicyRule_History(PolicyID, RuleID )
+	SELECT PolicyID, RuleID
+	FROM CustomerClassPolicyRule WITH (NOLOCK)
 	WHERE PolicyID = @PolicyID
 
-	INSERT INTO CustomerClassPolicyRule(PolicyID ,  RuleID)	
-	SELECT @PolicyID ,RuleID 
-	FROM #CustomerClassRule
-
+	DELETE FROM CustomerClassPolicyRule WITH (ROWLOCK)
+	OUTPUT	DELETED.PolicyID,	DELETED.RuleID , [dbo].[f_GetDateTime2]()
+	INTO CustomerClassPolicyRule_Del_InHouse(PolicyID , RuleID, RepUpdateTime)
+	WHERE PolicyID = @PolicyID
+	
 	SELECT @RuleIDs_old = (SELECT STRING_AGG(CAST(RuleID AS VARCHAR(20)), ',') 
 						WITHIN GROUP (ORDER BY RuleID)
 						FROM #CustomerClassPolicyRule_History  WITH(NOLOCK))

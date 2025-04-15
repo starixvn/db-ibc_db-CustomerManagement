@@ -16,7 +16,8 @@ AS
 	Original:
 
 	Revisions:
-		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
+		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119] 
 
 	Param's Explanation:
 
@@ -41,7 +42,8 @@ BEGIN
 	END	
 		
 	UPDATE a	
-	SET a.Enable  =   @Enable 
+	SET a.Enable  =   @Enable
+		,RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM CustomerClassSpread a WITH (ROWLOCK, UPDLOCK)
 	WHERE a.PolicyID = @PolicyID
 

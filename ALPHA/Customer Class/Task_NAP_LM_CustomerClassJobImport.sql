@@ -11,6 +11,7 @@ AS
 	Revisions:
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256]  
 		- 20240315@Winfred: [NAP CM] - CCMgt - Enhance SP call loop for updating policies [RedmineID: #201256] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 */ 
@@ -51,7 +52,8 @@ BEGIN
 	IF @ErrCode <> 0 -- Failed
 	BEGIN
 		UPDATE s
-		SET s.Status = 2, ErrCode = @ErrCode
+		SET s.Status = 2, ErrCode = @ErrCode,
+			s.RepUpdateTime	 =	[dbo].[f_GetDateTime2]() 
 		FROM dbo.CustomerClassSMQueue s WITH (ROWLOCK) 
 		WHERE ID = @IDMin
 
@@ -90,7 +92,8 @@ BEGIN
 	ELSE -- Complete
 	BEGIN
 		UPDATE s
-		SET s.Status = 1
+		SET s.Status = 1,
+			s.RepUpdateTime	 =	[dbo].[f_GetDateTime2]() 
 		FROM dbo.CustomerClassSMQueue s WITH (ROWLOCK) 
 		WHERE ID = @IDMin
 	END
@@ -102,6 +105,9 @@ BEGIN
 	WHERE VName = 'CustomerClassJob_Status'
 
 	-- Clear data 3 month
-	DELETE FROM dbo.CustomerClassSMQueue WITH (ROWLOCK) WHERE LastModifiedTime <= DATEADD(month, -3, GETDATE()) AND Status = 1
+	DELETE a 
+	OUTPUT DELETED.ID, [dbo].[f_GetDateTime2]() 
+	INTO CustomerClassSMQueue_Del_InHouse(ID, RepUpdateTime )
+	FROM dbo.CustomerClassSMQueue a WITH (ROWLOCK) WHERE LastModifiedTime <= DATEADD(month, -3, GETDATE()) AND Status = 1
 
 END

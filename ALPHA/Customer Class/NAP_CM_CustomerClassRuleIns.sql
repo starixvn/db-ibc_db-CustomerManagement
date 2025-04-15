@@ -19,6 +19,7 @@ AS
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
 		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Rules:
@@ -223,7 +224,8 @@ BEGIN
 		,	TopPriority
 		,	IsTest
 		,	LastModifiedUser
-		,	LastModifiedTime)	
+		,	LastModifiedTime
+		,	RepUpdateTime)	
 		SELECT
 			CustomerClass 			
 			, CustomerClassDetail				
@@ -248,6 +250,7 @@ BEGIN
 			, IsTest
 			, @UserID
 			, GETDATE()
+			, [dbo].[f_GetDateTime2]() 
 		FROM #CustomerClassRule
 		WHERE STT = @STT
 		
@@ -255,8 +258,8 @@ BEGIN
 			
 		UPDATE #CustomerClassRule SET RuleID  = @RuleID WHERE STT = @STT
 			
-		INSERT INTO CustomerClassRuleLeagueGroup(RuleID ,  LeagueGroupID)	
-		SELECT a.RuleID ,CAST(b.LeagueGroupID  AS SMALLINT) AS LeagueGroupID
+		INSERT INTO CustomerClassRuleLeagueGroup( RuleID,  LeagueGroupID, RepUpdateTime)	
+		SELECT a.RuleID ,CAST(b.LeagueGroupID  AS SMALLINT) AS LeagueGroupID, [dbo].[f_GetDateTime2]() 
 		FROM #CustomerClassRule a
 		CROSS APPLY ( SELECT VALUE AS LeagueGroupID FROM STRING_SPLIT(a.LeagueGroupIDs,',') WHERE VALUE <> '' ) b
 		WHERE STT = @STT

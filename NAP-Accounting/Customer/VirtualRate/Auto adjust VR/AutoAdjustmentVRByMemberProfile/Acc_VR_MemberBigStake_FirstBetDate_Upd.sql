@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_FirstBetDate_Upd
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
@@ -19,6 +19,8 @@ AS
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exxclude BasketBall and Esport
@@ -52,7 +54,8 @@ BEGIN
 	END
 	  
 	UPDATE v
-	SET v.FirstBetDate = @BetDate
+	SET v.FirstBetDate = @BetDate,
+		v.RepUpdateTime = [dbo].[f_GetDateTime2]() 
 	OUTPUT deleted.CustID INTO @UpdatedCustTbl(CustID)
 	FROM VRMemberBigStake v WITH(ROWLOCK)
 		INNER JOIN @InputCustTbl t ON v.CustID = t.CustID

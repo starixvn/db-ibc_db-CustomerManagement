@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_Ins
 	@IsTest BIT = 0
 AS  
@@ -13,6 +13,7 @@ AS
 		- 20210301@Eden: If member soccer hdp vr < site value, then insert the members into the VRMemberBigStake [#150298]
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:  
 	Examples:
@@ -57,15 +58,15 @@ BEGIN
 	BEGIN
 		DELETE FROM @Inserted_Cust
 
-		DELETE TOP(10000) t
+		DELETE TOP(2000) t
 		OUTPUT deleted.CustID,deleted.Type,deleted.IsWL INTO @Inserted_Cust(CustID,Type,IsWL)
 		FROM #TblCust t
 
 		IF @@ROWCOUNT = 0 
 			BREAK
 
-		INSERT INTO VRMemberBigStake(CustID,Type,Status)
-		SELECT t.custid, t.Type, 0 AS Status
+		INSERT INTO VRMemberBigStake(CustID,Type,Status, RepUpdateTime)
+		SELECT t.custid, t.Type, 0 AS Status, [dbo].[f_GetDateTime2]() 
 		FROM @Inserted_Cust t
 			LEFT JOIN VRMemberBigStake v WITH(NOLOCK) ON v.custid = t.custid AND v.Type = t.Type
 		WHERE v.CustID IS NULL

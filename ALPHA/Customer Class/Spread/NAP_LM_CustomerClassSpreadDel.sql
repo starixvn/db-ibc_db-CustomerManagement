@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20230115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 
@@ -39,7 +40,9 @@ BEGIN
 		, @Currencies_Old VARCHAR(MAX)= ''
 		, @Platforms_Old VARCHAR(MAX)= ''
 		, @LastModifiedTime DATETIME
-		
+	CREATE TABLE #CCSpreadDetail(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CCSpreadDetail_temp(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT)
+	
 	SELECT @StartRun = GETDATE() , @LastModifiedTime = GETDATE()
 	CREATE TABLE #CustomerClassSpread_History(PolicyID INT, PolicyTitle VARCHAR(500), Spread DECIMAL(4,2), Enable BIT,IsTest TINYINT, LastModifiedUser INT, LastModifiedTime DATETIME)
 
@@ -82,10 +85,41 @@ BEGIN
 							WHERE PolicyID = @PolicyID)cc) 
 	
 	BEGIN TRY
-		DELETE FROM CustomerClassSpread WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
-		DELETE FROM CustomerClassSpreadClass WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
-		DELETE FROM CustomerClassSpreadDetail WITH(ROWLOCK,UPDLOCK) WHERE PolicyID = @PolicyID
- 	
+		DELETE FROM CustomerClassSpread WITH(ROWLOCK,UPDLOCK) 
+		OUTPUT DELETED.PolicyID, [dbo].[f_GetDateTime2]() 
+		INTO CustomerClassSpread_Del_InHouse(PolicyID, RepUpdateTime )
+		WHERE PolicyID = @PolicyID
+
+		DELETE FROM CustomerClassSpreadClass WITH(ROWLOCK,UPDLOCK)
+		OUTPUT DELETED.PolicyID, DELETED.CustomerClass, [dbo].[f_GetDateTime2]() 
+		INTO CustomerClassSpreadClass_Del_InHouse(PolicyID, CustomerClass, RepUpdateTime )
+		WHERE PolicyID = @PolicyID
+
+		INSERT INTO #CCSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)
+		SELECT PolicyID, SiteID, Currency, Platform, SportType
+		FROM CustomerClassSpreadDetail a WITH(NOLOCK) 
+		WHERE PolicyID = @PolicyID
+
+		WHILE 0 = 0
+		BEGIN
+			TRUNCATE TABLE #CCSpreadDetail_temp
+
+			UPDATE TOP(2000) #CCSpreadDetail
+			SET	isFinished = 1
+			OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType
+			INTO	#CCSpreadDetail_temp (PolicyID, SiteID, Currency, Platform, SportType)
+			WHERE	isFinished = 0
+
+			IF	@@ROWCOUNT = 0
+				BREAK
+
+			DELETE a
+			OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType , [dbo].[f_GetDateTime2]()
+			INTO CustomerClassSpreadDetail_Del_InHouse(PolicyID, SiteID, Currency, Platform, SportType, RepUpdateTime)
+			FROM CustomerClassSpreadDetail a WITH (ROWLOCK,UPDLOCK)
+				INNER JOIN #CCSpreadDetail_temp b ON a.PolicyID = b.PolicyID AND  a.SiteID = b.SiteID 
+												 AND a.Currency = b.Currency AND a.Platform = b.Platform AND a.SportType = b.SportType
+		END
 	END TRY
 	BEGIN CATCH
 		SELECT  @ErrCode = ERROR_NUMBER(),@ErrMsg = ERROR_MESSAGE()
@@ -124,5 +158,7 @@ BEGIN
 				@TrackingValue = NULL,
 			    @TrackingValue2 = @logSpData_Old,
 				@duration = @Duration
+	
+	DROP TABLE #CCSpreadDetail_temp, #CCSpreadDetail 
 END
 GO
