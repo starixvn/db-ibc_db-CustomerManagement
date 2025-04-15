@@ -25,6 +25,7 @@ AS
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20240115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation: 
 	* @Sites:  "0 : All
@@ -59,11 +60,14 @@ BEGIN
 		, @Platforms_Old VARCHAR(MAX)= ''
 		, @SportType_Old SMALLINT
 		, @LastModifiedTime DATETIME
+		, @Batch		  SMALLINT = 2000
 	
 	SELECT @StartRun = GETDATE() , @LastModifiedTime = GETDATE()
 	CREATE TABLE #CustomerClassSpread_History(PolicyID INT, PolicyTitle VARCHAR(500), Spread DECIMAL(4,2), Enable BIT,IsTest TINYINT, LastModifiedUser INT, LastModifiedTime DATETIME)
 	CREATE TABLE #CustomerClassSpreadClass_History(PolicyID INT, CustomerClass smallint)
-	CREATE TABLE #CustomerClassSpreadDetail_History(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT)
+	CREATE TABLE #CustomerClassSpreadDetail_History(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CCSpreadDetail(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CCSpreadDetail_temp(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT)
 	
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassSpread a WITH(NOLOCK) WHERE a.IsTest <> @IsTest AND PolicyID = @PolicyID ) 
 	BEGIN
@@ -76,8 +80,7 @@ BEGIN
 		SELECT @ErrCode = 104 , @ErrMsg = 'Please input a value between [0:0.5]' 
 		RETURN
 	END
-
-
+	
 	UPDATE a	
 	SET a.PolicyTitle 		= @PolicyTitle 
 		,a.Spread = @Spread
@@ -85,6 +88,7 @@ BEGIN
 		,a.IsTest = @IsTest
 		,a.LastModifiedUser = @UserID
 		,a.LastModifiedTime = @LastModifiedTime
+		,a.RepUpdateTime = [dbo].[f_GetDateTime2]()
 	OUTPUT	deleted.PolicyTitle 	
 		,	deleted.Spread		
 		,	deleted.Enable	
@@ -102,13 +106,18 @@ BEGIN
 	
 	IF ISNULL(@CustomerClasses,'') <> ''
 	BEGIN
-		DELETE FROM CustomerClassSpreadClass WITH (ROWLOCK)
-		OUTPUT	deleted.PolicyID,	deleted.CustomerClass 
-		INTO #CustomerClassSpreadClass_History(PolicyID, CustomerClass )
+		INSERT INTO #CustomerClassSpreadClass_History(PolicyID, CustomerClass)
+		SELECT PolicyID, CustomerClass
+		FROM CustomerClassSpreadClass WITH (NOLOCK)
 		WHERE PolicyID = @PolicyID
 
-		INSERT INTO CustomerClassSpreadClass(PolicyID ,  CustomerClass)	
-		SELECT @PolicyID AS PolicyID, VALUE AS CustomerClass 
+		DELETE FROM CustomerClassSpreadClass WITH (ROWLOCK)
+		OUTPUT	DELETED.PolicyID, DELETED.CustomerClass , [dbo].[f_GetDateTime2]()
+		INTO CustomerClassSpreadClass_Del_InHouse(PolicyID, CustomerClass, RepUpdateTime )
+		WHERE PolicyID = @PolicyID
+	
+		INSERT INTO CustomerClassSpreadClass(PolicyID, CustomerClass, RepUpdateTime)	
+		SELECT @PolicyID AS PolicyID, VALUE AS CustomerClass, [dbo].[f_GetDateTime2]()
 		FROM STRING_SPLIT(@CustomerClasses,',') WHERE VALUE <> ''
 
 		SELECT @CustomerClasses_Old = (SELECT STRING_AGG(CAST(CustomerClass AS VARCHAR(MAX)), ',') 
@@ -119,20 +128,59 @@ BEGIN
 
 	IF ISNULL(@Currencies,'') <> '' AND  ISNULL(@Sites,'') <> '' AND  ISNULL(@Platforms,'') <> ''  
 	BEGIN
-		DELETE FROM CustomerClassSpreadDetail WITH (ROWLOCK)
-		OUTPUT	deleted.PolicyID, deleted.SiteID, deleted.Currency, deleted.Platform, deleted.SportType 
-		INTO #CustomerClassSpreadDetail_History(PolicyID, SiteID, Currency, Platform, SportType)
+
+		INSERT INTO #CustomerClassSpreadDetail_History(PolicyID, SiteID, Currency, Platform, SportType)
+		SELECT PolicyID, SiteID, Currency, Platform, SportType
+		FROM CustomerClassSpreadDetail WITH (NOLOCK)
 		WHERE PolicyID = @PolicyID
 
-		INSERT INTO CustomerClassSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)	
+		WHILE 0 = 0
+		BEGIN
+			TRUNCATE TABLE #CCSpreadDetail_temp
+
+			UPDATE TOP(@Batch) #CustomerClassSpreadDetail_History
+			SET	isFinished = 1
+			OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType
+			INTO	#CCSpreadDetail_temp (PolicyID, SiteID, Currency, Platform, SportType)
+			WHERE	isFinished = 0
+
+			IF	@@ROWCOUNT = 0
+				BREAK
+			
+			DELETE cg
+			OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType , [dbo].[f_GetDateTime2]()
+			INTO CustomerClassSpreadDetail_Del_InHouse(PolicyID, SiteID, Currency, Platform, SportType, RepUpdateTime)
+			FROM CustomerClassSpreadDetail cg WITH (ROWLOCK)
+				INNER JOIN #CCSpreadDetail_temp t ON cg.PolicyID = t.PolicyID AND cg.SiteID = t.SiteID 
+												 AND cg.Currency = t.Currency AND cg.Platform = t.Platform AND cg.SportType = t.SportType
+		END
+
+		INSERT INTO #CCSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)
 		SELECT @PolicyID AS PolicyID, s.VALUE AS SiteID , c.Currency, p.Platform,  @SportType AS SportType
 		FROM STRING_SPLIT(@Sites,',') s   
 		  CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(@Currencies,',') WHERE VALUE <> '' ) c  
 		  CROSS APPLY ( SELECT VALUE AS Platform FROM STRING_SPLIT(@Platforms,',') WHERE VALUE <> '' ) p
 		WHERE s.VALUE <> '' 
 
-		SELECT TOP 1 @SportType_Old = SportType 
-		FROM #CustomerClassSpreadDetail_History WITH (NOLOCK)
+		WHILE 0 = 0
+		BEGIN
+			TRUNCATE TABLE #CCSpreadDetail_temp
+
+			UPDATE TOP(@Batch) #CCSpreadDetail
+			SET	isFinished = 1
+			OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType
+			INTO	#CCSpreadDetail_temp (PolicyID, SiteID, Currency, Platform, SportType)
+			WHERE	isFinished = 0
+
+			IF	@@ROWCOUNT = 0
+				BREAK
+
+			INSERT INTO CustomerClassSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType, RepUpdateTime)
+			SELECT PolicyID, SiteID, Currency, Platform, SportType, [dbo].[f_GetDateTime2]()
+			FROM #CCSpreadDetail_temp	
+		END
+
+		SELECT TOP 1 @SportType_Old = SportType FROM #CustomerClassSpreadDetail_History WITH (NOLOCK)
 
 		SELECT @Currencies_Old = (SELECT STRING_AGG(CAST(Currency AS VARCHAR(MAX)), ',') 
 								WITHIN GROUP (ORDER BY Currency)
@@ -207,6 +255,8 @@ BEGIN
 
 	DROP TABLE #CustomerClassSpread_History,
 				#CustomerClassSpreadClass_History,
-				#CustomerClassSpreadDetail_History				
+				#CustomerClassSpreadDetail_History,
+				#CCSpreadDetail_temp,
+				#CCSpreadDetail
 END
 GO

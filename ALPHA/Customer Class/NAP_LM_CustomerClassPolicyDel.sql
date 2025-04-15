@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
@@ -30,7 +31,8 @@ BEGIN
 		, @Duration		INT
 		, @logSpData_Old   NVARCHAR(MAX)
 		, @xml			 XML
-		, @Threshold	INT = 5000
+		, @Threshold	INT = 2000
+
 	CREATE TABLE #PolicyTemp(PolicyID INT) 
 	INSERT INTO #PolicyTemp(PolicyID)
 	SELECT VALUE AS PolicyID FROM STRING_SPLIT(@Policies,',') WHERE VALUE <> ''
@@ -68,10 +70,16 @@ BEGIN
 	 FROM #PolicyTemp a  
 		INNER JOIN CustomerClassSiteManagement b WITH(NOLOCK) ON a.PolicyID = b.PolicyID
 
-	DELETE a FROM CustomerClassPolicyManagement a WITH (ROWLOCK)
+	DELETE a 
+	OUTPUT DELETED.PolicyID, [dbo].[f_GetDateTime2]() 
+	INTO CustomerClassPolicyManagement_Del_InHouse(PolicyID, RepUpdateTime )
+	FROM CustomerClassPolicyManagement a WITH (ROWLOCK)
 		INNER JOIN #PolicyTemp b ON a.PolicyID = b.PolicyID
 
-	DELETE a FROM CustomerClassPolicyRule a WITH (ROWLOCK)
+	DELETE a 
+	OUTPUT DELETED.PolicyID, DELETED.RuleID, [dbo].[f_GetDateTime2]() 
+	INTO CustomerClassPolicyRule_Del_InHouse(PolicyID, RuleID, RepUpdateTime )
+	FROM CustomerClassPolicyRule a WITH (ROWLOCK)
 		INNER JOIN #PolicyTemp b ON a.PolicyID = b.PolicyID
 
 	WHILE (1 = 1)
@@ -85,7 +93,10 @@ BEGIN
 			
 		IF @@ROWCOUNT = 0 BREAK 
 
-		DELETE a FROM CustomerClassSiteManagement a WITH (ROWLOCK)
+		DELETE a 
+		OUTPUT DELETED.PolicyID, DELETED.Site, DELETED.Currency, DELETED.Platform, [dbo].[f_GetDateTime2]() 
+		INTO CustomerClassSiteManagement_Del_InHouse(PolicyID, Site, Currency, Platform, RepUpdateTime )
+		FROM CustomerClassSiteManagement a WITH (ROWLOCK)
 		INNER JOIN #tempCC b ON a.PolicyID = b.PolicyID AND a.Site = b.Site AND a.Currency = b.Currency AND a.Platform = b.Platform 
 
 		TRUNCATE TABLE #tempCC	
@@ -103,9 +114,9 @@ BEGIN
 							cs.SportType				 AS '@SportType',
 							cs.RuleIDs					 AS '@RuleIDs',
 							cs.IsTest					 AS '@IsTest', 
-							s.Sites						AS '@S',  
-							c.Currencies				AS '@C' ,  
-							p.Platforms					AS '@P' , 
+							s.Sites						 AS '@S',  
+							c.Currencies				 AS '@C' ,  
+							p.Platforms					 AS '@P' , 
 							cs.LastModifiedUser			 AS '@LastModifiedUser',
 							CONVERT(VARCHAR(10), cs.LastModifiedTime, 120) AS '@LastModifiedTime'
 						FROM	#CustomerClassPolicy_History AS cs	

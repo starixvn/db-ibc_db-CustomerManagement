@@ -25,6 +25,7 @@ AS
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20240115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Sites:  "0 : All
@@ -52,7 +53,9 @@ BEGIN
 		, @RuleID		  INT
 		, @logSpData	  NVARCHAR(MAX)
 		, @xml			  XML
-	
+	CREATE TABLE #CCSpreadDetail(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT, IsFinished BIT DEFAULT(0))
+	CREATE TABLE #CCSpreadDetail_temp(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT)
+
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassSpread a WITH(NOLOCK) WHERE a.IsTest <> @IsTest AND PolicyID = @PolicyID ) 
 	BEGIN
 		SELECT @ErrCode = 102 , @ErrMsg = 'Cannot update PROD data' 
@@ -77,8 +80,9 @@ BEGIN
 	,	Spread 		
 	,	Enable 	
 	,	IsTest
-	,  LastModifiedUser
-	,  LastModifiedTime)	
+	,	LastModifiedUser
+	,	LastModifiedTime
+	,	RepUpdateTime)	
 	SELECT
 		@PolicyTitle 
 		,@Spread 					    
@@ -86,20 +90,39 @@ BEGIN
 		,@IsTest
 		,@UserID
 		,GETDATE()
+		,[dbo].[f_GetDateTime2]()
 		
 	SET @PolicyID = SCOPE_IDENTITY()
 				
-	INSERT INTO CustomerClassSpreadClass(PolicyID, CustomerClass)	
-	SELECT @PolicyID AS PolicyID, VALUE AS CustomerClass 
+	INSERT INTO CustomerClassSpreadClass(PolicyID, CustomerClass, RepUpdateTime)	
+	SELECT @PolicyID AS PolicyID, VALUE AS CustomerClass ,[dbo].[f_GetDateTime2]()
 	FROM STRING_SPLIT(@CustomerClasses,',') 
 	WHERE VALUE <> '' 
 
-	INSERT INTO CustomerClassSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)	
+	INSERT INTO #CCSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType)
 	SELECT @PolicyID AS PolicyID, s.VALUE AS SiteID , c.Currency, p.Platform,  @SportType AS SportType
 	FROM STRING_SPLIT(@Sites,',') s   
-	  CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(@Currencies,',') WHERE VALUE <> '' ) c
-	  CROSS APPLY ( SELECT VALUE AS Platform FROM STRING_SPLIT(@Platforms,',') WHERE VALUE <> '' ) p
+		CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(@Currencies,',') WHERE VALUE <> '' ) c  
+		CROSS APPLY ( SELECT VALUE AS Platform FROM STRING_SPLIT(@Platforms,',') WHERE VALUE <> '' ) p
 	WHERE s.VALUE <> '' 
+
+	WHILE 0 = 0
+	BEGIN
+		TRUNCATE TABLE #CCSpreadDetail_temp
+
+		UPDATE TOP(2000) #CCSpreadDetail
+		SET	isFinished = 1
+		OUTPUT	DELETED.PolicyID, DELETED.SiteID, DELETED.Currency, DELETED.Platform, DELETED.SportType
+		INTO	#CCSpreadDetail_temp (PolicyID, SiteID, Currency, Platform, SportType)
+		WHERE	isFinished = 0
+
+		IF	@@ROWCOUNT = 0
+			BREAK
+
+		INSERT INTO CustomerClassSpreadDetail(PolicyID, SiteID, Currency, Platform, SportType, RepUpdateTime)
+		SELECT PolicyID, SiteID, Currency, Platform, SportType, [dbo].[f_GetDateTime2]()
+		FROM #CCSpreadDetail_temp	
+	END
 
 	-- Log new updated data
 	SET @xml = (
@@ -131,5 +154,6 @@ BEGIN
 				@TrackingValue = @LogSPData,
 				@duration = @Duration
 
+	DROP TABLE #CCSpreadDetail, #CCSpreadDetail_temp
 END
 GO

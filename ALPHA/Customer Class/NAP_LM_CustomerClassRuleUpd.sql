@@ -18,6 +18,7 @@ AS
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20230802@Winfred: [NAP CM] Customer Class - Enhance for CC [RedmineID: #187368] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 
 	Param's Explanation:
 	* @Rules:
@@ -228,6 +229,7 @@ BEGIN
 		,a.PeakHourSpreadAdjustment =   b.PeakHourSpreadAdjustment
 		,a.AgentBetInterval			=   b.AgentBetInterval
 		,a.CustomerClassDetail		=   b.CustomerClassDetail
+		,a.RepUpdateTime			=	[dbo].[f_GetDateTime2]() 
 	OUTPUT	b.RuleID 					
 		,	b.CustomerClass 				
 		,	deleted.CustomerClassDetail 			
@@ -272,12 +274,15 @@ BEGIN
 		INNER JOIN  #CustomerClassRule b ON a.RuleID = b.RuleID
 	
 	DELETE FROM CustomerClassRuleLeagueGroup WITH (ROWLOCK)
-	OUTPUT	deleted.RuleID,	deleted.LeagueGroupID 
+	OUTPUT	DELETED.RuleID,	DELETED.LeagueGroupID 
 	INTO #CustomerClassRuleLeagueGroup_History(RuleID,	LeagueGroupID )
 	WHERE RuleID IN (SELECT RuleID FROM #CustomerClassRule)
 
-	INSERT INTO CustomerClassRuleLeagueGroup(RuleID ,  LeagueGroupID)	
-	SELECT a.RuleID ,b.LeagueGroupID 
+	INSERT INTO CustomerClassRuleLeagueGroup_Del_InHouse( RuleID,  LeagueGroupID, RepUpdateTime)
+	SELECT RuleID,	LeagueGroupID, [dbo].[f_GetDateTime2]() FROM #CustomerClassRuleLeagueGroup_History
+
+	INSERT INTO CustomerClassRuleLeagueGroup( RuleID, LeagueGroupID, RepUpdateTime)	
+	SELECT a.RuleID, b.LeagueGroupID, [dbo].[f_GetDateTime2]() 
 	FROM #CustomerClassRule a
 	CROSS APPLY ( SELECT VALUE AS LeagueGroupID FROM STRING_SPLIT(a.LeagueGroupIDs,',') WHERE VALUE <> '' ) b
 
@@ -371,6 +376,7 @@ BEGIN
 				@TrackingValue = @LogSPData,
 			    @TrackingValue2 = @logSpData_Old,
 				@duration = @Duration
-
+	
+	DROP TABLE #CustomerClassRuleLeagueGroup_History
 END
 GO

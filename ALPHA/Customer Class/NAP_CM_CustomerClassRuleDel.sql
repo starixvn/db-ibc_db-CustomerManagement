@@ -18,6 +18,8 @@ AS
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20240402@Winfred: [NAP CM] Customer Class - Support to add CC by Sport Detail [199679] 
 		- 20240925@Winfred: [NAP CM] Customer Class - Allow licensees to bypass any restrict rules [188589]
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
 
@@ -93,10 +95,16 @@ BEGIN
 		CROSS APPLY ( SELECT TOP 1 RuleID FROM #RuleTemp WHERE RuleID = a.RuleID ) c
 	WHERE a.IsTest <= @IsTest
 	
-	DELETE a FROM CustomerClassRule a WITH (ROWLOCK)
+	DELETE a 
+	OUTPUT DELETED.RuleID, [dbo].[f_GetDateTime2]() 
+	INTO CustomerClassRule_Del_InHouse(RuleID, RepUpdateTime )
+	FROM CustomerClassRule a WITH (ROWLOCK)
 		INNER JOIN #RuleTemp b ON a.RuleID = b.RuleID
 
-	DELETE a FROM CustomerClassRuleLeagueGroup a WITH (ROWLOCK)
+	DELETE a 
+	OUTPUT DELETED.RuleID, DELETED.LeagueGroupID,  [dbo].[f_GetDateTime2]() 
+	INTO CustomerClassRuleLeagueGroup_Del_InHouse(RuleID, LeagueGroupID, RepUpdateTime )
+	FROM CustomerClassRuleLeagueGroup a WITH (ROWLOCK)
 		INNER JOIN #RuleTemp b ON a.RuleID = b.RuleID
 
 	-- Log new updated data

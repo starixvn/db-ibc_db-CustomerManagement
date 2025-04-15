@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Acc_VR_MemberBigStake_WhiteList_Upd 
 	 @CustIDList VARCHAR(max)
 	,@Type TINYINT
@@ -17,7 +17,8 @@ AS
 		- 20210301@Eden: Check if member soccer hdp vr >= site value then remove the member from VRMemberBigStake table [#150298]
 		- 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
-
+		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exclude BasketBall and Esport
@@ -91,7 +92,8 @@ BEGIN
 
 	--> Update Status = 1
 	UPDATE v
-	SET v.Status = 1
+	SET v.Status = 1,
+		v.RepUpdateTime = [dbo].[f_GetDateTime2]() 
 	OUTPUT deleted.CustID INTO @Whitelist_TBL(CustID)
 	FROM VRMemberBigStake v WITH(ROWLOCK)
 		INNER JOIN @CustTbl t ON v.CustID = t.CustID
@@ -103,9 +105,9 @@ BEGIN
 	
 	IF @UpdateType IN (2,3) --White list  by Manual or HighVR no need Bet ticket
 	BEGIN
-		INSERT INTO VRMemberBigStake (CustID,Type,Status)
+		INSERT INTO VRMemberBigStake (CustID,Type,Status, RepUpdateTime)
 		OUTPUT inserted.CustID INTO @Whitelist_TBL(CustID)
-		SELECT t.CustID, @Type, 1
+		SELECT t.CustID, @Type, 1, [dbo].[f_GetDateTime2]() 
 		FROM @CustTbl t 
 			INNER JOIN Customer c WITH(NOLOCK) ON t.CustID = c.custid
 			INNER JOIN dbo.f_GetVRBigStakeConfig(NULL) p ON p.site = c.site
