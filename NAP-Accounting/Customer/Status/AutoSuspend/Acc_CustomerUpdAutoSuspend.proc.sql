@@ -38,6 +38,7 @@ AS
 		- 20230308@Johnson: Add auto-suspend for Basketball [redmine:#184339]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241129@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]		
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 	Param's Explanation:
 		@IsUpdDownline: auto-suspended all downlines
 
@@ -66,7 +67,8 @@ BEGIN
 			@uplineAutoSuspend3 BIT,
 			@IsUpdateAutoSuspendSoccer 		BIT = 0,
 			@IsUpdateAutoSuspendOtherSports BIT = 0,
-			@IsUpdateAutoSuspendBasketball 	BIT = 0
+			@IsUpdateAutoSuspendBasketball 	BIT = 0,
+			@UplineID			INT
 			
 	
 	SELECT	@roleID = roleID, 
@@ -111,31 +113,50 @@ BEGIN
 
 	IF @AutoSuspend = 0 or @AutoSuspendOther = 0 or @AutoSuspend3 = 0-- need to check upline when enable Auto-suspend
 	BEGIN
-		IF @roleID = 1	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
-								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)
-						FROM	custinfo WITH (NOLOCK)
-						WHERE	custid = (SELECT recommend 
-											FROM custinfo WITH (NOLOCK) 
-											WHERE custid = @custID)
+		IF @roleID = 1	
+		BEGIN
+			
+			SELECT @UplineID = CASE 
+							WHEN ci.recommend = -4 THEN ci.srecommend		-- SuperDirectMember
+							WHEN ci.recommend = -3 THEN ci.mrecommend		-- MasterDirectMember
+							ELSE ci.recommend						-- NormalMember
+						END  
+							FROM custinfo ci WITH (NOLOCK) 
+							WHERE custid = @custID
 
-		IF @roleID = 2	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
-								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
-						FROM	custinfo WITH (NOLOCK)
-						WHERE	custid = (SELECT mrecommend 
-											FROM custinfo WITH (NOLOCK) 
-											WHERE custid = @custID) 
+			SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),
+					@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+					@uplineAutoSuspend3 = ISNULL(autosuspend3,0)
+			FROM	custinfo WITH (NOLOCK)
+			WHERE	custid = @UplineID
+		END
+					
+		IF @roleID = 2	
+		BEGIN
+			SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
+					@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+					@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
+			FROM	custinfo WITH (NOLOCK)
+			WHERE	custid = (SELECT mrecommend 
+								FROM custinfo WITH (NOLOCK) 
+								WHERE custid = @custID) 
+		END
+		
+		IF @roleID = 3	
+		BEGIN
+			SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
+					@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
+					@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
+			FROM	custinfo WITH (NOLOCK)
+			WHERE	custid = (SELECT srecommend 
+								FROM custinfo WITH (NOLOCK) 
+								WHERE custid = @custID) 
+		END
 
-		IF @roleID = 3	SELECT	@uplineAutoSuspend = ISNULL(autosuspend,0),	
-								@uplineAutoSuspendOther = ISNULL(autosuspend2, 0),
-								@uplineAutoSuspend3 = ISNULL(autosuspend3,0)	
-						FROM	custinfo WITH (NOLOCK)
-						WHERE	custid = (SELECT srecommend 
-											FROM custinfo WITH (NOLOCK) 
-											WHERE custid = @custID) 
-
-		IF @roleID = 4	SELECT	@uplineAutoSuspend = 0, @uplineAutoSuspendOther = 0, @uplineAutoSuspend3 = 0  
+		IF @roleID = 4
+		BEGIN
+			SELECT	@uplineAutoSuspend = 0, @uplineAutoSuspendOther = 0, @uplineAutoSuspend3 = 0  
+		END
 		
 		IF @uplineAutoSuspendOther = 1 and @old_AutoSuspendOther <> @AutoSuspendOther
 		begin

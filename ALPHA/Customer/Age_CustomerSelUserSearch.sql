@@ -1,5 +1,4 @@
 ﻿/*<info serverAlias="DBAGE-bodb02" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Age_CustomerSelUserSearch]
 	@UserID INT,
 	@custid INT,  -- roleid1
@@ -29,6 +28,7 @@ AS
 		- 20230407@Helios: Changed datatype parameter @username [Redmine: #183697]
 		- 20231222@Helios: Alpha - Search Customer run slowly - Add Forced Index  [Redmine: #198788]
 		- 20231222@Helios: Alpha - Search Customer run slowly - Revise code to user index IX_agent [Redmine: #198788]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 	Param's Explanation:
 		• @custid: User who are logging in.
 		• @username: part of downline's username.
@@ -116,19 +116,39 @@ BEGIN
 		BEGIN
 			IF @directdownline = 1
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
-				FROM customer c1 WITH (NOLOCK)
-				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
-							FROM Customer WITH (NOLOCK)
-							WHERE custid = c1.custid 
-								AND (username LIKE @username  + '%' 
-								OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
-								OR firstname LIKE @username  + '%' 
-								OR lastname LIKE @username  + '%')) c
-				WHERE roleid = 2
-					AND mrecommend = @custid
-				ORDER BY c.username
+				IF @excludemember = 1 
+				BEGIN
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
+					FROM customer c1 WITH (NOLOCK)
+					CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+								FROM Customer WITH (NOLOCK)
+								WHERE custid = c1.custid 
+									AND (username LIKE @username  + '%' 
+									OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
+									OR firstname LIKE @username  + '%' 
+									OR lastname LIKE @username  + '%')) c
+					WHERE mrecommend = @custid
+					AND c1.roleid = 2
+					ORDER BY c.username
+				END
+				ELSE
+				BEGIN
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
+					FROM customer c1 WITH (NOLOCK)
+					CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+								FROM Customer WITH (NOLOCK)
+								WHERE custid = c1.custid 
+									AND (username LIKE @username  + '%' 
+									OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
+									OR firstname LIKE @username  + '%' 
+									OR lastname LIKE @username  + '%')) c
+					WHERE mrecommend = @custid
+					AND ((c1.roleid = 2) OR ((c1.roleid = 1 AND c1.recommend = -3)))
+					ORDER BY c.username
+				END
+				
 			END
 			ELSE
 			BEGIN
@@ -170,19 +190,38 @@ BEGIN
 		BEGIN
 			IF @directdownline = 1
 			BEGIN
-				INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
-				SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
-				FROM customer c1 WITH (NOLOCK)
-				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
-							FROM Customer WITH (NOLOCK)
-							WHERE custid = c1.custid 
-								AND (username LIKE @username  + '%' 
-								OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
-								OR firstname LIKE @username  + '%' 
-								OR lastname LIKE @username  + '%')) c
-				WHERE roleid = 3
-					AND srecommend = @custid
-				ORDER BY c.username
+				IF @excludemember = 1
+				BEGIN
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
+					FROM customer c1 WITH (NOLOCK)
+					CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+								FROM Customer WITH (NOLOCK)
+								WHERE custid = c1.custid 
+									AND (username LIKE @username  + '%' 
+									OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
+									OR firstname LIKE @username  + '%' 
+									OR lastname LIKE @username  + '%')) c
+					WHERE srecommend = @custid
+					AND roleid = 3
+					ORDER BY c.username
+				END
+				ELSE
+				BEGIN
+					INSERT INTO @tmpUsername (username, firstname, lastname, username2, searchcount)
+					SELECT TOP 10 c.username, c.firstname, c.lastname, CASE WHEN @UserRoleId = @RoleID THEN c.username2 ELSE NULL END, -1 AS searchcount
+					FROM customer c1 WITH (NOLOCK)
+					CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+								FROM Customer WITH (NOLOCK)
+								WHERE custid = c1.custid 
+									AND (username LIKE @username  + '%' 
+									OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
+									OR firstname LIKE @username  + '%' 
+									OR lastname LIKE @username  + '%')) c
+					WHERE srecommend = @custid
+					AND ((roleid = 3) OR (roleid = 1 AND c1.recommend = -4))
+					ORDER BY c.username
+				END
 			END
 			ELSE
 			BEGIN

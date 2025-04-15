@@ -22,13 +22,14 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220728@Eden: Ext NAP - Error messge is not clear when searching a disabled account [RedmineID: #175938]
 		- 20221123@Elodie: Migrate NG and Keno to DCS structure [Redmine: #179711]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
 	
 */
 BEGIN
     SET NOCOUNT ON
-    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1, @Locked TINYINT
+    DECLARE @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT, @HasDownline BIT = 0, @uplineid INT = -1, @Locked TINYINT, @isDirectMember SMALLINT = 0
 		    	
 		  
 	DECLARE @upLineDisableOutright	BIT
@@ -41,7 +42,12 @@ BEGIN
 		  , @TransferOption			BIT
 		  , @IsProtectedMode		BIT
 		  
-    SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = recommend
+    SELECT @roleid = roleid, @srecommend = srecommend, @mrecommend = mrecommend, @recommend = CASE 
+                                                                                              	WHEN recommend = -4  THEN srecommend
+                                                                                              	WHEN recommend = -3  THEN mrecommend
+                                                                                              	 ELSE recommend
+                                                                                              END
+													 , @isDirectMember = CASE WHEN recommend IN (-3,-4) THEN  recommend ELSE 0 END
 	FROM custinfo WITH(NOLOCK)
     WHERE custid = @custid 
 
@@ -63,7 +69,12 @@ BEGIN
 
 		SELECT @HasSecurityCode = 1 FROM dbo.CustLoginInfo_Member WITH (NOLOCK) WHERE CustID = @custID AND SecurityCode IS NOT NULL
 		SELECT @UplineHasSecurityCode = 1 FROM CustLoginInfo WITH (NOLOCK) WHERE CustID = @recommend AND SecurityCode IS NOT NULL
-		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustAgent WITH(NOLOCK) WHERE custid = @recommend
+		SELECT @TransferOption = CASE @isDirectMember 
+							WHEN -4 THEN (SELECT CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustSuper  WITH(NOLOCK) WHERE custid = @recommend)
+							WHEN -3 THEN (SELECT CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustMaster WITH(NOLOCK) WHERE custid = @recommend)
+							ELSE		 (SELECT CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustAgent  WITH(NOLOCK) WHERE custid = @recommend)
+						 END
+		
     END 
     ELSE IF @roleID = 2 --for agent
     BEGIN
@@ -107,7 +118,7 @@ BEGIN
 								) AS ps
 	    WHERE custID = @srecommend		
 		 
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND roleid = 2
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE mrecommend = @custid AND ((roleid = 2) OR (roleid = 1 AND recommend = -3))
 	    SELECT @DisableAutoMPT = DisableAutoMPT FROM CustMaster (NOLOCK) WHERE CustID = @custID
 		SELECT @TransferOption = CASE WHEN TransferOption = 0 THEN 0 ELSE 1 END FROM dbo.CustSuper WITH(NOLOCK) WHERE custid = @srecommend
 		SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
@@ -125,7 +136,7 @@ BEGIN
 				,	@uplineDoubleCommLosing = 1
 
 				
-		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND roleid = 3		
+		SELECT TOP 1 @HasDownline = 1 FROM dbo.custInfo c WITH (NOLOCK) WHERE srecommend = @custid AND ((roleid = 3) OR (roleid = 1 AND c.recommend = -4))		
 	    SELECT	@HasSecurityCode = CASE WHEN SecurityCode IS NOT NULL THEN 1 ELSE 0 END,
 				@IsProtectedMode = ISNULL(IsProtectedMode,0)
 		FROM CustLoginInfo WITH (NOLOCK) 

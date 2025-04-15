@@ -215,7 +215,3 @@ BEGIN
 			END CATCH
 		END
 END
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [wsv_alp] AS [dbo]
-GO
-GRANT EXECUTE ON [dbo].[Age_CustomerUpdSecurityCode] TO [wsv_alpv] AS [dbo]

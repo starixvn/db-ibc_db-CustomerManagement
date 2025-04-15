@@ -1,11 +1,11 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_xnap" viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerUpdResetMemberCredit]
-	@agentID		INT,
-	@closedOnly		BIT = 1,
-	@UserID			INT,
-	@IP				VARCHAR(15)='',
-	@ErrCode		INT = 0 OUTPUT,
-	@ErrMsg			NVARCHAR(200) = '' OUTPUT
+	@UplineID		INT,			-- SMA Input
+	@closedOnly		BIT			= 1,
+	@UserID		INT,
+	@IP			VARCHAR(15)		='',
+	@ErrCode		INT			= 0 OUTPUT,
+	@ErrMsg		NVARCHAR(200)	= '' OUTPUT
 AS
 /*	Created by: [Creator]
 	DB: DBCUST/CustDB
@@ -25,60 +25,150 @@ AS
 		- 20210716@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241217@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
 */
 BEGIN
 	SET NOCOUNT ON 
-	DECLARE @LogData VARCHAR(500), @AgentUserName VARCHAR(30), @isLicensee BIT = 0
+	DECLARE @LogData VARCHAR(500), @UplineUserName VARCHAR(30), @isLicensee BIT = 0 , @IsDirectMember INT
 	SET @ErrCode = 0
 
 	--Check disable user
-	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @agentID, @ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
-	IF @ErrCode <>0 RETURN
+	EXEC dbo.Acc_CustomerSelCheckEnable @custid = @UplineID, @ErrCode=@ErrCode OUTPUT,@ErrMsg=@ErrMsg OUTPUT
+		IF @ErrCode <>0 RETURN
 	--end
 
-	DECLARE @tmpCust TABLE( custid INT, Credit MONEY)
-
-	SELECT @AgentUserName = username FROM custinfo (NOLOCK) WHERE custid = @agentID
-
+	-- Chek Isdirect Member
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.srecommend = @UplineID AND i.recommend = -4 AND i.roleid = 1
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.mrecommend = @UplineID AND i.recommend = -3 AND i.roleid = 1
+	SELECT TOP 1 @IsDirectMember = i.recommend FROM Custinfo i WITH (NOLOCK) WHERE i.recommend = @UplineID  AND i.recommend NOT IN (-3,-4) AND i.roleid = 1
+	
 	--check Licensee customer
 	SELECT @isLicensee = 1
 	FROM CustInfo ci WITH (NOLOCK)
 		INNER JOIN Dep_CustSuper sup WITH (NOLOCK) ON ci.srecommend = sup.custid
-	WHERE ci.custid = @agentID
+	WHERE ci.custid = @UplineID
 
-	IF @closedOnly = 1
+	DECLARE @tmpCust TABLE( custid INT, Credit MONEY)
+
+	IF @IsDirectMember NOT IN (-3,-4) -- Normal Member: Upline is Agent
 	BEGIN
-		IF (@isLicensee = 1)
+		SELECT @UplineUserName = username
+		FROM custinfo ci (NOLOCK) 
+		WHERE ci.recommend = @UplineID
+
+		IF @closedOnly = 1
+		BEGIN
+			IF (@isLicensee = 1)
+			BEGIN
+				UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				WHERE roleid = 1 AND closed=1 AND recommend = @UplineID AND Credit != 0 
+			END
+			ELSE
+			BEGIN
+				UPDATE ci  
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
+					INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+				WHERE roleid = 1 AND cps.CloseInfo > 0 AND recommend = @UplineID AND Credit != 0 
+			END
+
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines [CLOSED ACCOUNTS ONLY]'
+		END
+		ELSE
 		BEGIN
 			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
 			SET credit = 0,
 				RepUpdateTime = dbo.f_GetDateTime2()
 			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
-			WHERE roleid = 1 AND closed=1 AND recommend = @agentID AND Credit != 0 
+			WHERE roleid = 1 AND recommend = @UplineID AND Credit != 0 
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines'
+		END
+
+	END
+	ELSE IF @IsDirectMember = -3	-- Master Direct Member: Upline is Master
+	BEGIN
+		SELECT @UplineUserName = username
+		FROM custinfo ci (NOLOCK) 
+		WHERE ci.mrecommend = @UplineID
+
+		IF @closedOnly = 1
+		BEGIN
+			IF (@isLicensee = 1)
+			BEGIN
+				UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				WHERE roleid = 1 AND closed=1 AND mrecommend = @UplineID AND recommend = -3 AND Credit != 0 
+			END
+			ELSE
+			BEGIN
+				UPDATE ci  
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
+					INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+				WHERE roleid = 1 AND cps.CloseInfo > 0 AND mrecommend = @UplineID AND recommend = -3 AND Credit != 0 
+			END
+
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines [CLOSED ACCOUNTS ONLY]'
 		END
 		ELSE
 		BEGIN
-			UPDATE ci  
+			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
 			SET credit = 0,
 				RepUpdateTime = dbo.f_GetDateTime2()
 			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
-			FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
-				INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
-			WHERE roleid = 1 AND cps.CloseInfo > 0 AND recommend = @agentID AND Credit != 0 
+			WHERE roleid = 1 AND mrecommend = @UplineID AND recommend = -3 AND Credit != 0 
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines'
 		END
-
-		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines [CLOSED ACCOUNTS ONLY]'
 	END
-	ELSE
+	ELSE IF @IsDirectMember = -4	-- Super Direct Member: Upline is Super
 	BEGIN
-		UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
-		SET credit = 0,
-			RepUpdateTime = dbo.f_GetDateTime2()
-		OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
-		WHERE roleid = 1 AND recommend = @agentID AND Credit != 0 
-		SELECT @LogData = 'Clear Credit of the specified agent ' + @AgentUserName + ' and all downlines'
-	END
+		SELECT @UplineUserName = username
+		FROM custinfo ci (NOLOCK) 
+		WHERE ci.srecommend = @UplineID
 
+		IF @closedOnly = 1
+		BEGIN
+			IF (@isLicensee = 1)
+			BEGIN
+				UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				WHERE roleid = 1 AND closed=1 AND srecommend = @UplineID AND recommend = -4 AND Credit != 0 
+			END
+			ELSE
+			BEGIN
+				UPDATE ci  
+				SET credit = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+				FROM custinfo ci WITH (ROWLOCK,UPDLOCK)
+					INNER JOIN CustProductStatus cps WITH (NOLOCK) ON cps.CustID = ci.custid
+				WHERE roleid = 1 AND cps.CloseInfo > 0 AND srecommend = @UplineID AND recommend = -4 AND Credit != 0 
+			END
+
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines [CLOSED ACCOUNTS ONLY]'
+		END
+		ELSE
+		BEGIN
+			UPDATE custinfo WITH (ROWLOCK,UPDLOCK) 
+			SET credit = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			OUTPUT deleted.custid, deleted.Credit INTO @tmpCust(custid, Credit)
+			WHERE roleid = 1 AND srecommend = @UplineID AND recommend = -4 AND Credit != 0 
+			SELECT @LogData = 'Clear Credit of the specified agent ' + @UplineUserName + ' and all downlines'
+		END
+	END
+	
 	DECLARE @log xml, @SB_Error BIT = 0
 		
 	SELECT @log = (

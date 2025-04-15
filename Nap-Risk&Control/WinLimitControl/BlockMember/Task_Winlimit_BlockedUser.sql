@@ -25,6 +25,7 @@ AS
 		- 20240808@Johnson: Apply Inhouse Replication for CWL [redmine: #209068]
 		- 20250110@Tacy: Offer direct member for super/master [Redmine: #215809]
 		- 20250328@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 
 	Param's Explanation:
 	

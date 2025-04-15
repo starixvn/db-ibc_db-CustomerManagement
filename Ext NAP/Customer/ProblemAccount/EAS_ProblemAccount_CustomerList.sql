@@ -25,7 +25,7 @@ AS
 		- 20220418@Johnson: Change datasource for problem account [redmine:#170692]
 		- 20221017@Tacy: Hide Display for Credit Prolem Accounts (Group Betting, Robot User) [RedmineID: #178796]
 		- 20241118@Tacy: New CC for SMA [Redmine: #212681]
-
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Parameter's Explanation:
 		@GroupName: ext group
 		@UplineUsername: search downlines under @UplineUsername, not required
@@ -188,7 +188,13 @@ BEGIN
 			INNER JOIN CustProductStatus ps WITH (NOLOCK) ON ps.CustID = c.custid
 			LEFT JOIN dbo.CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustId = c.CustId
 			LEFT JOIN Dep_CustSuper cs WITH (NOLOCK) ON ci.srecommend=cs.custid
-		WHERE 1 = CASE WHEN @UplineID IS NULL OR (@UplineID IS NOT NULL AND c.recommend = @UplineID) THEN 1 ELSE 0 END
+		WHERE 1 = CASE 
+					WHEN @UplineID IS NULL		THEN 1
+					WHEN @UplineID IS NOT NULL AND c.recommend = -4 AND c.srecommend = @UplineID	THEN 1
+					WHEN @UplineID IS NOT NULL AND c.recommend = -3 AND c.mrecommend = @UplineID	THEN 1
+					WHEN @UplineID IS NOT NULL AND c.recommend NOT IN (-3,-4) AND c.recommend  = @UplineID	THEN 1
+					ELSE 0 
+				END
 			AND c.srecommend IN (SELECT custid FROM @tmpSuper)
 			AND c.roleid = 1
 			AND (p.ModifiedDate >= @FromDate AND p.ModifiedDate < DATEADD(DAY, 1, @ToDate))
@@ -205,11 +211,12 @@ BEGIN
 
 	/* ===== Paging ===== */
 	--@Status: 1: Open, 2:Suppended, 3: Closed, 4: Disabled
-	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked
+	SELECT custId, username, firstname, lastname, username2, ISNULL(numberOfDownline, 0) AS numberOfDownline, status, createdDate, isReviewed, ClosedReason, Locked, AgentID
 	FROM (
 		SELECT t.custId, t.username, t.firstname, t.lastname, t.username2, t.numberOfDownline, t.ClosedReason,
 			CASE WHEN ci.Enabled = 1 THEN CASE WHEN cs.closed = 1 THEN 3 WHEN cs.reject = 1 THEN 2 ELSE 1 END ELSE 4 END AS Status,
-			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed ASC, t.createdDate DESC, t.username ASC) AS RowId, t.Locked
+			t.createdDate, t.isReviewed, ROW_NUMBER() OVER (ORDER BY t.isReviewed ASC, t.createdDate DESC, t.username ASC) AS RowId, t.Locked,
+			CASE WHEN ci.roleid = 1 AND ci.recommend IN (-3,-4) THEN ci.recommend ELSE 0 END AS AgentID
 		FROM #tempProblemAccount t
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON ci.custid = t.custId
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed

@@ -10,12 +10,13 @@ AS
 	
 	Revisions:
 		- 20210319@Winfred: Check Site to limit create accounts [Redmine: #151526]
+		- 20241107@Eden: Offer Direct Member for Super/Master [redmine: #211969]   
 */
 RETURN
 	WITH Temp AS (
-		SELECT CAST('IBCIndo' AS VARCHAR(50)) AS Site, CAST(300 AS INT) AS Limit
+		SELECT CAST('IBCIndo' AS VARCHAR(50)) AS Site, CAST(300 AS INT) AS Limit, CAST(150 AS INT) AS DirectMember_Limit
 	)
-	SELECT Site,Limit FROM Temp WHERE Site = @Site 
+	SELECT Site,Limit,DirectMember_Limit FROM Temp WHERE Site = @Site 
 
 
 

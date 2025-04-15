@@ -34,6 +34,7 @@ AS
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -45,7 +46,8 @@ BEGIN
 	DECLARE
 		@Credit_AllMember MONEY, 
 		@Credit_AllOtherAgent MONEY, 
-		@Credit_MAg MONEY
+		@Credit_MAg MONEY,
+		@Credit_AllMasterDirectMember MONEY
 	
 	DECLARE @ErrCode INT = 0
 	
@@ -72,6 +74,9 @@ BEGIN
 		RETURN	
 	END
 	
+	SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+	FROM dbo.custInfo WITH (NOLOCK)
+	WHERE mrecommend = @MAgID AND roleid = 1 AND recommend = -3
 
 	SELECT @Credit_AllOtherAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 	FROM dbo.custInfo WITH (NOLOCK)
@@ -85,13 +90,13 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @MAgID
 
-	IF @Credit_AllOtherAgent + @CreditAmt > @Credit_MAg
+	IF @Credit_AllOtherAgent + @CreditAmt + @Credit_AllMasterDirectMember > @Credit_MAg
 	BEGIN
 		SELECT	@CreditProblem = 1,
 				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_MAg - @Credit_AllOtherAgent, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_MAg - (@Credit_AllOtherAgent + @Credit_AllMasterDirectMember), '#,#0.####'))
 		RETURN
 	END
 	

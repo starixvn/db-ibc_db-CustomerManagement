@@ -34,6 +34,7 @@ AS
 		- 20230227@Evan: Balance-Up support transfer 247 [Redmine: #173554]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -45,7 +46,9 @@ BEGIN
 	DECLARE
 		@Credit_AllAgent MONEY,
 		@Credit_AllOtherMaster MONEY,
-		@Credit_SAg MONEY
+		@Credit_SAg MONEY,
+		@Credit_AllSuperDirectMember MONEY,
+		@Credit_AllMember		MONEY
 
 	DECLARE @ErrCode INT = 0
 
@@ -72,7 +75,10 @@ BEGIN
 		RETURN	
 	END
 	
-
+	SELECT @Credit_AllSuperDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+	FROM dbo.custInfo WITH (NOLOCK)
+	WHERE srecommend = @SAgID AND RoleID = 1 AND recommend = -4
+	
 	SELECT @Credit_AllOtherMaster = ISNULL(SUM(ISNULL(credit, 0)), 0)
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE srecommend = @SAgID AND roleid = 3 AND custid <> @CustID
@@ -85,17 +91,31 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @SAgID
 
+	SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+	FROM dbo.custInfo WITH (NOLOCK)
+	WHERE mrecommend = @CustID AND RoleID = 1
+
 	IF @SAgID > 100
 	BEGIN
-		IF (@Credit_AllOtherMaster + @CreditAmt > @Credit_SAg)
+		IF (@Credit_AllSuperDirectMember + @Credit_AllOtherMaster + @CreditAmt > @Credit_SAg)
 		BEGIN
 			SELECT	@CreditProblem = 1,
 					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_SAg - @Credit_AllOtherMaster, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_SAg - (@Credit_AllSuperDirectMember + @Credit_AllOtherMaster), '#,#0.####'))
 			RETURN
-		END 
+		END
+		
+		IF (@Credit_AllMember > @CreditAmt)
+		BEGIN
+			SELECT	@CreditProblem = 1,
+					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
+												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+											END  
+											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+			RETURN
+		END
 		
 		IF (@Credit_AllAgent > @CreditAmt)
 		BEGIN

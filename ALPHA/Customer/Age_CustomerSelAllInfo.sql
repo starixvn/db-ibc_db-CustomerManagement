@@ -64,6 +64,7 @@ AS
 		- 20211124@Danny: Split transfer tickets out of bettrans [Redmine: #164196]
 		- 20230920@Bobby: Enhance performance get max transid [Redmine: #194274]
 		- 20230925@Tacy: remove get Closed Reason and Protection Mode info from DBACC [Redmine: #194274]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -115,7 +116,11 @@ BEGIN
 			--Upline
 			SELECT	@upLineEnabled = ISNULL(Enabled, 0)
 			FROM custinfo WITH(NOLOCK)
-			WHERE custID = @recommend	
+			WHERE custID = CASE 
+						WHEN @recommend = -4 THEN @srecommend
+						WHEN @recommend = -3 THEN @mrecommend
+						ELSE @recommend
+					   END 	
 		END 
 		ELSE IF @roleID = 2 --for agent
 		BEGIN
@@ -148,7 +153,7 @@ BEGIN
 			ISNULL(@isDirectClosed,0) as isDirectClosed,
 			CASE WHEN c.roleid = 1 THEN c.custid ELSE NULL END AS memberID,
 			CASE WHEN c.roleid = 1 THEN c.username ELSE NULL END AS memberName,	
-			a.custid AS agentID,
+			ISNULL(a.custid,c.recommend) AS agentID,
 			a.username AS agentName,	
 			m.custid AS masterID,
 			m.username AS masterName,

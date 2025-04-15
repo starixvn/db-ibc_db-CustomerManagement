@@ -2,7 +2,8 @@
 ALTER PROCEDURE [dbo].[Age_CustomerSelCommByProductID_Ag]
 	@ProductID INT,
 	@Recommend INT,
-	@SettingStatus TINYINT = 0
+	@SettingStatus TINYINT = 0,
+	@isDirectDownline BIT
 AS
 
 /*
@@ -23,8 +24,12 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT 
+		- @isDirectDownline:
+				0 : Normal Member Of Agent
+				1 : Get Master Direct Member List : Agent Comm = 0
 
 */
 BEGIN
@@ -58,13 +63,48 @@ BEGIN
 
 	DELETE FROM #SportBettypeFilter WHERE ISNULL(RealProductID , 0) <> @ProductID 
 
+	CREATE TABLE #Tmp_CustCollect (CustID INT , Enabled BIT , credit MONEY ,  DoubleCommLosing BIT , PRIMARY KEY CLUSTERED (CustID))
+	
+	IF  ISNULL(@isDirectDownline , 0) = 0	--Get Normal Member : upline Agent
+	BEGIN
+		INSERT INTO #Tmp_CustCollect 
+		(
+			CustID
+		    , Enabled
+		    , credit
+		    , DoubleCommLosing
+		)
+		SELECT CustID
+		    , [Enabled]
+		    , credit
+		    , DoubleCommLosing
+		FROM custInfo i WITH (NOLOCK)
+		WHERE i.roleid = 1 AND i.recommend = @Recommend
+	END
+	ELSE					--Get Master Direct Member : upline Master
+	BEGIN
+		INSERT INTO #Tmp_CustCollect 
+		(
+			CustID
+		    , Enabled
+		    , credit
+		    , DoubleCommLosing
+		)
+		SELECT CustID
+		    , [Enabled]
+		    , credit
+		    , DoubleCommLosing
+		FROM custInfo i WITH (NOLOCK)
+		WHERE i.roleid = 1 AND i.mrecommend = @Recommend AND i.recommend = -3
+	END	
+
 	IF @ProductID = 1
 	BEGIN
 		INSERT INTO #CustTemp(custid, username, ugroup, firstname, lastname, Enabled, credit, DoubleCommLosing)
 		SELECT c.custid, c.username, c.ugroup, c.firstname, c.lastname, ci.Enabled, ci.credit, ci.DoubleCommLosing
 		FROM Customer c WITH (NOLOCK)
-			INNER JOIN custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
-		WHERE c.recommend = @recommend AND c.roleid = 1
+			INNER JOIN #Tmp_CustCollect ci ON c.custid = ci.custid
+
 
 		SELECT
 		ci.enabled
@@ -78,26 +118,26 @@ BEGIN
 	    , ci.DoubleCommLosing
 
 	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.MasterDiscount ELSE 0 END) * 100	AS adiscount
-	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.AgentDiscount  ELSE 0 END) * 100	AS discount
+	    , CASE WHEN @isDirectDownline = 1 THEN 0 ELSE MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.AgentDiscount  ELSE 0 END) * 100 END	AS discount
 	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 1 THEN cdm.PlayerDiscount ELSE 0 END) * 100	AS playerdiscount
 	    
 	    -- Others Comm
-	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.MasterDiscount ELSE 0 END) * 100	AS adiscountcs
-	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.AgentDiscount  ELSE 0 END) * 100	AS discountcs
+	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.MasterDiscount ELSE 0 END) * 100 AS adiscountcs
+	    , CASE WHEN @isDirectDownline = 1 THEN 0 ELSE MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.AgentDiscount  ELSE 0 END) * 100 END AS discountcs
 	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.PlayerDiscount ELSE 0 END) * 100	AS playerdiscountcs
 
 	    -- 1X2
-	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.MasterDiscount ELSE 0 END) * 100	AS adiscount1x2
-	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount  ELSE 0 END) * 100	AS discount1x2
+	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.MasterDiscount ELSE 0 END) * 100 AS adiscount1x2
+	    , CASE WHEN @isDirectDownline = 1 THEN 0 ELSE MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.AgentDiscount  ELSE 0 END) * 100 END AS discount1x2
 	    , MAX (CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.PlayerDiscount ELSE 0 END) * 100	AS playerdiscount1x2
 	  
 		--End
 	    , ci.credit
 		-- cricket
 		-- Cricket
-	    , ISNULL ( cdm_cricket.MasterDiscount , 0 ) * 100 adiscount_cricket
-	    , ISNULL ( cdm_cricket.AgentDiscount , 0 ) * 100  discount_cricket
-	    , ISNULL ( cdm_cricket.playerdiscount , 0 ) * 100 playerdiscount_cricket
+	    , ISNULL ( cdm_cricket.MasterDiscount , 0 ) * 100 AS adiscount_cricket
+	    , CASE WHEN @isDirectDownline = 1 THEN 0 ELSE ISNULL ( cdm_cricket.AgentDiscount , 0 ) * 100 END AS discount_cricket
+	    , ISNULL ( cdm_cricket.playerdiscount , 0 ) * 100 AS playerdiscount_cricket
 	    , cps.Locked
 	    , cl.ClosedReason
 		FROM
@@ -142,13 +182,13 @@ BEGIN
 			ci.credit,
 			cs.SportType,
 			cs.MasterDiscount * 100 AS MasterDiscount,
-			cs.AgentDiscount * 100 AS AgentDiscount,
+			CASE WHEN @isDirectDownline = 1 THEN 0 ELSE cs.AgentDiscount * 100  END AS AgentDiscount,
 			cs.PlayerDiscount * 100 AS PlayerDiscount,
 			cps.Locked,
 			cl.ClosedReason
 		FROM 
 			customer AS m with (NOLOCK)
-			INNER JOIN CustInfo as ci with (NOLOCK) on m.CustID = ci.CustID
+			INNER JOIN #Tmp_CustCollect ci on m.CustID = ci.CustID
 			CROSS JOIN #SportBettypeFilter f WITH(NOLOCK)
 			INNER JOIN CustDiscount3rd_Member as cs with (NOLOCK) 
 					ON m.CustID = cs.CustID
@@ -161,8 +201,7 @@ BEGIN
 										WHERE CustID = ci.custid
 									) AS cps
 			LEFT JOIN CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustID = ci.custid
-		WHERE m.Recommend = @Recommend and m.roleid=1 
-		--AND RealProductID = @ProductID
+	
 		ORDER BY 
 			case 
 				when isnull(ci.enabled, 0) = 0 then 3 

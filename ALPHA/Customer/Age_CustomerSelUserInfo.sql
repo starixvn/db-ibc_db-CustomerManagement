@@ -71,7 +71,7 @@ Revisions:
 	- 20230728@Eden: Simplify Live Casino Customer Setting [RedmineID: #189389]
 	- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 	- 20241022@Johnson: remove bitcoin [redmine: #201396]
-
+	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 Param's Explanation:
 	@custid: custid that need to be viewed.   
 	- @SettingStatus: 0: Pro, 1: UAT
@@ -245,23 +245,23 @@ BEGIN
 	EXEC Acc_CheckShowProduct @ProductID = 6, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_SabaCasino OUTPUT
 	EXEC Acc_CheckShowProduct @ProductID = 41, @SettingStatus = @SettingStatus, @IsHide = @IsHidden_LiveCasino OUTPUT
 
-	SELECT Customer.custid,
-		   Customer.userpwd,
+	SELECT c.custid,
+		   c.userpwd,
 		   ci.username,
-		   customer.firstname, 
-		   customer.lastname, 
-		   isnull(customer.phone,'') as phone, 
-		   isnull(customer.mobilephone,'') as mobilephone, 
-		   isnull(customer.fax,'') as fax, 
-		   customer.email,
-		   customer.username2,
+		   c.firstname, 
+		   c.lastname, 
+		   isnull(c.phone,'') as phone, 
+		   isnull(c.mobilephone,'') as mobilephone, 
+		   isnull(c.fax,'') as fax, 
+		   c.email,
+		   c.username2,
 		   ci.currency,  
 		   ISNULL(cps.closed, ci.closed) closed, 
 		   ISNULL(cps.reject, ci.reject) as suspend,
 		   ci.srecommend as superid,
 		   ci.mrecommend as masterid,
 		   ci.recommend as agentid, 
-		   Customer.roleid as roleid,
+		   c.roleid as roleid,
 		   
 		   
 		   	-- For MuayThai
@@ -280,7 +280,7 @@ BEGIN
 					END AS BIT) AS HideAllBet,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_LiveCasino)), 0) AS SyncedAllBet,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_LiveCasino)), 0) AS SyncedAllBetUpline,
-			CASE	WHEN Customer.roleid = 1 THEN 1
+			CASE	WHEN c.roleid = 1 THEN 1
 					WHEN EXISTS	(	SELECT 1
 									FROM #ciDownline AS ciDownline
 										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_LiveCasino) s
@@ -330,7 +330,7 @@ BEGIN
 			CAST(CASE WHEN @IsHidden_VoidBridge = 0 AND ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapIsHidden, @bitmapOrder_VoidBridge)),1) = 0 THEN 0 ELSE 1 END AS BIT) AS HideVoidBridge,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cps.bitmapHasSynced, @bitmapOrder_VoidBridge)), 0) AS SyncedVoidBridge,
 			ISNULL((SELECT [value] FROM dbo.f_CustSetting_ProductStatusSel(cpsUpline.bitmapHasSynced, @bitmapOrder_VoidBridge)), 0) AS SyncedVoidBridgeUpline,
-			CASE	WHEN Customer.roleid = 1 THEN 1
+			CASE	WHEN c.roleid = 1 THEN 1
 					WHEN EXISTS	(	SELECT 1
 									FROM #ciDownline AS ciDownline
 										CROSS APPLY dbo.f_CustSetting_ProductStatusSel(ciDownline.bitmapHasSynced, @bitmapOrder_VoidBridge) s
@@ -390,12 +390,12 @@ BEGIN
 		   ci.credit,
 		   e.currency as currencyname,
 		   @remark as remark,
-		   ISNULL(NULLIF(Customer.site,''), ag.site) AS Site
-	  FROM Customer WITH(nolock) 
+		   ISNULL(NULLIF(c.site,''), c.site) AS Site
+	  FROM Customer c WITH(nolock) 
 		 INNER JOIN CustInfo as ci with(NOLOCK)
-				 on Customer.CustID = ci.CustID --Shifu
+				 on c.CustID = ci.CustID --Shifu
 		 INNER JOIN Exchange as e with (NOLOCK)
-				 ON Customer.currency = e.exchangeid
+				 ON c.currency = e.exchangeid
 		OUTER APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, bitmapHasSynced
@@ -407,14 +407,11 @@ BEGIN
 								) AS cps
 		-- Upline Status
 		LEFT JOIN	dbo.CustProductStatus AS cpsUpline WITH (NOLOCK)
-				ON	cpsUpline.CustID =	CASE	WHEN Customer.roleid = 1 THEN Customer.recommend
-												WHEN Customer.roleid = 2 THEN Customer.mrecommend
-												ELSE Customer.srecommend
-										END
-		LEFT JOIN dbo.Customer ag WITH (NOLOCK) ON Customer.recommend = ag.custid
-		    
-		 
-	 WHERE Customer.custid = @custid
+				ON	cpsUpline.CustID =	CASE	WHEN (c.roleid = 1 AND c.recommend = -4) OR (c.roleid = 3) THEN c.srecommend 
+										WHEN (c.roleid = 1 AND c.recommend = -3) OR (c.roleid = 2) THEN c.mrecommend
+										ELSE c.recommend
+									END
+	 WHERE c.custid = @custid
 
 	 DROP TABLE #ciDownline
 END

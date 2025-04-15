@@ -16,7 +16,7 @@ AS
 
 	Revisions:  
 		- 20230525@Tacy: Ext NAP - Function for Headline to provide customer class based on their knowledge [Redmine:#188025]
-	
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Param's Explanation:
 		* @RoleID : 0 ~ all (SMA, Member)
 					1 ~ member
@@ -46,13 +46,14 @@ BEGIN
 		RoleID		TINYINT,
 		TypeID		TINYINT,
 		MarkedDate	SMALLDATETIME,
-		Remark		NVARCHAR(2000)
+		Remark		NVARCHAR(2000),
+		AgentID		INT
 	)
 
 	IF @UserName<>''
 	BEGIN
-		INSERT INTO #tbMarkedAcc (CustID, Username, RoleID, TypeID, MarkedDate, Remark)
-		SELECT c.custid, c.username, C.roleid, ct.TypeID, ct.MarkedDate, ct.remark
+		INSERT INTO #tbMarkedAcc (CustID, Username, RoleID, TypeID, MarkedDate, Remark, AgentID)
+		SELECT c.custid, c.username, C.roleid, ct.TypeID, ct.MarkedDate, ct.remark , CASE WHEN c.recommend IN (-3,-4) THEN c.recommend ELSE 0 END AS AgentID
 		FROM Acc_CustType ct WITH (NOLOCK)
 		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ct.custid
 		INNER JOIN Acc_CustGroup cg WITH (NOLOCK) ON cg.CustID=c.srecommend 
@@ -64,8 +65,8 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #tbMarkedAcc (CustID, Username, RoleID, TypeID, MarkedDate, Remark)
-		SELECT c.custid, c.username, C.roleid, ct.TypeID, ct.MarkedDate, ct.remark
+		INSERT INTO #tbMarkedAcc (CustID, Username, RoleID, TypeID, MarkedDate, Remark, AgentID)
+		SELECT c.custid, c.username, C.roleid, ct.TypeID, ct.MarkedDate, ct.remark , CASE WHEN c.recommend IN (-3,-4) THEN c.recommend ELSE 0 END AS AgentID
 		FROM Acc_CustType ct WITH (NOLOCK)
 		INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ct.custid
 		INNER JOIN Acc_CustGroup cg WITH (NOLOCK) ON cg.CustID=c.srecommend 
@@ -78,7 +79,7 @@ BEGIN
 	SELECT @TotalRows = COUNT(1)
 	FROM #tbMarkedAcc
 
-	SELECT CustID, Username, RoleID, TypeID, MarkedDate, Remark
+	SELECT CustID, Username, RoleID, TypeID, MarkedDate, Remark, AgentID
 	FROM #tbMarkedAcc
 	WHERE RowID BETWEEN @rowstart AND @rowend
 	ORDER BY RowID

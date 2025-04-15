@@ -43,6 +43,7 @@ AS
 		- 20230510@Eden: Scale out DBTRANS for Credit [Redmine: #181595]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]   
 	Param's Explanation:  
 		- @custid: custid that need to be updated   
 		- @CreditAmt: new credit   
@@ -54,13 +55,15 @@ BEGIN
 	DECLARE
 		@Credit_AllOtherMember MONEY,
 		@Credit_Ag MONEY,
-		@MaxCredit_Ag MONEY
+		@MaxCredit_Ag MONEY,
+		@Credit_AllSuperDirectMember MONEY , 
+		@Credit_AllMasterDirectMember MONEY
 
 	DECLARE @ErrCode INT = 0
   
-	DECLARE @SAgID INT, @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
+	DECLARE @SAgID INT, @MAgID INT, @AgID INT, @username VARCHAR(50), @OldCredit MONEY, @RoleID TINYINT
 	
-	SELECT @SAgID = srecommend, @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid
+	SELECT @SAgID = srecommend, @MAgID = mrecommend, @AgID = recommend, @username = username, @OldCredit = Credit, @RoleID = roleid
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @CustID
 
@@ -103,34 +106,90 @@ BEGIN
 							ELSE [dbo].[f_Get_MsgNamebyMsgID](70006, @Language) END
 		RETURN
 	END
-	
-	IF @Credit_AllOtherMember + @CreditAmt > @Credit_Ag
+
+	IF @AgID NOT IN (-3,-4)
 	BEGIN
-		SELECT	@CreditProblem = 1,
-				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+		IF @Credit_AllOtherMember + @CreditAmt > @Credit_Ag
+		BEGIN
+			SELECT	@CreditProblem = 1,
+					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												END  
+												, '{number}', FORMAT(@Credit_Ag - @Credit_AllOtherMember, '#,#0.####'))
+			RETURN 
+		END
+
+		DECLARE @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
+  
+	      SELECT  @Agent_Credit_Bal	= @Credit_Ag - @Credit_AllOtherMember
+	      SELECT  @Credit_Mem_Max		= CASE
+								WHEN @MaxCredit_Ag = 0 THEN @Agent_Credit_Bal
+								WHEN @MaxCredit_Ag > @Agent_Credit_Bal THEN @Agent_Credit_Bal  
+								ELSE @MaxCredit_Ag END
+  
+	      IF @CreditAmt > @Credit_Mem_Max
+	      BEGIN  
+			SELECT	@CreditProblem = 1,
+						@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'You have exceeded the member max credit given by upline ({number}).'
+														ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
+													END  
+													, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
+			RETURN
+	      END
+	END
+	ELSE IF (@AgID = -4)		--Super Direct Member
+	BEGIN
+		DECLARE @Credit_AllNormalMaster MONEY , @SuperCredit MONEY
+
+		SELECT	@SuperCredit = ISNULL(Credit, 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE CustID = @SAgID
+
+		SELECT @Credit_AllSuperDirectMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE srecommend = @SAgID AND roleid = 1 AND CustID <> @CustId AND recommend = -4
+
+		SELECT @Credit_AllNormalMaster = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE srecommend = @SAgID AND roleid = 3
+
+		IF @CreditAmt + @Credit_AllSuperDirectMember + @Credit_AllNormalMaster > @SuperCredit
+		BEGIN
+			SELECT	@CreditProblem = 1,
+					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
+													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
+												END  
+												, '{number}', FORMAT(@SuperCredit - (@Credit_AllSuperDirectMember + @Credit_AllNormalMaster), '#,#0.####'))
+			RETURN 
+		END
+	END
+	ELSE IF (@AgID = -3)		--Master Direct Member
+	BEGIN
+		DECLARE @Credit_AllNormalAgent MONEY , @MasterCredit MONEY
+
+		SELECT	@MasterCredit = ISNULL(Credit, 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE CustID = @MAgID
+
+		SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE mrecommend = @MAgID AND roleid = 1 AND CustID <> @CustId AND recommend = -3
+
+		SELECT @Credit_AllNormalAgent = ISNULL(SUM(ISNULL(Credit, 0)), 0)
+		FROM dbo.custInfo WITH (NOLOCK) 
+		WHERE mrecommend = @MAgID AND roleid = 2
+
+		IF @CreditAmt + @Credit_AllMasterDirectMember + @Credit_AllNormalAgent > @MasterCredit
+		BEGIN
+			SELECT	@ErrCode = 201
+			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_Ag - @Credit_AllOtherMember, '#,#0.####'))
-		RETURN 
+											, '{number}', FORMAT(@MasterCredit - (@Credit_AllMasterDirectMember + @Credit_AllNormalAgent), '#,#0.####'))
+			RETURN
+		END
 	END
-
-    DECLARE @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
-  
-    SELECT  @Agent_Credit_Bal	= @Credit_Ag - @Credit_AllOtherMember
-    SELECT  @Credit_Mem_Max		= CASE
-									WHEN @MaxCredit_Ag = 0 THEN @Agent_Credit_Bal
-									WHEN @MaxCredit_Ag > @Agent_Credit_Bal THEN @Agent_Credit_Bal  
-									ELSE @MaxCredit_Ag END
-  
-    IF @CreditAmt > @Credit_Mem_Max
-    BEGIN  
-        SELECT	@CreditProblem = 1,
-				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'You have exceeded the member max credit given by upline ({number}).'
-												ELSE [dbo].[f_Get_MsgNamebyMsgID](70032,@Language) 
-											END  
-											, '{number}', FORMAT(@Credit_Mem_Max, '#,#0.####'))
-        RETURN
-    END
+	
 	
 	UPDATE dbo.custInfo WITH (ROWLOCK)
 	SET credit = @CreditAmt,

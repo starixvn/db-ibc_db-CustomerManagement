@@ -12,6 +12,7 @@ AS
 		- 20181030@Elodie: Search Customer on left panel of EXT NAP (Login Info) [Redmine:#95978]
 		- 20191227@Johnson: change to get max transdate from sp EAS_CustomerSelBalanceInfo [redmine: #125894]
 		- 20230208@Tacy: Alpha/NAP - Split 789y site [Redmine:#181596]
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	Example:	
 		EXEC EAS_CustomerSelLoginInfo @CustId = 1176070, @GroupName = 'ACCUUS'
 */
@@ -27,7 +28,7 @@ BEGIN
 			@LastChangedSecurityCodeDate	DATETIME,
 			@OTPCreateDate					DATETIME			
 
-	SELECT  @RoleId = roleID, @Site = c.site, @recommend = recommend, @srecommend = srecommend, @SiteLabel=s.SiteLabel
+	SELECT  @RoleId = roleID, @Site = c.site, @recommend = recommend , @srecommend = srecommend, @SiteLabel=s.SiteLabel
 	FROM dbo.customer c WITH (NOLOCK) 
 	INNER JOIN Site s WITH (NOLOCK) ON s.site=c.site
 	WHERE custid = @CustId
@@ -51,11 +52,7 @@ BEGIN
 	ELSE IF @RoleId = 2
 	BEGIN
 		SELECT @NicknameLoginOnly = ISNULL(NicknameLoginOnly, 0) FROM dbo.CustAgent WITH (NOLOCK) WHERE custid = @CustId		
-	END
-	ELSE IF @RoleId = 1
-	BEGIN		
-		SELECT  @Site = site FROM dbo.customer WITH (NOLOCK) WHERE custid = @recommend
-	END
+	END	
 	
 	IF @RoleId=1
 		SELECT @LastChangedSecurityCodeDate = LastChangedDate
