@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB" executers="wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),
@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA]
 AS
 /*
 	Created: 20211105@Winfred
-	DB: DBACC-bodb02
+	DB:DBCUST-CustDB
 	Task: Get value PT setting product for customer SMA
 
 	Revisions:
@@ -28,7 +28,7 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
-
+		- 20250415@Johnson: move sp to DBCUST [redmine: #224180]
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
 						</ROOT>'
