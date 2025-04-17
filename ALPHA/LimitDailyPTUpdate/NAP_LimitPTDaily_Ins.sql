@@ -3,7 +3,7 @@ ALTER PROCEDURE [dbo].[NAP_LimitPTDaily_Ins]
 	-- Add the parameters for the stored procedure here
 	  @ProductID			NVARCHAR(MAX) = '',
 	  @SMAName				VARCHAR(MAX) = '',
-	  @Currency				TINYINT,
+	  @Currency				INT,
 	  @SiteID				INT,
 	  @Type					TINYINT,
 	  @LimitNewAccUpdPT		BIT = 0,
@@ -24,6 +24,7 @@ AS
 			- 20230508@Luke: Add log when user limit PT update by Site/Currency [Redmine: #186741]
 			- 20230620@Luke: Limitation to update PT for new member [Redmine: #188950]
 			- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+			- 20250410@Johnson: change datatype for ExchangeID[redmine: #223630]
 
 	*/
 BEGIN
