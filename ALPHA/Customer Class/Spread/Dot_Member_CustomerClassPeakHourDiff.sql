@@ -62,7 +62,7 @@ BEGIN
 		BEGIN
 			SELECT TOP (@maxRecords) cs.PolicyID, cc.CustomerClass, cd.SiteID, cd.Currency, cd.[Platform], cd.SportType, cl.LeagueGroupID, cs.Spread, cs.IsLive, 
 				cs.RepUpdateTime,
-				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
+				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cc.ID * 1000 + cd.ID) AS RowNum
 			FROM CustomerClassSpread_UAT cs WITH(NOLOCK)
 				CROSS APPLY (SELECT LeagueGroupID, ID FROM CustomerClassSpreadLeagueGroup_UAT WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cl
 				CROSS APPLY (SELECT CustomerClass, ID FROM CustomerClassSpreadClass_UAT WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cc
@@ -79,7 +79,7 @@ BEGIN
 				AND cs.IsLive IN (2, @Islive) 
 				AND cs.Enable = 1 
 				AND cs.Type = 2 
-				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
+				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cc.ID * 1000 + cd.ID) > @RowNum
 			ORDER BY cs.RepUpdateTime, RowNum
 		END
 	END
@@ -105,7 +105,7 @@ BEGIN
 		BEGIN
 			SELECT TOP (@maxRecords) cs.PolicyID, cc.CustomerClass, cd.SiteID, cd.Currency, cd.[Platform], cd.SportType, cl.LeagueGroupID, cs.Spread, cs.IsLive, 
 				cs.RepUpdateTime,
-				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
+				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cc.ID * 1000 + cd.ID) AS RowNum
 			FROM CustomerClassSpread cs WITH(NOLOCK)
 				CROSS APPLY (SELECT LeagueGroupID, ID FROM CustomerClassSpreadLeagueGroup WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cl
 				CROSS APPLY (SELECT CustomerClass, ID FROM CustomerClassSpreadClass WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cc
@@ -123,7 +123,7 @@ BEGIN
 				AND cs.IsLive IN (2, @Islive) 
 				AND cs.Enable = 1 
 				AND cs.Type = 2 
-				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
+				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cc.ID * 1000 + cd.ID) > @RowNum
 			ORDER BY cs.RepUpdateTime, RowNum
 		END
 	END
