@@ -1,6 +1,5 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="Dot_Admin,svc_tig" viewers="" isFunction="0"></info>*/
 CREATE PROCEDURE [dbo].[Dot_Member_CustomerClassPeakHourDiff] 
-	@PolicyID INT = 0,
 	@Platform TINYINT = 0,
 	@IsTest BIT = 0,
     @Islive BIT = 0,
@@ -59,21 +58,29 @@ BEGIN
 			) CCS
 		ORDER BY RepUpdateTime
 
-		IF @PolicyID <> 0 
+		IF @RepUpdateTime IS NOT NULL
 		BEGIN
 			SELECT TOP (@maxRecords) cs.PolicyID, cc.CustomerClass, cd.SiteID, cd.Currency, cd.[Platform], cd.SportType, cl.LeagueGroupID, cs.Spread, cs.IsLive, 
 				cs.RepUpdateTime,
-				(cs.PolicyID * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
+				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
 			FROM CustomerClassSpread_UAT cs WITH(NOLOCK)
 				CROSS APPLY (SELECT LeagueGroupID, ID FROM CustomerClassSpreadLeagueGroup_UAT WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cl
 				CROSS APPLY (SELECT CustomerClass, ID FROM CustomerClassSpreadClass_UAT WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cc
 				CROSS APPLY (SELECT d.SiteID, Currency, [Platform], SportType, ID  
 							 FROM CustomerClassSpreadDetail_UAT d WITH(NOLOCK) 
-									INNER JOIN Site s WITH(NOLOCK) on d.SiteID IN (0, @NewSiteID, s.siteid) AND s.isLicensee = @IsLicensee
-							 WHERE PolicyID = cs.PolicyID AND [Platform] IN (0, @Platform)) cd
-			WHERE cs.PolicyID = @PolicyID AND IsLive  IN ( 2, @Islive) AND Enable = 1 AND Type = 2 
-				AND (cs.PolicyID * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
-			ORDER BY RowNum
+								CROSS APPLY (SELECT TOP 1 isLicensee FROM Site WITH(NOLOCK) WHERE siteid = d.SiteID) s 
+							 WHERE PolicyID = cs.PolicyID AND s.isLicensee = @IsLicensee AND [Platform] IN (0, @Platform) 
+							 UNION 
+							 SELECT d.SiteID, Currency, [Platform], SportType, ID  
+							 FROM CustomerClassSpreadDetail_UAT d WITH(NOLOCK) 
+							 WHERE PolicyID = cs.PolicyID AND d.SiteID IN (0, @NewSiteID) AND [Platform] IN (0, @Platform)) cd
+			WHERE cs.RepUpdateTime >= CAST(@RepUpdateTime  as datetime2)
+				AND cs.IsTest = @IsTest
+				AND cs.IsLive IN (2, @Islive) 
+				AND cs.Enable = 1 
+				AND cs.Type = 2 
+				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
+			ORDER BY cs.RepUpdateTime, RowNum
 		END
 	END
 	ELSE
@@ -94,21 +101,30 @@ BEGIN
 			) CCS
 		ORDER BY RepUpdateTime
 
-		IF @PolicyID <> 0 
+		IF @RepUpdateTime IS NOT NULL
 		BEGIN
 			SELECT TOP (@maxRecords) cs.PolicyID, cc.CustomerClass, cd.SiteID, cd.Currency, cd.[Platform], cd.SportType, cl.LeagueGroupID, cs.Spread, cs.IsLive, 
 				cs.RepUpdateTime,
-				(cs.PolicyID * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
+				(CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) AS RowNum
 			FROM CustomerClassSpread cs WITH(NOLOCK)
 				CROSS APPLY (SELECT LeagueGroupID, ID FROM CustomerClassSpreadLeagueGroup WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cl
 				CROSS APPLY (SELECT CustomerClass, ID FROM CustomerClassSpreadClass WITH(NOLOCK) WHERE PolicyID = cs.PolicyID) cc
 				CROSS APPLY (SELECT d.SiteID, Currency, [Platform], SportType, ID  
 							 FROM CustomerClassSpreadDetail d WITH(NOLOCK) 
-									INNER JOIN Site s WITH(NOLOCK) on d.SiteID IN (0, @NewSiteID, s.siteid) AND s.isLicensee = @IsLicensee
-							 WHERE PolicyID = cs.PolicyID AND [Platform] IN (0, @Platform)) cd
-			WHERE cs.PolicyID = @PolicyID AND IsLive  IN ( 2, @Islive) AND Enable = 1 AND Type = 2 
-				AND (cs.PolicyID * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
-			ORDER BY RowNum
+								CROSS APPLY (SELECT TOP 1 isLicensee FROM Site WITH(NOLOCK) WHERE siteid = d.SiteID) s 
+							 WHERE PolicyID = cs.PolicyID AND s.isLicensee = @IsLicensee AND [Platform] IN (0, @Platform) 
+							 UNION 
+							 SELECT d.SiteID, Currency, [Platform], SportType, ID  
+							 FROM CustomerClassSpreadDetail d WITH(NOLOCK) 
+							 WHERE PolicyID = cs.PolicyID AND d.SiteID IN (0, @NewSiteID) AND [Platform] IN (0, @Platform)
+									) cd
+			WHERE cs.RepUpdateTime >= CAST(@RepUpdateTime  as datetime2)
+				AND cs.IsTest = @IsTest
+				AND cs.IsLive IN (2, @Islive) 
+				AND cs.Enable = 1 
+				AND cs.Type = 2 
+				AND (CAST(cs.PolicyID AS BIGINT) * 1000000000 + cl.ID * 1000000 + cd.ID * 1000 + cd.ID) > @RowNum
+			ORDER BY cs.RepUpdateTime, RowNum
 		END
 	END
 END

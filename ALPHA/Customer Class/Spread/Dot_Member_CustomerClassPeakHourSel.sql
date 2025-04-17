@@ -59,11 +59,11 @@ BEGIN
 				cp.SportType,
 				MAX(cc.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail_UAT cp WITH(NOLOCK)
-				CROSS APPLY (SELECT TOP 1 cl.LeagueGroupID FROM CustomerClassSpreadLeagueGroup_UAT cl WITH(NOLOCK) WHERE cl.PolicyID = cp.PolicyID AND cl.LeagueGroupID IN (@LeagueGroupID, 0)) lg
+				CROSS APPLY (SELECT TOP 1 cl.LeagueGroupID FROM CustomerClassSpreadLeagueGroup_UAT cl WITH(NOLOCK) WHERE cl.PolicyID = cp.PolicyID AND cl.LeagueGroupID IN (@LeagueGroupID, -1)) lg
 				CROSS APPLY (SELECT TOP 1 cs.Spread
 							 FROM CustomerClassSpreadClass_UAT cm WITH(NOLOCK)
 								INNER JOIN CustomerClassSpread_UAT cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND cs.IsLive IN (@IsLive,0) AND Type = 2
+							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND cs.IsLive IN (@IsLive,2) AND Type = 2
 							) cc
 			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
@@ -85,11 +85,11 @@ BEGIN
 				cp.SportType,
 				MAX(cc.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail cp WITH(NOLOCK)
-				CROSS APPLY (SELECT TOP 1 cl.LeagueGroupID FROM CustomerClassSpreadLeagueGroup cl WITH(NOLOCK) WHERE cl.PolicyID = cp.PolicyID AND cl.LeagueGroupID IN (@LeagueGroupID, 0)) lg
+				CROSS APPLY (SELECT TOP 1 cl.LeagueGroupID FROM CustomerClassSpreadLeagueGroup cl WITH(NOLOCK) WHERE cl.PolicyID = cp.PolicyID AND cl.LeagueGroupID IN (@LeagueGroupID, -1)) lg
 				CROSS APPLY (SELECT TOP 1 cs.Spread
 							 FROM CustomerClassSpreadClass cm WITH(NOLOCK)
 								INNER JOIN CustomerClassSpread cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND cs.IsLive IN (@IsLive,0) AND Type = 2
+							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND cs.IsLive IN (@IsLive,2) AND Type = 2
 							) cc
 			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
