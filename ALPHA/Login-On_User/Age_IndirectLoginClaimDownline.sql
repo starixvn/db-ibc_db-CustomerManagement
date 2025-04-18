@@ -47,6 +47,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20230214@Helios: Enhance language part [RedmineID: #183700]
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 	Param's Explanation:		
 	*/
 BEGIN
@@ -54,7 +55,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
-	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency TINYINT, @db_loginip NVARCHAR(20), @rowcount INT
+	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency INT, @db_loginip NVARCHAR(20), @rowcount INT
 			,@DownlineUsername VARCHAR(30) = @username
 			
 	SET @Begin = GETDATE() 

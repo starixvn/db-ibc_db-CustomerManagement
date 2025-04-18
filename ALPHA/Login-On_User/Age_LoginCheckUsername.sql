@@ -21,7 +21,7 @@ AS
 
 	Revisions:
 		- 20241220@Elodie: Initial SP [Redmine: #215625]
-		
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 	Param's Explanation: 
 	• @SiteGroup: Check the site and corresponding domain
 		+ ALL: All add domains 
@@ -34,7 +34,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @IsSubAccount BIT, @closed BIT, @inputLoginIP VARCHAR(15),
-		@db_custid INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
+		@db_custid INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency int,
 		-- For checking login domain
 		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT,
 		@Locked TINYINT

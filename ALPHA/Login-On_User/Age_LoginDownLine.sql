@@ -74,7 +74,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
-
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @NicknameLoginOnly: Value of the option Set login option by nickname only
@@ -102,7 +102,7 @@ BEGIN
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @LogData NVARCHAR(200), @ActionID INT
 	DECLARE	@inputLoginIP VARCHAR(15), @rowcount INT, @OldUserPwd VARCHAR(40)
 	DECLARE @db_custid INT, @db_userpwd NVARCHAR(50), @db_roleid TINYINT, @failedcount INT, @role NVARCHAR(20), @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT
-	DECLARE @db_currency TINYINT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
+	DECLARE @db_currency INT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
     
 	SET @Begin = GETDATE() 
 	SELECT	@inputLoginIP = @LoginIP 
