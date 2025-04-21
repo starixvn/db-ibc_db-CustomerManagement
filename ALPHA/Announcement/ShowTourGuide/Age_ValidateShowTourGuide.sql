@@ -1,5 +1,5 @@
 ﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp, wsv_alpv" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[Age_ValidateShowTourGuide]  
+ALTER PROCEDURE [dbo].[Age_ValidateShowTourGuide]  
 	@CustID INT,			-- SMA_ID Input
       @IsShow BIT = 0 OUTPUT
 AS 
@@ -11,7 +11,7 @@ BEGIN
 	DB: DBCust.CustDB
 	
 	Revisions:
-		- 20250321@Helios: Alpha - Credit Reward - Show tour guide for selected SMA [Redmine: #221208]
+		- 20250321@Helios: Alpha - Credit Reward - Show tour guide for selected SMA [Redmine: #221208] 
 
 	Param:
 		@IsShow = 0 : Don't Show Tour Guide
@@ -25,23 +25,60 @@ BEGIN
 */  
  SET NOCOUNT ON;
 
-    -- Check SMA_ID input validate show tour guide or not 
-    IF EXISTS (
-        SELECT 1
-        FROM custInfo  c WITH (NOLOCK)
-        WHERE ((c.srecommend = @CustID) OR (c.mrecommend = @CustID) OR (c.recommend = @CustID))
-	  AND c.roleid = 1
-	  AND EXISTS (
-              SELECT 1
-              FROM dbo.fn_GetCreditReward_MemberList(c.CustID) h
-          )
-    )
+    DECLARE @RoleID TINYINT
+    , @Get_Date DATE
+
+    SET @IsShow = 0
+    SET @Get_Date = CAST(GETDATE() AS DATE)
+
+    SELECT @RoleID = (SELECT RoleID FROM  Customer WITH (NOLOCK) WHERE custid = @CustID)
+
+    IF @RoleID = 4
     BEGIN
-        SET @IsShow = 1;
+	    IF EXISTS (
+		  SELECT TOP 1 1
+		  FROM custInfo  c WITH (NOLOCK)
+		  INNER JOIN Age_CreditRewardCustomers cr WITH (NOLOCK) ON c.custid = cr.custID
+		  WHERE c.srecommend = @CustID
+		  AND c.roleid = 1
+		  AND @Get_Date BETWEEN cr.FromDate AND cr.ToDate
+		  )
+
+	    BEGIN
+			SET @IsShow = 1;
+	    END
     END
-    ELSE
+
+    ELSE IF @RoleID = 3
     BEGIN
-        SET @IsShow = 0;
+	    IF EXISTS (
+		  SELECT TOP 1 1
+		  FROM custInfo  c WITH (NOLOCK)
+		  INNER JOIN Age_CreditRewardCustomers cr WITH (NOLOCK) ON c.custid = cr.custID
+		  WHERE c.mrecommend = @CustID
+		  AND c.roleid = 1
+		  AND @Get_Date BETWEEN cr.FromDate AND cr.ToDate
+		  )
+
+	    BEGIN
+			SET @IsShow = 1;
+	    END
     END
+    ELSE IF @RoleID = 2
+    BEGIN
+	    IF EXISTS (
+			  SELECT TOP 1 1
+			  FROM custInfo  c WITH (NOLOCK)
+			  INNER JOIN Age_CreditRewardCustomers cr WITH (NOLOCK) ON c.custid = cr.custID
+			  WHERE c.recommend = @CustID
+			  AND c.roleid = 1
+			  AND @Get_Date BETWEEN cr.FromDate AND cr.ToDate
+		  )
+
+	    BEGIN
+			SET @IsShow = 1;
+	    END
+    END
+
 END
 GO
