@@ -8,7 +8,7 @@ CREATE PROCEDURE [dbo].[EAS_API_CheckSecretKeyUser]
   , @SubAccID			INT			  = 0	OUTPUT
   , @IsAuthenticated	BIT			  = 1	OUTPUT
   , @Site				VARCHAR(10)	  = ''	OUTPUT
-  , @Currency			TINYINT		  = 0	OUTPUT
+  , @Currency			INT		  = 0	OUTPUT
   , @ErrCode			INT			  = 0	OUTPUT
   , @ErrMsg				NVARCHAR(200) = ''  OUTPUT
 AS
@@ -21,6 +21,7 @@ AS
 		- 20230511@Helios: EXT - Support API for Headline [Redmine: #188035]
 		- 20230816@Tacy: EXT - Adjust API to support Live Casino for Headline [Redmine: #192805]
 		- 20240701@Tacy: EXT - API - Return Site & Currency [Redmine: #206055]
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 	Parameter's Explanation:  
 		@ErrCode = 0 : Pass || @ErrCode IN (101,102,103) : ERROR
 		@IsAuthenticated:

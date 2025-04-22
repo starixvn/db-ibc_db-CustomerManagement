@@ -75,7 +75,7 @@ AS
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20250312@Helios: Alpha - Reset Password Notification [Redmine: #219803] 
 		- 20250320@Elodie: Login Process Amenment - Solution 3 - Output @UpLineID [RedmineID: #220522]
-
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
 		• @SiteGroup: Check the site and corresponding domain
@@ -99,7 +99,7 @@ BEGIN
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
 	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), @ActionID INT,
-		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
+		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency int,
 		-- For checking login domain
 		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT,
 		@Locked TINYINT, @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT

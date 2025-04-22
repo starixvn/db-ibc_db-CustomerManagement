@@ -63,6 +63,7 @@ AS
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
 		- 20220110@Eden: HotFix - Alpha login_After login success log of sub account is not shown if sub's password <> main's password [RedmineID: #181370]
 		- 20230214@Helios: Enhance language part [RedmineID: #183700]
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not, parameter Input also Output
@@ -73,7 +74,7 @@ BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
-	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency TINYINT, @db_loginip NVARCHAR(20), @rowcount INT, 
+	DECLARE @LogData NVARCHAR(200), @role NVARCHAR(20), @db_currency INT, @db_loginip NVARCHAR(20), @rowcount INT, 
 		@db_userpwd NVARCHAR(50), @db_ProtectionCode VARCHAR(30), @ActionID INT
     
 	SET @Begin = GETDATE() 
