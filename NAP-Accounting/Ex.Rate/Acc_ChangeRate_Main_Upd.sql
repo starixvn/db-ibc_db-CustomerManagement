@@ -13,7 +13,7 @@ AS
 	Revisions:
 		- 20211229@Malcolm: Initialize SP [RedmineID: #163417]
 		- 20220801@Sophia: Scale out, call at SiteDB [RedmineID: #175253]
-
+		- 20240401@Danny: Handle exception [RedmineID: #205614]
 	Param's Explanation:
 	
 	@TableName :
