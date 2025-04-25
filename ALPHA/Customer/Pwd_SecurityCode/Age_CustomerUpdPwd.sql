@@ -35,6 +35,7 @@ Revisions:
 	- 20240422@Elodie: Change SQL Account [RedmineID: #204021]  
 	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+	- 20250425@Dave: Login Process Amenment - Solution 3- Phrase 2 - Update old userpwd on CustLoginInfo_Member [Redmine: #225351]
 
 Param's Explanation:
 
@@ -122,6 +123,8 @@ BEGIN
 		UPDATE	CustLoginInfo_Member WITH (ROWLOCK, UPDLOCK)
 		SET	gesture = NULL
 		   ,RepUpdateTime = dbo.f_GetDateTime2()
+			,OldUserPwd			=	@OldPwd
+			,LastChangedPwdDate	=	GETDATE()
 		WHERE	custid = @CustID
 	END
 	
