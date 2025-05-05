@@ -20,6 +20,7 @@ AS
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250505@Winfred: [NAP CM] Sportsbook CC Management - Update Policy Issue[Redmine: #226076]
 
 	Param's Explanation:
 	* @Policys:
@@ -108,6 +109,10 @@ BEGIN
 	OUTPUT	DELETED.PolicyID,	DELETED.RuleID , [dbo].[f_GetDateTime2]()
 	INTO CustomerClassPolicyRule_Del_InHouse(PolicyID , RuleID, RepUpdateTime)
 	WHERE PolicyID = @PolicyID
+
+	INSERT INTO CustomerClassPolicyRule(PolicyID , RuleID, RepUpdateTime)	
+	SELECT @PolicyID, RuleID, [dbo].[f_GetDateTime2]() 
+	FROM #CustomerClassRule
 	
 	SELECT @RuleIDs_old = (SELECT STRING_AGG(CAST(RuleID AS VARCHAR(20)), ',') 
 						WITHIN GROUP (ORDER BY RuleID)
@@ -123,7 +128,7 @@ BEGIN
 					SportType				AS '@SportType',
 					LastModifiedUser		AS '@LastModifiedUser',
 					CONVERT(VARCHAR(10), LastModifiedTime, 120) AS '@LastModifiedTime',
-					RuleIDs					AS '@RuleIDs' ,
+					@RuleIDs_old			AS '@RuleIDs' ,
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
 					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'
 			FROM	#CustomerClassPolicyManagement_History AS cs	
