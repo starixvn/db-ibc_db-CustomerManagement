@@ -36,6 +36,7 @@ AS
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250425@Dave: Login Process Amenment - Solution 3- Phrase 2 - Update old userpwd on CustLoginInfo_Member [Redmine: #225351]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -111,6 +112,8 @@ BEGIN
 		UPDATE	CustLoginInfo_Member WITH (UPDLOCK,ROWLOCK)
 		SET		gesture 			= NULL
 			   ,RepUpdateTime = dbo.f_GetDateTime2()
+			   ,OldUserPwd			=	@OldUserPwd
+			   ,LastChangedPwdDate	=	GETDATE()
 		WHERE	CustID = @CustID
 	END
 	
