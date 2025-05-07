@@ -32,6 +32,7 @@ ALTER PROCEDURE [dbo].[NAP_VREngine_Rule_Update]
 	@CustomerClassDetailList VARCHAR(MAX) =  NULL,
 	@CCSporttypeList VARCHAR(MAX) = NULL,
 	@JsonCheckData VARCHAR(MAX)	= '',
+	@TimeBeforeKO SMALLMONEY = 0,
 	@ErrorCode INT = 0 OUTPUT,
 	@ErrorMsg VARCHAR(MAX) = '' OUTPUT 
 AS
@@ -46,6 +47,7 @@ AS
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 	- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
+	- 20241230@Winfred: [NAP CM] VR Engine - Pre-match Period with Extra VR [redmine: #215791]
 
 	Parameter explanation:
 		@Criteria_NotApply = 
@@ -97,6 +99,7 @@ AS
 		@CustomerClassList ='',
 		@CustomerClassDetailList ='',
 		@CCSporttypeList = '0',
+		@TimeBeforeKO = 0,
 		@ErrorCode = @ErrorCode OUTPUT,
 		@ErrorMsg = @ErrorMsg OUTPUT
 	SELECT @ErrorCode,@ErrorMsg
@@ -152,7 +155,8 @@ BEGIN
 		@CustomerClassDetailList_Old VARCHAR(MAX),
 		@CustomerClassDetailList_NotApply_Old VARCHAR(MAX),
 		@CCSporttypeList_Old VARCHAR(MAX),
-		@CCSporttypeList_NotApply_Old VARCHAR(MAX)
+		@CCSporttypeList_NotApply_Old VARCHAR(MAX),
+		@TimeBeforeKO_Old SMALLMONEY
 
 
 	SET @StartRun = GETDATE()
@@ -205,6 +209,7 @@ BEGIN
 
 	SELECT 	@AdjustmentValue = CASE WHEN @Adjustmenttype = 1 THEN @AdjustmentValue/100 + 1
 									WHEN @Adjustmenttype = 2 THEN @AdjustmentValue/100
+									WHEN @Adjustmenttype = 3 THEN @AdjustmentValue/100
 								END
 
 	SELECT	 @RuleName_Old			= RuleName
@@ -377,6 +382,7 @@ BEGIN
 									FOR XML PATH ('')
 									),1,1,'')
 		,@AccumulatedBalance_Old = AccumulatedBalance
+		,@TimeBeforeKO_Old = TimeBeforeKO
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
 
@@ -499,6 +505,7 @@ BEGIN
 		,Enabled_Column		= @Enabled_Columns
 		,AccumulatedBalance = @AccumulatedBalance
 		,RepUpdateTime = [dbo].[f_GetDateTime2]()
+		,TimeBeforeKO	= @TimeBeforeKO
 	WHERE RuleID = @RuleID
 
 	--> Refresh VRSettingRuleDetail 
@@ -585,12 +592,14 @@ BEGIN
 						+ 'AdjustmentType="'+ coalesce(cast(@AdjustmentType as varchar(20)),space(1)) + '" ' 
 						+ 'AdjustmentValue="'+ coalesce(cast((CASE	WHEN @Adjustmenttype = 1 THEN (@AdjustmentValue -1 ) * 100 
 																	WHEN @Adjustmenttype = 2 THEN @AdjustmentValue * 100
+																	WHEN @Adjustmenttype = 3 THEN @AdjustmentValue * 100
 																END)
 															as varchar(10)),space(1)) + '" ' 
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance as varchar(2)),space(1)) + '" ' 
 						+ 'CCSportType="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply,'') = ''  THEN 'IN (' + @CCSportTypeList + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply,'') = ''  THEN 'IN (' + @CustomerClassDetailList + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply + ')'  END ,space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status as varchar(10)),space(1)) + '" '
+						+ 'TimeBeforeKO="'+ coalesce(cast(@TimeBeforeKO as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />',
 			@LogData_Old = '<R '
@@ -619,12 +628,14 @@ BEGIN
 						+ 'AdjustmentType="'+ coalesce(cast(@AdjustmentType_Old as varchar(20)),space(1)) + '" ' 
 						+ 'AdjustmentValue="'+ coalesce(cast((CASE	WHEN @AdjustmentType_Old = 1 THEN (@AdjustmentValue_Old -1 ) * 100 
 																	WHEN @AdjustmentType_Old = 2 THEN @AdjustmentValue_Old * 100
+																	WHEN @AdjustmentType_Old = 3 THEN @AdjustmentValue_Old * 100
 																END)
 															as varchar(10)),space(1)) + '" '
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance_Old as varchar(2)),space(1)) + '" '
 						+ 'CCSportType="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply_Old,'') = ''  THEN 'IN (' + @CCSportTypeList_Old + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'CustomerClassDetail="'+ coalesce(CASE WHEN ISNULL(@CustomerClassDetailList_NotApply_Old,'') = ''  THEN 'IN (' + @CustomerClassDetailList_Old + ')'  ELSE 'NOT IN (' + @CustomerClassDetailList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'Status="'+ coalesce(cast(@Status_Old as varchar(10)),space(1)) + '" '
+						+ 'TimeBeforeKO="'+ coalesce(cast(@TimeBeforeKO_Old as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'
 
