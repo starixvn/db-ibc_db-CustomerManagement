@@ -17,6 +17,7 @@ AS
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
 	- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
+	- 20241230@Winfred: [NAP CM] VR Engine - Pre-match Period with Extra VR [redmine: #215791]
 
 	Parameter explanation:
 
@@ -70,7 +71,8 @@ BEGIN
 		@CustomerClassDetailList_Old VARCHAR(MAX) ,
 		@CustomerClassDetailList_NotApply_Old VARCHAR(MAX),
 		@CCSporttypeList_Old VARCHAR(MAX) ,
-		@CCSporttypeList_NotApply_Old VARCHAR(MAX)
+		@CCSporttypeList_NotApply_Old VARCHAR(MAX),
+		@TimeBeforeKO_Old SMALLMONEY
 
 	SET @StartRun = GETDATE()
 
@@ -256,6 +258,7 @@ BEGIN
 									FOR XML PATH ('')
 									),1,1,'')
 		,@AccumulatedBalance_Old = AccumulatedBalance
+		,@TimeBeforeKO_Old = TimeBeforeKO
 	FROM VRSettingRule r WITH(NOLOCK)
 	WHERE RuleID = @RuleID
 
@@ -306,6 +309,7 @@ BEGIN
 						+ 'AdjustmentType="'+ coalesce(cast(@AdjustmentType_Old as varchar(20)),space(1)) + '" ' 
 						+ 'AdjustmentValue="'+ coalesce(cast((CASE	WHEN @AdjustmentType_Old = 1 THEN (@AdjustmentValue_Old -1 ) * 100 
 																	WHEN @AdjustmentType_Old = 2 THEN @AdjustmentValue_Old * 100
+																	WHEN @AdjustmentType_Old = 3 THEN @AdjustmentValue_Old * 100
 																END)
 															as varchar(10)),space(1)) + '" '
 						+ 'CCSporttype="'+ coalesce(CASE WHEN ISNULL(@CCSportTypeList_NotApply_Old,'') = ''  THEN 'IN (' + @CCSportTypeList_Old + ')'  ELSE 'NOT IN (' + @CCSportTypeList_NotApply_Old + ')'  END ,space(1)) + '" ' 
@@ -313,6 +317,7 @@ BEGIN
 						+ 'CurrencyID="'+ coalesce(CASE WHEN ISNULL(@CurrencyIDList_NotApply_Old,'') = ''  THEN 'IN (' + @CurrencyIDList_Old + ')'  ELSE 'NOT IN (' + @CurrencyIDList_NotApply_Old + ')'  END ,space(1)) + '" ' 
 						+ 'AccumulatedBalance="'+ coalesce(cast(@AccumulatedBalance_Old as varchar(2)),space(1)) + '" '
 						+ 'Status="'+ coalesce(cast(@Status_Old as varchar(10)),space(1)) + '" '
+						+ 'TimeBeforeKO="'+ coalesce(cast(@TimeBeforeKO_Old as varchar(10)),space(1)) + '" '
 						+ 'IP="' + COALESCE(@IP, SPACE(1)) + '" '
 						+ ' />'
 
