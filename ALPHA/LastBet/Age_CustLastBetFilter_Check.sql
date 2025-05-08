@@ -3,6 +3,7 @@ ALTER PROCEDURE [dbo].[Age_CustLastBetFilter_Check]
 	-- Add the parameters for the stored procedure here
 	 @AgentID	INT
 	,@UserNames	NVARCHAR(MAX)
+	,@RoleId	TINYINT
 AS
 /*
 	Creator: 20230626@Tacy  
@@ -11,6 +12,7 @@ AS
 
 	Revisions:  
 		- 20230626@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
+		- 20241108@Virgil: Alpha - Offer Last Bets function for Super/Master [Redmine: #213315]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -33,13 +35,13 @@ BEGIN
 		roleID		TINYINT
 	)
 
-	-- username is overlength
+	-- Username is overlength
 	INSERT INTO @Err_Tbl (CustID, Username, ErrCode)
 	SELECT NULL, TRIM(value), 100
 	FROM STRING_SPLIT(@UserNames, ',') 
 	WHERE TRIM(value)<>'' AND LEN(TRIM(value))>50
 
-	--username
+	-- Username
 	INSERT INTO @tbUsername (CustID, Username, Username2, firstname, lastname, roleID)
 	SELECT ci.custid, TRIM(t.value), c.username2, c.firstname, c.lastname, ci.roleid
 	FROM STRING_SPLIT(@UserNames, ',') t
@@ -47,7 +49,7 @@ BEGIN
 	LEFT JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 	WHERE TRIM(t.value)<>'' AND LEN(TRIM(value))<=50
 	
-	--nickname
+	-- Nickname
 	UPDATE t
 	SET t.CustID=c.custid, 
 		t.username=c.username,
@@ -58,25 +60,28 @@ BEGIN
 	FROM @tbUsername t
 	INNER JOIN Customer c WITH (NOLOCK) ON c.username2=t.username
 
-	-- not exist Username/nickname
+	-- Not exist Username/nickname
 	INSERT INTO @Err_Tbl (CustID, Username, Username2, firstname, lastname, ErrCode)
 	SELECT DISTINCT CustID, Username, Username2, firstname, lastname, 100	
 	FROM @tbUsername 
 	WHERE CustID IS NULL
 
-	-- SMA
+	-- Is SMA
 	INSERT INTO @Err_Tbl (CustID, Username, Username2, firstname, lastname, ErrCode)
 	SELECT DISTINCT CustID, Username, Username2, firstname, lastname, 101		
 	FROM @tbUsername  t
-	WHERE CustID IS NOT NULL AND roleID<>1
+	WHERE CustID IS NOT NULL AND roleID <> 1
 
-	-- not agent's downline
+	-- Not SMA's downline
 	INSERT INTO @Err_Tbl (CustID, Username, Username2, firstname, lastname, ErrCode)
 	SELECT DISTINCT t.CustID, t.Username, t.Username2, t.firstname, t.lastname, 100		
 	FROM @tbUsername t
 	INNER JOIN Customer c WITH (NOLOCK) ON c.custid=t.CustID
-	WHERE c.recommend<>@AgentID and c.roleid=1
-	AND NOT EXISTS (SELECT 1 FROM @Err_Tbl e WHERE e.CustID=t.CustID)
+	WHERE ((c.recommend <> @AgentID AND @RoleId = 2) 
+		OR (c.mrecommend <> @AgentID AND @RoleId = 3) 
+		OR (c.srecommend <> @AgentID AND @RoleId = 4))
+		AND c.roleid = 1
+		AND NOT EXISTS (SELECT 1 FROM @Err_Tbl e WHERE e.CustID=t.CustID)
 
 	-- Valid usernames
 	INSERT INTO @Err_Tbl (CustID, Username, Username2, firstname, lastname)

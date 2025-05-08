@@ -17,6 +17,7 @@ ALTER PROCEDURE [dbo].[Age_CustLastBetFilter_Ins]
 	, @ErrCode		INT				= 0		OUTPUT
 	, @ErrMsg		NVARCHAR(200)	= ''	OUTPUT
 	, @IP			VARCHAR(20)		= ''
+	, @RoleId		TINYINT
 AS
 /*
 	Creator: 20230608@Tacy  
@@ -26,6 +27,7 @@ AS
 	Revisions:  
 		- 20230608@Tacy: Alpha - Bet List - Enhance Last bet function [Redmine:#186142]
 		- 20240223@Luke: Telegram Chatbot - Notify Member Last bets [Redmine: #193689]
+		- 20241108@Virgil: Alpha - Offer Last Bets function for Super/Master [Redmine: #213315]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 
 	Param's Explanation: 
@@ -125,13 +127,16 @@ BEGIN
 									CROSS APPLY (SELECT TOP 1 1 AS val FROM STRING_SPLIT(@InputList,',')
 												 WHERE TRIM(value)<>''
 												 AND CAST(TRIM(value) AS INT)=ci.custid) t
-									WHERE recommend=@CustID AND roleid=1
+									WHERE (recommend = @CustID AND @RoleId = 2)
+										OR (mrecommend = @CustID AND @RoleId = 3)
+										OR (srecommend = @CustID AND @RoleId = 4)
+										AND roleid=1
 									FOR XML PATH (''))
 									,1,1,''
 								)
 	END
 
-	IF @WatchList NOT IN ('', '0') --NONE/All members
+	IF @WatchList NOT IN ('', '0') AND @RoleId = 2 --NONE/All members
 	BEGIN
 		--Exclude: Not be agent's member
 		SELECT @WatchList = STUFF((SELECT ',' + CAST(ci.custid AS VARCHAR)
