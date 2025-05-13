@@ -10,11 +10,12 @@ AS
 	Original: f_GetModeCustomerClass
 		Revisions:
 			- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
+			- 20250513@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type _UAT [RedmineID: #225201] 
 	Example:
 	@ModeTest :  1 = Test , 0 = Original
 */
 BEGIN
-	DECLARE @ModeTest AS BIT = 0
+	DECLARE @ModeTest AS BIT = 1
 	RETURN @ModeTest
 END
 GO
