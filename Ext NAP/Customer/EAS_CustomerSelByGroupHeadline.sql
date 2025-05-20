@@ -15,7 +15,8 @@ AS
 	Revisions:
         - 20240325@Tacy: Create SP [redmine: #202501]
         - 20240424@Tacy: HF - Show headline have Extra PT group mapping [redmine: #205723]
-		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
+		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918]
+		- 20250520@Virgil: Ext -Admin - Keep loading when click con headline list function [Redmine: #228004]
 		
 	Param's Explanation:
 		* @Status : 0 ~ All
@@ -115,7 +116,7 @@ BEGIN
 
     --Get Headline
     INSERT INTO #tmpGroupHeadline(CustHeadlineID, GroupHeadline, GroupHeadlineID)    
-	SELECT hl.CustID, cu.username, hl.GroupID
+	SELECT DISTINCT hl.CustID, cu.username, hl.GroupID
     FROM dbo.CustGroupHeadline hl WITH (NOLOCK)
         INNER JOIN dbo.Customer cu WITH (NOLOCK) ON hl.CustID = cu.custid
 		INNER JOIN EaGroupHeadline g WITH (NOLOCK)	ON g.GroupHeadlineID=hl.GroupID
