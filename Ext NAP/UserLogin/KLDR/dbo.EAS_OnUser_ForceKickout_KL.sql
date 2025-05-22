@@ -17,7 +17,7 @@ BEGIN
 	RETURN
 	/*
 	UPDATE eaOn_User WITH(UPDLOCK,ROWLOCK)
-	SET isKickedout = 1
+	SET isKickedout = 1, reload_time = GETDATE()
 	WHERE custid = @custid
 		AND isKickedout = 0*/
 		

@@ -1,5 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
-
+﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_alp, wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE Age_LoginVerifyDownline_KL
 	@UserName VARCHAR(50) = '' OUTPUT,  
 	@UserPwd VARCHAR(50),  
@@ -25,7 +24,10 @@ ALTER PROCEDURE Age_LoginVerifyDownline_KL
 	@IsKickOut BIT = 0 OUTPUT, 
 	@IsDarkMode BIT = NULL,
 	@ErrCode INT = 0 OUTPUT,  
-	@ErrMsg NVARCHAR(4000) = '' OUTPUT	
+	@ErrMsg NVARCHAR(4000) = '' OUTPUT,
+	@failedcount	INT		= 0 OUTPUT,
+	@UplineId INT = 0 OUTPUT,
+	@UplineName VARCHAR(30) = '' OUTPUT
 AS
 /*
 	Created: 20090829@Don
@@ -69,6 +71,11 @@ AS
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20211019@Winfred: Add log Alpha Support Dark Mode [Redmine: #151816]
 		- 20230207@Tacy: Alpha/NAP - Split 789y site [RedmineID:#181596]
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250312@Helios: Alpha - Reset Password Notification [Redmine: #219803] 
+		- 20250320@Elodie: Login Process Amenment - Solution 3 - Output @UpLineID [RedmineID: #220522]
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 		- 20231218@Johnson: setup KL DR [redmine: #195700]
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -93,7 +100,7 @@ BEGIN
 
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @inputLoginIP VARCHAR(15)
 	DECLARE @IsSubAccount BIT, @role NVARCHAR(20), @closed BIT, @LogData NVARCHAR(200), @LogSPData VARCHAR(1000), @ActionID INT,
-		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @failedcount INT, @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency tinyint,
+		@db_custid INT, @db_userpwd NVARCHAR(50), @OldUserPwd VARCHAR(40), @db_loginip NVARCHAR(20), @db_enabled BIT, @db_currency int,
 		-- For checking login domain
 		@IsMatched BIT, @rowcount INT, @isAllowed BIT, @IsAccess BIT,
 		@Locked TINYINT, @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT
@@ -484,7 +491,11 @@ BEGIN
 			/* START --Jamie@20130327 Close accounts after 5 logins failed */			
 			/*IF @failedcount > 5
 			BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @subaccid 
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET closed = 1, 
+					logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE subaccid = @subaccid 
 					    
 				SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" '
 										+'SubAccount="'  + @SubUserName +'" ' +
@@ -500,7 +511,10 @@ BEGIN
 			
 			/*IF (@failedcount <=5)
 			BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = @failedcount WHERE subaccid = @subaccid 
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
+				WHERE subaccid = @subaccid 
 			END	*/	
 
 			SELECT  @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
@@ -519,6 +533,7 @@ BEGIN
 
 				/*UPDATE cl
 				SET IsProtectedMode = 1, @IsKickOut = 1
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				FROM CustLoginInfo cl WITH (ROWLOCK)
 				WHERE custid = @CustID 
 
@@ -540,7 +555,10 @@ BEGIN
 			SELECT @ActionID = 1304 
 		 END
 
-		--UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET logincount = 0 WHERE subaccid = @subaccid 
+		/*UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+		SET logincount = 0,
+			RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE subaccid = @subaccid */
 		
 		--Get username, password from customer table to login in the context of agent    
 		SELECT @db_custid = custid, @db_userpwd = userpwd, @RoleID = roleid, @Site = c.site, @UserName = username, @UserPwd = userpwd,
@@ -896,8 +914,16 @@ BEGIN
 	RETURN  
 	END  
 
-	SELECT @db_enabled = ISNULL(enabled,0), @superid = srecommend
-	FROM custinfo WITH (NOLOCK) WHERE custid = @db_custid
+	SELECT @db_enabled = ISNULL(enabled,0), @superid = srecommend,
+		@UplineId = CASE WHEN (roleid = 1 AND recommend = -4) OR roleid = 3 THEN srecommend
+						WHEN (roleid = 1 AND recommend = -3) OR roleid = 2 THEN mrecommend
+						WHEN roleid = 1 AND recommend NOT IN (-3, -4) THEN recommend END
+	FROM custinfo WITH (NOLOCK) 
+	WHERE custid = @db_custid	
+
+	SELECT @UplineName = username
+	FROM customer c WITH (NOLOCK) 
+	WHERE CustID = @UplineId
 
 	SELECT @Locked = CASE WHEN @IsSubAccount = 1 THEN 0 ELSE CPS.Locked END, 
 		@closed = CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END
@@ -1095,9 +1121,15 @@ BEGIN
 		
 		/*IF @failedcount > 5 	
 		BEGIN
-			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) 
+			SET Locked = 2,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+			UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+			SET logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 			
 	    	SELECT @LogSPData = '<Age_LoginVerifyDownline IP="'+ @inputLoginIP + '" />'		    
 			
@@ -1107,19 +1139,25 @@ BEGIN
 				@ActionID = 908,
 				@TrackingValue = @LogSPData,
 				@Duration = @Duration			
+								
+			-- Helios Add code
+			SELECT @ErrMsg = CASE @Language WHEN 'E' THEN 'Your account has been locked due to multiple failed security check. Please contact your upline to unlock.'  
+						ELSE [dbo].[f_Get_MsgNamebyMsgID](80007,@Language)
+				   END ,@ErrCode=111  
 		END
 		
 		IF (@failedcount <= 5) 
 		BEGIN
 			UPDATE	customer WITH (ROWLOCK, UPDLOCK) 
-			SET		logincount = @failedcount 
+			SET		logincount = @failedcount,
+					RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE	custid = @db_custid  
 		END*/
 	  
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
 				 ELSE [dbo].[f_Get_MsgNamebyMsgID](80001,@Language)  
 				 END ,@ErrCode= case when @failedcount > 5 then 109 else 106 end
-	  return  
+	  RETURN  
 	END
 	
 	IF @IsSubAccount = 0 
@@ -1133,6 +1171,7 @@ BEGIN
 
 				/*UPDATE cl
 				SET IsProtectedMode = 1, @IsKickOut = 1
+				   ,RepUpdateTime = dbo.f_GetDateTime2()
 				FROM CustLoginInfo cl WITH (ROWLOCK)
 				WHERE custid = @CustID 
 
@@ -1158,8 +1197,9 @@ BEGIN
 	/*UPDATE customer WITH (ROWLOCK, UPDLOCK)  
 	SET logincount = CASE WHEN @IsSubAccount = 0 THEN 0 ELSE logincount END,
 		iplogin = @inputLoginIP, 		
-		lastlogged = CURRENT_TIMESTAMP 
-	WHERE custid = @db_custid  */
+		lastlogged = CURRENT_TIMESTAMP,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE custid = @db_custid*/
 	
 	/*IF ISNULL(CAST(@IsDarkMode AS INT),-1)  = 1 
 	BEGIN

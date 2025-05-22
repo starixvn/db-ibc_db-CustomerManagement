@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_alp, wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_LoginDownline_Sub_KL]    
 	@SubUserName varchar(50),    
 	@UserPwd varchar(50),    
@@ -68,6 +68,8 @@ Revisions:
 	- 20210524@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 	- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+	- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+	- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 	- 20231218@Johnson: setup KL DR [redmine: #195700]
 
 Param's Explanation:
@@ -354,7 +356,12 @@ BEGIN
 		/* START --Jamie@20130327 Close accounts after 5 logins failed */
 		/*IF @failedcount > 5
 		BEGIN
-				UPDATE custSub WITH (ROWLOCK, UPDLOCK) SET closed = 1, logincount = 0 WHERE subaccid = @subaccid 		
+				UPDATE custSub WITH (ROWLOCK, UPDLOCK) 
+				SET closed = 1, 
+					logincount = 0,
+					RepUpdateTime = dbo.f_GetDateTime2()					
+				WHERE subaccid = @subaccid 		
+				
 				SELECT	@LogData = '<Age_LoginDownline_Sub IP="' + @LoginIP + '" ' + 
 										'SubAccount="' + @SubUserName +'" ' +
 									' />'
@@ -387,7 +394,10 @@ BEGIN
 		--IF (@failedcount <= 255) -- max of tinyint
 		/*IF (@failedcount <= 5) 
 		BEGIN
-			UPDATE custSub with (rowlock, updlock) SET logincount = @failedcount WHERE subaccid = @subaccid 
+			UPDATE custSub with (rowlock, updlock) 
+			SET logincount = @failedcount,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE subaccid = @subaccid 
 		END*/
 		
 		SELECT @ErrMsg = CASE @Language WHEN 'E' THEN  'Wrong username/nickname or password.' 
@@ -396,8 +406,11 @@ BEGIN
 		RETURN    
 	END    
 
-	--UPDATE custSub with (rowlock, updlock) SET logincount = 0 WHERE subaccid = @subaccid 
-	      
+	/*UPDATE custSub with (rowlock, updlock) 
+	SET logincount = 0,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE subaccid = @subaccid */
+
 	 /**Agency info**/    
 	  
 	Declare @db_custid int,   @db_roleid tinyint,  @role nvarchar(20)  
@@ -824,7 +837,9 @@ BEGIN
 	SELECT @Currency = Currency, @CurrencyId = @db_currency FROM exchange with (nolock) WHERE exchangeid = @db_currency  
 	/*  
 	UPDATE customer with (rowlock, updlock)  
-	SET iplogin = case when @db_loginip<>'' then @LoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 
+	SET iplogin = case when @db_loginip<>'' then @LoginIP else '' end, 
+		lastlogged = CURRENT_TIMESTAMP,
+		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE custid = @db_custid  
 	  */
 	-- Don't write log for AdminLogin
@@ -842,6 +857,7 @@ BEGIN
 /*
 			UPDATE cl
 			SET IsProtectedMode = 1, @IsKickOut = 1
+			   ,RepUpdateTime = dbo.f_GetDateTime2()
 			FROM CustLoginInfo cl WITH (ROWLOCK)
 			WHERE custid = @CustID
 

@@ -21,6 +21,7 @@ AS
 		Revisions:
 			- 20130121@Dan: change linked server DB052 to DBEAS, Write log on DBTXN server in case of DBLOG server failure
 			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+			- 20241210@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 			- 20231219@Johnson: setup KL DR [redmine: #195700]
 		Parameter's Explanation:
 	*/ 
@@ -68,7 +69,8 @@ SET NOCOUNT ON
 		IF (@failedcount <= 255) -- max of tinyint
 		BEGIN
 			UPDATE customer WITH (ROWLOCK, UPDLOCK) 
-			SET logincount = @failedcount 
+			SET logincount = @failedcount, 
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 		END*/
 	END
@@ -95,7 +97,11 @@ SET NOCOUNT ON
 		ELSE
 		BEGIN
 			/*UPDATE customer with (rowlock, updlock)
-			SET logincount = 0, iplogin = @LoginIP, lastlogged = CURRENT_TIMESTAMP, on_sessionid = 0
+			SET logincount = 0, 
+				iplogin = @LoginIP, 
+				lastlogged = CURRENT_TIMESTAMP, 
+				on_sessionid = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE custid = @custid
 */
 			SET @LogData = 'User:' + @username + ' Logged in to EAS SITE' + ' - ' + 'Result:Success'		

@@ -72,6 +72,9 @@ AS
 		- 20210408@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20210824@Elodie: Implement Protection Code [Redmine: #160151]
 		- 20220110@Eden: Saba Casino use DCS Setting [RedmineID: #164280]
+		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250417@Johnson:  Upgrade ExchangeID data type [redmineID: #224440]
 		- 20231218@Johnson: setup KL DR [redmine: #195700]	
 	Param's Explanation:
 		• @IsNickname: is use Nickname or not
@@ -100,7 +103,7 @@ BEGIN
 	DECLARE @Begin DATETIME, @End DATETIME, @Duration INT, @LogData NVARCHAR(200), @ActionID INT
 	DECLARE	@inputLoginIP VARCHAR(15), @rowcount INT, @OldUserPwd VARCHAR(40)
 	DECLARE @db_custid INT, @db_userpwd NVARCHAR(50), @db_roleid TINYINT, @failedcount INT, @role NVARCHAR(20), @db_ProtectionCode VARCHAR(30), @db_IsProtectedMode BIT
-	DECLARE @db_currency TINYINT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
+	DECLARE @db_currency INT, @closed BIT , @db_loginip NVARCHAR(20), @db_enabled BIT, @locked TINYINT
     
 	SET @Begin = GETDATE() 
 	SELECT	@inputLoginIP = @LoginIP 
@@ -696,9 +699,15 @@ BEGIN
 		/* START --Jamie@20130327 Close accounts after 5 logins failed */
 	/*	IF @failedcount > 5
 		BEGIN
-			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) SET Locked = 2 WHERE custid = @db_custid 
+			UPDATE CustProductStatus WITH (ROWLOCK, UPDLOCK) 
+			SET Locked = 2,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 		    
-			UPDATE Customer WITH (ROWLOCK,UPDLOCK) SET logincount = 0 WHERE custid = @db_custid 
+			UPDATE Customer WITH (ROWLOCK,UPDLOCK) 
+			SET logincount = 0,
+				RepUpdateTime = dbo.f_GetDateTime2()
+			WHERE custid = @db_custid 
 			--log data to UserLog_RunSP 
 			SELECT @LogData = '<Age_LoginDownline IP="'+ @inputLoginIP + '" />'		    
 			
@@ -733,7 +742,8 @@ BEGIN
 
 		BEGIN
 			UPDATE	customer with (rowlock, updlock) 
-			SET		logincount = @failedcount 
+			SET		logincount = @failedcount, 
+					RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE	custid = @db_custid 
 		END*/
 
@@ -752,7 +762,8 @@ BEGIN
 			SET @Duration = DATEDIFF(millisecond,@Begin,@End)	
 
 			UPDATE cl
-			SET IsProtectedMode = 1, @IsKickOut = 1
+			SET  IsProtectedMode = 1, @IsKickOut = 1
+				,RepUpdateTime = dbo.f_GetDateTime2()
 			FROM CustLoginInfo cl WITH (ROWLOCK)
 			WHERE custid = @CustID
 
@@ -786,8 +797,11 @@ BEGIN
 	  
 	/*  
 	UPDATE customer with (rowlock, updlock)  
-	SET logincount = 0, iplogin = case when @db_loginip<>'' then @inputLoginIP else '' end, lastlogged = CURRENT_TIMESTAMP 
-	WHERE custid = @db_custid  
+	SET logincount = 0, 
+		iplogin = case when @db_loginip<>'' then @inputLoginIP else '' end, 
+		lastlogged = CURRENT_TIMESTAMP,
+		RepUpdateTime = dbo.f_GetDateTime2()
+	WHERE custid = @db_custid   
 	*/  
 	-- Don't write log for AdminLogin
 	if (@AdminUsername <> '' or @AdminUsername is not null)
