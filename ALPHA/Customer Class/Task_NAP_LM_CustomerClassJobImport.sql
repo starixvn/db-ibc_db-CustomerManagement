@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Task_NAP_LM_CustomerClassJobImport] 
 AS
 /*
@@ -12,6 +12,7 @@ AS
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256]  
 		- 20240315@Winfred: [NAP CM] - CCMgt - Enhance SP call loop for updating policies [RedmineID: #201256] 
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 */ 
@@ -46,7 +47,7 @@ BEGIN
 	WHERE ID = @IDMin
 
 	-- Insert data 
-	EXEC NAP_LM_CustomerClassPolicySiteIns @IsOverwrite=@IsOverwrite,@UserID=@UserID,@PolicySites=@PolicySites,@IP=@IP,@IsTest=@IsTest, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
+	EXEC NAP_CM_CustomerClassPolicySiteIns @IsOverwrite=@IsOverwrite,@UserID=@UserID,@PolicySites=@PolicySites,@IP=@IP,@IsTest=@IsTest, @ErrCode = @ErrCode OUTPUT, @ErrMsg = @ErrMsg OUTPUT
 
 	-- Update table Queue
 	IF @ErrCode <> 0 -- Failed
@@ -61,7 +62,7 @@ BEGIN
 		SELECT @Subject = 'SQL Server Job System: ''NAP_LM: Import Queue Data'' failed on ' + @@SERVERNAME
 		-- Send letstalk if have error
 		SELECT @Msg = N'Dear all, on '+ CAST(@LastModifiedTime AS VARCHAR(50))  
-						+ N' GMT-4, SP NAP_LM_CustomerClassPolicySiteIns encountered error(s) during runtime as: Error ' + CAST(@ErrCode AS VARCHAR(10))  
+						+ N' GMT-4, SP NAP_CM_CustomerClassPolicySiteIns encountered error(s) during runtime as: Error ' + CAST(@ErrCode AS VARCHAR(10))  
 						+ N': ' +  @ErrMsg + ' - ID ' + CAST(@IDMin AS VARCHAR(10))  + N' : ' 
 					 + REPLACE(REPLACE(REPLACE(REPLACE(@PolicySites, '<ROOT>', ''), '</ROOT>', ''), '<r', '['), '/>', ']')  
 					 + N'. Please check this SP again. Thank you. (This is an auto-mail, please do not reply)'
@@ -74,7 +75,7 @@ BEGIN
 			SELECT @recipients = 'pontus@starixsoft.com,it@starixsoft.com,julien.le@starixsoft.com'
 
 		SELECT @Msg = N'Dear all,'
-					 + N'<br> On ' + CAST(@LastModifiedTime AS VARCHAR(50))  + ' GMT-4, SP NAP_LM_CustomerClassPolicySiteIns encountered error(s) during '
+					 + N'<br> On ' + CAST(@LastModifiedTime AS VARCHAR(50))  + ' GMT-4, SP NAP_CM_CustomerClassPolicySiteIns encountered error(s) during '
 					 + N'<br> runtime: ' + CAST(@ErrCode AS VARCHAR(10))  + ' : ' +  @ErrMsg + ' </br>'
 					 + N'<br> ID ' + CAST(@IDMin AS VARCHAR(10))  + N' : Info ' 
 					 + REPLACE(REPLACE(REPLACE(REPLACE(@PolicySites, '<ROOT>', ''), '</ROOT>', ''), '<r', '['), '/>', ']')  + N' </br>'

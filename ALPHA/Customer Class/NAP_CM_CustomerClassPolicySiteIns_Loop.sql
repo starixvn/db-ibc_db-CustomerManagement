@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteIns_Loop] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicySiteIns_Loop] 
 	@PolicySites  NVARCHAR(MAX)
 	, @IsTest		TINYINT
 	, @IsOverwrite	BIT = 1
@@ -14,12 +14,13 @@ AS
 	Date: 20240223
 	Task : [NAP CM] Update SP to call loop for updating policies [#201256]
 	DB: DBCUST/CustDB
-	Original:
+	Original: Change Name for NAP_LM_CustomerClassPolicySiteIns_Loop
 
 	Revisions:
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
 		- 20240315@Winfred: [NAP CM] - CCMgt - Enhance SP call loop for updating policies [RedmineID: #201256] 
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -37,7 +38,7 @@ AS
 				  4 : Oddsfeed
 				  5 : DirectAPI"
 	* @IsOverwrite : 1. Overwrite, 0. Not Overwrite
-	Example: NAP_LM_CustomerClassPolicySiteIns_Loop 
+	Example: NAP_CM_CustomerClassPolicySiteIns_Loop 
 		@PolicySites ='<ROOT><r PolicyID=1 Site="6777777" Currency=20 Platform=1/> 
 						<r PolicyID=2 PolicyTitle="2222222" Currency=4 Platform=2/> </ROOT>' ,@ErrCode =0, @ErrMsg = '',  @IP = '11.12.11.10', @UserID = 6
 */ 
@@ -80,7 +81,7 @@ BEGIN
 	 END CATCH  
 
 	 INSERT INTO #CustomerClass_Group (PolicyID , Site , Currency , Platform , STT, BatchID)
-	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform , STT
+	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS SMALLINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform , STT
 	   ,DENSE_RANK() OVER(PARTITION BY b.Site  ORDER BY  STT) AS BatchID
 	 FROM #CustomerClass a  
 	  CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b  

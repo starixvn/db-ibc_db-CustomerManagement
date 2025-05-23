@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteDel] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicySiteDel] 
 	@PolicySites  NVARCHAR(MAX)
 	, @IsTest TINYINT
 	, @UserID		INT
@@ -12,12 +12,13 @@ AS
 	Date: 20231005
 	Task : [NAP CM] Build Customer Class Management [#195100]
 	DB: DBCUST/CustDB
-	Original:
+	Original: Change Name for NAP_LM_CustomerClassPolicySiteDel
 
 	Revisions:
 		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100]
 		- 20231107@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699]  
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 	* @PolicySites:
@@ -25,7 +26,7 @@ AS
 			   <r PolicyID = 2 Site = "2222222" Currency = "4" Platform = "2,4"/>
 		</ROOT>'
 
-	Example: NAP_LM_CustomerClassPolicySiteDel @PolicySites ='<ROOT><r PolicyID = 1 Site = "6777777" Currency = "20,75" Platform = "1,2,3,6"/> <r PolicyID = 2 Site = "2222222" Currency = "4" Platform = "2,4"/> </ROOT>' ,@ErrCode =0, @ErrMsg = '',  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_CM_CustomerClassPolicySiteDel @PolicySites ='<ROOT><r PolicyID = 1 Site = "6777777" Currency = "20,75" Platform = "1,2,3,6"/> <r PolicyID = 2 Site = "2222222" Currency = "4" Platform = "2,4"/> </ROOT>' ,@ErrCode =0, @ErrMsg = '',  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;   
@@ -42,10 +43,10 @@ BEGIN
 	 IF @PolicySites IS NULL OR @PolicySites = ''  
 	  RETURN  
   
-	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT,   
 		   Platform TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME, isFinished BIT DEFAULT(0))  
 	 CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))  
-	 CREATE TABLE #tempCC(PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)	
+	 CREATE TABLE #tempCC(PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, Platform TINYINT)	
 	 CREATE NONCLUSTERED INDEX inx_temp ON #CustomerClassSiteManagement_history(  PolicyID ) INCLUDE ( Currency, Platform )
 	 CREATE CLUSTERED INDEX inx_tempCC ON #tempCC( PolicyID, Site, Currency, Platform )
 
@@ -80,7 +81,7 @@ BEGIN
 	END	
 
 	 INSERT INTO #CustomerClassSiteManagement_history(PolicyID, Site, Currency, Platform)  
-	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform
+	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS SMALLINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform
 	 FROM #CustomerClass a  
 		CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b
 		CROSS APPLY ( SELECT VALUE AS Currency FROM STRING_SPLIT(a.Currency,',') WHERE VALUE <> '' ) c  

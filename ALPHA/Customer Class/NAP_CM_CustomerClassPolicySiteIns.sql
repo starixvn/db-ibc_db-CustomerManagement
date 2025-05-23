@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteIns] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicySiteIns] 
 	@PolicySites  NVARCHAR(MAX)
 	, @IsTest		TINYINT
 	, @IsOverwrite	BIT = 1
@@ -13,7 +13,7 @@ AS
 	Date: 20221209
 	Task : [NAP CM] Build Customer Class Management [#180904]
 	DB: DBCUST/CustDB
-	Original:
+	Original: Change Name for NAP_LM_CustomerClassPolicySiteIns
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
@@ -21,6 +21,7 @@ AS
 		- 20231101@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -38,7 +39,7 @@ AS
 				  4 : Oddsfeed
 				  5 : DirectAPI"
 	* @IsOverwrite : 1. Overwrite, 0. Not Overwrite
-	Example: NAP_LM_CustomerClassPolicySiteIns @PolicySites ='<ROOT><r PolicyID=1 Site="6777777" Currency=20 Platform=1/> 
+	Example: NAP_CM_CustomerClassPolicySiteIns @PolicySites ='<ROOT><r PolicyID=1 Site="6777777" Currency=20 Platform=1/> 
 		<r PolicyID=2 PolicyTitle="2222222" Currency=4 Platform=2/> </ROOT>' ,@ErrCode =0, @ErrMsg = '',  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
@@ -59,13 +60,13 @@ BEGIN
 	 IF @PolicySites IS NULL OR @PolicySites = ''  
 	  RETURN  
    
-	 CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+	 CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT,   
 		   Platform TINYINT, IsTest TINYINT,SportType SMALLINT, isDeposit BIT, STT INT IDENTITY (1,1), isFinished BIT DEFAULT(0))  
-	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT,isFinished BIT DEFAULT(0)) 
-	 CREATE TABLE #ConverOldData( PolicyID_new INT, Site_new NVARCHAR(50), Currency_new TINYINT, Platform_new TINYINT, 
-								  PolicyID_old INT, Site_old NVARCHAR(50), Currency_old TINYINT, Platform_old TINYINT, isDeposit BIT)
+	 CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, Platform TINYINT,isFinished BIT DEFAULT(0)) 
+	 CREATE TABLE #ConverOldData( PolicyID_new INT, Site_new NVARCHAR(50), Currency_new SMALLINT, Platform_new TINYINT, 
+								  PolicyID_old INT, Site_old NVARCHAR(50), Currency_old SMALLINT, Platform_old TINYINT, isDeposit BIT)
 	 CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))  
-	CREATE TABLE #tempPS(PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)
+	CREATE TABLE #tempPS(PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, Platform TINYINT)
 	 CREATE NONCLUSTERED INDEX ix_temp ON #CustomerClassSiteManagement(  PolicyID, STT,  Currency, Platform, isDeposit, Site ) 
 	 CREATE CLUSTERED INDEX cix_tempPS ON #tempPS( PolicyID, Site, Currency, Platform )
 
@@ -93,7 +94,7 @@ BEGIN
 	 END CATCH  
   
 	 INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, SportType, IsTest, isDeposit)  
-	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType , @IsTest , s.isDeposit
+	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS SMALLINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType , @IsTest , s.isDeposit
 	 FROM #CustomerClass a  
 	  INNER JOIN CustomerClassPolicyManagement aRule WITH(NOLOCK) ON a.PolicyID = aRule.PolicyID
 	  CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b  

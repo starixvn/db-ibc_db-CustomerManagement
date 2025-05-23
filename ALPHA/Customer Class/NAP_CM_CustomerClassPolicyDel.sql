@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicyDel] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicyDel] 
 	  @Policies		VARCHAR(MAX)
 	, @UserID		INT
 	, @IsTest		TINYINT	
@@ -12,16 +12,17 @@ AS
 	Date: 20231101
 	Task : [NAP CM] Support to delete settings [#188590]
 	DB: DBCUST/CustDB
-	Original:
+	Original: change name for NAP_LM_CustomerClassPolicyDel
 
 	Revisions:
 		- 20231101@Winfred: [NAP CM] Customer Class - Support to delete settings [RedmineID: #188590] 
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 	* @RuleIDs: List ID Rule
 
-	Example: NAP_LM_CustomerClassPolicyDel @Policies = '1,2,3,4,5,6,9,7,8,11' , @ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
+	Example: NAP_CM_CustomerClassPolicyDel @Policies = '1,2,3,4,5,6,9,7,8,11' , @ErrCode = 0, @ErrMsg = '' ,  @IP = '11.12.11.10', @UserID = 6
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -46,9 +47,9 @@ BEGIN
 		RETURN
 	END	
 	
-	CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency TINYINT,   
+	CREATE TABLE #CustomerClassSiteManagement_history( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT,   
 		   Platform TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME, isFinished BIT DEFAULT(0))  
-	CREATE TABLE #tempCC(PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform TINYINT)	
+	CREATE TABLE #tempCC(PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, Platform TINYINT)	
 	CREATE TABLE #CustomerClassPolicy_History( PolicyID INT PRIMARY KEY, PolicyTitle VARCHAR(500),RuleIDs VARCHAR(MAX),
 			SportType SMALLINT, IsTest TINYINT,LastModifiedUser INT, LastModifiedTime DATETIME)
 	 CREATE NONCLUSTERED INDEX inx_temp ON #CustomerClassSiteManagement_history(  PolicyID ) INCLUDE ( Currency, Platform, Site ) 
