@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassSetting_RuleDetail] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+CREATE PROCEDURE [dbo].[NAP_CM_CustomerClassSetting_RuleDetail] 
 	 @RuleID INT
 	,@Site NVARCHAR(MAX) = NULL
 	,@SportTypes VARCHAR(2000)
@@ -12,13 +12,14 @@ AS
 	Date: 20221209
 	Task : [NAP CM] Build Customer Class Management [#180904]
 	DB: DBCUST/CustDB
-	Original:
+	Original: Change Name for NAP_LM_CustomerClassSetting_RuleDetail
 
 	Revisions:
 		- 20240605@Winfred: [NAP CM] Customer Class Setting - Update the way to get CC Management Settings [201770]
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
-	Example: NAP_LM_CustomerClassSetting_RuleDetail @Site = 'BEST-ODDS', @RuleID = 86, @SportType = 2, @Currencies = '0', @IsTest = 1	
+	Example: NAP_CM_CustomerClassSetting_RuleDetail @Site = 'BEST-ODDS', @RuleID = 86, @SportType = 2, @Currencies = '0', @IsTest = 1	
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -26,7 +27,7 @@ BEGIN
     CREATE TABLE #CustomerClassSiteManagement ( Site NVARCHAR(50), CurrencyName NVARCHAR(MAX),Platform VARCHAR(100))  
 	CREATE NONCLUSTERED INDEX Ix_CustomerClassSiteManagement ON #CustomerClassSiteManagement (Platform) INCLUDE (Site)  
     
-	CREATE TABLE #CustomerClass_Platform( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, Platform VARCHAR(100))  
+	CREATE TABLE #CustomerClass_Platform( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, Platform VARCHAR(100))  
     CREATE CLUSTERED INDEX  CIX_CustomerClass_Platform ON #CustomerClass_Platform (PolicyID, Site, Platform)  
 
 	CREATE TABLE #CustomerClass_Currency( PolicyID INT, Site NVARCHAR(50), CurrencyName NVARCHAR(MAX), Platform VARCHAR(100))  
@@ -37,7 +38,7 @@ BEGIN
 	CREATE NONCLUSTERED INDEX  IX_PolicyRule ON #PolicyRule (PolicyID)    
 	
 	CREATE TABLE #SportType(SportType SMALLINT)
-	CREATE TABLE #Currency(Currency INT PRIMARY KEY)
+	CREATE TABLE #Currency(Currency SMALLINT PRIMARY KEY)
 	
 	DECLARE @SiteTbl TABLE(Site NVARCHAR(50), isDeposit BIT)
 	INSERT INTO @SiteTbl (Site) SELECT  'All' --All

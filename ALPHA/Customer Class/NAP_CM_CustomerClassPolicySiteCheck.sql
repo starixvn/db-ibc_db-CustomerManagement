@@ -1,5 +1,5 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassPolicySiteCheck] 
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassPolicySiteCheck] 
 	@PolicySites  VARCHAR(MAX)
 	, @IsTest TINYINT
 	, @ErrCode		INT				= 0		OUTPUT
@@ -10,13 +10,14 @@ AS
 	Date: 20221209
 	Task : [NAP CM] Build Customer Class Management [#180904]
 	DB: DBCUST/CustDB
-	Original:
+	Original: Change Name for NAP_LM_CustomerClassPolicySiteCheck
 
 	Revisions:
 		- 20221209@Winfred: [NAP CM] Build Customer Class Management [RedmineID: #180904] 
 		- 20231005@Winfred: [NAP CM] Enhance for Site Management [RedmineID: #195100] 
 		- 20231107@Winfred: [NAP CM] Customer Class - Auto include new items for rows that is selected option "All" [RedmineID: #186699] 
 		- 20240223@Winfred: [NAP CM] - CCMgt - Update SP to call loop for updating policies [RedmineID: #201256] 
+		- 20250507@Winfred: [NAP CM] Risk Control - Upgrade ExchangeID Data Type[Redmine: #214119]
 
 	Param's Explanation:
 	* @Policys:
@@ -33,7 +34,7 @@ AS
 				  3 : APP
 				  4 : Oddsfeed
 				  5 : DirectAPI"
-	Example: NAP_LM_CustomerClassPolicySiteCheck @PolicySites ='<ROOT><r PolicyID=1 Site="6777777" Currency=20 Platform=1/> 
+	Example: NAP_CM_CustomerClassPolicySiteCheck @PolicySites ='<ROOT><r PolicyID=1 Site="6777777" Currency=20 Platform=1/> 
 		<r PolicyID=2 PolicyTitle="2222222" Currency=4 Platform=2/> </ROOT>' ,@ErrCode =0, @ErrMsg = ''
 */ 
 BEGIN
@@ -45,10 +46,10 @@ BEGIN
 	IF @PolicySites IS NULL	OR @PolicySites = ''
 		RETURN
 	
-	CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, 
+	CREATE TABLE #CustomerClassSiteManagement( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, 
 							Platform TINYINT, IsTest TINYINT,SportType SMALLINT, isDeposit BIT, STT INT IDENTITY (1,1))
 	CREATE TABLE #CustomerClass( PolicyID INT, Site NVARCHAR(MAX), Currency VARCHAR(MAX), Platform VARCHAR(MAX))
-	CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency TINYINT, CurrencyName	nvarchar(50), Platform VARCHAR(MAX))
+	CREATE TABLE #CustomerClassCurrency( PolicyID INT, Site NVARCHAR(50), Currency SMALLINT, CurrencyName nvarchar(50), Platform VARCHAR(MAX))
 	CREATE CLUSTERED INDEX CIX_CustomerClassSiteManagement ON #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform)
 	CREATE NONCLUSTERED INDEX IX_CustomerClassSiteManagement ON #CustomerClassSiteManagement(Site, Currency, Platform) INCLUDE (STT)
 	CREATE NONCLUSTERED INDEX ix_temp ON #CustomerClassCurrency(PolicyID, Site) INCLUDE (Platform,Currency)
@@ -80,7 +81,7 @@ BEGIN
 	END CATCH
 
 	INSERT INTO #CustomerClassSiteManagement(PolicyID, Site, Currency, Platform, SportType, IsTest, isDeposit)  
-	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS TINYINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType , @IsTest , s.isDeposit
+	 SELECT a.PolicyID, b.Site, CAST(c.Currency AS SMALLINT) AS Currency, CAST(d.Platform  AS TINYINT) AS Platform  , aRule.SportType , @IsTest , s.isDeposit
 	FROM #CustomerClass a
 	  INNER JOIN CustomerClassPolicyManagement aRule WITH(NOLOCK) ON a.PolicyID = aRule.PolicyID
 	  CROSS APPLY ( SELECT VALUE AS site FROM STRING_SPLIT(a.Site,',') WHERE VALUE <> '' ) b  
