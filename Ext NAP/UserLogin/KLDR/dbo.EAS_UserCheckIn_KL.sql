@@ -25,6 +25,6 @@ WHERE custid = @custid
 INSERT INTO eaOn_User (custid, NetSessionID, isKickedOut, IP) 
 VALUES (@custid, @NetSessionID, 0, @IP)
 */
-SELECT @on_userid = SCOPE_IDENTITY()
+SELECT @on_userid = 0
 	
 GO

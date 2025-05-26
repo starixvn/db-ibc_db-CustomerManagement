@@ -43,6 +43,6 @@ SET NOCOUNT ON
 --values
 --	(@custid, @NetSessionid,0, @ServerID, 0, @IP, @SubAccID,GETDATE())
 
-Select @On_UserID = SCOPE_IDENTITY()
+Select @On_UserID = 0;
 
 GO

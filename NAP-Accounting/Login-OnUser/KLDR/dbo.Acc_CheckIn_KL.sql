@@ -58,7 +58,7 @@ insert into On_User_Admin
 values  
  (@custid, @NetSessionid,0, @ServerID, 0, @IP, @SubAccID)  
   */
-Select @On_UserID = SCOPE_IDENTITY()  
+Select @On_UserID = 0;  
   
 
 
