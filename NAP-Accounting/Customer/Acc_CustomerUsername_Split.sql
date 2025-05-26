@@ -11,6 +11,7 @@ AS
 		
 	Revisions:
 		- 20240704@Tacy: Create SP [Redmine: #206291]
+		- 20250520@Virgil: NAP - Text to Username Enhancement [Redmine: #227391]
 		
 	Parameter's Explanation:
 */
@@ -19,6 +20,8 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @tmpUser TABLE (custid INT, username VARCHAR(200), roleid TINYINT)
+	DECLARE @tmpNickname TABLE (custid INT, username VARCHAR(200), nickname VARCHAR(100), roleid TINYINT)
+
 	DECLARE @tmpResult TABLE (username VARCHAR(100), ErrMsg VARCHAR(100), ErrCode TINYINT)
 
 	INSERT INTO @tmpUser(username)
@@ -26,10 +29,20 @@ BEGIN
 	FROM STRING_SPLIT(@username,'#') ss
 	CROSS APPLY dbo.f_Acc_UserNameSplit (TRIM(ss.value),'-',',',';')
 
+	-- Insert list users have nickname
+	INSERT INTO @tmpNickname(custid, username, nickname, roleid)
+	SELECT c.custid, c.username, c.username2, c.roleid
+	FROM @tmpUser t
+		INNER JOIN dbo.Customer c WITH (NOLOCK) ON t.username = c.username2
+
+	-- Update customer info from username list
 	UPDATE t
 	SET t.custid = c.custid, t.roleid = c.roleid
 	FROM @tmpUser t
 		LEFT JOIN dbo.Customer c WITH (NOLOCK) ON t.username = c.username
+
+	-- Remove username that already has nickname 
+	DELETE FROM @tmpUser WHERE username IN (SELECT nickname FROM @tmpNickname)
 
 	--get denied site/currency:
 	DECLARE @tmpSite TABLE (siteid INT,site NVARCHAR(50), SpecialGroup TINYINT )
@@ -81,20 +94,21 @@ BEGIN
 		SELECT username, 'Invalid Super account', 100
 		FROM @tmpUser
 		WHERE custid IS NULL
-		UNION
-		SELECT t.username, 'Invalid Super account', 0
-		FROM @tmpUser t
-			LEFT JOIN @tmpResult rs ON t.username = rs.username
-		WHERE roleid<>4 AND rs.username IS NULL
+
 	END
 	
 	/* ===== Valid case ===== */
 	BEGIN
 		INSERT INTO @tmpResult(username, ErrMsg, ErrCode)
-		SELECT t.username, 'Valid Username.', 0
+		SELECT t.username, 'Valid Username', 0
 		FROM @tmpUser t 
 			LEFT JOIN @tmpResult rs ON t.username = rs.username
 		WHERE rs.username IS NULL
+		UNION
+		SELECT t.nickname, 'Valid Nicknames', 99
+		FROM @tmpNickname t 
+			LEFT JOIN @tmpResult nn ON t.nickname = nn.username
+		WHERE nn.username IS NULL
 	END
 
 	/* ===== Return result ===== */
