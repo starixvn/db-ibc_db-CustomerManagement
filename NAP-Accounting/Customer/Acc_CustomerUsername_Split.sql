@@ -19,8 +19,8 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @tmpUser TABLE (custid INT, username VARCHAR(200), roleid TINYINT)
-	DECLARE @tmpNickname TABLE (custid INT, username VARCHAR(200), nickname VARCHAR(100), roleid TINYINT)
+	DECLARE @tmpUser TABLE (custid INT, username VARCHAR(200))
+	DECLARE @tmpNickname TABLE (custid INT, username VARCHAR(200), nickname VARCHAR(100))
 
 	DECLARE @tmpResult TABLE (username VARCHAR(100), ErrMsg VARCHAR(100), ErrCode TINYINT)
 
@@ -30,16 +30,37 @@ BEGIN
 	CROSS APPLY dbo.f_Acc_UserNameSplit (TRIM(ss.value),'-',',',';')
 
 	-- Insert list users have nickname
-	INSERT INTO @tmpNickname(custid, username, nickname, roleid)
-	SELECT c.custid, c.username, c.username2, c.roleid
+	INSERT INTO @tmpNickname(custid, username, nickname)
+	SELECT c.custid, c.username, c.username2
 	FROM @tmpUser t
 		INNER JOIN dbo.Customer c WITH (NOLOCK) ON t.username = c.username2
+	UNION 
+	SELECT ci.custid, ci.username, ci.username2
+	FROM @tmpUser t
+		INNER JOIN GlobCustDB.dbo.CustInfoMini ci WITH (NOLOCK) ON t.username = ci.username2
+	UNION 
+	SELECT cs.custid, cs.username, cs.username2
+	FROM @tmpUser t
+		INNER JOIN GlobCustDB.dbo.CustSubMini cs WITH (NOLOCK) ON t.username = cs.username2
+
 
 	-- Update customer info from username list
 	UPDATE t
-	SET t.custid = c.custid, t.roleid = c.roleid
+	SET t.custid = c.custid
 	FROM @tmpUser t
 		LEFT JOIN dbo.Customer c WITH (NOLOCK) ON t.username = c.username
+
+	UPDATE t
+	SET t.custid = c.custid
+	FROM @tmpUser t
+		LEFT JOIN GlobCustDB.dbo.CustInfoMini c WITH (NOLOCK) ON t.username = c.username
+	WHERE t.custid IS NULL
+
+	UPDATE t
+	SET t.custid = c.custid
+	FROM @tmpUser t
+		LEFT JOIN GlobCustDB.dbo.CustSubMini c WITH (NOLOCK) ON t.username = c.username
+	WHERE t.custid IS NULL
 
 	-- Remove username that already has nickname 
 	DELETE FROM @tmpUser WHERE username IN (SELECT nickname FROM @tmpNickname)
@@ -85,7 +106,7 @@ BEGIN
 		INSERT INTO @tmpResult (username, ErrMsg, ErrCode)
 		SELECT DISTINCT t.username, 'You don''t have permission to access', 99
 		FROM @tmpUser t
-			INNER JOIN customer c WITH (NOLOCK) ON c.custid = t.custid
+			INNER JOIN dbo.customer c WITH (NOLOCK) ON c.custid = t.custid
 		WHERE c.currency IN (SELECT exchangeID FROM @tmpExchange)
 			OR c.site IN (SELECT site FROM @tmpSite)
 
