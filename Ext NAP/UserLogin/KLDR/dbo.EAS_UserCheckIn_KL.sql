@@ -1,0 +1,30 @@
+/*<info serverAlias="DBPOL-NAP_UserControl" executers="wsv_xnap" viewers="" isFunction="0"></info>*/
+ALTER PROCEDURE [dbo].[EAS_UserCheckIn_KL]
+	@custid			INT,
+	@NetSessionID	VARCHAR(50),
+	@on_userid		INT OUTPUT,
+	@IP				NVARCHAR(50)
+AS
+	/*
+		Created: Dan
+		Date: 2012-11-16
+		Task: user check in 
+		DB: DBPOL/NAP_UserControl
+		
+		Revisions:
+			- 20190502@Kan: DBPOL/NAP_UserControl Migration, Move sp from DBEAS/bodb_EAS to DBPOL/NAP_UserControl [Redmine: #111865]
+			- 20231219@Johnson: setup KL DR [redmine: #195700]
+		Parameter's Explanation:
+	*/
+SET NOCOUNT ON 
+/*
+UPDATE eaOn_User WITH(UPDLOCK,ROWLOCK) 
+SET iskickedout = 1, reload_time = GETDATE()
+WHERE custid = @custid
+
+INSERT INTO eaOn_User (custid, NetSessionID, isKickedOut, IP) 
+VALUES (@custid, @NetSessionID, 0, @IP)
+*/
+SELECT @on_userid = 0
+	
+GO
