@@ -1,6 +1,6 @@
 ﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Acc_ServerDBConfigSelByCust]
+ALTER PROCEDURE [dbo].[Acc_ServerDBConfigSelByCust_KL]
 	@CustID INT = NULL,
 	@username VARCHAR(30) = NULL
 AS
