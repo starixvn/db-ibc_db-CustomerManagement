@@ -37,7 +37,8 @@ AS
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 		- 20241230@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
-
+		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #221252]
+		
 	Param's Explanation:
 		@Case = 0 : No change
 		      = 1 : IsGroupHeadline 0-> 0, the user change group
@@ -103,8 +104,8 @@ BEGIN
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 
 		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
-			OUTPUT DELETED.CustID, dbo.f_GetDateTime2()
-			INTO dbo.CustGroupHeadline_Del_InHouse(CustID, RepUpdateTime)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2(), DELETED.ID
+			INTO CustGroupHeadline_Del_Inhouse (CustID, RepUpdateTime, ID)
 		WHERE custid IN (SELECT value FROM STRING_SPLIT(@CustIDList, ','))
 		
 		SELECT @ErrMsg = 'Group of ' + COALESCE(CAST(@UsernameHL AS NVARCHAR(300)), SPACE(1)) + ' has been removed.'

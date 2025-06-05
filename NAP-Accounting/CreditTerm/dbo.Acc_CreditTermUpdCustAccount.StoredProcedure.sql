@@ -23,6 +23,7 @@ AS
 		- 20160915@Elodie: SMA Mangement allows to input freetext for Owner info [Redmine:#63349]
 		- 20240909@Tacy: NAP - White Label [Redmine:#209807]
 		- 20250102@Hughie: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20250317@July: Scale Out DBCUST - Change unique key table CustGroupHeadline [Redmine: #221252]
 */
 BEGIN 
 	DECLARE @NotificationInfo VARCHAR(MAX), @CreateDate DATETIME, @CustID_Headline INT
@@ -31,8 +32,8 @@ BEGIN
 	IF @isgroupheadline = 0
 	BEGIN
 		DELETE dbo.CustGroupHeadline WITH (ROWLOCK)
-		OUTPUT DELETED.custid, dbo.f_GetDateTime2()
-		INTO CustGroupHeadline_Del_Inhouse(custid,RepUpdateTime)
+			OUTPUT DELETED.CustID, dbo.f_GetDateTime2(), DELETED.ID
+			INTO CustGroupHeadline_Del_Inhouse (CustID, RepUpdateTime, ID)
 		WHERE CustID = @custid
 	END
 	ELSE
@@ -75,7 +76,3 @@ BEGIN
 			,@IP		= @IP
 	END
 END
-GO
-GRANT EXECUTE ON [dbo].[Acc_CreditTermUpdCustAccount] TO [wsv_nap]
-GO
-GRANT VIEW DEFINITION ON [dbo].[Acc_CreditTermUpdCustAccount] TO [vnteam]
