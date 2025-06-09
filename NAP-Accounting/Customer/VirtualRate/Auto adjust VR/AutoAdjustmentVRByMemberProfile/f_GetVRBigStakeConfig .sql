@@ -1,11 +1,11 @@
-/*<info serverAlias="DBCust-CustDB" selecters="" viewers="" isFunction="1" isNested="1"></info>*/
+/*<info serverAlias="DBCust-CustDB,DBWH-bodb02" selecters="" viewers="" isFunction="1" isNested="1"></info>*/
 ALTER FUNCTION [dbo].f_GetVRBigStakeConfig(@Site NVARCHAR(50))	       
 RETURNS TABLE
 AS
 /*
 	Created by: 20210219@Eden
 	Task: Return VRBigStakeConfig 
-	DB: DBCust/CustDB
+	DB: DBCust/CustDB,DBWH-bodb02
 	Original: 
 	
 	Revisions:
