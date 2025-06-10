@@ -8,6 +8,7 @@ AS
 	DB: DBACC/bodb02
 	Revisions:
 		- 20240716@Elodie: Initial SP 
+		- 20250610@Tacy: Setup KL [Redmine: #223922]
 
 	Example:	EXEC Acc_Dep_ServerDBConfigSel
 */
@@ -18,12 +19,22 @@ BEGIN
 			cc.CustDBGroupID, 
 			cc.LinkedServerName AS LinkedServerNameDBCUST, 
 			cc.ClientAccessName AS ClientAccessNameDBCUST, 
-			cc.AGIP AS AGIP_DBCUST,
+			CASE cc.CustDBGroupID 
+				WHEN 0 THEN '10.146.11.150' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP_DBCUST,
 			cc.FQDN AS FQDN_DBCUST,
 			sc.SiteDBGroupID, 
 			sc.LinkedServerName, 
 			sc.ClientAccessName, 
-			sc.AGIP,
+			CASE sc.SiteDBGroupID 
+				WHEN 0 THEN '10.146.11.130' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP,
 			sc.FQDN
 	FROM custinfo c WITH (NOLOCK)
 		INNER JOIN Dep_CustSuper ds WITH (NOLOCK) ON c.srecommend = ds.custid

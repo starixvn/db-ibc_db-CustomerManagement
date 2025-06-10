@@ -9,6 +9,7 @@ AS
 	DB: DBCUST/CustDB
 	Revisions:
 		- 20240716@Elodie: Initial SP 
+		- 20250610@Tacy: Setup KL [Redmine: #223922]
 
 	Example:	EXEC API_SiteBuilder_GetCustomerSiteDB @SiteDBGroupId = 1
 */
@@ -19,12 +20,22 @@ BEGIN
 		SELECT	cc.CustDBGroupID, 
 			cc.LinkedServerName AS LinkedServerNameDBCUST, 
 			cc.ClientAccessName AS ClientAccessNameDBCUST, 
-			cc.AGIP AS AGIP_DBCUST,
+			CASE cc.CustDBGroupID 
+				WHEN 0 THEN '10.146.11.150' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP_DBCUST,
 			cc.FQDN AS FQDN_DBCUST,
 			sc.SiteDBGroupID, 
 			sc.LinkedServerName, 
 			sc.ClientAccessName, 
-			sc.AGIP,
+			CASE sc.SiteDBGroupID 
+				WHEN 0 THEN '10.146.11.130' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP,
 			sc.FQDN
 		FROM CustDBSiteConfig cc WITH (NOLOCK) 
 			INNER JOIN SiteDBConfig sc WITH (NOLOCK) ON cc.CustDBGroupID = sc.SiteDBGroupID
@@ -33,12 +44,22 @@ BEGIN
 		SELECT	cc.CustDBGroupID, 
 			cc.LinkedServerName AS LinkedServerNameDBCUST, 
 			cc.ClientAccessName AS ClientAccessNameDBCUST, 
-			cc.AGIP AS AGIP_DBCUST,
+			CASE cc.CustDBGroupID 
+				WHEN 0 THEN '10.146.11.150' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP_DBCUST,
 			cc.FQDN AS FQDN_DBCUST,
 			sc.SiteDBGroupID, 
 			sc.LinkedServerName, 
 			sc.ClientAccessName, 
-			sc.AGIP,
+			CASE sc.SiteDBGroupID 
+				WHEN 0 THEN '10.146.11.130' 
+				WHEN 1 THEN '10.146.11.160' 
+				WHEN 2 THEN '10.146.11.161' 
+				WHEN 3 THEN '10.146.11.162' 
+			END AS AGIP,
 			sc.FQDN
 		FROM CustDBSiteConfig cc WITH (NOLOCK) 
 			CROSS JOIN SiteDBConfig sc WITH (NOLOCK)
