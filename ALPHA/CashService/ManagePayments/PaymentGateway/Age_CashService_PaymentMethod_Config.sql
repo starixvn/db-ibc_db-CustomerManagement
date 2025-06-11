@@ -198,8 +198,8 @@ BEGIN
 	END
 
 	--START LOG 
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue VARCHAR(MAX), TrackingValue2 VARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX)
+	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue VARCHAR(MAX), TrackingValue2 VARCHAR(MAX) , TrackingValueMask VARCHAR(MAX), TrackingValueMask2 VARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValue VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX) , @TrackingValueMask VARCHAR(MAX), @TrackingValueMask2 VARCHAR(MAX)
 	DECLARE @xml XML, @ActionID INT
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -228,7 +228,26 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'), TYPE
 		);
-		SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
+		SET @TrackingValueMask = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
+
+		SET @xml = (
+		SELECT	@CustID                         AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID) AS '@SubAccName',
+				@IP                             AS '@IP',
+				(
+					SELECT	rt.AgentID					 AS '@CustID',
+							rt.ProviderID				 AS '@ProviderID',
+							rt.MethodID					 AS '@PaymentMethodID',
+							rt.TransactionType			 AS '@TransactionType',
+							''						 AS '@APIConfig',
+							rt.PaymentMethodStatus			 AS '@PaymentMethodStatus'
+					FROM @old_RetryAPIConfig rt
+					FOR XML PATH('PaymentProviderAPIConfig'), 
+					TYPE
+				)
+		FOR XML PATH('ROOT'), TYPE
+		);
+		SELECT @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 		-- LOG NEW VALUES FOR SETTING PAYMENT METHOD
 		SET @xml = (
@@ -247,11 +266,29 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'), TYPE
 		);
-		SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
-
+		SET @TrackingValueMask2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
+		
+		
+		SET @xml = (
+		SELECT	@CustID                         AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID) AS '@SubAccName',
+				@IP                             AS '@IP',
+				(
+					SELECT	@CustID					 AS '@CustID',
+							@ProviderID					 AS '@ProviderID',
+							@PaymentMethodID				 AS '@PaymentMethodID',
+							@TransactionType				 AS '@TransactionType',
+							''						 AS '@APIConfig',
+							@PaymentMethodStatus			 AS '@PaymentMethodStatus'
+					FOR XML PATH('PaymentProviderAPIConfig'), 
+					TYPE
+				)
+		FOR XML PATH('ROOT'), TYPE
+		);
+		SELECT @TrackingValue2 = REPLACE(@TrackingValueMask2, ISNULL(@APIConfig, ''), '');
 	
-		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
+		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValueMask, TrackingValueMask2, Duration)
+		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @TrackingValueMask , @TrackingValueMask2 , @DurationTime
 	END
 
 	IF ISNULL(@CheckExists_ProviderAPIConfig, 0) = 0  AND ISNULL(@CheckExists_AgentPaymentMethod, 0) = 0
@@ -308,6 +345,6 @@ BEGIN
 	END
 	
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValueMask , TrackingValueMask2 , Duration FROM @LogInfo_Tbl
 	
 END

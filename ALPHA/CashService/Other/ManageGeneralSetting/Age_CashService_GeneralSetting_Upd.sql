@@ -18,7 +18,7 @@ AS
 	DB: DBCust.AgencyCashService
 	
 	Revisions:
-		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
+		- 20250321@Helios: Agency Cash Service [Redmine: #223896] 
 
 	Param:
 		DECLARE @p1 INT , @p2 NVARCHAR(1000)
@@ -129,8 +129,8 @@ BEGIN
 
 	
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX) , @TrackingValueMask NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
 	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 305006
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -151,7 +151,9 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SET @TrackingValueMask = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SELECT @TrackingValue = REPLACE(REPLACE(@TrackingValueMask, ISNULL(@Mobile, ''), ''),ISNULL(@Contact, ''),'');
+
 
 	-- LOG OLD VALUES
 	SET @xml = (
@@ -170,14 +172,40 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SET @TrackingValueMask2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 
 
-	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
+	SET @xml = (
+		SELECT	@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
+				@IP										AS '@IP',
+				(
+					SELECT	
+							a.SettingInfo					AS '@SettingInfo',
+							''							AS '@Mobile',
+							''							AS '@Contact',
+							CONVERT(NVARCHAR(500) , a.Announcement)	AS '@Announcement'
+					FROM @old_ManagedAgents a
+					FOR XML PATH('CashAgentManagement'), 
+					TYPE
+				)
+		FOR XML PATH('ROOT'),TYPE
+	);
+	SELECT @TrackingValue2 =  REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
+	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
 
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		  AS UserID
+	    , @custid		  AS CustID
+	    , @ActionID		  AS ActionID
+	    , @TrackingValue	  AS TrackingValue
+	    , @TrackingValue2	  AS TrackingValue2
+	    , @TrackingValueMask  AS TrackingValueMask
+	    , @TrackingValueMask2 AS TrackingValueMask2
+	    , @DurationTime	  AS Duration
 
 END

@@ -145,8 +145,9 @@ BEGIN
 	END
 
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValueMask	NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
+	DECLARE @TrackingValue		NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
 	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 300004
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -170,7 +171,9 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValue = REPLACE(@TrackingValueMask, ISNULL(@PromptPayMobile, ''), '');
+
 
 	-- LOG OLD VALUES
 	SET @xml = (
@@ -192,12 +195,41 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'),TYPE
 	);
+	SET @TrackingValueMask2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	
+	SET @xml = (
+	SELECT	@CustID									AS '@CustID',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
+			@IP										AS '@IP',
+			(
+				SELECT	
+						CONVERT(INT, a.AgentID)				AS '@CustID',
+						CONVERT(INT, a.BankAccountStatus)		AS '@BankAccountStatus',
+						CONVERT(NVARCHAR(255), a.AccountNickname)	AS '@AccountNickname',
+						a.TransTypeList					AS '@TransTypeList',
+						a.DepositMatching					AS '@DepositMatching',
+						CONVERT(INT, a.PromptPayEnabled)		AS '@PromptPayEnabled',
+						''							AS '@PromptPayMobile'
+				FROM @Old_CashAgentBankAccount a
+				FOR XML PATH('AgentBankAcc'), 
+				TYPE
+			)
+	FOR XML PATH('ROOT'),TYPE
+	);
 	SET @TrackingValue2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
-	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
+	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
 
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		  AS UserID
+	    , @custid		  AS CustID
+	    , @ActionID		  AS ActionID
+	    , @TrackingValue	  AS TrackingValue
+	    , @TrackingValue2	  AS TrackingValue2
+	    , @TrackingValueMask  AS TrackingValueMask
+	    , @TrackingValueMask2 AS TrackingValueMask2
+	    , @DurationTime	  AS Duration
 END

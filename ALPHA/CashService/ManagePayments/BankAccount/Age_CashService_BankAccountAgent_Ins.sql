@@ -147,8 +147,8 @@ BEGIN
 	END
 
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValueMask NVARCHAR(MAX)
 	DECLARE @xml XML , @ActionID INT = 300003
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -174,12 +174,21 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'), TYPE
 	);
-	SET @TrackingValue = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValue = REPLACE(REPLACE(REPLACE(@TrackingValueMask, ISNULL(@AccountHolderName, ''), ''),ISNULL(@BankAccountNumber, ''),''),ISNULL(@PromptPayMobile, ''),'');
 
-	
-	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		 AS UserID
+	    , @custid		 AS CustID
+	    , @ActionID		 AS ActionID
+	    , @TrackingValue	 AS TrackingValue
+	    , NULL			 AS TrackingValue2
+	    , @TrackingValueMask AS TrackingValueMask
+	    , NULL			 AS TrackingValueMask2
+	    , @DurationTime	 AS Duration
+
 END
