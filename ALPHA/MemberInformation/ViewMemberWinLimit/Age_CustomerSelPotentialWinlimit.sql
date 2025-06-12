@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20250529@Razor:	Potential Member win limit - [Redmine: #228570]
+		- 20250612@Razor:	Sort by status - [Redmine: #226060]
 
 	Param's Explanation:
 		@problemAccount:	2 = All, 1 = Yes, 0 = No
@@ -94,14 +95,38 @@ BEGIN
 	BEGIN
 		SELECT *
 		FROM #Data
-		ORDER BY custid DESC
+		ORDER BY 
+			CASE Status
+				WHEN 'Open' THEN 1
+				WHEN 'Closed' THEN 2
+				WHEN 'Suspended' THEN 3
+				WHEN 'Locked' THEN 4
+				WHEN 'Disabled' THEN 5
+			END,
+			Username
 	END
 	ELSE
 	BEGIN
-		SELECT ROW_NUMBER() OVER (ORDER BY CustId DESC) AS RowNumber
+		SELECT ROW_NUMBER() OVER (ORDER BY 
+			CASE Status
+				WHEN 'Open' THEN 1
+				WHEN 'Closed' THEN 2
+				WHEN 'Suspended' THEN 3
+				WHEN 'Locked' THEN 4
+				WHEN 'Disabled' THEN 5
+			END,
+			Username) AS RowNumber
 			, *
 		FROM #Data
-		ORDER BY custid DESC
+		ORDER BY 
+			CASE Status
+				WHEN 'Open' THEN 1
+				WHEN 'Closed' THEN 2
+				WHEN 'Suspended' THEN 3
+				WHEN 'Locked' THEN 4
+				WHEN 'Disabled' THEN 5
+			END,
+			Username
 		OFFSET @PageSize * (@PageIndex - 1) ROWS
 		FETCH NEXT @PageSize ROWS ONLY
 	END
