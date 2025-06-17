@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_CashService" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_CashService,asv_CashService" viewers="" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE WriteLog_CashService_UserLog_RunSP
 	@UserID			 INT
     , @CustID			 INT		   = 0
@@ -14,7 +14,8 @@ CREATE PROCEDURE WriteLog_CashService_UserLog_RunSP
     DB: bodb_CustomerLog
 
 	Revisions:
-		- 20250321@Helios: Agency Cash Service [Redmine: #223896]      
+		- 20250321@Helios: Agency Cash Service [Redmine: #223896]     
+		- 20250603@Max: Add more account permission [Redmine: #223896]   
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action
