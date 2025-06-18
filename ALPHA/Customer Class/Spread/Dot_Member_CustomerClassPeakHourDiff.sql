@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_Admin,svc_tig" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_Admin,svc_tig,wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Dot_Member_CustomerClassPeakHourDiff] 
 	@IsTest BIT = 0,
     @Islive BIT = 0,
