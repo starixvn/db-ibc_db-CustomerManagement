@@ -65,6 +65,7 @@ AS
 		- 20230920@Bobby: Enhance performance get max transid [Redmine: #194274]
 		- 20230925@Tacy: remove get Closed Reason and Protection Mode info from DBACC [Redmine: #194274]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250623@Helios: Offer Direct Member for Super/Master [redmine: #231204]
 
 	Param's Explanation:
 		• @username: username of customer that need to be viewed.   
@@ -77,7 +78,8 @@ BEGIN
     DECLARE @custid INT, @roleid TINYINT, @srecommend INT, @mrecommend INT, @recommend INT
     DECLARE @upLineEnabled BIT,
 			@isDirectSuspend BIT = 0, @Locked TINYINT,
-			@isDirectClosed BIT
+			@isDirectClosed BIT ,
+			@isServiceType TINYINT
 
     SELECT @username = RTRIM(LTRIM(@username))
 
@@ -141,7 +143,8 @@ BEGIN
 	--check suspend status is direct or not
 	SELECT @isDirectSuspend = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,SuspendInfo)),
 		@isDirectClosed = (SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,CloseInfo)),
-		@Locked = ISNULL(Locked,0)
+		@Locked = ISNULL(Locked,0),
+		@isServiceType = ISNULL(ServiceType , 0)
 	FROM dbo.CustProductStatus WITH(NOLOCK)
 	WHERE custid = @custid
 	
@@ -159,7 +162,7 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @Locked AS Locked
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @Locked AS Locked , @isServiceType AS ServiceType
     FROM custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
