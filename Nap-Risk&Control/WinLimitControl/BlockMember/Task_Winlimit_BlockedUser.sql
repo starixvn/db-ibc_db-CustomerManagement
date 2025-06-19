@@ -26,6 +26,7 @@ AS
 		- 20250110@Tacy: Offer direct member for super/master [Redmine: #215809]
 		- 20250328@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250619@July: CWL - Alert Logic Update in Same Threshold Level [redmine: #229646]
 
 	Param's Explanation:
 	
@@ -436,8 +437,12 @@ BEGIN
 					 WHERE  tmp.CustID = G.CustID AND tmp.ProductID = G.ProductID) AS CGS
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID
 	WHERE (
-			-- cover for both Winlimt & LossLimit
-				(LS.LevelOrder < T.LevelOrder 
+				-- cover for both Winlimt & LossLimit
+				(
+					(LS.LevelOrder < T.LevelOrder 
+					--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+					OR (LS.LevelOrder = T.LevelOrder AND DATEDIFF(HH, g.WinlostDate, @ReachedDate)>=1 AND g.WinAmt < t.TotalWinAmount AND t.LevelID IN (1,2,3))
+				)
 				--in case loss, if exists losslevel history which higher than losslevel customer reach again
 				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
 							AND EXISTS(SELECT TOP 1 1
