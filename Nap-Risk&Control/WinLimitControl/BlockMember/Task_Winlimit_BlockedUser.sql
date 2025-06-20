@@ -252,7 +252,7 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID
+				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
 			WHERE ( t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
 					AND s.MaxWinLimit >  0
@@ -276,7 +276,7 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID 
+				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID 
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
 			WHERE (t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
 					AND s.MaxWinLimit < 0
