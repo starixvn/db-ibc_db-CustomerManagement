@@ -180,13 +180,10 @@ BEGIN
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
-				CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>' 
-							FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-								  FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-								  WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
-								  FOR XML PATH('')
-								) x(str)
-				) AS tmp (MaxWinLimitSetting)
+				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
+							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
+							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
+							) tmp
 			WHERE	(t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
 					AND s.MaxWinLimit > 0
 					AND T.IsPrivateSetting = 1
@@ -206,13 +203,10 @@ BEGIN
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
-				CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>' 
-							FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-								  FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-								  WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
-								  FOR XML PATH('')
-								) x(str)
-				) AS tmp (MaxWinLimitSetting)
+				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
+							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
+							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
+							) tmp
 			WHERE	( t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 1
@@ -226,16 +220,15 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 0)
 	BEGIN
 		INSERT INTO #WinLimit_ProductSettingDetail(ProductId,GroupID,ExchangeID,SiteID,MaxWinLimitSetting)
-		SELECT DISTINCT  t.ProductID,t.GroupID,t.ExchangeID,t.SiteID, '<MaxWinLimitSetting' + x.str + '/>' as MaxWinLimitSetting 			
+		SELECT DISTINCT  t.ProductID,t.GroupID,t.ExchangeID,t.SiteID, x.MaxWinLimitSetting 			
 		FROM (SELECT DISTINCT t.ProductID,t.GroupID,t.ExchangeID,t.SiteID
 			FROM #DataTmp t
 			)t			
 		CROSS APPLY (
-			SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
+			SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
 			FROM dbo.WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
 			WHERE S1.ProductID = t.ProductID AND S1.GroupID = t.GroupID AND S1.ExchangeID = t.ExchangeID AND S1.SiteID = t.SiteID			 
-			FOR XML PATH('')
-			  ) x(str)
+			  ) x
 			  
 		-- WIN LIMT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount > 0) 
