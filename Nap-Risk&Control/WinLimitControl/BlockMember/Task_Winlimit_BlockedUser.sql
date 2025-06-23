@@ -179,11 +179,11 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
+				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
 				CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>' 
 							FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
 								  FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-								  WHERE S1.CustID = T.CustId AND S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID
+								  WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
 								  FOR XML PATH('')
 								) x(str)
 				) AS tmp (MaxWinLimitSetting)
@@ -205,11 +205,11 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
+				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
 				CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>' 
 							FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
 								  FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-								  WHERE S1.CustID = T.CustId AND S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID
+								  WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
 								  FOR XML PATH('')
 								) x(str)
 				) AS tmp (MaxWinLimitSetting)
@@ -225,7 +225,7 @@ BEGIN
 	--For CURRENCY SETTING Processing
 	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 0)
 	BEGIN
-		INSERT into #WinLimit_ProductSettingDetail(ProductId,GroupID,ExchangeID,SiteID,MaxWinLimitSetting)
+		INSERT INTO #WinLimit_ProductSettingDetail(ProductId,GroupID,ExchangeID,SiteID,MaxWinLimitSetting)
 		SELECT DISTINCT  t.ProductID,t.GroupID,t.ExchangeID,t.SiteID, '<MaxWinLimitSetting' + x.str + '/>' as MaxWinLimitSetting 			
 		FROM (SELECT DISTINCT t.ProductID,t.GroupID,t.ExchangeID,t.SiteID
 			FROM #DataTmp t
