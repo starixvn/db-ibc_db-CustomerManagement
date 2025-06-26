@@ -20,7 +20,7 @@ AS
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
 		- 20250401@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
-		- 20250626@Cherry: Extend SiteID in #ProductSiteCurrencySetting from SMALLINT to INT 
+		- 20250626@Cherry: Extend SiteID in #ProductSiteCurrencySetting from SMALLINT to INT (#230335)
 
 	Parameters Explanation:
 	   @ProductId: Product ID
