@@ -22,6 +22,7 @@ AS
 		- 20230215@Tacy: CWL - Split 789y site [RedmineID: #182387]
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20250401@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
+		- 20260627Cherry: Extend SiteID from SMALLINT to INT (#231607)
 		
 	Parameters Explanation:
 		@ProductId	: Product ID
@@ -88,7 +89,7 @@ BEGIN
 		CREATE TABLE #ProductSiteCurrencySetting
 					(
 			ProductId  TINYINT, 
-			SiteId     SMALLINT, 
+			SiteId     INT, 
 			CurrencyId SMALLINT,
 			IsCreditSite BIT
 					);
