@@ -48,6 +48,7 @@ AS
 		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20250220@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]    
+		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
 		
 */
 BEGIN
@@ -64,7 +65,8 @@ SET NOCOUNT ON
 			@Credit_AllOtherMember MONEY,
 			@matchlimit SMALLMONEY,
 			@Credit_AllSuperDirectMember MONEY , 
-			@Credit_AllMasterDirectMember MONEY
+			@Credit_AllMasterDirectMember MONEY,
+			@AccumCredit_AllCashMember MONEY
 
 	SELECT	@username = username,
 			@roleid = roleid,
@@ -104,6 +106,14 @@ SET NOCOUNT ON
 
 	IF @roleid = 1
 	BEGIN
+
+		DECLARE @isCashService TINYINT;
+		EXEC dbo.Age_CashService_CustServiceTypeSel @CustID =  @custid  , @ServiceType = @isCashService OUTPUT;
+		IF @isCashService = 1	/*skip updating the credit for Cash Member*/
+		BEGIN
+			RETURN;
+		END
+
 		IF @NewCredit < 0
 		BEGIN
 			SELECT	@ErrCode = 100,
@@ -132,6 +142,10 @@ SET NOCOUNT ON
 			FROM dbo.custInfo WITH (NOLOCK) 
 			WHERE recommend = @recommend AND roleid = 1 AND CustID <> @CustID
 
+			SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+			FROM CashAccumCredit WITH (NOLOCK)
+			WHERE recommend = @recommend AND AccumCreditReturn > 0;
+
 			DECLARE @AgentMaxCredit MONEY, @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
 
 			SELECT	@AgentCredit = ISNULL(Credit, 0)
@@ -142,19 +156,19 @@ SET NOCOUNT ON
 			FROM dbo.CustAgent WITH (NOLOCK)
 			WHERE CustID = @recommend
 
-			SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember
+			SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember - ISNULL(@AccumCredit_AllCashMember, 0);
 			SELECT @Credit_Mem_Max		= CASE
 											WHEN @AgentMaxCredit = 0 THEN @Agent_Credit_Bal
 											WHEN @AgentMaxCredit > @Agent_Credit_Bal THEN @Agent_Credit_Bal
 											ELSE @AgentMaxCredit END
 
-			IF @NewCredit + @Credit_AllOtherMember > @AgentCredit 
+			IF @NewCredit > @Agent_Credit_Bal 
 			BEGIN
 				SELECT	@ErrCode = 101
 				SET		@ErrMsg =  REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 												END  
-												, '{number}', FORMAT(@AgentCredit - @Credit_AllOtherMember, '#,#0.####'))
+												, '{number}', FORMAT(@Agent_Credit_Bal, '#,#0.####'))
 				RETURN
 			END
 			
@@ -289,13 +303,17 @@ SET NOCOUNT ON
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE recommend = @CustID AND roleid = 1
 
-		IF @Credit_AllMember > @NewCredit
+		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+		FROM CashAccumCredit WITH (NOLOCK)
+    	WHERE recommend = @custID;
+		
+		IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit
 		BEGIN
 			SELECT	@ErrCode = 202
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+											, '{number}', FORMAT((@Credit_AllMember + @AccumCredit_AllCashMember), '#,#0.####'))
 			RETURN
 		END
 	END
@@ -327,6 +345,10 @@ SET NOCOUNT ON
 		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE mrecommend = @CustID AND RoleID = 1
+
+		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+		FROM CashAccumCredit WITH (NOLOCK)
+		WHERE mrecommend = @CustID AND AccumCreditReturn > 0;
 	
 		SELECT @Credit_AllAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
@@ -349,13 +371,13 @@ SET NOCOUNT ON
 				RETURN
 			END
 
-			IF @Credit_AllMember > @NewCredit
+			IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit
 			BEGIN
 				SELECT	@ErrCode = 302
 				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
 				RETURN
 			END
 						
@@ -405,17 +427,21 @@ SET NOCOUNT ON
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 1
 
+		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+		FROM CashAccumCredit WITH (NOLOCK)
+		WHERE srecommend = @CustID AND AccumCreditReturn > 0;
+
 		SELECT @Credit_AllAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 2
 
-		IF @Credit_AllMember > @NewCredit 
+		IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit 
 		BEGIN
 			SELECT	@ErrCode = 403
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT((@Credit_AllMember), '#,#0.####'))
+											, '{number}', FORMAT((@Credit_AllMember + @AccumCredit_AllCashMember), '#,#0.####'))
 			RETURN
 		END
 
@@ -468,6 +494,24 @@ SET NOCOUNT ON
 		SET		MaxCredit = ISNULL(@MaxCredit, MaxCredit),
 				RepUpdateTime = dbo.f_GetDateTime2()
 		WHERE	custid = @custid AND @roleid = 2
+	END
+
+	/*For agent have members cash service -> Update MaxWinlimit of members if their MaxWinLimit amount more than new credit of Agent [MaxWinLimit of agent NOT Unlimited]*/
+	IF @roleid = 2
+	BEGIN
+		UPDATE	wl
+		SET		wl.MaxWinLimit = IIF(@NewCredit = 0, 0.1, @NewCredit * ag.MaxWinLimit) ,
+				wl.RepUpdateTime = dbo.f_GetDateTime2()
+		FROM	dbo.customer AS c WITH (NOLOCK)
+				INNER JOIN dbo.CustProductStatus AS cs WITH (NOLOCK)
+					ON c.custid = cs.CustID AND cs.ServiceType = 1
+				INNER JOIN dbo.CustWinLossLimit_Member AS wl WITH (ROWLOCK, UPDLOCK)
+					ON wl.CustId = c.custid AND wl.MaxWinLimit > 0
+				INNER JOIN dbo.CustWinLossLimit_Agent AS ag WITH (NOLOCK)
+					ON ag.CustId = @CustID AND ag.SportType = wl.SportType 
+					AND ag.BetType = wl.BetType AND ag.MaxWinLimit > 0
+		WHERE	c.recommend = @CustID AND c.roleid = 1
+				AND wl.MaxWinLimit > @NewCredit * ag.MaxWinLimit;
 	END
 
 	-- Write Log
