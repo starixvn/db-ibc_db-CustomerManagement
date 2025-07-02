@@ -441,7 +441,7 @@ BEGIN
 				(
 					(LS.LevelOrder < T.LevelOrder 
 					--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
-					OR (LS.LevelOrder = T.LevelOrder AND DATEDIFF(HH, g.WinlostDate, @ReachedDate)>=1 AND g.WinAmt < t.TotalWinAmount AND t.LevelID IN (1,2,3))
+					OR (LS.LevelOrder = T.LevelOrder AND DATEDIFF(HH, g.ModifiedDate, @ReachedDate)>=1 AND g.WinAmt < t.TotalWinAmount AND t.LevelID IN (1,2,3))
 				)
 				--in case loss, if exists losslevel history which higher than losslevel customer reach again
 				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
