@@ -20,6 +20,7 @@ AS
 		- 20230911@Tacy: CWL - Suspend member accounts when member reaches Yellow level on RNG Slots Games [RedmineID: #184911]
 		- 20240118@Tacy: NAP Risk & Control - Merge VS1, VS2, VS3 as Virtual Sports [Redmine: #199920]
 		- 20250401@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
+		- 20260627Cherry: Extend SiteID from SMALLINT to INT (#231607)
 
 	Parameters Explanation:
 	   @ProductId: Product ID
@@ -78,7 +79,7 @@ AS
 	   CREATE TABLE #ProductSiteCurrencySetting
 				 (
 		   ProductId    TINYINT, 
-		   SiteId       SMALLINT, 
+		   SiteId       INT, 
 		   CurrencyId   SMALLINT, 
 		   IsCreditSite BIT
 				 );
