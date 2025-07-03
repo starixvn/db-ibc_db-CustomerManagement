@@ -430,12 +430,24 @@ BEGIN
 	FROM dbo.WinLimit_CustGameMonitoring g WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN dbo.Winlimit_LevelSetting ls WITH (NOLOCK) ON g.LevelID = ls.LevelID
 		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId		
-		
 		CROSS APPLY (SELECT TOP 1 tmp.ActionID,tmp.IsBlockedTransfer,tmp.IsBlockedPlaceBet
 					 FROM dbo.WinLimit_CustGameStatus tmp WITH (NOLOCK) 
 						INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = t.GroupID AND tmp.BettypeID = gs.BetTypeID
 					 WHERE  tmp.CustID = G.CustID AND tmp.ProductID = G.ProductID) AS CGS
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID
+		OUTER APPLY (
+			SELECT TOP 1 gh2.ModifiedDate, gh2.WinAmt, ls2.LevelOrder
+			FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
+				INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
+			WHERE g.CustID = gh2.CustID 
+				AND g.WinlostDate = gh2.WinlostDate 
+				AND g.GroupID = gh2.GroupID 
+				AND g.ProductID = gh2.ProductID
+				AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
+				AND ls2.LevelOrder >= T.LevelOrder
+				AND gh2.ActionID < 200 
+			ORDER BY ModifiedDate DESC
+		)lastest
 	WHERE (
 				-- cover for both Winlimt & LossLimit
 				(
@@ -463,7 +475,10 @@ BEGIN
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
 				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
-				--not exists winlevel history which higher winlevel customer reach again
+				--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+				AND 1 = CASE WHEN lastest.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, lastest.ModifiedDate, @ReachedDate)>=60 AND lastest.WinAmt < t.TotalWinAmount THEN 1
+				             ELSE 0 END
+				/*--not exists winlevel history which higher winlevel customer reach again
 				AND NOT EXISTS(SELECT TOP 1 1
 							FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
 								INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
@@ -474,7 +489,7 @@ BEGIN
 								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
 								AND ls2.LevelOrder >= T.LevelOrder
 								AND gh2.ActionID < 200 
-							)
+							)*/
 				) 
 			-- Reach level again after unblocked
 			--and not exists history level which customer reach
