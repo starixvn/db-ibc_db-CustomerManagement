@@ -282,6 +282,7 @@ BEGIN
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList			
+			
 			SET @RowCount += @@ROWCOUNT
 
 		END
