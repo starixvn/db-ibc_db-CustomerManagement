@@ -35,7 +35,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	 
-	DECLARE @StrData VARCHAR(MAX), @XmlData XML, @RowCount INT, @ReTry INT, @cnt_reach INT = 0
+	DECLARE @StrData VARCHAR(MAX), @XmlData XML, @RowCount INT = 0
 	DECLARE @StartRow INT, @MaxRow INT,@Threshold INT, @StopRow INT
 	DECLARE @WinlostDate SMALLDATETIME, @ReachedDate DATETIME
 	DECLARE @WinlimitLevel_min INT, @WinlimitLevel_max INT, @LosslimitLevel_min INT, @LosslimitLevel_max INT
@@ -191,7 +191,7 @@ BEGIN
 					AND T.IsPrivateSetting = 1
 			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
 			
-			SET @cnt_reach += @@ROWCOUNT
+			SET @RowCount += @@ROWCOUNT
 		END
 		-- LOSS LIMIT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
@@ -218,7 +218,7 @@ BEGIN
 					AND T.IsPrivateSetting = 1
 			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
 			
-			SET @cnt_reach += @@ROWCOUNT
+			SET @RowCount += @@ROWCOUNT
 		END
 		
 	END
@@ -257,7 +257,8 @@ BEGIN
 					AND s.MaxWinLimit >  0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
-			SET @cnt_reach += @@ROWCOUNT
+			
+			SET @RowCount += @@ROWCOUNT
 
 		END
 		-- LOSS LIMIT
@@ -281,12 +282,13 @@ BEGIN
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList
-			SET @cnt_reach += @@ROWCOUNT
+			
+			SET @RowCount += @@ROWCOUNT
 
 		END
 	END
 	
-	IF @cnt_reach = 0
+	IF @RowCount = 0
 	BEGIN
 		RETURN
 	END
