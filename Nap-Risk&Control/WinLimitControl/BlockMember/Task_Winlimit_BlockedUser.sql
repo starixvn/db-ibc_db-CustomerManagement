@@ -266,14 +266,6 @@ BEGIN
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-				--CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>'  
-				--			FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-				--				  FROM #WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
-				--				  WHERE S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID AND S1.ExchangeID = T.ExchangeID AND S.SiteID = S1.SiteID
-				--				  FOR XML PATH('')
-				--				) x(str)
-				--) AS tmp (MaxWinLimitSetting)
-				
 			WHERE ( t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
 					AND s.MaxWinLimit >  0
 					AND T.IsPrivateSetting = 0
@@ -296,14 +288,6 @@ BEGIN
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID 
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-				--CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>'  
-				--			FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-				--				  FROM dbo.WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
-				--				  WHERE S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID AND S1.ExchangeID = T.ExchangeID AND S.SiteID = S1.SiteID
-				--				  FOR XML PATH('')
-				--				) x(str)
-				--) AS tmp (MaxWinLimitSetting)
-				
 			WHERE (t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 0
@@ -479,18 +463,6 @@ BEGIN
 				AND 1 = CASE WHEN lastest.LevelOrder < T.LevelOrder THEN 1
 							 WHEN lastest.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, lastest.ModifiedDate, @ReachedDate)>=60 AND lastest.WinAmt < t.TotalWinAmount THEN 1
 				             ELSE 0 END
-				/*--not exists winlevel history which higher winlevel customer reach again
-				AND NOT EXISTS(SELECT TOP 1 1
-							FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
-								INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
-							WHERE g.CustID = gh2.CustID 
-								AND g.WinlostDate = gh2.WinlostDate 
-								AND g.GroupID = gh2.GroupID 
-								AND g.ProductID = gh2.ProductID
-								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
-								AND ls2.LevelOrder >= T.LevelOrder
-								AND gh2.ActionID < 200 
-							)*/
 				) 
 			-- Reach level again after unblocked
 			--and not exists history level which customer reach
