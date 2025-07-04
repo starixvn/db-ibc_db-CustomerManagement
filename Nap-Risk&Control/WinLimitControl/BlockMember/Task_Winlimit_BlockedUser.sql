@@ -476,7 +476,8 @@ BEGIN
 				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
 				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
 				--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
-				AND 1 = CASE WHEN lastest.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, lastest.ModifiedDate, @ReachedDate)>=60 AND lastest.WinAmt < t.TotalWinAmount THEN 1
+				AND 1 = CASE WHEN lastest.LevelOrder < T.LevelOrder THEN 1
+							 WHEN lastest.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, lastest.ModifiedDate, @ReachedDate)>=60 AND lastest.WinAmt < t.TotalWinAmount THEN 1
 				             ELSE 0 END
 				/*--not exists winlevel history which higher winlevel customer reach again
 				AND NOT EXISTS(SELECT TOP 1 1
