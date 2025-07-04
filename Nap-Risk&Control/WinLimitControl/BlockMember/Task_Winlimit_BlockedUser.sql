@@ -270,7 +270,6 @@ BEGIN
 					AND s.MaxWinLimit >  0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList
-			--OPTION(RECOMPILE)
 		END
 		-- LOSS LIMIT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
@@ -292,7 +291,6 @@ BEGIN
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList
-			--OPTION(RECOMPILE)
 		
 		END
 	END
@@ -427,20 +425,19 @@ BEGIN
 				AND g.WinlostDate = gh2.WinlostDate 
 				AND g.GroupID = gh2.GroupID 
 				AND g.ProductID = gh2.ProductID
-				AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
-				AND ls2.LevelOrder >= T.LevelOrder
+				AND gh2.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max	
 				AND gh2.ActionID < 200 
 			ORDER BY ModifiedDate DESC
-		)lastest
+		)ls_win
 	WHERE (
 				-- cover for both Winlimt & LossLimit
-				(
-					(LS.LevelOrder < T.LevelOrder 
-					--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
-					OR (LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=60 AND g.WinAmt < t.TotalWinAmount AND t.LevelID IN (1,2,3))
-				)
-				--in case loss, if exists losslevel history which higher than losslevel customer reach again
-				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
+				((	LS.LevelOrder < T.LevelOrder 
+						--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+						OR ( T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
+							AND LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=60 AND g.WinAmt < t.TotalWinAmount )
+					)
+					--in case loss, if exists losslevel history which higher than losslevel customer reach again
+					AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
 							AND EXISTS(SELECT TOP 1 1
 								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
 									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
@@ -453,15 +450,14 @@ BEGIN
 									AND gh1.ActionID < 200
 							)
 						THEN 0 ELSE 1 END	
-						)	
-				)	
+				))	
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
-				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
-				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
-				--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
-				AND 1 = CASE WHEN lastest.LevelOrder < T.LevelOrder THEN 1
-							 WHEN lastest.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, lastest.ModifiedDate, @ReachedDate)>=60 AND lastest.WinAmt < t.TotalWinAmount THEN 1
+				AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
+				AND G.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max  -- LevelID of loss limit
+				AND 1 = CASE WHEN ls_win.LevelOrder < T.LevelOrder THEN 1
+							 --Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+							 WHEN ls_win.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, ls_win.ModifiedDate, @ReachedDate)>=60 AND ls_win.WinAmt < t.TotalWinAmount THEN 1
 				             ELSE 0 END
 				) 
 			-- Reach level again after unblocked
