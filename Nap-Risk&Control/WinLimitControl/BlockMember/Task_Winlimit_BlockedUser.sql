@@ -434,7 +434,7 @@ BEGIN
 				((	LS.LevelOrder < T.LevelOrder 
 						--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
 						OR ( T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
-							AND LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=60 AND g.WinAmt < t.TotalWinAmount )
+							AND LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=15 AND g.WinAmt < t.TotalWinAmount )
 					)
 					--in case loss, if exists losslevel history which higher than losslevel customer reach again
 					AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
@@ -457,7 +457,7 @@ BEGIN
 				AND G.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max  -- LevelID of loss limit
 				AND 1 = CASE WHEN ls_win.LevelOrder < T.LevelOrder OR ls_win.LevelOrder IS NULL  THEN 1
 							 --Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
-							 WHEN ls_win.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, ls_win.ModifiedDate, @ReachedDate)>=60 AND ls_win.WinAmt < t.TotalWinAmount THEN 1
+							 WHEN ls_win.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, ls_win.ModifiedDate, @ReachedDate)>=15 AND ls_win.WinAmt < t.TotalWinAmount THEN 1
 				             ELSE 0 END
 				) 
 			-- Reach level again after unblocked
