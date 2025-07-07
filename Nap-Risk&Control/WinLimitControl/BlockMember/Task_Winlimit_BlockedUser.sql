@@ -416,16 +416,30 @@ BEGIN
 				AND gh2.ActionID < 200 
 			ORDER BY ModifiedDate DESC
 		)ls_win
+		OUTER APPLY (
+			SELECT TOP 1 1 AS IsInValid
+			FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
+				INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
+			WHERE g.CustID = gh1.CustID 
+				AND g.WinlostDate = gh1.WinlostDate 
+				AND g.GroupID = gh1.GroupID 
+				AND g.ProductID = gh1.ProductID	
+				AND gh1.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
+				AND ls1.LevelOrder >= T.LevelOrder
+				AND gh1.ActionID < 200
+		)ls_lose
 	WHERE (
 				-- cover for both Winlimt & LossLimit
 				((	LS.LevelOrder < T.LevelOrder 
 						--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
 						OR ( T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
 							AND LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=60 AND g.WinAmt < t.TotalWinAmount )
-					   )
 					)
-					--in case loss, if exists losslevel history which higher than losslevel customer reach again
-					AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
+				--in case loss, if exists losslevel history which higher than losslevel customer reach again
+				AND 1 = CASE WHEN T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max 
+					                 AND ls_lose.IsInValid IS NOT NULL THEN 0 ELSE 1 END
+				)
+				/*AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
 							AND EXISTS(SELECT TOP 1 1
 								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
 									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
@@ -438,7 +452,8 @@ BEGIN
 									AND gh1.ActionID < 200
 							)
 						THEN 0 ELSE 1 END	
-				))	
+						)	
+				)*/
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
@@ -451,7 +466,12 @@ BEGIN
 			-- Reach level again after unblocked
 			--and not exists history level which customer reach
 			OR (CGS.ActionID IN (2,4)
-				AND NOT EXISTS(SELECT TOP 1 1
+				AND 1 = CASE WHEN T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max
+									AND ls_win.LevelOrder >= T.LevelOrder THEN 0
+								WHEN T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
+									AND ls_lose.IsInValid IS NOT NULL THEN 0 
+								ELSE 1 END			
+				/*AND NOT EXISTS(SELECT TOP 1 1
 							FROM dbo.WinLimit_CustGameMonitoring_History gh3 WITH(NOLOCK) 
 								INNER JOIN dbo.Winlimit_LevelSetting ls3 WITH (NOLOCK) ON gh3.LevelID = ls3.LevelID
 							WHERE g.CustID = gh3.CustID 
@@ -467,7 +487,7 @@ BEGIN
 												AND ls3.LevelOrder >= T.LevelOrder
 											THEN 1 ELSE 0 END
 								AND gh3.ActionID < 200 
-							)				
+							)*/				
 				)
 		)
 	
