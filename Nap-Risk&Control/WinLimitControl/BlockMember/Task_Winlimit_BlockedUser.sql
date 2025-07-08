@@ -169,8 +169,8 @@ BEGIN
 		-- WIN LIMT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount > 0) 
 		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID,WinlostDate,ExchangeID,SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID
+			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
+			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
 					, MAX(LS.LevelOrder) AS LevelOrder 
 					, MAX(s.MaxWinLimit) AS MaxWinLimit
 					, MAX(t.TotalWinAmount) AS TotalWinAmount
@@ -196,8 +196,8 @@ BEGIN
 		-- LOSS LIMIT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
 		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID,WinlostDate,ExchangeID,SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID
+			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
+			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
 					, MAX(LS.LevelOrder) AS LevelOrder
 					, MIN(s.MaxWinLimit) AS MaxWinLimit
 					, MAX(t.TotalWinAmount) AS TotalWinAmount
@@ -225,8 +225,8 @@ BEGIN
 	--For CURRENCY SETTING Processing
 	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 0)
 	BEGIN
-		INSERT INTO #WinLimit_ProductSettingDetail(ProductId,GroupID,ExchangeID,SiteID,MaxWinLimitSetting)
-		SELECT t.ProductID,t.GroupID,t.ExchangeID,t.SiteID, x.MaxWinLimitSetting 			
+		INSERT INTO #WinLimit_ProductSettingDetail(ProductId, GroupID, ExchangeID, SiteID, MaxWinLimitSetting)
+		SELECT t.ProductID, t.GroupID, t.ExchangeID, t.SiteID, x.MaxWinLimitSetting 			
 		FROM (SELECT DISTINCT t.ProductID,t.GroupID,t.ExchangeID,t.SiteID
 			FROM #DataTmp t
 			)t			
@@ -240,7 +240,7 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount > 0) 
 		BEGIN	  
 			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID
+			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
 					, MAX(LS.LevelOrder)
 					, MAX(s.MaxWinLimit) 
 					, MAX(t.TotalWinAmount)
@@ -264,8 +264,8 @@ BEGIN
 		-- LOSS LIMIT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
 		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID,WinlostDate,ExchangeID,SiteID,LevelOrder, MaxwinLimit, TotalWinAmount,IsPrivateSetting,MaxWinLimitSetting,BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID
+			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount,IsPrivateSetting,MaxWinLimitSetting,BettypeIDList, LevelID)
+			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
 					, MAX(LS.LevelOrder)
 					, MIN(s.MaxWinLimit) 
 					, MAX(t.TotalWinAmount)
@@ -439,7 +439,6 @@ BEGIN
 				--in case loss, if exists losslevel history which higher than losslevel customer reach again
 				AND 1 = CASE WHEN T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max 
 					                 AND ls_lose.IsInValid IS NOT NULL THEN 0 ELSE 1 END
-				)
 				/*AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
 							AND EXISTS(SELECT TOP 1 1
 								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
@@ -453,8 +452,8 @@ BEGIN
 									AND gh1.ActionID < 200
 							)
 						THEN 0 ELSE 1 END	
-						)	
-				)*/
+						)	*/
+				)
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
 				AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
