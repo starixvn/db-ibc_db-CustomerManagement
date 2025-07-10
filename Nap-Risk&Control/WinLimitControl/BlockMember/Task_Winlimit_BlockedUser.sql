@@ -228,7 +228,8 @@ BEGIN
 		INSERT INTO #WinLimit_ProductSettingDetail(ProductId, GroupID, ExchangeID, SiteID, MaxWinLimitSetting)
 		SELECT t.ProductID, t.GroupID, t.ExchangeID, t.SiteID, x.MaxWinLimitSetting 			
 		FROM (SELECT DISTINCT t.ProductID,t.GroupID,t.ExchangeID,t.SiteID
-			FROM #DataTmp t
+			  FROM #DataTmp t
+			  WHERE t.IsPrivateSetting = 0
 			)t			
 		CROSS APPLY (
 			SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
