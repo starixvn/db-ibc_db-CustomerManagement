@@ -17,6 +17,7 @@ AS
 		- 20240507@Kelvin: LAP - Support based currency JPY, MXN, NGN [RedmineID: #200904]
 		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
 		- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
+		- 20250716@Kelvin: LAP - Support based ZAR [RedmineID: #232973]
 */	
 BEGIN  
 	SET NOCOUNT ON 
@@ -51,7 +52,8 @@ BEGIN
 		MXN,
 		NGN,
 		BRL,
-		PKR
+		PKR,
+		ZAR
 	FROM (
 		SELECT 
 			edo.ExchangeDate,
@@ -84,6 +86,7 @@ BEGIN
 			edo.NGN,
 			edo.BRL,
 			edo.PKR,
+			edo.ZAR,
 			ROW_NUMBER() OVER(
 				PARTITION BY edo.ExchangeDate, CASE WHEN edo.Code = 'VND' THEN 'INH' WHEN edo.Code = 'MMK' THEN 'MKK' ELSE edo.Code END
 				ORDER BY edo.ActualRate ASC
