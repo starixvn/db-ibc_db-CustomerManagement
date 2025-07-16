@@ -26,6 +26,7 @@ AS
 		- 20250110@Tacy: Offer direct member for super/master [Redmine: #215809]
 		- 20250328@Lani: NAP Risk & Control - Extend ExchangeID data type from TINYINT to SMALLINT [Redmine: #222190]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250619@July: CWL - Alert Logic Update in Same Threshold Level [redmine: #229646]
 
 	Param's Explanation:
 	
@@ -265,19 +266,10 @@ BEGIN
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-				--CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>'  
-				--			FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-				--				  FROM #WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
-				--				  WHERE S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID AND S1.ExchangeID = T.ExchangeID AND S.SiteID = S1.SiteID
-				--				  FOR XML PATH('')
-				--				) x(str)
-				--) AS tmp (MaxWinLimitSetting)
-				
 			WHERE ( t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
 					AND s.MaxWinLimit >  0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList
-			--OPTION(RECOMPILE)
 		END
 		-- LOSS LIMIT
 		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
@@ -295,19 +287,10 @@ BEGIN
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
 				INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID 
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-				--CROSS APPLY (SELECT '<MaxWinLimitSetting' + x.str + '/>'  
-				--			FROM (SELECT ' Level' + CAST(LevelID AS VARCHAR) + '="' + CAST(MaxWinLimit_RM AS VARCHAR) + '"'
-				--				  FROM dbo.WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
-				--				  WHERE S1.ProductID = GS.ProductId AND S1.GroupID = GS.GroupID AND S1.ExchangeID = T.ExchangeID AND S.SiteID = S1.SiteID
-				--				  FOR XML PATH('')
-				--				) x(str)
-				--) AS tmp (MaxWinLimitSetting)
-				
 			WHERE (t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
 					AND s.MaxWinLimit < 0
 					AND T.IsPrivateSetting = 0
 			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList
-			--OPTION(RECOMPILE)
 		
 		END
 	END
@@ -429,17 +412,32 @@ BEGIN
 	FROM dbo.WinLimit_CustGameMonitoring g WITH(ROWLOCK, UPDLOCK)
 		INNER JOIN dbo.Winlimit_LevelSetting ls WITH (NOLOCK) ON g.LevelID = ls.LevelID
 		INNER JOIN #CustReachCWLList t WITH(NOLOCK) ON t.CustId = g.CustID AND g.WinlostDate = t.WinlostDate AND t.GroupID = g.GroupID AND g.ProductID = t.ProductId		
-		
 		CROSS APPLY (SELECT TOP 1 tmp.ActionID,tmp.IsBlockedTransfer,tmp.IsBlockedPlaceBet
 					 FROM dbo.WinLimit_CustGameStatus tmp WITH (NOLOCK) 
 						INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = t.GroupID AND tmp.BettypeID = gs.BetTypeID
 					 WHERE  tmp.CustID = G.CustID AND tmp.ProductID = G.ProductID) AS CGS
 		INNER JOIN dbo.Exchange e WITH (NOLOCK)  ON e.ExchangeId = T.ExchangeID
+		OUTER APPLY (
+			SELECT TOP 1 gh2.ModifiedDate, gh2.WinAmt, ls2.LevelOrder
+			FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
+				INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
+			WHERE g.CustID = gh2.CustID 
+				AND g.WinlostDate = gh2.WinlostDate 
+				AND g.GroupID = gh2.GroupID 
+				AND g.ProductID = gh2.ProductID
+				AND gh2.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max	
+				AND gh2.ActionID < 200 
+			ORDER BY ModifiedDate DESC
+		)ls_win
 	WHERE (
-			-- cover for both Winlimt & LossLimit
-				(LS.LevelOrder < T.LevelOrder 
-				--in case loss, if exists losslevel history which higher than losslevel customer reach again
-				AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
+				-- cover for both Winlimt & LossLimit
+				((	LS.LevelOrder < T.LevelOrder 
+						--Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+						OR ( T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
+							AND LS.LevelOrder = T.LevelOrder AND DATEDIFF(MINUTE, g.ModifiedDate, @ReachedDate)>=60 AND g.WinAmt < t.TotalWinAmount )
+					)
+					--in case loss, if exists losslevel history which higher than losslevel customer reach again
+					AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
 							AND EXISTS(SELECT TOP 1 1
 								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
 									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
@@ -452,24 +450,15 @@ BEGIN
 									AND gh1.ActionID < 200
 							)
 						THEN 0 ELSE 1 END	
-						)	
-				)	
+				))	
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
-				AND T.LevelID >= @WinlimitLevel_min AND T.LevelID <= @WinlimitLevel_max    -- LevelID of win limit
-				AND G.LevelID >= @LosslimitLevel_min AND G.LevelID <= @LosslimitLevel_max  -- LevelID of loss limit
-				--not exists winlevel history which higher winlevel customer reach again
-				AND NOT EXISTS(SELECT TOP 1 1
-							FROM dbo.WinLimit_CustGameMonitoring_History gh2 WITH(NOLOCK) 
-								INNER JOIN dbo.Winlimit_LevelSetting ls2 WITH (NOLOCK) ON gh2.LevelID = ls2.LevelID
-							WHERE g.CustID = gh2.CustID 
-								AND g.WinlostDate = gh2.WinlostDate 
-								AND g.GroupID = gh2.GroupID 
-								AND g.ProductID = gh2.ProductID
-								AND gh2.LevelID >= @WinlimitLevel_min AND gh2.LevelID <= @WinlimitLevel_max	
-								AND ls2.LevelOrder >= T.LevelOrder
-								AND gh2.ActionID < 200 
-							)
+				AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max    -- LevelID of win limit
+				AND G.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max  -- LevelID of loss limit
+				AND 1 = CASE WHEN ls_win.LevelOrder < T.LevelOrder OR ls_win.LevelOrder IS NULL THEN 1
+							 --Enhance CWL to alert again when player reaches again the level within a day (the time reached compared to the previous reach is greater than 1 hour
+							 WHEN ls_win.LevelOrder = t.LevelOrder AND DATEDIFF(MINUTE, ls_win.ModifiedDate, @ReachedDate)>=60 AND ls_win.WinAmt < t.TotalWinAmount THEN 1
+				             ELSE 0 END
 				) 
 			-- Reach level again after unblocked
 			--and not exists history level which customer reach
