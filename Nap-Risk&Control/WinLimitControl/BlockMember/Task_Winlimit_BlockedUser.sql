@@ -143,16 +143,11 @@ BEGIN
 			, t.ProductID
 			, SUM(t.TotalWinAmount) AS TotalWinAmount
 			, CASE WHEN CGS.CustID IS NOT NULL THEN 1 ELSE 0 END AS IsPrivateSetting
-			, STUFF(tmp.BettypeIDList,1,1,'') AS BettypeIDList
+			, STRING_AGG(t.Bettype, ',') AS BettypeIDList
 			, cc.currency, s.siteid
 	FROM #DataTmp_pre t WITH(NOLOCK)		
 		INNER JOIN dbo.Customer cc WITH (NOLOCK) ON cc.custid = t.CustId
 		INNER JOIN dbo.site s WITH (NOLOCK) ON s.site = cc.site
-		CROSS APPLY (SELECT ',' + CONVERT (VARCHAR(200), pre.Bettype)
-					FROM #DataTmp_pre pre WITH (NOLOCK) 
-					WHERE pre.GroupID = t.GroupID AND t.CustId = pre.CustId
-					FOR XML PATH ('')
-					) AS Tmp (BettypeIDList)
 		OUTER APPLY ( -- just need one row returned, so checking level1 is fine to know whether this customer has private setting or not
 				SELECT TOP 1 CGS.CustID
 				FROM dbo.WinLimit_CustGameSetting CGS WITH (NOLOCK)
@@ -160,7 +155,6 @@ BEGIN
 			)CGS
 	GROUP BY t.CustId, WinlostDate, t.GroupID,t.ProductID
 			,CASE WHEN CGS.CustID IS NOT NULL THEN 1 ELSE 0 END
-			,STUFF(tmp.BettypeIDList,1,1,'')
 			,cc.currency, s.siteid
 					
 	--For Private Setting Processing
@@ -181,7 +175,6 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
 				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
 							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
 							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
@@ -208,7 +201,6 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID AND GS.GroupID = T.GroupID
 				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
 							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
 							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
@@ -252,7 +244,6 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
 			WHERE ( t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
 					AND s.MaxWinLimit >  0
@@ -277,7 +268,6 @@ BEGIN
 			FROM #DataTmp t WITH(NOLOCK)
 				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
 				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				--INNER JOIN dbo.WinLimit_GameGroupSetting GS WITH (NOLOCK) ON GS.GroupID = S.GroupID 
 				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
 			WHERE (t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
 					AND s.MaxWinLimit < 0
