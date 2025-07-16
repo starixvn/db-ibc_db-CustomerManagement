@@ -158,64 +158,41 @@ BEGIN
 			,cc.currency, s.siteid
 					
 	--For Private Setting Processing
-	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 1)
+	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 1 AND TotalWinAmount <> 0)
 	BEGIN
-		-- WIN LIMT
-		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount > 0) 
-		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
-					, MAX(LS.LevelOrder) AS LevelOrder 
-					, MAX(s.MaxWinLimit) AS MaxWinLimit
-					, MAX(t.TotalWinAmount) AS TotalWinAmount
-					, 1
-					, CAST(tmp.MaxWinLimitSetting AS XML)
-					, t.BettypeIDList
-					, MAX(LS.LevelID) AS LevelID
-			FROM #DataTmp t WITH(NOLOCK)
-				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
-				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
-							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
-							) tmp
-			WHERE	(t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
-					AND s.MaxWinLimit > 0
-					AND T.IsPrivateSetting = 1
-			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
+		INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
+		SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
+				, MAX(LS.LevelOrder) AS LevelOrder
+				, CASE 
+						WHEN MAX(t.TotalWinAmount) > 0 THEN MAX(s.MaxWinLimit) -- FOR WIN LIMIT
+						WHEN MAX(t.TotalWinAmount) < 0 THEN MIN(s.MaxWinLimit) -- FOR LOSS LIMIT
+					END AS MaxWinLimit
+				, MAX(t.TotalWinAmount) AS TotalWinAmount
+				, 1
+				, CAST(tmp.MaxWinLimitSetting AS XML)
+				, t.BettypeIDList
+				, MAX(LS.LevelID) AS LevelID
+		FROM #DataTmp t WITH(NOLOCK)
+			INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
+			INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
+			CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
+							FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
+							WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
+						) tmp
+		WHERE t.IsPrivateSetting = 1
+			AND t.TotalWinAmount <> 0
+			AND (
+				(t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max AND s.MaxWinLimit > 0) -- FOR WIN LIMIT
+				OR
+				(t.TotalWinAmount < 0 AND t.TotalWinAmount <= s.MaxWinLimit AND s.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max AND s.MaxWinLimit < 0) -- FOR LOSS LIMIT
+			)
+		GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
 			
-			SET @RowCount += @@ROWCOUNT
-		END
-		-- LOSS LIMIT
-		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
-		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
-					, MAX(LS.LevelOrder) AS LevelOrder
-					, MIN(s.MaxWinLimit) AS MaxWinLimit
-					, MAX(t.TotalWinAmount) AS TotalWinAmount
-					, 1
-					, CAST(tmp.MaxWinLimitSetting AS XML)
-					, t.BettypeIDList
-					, MAX(LS.LevelID) AS LevelID
-			FROM #DataTmp t WITH(NOLOCK)
-				INNER JOIN dbo.WinLimit_CustGameSetting s WITH(NOLOCK) ON t.CustId = s.CustId AND t.ProductId = s.ProductId 
-				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				CROSS APPLY (SELECT '<MaxWinLimitSetting ' + STRING_AGG('Level' + CAST(S1.LevelID AS VARCHAR) + '="' + CAST(S1.MaxWinLimit_RM AS VARCHAR) + '"',' ') + '/>' AS MaxWinLimitSetting
-							 FROM dbo.WinLimit_CustGameSetting S1 WITH (NOLOCK)
-							 WHERE S1.CustID = T.CustId AND S1.ProductID = T.ProductId AND S1.GroupID = T.GroupID
-							) tmp
-			WHERE	( t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
-					AND s.MaxWinLimit < 0
-					AND T.IsPrivateSetting = 1
-			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
-			
-			SET @RowCount += @@ROWCOUNT
-		END
-		
+		SET @RowCount += @@ROWCOUNT
+
 	END
 	--For CURRENCY SETTING Processing
-	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 0)
+	IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE IsPrivateSetting = 0 AND TotalWinAmount <> 0)
 	BEGIN
 		INSERT INTO #WinLimit_ProductSettingDetail(ProductId, GroupID, ExchangeID, SiteID, MaxWinLimitSetting)
 		SELECT t.ProductID, t.GroupID, t.ExchangeID, t.SiteID, x.MaxWinLimitSetting 			
@@ -228,55 +205,34 @@ BEGIN
 			FROM dbo.WinLimit_ProductSettingDetail S1 WITH (NOLOCK)
 			WHERE S1.ProductID = t.ProductID AND S1.GroupID = t.GroupID AND S1.ExchangeID = t.ExchangeID AND S1.SiteID = t.SiteID			 
 			  ) x
-			  
-		-- WIN LIMT
-		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount > 0) 
-		BEGIN	  
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
-					, MAX(LS.LevelOrder)
-					, MAX(s.MaxWinLimit) 
-					, MAX(t.TotalWinAmount)
-					, 0
-					, CAST(tmp.MaxWinLimitSetting AS XML)
-					, t.BettypeIDList
-					, MAX(LS.LevelID) AS LevelID
-			FROM #DataTmp t WITH(NOLOCK)
-				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
-				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-			WHERE ( t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID >= @WinlimitLevel_min AND s.LevelID <= @WinlimitLevel_max) -- FOR WIN LIMIT
-					AND s.MaxWinLimit >  0
-					AND T.IsPrivateSetting = 0
-			GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
+		  
+		INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount, IsPrivateSetting, MaxWinLimitSetting, BettypeIDList, LevelID)
+		SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
+				, MAX(LS.LevelOrder)
+				, CASE 
+					WHEN MAX(t.TotalWinAmount) > 0 THEN MAX(s.MaxWinLimit) -- FOR WIN LIMIT
+					WHEN MAX(t.TotalWinAmount) < 0 THEN MIN(s.MaxWinLimit) -- FOR LOSS LIMIT
+				END AS MaxWinLimit 
+				, MAX(t.TotalWinAmount)
+				, 0
+				, CAST(tmp.MaxWinLimitSetting AS XML)
+				, t.BettypeIDList
+				, MAX(LS.LevelID) AS LevelID
+		FROM #DataTmp t WITH(NOLOCK)
+			INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
+			INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
+			INNER JOIN #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
+		WHERE t.IsPrivateSetting = 0
+			AND t.TotalWinAmount <> 0
+			AND (
+				(t.TotalWinAmount > 0 AND t.TotalWinAmount >= s.MaxWinLimit AND s.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max AND s.MaxWinLimit > 0) -- FOR WIN LIMIT
+				OR
+				(t.TotalWinAmount < 0 AND t.TotalWinAmount <= s.MaxWinLimit AND s.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max AND s.MaxWinLimit < 0) -- FOR LOSS LIMIT
+			)
+		GROUP BY t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID, tmp.MaxWinLimitSetting, t.BettypeIDList
 			
-			SET @RowCount += @@ROWCOUNT
+		SET @RowCount += @@ROWCOUNT
 
-		END
-		-- LOSS LIMIT
-		IF EXISTS (SELECT 1 FROM #DataTmp WITH (NOLOCK) WHERE TotalWinAmount < 0) 
-		BEGIN
-			INSERT INTO #CustReachCWLList(CustId, ProductId, GroupID, WinlostDate, ExchangeID, SiteID, LevelOrder, MaxwinLimit, TotalWinAmount,IsPrivateSetting,MaxWinLimitSetting,BettypeIDList, LevelID)
-			SELECT t.CustId, t.ProductId, t.GroupID, t.WinlostDate, t.ExchangeID, t.SiteID
-					, MAX(LS.LevelOrder)
-					, MIN(s.MaxWinLimit) 
-					, MAX(t.TotalWinAmount)
-					, 0
-					, CAST(tmp.MaxWinLimitSetting AS XML)
-					, t.BettypeIDList
-					, MAX(LS.LevelID) AS LevelID 
-			FROM #DataTmp t WITH(NOLOCK)
-				INNER JOIN dbo.WinLimit_ProductSettingDetail s WITH(NOLOCK) ON t.ExchangeID = s.ExchangeID AND t.ProductId = s.ProductID AND T.SiteID = S.SiteID AND T.GroupID = S.GroupID
-				INNER JOIN dbo.Winlimit_LevelSetting LS WITH (NOLOCK) ON LS.LevelID = S.LevelID
-				INNER JOIN  #WinLimit_ProductSettingDetail tmp ON t.ExchangeID = tmp.ExchangeID AND t.ProductId = tmp.ProductID AND T.SiteID = tmp.SiteID AND T.GroupID = tmp.GroupID
-			WHERE (t.TotalWinAmount < 0 AND t.TotalWinAmount < = s.MaxWinLimit AND s.LevelID >= @LosslimitLevel_min AND s.LevelID <= @LosslimitLevel_max) -- FOR LOSS LIMIT
-					AND s.MaxWinLimit < 0
-					AND T.IsPrivateSetting = 0
-			GROUP BY t.CustId, t.ProductId, t.GroupID,t.WinlostDate,t.ExchangeID,t.SiteID,tmp.MaxWinLimitSetting, t.BettypeIDList			
-			
-			SET @RowCount += @@ROWCOUNT
-
-		END
 	END
 	
 	IF @RowCount = 0
