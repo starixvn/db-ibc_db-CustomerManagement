@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCUST-CustDB" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE	dbo.Age_CustomerSelPotentialWinlimit
-				@agentId				INT
+				@CustId					INT
+				,   @RoleId				TINYINT
 				,	@username			NVARCHAR(50)	= ''
 				,   @problemAccount 	TINYINT = 2
 				,	@Status		 		VARCHAR(30) = ''
@@ -17,6 +18,7 @@ AS
 	Revisions:
 		- 20250529@Razor:	Potential Member win limit - [Redmine: #228570]
 		- 20250612@Razor:	Sort by status - [Redmine: #226060]
+		- 20250623@Razor:	Support Direct member - [Redmine: #230794]
 
 	Param's Explanation:
 		@problemAccount:	2 = All, 1 = Yes, 0 = No
@@ -75,8 +77,12 @@ BEGIN
 						WHERE CustID = ci.custid
 					) AS cs
 	WHERE 
-		ci.recommend = @agentId
-		AND c.roleid = 1
+		1 = CASE 
+				WHEN @RoleId = 2 AND ci.recommend = @CustId AND c.roleid = 1 THEN 1
+				WHEN @RoleId = 3 AND ci.mrecommend = @CustId AND ci.recommend = -3 AND c.roleid = 1 THEN 1
+				WHEN @RoleId = 4 AND ci.srecommend = @CustId AND ci.recommend = -4 AND c.roleid = 1 THEN 1
+				ELSE 0
+			END
 		AND cpw.PotentialWinLimit > 0
 		AND ci.username LIKE  '%' + ISNULL(@Username,'') + '%'
 		AND (	CASE WHEN ci.Enabled = 0 THEN 'Disabled'
