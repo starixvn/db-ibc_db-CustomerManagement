@@ -71,6 +71,7 @@ AS
 		- 20230310@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
+		- 20250717@Dave: Agency Cash Service - Customer Setting - Sprint 6 - output ServiceType [Redmine: #232372]
 
 	Explanation's Param:
 		@Status = 
@@ -211,7 +212,7 @@ BEGIN
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 5 THEN cda.Discount ELSE 0 END) AS discount1x2,
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 4 THEN cda.Discount ELSE 0 END) AS discountcs,
 			ISNULL(cps.Locked,0) AS Locked
-           			
+           	,ISNULL(v_csm.ServiceType, 0) AS ServiceType
 	FROM @tmpAgentList al
 		INNER JOIN dbo.customer c WITH(NOLOCK) on al.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
@@ -223,12 +224,16 @@ BEGIN
 								) AS cps
 		LEFT JOIN CustDiscount3rd_Agent cda WITH (NOLOCK) ON c.custid = cda.CustID AND cda.SportType IN (1,2)
 		LEFT JOIN CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+		CROSS APPLY (SELECT TOP (1) ServiceType
+						FROM dbo.vw_CustInfoExtra WITH(NOLOCK)
+						WHERE CustID = ci.custid
+					) AS v_csm
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, 
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason, al.Downlines,
 			cl.SecurityCode, al.RowNumber ,cps.Locked
-	
+			,ISNULL(v_csm.ServiceType, 0)
 	ORDER BY RowNumber
 END
 GO
