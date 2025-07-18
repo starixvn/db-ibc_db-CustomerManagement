@@ -386,20 +386,6 @@ BEGIN
 				--in case loss, if exists losslevel history which higher than losslevel customer reach again
 				AND 1 = CASE WHEN T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max 
 					                 AND ls_lose.IsInValid IS NOT NULL THEN 0 ELSE 1 END
-				/*AND 1= (CASE WHEN T.LevelID >= @LosslimitLevel_min AND T.LevelID <= @LosslimitLevel_max 
-							AND EXISTS(SELECT TOP 1 1
-								FROM dbo.WinLimit_CustGameMonitoring_History gh1 WITH(NOLOCK) 
-									INNER JOIN dbo.Winlimit_LevelSetting ls1 WITH (NOLOCK) ON gh1.LevelID = ls1.LevelID
-								WHERE g.CustID = gh1.CustID 
-									AND g.WinlostDate = gh1.WinlostDate 
-									AND g.GroupID = gh1.GroupID 
-									AND g.ProductID = gh1.ProductID	
-									AND gh1.LevelID >= @LosslimitLevel_min AND gh1.LevelID <= @LosslimitLevel_max
-									AND ls1.LevelOrder >= T.LevelOrder
-									AND gh1.ActionID < 200
-							)
-						THEN 0 ELSE 1 END	
-						)	*/
 				)
 			-- from Loss Limit to Win limit (Level 101 -> Level 2): currently reaching loss limit (such as level 101) and then reach to winlimit (such as level 2) 
 			OR (LS.LevelOrder > T.LevelOrder 
@@ -418,23 +404,6 @@ BEGIN
 								WHEN T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
 									AND ls_lose.IsInValid IS NOT NULL THEN 0 
 								ELSE 1 END			
-				/*AND NOT EXISTS(SELECT TOP 1 1
-							FROM dbo.WinLimit_CustGameMonitoring_History gh3 WITH(NOLOCK) 
-								INNER JOIN dbo.Winlimit_LevelSetting ls3 WITH (NOLOCK) ON gh3.LevelID = ls3.LevelID
-							WHERE g.CustID = gh3.CustID 
-								AND g.WinlostDate = gh3.WinlostDate 
-								AND g.GroupID = gh3.GroupID 
-								AND g.ProductID = gh3.ProductID
-								AND 1 = CASE WHEN ((gh3.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max
-													AND T.LevelID BETWEEN @WinlimitLevel_min AND @WinlimitLevel_max)
-												 OR 
-													(gh3.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max
-													AND T.LevelID BETWEEN @LosslimitLevel_min AND @LosslimitLevel_max)
-												)
-												AND ls3.LevelOrder >= T.LevelOrder
-											THEN 1 ELSE 0 END
-								AND gh3.ActionID < 200 
-							)*/				
 				)
 		)
 	
