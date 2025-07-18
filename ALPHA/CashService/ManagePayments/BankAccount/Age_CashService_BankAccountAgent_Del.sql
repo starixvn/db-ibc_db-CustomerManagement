@@ -55,7 +55,7 @@ BEGIN
 
 	IF @Old_IsActiveStatus IS NULL
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 

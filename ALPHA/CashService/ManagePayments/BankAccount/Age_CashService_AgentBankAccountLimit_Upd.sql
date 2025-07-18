@@ -16,11 +16,11 @@ AS
 /*  
 	Created By: Helios
 	Created Date: 2025-04-18
-	Description: Agency Cash Service - Update daily withdrawal count [Redmine #223896] 
+	Description: Agency Cash Service - Update daily withdrawal count [Redmine #223896]   
 	DB: DBCust.AgencyCashService
 	
 	Revisions:
-		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
+		- 20250321@Helios: Agency Cash Service [Redmine: #223896]   
 
 	Param:
 
@@ -61,19 +61,19 @@ BEGIN
 
 	IF @Old_DailyWithdrawalCount IS NULL
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
 	IF ISNULL(@DrawLimit , 0) = 0
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Draw Limit'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters'	, @ErrCode = 100 ;	
 		RETURN
 	END
 
 	IF @DrawLimit IS NOT NULL AND @DrawLimit > 32767
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Draw Limit Out Of Range' , @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters' , @ErrCode = 100 ;	
 		RETURN
 	END
 
@@ -93,7 +93,7 @@ BEGIN
 		IF (@@error = 0)
 		BEGIN
 			SELECT  
-				@ErrMsg = N'Update Successful!',
+				@ErrMsg = N'Action completed successfully.',
 				@ErrCode = 0 ;
 		END
 	END
@@ -146,7 +146,7 @@ BEGIN
 			OR @MinPerDeposit < 0 OR @MaxPerDeposit < 0 OR @MinPerWithdrawal < 0 OR @MaxPerWithdrawal < 0
 		)
 		BEGIN
-			SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 101 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 101;
 			RETURN
 		END
 
@@ -172,7 +172,7 @@ BEGIN
 
 		IF ISNULL(@Exist_LimitAccount , 0) = 0
 		BEGIN
-			SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 102 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 102;
 			RETURN
 		END
 
@@ -211,7 +211,7 @@ BEGIN
 			IF (@@error = 0)
 			BEGIN
 				SELECT  
-					@ErrMsg = N'Update Successful!',
+					@ErrMsg = N'Action completed successfully.',
 					@ErrCode = 0 ;
 			END
 		END

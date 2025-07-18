@@ -48,22 +48,21 @@ BEGIN
 
 	IF dbo.f_IsValidProvider(@ProviderID) = 0
 	BEGIN
-	    SET @ErrCode = 100;
-	    SET @ErrMsg = N'Invalid Provider Input';
-	    RETURN;
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
+		RETURN;
 	END
 	
 	SELECT @Old_ProviderStatus = (SELECT TOP 1 ProviderStatus FROM CashAgentProviderConfig WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID)
 
 	IF @Old_ProviderStatus IS NULL OR @ProviderID IS NULL OR @ProviderStatus IS NULL
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
 	IF @Old_ProviderStatus IS NOT NULL AND @Old_ProviderStatus = @ProviderStatus
 	BEGIN
-		SELECT  @ErrMsg = N'Nothing has been changed.'	, @ErrCode = 0 ;	
+		SELECT  @ErrMsg = N'NoChange', @ErrCode = 0 ;
 		RETURN
 	END
 
