@@ -54,52 +54,52 @@ BEGIN
 
 	IF dbo.f_IsValidProvider(@ProviderID) = 0
 	BEGIN
-	    SET @ErrCode = 100;
-	    SET @ErrMsg = N'Invalid Provider Input';
-	    RETURN;
+		SET @ErrCode = 100;
+		SET @ErrMsg = N'Invalid parameters.';
+		RETURN;
 	END
 	
 	-- Check if XML is null or empty
 	IF @ProviderID IS NULL OR @PaymentMethods IS NULL OR @PaymentMethods = ''
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters.' , @ErrCode = 100;
 		RETURN
 	END
 
 	-- write log
 	DECLARE @old_PaymentMethods TABLE (
-	    MethodID				SMALLINT,
-	    TransactionType			TINYINT,
-	    MinAmount				MONEY,
-	    MaxAmount				MONEY,
-	    PaymentMethodEnable			BIT
+		MethodID				SMALLINT,
+		TransactionType			TINYINT,
+		MinAmount				MONEY,
+		MaxAmount				MONEY,
+		PaymentMethodEnable			BIT
 	);
 
 	
 	--get global config
 	DECLARE @tmp_global_PaymentMethods TABLE (
-	    ProviderID				SMALLINT,
-	    MethodID				SMALLINT,
-	    TransactionType			TINYINT,
-	    MinAmount				MONEY,
-	    MaxAmount				MONEY
+		ProviderID				SMALLINT,
+		MethodID				SMALLINT,
+		TransactionType			TINYINT,
+		MinAmount				MONEY,
+		MaxAmount				MONEY
 	);
 
 	--parse new data
 	DECLARE @tmp_PaymentMethods TABLE (
-	    MethodID				SMALLINT,
-	    TransactionType			TINYINT,
-	    MinAmount				MONEY,
-	    MaxAmount				MONEY,
-	    PaymentMethodEnable			BIT
+		MethodID				SMALLINT,
+		TransactionType			TINYINT,
+		MinAmount				MONEY,
+		MaxAmount				MONEY,
+		PaymentMethodEnable			BIT
 	);
 	INSERT INTO @tmp_PaymentMethods 
 	(
 		MethodID
-	    , TransactionType
-	    , MinAmount
-	    , MaxAmount
-	    , PaymentMethodEnable
+		, TransactionType
+		, MinAmount
+		, MaxAmount
+		, PaymentMethodEnable
 	)
 	SELECT MethodID , TransactionType, MinAmount, MaxAmount, PaymentMethodEnable
 	FROM OPENJSON(@PaymentMethods) WITH (
@@ -115,24 +115,24 @@ BEGIN
 	BEGIN
 		--SELECT @ErrCode = 90017,
 		--	 @ErrMsg =  [dbo].[f_Get_MsgNamebyMsgID](90017,'E')
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid values input.' , @ErrCode = 100;
 			RETURN
 	END
 
 	INSERT INTO @tmp_global_PaymentMethods 
 	(
 		ProviderID
-	    , MethodID
-	    , TransactionType
-	    , MinAmount
-	    , MaxAmount
+		, MethodID
+		, TransactionType
+		, MinAmount
+		, MaxAmount
 	)
 	SELECT
 		cppi.ProviderID
-	    , cppi.PaymentMethodID
-	    , cppi.TransactionType
-	    , cppi.MinAmountTrans
-	    , cppi.MaxAmountTrans
+		, cppi.PaymentMethodID
+		, cppi.TransactionType
+		, cppi.MinAmountTrans
+		, cppi.MaxAmountTrans
 	FROM CashPaymentProviderInfo cppi WITH (NOLOCK)
 	INNER JOIN @tmp_PaymentMethods old ON cppi.PaymentMethodID = old.MethodID AND cppi.TransactionType = old.TransactionType
 	WHERE cppi.ProviderID = @ProviderID
@@ -150,7 +150,7 @@ BEGIN
 	--validate parse data with current data setting is changed
 	IF NOT EXISTS (SELECT TOP 1 1 FROM @tmp_PaymentMethods tmp)
 	BEGIN
-		SELECT  @ErrMsg = N'Nothing has been changed.'	, @ErrCode = 0 ;	
+		SELECT  @ErrMsg = N'No changes detected.' , @ErrCode = 0;
 			RETURN
 	END
 
@@ -167,8 +167,8 @@ BEGIN
 	BEGIN
 		--SELECT @ErrCode = 90017,
 		--	 @ErrMsg =  [dbo].[f_Get_MsgNamebyMsgID](90017,'E')
-		SELECT  @ErrMsg = N'Wrong Min Max Amount'	, @ErrCode = 101 ;	
-			RETURN
+		SELECT  @ErrMsg = N'Incorrect Min/Max value.' , @ErrCode = 101;
+		RETURN
 	END
 
 	DECLARE @PaymentMethodStatus BIT = NULL
@@ -183,7 +183,7 @@ BEGIN
 	-- Check if payment method status is already 'completed'
 	IF ISNULL(@PaymentMethodStatus, 0) = 0
 	BEGIN
-		SELECT  @ErrMsg = N'Payment method is incomplete'	, @ErrCode = 102 ;	
+		SELECT  @ErrMsg = N'Payment method is incomplete.' , @ErrCode = 102;
 			RETURN
 	END
 	
@@ -197,10 +197,10 @@ BEGIN
 		INSERT INTO @old_PaymentMethods 
 		(
 			MethodID
-		    , TransactionType
-		    , MinAmount
-		    , MaxAmount
-		    , PaymentMethodEnable
+			, TransactionType
+			, MinAmount
+			, MaxAmount
+			, PaymentMethodEnable
 		)
 		SELECT 
 			cpp.PaymentMethodID,
@@ -228,8 +228,8 @@ BEGIN
 	IF (@@error = 0)
 	BEGIN
 		SELECT  
-			@ErrMsg = N'Update Successful!',
-			@ErrCode = 0 ;
+			@ErrMsg = N'Update successful.',
+			@ErrCode = 0;
 	END
 
 	--START LOG

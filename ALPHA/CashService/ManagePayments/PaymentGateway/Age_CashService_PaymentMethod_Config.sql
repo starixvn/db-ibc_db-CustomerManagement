@@ -1,16 +1,17 @@
 ﻿/*<info serverAlias="DBCUST-AgencyCashService" executers="wsv_CashService"  viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Age_CashService_PaymentMethod_Config
-	@CustID			INT,			-- SMA_ID Input
-	@ProviderID			SMALLINT,
-	@TransactionType		TINYINT,
-	@PaymentMethodID		SMALLINT,
-	@SubAccID			INT				= 0,
-	@IP				VARCHAR(50)			= '',
-	@Language			VARCHAR(2)			= 'E',
-	@APIConfig			VARCHAR(500)		= NULL,
-	@ErrCode			INT				= 0		OUTPUT,
-	@ErrMsg			NVARCHAR(1000)		= ''		OUTPUT
-AS 
+	@CustID                 INT,            -- SMA_ID Input
+	@ProviderID             SMALLINT,
+	@TransactionType        TINYINT,
+	@PaymentMethodID        SMALLINT,
+	@ValidationResult       BIT,
+	@SubAccID               INT             = 0,
+	@IP                     VARCHAR(50)     = '',
+	@Language               VARCHAR(2)      = 'E',
+	@APIConfig              VARCHAR(500)    = NULL,
+	@ErrCode                INT             = 0 OUTPUT,
+	@ErrMsg                 NVARCHAR(1000)  = '' OUTPUT
+AS
 /*  
 	Created By: Helios
 	Created Date: 2025-04-18
@@ -36,55 +37,66 @@ AS
 */  
 BEGIN
 	SET NOCOUNT ON;
+	DECLARE
+		@startRun           DATETIME,
+		@endRun             DATETIME,
+		@DurationTime       INT;
 
-	DECLARE 
-		@startRun		DATETIME ,
-		@endRun		DATETIME ,
-		@DurationTime	INT
-	
-	SET @startRun = GETDATE ()
-	SELECT @ErrCode = 0 , @ErrMsg = '' 
+	SET @startRun = GETDATE();
+	SELECT @ErrCode = 0, @ErrMsg = '';
 
-	DECLARE @CheckExists_ProviderAPIConfig INT = NULL , @CheckExists_AgentPaymentMethod INT = NULL
-	
-	DECLARE @PaymentMethodStatus TINYINT
-	DECLARE @MinAmount MONEY , @MaxAmount MONEY , @PaymentMethodEnable BIT
+	DECLARE
+		@CheckExists_ProviderAPIConfig   INT = NULL,
+		@CheckExists_AgentPaymentMethod  INT = NULL,
+		@PaymentMethodStatus		   TINYINT = NULL;
 
-	DECLARE @old_RetryAPIConfig TABLE (
-		AgentID			INT,
-		ProviderID			SMALLINT,
-		MethodID			SMALLINT,
-		TransactionType		TINYINT,
-		APIConfig			VARCHAR(500),
-		PaymentMethodStatus	TINYINT
-	)
+	DECLARE
+		@MinAmount          MONEY,
+		@MaxAmount          MONEY,
+		@PaymentMethodEnable BIT;
 
-	--hard code
-	SELECT 
-		@PaymentMethodStatus	= 1,		-- 1 AS Processing
-		@MinAmount			= 100,
-		@MaxAmount			= 5000,
-		@PaymentMethodEnable	= 0
+	DECLARE @old_RetryAPIConfig TABLE
+	(
+		AgentID             INT,
+		ProviderID          SMALLINT,
+		MethodID            SMALLINT,
+		TransactionType     TINYINT,
+		APIConfig           VARCHAR(500),
+		PaymentMethodStatus TINYINT
+	);
+
+	-- Hard code min/max/enable
+	SELECT
+		@MinAmount              = 100,
+		@MaxAmount              = 5000,
+		@PaymentMethodEnable    = 0;
 
 
 	IF NOT EXISTS (SELECT TOP 1 1 FROM CashPaymentProvider cpp WITH (NOLOCK) WHERE cpp.ProviderID = @ProviderID)
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Provider Input' , @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
 	IF dbo.f_IsValidProvider(@ProviderID) = 0
 	BEGIN
-	    SET @ErrCode = 100;
-	    SET @ErrMsg = N'Invalid Provider Input';
-	    RETURN;
+		SET @ErrCode = 100;
+		SET @ErrMsg = N'Invalid parameters';
+		RETURN;
 	END
 	
 	IF dbo.f_IsValidPaymentMethod(@PaymentMethodID) = 0
 	BEGIN
-	    SET @ErrCode = 100;
-	    SET @ErrMsg = N'Invalid PaymentMethod Input';
-	    RETURN;
+		SET @ErrCode = 100;
+		SET @ErrMsg = N'Invalid parameters';
+		RETURN;
+	END
+
+	IF @ValidationResult IS NULL
+	BEGIN
+		SET @ErrCode = 100;
+		SET @ErrMsg = N'Invalid parameters';
+		RETURN;
 	END
 		
 	SELECT @CheckExists_ProviderAPIConfig = (SELECT PaymentMethodStatus FROM CashPaymentProviderAPIConfig WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID AND PaymentMethodID = @PaymentMethodID AND TransactionType = @TransactionType)
@@ -93,8 +105,12 @@ BEGIN
 	-- Data Exists , so return
 	IF @CheckExists_ProviderAPIConfig IN (1,2,4) AND @CheckExists_AgentPaymentMethod = 1
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input or Data Existing'	, @ErrCode = 101 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 101;
 		RETURN
+	END
+
+	SELECT @PaymentMethodStatus = CASE WHEN @ValidationResult = 0 THEN 2 -- API validate is 0 : Status Completed
+	ELSE 3  --API validate is <> 0 : Status Fail
 	END
 
 	-- Existing record found with status 'Fail' — status has been updated.
@@ -104,19 +120,19 @@ BEGIN
 		INSERT INTO @old_RetryAPIConfig 
 		(
 			AgentID
-		    , ProviderID
-		    , MethodID
-		    , TransactionType
-		    , APIConfig
-		    , PaymentMethodStatus
+			, ProviderID
+			, MethodID
+			, TransactionType
+			, APIConfig
+			, PaymentMethodStatus
 		)
 		SELECT
 			AgentID
-		    , ProviderID
-		    , PaymentMethodID
-		    , TransactionType
-		    , APIConfig
-		    , PaymentMethodStatus
+			, ProviderID
+			, PaymentMethodID
+			, TransactionType
+			, APIConfig
+			, PaymentMethodStatus
 		FROM CashPaymentProviderAPIConfig cppa WITH (NOLOCK)
 		WHERE AgentID = @CustID 
 		AND ProviderID = @ProviderID 
@@ -128,8 +144,8 @@ BEGIN
 		--update values
 		UPDATE cppa
 			SET cppa.PaymentMethodStatus = @PaymentMethodStatus,
-			    cppa.APIConfig = @APIConfig,
-			    RepUpdateTime = dbo.f_GetDateTime2()
+				cppa.APIConfig = @APIConfig,
+				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CashPaymentProviderAPIConfig cppa WITH (NOLOCK)
 		WHERE AgentID = @CustID 
 		AND ProviderID = @ProviderID 
@@ -146,12 +162,12 @@ BEGIN
 			INSERT INTO CashPaymentProviderAPIConfig 
 			(
 				AgentID
-			    , ProviderID
-			    , PaymentMethodID
-			    , TransactionType
-			    , APIConfig
-			    , PaymentMethodStatus
-			    , RepUpdateTime
+				, ProviderID
+				, PaymentMethodID
+				, TransactionType
+				, APIConfig
+				, PaymentMethodStatus
+				, RepUpdateTime
 			)
 			SELECT
 				@CustID,

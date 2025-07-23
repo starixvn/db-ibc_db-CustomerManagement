@@ -25,6 +25,7 @@ AS
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250701@Helios: Agency Cash Service - Sprint 6 [RedmineID: #231815]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT 
 		- @isDirectDownline:
@@ -133,6 +134,7 @@ BEGIN
 	  
 		--End
 	    , ci.credit
+		, ISNULL(cps.ServiceType, 0) AS ServiceType
 		-- cricket
 		-- Cricket
 	    , ISNULL ( cdm_cricket.MasterDiscount , 0 ) * 100 AS adiscount_cricket
@@ -145,7 +147,7 @@ BEGIN
 		CROSS JOIN #SportBettypeFilter f WITH(NOLOCK)
 		INNER JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON ci.custID = cdm.CustID AND f.SportType = cdm.SportType AND f.Bettype = cdm.BetType
 		CROSS APPLY (
-				SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed , CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject , ISNULL ( Locked , 0 ) Locked
+				SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed , CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject , ISNULL ( Locked , 0 ) Locked, ISNULL(ServiceType, 0) AS ServiceType
 				    FROM dbo.CustProductStatus WITH (NOLOCK)
 					WHERE CustID = ci.custid
 			) AS cps
@@ -153,7 +155,7 @@ BEGIN
 			    ON cdm_cricket.CustID = ci.custid  AND cdm_cricket.SportType = 50 AND cdm_cricket.BetType = 501
 		LEFT JOIN CustLoginInfo_Member cl WITH (NOLOCK) ON cl.CustID = ci.custid
 		GROUP BY
-			ci.enabled , cps.closed , cps.reject , cps.Locked , ci.username , ci.custid , ci.ugroup , ci.firstname , ci.lastname , ci.credit , ci.DoubleCommLosing , cdm_cricket.AgentDiscount , cdm_cricket.MasterDiscount , cdm_cricket.PlayerDiscount , cl.ClosedReason
+			ci.enabled , cps.closed , cps.reject , cps.Locked , ci.username , ci.custid , ci.ugroup , ci.firstname , ci.lastname , ci.credit , ci.DoubleCommLosing , cdm_cricket.AgentDiscount , cdm_cricket.MasterDiscount , cdm_cricket.PlayerDiscount , cl.ClosedReason, cps.ServiceType
 
 		ORDER BY
 			CASE
@@ -180,6 +182,7 @@ BEGIN
 			m.firstname, 
 			m.lastname, 
 			ci.credit,
+			ISNULL(cps.ServiceType, 0) AS ServiceType,
 			cs.SportType,
 			cs.MasterDiscount * 100 AS MasterDiscount,
 			CASE WHEN @isDirectDownline = 1 THEN 0 ELSE cs.AgentDiscount * 100  END AS AgentDiscount,
@@ -197,6 +200,7 @@ BEGIN
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 											, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 											, ISNULL(Locked, 0) Locked
+											, ISNULL(ServiceType, 0) AS ServiceType
 										FROM dbo.CustProductStatus  WITH(NOLOCK)
 										WHERE CustID = ci.custid
 									) AS cps

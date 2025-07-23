@@ -30,6 +30,7 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250701@Helios: Agency Cash Service - Sprint 6 [RedmineID: #231815]
 	Param's Explanation:
 	- @Recommend: Agent ID
 */
@@ -228,19 +229,21 @@ BEGIN
 					c.lastname,
 				    ci.custid,
 					ISNULL(cl.ClosedReason,0) AS ClosedReason,
-					ISNULL(ps.Locked,0) Locked
+					ISNULL(ps.Locked,0) Locked,
+					ISNULL(ps.ServiceType,0) AS ServiceType
 			FROM custInfo AS ci WITH(NOLOCK)
 				INNER JOIN Customer c WITH (NOLOCK) ON c.custid=ci.custid
 				CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS closed
-								, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
-								, Locked
-							FROM dbo.CustProductStatus  WITH(NOLOCK)
-							WHERE CustID = ci.custid
-						) AS ps
+									, CASE WHEN SuspendInfo > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS reject
+									, Locked
+									, ISNULL(ServiceType,0) AS ServiceType
+								FROM dbo.CustProductStatus  WITH(NOLOCK)
+								WHERE CustID = ci.custid
+							) AS ps
 				LEFT JOIN CustLoginInfo_Member cl WITH(NOLOCK) ON ci.custid=cl.CustID
 			WHERE   ci.Recommend = @UplineID 
-		    AND   ci.roleid = 1
-			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
+	    AND   ci.roleid = 1
+			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked,ps.ServiceType
 		) info
 		CROSS APPLY (
 			SELECT 2 AS roleid

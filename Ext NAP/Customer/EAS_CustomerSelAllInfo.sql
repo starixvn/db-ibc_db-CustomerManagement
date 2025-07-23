@@ -18,6 +18,7 @@ Revisions:
 	- 20230602@Eden: Ext Nap - Archive Super level [Redmine:#183447]
 	- 20240220@Luke: Ext Nap - Support to show Headline's username on left panel [Redmine: #200995]
 	- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
+	- 20250623@Helios: Offer CashService - Sprint 6 [RedmineID: #231204]
 
 Example:	
 	EXEC EAS_CustomerSelAllInfo @GroupName='ACCUUS', @UserName = 'supertest1', @UserId = 8 
@@ -115,7 +116,8 @@ BEGIN
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				ISNULL(ps.Locked,0) AS Locked,
 				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed,
-				ISNULL(Headline.username,'') AS Headline
+				ISNULL(Headline.username,'') AS Headline,
+				ps.ServiceType
 		FROM CustSuperProfile cp WITH (NOLOCK)
 			RIGHT JOIN dbo.customer c WITH (NOLOCK) ON c.custid = cp.custid
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
@@ -124,6 +126,7 @@ BEGIN
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, Locked
 										, CloseInfo
+										, ServiceType
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS ps
@@ -145,7 +148,8 @@ BEGIN
 				c.srecommend, c.mrecommend, c.recommend, @SuperName AS SuperName, @MasterName AS MasterName, @AgentName AS AgentName,
 				ISNULL(ps.Locked,0) AS Locked,
 				ISNULL((SELECT suspendinfo FROM dbo.f_GetSuspendInfoStatus(@roleid,ps.CloseInfo)),0) as isDirectClosed,
-				ISNULL(Headline.username,'') AS Headline
+				ISNULL(Headline.username,'') AS Headline,
+				ps.ServiceType
 		FROM dbo.customer c WITH (NOLOCK) 
 			INNER JOIN dbo.custInfo ci WITH (NOLOCK) ON c.custid = ci.custid
 			LEFT JOIN custaccount AS GroupHeadline WITH (NOLOCK) ON GroupHeadline.CUSTID = @CustGroupHeadlineID AND GroupHeadline.GroupID > 0 
@@ -153,6 +157,7 @@ BEGIN
 										, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 										, Locked
 										, CloseInfo
+										, ServiceType
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid
 								) AS ps
