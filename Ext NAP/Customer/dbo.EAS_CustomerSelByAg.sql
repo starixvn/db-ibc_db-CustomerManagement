@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[EAS_CustomerSelByAg]
 	@UserID		INT,
 	@PageIndex		INT = 1 OUTPUT,
 	@PageSize		INT = 500,
-	@TotalRows		INT = 0 OUTPUT
+	@TotalRows		INT = 0 OUTPUT,
+	@ServiceType	TINYINT = 2
 AS
 /*  
 Created by: Scott  
@@ -69,6 +70,7 @@ Revisions:
 	- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 	- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+	- 20250717@Dave: Agency Cash Service - Customer Setting - Sprint 6 - Add filter for Member Type (@ServiceType) [Redmine: #232372]
 	Explanation's Param:
 	@Status = 
 		0: All
@@ -77,6 +79,10 @@ Revisions:
 		3: Closed
 		4: Disabled
 		5: Locked
+	@ServiceType:
+		0: Credit Member
+		1: Cash Member
+		2: All
 		
 	Example: EXEC EAS_CustomerSelBySAg @srecommend=9367272, @UserID = 8   
 */  
@@ -115,6 +121,10 @@ BEGIN
 								WHERE CustID = ci.custid
 							) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT TOP (1) ServiceType
+								FROM dbo.vw_CustInfoExtra WITH(NOLOCK)
+								WHERE CustID = ci.custid
+							) AS v_csm
 		WHERE 1 = CASE WHEN @Currencies = '' 
 							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
 											)
@@ -128,6 +138,8 @@ BEGIN
 			AND ISNULL(cps.reject, 0) = CASE WHEN @Status = 1 THEN 0
 											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @ServiceType = 2 THEN 1
+						WHEN ISNULL(v_csm.ServiceType, 0) = @ServiceType THEN 1 ELSE 0 END
 		
 
 		SELECT @TotalRows = @@ROWCOUNT
@@ -146,6 +158,10 @@ BEGIN
 								WHERE CustID = ci.custid
 							) AS cps
 			LEFT JOIN dbo.Age_CustDateLimit l WITH(NOLOCK) ON c.CustID=l.CustId
+			CROSS APPLY (SELECT TOP (1) ServiceType
+								FROM dbo.vw_CustInfoExtra WITH(NOLOCK)
+								WHERE CustID = ci.custid
+							) AS v_csm
 		WHERE 1 = CASE WHEN @Currencies = '' 
 							OR ci.currency IN (SELECT value FROM STRING_SPLIT(@Currencies,',') 
 											)
@@ -160,6 +176,8 @@ BEGIN
 											WHEN @Status = 2 THEN 1 ELSE ISNULL(cps.reject, 0) END
 			AND c.username LIKE @UserName + '%'
 			AND ISNULL(cps.Locked,0) >= CASE WHEN @Status = 5 THEN 1 ELSE 0 END
+			AND 1 = CASE WHEN @ServiceType = 2 THEN 1
+						WHEN ISNULL(v_csm.ServiceType, 0) = @ServiceType THEN 1 ELSE 0 END
 	
 		SELECT @TotalRows = @@ROWCOUNT
 	END
@@ -216,7 +234,8 @@ BEGIN
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 4 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscountcs,
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount1x2,
 
-			ISNULL(cps.Locked,0) AS Locked
+			ISNULL(cps.Locked,0) AS Locked,
+			ISNULL(v_csm.ServiceType, 0) AS ServiceType
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
@@ -228,12 +247,13 @@ BEGIN
 								) AS cps
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON c.custid = cdm.CustID AND cdm.SportType IN (1,2)
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+		CROSS APPLY (SELECT TOP 1 ServiceType FROM dbo.vw_CustInfoExtra WITH(NOLOCK) WHERE CustID = ci.custid) AS v_csm
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
-			cl.SecurityCode, ml.RowNumber  ,cps.Locked,c.recommend
-	
+			cl.SecurityCode, ml.RowNumber  ,cps.Locked,c.recommend,
+			ISNULL(v_csm.ServiceType, 0)
 	ORDER BY RowNumber
 
 END
