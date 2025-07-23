@@ -25,7 +25,8 @@ AS
 	DB: DBCust.AgencyCashService
 	
 	Revisions:
-		- 20250321@Helios: Agency Cash Service [Redmine: #223896]    
+		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
+		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.AccountHolderName , BankAccountNumber,  PromptPayMobile [RedmineID: #231204]  
 
 	Param:
 		DECLARE @p1 INT , @p2 VARCHAR(1000)
@@ -72,20 +73,19 @@ BEGIN
 	OR @TransTypeList IS NULL OR @TransTypeList = ''
 	OR @DepositMatchingMode IS NULL
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
 	IF dbo.f_IsValidBank(@BankID) = 0
 	BEGIN
-	    SET @ErrCode = 100;
-	    SET @ErrMsg = N'Invalid Bank Input';
-	    RETURN;
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
+		RETURN;
 	END
 
 	IF @PromptPayEnabled = 1 AND (@PromptPayMobile IS NULL  OR @PromptPayMobile = '')
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 101 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
@@ -95,12 +95,7 @@ BEGIN
 								WHERE AgentID = @custid AND BankID = @BankID AND BankAccountNumber = @BankAccountNumber AND IsActive = 1)
 	IF @CheckExistsBankAccountNumber = 1
 	BEGIN
-		SELECT  @ErrMsg = 'This bank account already exist, please enter a different bank account number.',
-							--					CASE @Language
-							--                              WHEN 'E' THEN 'This bank account already exist, please enter a different bank account number.'
-							--                              ELSE [dbo].[f_Get_MsgNamebyMsgID](9900,@Language)	-- Need Define MsgID
-							--                            END ,
-                 @ErrCode = 102
+		SELECT  @ErrMsg = N'This bank account already exist, please enter a different bank account number.', @ErrCode = 102
 		RETURN	
 	END
 	ELSE 
@@ -141,14 +136,12 @@ BEGIN
 
 	IF (@@error = 0)
 	BEGIN
-		SELECT  
-			@ErrMsg = N'Update Successful!',
-			@ErrCode = 0 ;
+		SELECT @ErrMsg = N'Action completed successfully.', @ErrCode = 0 ;
 	END
 
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValueMask NVARCHAR(MAX)
 	DECLARE @xml XML , @ActionID INT = 300003
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -174,12 +167,22 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'), TYPE
 	);
-	SET @TrackingValue = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	
+	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValue = REPLACE(REPLACE(REPLACE(@TrackingValueMask, ISNULL(@AccountHolderName, ''), ''),ISNULL(@BankAccountNumber, ''),''),ISNULL(@PromptPayMobile, ''),'');
 
 	
-	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		 AS UserID
+	    , @custid		 AS CustID
+	    , @ActionID		 AS ActionID
+	    , @TrackingValue	 AS TrackingValue
+	    , NULL			 AS TrackingValue2
+	    , @TrackingValueMask AS TrackingValueMask
+	    , NULL			 AS TrackingValueMask2
+	    , @DurationTime	 AS Duration
 END

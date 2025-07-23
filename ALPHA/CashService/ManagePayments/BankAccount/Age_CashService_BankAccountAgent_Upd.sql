@@ -23,6 +23,7 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]   
+		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.PromptPayMobile [RedmineID: #231204]
 
 	Param:
 		DECLARE @p1 INT , @p2 VARCHAR(1000)
@@ -59,13 +60,13 @@ BEGIN
 	IF @CustID IS NULL OR @AgentBankAccountID IS NULL OR @BankAccountStatus IS NULL 
 	OR @TransTypeList IS NULL OR @DepositMatchingMode IS NULL 
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
 	IF @PromptPayEnabled = 1 AND (@PromptPayMobile IS NULL  OR @PromptPayMobile = '')
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 102 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
@@ -90,8 +91,7 @@ BEGIN
 
 	IF ISNULL(@CheckExists_BankAccountNumber , 0) = 0
 	BEGIN
-		SELECT  @ErrMsg = 'This bank account does not exist.',
-                 @ErrCode = 102
+		SELECT  @ErrMsg = N'This bank account already exist, please enter a different bank account number.', @ErrCode = 102
 		RETURN
 	END
 
@@ -101,12 +101,12 @@ BEGIN
 		INSERT INTO @Old_CashAgentBankAccount 
 		(
 			AgentID
-		    , BankAccountStatus
-		    , AccountNickname
-		    , TransTypeList
-		    , DepositMatching
-		    , PromptPayEnabled
-		    , PromptPayMobile
+			, BankAccountStatus
+			, AccountNickname
+			, TransTypeList
+			, DepositMatching
+			, PromptPayEnabled
+			, PromptPayMobile
 		)
 		SELECT 
 			aba.AgentID, 
@@ -139,14 +139,13 @@ BEGIN
 	
 	IF (@@error = 0)
 	BEGIN
-		SELECT  
-			@ErrMsg = N'Update Successful!',
-			@ErrCode = 0 ;
+		SELECT @ErrMsg = N'Action completed successfully.', @ErrCode = 0 ;
 	END
 
 	--START LOG
 	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	DECLARE @TrackingValueMask	NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
+	DECLARE @TrackingValue		NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
 	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 300004
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -154,7 +153,7 @@ BEGIN
 	-- LOG NEW VALUES
 	SET @xml = (
 	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
 			@IP										AS '@IP',
 			(
 				SELECT	
@@ -170,12 +169,13 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValue = REPLACE(@TrackingValueMask, ISNULL(@PromptPayMobile, ''), '');
 
 	-- LOG OLD VALUES
 	SET @xml = (
 	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
 			@IP										AS '@IP',
 			(
 				SELECT	
@@ -192,12 +192,40 @@ BEGIN
 			)
 	FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SET @TrackingValueMask2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	
+	SET @xml = (
+	SELECT	@CustID									AS '@CustID',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
+			@IP										AS '@IP',
+			(
+				SELECT	
+						CONVERT(INT, a.AgentID)				AS '@CustID',
+						CONVERT(INT, a.BankAccountStatus)		AS '@BankAccountStatus',
+						CONVERT(NVARCHAR(255), a.AccountNickname)	AS '@AccountNickname',
+						a.TransTypeList					AS '@TransTypeList',
+						a.DepositMatching					AS '@DepositMatching',
+						CONVERT(INT, a.PromptPayEnabled)		AS '@PromptPayEnabled',
+						''							AS '@PromptPayMobile'
+				FROM @Old_CashAgentBankAccount a
+				FOR XML PATH('AgentBankAcc'), 
+				TYPE
+			)
+	FOR XML PATH('ROOT'),TYPE
+	);
 
 	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
 
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		  AS UserID
+	    , @custid		  AS CustID
+	    , @ActionID		  AS ActionID
+	    , @TrackingValue	  AS TrackingValue
+	    , @TrackingValue2	  AS TrackingValue2
+	    , @TrackingValueMask  AS TrackingValueMask
+	    , @TrackingValueMask2 AS TrackingValueMask2
+	    , @DurationTime	  AS Duration
 END
