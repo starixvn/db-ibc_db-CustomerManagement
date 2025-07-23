@@ -19,6 +19,7 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
+		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentManagement.Contact , Mobile [RedmineID: #231204]   
 
 	Param:
 		DECLARE @p1 INT , @p2 NVARCHAR(1000)
@@ -56,7 +57,7 @@ BEGIN
 
 	IF @SettingInfo IS NULL OR @Mobile IS NULL OR @Mobile = '' OR @Contact IS NULL OR @Contact = ''
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Values Input'	, @ErrCode = 100 ;	
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 100;
 		RETURN
 	END
 
@@ -84,7 +85,7 @@ BEGIN
 	OR NOT EXISTS (SELECT TOP 1 1 FROM @tmp_Contact WHERE ContactType = 'line')
 	OR EXISTS (SELECT 1 FROM @tmp_Contact WHERE ContactType = 'line' AND (ContactValues IS NULL OR ContactValues = ''))
 	BEGIN
-		SELECT  @ErrMsg = N'Invalid Contact Values Input' , @ErrCode = 101 ;	
+		SELECT  @ErrMsg = N'Invalid parameters' , @ErrCode = 101 ;	
 		RETURN
 	END
 
@@ -97,9 +98,9 @@ BEGIN
 		INSERT INTO @old_ManagedAgents 
 		(
 			SettingInfo
-		    , Mobile
-		    , Contact
-		    , Announcement
+			, Mobile
+			, Contact
+			, Announcement
 		)
 		SELECT 
 			SettingInfo
@@ -123,14 +124,14 @@ BEGIN
 	IF (@@error = 0)
 	BEGIN
 		SELECT  
-			@ErrMsg = N'Update Successful!',
+			@ErrMsg = N'Action completed successfully.',
 			@ErrCode = 0 ;
 	END
 
 	
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX) , Duration INT )
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX) , @TrackingValueMask NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
 	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 305006
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -151,7 +152,9 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SET @TrackingValueMask = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SELECT @TrackingValue = REPLACE(REPLACE(@TrackingValueMask, ISNULL(@Mobile, ''), ''),ISNULL(@Contact, ''),'');
+
 
 	-- LOG OLD VALUES
 	SET @xml = (
@@ -170,14 +173,40 @@ BEGIN
 				)
 		FOR XML PATH('ROOT'),TYPE
 	);
-	SET @TrackingValue2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	SET @TrackingValueMask2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 
 
-	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
+	SET @xml = (
+		SELECT	@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
+				@IP										AS '@IP',
+				(
+					SELECT	
+							a.SettingInfo					AS '@SettingInfo',
+							''							AS '@Mobile',
+							''							AS '@Contact',
+							CONVERT(NVARCHAR(500) , a.Announcement)	AS '@Announcement'
+					FROM @old_ManagedAgents a
+					FOR XML PATH('CashAgentManagement'), 
+					TYPE
+				)
+		FOR XML PATH('ROOT'),TYPE
+	);
+	SELECT @TrackingValue2 =  REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
+	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
 
 
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT
+		@custid		  AS UserID
+	    , @custid		  AS CustID
+	    , @ActionID		  AS ActionID
+	    , @TrackingValue	  AS TrackingValue
+	    , @TrackingValue2	  AS TrackingValue2
+	    , @TrackingValueMask  AS TrackingValueMask
+	    , @TrackingValueMask2 AS TrackingValueMask2
+	    , @DurationTime	  AS Duration
 
 END
