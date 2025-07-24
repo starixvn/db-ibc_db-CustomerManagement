@@ -35,6 +35,7 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
+		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -48,7 +49,8 @@ BEGIN
 		@Credit_AllOtherMaster MONEY,
 		@Credit_SAg MONEY,
 		@Credit_AllSuperDirectMember MONEY,
-		@Credit_AllMember		MONEY
+		@Credit_AllMember		MONEY,
+		@AccumCredit_AllCashMember	MONEY;
 
 	DECLARE @ErrCode INT = 0
 
@@ -95,6 +97,10 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE mrecommend = @CustID AND RoleID = 1
 
+	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+	FROM CashAccumCredit WITH (NOLOCK)
+	WHERE mrecommend = @CustID;
+
 	IF @SAgID > 100
 	BEGIN
 		IF (@Credit_AllSuperDirectMember + @Credit_AllOtherMaster + @CreditAmt > @Credit_SAg)
@@ -107,13 +113,13 @@ BEGIN
 			RETURN
 		END
 		
-		IF (@Credit_AllMember > @CreditAmt)
+		IF (@Credit_AllMember + @AccumCredit_AllCashMember > @CreditAmt)
 		BEGIN
 			SELECT	@CreditProblem = 1,
 					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
 			RETURN
 		END
 		

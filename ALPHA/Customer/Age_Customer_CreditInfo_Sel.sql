@@ -10,6 +10,7 @@ AS
 	Revisions:
 		- 20191008@Johnson: Initial sp[Redmine: #58776]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]   
+		- 20250626@Dave: Add AccumCredit_AllCashMember to agentUsedCredit [Redmine: #231524]
 	Paramter's explanation:
 */
 
@@ -28,7 +29,8 @@ BEGIN
 		@Credit_AllOtherMember MONEY,
 		@Credit_AllNormalMaster MONEY,
 		@Credit_AllNormalAgent MONEY,
-		@Credit_AllOtherMaster MONEY
+		@Credit_AllOtherMaster MONEY,
+		@AccumCredit_AllCashMember MONEY;
 
 	SELECT 
 		@srecommend = srecommend
@@ -103,7 +105,11 @@ BEGIN
 			WHERE CustID <> @CustID
 			AND ci.roleid = 1 AND recommend = @recommend 			
 
-			SELECT @Credit_Ag_Bal = ISNULL(@Credit_Upline,0) - ISNULL(@Credit_AllOtherMember,0)	
+			SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+			FROM CashAccumCredit WITH (NOLOCK)
+			WHERE recommend = @recommend AND CustID <> @CustID;
+
+			SELECT @Credit_Ag_Bal = ISNULL(@Credit_Upline,0) - ISNULL(@Credit_AllOtherMember,0)	- ISNULL(@AccumCredit_AllCashMember,0);
 		END
 					
 			
@@ -149,12 +155,16 @@ BEGIN
 		FROM dbo.CustAgent WITH (NOLOCK) 
 		WHERE custid = @CustID 
 		
+		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn), 0)
+		FROM CashAccumCredit WITH (NOLOCK)
+    	WHERE recommend = @custID;
+
 		SELECT
 			@Credit AS Credit,
-			@Credit_Ag_Min AS AgentCredit_Min,
+			@Credit_Ag_Min + ISNULL(@AccumCredit_AllCashMember,0) AS AgentCredit_Min,
 			@Credit_Ag_Max AS AgentCredit_Max,
 			@Credit_Mem_Min AS MemMaxCredit_Min,
-			@UsedCredit	AS agentUsedCredit,
+			@UsedCredit + ISNULL(@AccumCredit_AllCashMember,0)	AS agentUsedCredit,
 			@Mem_MaxCredit AS memberMaxCredit
 	END
 	ELSE IF @roleid = 3

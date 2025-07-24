@@ -35,6 +35,7 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -47,7 +48,8 @@ BEGIN
 		@Credit_AllMember MONEY, 
 		@Credit_AllOtherAgent MONEY, 
 		@Credit_MAg MONEY,
-		@Credit_AllMasterDirectMember MONEY
+		@Credit_AllMasterDirectMember MONEY,
+		@AccumCredit_AllCashMember MONEY;
 	
 	DECLARE @ErrCode INT = 0
 	
@@ -86,6 +88,10 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE recommend = @CustID AND roleid = 1
 
+	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
+	FROM CashAccumCredit WITH (NOLOCK)
+	WHERE recommend = @custID;
+
 	Select @Credit_MAg = ISNULL(credit, 0)
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE custid = @MAgID
@@ -100,13 +106,13 @@ BEGIN
 		RETURN
 	END
 	
-	IF @Credit_AllMember > @CreditAmt
+	IF @Credit_AllMember + @AccumCredit_AllCashMember > @CreditAmt
 	BEGIN
 		SELECT	@CreditProblem = 1,
 				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
 		RETURN
 	END
 
@@ -115,6 +121,21 @@ BEGIN
 		RepUpdateTime = dbo.f_GetDateTime2()
 	WHERE CustID = @CustID
 	
+	/*For agent have members cash service -> Update MaxWinlimit of members if their MaxWinLimit amount more than new credit of Agent [MaxWinLimit of agent NOT Unlimited]*/
+	UPDATE	wl
+	SET		wl.MaxWinLimit = IIF(@CreditAmt = 0, 0.1, @CreditAmt * ag.MaxWinLimit) ,
+			wl.RepUpdateTime = dbo.f_GetDateTime2()
+	FROM	dbo.customer AS c WITH (NOLOCK)
+			INNER JOIN dbo.CustProductStatus AS cs WITH (NOLOCK)
+				ON c.custid = cs.CustID AND cs.ServiceType = 1
+			INNER JOIN dbo.CustWinLossLimit_Member AS wl WITH (ROWLOCK, UPDLOCK)
+				ON wl.CustId = c.custid AND wl.MaxWinLimit > 0
+			INNER JOIN dbo.CustWinLossLimit_Agent AS ag WITH (NOLOCK)
+				ON ag.CustId = @CustID AND ag.SportType = wl.SportType 
+				AND ag.BetType = wl.BetType AND ag.MaxWinLimit > 0
+	WHERE	c.recommend = @CustID AND c.roleid = 1
+			AND wl.MaxWinLimit > @CreditAmt * ag.MaxWinLimit;
+
 	-- Write Log
 	DECLARE @LogData VARCHAR(500)
 	SELECT  @LogData = 'Update credit for agent account ' + COALESCE(@username, SPACE(1))

@@ -11,6 +11,8 @@ Revisions:
 	- 20200309@Eden: HotFix MaxCreditMember [RM#137309]
 	- 20210513@Tina: Lock account & indirect close account [redmine: #148600]
 	- 20240423@Elodie: Member Max Credit, Member Given Credit enhancements [Redmine: #203332]
+	- 20250627@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
+
 */
 
 AS
@@ -22,6 +24,7 @@ BEGIN
 			,@Credit_AllOtherMember MONEY = 0
 			,@MaxCredit_Mem MONEY
 			,@Status VARCHAR(10)
+			,@AccumCredit_AllCashMember MONEY = 0;
 
 	SELECT @RefCredit = Credit, 
 		   @AgentID = recommend,
@@ -39,7 +42,8 @@ BEGIN
 
 	SELECT @AgentCredit = ISNULL(Credit,0) FROM custinfo WITH(NOLOCK) WHERE custID = @AgentID
 	SELECT @Credit_AllOtherMember = ISNULL(SUM(Credit), 0) FROM custinfo WITH(NOLOCK) WHERE Recommend = @AgentID AND RoleID = 1
-	SELECT @Credit_Ag_Bal = @AgentCredit - ISNULL(@Credit_AllOtherMember,0)
+	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0) FROM dbo.CashAccumCredit WITH (NOLOCK) WHERE recommend = @AgentID;
+	SELECT @Credit_Ag_Bal = @AgentCredit - ISNULL(@Credit_AllOtherMember,0) - ISNULL(@AccumCredit_AllCashMember,0);
 	SELECT @MaxCredit_Mem = isnull(maxcredit,0) from CustAgent WITH (NOLOCK) where CustID = @AgentID
 
 	--SELECT @MaxCredit_Mem = CASE WHEN @MaxCredit_Mem = 0 THEN @Credit_Ag_Bal 
