@@ -26,6 +26,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns]
 	, @NGN FLOAT
 	, @BRL FLOAT
 	, @PKR FLOAT
+	, @ZAR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -53,6 +54,7 @@ AS
 		- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]  
 		- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 		- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
+		- 20250716@Kelvin: LAP - Support based ZAR [RedmineID: #232973]
 		
 	Parameter's Explaination:
 	/*
@@ -137,6 +139,7 @@ BEGIN
 					, NGN
 					, BRL
 					, PKR
+					, ZAR
 					, RepUpdateTime
 				)
 				VALUES (
@@ -167,6 +170,7 @@ BEGIN
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
 					, @PKR * @MultipliedBy
+					, @ZAR * @MultipliedBy
 					, dbo.f_GetDateTime2()
 				)
 			END
@@ -197,6 +201,7 @@ BEGIN
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
 					, PKR = @PKR * @MultipliedBy
+					, ZAR = @ZAR * @MultipliedBy
 					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
 				  AND ExchangeDate = @date
@@ -250,12 +255,14 @@ BEGIN
 			, NGN
 			, BRL
 			, PKR
+			, ZAR
 			, RepUpdateTime
 		)
 		VALUES (
 			20
 			, @date
 			, 'UUS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -319,12 +326,14 @@ BEGIN
 			, NGN
 			, BRL
 			, PKR
+			, ZAR
 			, RepUpdateTime
 		)
 		VALUES (
 			218
 			, @date
 			, 'BTS'
+			, 2e-101
 			, 2e-101
 			, 2e-101
 			, 2e-101
@@ -395,6 +404,7 @@ BEGIN
 				, NGN
 				, BRL
 				, PKR
+				, ZAR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -425,6 +435,7 @@ BEGIN
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
 				, @PKR * @MultipliedBy
+				, @ZAR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -455,6 +466,7 @@ BEGIN
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
 				, PKR = @PKR * @MultipliedBy
+				, ZAR = @ZAR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
@@ -512,6 +524,7 @@ BEGIN
 				, NGN
 				, BRL
 				, PKR
+				, ZAR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -542,6 +555,7 @@ BEGIN
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
 				, @PKR * @MultipliedBy
+				, @ZAR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -572,6 +586,7 @@ BEGIN
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
 				, PKR = @PKR * @MultipliedBy
+				, ZAR = @ZAR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date
@@ -629,6 +644,7 @@ BEGIN
 				, NGN
 				, BRL
 				, PKR
+				, ZAR
 				, RepUpdateTime
 			)
 			VALUES (
@@ -659,6 +675,7 @@ BEGIN
 				, @NGN * @MultipliedBy
 				, @BRL * @MultipliedBy
 				, @PKR * @MultipliedBy
+				, @ZAR * @MultipliedBy
 				, dbo.f_GetDateTime2()
 			)
 		END
@@ -689,6 +706,7 @@ BEGIN
 				, NGN = @NGN * @MultipliedBy
 				, BRL = @BRL * @MultipliedBy
 				, PKR = @PKR * @MultipliedBy
+				, ZAR = @ZAR * @MultipliedBy
 				, RepUpdateTime = dbo.f_GetDateTime2()
 			WHERE ExchangeId = @ExchangeId
 			  AND ExchangeDate = @date

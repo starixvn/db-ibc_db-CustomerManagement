@@ -25,6 +25,7 @@ ALTER PROCEDURE [dbo].[Acc_ExchangeDailyIns_Crypto]
 	, @NGN FLOAT
 	, @BRL FLOAT
 	, @PKR FLOAT
+	, @ZAR FLOAT
 	, @rundate DATETIME = NULL
 	, @ErrCode INT = 0 OUTPUT
 	, @ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -42,6 +43,7 @@ Revisions:
 	- 20241111@Kelvin: LAP - Support BRL base currency [RedmineID: #208662]
 	- 20250114@Lewis: Apply Rep-Inhouse [RedmineID: #215883]
 	- 20250314@Kelvin: LAP - Support based PKR [RedmineID: #219424]
+	- 20250716@Kelvin: LAP - Support based ZAR [RedmineID: #232973]
 */
 BEGIN
 
@@ -123,6 +125,7 @@ BEGIN
 					, NGN
 					, BRL
 					, PKR
+					, ZAR
 					, ActualRate
 					, RepUpdateTime
 					)
@@ -154,7 +157,8 @@ BEGIN
 					, @NGN * @MultipliedBy
 					, @BRL * @MultipliedBy
 					, @PKR * @MultipliedBy
-					, @MYR * @MultipliedBy	--ActualRate				
+					, @ZAR * @MultipliedBy
+					, @MYR * @MultipliedBy	--ActualRate
 					, dbo.f_GetDateTime2()
 					)
 			END
@@ -185,6 +189,7 @@ BEGIN
 					, NGN = @NGN * @MultipliedBy
 					, BRL = @BRL * @MultipliedBy
 					, PKR = @PKR * @MultipliedBy
+					, ZAR = @ZAR * @MultipliedBy
 					, ActualRate = @MYR * @MultipliedBy
 					, RepUpdateTime = dbo.f_GetDateTime2()
 				WHERE ExchangeId = @ExchangeId
