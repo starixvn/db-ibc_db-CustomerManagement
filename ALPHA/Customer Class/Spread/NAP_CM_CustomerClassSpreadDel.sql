@@ -1,9 +1,10 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-ALTER PROCEDURE [dbo].[NAP_LM_CustomerClassSpreadDel] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassSpreadDel] 
 	  @PolicyID			INT			
 	, @UserID			INT
 	, @IP				VARCHAR(50)		= ''
 	, @IsTest			TINYINT	
+	, @Type				SMALLINT
 	, @ErrCode			TINYINT			= 0		OUTPUT
 	, @ErrMsg			NVARCHAR(MAX)	= ''	OUTPUT
 AS
@@ -18,10 +19,11 @@ AS
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354] 
 		- 20230115@Luke: [NAP CM] Customer Class - Spread mng - Set Spread by Sport [Redmine: #195328]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20240612@Winfred: [NAP CM] Customer Class - Add Peak Hour Spread on rule setting [Redmine: #186118]
 
 	Param's Explanation:
 
-	Example: NAP_LM_CustomerClassSpreadDel @PolicyID = 15, @ErrCode =0, @ErrMsg = '' , @IP = '11.12.11.10', @UserID = 6, @IsTest = 1
+	Example: NAP_CM_CustomerClassSpreadDel @PolicyID = 15, @ErrCode =0, @ErrMsg = '' , @IP = '11.12.11.10', @UserID = 6, @IsTest = 1
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -40,11 +42,13 @@ BEGIN
 		, @Currencies_Old VARCHAR(MAX)= ''
 		, @Platforms_Old VARCHAR(MAX)= ''
 		, @LastModifiedTime DATETIME
+		, @LeagueGroups_Old VARCHAR(MAX)= ''
+		, @ActionID		  INT
 	CREATE TABLE #CCSpreadDetail(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT, IsFinished BIT DEFAULT(0))
 	CREATE TABLE #CCSpreadDetail_temp(PolicyID INT, SiteID INT, Currency INT, Platform TINYINT, SportType SMALLINT)
 	
 	SELECT @StartRun = GETDATE() , @LastModifiedTime = GETDATE()
-	CREATE TABLE #CustomerClassSpread_History(PolicyID INT, PolicyTitle VARCHAR(500), Spread DECIMAL(4,2), Enable BIT,IsTest TINYINT, LastModifiedUser INT, LastModifiedTime DATETIME)
+	CREATE TABLE #CustomerClassSpread_History(PolicyID INT, PolicyTitle VARCHAR(500), Spread DECIMAL(4,2), Enable BIT,IsTest TINYINT, IsLive SMALLINT, LastModifiedUser INT, LastModifiedTime DATETIME)
 
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassSpread a WITH(NOLOCK) WHERE a.IsTest <> @IsTest AND PolicyID = @PolicyID ) 
 	BEGIN
@@ -52,8 +56,8 @@ BEGIN
 		RETURN
 	END	
 		
-	INSERT INTO #CustomerClassSpread_History(PolicyID, PolicyTitle, Spread, Enable, IsTest, LastModifiedUser, LastModifiedTime)
-	SELECT PolicyID, PolicyTitle, Spread, Enable, IsTest, LastModifiedUser, LastModifiedTime 
+	INSERT INTO #CustomerClassSpread_History(PolicyID, PolicyTitle, Spread, Enable, IsTest, IsLive, LastModifiedUser, LastModifiedTime)
+	SELECT PolicyID, PolicyTitle, Spread, Enable, IsTest, IsLive, LastModifiedUser, LastModifiedTime 
 	FROM CustomerClassSpread WITH(NOLOCK) WHERE PolicyID = @PolicyID
 	
 	SELECT TOP 1 @SportType_Old = SportType 
@@ -68,22 +72,30 @@ BEGIN
 	
 	SELECT @Currencies_Old = (SELECT STRING_AGG(CAST(Currency AS NVARCHAR(MAX)), ',') 
 									WITHIN GROUP (ORDER BY Currency)
-								FROM(	SELECT DISTINCT Currency
+								FROM( SELECT DISTINCT Currency
 								FROM CustomerClassSpreadDetail WITH(NOLOCK)
 								WHERE PolicyID = @PolicyID)cc) 
 							
 	SELECT @Sites_Old = (SELECT STRING_AGG(CAST(SiteID AS NVARCHAR(MAX)), ',') 
 								WITHIN GROUP (ORDER BY SiteID)
-							FROM(	SELECT DISTINCT SiteID
+							FROM( SELECT DISTINCT SiteID
 							FROM CustomerClassSpreadDetail WITH(NOLOCK)
 							WHERE PolicyID = @PolicyID)cc) 
 								
 	SELECT @Platforms_Old = (SELECT STRING_AGG(CAST(Platform AS NVARCHAR(MAX)), ',') 
 								WITHIN GROUP (ORDER BY Platform)
-							FROM(	SELECT DISTINCT Platform
+							FROM( SELECT DISTINCT Platform
 							FROM CustomerClassSpreadDetail WITH(NOLOCK)
 							WHERE PolicyID = @PolicyID)cc) 
-	
+	IF @Type = 2
+	BEGIN
+		SELECT @LeagueGroups_Old = (SELECT STRING_AGG(CAST(LeagueGroupID AS NVARCHAR(MAX)), ',') 
+								WITHIN GROUP (ORDER BY LeagueGroupID)
+							FROM( SELECT DISTINCT LeagueGroupID
+							FROM CustomerClassSpreadLeagueGroup WITH(NOLOCK)
+							WHERE PolicyID = @PolicyID)cc) 
+	END
+
 	BEGIN TRY
 		DELETE FROM CustomerClassSpread WITH(ROWLOCK,UPDLOCK) 
 		OUTPUT DELETED.PolicyID, [dbo].[f_GetDateTime2]() 
@@ -137,9 +149,12 @@ BEGIN
 					@Currencies_Old			AS '@Currencies',							
 					@Platforms_Old			AS '@Platforms',	
 					@SportType_Old			AS '@SportType',
-					Spread					AS '@Spread',
+					Spread					AS '@Spread',					
+					@LeagueGroups_Old		AS '@LeagueGroups',						
+					IsLive					AS '@IsLive',
 					Enable					AS '@Enable',
-					IsTest					AS '@IsTest',
+					IsTest					AS '@IsTest',						
+					@Type					AS '@Type',	
 					CONVERT(VARCHAR(10), LastModifiedTime, 120) AS '@LastModifiedTime',	
 					COALESCE(CAST(@ErrMsg	AS VARCHAR(400)),SPACE(1))	AS '@ErrMsg',
 					COALESCE(CAST(@ErrCode	AS VARCHAR(50)),SPACE(1))	AS '@ErrCode'
@@ -150,11 +165,20 @@ BEGIN
 	SET @logSpData_Old = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
+	
+	IF @Type = 1 
+	BEGIN
+		SET @ActionID =  31907 
+	END
+	ELSE
+	BEGIN
+		SET @ActionID =  31921 
+	END
 
 	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
 				@CustID  = @UserID,
 				@UserID = @UserID,
-				@ActionID = 31907,
+				@ActionID = @ActionID,
 				@TrackingValue = NULL,
 			    @TrackingValue2 = @logSpData_Old,
 				@duration = @Duration
