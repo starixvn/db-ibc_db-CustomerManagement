@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap,asv_CashService" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CheckUM]
 	@CustID	int ,
 	@ProductID tinyint = NULL,

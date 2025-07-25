@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBGLOB-GlobCustDB" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap,wsv_lap,wsv_CashService,asv_CashService" viewers="" isFunction="0" isNested="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_ServerDBConfigSelByCust]
 	@CustID INT = NULL,
