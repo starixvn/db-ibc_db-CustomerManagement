@@ -1,9 +1,10 @@
 /*<info serverAlias="DBCUST-CUSTDB" executers="wsv_nap,wsv_lap" viewers="" isFunction="0"></info>*/
-CREATE PROCEDURE [dbo].[NAP_LM_CustomerClassSpreadEnable] 
+ALTER PROCEDURE [dbo].[NAP_CM_CustomerClassSpreadEnable] 
 	  @PolicyID			INT						 
 	, @Enable			BIT
 	, @UserID			INT
 	, @IsTest			TINYINT	
+	, @Type				SMALLINT	
 	, @IP				VARCHAR(50)		= ''
 	, @ErrCode			TINYINT			= 0		OUTPUT
 	, @ErrMsg			NVARCHAR(MAX)	= ''	OUTPUT
@@ -18,10 +19,11 @@ AS
 	Revisions:
 		- 20230627@Winfred: [NAP CM] Customer Class - Add Spread on rule setting [RedmineID: #187354]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119] 
+		- 20240612@Winfred: [NAP CM] Customer Class - Add Peak Hour Spread on rule setting [Redmine: #186118]
 
 	Param's Explanation:
 
-	Example: NAP_LM_CustomerClassSpreadEnable @PolicyID = 15, @Enable = 1 , @ErrCode =0, @ErrMsg = '' , @IP = '11.12.11.10', @UserID = 6, @IsTest = 1
+	Example: NAP_CM_CustomerClassSpreadEnable @PolicyID = 15, @Enable = 1 , @ErrCode =0, @ErrMsg = '' , @IP = '11.12.11.10', @UserID = 6, @IsTest = 1
 */ 
 BEGIN
 	SET NOCOUNT ON;
@@ -32,8 +34,11 @@ BEGIN
 		, @iDoc			  INT
 		, @RuleID		  INT
 		, @logSpData	  NVARCHAR(MAX)
-		, @logSpData_Old   NVARCHAR(MAX)
+		, @logSpData_Old  NVARCHAR(MAX)
 		, @xml			  XML
+		, @ActionID		  INT
+
+	SELECT @StartRun	= GETDATE()
 
 	IF 	EXISTS(SELECT TOP 1 1 FROM CustomerClassSpread a WITH(NOLOCK) WHERE a.IsTest <> @IsTest AND PolicyID = @PolicyID ) 
 	BEGIN
@@ -42,7 +47,7 @@ BEGIN
 	END	
 		
 	UPDATE a	
-	SET a.Enable  =   @Enable
+	SET  a.Enable  =   @Enable
 		,RepUpdateTime = [dbo].[f_GetDateTime2]()
 	FROM CustomerClassSpread a WITH (ROWLOCK, UPDLOCK)
 	WHERE a.PolicyID = @PolicyID
@@ -75,13 +80,23 @@ BEGIN
 	SET @logSpData = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 	SELECT @EndRun	= GETDATE(), @Duration = DATEDIFF(MILLISECOND, @StartRun, @EndRun)
-
+	
+	IF @Type = 1 
+	BEGIN
+		SET @ActionID =  31908 
+	END
+	ELSE
+	BEGIN
+		SET @ActionID =  31922 
+	END
+	
 	EXEC  Acc_WriteLog_UserLog_RunSP_Wrapper
-				@CustID  = @UserID,
-				@UserID = @UserID,
-				@ActionID = 31908,
-				@TrackingValue = @LogSPData,
-			    @TrackingValue2 = @logSpData_Old,
-				@duration = @Duration
+			@CustID  = @UserID,
+			@UserID = @UserID,
+			@ActionID = @ActionID,
+			@TrackingValue = @LogSPData,
+			@TrackingValue2 = @logSpData_Old,
+			@duration = @Duration
+	
 END
 GO

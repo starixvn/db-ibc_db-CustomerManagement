@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20240215@Winfred: [NAP CM] Customer Class - SP Integrate Spread setting [RedmineID: #200996] 
+		- 20240612@Winfred: [NAP CM] Customer Class - Add Peak Hour Spread on rule setting [Redmine: #186118]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSpreadSel @SiteID = 25, @Currency = 1, @CustomerClass =13 , @Platform =3 , @IsTest=0, @IsLicensee = 0
@@ -52,24 +53,19 @@ BEGIN
 			SumSpread AS ReturnedSpread
 		FROM (
 			SELECT
-				cp.SiteID,
-				cp.Currency,
-				cp.Platform,
 				cp.SportType,
-				MAX(cc.Spread) AS SumSpread,
-				ROW_NUMBER() OVER(PARTITION BY cp.SportType ORDER BY cp.Platform DESC, cp.Currency DESC, cp.SiteID DESC) AS RowNumber
+				MAX(cc.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail_UAT cp WITH(NOLOCK)
 				CROSS APPLY (SELECT TOP 1 
 								cs.Spread
 							 FROM CustomerClassSpreadClass_UAT cm WITH(NOLOCK)
 								INNER JOIN CustomerClassSpread_UAT cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass
+							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND Type = 1
 							) cc
 			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
 				AND cp.Platform IN (0, @Platform)
-			GROUP BY cp.SportType, cp.SiteID, cp.Currency , cp.Platform) KQ
-		WHERE RowNumber = 1
+			GROUP BY cp.SportType) KQ
 	 END
 	 ELSE
 	 BEGIN
@@ -82,23 +78,18 @@ BEGIN
 			SumSpread AS ReturnedSpread
 		FROM (
 			SELECT
-				cp.SiteID,
-				cp.Currency,
-				cp.Platform,
 				cp.SportType,
-				MAX(cc.Spread) AS SumSpread,
-				ROW_NUMBER() OVER(PARTITION BY cp.SportType ORDER BY cp.Platform DESC, cp.Currency DESC, cp.SiteID DESC) AS RowNumber
+				MAX(cc.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail cp WITH(NOLOCK)
 				CROSS APPLY (SELECT TOP 1 
 								cs.Spread
 							 FROM CustomerClassSpreadClass cm WITH(NOLOCK)
 								INNER JOIN CustomerClassSpread cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass
+							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND Type = 1
 							) cc
 			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
 				AND cp.Platform IN (0, @Platform)
-			GROUP BY cp.SportType, cp.SiteID, cp.Currency , cp.Platform) KQ
-		WHERE RowNumber = 1
+			GROUP BY cp.SportType) KQ
 	END 
 END
