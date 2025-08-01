@@ -19,7 +19,7 @@ AS
 		- 20250529@Razor:	Potential Member win limit - [Redmine: #228570]
 		- 20250612@Razor:	Sort by status - [Redmine: #226060]
 		- 20250623@Razor:	Support Direct member - [Redmine: #230794]
-
+		- 20250801@Johnson: Include Parlay to Potential Win Limit - [Redmine: #233805]
 	Param's Explanation:
 		@problemAccount:	2 = All, 1 = Yes, 0 = No
 		@Status:			All, Disabled, Closed, Suspended, Locked, Open
@@ -38,6 +38,7 @@ BEGIN
 		Credit MONEY,
 		IsAutoReset BIT,
 		PotentialWinLimit MONEY,
+		IncludeParlay BIT,
 		SportType INT,
 		BetType INT
 	)
@@ -57,6 +58,7 @@ BEGIN
 		, ci.credit
 		, cpw.IsAutoReset
 		, cpw.PotentialWinLimit
+		, dbo.f_CustPotentialWinLimit_GetOfferOption(cpw.OfferOption, 1) AS IncludeParlay
 		, cpw.SportType
 		, cpw.BetType
 	FROM dbo.CustPotentialWinlimit AS cpw WITH(NOLOCK) 
