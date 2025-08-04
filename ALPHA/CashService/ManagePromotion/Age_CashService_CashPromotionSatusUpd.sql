@@ -17,7 +17,7 @@ AS
   
 	Revisions:
         - 20250711@Johnson: initial sp [redmine:#232347]
-
+        - 20250804@Johnson: check current time when active the promotion [redmine:#235012]
     Parameter's Explanation:    
     @Log= '<ROOT CustID="1" SubAccName="" IP="1.1.1.1" >'
                 <Promotion PromotionID="123" Title="Summer Promotion 2025" Enabled="1" />
@@ -62,6 +62,20 @@ BEGIN
                @ErrMsg = 'There is another active promotion for the same period.'
             RETURN
         END      
+
+        IF CAST(GETDATE() AS DATE) > @ToDate
+        BEGIN
+             SELECT @ErrCode = 101, 
+               @ErrMsg = 'Do not allow setting a promotion to active when it has already expired.'
+            RETURN
+        END
+
+        IF CAST(GETDATE() AS DATE) BETWEEN @FromDate AND @ToDate
+        BEGIN
+            SELECT @ErrCode = 102, 
+               @ErrMsg = 'Do not allow setting a promotion to active when current time is in the promotion period.'
+            RETURN
+        END
     END
 
     UPDATE CashPromotion WITH(ROWLOCK)
