@@ -24,7 +24,8 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083]
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
-		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474] 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 		- @isDirectDownline:
@@ -156,13 +157,14 @@ BEGIN
 		    , ISNULL ( cdm_Cricket.playerdiscount , 0 ) * 100  playerdiscount_cricket																	
 		    , cps.Locked
 		    , cl.ClosedReason
+			, cps.ServiceType
 		FROM
 			#CustTemp AS ci WITH (NOLOCK)
 		CROSS JOIN #SportBettypeFilter f WITH(NOLOCK)
 		INNER JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON cdm.CustID = ci.custID AND f.SportType = cdm.SportType AND f.Bettype = cdm.BetType
 		LEFT JOIN CustDiscount3rd_Member cdm_Cricket WITH (NOLOCK) ON cdm_Cricket.CustID = ci.custid  AND cdm_Cricket.SportType = 50 AND cdm_Cricket.BetType = 501
 		CROSS APPLY (
-				SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed , CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject , ISNULL ( Locked , 0 ) Locked
+				SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed , CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject , ISNULL ( Locked , 0 ) Locked , ServiceType
 				FROM dbo.CustProductStatus WITH (NOLOCK)
 				WHERE CustID = ci.custid
 			) AS cps
@@ -170,7 +172,7 @@ BEGIN
 
 		GROUP BY
 			ci.enabled , cps.closed , cps.reject , cps.Locked , ci.username , ci.custid , ci.ugroup ,
-			ci.firstname , ci.lastname , ci.credit , ci.DoubleCommLosing , cdm_Cricket.AgentDiscount , cdm_Cricket.MasterDiscount , cdm_Cricket.PlayerDiscount , cl.ClosedReason, ci.AgentID
+			ci.firstname , ci.lastname , ci.credit , ci.DoubleCommLosing , cdm_Cricket.AgentDiscount , cdm_Cricket.MasterDiscount , cdm_Cricket.PlayerDiscount , cl.ClosedReason, ci.AgentID , cps.ServiceType
 		ORDER BY
 			CASE
 				WHEN ISNULL ( ci.enabled , 0 ) = 0
@@ -202,7 +204,8 @@ BEGIN
 			CASE WHEN (@isDirectDownline = 1) OR (@isDirectDownline = 0 AND m.recommend IN (-3,-4)) THEN 0 ELSE cs.AgentDiscount * 100		END AS AgentDiscount,
 			cs.PlayerDiscount * 100 AS PlayerDiscount,
 			cps.Locked,
-			cl.ClosedReason
+			cl.ClosedReason,
+			cps.ServiceType
 		FROM 
 			customer AS m with (NOLOCK)
 			INNER JOIN #Tmp_CustCollect ci on m.CustID = ci.CustID
@@ -214,6 +217,7 @@ BEGIN
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
 											, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
 											, ISNULL(Locked, 0) Locked
+											, ServiceType
 										FROM dbo.CustProductStatus  WITH(NOLOCK)
 										WHERE CustID = ci.custid
 									) AS cps

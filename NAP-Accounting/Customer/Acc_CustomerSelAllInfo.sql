@@ -129,6 +129,7 @@ Revisions:
 	- 20241106@Tacy: Credit - change data source to get SMA CC [Redmine: #212681]
 	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
 	- 20241230@Tacy: SabaCoins - Phase 02 [redmine: #215807]
+	- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474]
 
 Param's Explanation:
 	@username: username want to get all info related
@@ -738,7 +739,8 @@ BEGIN
 		,@DisableAutoMPT AS DisableAutoMPT
 		,CASE WHEN @IsDeposit=0 AND c.roleid>1 THEN ISNULL(CAST(ag.CustomerClass AS VARCHAR),'-') 
 			ELSE ISNULL(CAST(ci.CustomerClass AS VARCHAR),'-') 
-		END AS CustomerClass
+		END AS CustomerClass,
+		cps.ServiceType
     FROM customer c WITH(NOLOCK)
 	    inner join custinfo ci WITH(NOLOCK) on c.custid = ci.custid
 	    inner join exchange e WITH(NOLOCK) on c.currency = e.exchangeid 
@@ -756,6 +758,7 @@ BEGIN
 										, Locked
 										, SuspendInfo
 										, CloseInfo
+										, ServiceType
 									FROM dbo.CustProductStatus  WITH(NOLOCK)
 									WHERE CustID = ci.custid AND @IsDeposit = 0
 								) AS cps	

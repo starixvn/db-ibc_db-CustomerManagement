@@ -148,24 +148,21 @@ BEGIN
 
 	-- LOG NEW VALUES
 	SET @xml = (
-	SELECT	@CustID                         AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID) AS '@SubAccName',
-			@IP                             AS '@IP',
-			(
-				SELECT	@CustID					 AS '@CustID',
-						@BankID					 AS '@BankID',
-						CONVERT(INT, @BankAccountStatus)     AS '@BankAccountStatus',
-						CONVERT(NVARCHAR(255), @AccountHolderName)			 AS '@AccountHolderName',
-						@BankAccountNumber			 AS '@BankAccountNumber',
-						CONVERT(NVARCHAR(255), @AccountNickname)				 AS '@AccountNickname',
-						@TransTypeList				 AS '@TransTypeList',
-						@DepositMatchingMode			 AS '@DepositMatchingMode',
-						CONVERT(INT, @PromptPayEnabled)      AS '@PromptPayEnabled',
-						@PromptPayMobile				 AS '@PromptPayMobile'
-				FOR XML PATH('AgentBankAccount'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'), TYPE
+		SELECT	
+				@CustID								AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP								AS '@IP',
+				@BankID							AS '@BankID',
+				CONVERT(INT, @BankAccountStatus)	AS '@BankAccountStatus',
+				CONVERT(NVARCHAR(255), @AccountHolderName)	AS '@AccountHolderName',
+				@BankAccountNumber				AS '@BankAccountNumber',
+				CONVERT(NVARCHAR(255), @AccountNickname)	AS '@AccountNickname',
+				@TransTypeList					AS '@TransTypeList',
+				@DepositMatchingMode			AS '@DepositMatchingMode',
+				CONVERT(INT, @PromptPayEnabled)	AS '@PromptPayEnabled',
+				@PromptPayMobile				AS '@PromptPayMobile'
+		FOR XML PATH('Age_CashService_BankAccountAgent_Ins'), 
+		TYPE
 	);
 	
 	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')

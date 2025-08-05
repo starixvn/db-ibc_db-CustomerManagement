@@ -10,14 +10,15 @@ AS
 
 	Revisions:
 		- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
-		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]  
+		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474] 
 */
 BEGIN
 	SET NOCOUNT ON
 	SELECT
 		c.username			 agentname
 	    , ci.credit			 givencredit
-	    , ISNULL ( uc.credit , 0 ) usedcredit
+	    , ISNULL ( uc.credit , 0 )  + ISNULL ( ac.AccumCredit , 0 ) AS  usedcredit
 	FROM Customer c (NOLOCK)
 	INNER JOIN custInfo ci ON c.custid = ci.custid
 	LEFT OUTER JOIN (
@@ -26,6 +27,12 @@ BEGIN
 		WHERE mrecommend = @masterID AND roleid = 1 AND recommend NOT IN (-3,-4)
 		GROUP BY recommend
 	) uc ON c.custid = uc.recommend
+	LEFT JOIN (
+		SELECT recommend , SUM (AccumCreditReturn ) AccumCredit
+		FROM CashAccumCredit WITH (NOLOCK)
+		WHERE mrecommend = @masterID 
+		GROUP BY recommend
+	) ac ON c.custid = uc.recommend
 	WHERE c.mrecommend = @masterID AND c.roleid = 2
 	ORDER BY c.username
 END

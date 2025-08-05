@@ -224,17 +224,16 @@ BEGIN
 
 		-- LOG NEW VALUES
 		SET @xml = (
-		SELECT	@CustID                         AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID) AS '@SubAccName',
-				@IP                             AS '@IP',
-				(
-					SELECT	CONVERT(DECIMAL(20,2), @MinPerDeposit)     AS '@MinPerDeposit',
-							CONVERT(DECIMAL(20,2), @MaxPerDeposit)     AS '@MaxPerDeposit',
-							CONVERT(DECIMAL(20,2), @MinPerWithdrawal)  AS '@MinPerWithdrawal',
-							CONVERT(DECIMAL(20,2), @MaxPerWithdrawal)  AS '@MaxPerWithdrawal'
-					FOR XML PATH('PerTrans'), 
-					TYPE
-				)FOR XML PATH('ROOT'),TYPE
+			SELECT	
+					@CustID								AS '@CustID',
+					CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+					@IP								AS '@IP',
+					CONVERT(DECIMAL(20,2), @MinPerDeposit)	AS '@MinPerDeposit',
+					CONVERT(DECIMAL(20,2), @MaxPerDeposit)	AS '@MaxPerDeposit',
+					CONVERT(DECIMAL(20,2), @MinPerWithdrawal) AS '@MinPerWithdrawal',
+					CONVERT(DECIMAL(20,2), @MaxPerWithdrawal) AS '@MaxPerWithdrawal'
+			FOR XML PATH('Age_CashService_AgentBankAccountLimit_Upd'), 
+			TYPE
 		);
 
 		SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
@@ -242,18 +241,17 @@ BEGIN
 
 		-- LOG OLD VALUES
 		SET @xml = (
-		SELECT	@CustID                         AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID) AS '@SubAccName',
-				@IP                             AS '@IP',
-				(
-					SELECT	CONVERT(DECIMAL(20,2), a.MinPerDeposit)     AS '@MinPerDeposit',
-							CONVERT(DECIMAL(20,2), a.MaxPerDeposit)     AS '@MaxPerDeposit',
-							CONVERT(DECIMAL(20,2), a.MinPerWithdrawal)  AS '@MinPerWithdrawal',
-							CONVERT(DECIMAL(20,2), a.MaxPerWithdrawal)  AS '@MaxPerWithdrawal'
-					FROM @Old_CashAgentLimit a
-					FOR XML PATH('PerTrans'), 
-					TYPE
-				)FOR XML PATH('ROOT'),TYPE
+			SELECT	
+					@CustID								AS '@CustID',
+					CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+					@IP								AS '@IP',
+					CONVERT(DECIMAL(20,2), a.MinPerDeposit)	AS '@MinPerDeposit',
+					CONVERT(DECIMAL(20,2), a.MaxPerDeposit)	AS '@MaxPerDeposit',
+					CONVERT(DECIMAL(20,2), a.MinPerWithdrawal) AS '@MinPerWithdrawal',
+					CONVERT(DECIMAL(20,2), a.MaxPerWithdrawal) AS '@MaxPerWithdrawal'
+			FROM @Old_CashAgentLimit a
+			FOR XML PATH('Age_CashService_AgentBankAccountLimit_Upd'), 
+			TYPE
 		);
 
 		SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')		

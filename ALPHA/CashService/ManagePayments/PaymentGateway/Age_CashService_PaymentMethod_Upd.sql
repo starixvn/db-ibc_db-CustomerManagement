@@ -242,41 +242,35 @@ BEGIN
 
 	-- LOG NEW VALUES
 	SET @xml = (
-	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
-			@IP										AS '@IP',
-			(
-				SELECT	
-						a.MethodID						AS '@PaymentMethodID',
-						a.TransactionType					AS '@TransactionType',
-						CONVERT(DECIMAL(20,2), a.MinAmount)		AS '@MinAmount',
-						CONVERT(DECIMAL(20,2), a.MaxAmount)		AS '@MaxAmount',
-						a.PaymentMethodEnable				AS '@PaymentMethodEnable'
-				FROM @tmp_PaymentMethods a
-				FOR XML PATH('CashAgentPaymentMethod'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP									AS '@IP',
+				a.MethodID							AS '@PaymentMethodID',
+				a.TransactionType					AS '@TransactionType',
+				CONVERT(DECIMAL(20,2), a.MinAmount)	AS '@MinAmount',
+				CONVERT(DECIMAL(20,2), a.MaxAmount)	AS '@MaxAmount',
+				a.PaymentMethodEnable				AS '@PaymentMethodEnable'
+		FROM @tmp_PaymentMethods a
+		FOR XML PATH('Age_CashService_PaymentMethod_Upd'), 
+		TYPE
 	);
 	SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 	-- LOG OLD VALUES
 	SET @xml = (
-	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
-			@IP										AS '@IP',
-			(
-				SELECT	
-						a.MethodID						AS '@PaymentMethodID',
-						a.TransactionType					AS '@TransactionType',
-						CONVERT(DECIMAL(20,2), a.MinAmount)		AS '@MinAmount',
-						CONVERT(DECIMAL(20,2), a.MaxAmount)		AS '@MaxAmount',
-						a.PaymentMethodEnable				AS '@PaymentMethodEnable'
-				FROM @old_PaymentMethods a
-				FOR XML PATH('CashAgentPaymentMethod'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP									AS '@IP',
+				a.MethodID							AS '@PaymentMethodID',
+				a.TransactionType					AS '@TransactionType',
+				CONVERT(DECIMAL(20,2), a.MinAmount)	AS '@MinAmount',
+				CONVERT(DECIMAL(20,2), a.MaxAmount)	AS '@MaxAmount',
+				a.PaymentMethodEnable				AS '@PaymentMethodEnable'
+		FROM @old_PaymentMethods a
+		FOR XML PATH('Age_CashService_PaymentMethod_Upd'), 
+		TYPE
 	);
 	SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 

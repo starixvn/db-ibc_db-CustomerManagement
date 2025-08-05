@@ -152,67 +152,56 @@ BEGIN
 
 	-- LOG NEW VALUES
 	SET @xml = (
-	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
-			@IP										AS '@IP',
-			(
-				SELECT	
-						CONVERT(INT, @CustID)				AS '@CustID',
-						CONVERT(INT, @BankAccountStatus)		AS '@BankAccountStatus',
-						CONVERT(NVARCHAR(255), @AccountNickname)	AS '@AccountNickname',
-						@TransTypeList					AS '@TransTypeList',
-						@DepositMatchingMode				AS '@DepositMatching',
-						CONVERT(INT, @PromptPayEnabled)		AS '@PromptPayEnabled',
-						@PromptPayMobile					AS '@PromptPayMobile'
-				FOR XML PATH('AgentBankAcc'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID								AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP								AS '@IP',
+				CONVERT(INT, @BankAccountStatus)	AS '@BankAccountStatus',
+				CONVERT(NVARCHAR(255), @AccountNickname) AS '@AccountNickname',
+				@TransTypeList					AS '@TransTypeList',
+				@DepositMatchingMode			AS '@DepositMatching',
+				CONVERT(INT, @PromptPayEnabled)	AS '@PromptPayEnabled',
+				@PromptPayMobile				AS '@PromptPayMobile'
+		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
+		TYPE
 	);
 	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 	SELECT @TrackingValue = REPLACE(@TrackingValueMask, ISNULL(@PromptPayMobile, ''), '');
 
 	-- LOG OLD VALUES
 	SET @xml = (
-	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
-			@IP										AS '@IP',
-			(
-				SELECT	
-						CONVERT(INT, a.AgentID)				AS '@CustID',
-						CONVERT(INT, a.BankAccountStatus)		AS '@BankAccountStatus',
-						CONVERT(NVARCHAR(255), a.AccountNickname)	AS '@AccountNickname',
-						a.TransTypeList					AS '@TransTypeList',
-						a.DepositMatching					AS '@DepositMatching',
-						CONVERT(INT, a.PromptPayEnabled)		AS '@PromptPayEnabled',
-						a.PromptPayMobile					AS '@PromptPayMobile'
-				FROM @Old_CashAgentBankAccount a
-				FOR XML PATH('AgentBankAcc'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID								AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP								AS '@IP',
+				CONVERT(INT, a.BankAccountStatus)	AS '@BankAccountStatus',
+				CONVERT(NVARCHAR(255), a.AccountNickname) AS '@AccountNickname',
+				a.TransTypeList					AS '@TransTypeList',
+				a.DepositMatching				AS '@DepositMatching',
+				CONVERT(INT, a.PromptPayEnabled)	AS '@PromptPayEnabled',
+				a.PromptPayMobile				AS '@PromptPayMobile'
+		FROM @Old_CashAgentBankAccount a
+		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
+		TYPE
 	);
 	SET @TrackingValueMask2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 	
 	SET @xml = (
-	SELECT	@CustID									AS '@CustID',
-			CustDB.dbo.f_GetSubUsername(@SubAccID)				AS '@SubAccName',
-			@IP										AS '@IP',
-			(
-				SELECT	
-						CONVERT(INT, a.AgentID)				AS '@CustID',
-						CONVERT(INT, a.BankAccountStatus)		AS '@BankAccountStatus',
-						CONVERT(NVARCHAR(255), a.AccountNickname)	AS '@AccountNickname',
-						a.TransTypeList					AS '@TransTypeList',
-						a.DepositMatching					AS '@DepositMatching',
-						CONVERT(INT, a.PromptPayEnabled)		AS '@PromptPayEnabled',
-						''							AS '@PromptPayMobile'
-				FROM @Old_CashAgentBankAccount a
-				FOR XML PATH('AgentBankAcc'), 
-				TYPE
-			)
-	FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID								AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP								AS '@IP',
+				CONVERT(INT, a.BankAccountStatus)	AS '@BankAccountStatus',
+				CONVERT(NVARCHAR(255), a.AccountNickname) AS '@AccountNickname',
+				a.TransTypeList					AS '@TransTypeList',
+				a.DepositMatching				AS '@DepositMatching',
+				CONVERT(INT, a.PromptPayEnabled)	AS '@PromptPayEnabled',
+				''								AS '@PromptPayMobile'
+		FROM @Old_CashAgentBankAccount a
+		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
+		TYPE
 	);
+	SELECT @TrackingValue2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
 	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime

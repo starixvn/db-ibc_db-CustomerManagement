@@ -138,19 +138,16 @@ BEGIN
 
 	-- LOG NEW VALUES
 	SET @xml = (
-		SELECT	@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
-				@IP										AS '@IP',
-				(
-					SELECT	
-							@SettingInfo					AS '@SettingInfo',
-							@Mobile						AS '@Mobile',
-							CONVERT(NVARCHAR(500) , @Contact)		AS '@Contact',
-							CONVERT(NVARCHAR(500) , @Announcement)	AS '@Announcement'
-					FOR XML PATH('CashAgentManagement'), 
-					TYPE
-				)
-		FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP									AS '@IP',
+				@SettingInfo						AS '@SettingInfo',
+				@Mobile								AS '@Mobile',
+				CONVERT(NVARCHAR(500) , @Contact)	AS '@Contact',
+				CONVERT(NVARCHAR(500) , @Announcement) AS '@Announcement'
+		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
+		TYPE
 	);
 	SET @TrackingValueMask = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 	SELECT @TrackingValue = REPLACE(REPLACE(@TrackingValueMask, ISNULL(@Mobile, ''), ''),ISNULL(@Contact, ''),'');
@@ -158,39 +155,33 @@ BEGIN
 
 	-- LOG OLD VALUES
 	SET @xml = (
-		SELECT	@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
-				@IP										AS '@IP',
-				(
-					SELECT	
-							a.SettingInfo					AS '@SettingInfo',
-							a.Mobile						AS '@Mobile',
-							CONVERT(NVARCHAR(500) , a.Contact)		AS '@Contact',
-							CONVERT(NVARCHAR(500) , a.Announcement)	AS '@Announcement'
-					FROM @old_ManagedAgents a
-					FOR XML PATH('CashAgentManagement'), 
-					TYPE
-				)
-		FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP									AS '@IP',
+				a.SettingInfo						AS '@SettingInfo',
+				a.Mobile							AS '@Mobile',
+				CONVERT(NVARCHAR(500) , a.Contact)	AS '@Contact',
+				CONVERT(NVARCHAR(500) , a.Announcement) AS '@Announcement'
+		FROM @old_ManagedAgents a
+		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
+		TYPE
 	);
 	SET @TrackingValueMask2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 
 
 	SET @xml = (
-		SELECT	@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)					AS '@SubAccName',
-				@IP										AS '@IP',
-				(
-					SELECT	
-							a.SettingInfo					AS '@SettingInfo',
-							''							AS '@Mobile',
-							''							AS '@Contact',
-							CONVERT(NVARCHAR(500) , a.Announcement)	AS '@Announcement'
-					FROM @old_ManagedAgents a
-					FOR XML PATH('CashAgentManagement'), 
-					TYPE
-				)
-		FOR XML PATH('ROOT'),TYPE
+		SELECT	
+				@CustID									AS '@CustID',
+				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
+				@IP									AS '@IP',
+				a.SettingInfo						AS '@SettingInfo',
+				''									AS '@Mobile',
+				''									AS '@Contact',
+				CONVERT(NVARCHAR(500) , a.Announcement) AS '@Announcement'
+		FROM @old_ManagedAgents a
+		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
+		TYPE
 	);
 	SELECT @TrackingValue2 =  REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 

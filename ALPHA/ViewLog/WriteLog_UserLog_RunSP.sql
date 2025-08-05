@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv,Dot_Admin,wsv_lap,asv_cust" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCUST-bodb_CustomerLog,DBLOG-bodb_CustomerLog,DBSIC-bodb_CustomerLog" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_alpv,Dot_Admin,wsv_lap,asv_cust" viewers="" isFunction="0" isNested="1"></info>*/
 ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		@UserID INT,
 		@CustID INT = 0,
@@ -22,6 +22,7 @@ ALTER PROCEDURE [dbo].[WriteLog_UserLog_RunSP]
 		- 20190606@Elodie: Apply new structure for CN88's log [Redmine: #113198]
 		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
 		- 20220613@Elodie: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831]      
+		- 20250728@Dave: Deploy on DBSIC [RedmineID: #233474]
 
     Param's Explaination:    	
 		- @UserID: UserId perform this action

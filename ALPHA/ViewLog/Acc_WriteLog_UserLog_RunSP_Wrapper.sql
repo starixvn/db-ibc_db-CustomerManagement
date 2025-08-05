@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CustDB,DBGLOB-GlobCustDB" executers="wsv_nap,wsv_xnap,wsv_alp" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCUST-CustDB,DBGLOB-GlobCustDB,DBSIC-bodb02" executers="wsv_nap,wsv_xnap,wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_WriteLog_UserLog_RunSP_Wrapper]
 	@UserID INT,
@@ -12,12 +12,13 @@ ALTER PROCEDURE [dbo].[Acc_WriteLog_UserLog_RunSP_Wrapper]
 /* 
 	Created: 20180924@Elodie
     Task: ViewLog function
-    DB: DBCUST/CustDB,DBGLOB-GlobCustDB
+    DB: DBCUST/CustDB,DBGLOB-GlobCustDB,DBSIC-bodb02
 
 	Revisions:
 		- 20180924@Elodie: Migrate bodb_Licensee to DBCUST [Redmine:#99855]
 		- 20200218@Elodie: Add multitarget log [Redmine: #127446]
 		- 20250224@Tacy: Deploy on GlobCustDB [RedmineID: #216870]
+		- 20250728@Dave: Deploy on DBSIC [RedmineID: #233474]
     Param's Explaination:    	
 		- @UserID: UserId perform this action
 		- @CustID: 
