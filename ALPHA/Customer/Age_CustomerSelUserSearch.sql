@@ -7,8 +7,9 @@ ALTER PROCEDURE [dbo].[Age_CustomerSelUserSearch]
 	@excludemember BIT = 0,
 	@directdownline BIT = 0,
 	@isaccinfo BIT = 1,
-	@isInternalAgent BIT = 0
-	
+	@isInternalAgent BIT = 0,
+	@ExcludeCashMember BIT = 0
+
 AS
 /*
 	Created: 20090610@nqminh
@@ -29,6 +30,8 @@ AS
 		- 20231222@Helios: Alpha - Search Customer run slowly - Add Forced Index  [Redmine: #198788]
 		- 20231222@Helios: Alpha - Search Customer run slowly - Revise code to user index IX_agent [Redmine: #198788]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
+		- 20250724@Dave: Offer Cash service - Add ExcludeCashMember parameter [Redmine: #233474]
+
 	Param's Explanation:
 		• @custid: User who are logging in.
 		• @username: part of downline's username.
@@ -52,6 +55,9 @@ BEGIN
 		SELECT TOP 10 s.username, s.firstname, s.lastname, CASE WHEN c.roleid = @roleid - 1 THEN s.username2 ELSE NULL END, searchcount
 		FROM custsearch s WITH (NOLOCK) 
 			INNER JOIN customer c (NOLOCK) ON s.username = c.username  
+			CROSS APPLY (SELECT TOP 1 ServiceType
+						FROM dbo.vw_CustInfoExtra WITH (NOLOCK)
+						WHERE custid = c.custid) ci
 		WHERE userid=@custid 
 			AND (s.username LIKE '%' + @username  + '%' 
 				OR s.username2 LIKE '%' + @username  + '%' 
@@ -59,6 +65,7 @@ BEGIN
 				OR s.lastname LIKE '%' + @username  + '%')
 			AND  CASE WHEN @isInternalAgent = 0 THEN Left(s.username,7) ELSE 'A' END  <>
 				 CASE WHEN @isInternalAgent = 0 THEN 'Agency$' ELSE 'B' END 
+			AND ((@ExcludeCashMember = 1 AND ci.ServiceType = 0) OR @ExcludeCashMember = 0 OR c.roleid > 1)
 		ORDER BY [searchcount] DESC
 	END
 
@@ -107,8 +114,12 @@ BEGIN
 								OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 								OR firstname LIKE @username  + '%' 
 								OR lastname LIKE @username  + '%')) c
+				CROSS APPLY (SELECT TOP 1 ServiceType
+							FROM dbo.vw_CustInfoExtra WITH (NOLOCK)
+							WHERE custid = c1.custid) ci
 				WHERE roleid < 2
 					AND recommend = @custid
+					AND ((@ExcludeCashMember = 1 AND ci.ServiceType = 0) OR @ExcludeCashMember = 0)
 				ORDER BY c.username
 			END
 		END
@@ -180,8 +191,12 @@ BEGIN
 								OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 								OR firstname LIKE @username  + '%' 
 								OR lastname LIKE @username  + '%')) c
+					CROSS APPLY (SELECT TOP 1 ServiceType
+							FROM vw_CustInfoExtra WITH (NOLOCK)
+							WHERE custid = c1.custid) ci
 					WHERE roleid < 3
 						AND mrecommend = @custid
+						AND ((@ExcludeCashMember = 1 AND ci.ServiceType = 0) OR @ExcludeCashMember = 0)
 					ORDER BY c.username
 				END
 			END	
@@ -253,8 +268,12 @@ BEGIN
 								OR (@UserRoleId = @RoleID AND username2 LIKE @username  + '%')
 								OR firstname LIKE @username  + '%' 
 								OR lastname LIKE @username  + '%')) c
+						CROSS APPLY (SELECT TOP 1 ServiceType
+							FROM dbo.vw_CustInfoExtra WITH (NOLOCK)
+							WHERE custid = c1.custid) ci
 						WHERE roleid < 4
 							AND srecommend = @custid
+							AND ((@ExcludeCashMember = 1 AND ci.ServiceType = 0) OR @ExcludeCashMember = 0)
 						ORDER BY c.username
 					END
 			END	

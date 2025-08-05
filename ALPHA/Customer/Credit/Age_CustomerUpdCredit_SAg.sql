@@ -36,6 +36,7 @@ AS
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
+		- 20250730@Dave: Skip Rule #70030 [insufficient for all current Members], update Rule #70033 - add total credit of direct members [Redmine: #234627]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
@@ -50,7 +51,8 @@ BEGIN
 		@Credit_SAg MONEY,
 		@Credit_AllSuperDirectMember MONEY,
 		@Credit_AllMember		MONEY,
-		@AccumCredit_AllCashMember	MONEY;
+		@AccumCredit_AllCashMember	MONEY,
+		@Credit_AllMasterDirectMember MONEY;
 
 	DECLARE @ErrCode INT = 0
 
@@ -97,9 +99,9 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE mrecommend = @CustID AND RoleID = 1
 
-	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-	FROM CashAccumCredit WITH (NOLOCK)
-	WHERE mrecommend = @CustID;
+	SELECT @Credit_AllMasterDirectMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+	FROM dbo.custInfo WITH (NOLOCK)
+	WHERE mrecommend = @CustID AND roleid = 1 AND recommend = -3;
 
 	IF @SAgID > 100
 	BEGIN
@@ -113,7 +115,7 @@ BEGIN
 			RETURN
 		END
 		
-		IF (@Credit_AllMember + @AccumCredit_AllCashMember > @CreditAmt)
+		/*IF (@Credit_AllMember + @AccumCredit_AllCashMember > @CreditAmt)
 		BEGIN
 			SELECT	@CreditProblem = 1,
 					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
@@ -121,15 +123,15 @@ BEGIN
 											END  
 											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
 			RETURN
-		END
+		END*/
 		
-		IF (@Credit_AllAgent > @CreditAmt)
+		IF (@Credit_AllAgent + @Credit_AllMasterDirectMember > @CreditAmt)
 		BEGIN
 			SELECT	@CreditProblem = 1,
 					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllAgent, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_AllAgent + @Credit_AllMasterDirectMember, '#,#0.####'))
 			RETURN
 		END
 	END

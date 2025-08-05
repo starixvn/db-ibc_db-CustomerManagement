@@ -13,6 +13,7 @@ ALTER PROCEDURE	dbo.Age_CustomerSelCustWinlimit
 				,	@TotalRows		INT				= 0			OUTPUT
 				,     @SettingStatus    TINYINT = 0
 				,	@isDirectDownline BIT
+				,   @AccountType	TINYINT 		= 2
 AS
 /*
 	Create:	20150715@Patrick
@@ -34,7 +35,7 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
-
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474]
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -47,7 +48,13 @@ BEGIN
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
 
-	CREATE TABLE #MemberBalance (CustId INT)
+	CREATE TABLE #MemberBalance (
+		CustId INT,
+		closed BIT,
+		reject BIT,
+		Locked TINYINT,
+		ServiceType TINYINT
+	)
 
 	--> Get Representative sporttype, bettype of this sport( use for settingtype 22 storeing way)
 	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
@@ -74,9 +81,21 @@ BEGIN
 	BEGIN
 		IF @isDirectDownline = 0			-- Get Normal Member
 		BEGIN
-			INSERT INTO #MemberBalance(CustId)
-			SELECT c.custid
+			INSERT INTO #MemberBalance(CustId, closed, reject, Locked, ServiceType)
+			SELECT  
+					c.custid
+			,		cps.closed
+			,		cps.reject
+			,		cps.Locked
+			,		cps.ServiceType
 			FROM dbo.CustInfo c WITH(NOLOCK)
+			CROSS APPLY (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, ISNULL(Locked, 0) AS Locked
+									, ISNULL(ServiceType, 0) AS ServiceType
+								FROM dbo.CustProductStatus WITH(NOLOCK)
+								WHERE CustID = c.custid
+							) AS cps
 			WHERE c.srecommend = @CustId
 				AND roleid = 1
 				AND c.mrecommend = @mrecommend
@@ -84,13 +103,26 @@ BEGIN
 				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
 				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 				AND c.Enabled = 1
-			GROUP BY c.custid
+				AND cps.ServiceType = CASE WHEN @AccountType = 2 THEN cps.ServiceType ELSE @AccountType END
+			GROUP BY c.custid, cps.closed, cps.reject, cps.Locked, cps.ServiceType
 		END
 		ELSE							-- Get Super Direct Member
 		BEGIN
-			INSERT INTO #MemberBalance(CustId)
-			SELECT c.custid
+			INSERT INTO #MemberBalance(CustId, closed, reject, Locked, ServiceType)
+			SELECT  
+					c.custid
+			,		cps.closed
+			,		cps.reject
+			,		cps.Locked
+			,		cps.ServiceType
 			FROM dbo.CustInfo c WITH(NOLOCK)
+			CROSS APPLY (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, ISNULL(Locked, 0) AS Locked
+									, ISNULL(ServiceType, 0) AS ServiceType
+								FROM dbo.CustProductStatus WITH(NOLOCK)
+								WHERE CustID = c.custid
+							) AS cps
 			WHERE c.srecommend = @CustID
 				AND c.recommend = -4
 				AND roleid = 1
@@ -98,16 +130,29 @@ BEGIN
 				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
 				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 				AND c.Enabled = 1
-			GROUP BY c.custid
+				AND cps.ServiceType = CASE WHEN @AccountType = 2 THEN cps.ServiceType ELSE @AccountType END
+			GROUP BY c.custid, cps.closed, cps.reject, cps.Locked, cps.ServiceType
 		END
 	END
 	ELSE IF @RoleId = 3
 	BEGIN
 		IF @isDirectDownline = 0			-- Get Normal Member
 		BEGIN
-			INSERT INTO #MemberBalance(CustId)
-			SELECT c.custid
+			INSERT INTO #MemberBalance(CustId, closed, reject, Locked, ServiceType)
+			SELECT  
+					c.custid
+			,		cps.closed
+			,		cps.reject
+			,		cps.Locked
+			,		cps.ServiceType
 			FROM dbo.CustInfo c WITH(NOLOCK)
+			CROSS APPLY (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, ISNULL(Locked, 0) AS Locked
+									, ISNULL(ServiceType, 0) AS ServiceType
+								FROM dbo.CustProductStatus WITH(NOLOCK)
+								WHERE CustID = c.custid
+							) AS cps
 			WHERE c.mrecommend = @CustId
 				AND roleid = 1
 				AND c.srecommend = @srecommend 
@@ -115,13 +160,26 @@ BEGIN
 				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
 				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 				AND c.Enabled = 1
-			GROUP BY c.custid
+				AND cps.ServiceType = CASE WHEN @AccountType = 2 THEN cps.ServiceType ELSE @AccountType END
+			GROUP BY c.custid, cps.closed, cps.reject, cps.Locked, cps.ServiceType
 		END
 		ELSE							-- Get Master Direct Member
 		BEGIN
-			INSERT INTO #MemberBalance(CustId)
-			SELECT c.custid
+			INSERT INTO #MemberBalance(CustId, closed, reject, Locked, ServiceType)
+			SELECT  
+					c.custid
+			,		cps.closed
+			,		cps.reject
+			,		cps.Locked
+			,		cps.ServiceType
 			FROM dbo.CustInfo c WITH(NOLOCK)
+			CROSS APPLY (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+									, ISNULL(Locked, 0) AS Locked
+									, ISNULL(ServiceType, 0) AS ServiceType
+								FROM dbo.CustProductStatus WITH(NOLOCK)
+								WHERE CustID = c.custid
+							) AS cps
 			WHERE c.mrecommend = @CustId
 				AND roleid = 1
 				AND c.srecommend = @srecommend 
@@ -129,21 +187,35 @@ BEGIN
 				AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
 				AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 				AND c.Enabled = 1
-			GROUP BY c.custid
+				AND cps.ServiceType = CASE WHEN @AccountType = 2 THEN cps.ServiceType ELSE @AccountType END
+			GROUP BY c.custid, cps.closed, cps.reject, cps.Locked, cps.ServiceType
 		END
 	END
 	ELSE IF @RoleId = 2
 	BEGIN
-		INSERT INTO #MemberBalance(CustId)
-		SELECT c.custid
+		INSERT INTO #MemberBalance(CustId, closed, reject, Locked, ServiceType)
+		SELECT  
+				c.custid
+		,		cps.closed
+		,		cps.reject
+		,		cps.Locked
+		,		cps.ServiceType
 		FROM dbo.CustInfo c WITH(NOLOCK)
+		CROSS APPLY (SELECT TOP 1 CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
+								, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
+								, ISNULL(Locked, 0) AS Locked
+								, ISNULL(ServiceType, 0) AS ServiceType
+							FROM dbo.CustProductStatus WITH(NOLOCK)
+							WHERE CustID = c.custid
+						) AS cps
 		WHERE c.recommend = @CustId
 			AND roleid = 1
 			AND c.srecommend = @srecommend
 			AND	c.username LIKE '%' + ISNULL(@username, c.username) + '%'
 			AND	c.custid = ISNULL(@PlayerId_IBC, c.custid)
 			AND c.Enabled = 1
-		GROUP BY c.custid
+			AND cps.ServiceType = CASE WHEN @AccountType = 2 THEN cps.ServiceType ELSE @AccountType END
+		GROUP BY c.custid, cps.closed, cps.reject, cps.Locked, cps.ServiceType
 	END
 	
 	--Calc total rows
@@ -165,13 +237,14 @@ BEGIN
 		,	tmp.MaxLossLimit
 		,	tmp.Locked
 		,   tmp.ClosedReason
+		,	tmp.ServiceType
 	FROM	(
-		SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, cps.closed, ISNULL(cps.reject, 0), ci.username) AS RowNumber
+		SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, mb.closed, ISNULL(mb.reject, 0), ci.username) AS RowNumber
 			,	ci.username
-			,	CAST(cps.closed AS BIT) closed
+			,	CAST(mb.closed AS BIT) closed
 			,	ci.enabled
-			,	CAST(ISNULL(cps.reject, 0) AS BIT) AS suspended
-			,   cps.Locked
+			,	CAST(ISNULL(mb.reject, 0) AS BIT) AS suspended
+			,   mb.Locked
 			,   li.ClosedReason
 			,	ci.credit
 			,	mb.CustId				
@@ -180,6 +253,7 @@ BEGIN
 			,	cwllm.IsAutoReset
 			,	cwllm.MaxWinLimit
 			,	cwllm.MaxLossLimit
+			,	mb.ServiceType
 		FROM		#MemberBalance mb
 		INNER JOIN	dbo.custInfo ci WITH (NOLOCK) 
 				ON	mb.CustId = ci.custid
@@ -189,15 +263,9 @@ BEGIN
 				ON	ci.CustId = cwllm.CustId 
 				AND	cwllm.SportType = @SportType 
 				AND	cwllm.BetType = @BetType
-		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
-									, CASE WHEN SuspendInfo > 0 THEN 1 ELSE 0 END AS reject
-									, ISNULL(Locked, 0) Locked
-								FROM dbo.CustProductStatus  WITH(NOLOCK)
-								WHERE CustID = ci.custid
-							) AS cps
 		INNER JOIN CustLoginInfo_Member li WITH (NOLOCK) ON li.CustID = ci.custid
-		GROUP BY	ci.username, cps.closed, ci.Enabled, ISNULL(cps.reject, 0), cps.Locked, ci.credit, c.firstname, c.lastname
-				,	cwllm.IsAutoReset, cwllm.MaxWinLimit, cwllm.MaxLossLimit, mb.custid, li.ClosedReason
+		GROUP BY	ci.username, mb.closed, ci.Enabled, ISNULL(mb.reject, 0), mb.Locked, ci.credit, c.firstname, c.lastname
+				,	cwllm.IsAutoReset, cwllm.MaxWinLimit, cwllm.MaxLossLimit, mb.custid, li.ClosedReason, mb.ServiceType
 	) tmp
 		LEFT JOIN dbo.CustUserMapping3rd cm ON cm.Custid = tmp.CustId AND cm.VendorID = @VendorID
 	WHERE	tmp.RowNumber BETWEEN @RowStart AND @RowEnd

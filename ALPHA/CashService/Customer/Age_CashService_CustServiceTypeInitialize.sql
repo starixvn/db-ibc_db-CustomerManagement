@@ -12,11 +12,11 @@ AS
 /*  
 	Created By: Helios
 	Created Date: 2025-04-18
-	Description: Agency Cash Service - Enable or Disable ServiceType [Redmine #223896]   
+	Description: Agency Cash Service - Enable or Disable ServiceType [Redmine #223896]    
 	DB: DBCust.CustDB
 	
 	Revisions:
-		- 20250321@Helios: Agency Cash Service - S4 - Rollback [Redmine: #228627]   
+		- 20250321@Helios: Agency Cash Service - S4 - Rollback [Redmine: #228627]    
 
 	Param: 
 	@ServiceType : 0 - Disable  || 1 - Enable
@@ -126,16 +126,13 @@ BEGIN
 				SET @xml = (
 				SELECT	@CustID                         AS '@CustID',
 						@IP                             AS '@IP',
-						(
-							SELECT	pc.AgentID						 AS '@CustID',
-									pc.ProviderID					 AS '@ProviderID',
-									pc.ProviderStatus					 AS '@ProviderStatus',
-									CONVERT(NVARCHAR(500) , pc.ChannelContact) AS '@ChannelContact'
-							FROM #tmp_ProviderConfig pc
-							FOR XML PATH('ProviderConfig'), 
-							TYPE
-						)
-				FOR XML PATH('ROOT'), TYPE
+						pc.AgentID						 AS '@AgentID',
+						pc.ProviderID					 AS '@ProviderID',
+						pc.ProviderStatus					 AS '@ProviderStatus',
+						CONVERT(NVARCHAR(500) , pc.ChannelContact) AS '@ChannelContact'
+				FROM #tmp_ProviderConfig pc
+				FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
+				TYPE
 				);
 				SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 
@@ -228,21 +225,18 @@ BEGIN
 				SET @xml = (
 				SELECT	@CustID                         AS '@CustID',
 						@IP                             AS '@IP',
-						(
-							SELECT	@CustID					 AS '@CustID',
-									cam.SettingInfo				 AS '@SettingInfo',
-									cam.Mobile					 AS '@Mobile',
-									CONVERT(NVARCHAR(500) , cam.Contact) AS '@Contact',
-									CONVERT(NVARCHAR(500) , cam.Announcement)				 AS '@Announcement',
-									cam.DailyWithdrawalCount						 AS '@DailyWithdrawalCount',
-									CONVERT(VARCHAR(200) ,  cam.StartTime , 120)			 AS '@StartTime',
-									CONVERT(VARCHAR(200) ,  cam.TrialEndTime , 120)			 AS '@TrialEndTime'
-							FROM CashAgentManagement cam WITH (NOLOCK)
-							WHERE cam.AgentId = @CustID
-							FOR XML PATH('AgentManagement'), 
-							TYPE
-						)
-				FOR XML PATH('ROOT'), TYPE
+						@CustID					 AS '@AgentID',
+						cam.SettingInfo				 AS '@SettingInfo',
+						cam.Mobile					 AS '@Mobile',
+						CONVERT(NVARCHAR(500) , cam.Contact) AS '@Contact',
+						CONVERT(NVARCHAR(500) , cam.Announcement)				 AS '@Announcement',
+						cam.DailyWithdrawalCount						 AS '@DailyWithdrawalCount',
+						CONVERT(VARCHAR(200) ,  cam.StartTime , 120)			 AS '@StartTime',
+						CONVERT(VARCHAR(200) ,  cam.TrialEndTime , 120)			 AS '@TrialEndTime'
+				FROM CashAgentManagement cam WITH (NOLOCK)
+				WHERE cam.AgentId = @CustID
+				FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
+				TYPE
 				);
 				SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 			
@@ -323,16 +317,13 @@ BEGIN
 					SET @xml = (
 					SELECT	@CustID                         AS '@CustID',
 							@IP                             AS '@IP',
-							(
-								SELECT	cdm.AgentId						 AS '@CustID',
-										cdm.DomainId					 AS '@DomainId',
-										cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
-								FROM CashDomainManagement cdm WITH (NOLOCK) 
-								WHERE cdm.AgentId = @CustID
-								FOR XML PATH('DomainManagement'), 
-								TYPE
-							)
-					FOR XML PATH('ROOT'), TYPE
+							cdm.AgentId						 AS '@AgentID',
+							cdm.DomainId					 AS '@DomainId',
+							cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+					FROM CashDomainManagement cdm WITH (NOLOCK) 
+					WHERE cdm.AgentId = @CustID
+					FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
+					TYPE
 					);
 					SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 					
@@ -389,16 +380,13 @@ BEGIN
 						SET @xml = (
 						SELECT	@CustID                         AS '@CustID',
 								@IP                             AS '@IP',
-								(
-									SELECT	cdm.AgentId						 AS '@CustID',
-											cdm.DomainId					 AS '@DomainId',
-											cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
-									FROM CashDomainManagement cdm WITH (NOLOCK) 
-									WHERE cdm.AgentId = @CustID
-									FOR XML PATH('DomainManagement'), 
-									TYPE
-								)
-						FOR XML PATH('ROOT'), TYPE
+								cdm.AgentId						 AS '@AgentID',
+								cdm.DomainId					 AS '@DomainId',
+								cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+						FROM CashDomainManagement cdm WITH (NOLOCK) 
+						WHERE cdm.AgentId = @CustID
+						FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
+						TYPE
 						);
 						SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
@@ -406,15 +394,12 @@ BEGIN
 						SET @xml = (
 						SELECT	@CustID                         AS '@CustID',
 								@IP                             AS '@IP',
-								(
-									SELECT	cdm.AgentId						 AS '@CustID',
-											cdm.DomainId					 AS '@DomainId',
-											cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
-									FROM @old_CashDomainManagement cdm
-									FOR XML PATH('DomainManagement'), 
-									TYPE
-								)
-						FOR XML PATH('ROOT'), TYPE
+								cdm.AgentId						 AS '@AgentID',
+								cdm.DomainId					 AS '@DomainId',
+								cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+						FROM @old_CashDomainManagement cdm
+						FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
+						TYPE
 						);
 						SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 				

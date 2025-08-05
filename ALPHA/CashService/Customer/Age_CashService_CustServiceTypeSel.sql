@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCUST-CustDB" executers="wsv_CashService,wsv_nap"  viewers="" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCUST-CustDB,DBSIC-CustDB" executers="wsv_CashService,wsv_nap,wsv_alp,wsv_alpv"  viewers="" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE dbo.Age_CashService_CustServiceTypeSel
 	@CustID				INT,
 	@ServiceType			TINYINT	OUTPUT
@@ -7,10 +7,11 @@ AS
 	Created By: Helios
 	Created Date: 2025-04-18
 	Description: Agency Cash Service - Check Cust is ServiceType or not [Redmine #223896] 
-	DB: DBCust.CustDB
+	DB: DBCust.CustDB,DBSIC.CustDB
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]    
+		- 20250724@Dave: Add executers wsv_alp,wsv_alpv, deploy DBSIC [Redmine: #233474]
 
 	Param:
 
