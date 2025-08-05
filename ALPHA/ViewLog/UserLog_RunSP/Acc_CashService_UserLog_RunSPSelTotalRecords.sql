@@ -16,7 +16,7 @@ AS
       Task:         Log Cash Service – Create SP to count total log records for CashService [#233474] 
       DB:           DBLOG-bodb_CustomerLog
       Revisions:
-          - 20250728@Helios: Initial create for CashService log [redmine: 233474]  
+          - 20250728@Helios: Initial create for CashService log [redmine: 233474]
 
       Example:
           EXEC dbo.Acc_CashService_UserLog_RunSPSelTotalRecords @CustId = 1, @LoginUserId = 2, @FromDate = '2025-07-01', @ToDate = '2025-07-28', @ActionTypeId = -1, @IsInternal = 0; 

@@ -38,18 +38,6 @@ BEGIN
 	END
 	IF @ServiceType = 1
 	BEGIN
-		-- Return hard-coded values for ActionTypeID > 100
-		SELECT 101 AS ActionTypeID, N'Bank Account' AS ActionTypeNameEN, N'银行账户' AS ActionTypeNameCH, N'银行账户' AS ActionTypeNameCS, N'Bank Account' AS ActionTypeNameJP, N'Bank Account' AS ActionTypeNameIT, N'บัญชีธนาคาร' AS ActionTypeNameTH, N'Bank Account' AS ActionTypeNameKO, NULL AS ActionTypeNameVI, N'银行账户' AS ActionTypeNameCN
-		UNION ALL
-		SELECT 102, N'Payment Gateway', N'支付网关', N'支付网关', N'Payment Gateway', N'Payment Gateway', N'ช่องทางการชำระเงิน', N'Payment Gateway', NULL, N'支付网关'
-		UNION ALL
-		SELECT 103, N'Promotion', N'优惠', N'优惠', N'Promotion', N'Promotion', N'โปรโมชั่น', N'Promotion', NULL, N'优惠'
-		UNION ALL
-		SELECT 104, N'Deposit', N'存款', N'存款', N'Deposit', N'Deposit', N'ฝากเงิน', N'Deposit', NULL, N'存款'
-		UNION ALL
-		SELECT 105, N'Withdrawal', N'提款', N'提款', N'Withdrawal', N'Withdrawal', N'ถอนเงิน', N'Withdrawal', NULL, N'提款'
-
-		/* Open when released
 		SELECT 
 			ActionTypeID,
 			ActionTypeNameEN,
@@ -63,7 +51,6 @@ BEGIN
 			ActionTypeNameCN
 		FROM LogActionType WITH (NOLOCK)
 		WHERE ActionTypeID > 100
-		*/
 	END
 
 END
