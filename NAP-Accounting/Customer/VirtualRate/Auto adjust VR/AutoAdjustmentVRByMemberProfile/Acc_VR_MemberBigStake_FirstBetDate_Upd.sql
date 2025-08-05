@@ -20,6 +20,7 @@ AS
 		- 20220614@Eden: DBCUST - modify sp syntax to adapt with the SQL Server upgrade to 2019 [Redmine: #171831] 
 		- 20220617@Johnson: define temp table to avoid dump db [redmine:#174035]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250725@Thomas.Nguyen: Adjust Log - only except Esports [RedmineID: #233535]
 
 	Param's Explanation:  
 		@Type = 
@@ -124,7 +125,7 @@ BEGIN
 
 			SELECT @LogData = '<R '
 								+ 'Type="'
-										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 												ELSE space(1) 
 											END+ '" '
 								+ ' />'

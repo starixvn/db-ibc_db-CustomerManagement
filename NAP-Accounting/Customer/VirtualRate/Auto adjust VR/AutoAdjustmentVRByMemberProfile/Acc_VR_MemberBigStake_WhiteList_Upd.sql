@@ -18,7 +18,8 @@ AS
 		- 20210323@Eden: Enhancement for VR Member Big Stake [Redmine:#149372]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
-		
+		- 20250725@Thomas.Nguyen: Adjust Log - only except Esports [RedmineID: #233535]
+
 	Param's Explanation:  
 		@Type = 
 			1: All VR sport exclude BasketBall and Esport
@@ -150,7 +151,7 @@ BEGIN
 
 			SELECT @NewLogData = '<R '
 								+ 'Type="'
-										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+										+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 												ELSE space(1) 
 											END+ '" '
 								+ 'Reason="'

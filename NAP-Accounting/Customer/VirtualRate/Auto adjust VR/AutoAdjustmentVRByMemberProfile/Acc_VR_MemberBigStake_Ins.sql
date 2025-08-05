@@ -14,6 +14,7 @@ AS
 		- 20210914@Eden: Amendment on Virtual Rate by Big stake request [#156824]
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
+		- 20250725@Thomas.Nguyen: Adjust Log - only except Esports [RedmineID: #233535]
 
 	Param's Explanation:  
 	Examples:
@@ -87,7 +88,7 @@ BEGIN
 
 				SELECT @LogData_member = '<R '
 									+ 'Type="'
-											+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Basketball and Esports' 
+											+ CASE	WHEN @Type = 1 THEN 'Sportsbook except Esports' 
 													ELSE space(1) 
 												END+ '" '
 									+ ' />'
