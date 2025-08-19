@@ -74,8 +74,8 @@ BEGIN
 
 	--START LOG
 	--DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue VARCHAR(MAX), TrackingValue2 VARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX)
-	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 70633
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
+	DECLARE @xml XML , @ActionID INT = 70633
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 

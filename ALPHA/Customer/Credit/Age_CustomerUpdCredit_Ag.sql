@@ -8,7 +8,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdCredit_Ag]
 	@Language		VARCHAR(2)		= 'E',
 	@CreditProblem	BIT				= 0 OUTPUT,
 	@ErrMsg			NVARCHAR(500)	= '' OUTPUT,
-	@TotalAmt MONEY = NULL
+	@TotalAmt 		MONEY 			= NULL,
+	@AccumCreditAllCashMember		MONEY	= 0
 AS
 
 /*  
@@ -45,9 +46,11 @@ AS
 		- 20241121@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]   
 		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
+		- 20250729@Dave: Get data AccumCredit on SiteDB (is not select from the current DB (replicated)) [Redmine: #234627]
 	Param's Explanation:  
 		- @custid: custid that need to be updated   
 		- @CreditAmt: new credit   
+		- @AccumCreditAllCashMember: total accumulated credit of all cash members under this agent (data from SiteDB)
 */
 
 BEGIN
@@ -58,8 +61,7 @@ BEGIN
 		@Credit_Ag MONEY,
 		@MaxCredit_Ag MONEY,
 		@Credit_AllSuperDirectMember MONEY , 
-		@Credit_AllMasterDirectMember MONEY,
-		@AccumCredit_AllCashMember MONEY;
+		@Credit_AllMasterDirectMember MONEY;
 
 	DECLARE @ErrCode INT = 0
   
@@ -97,9 +99,6 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)  
 	WHERE recommend = @AgID AND roleid = 1 AND custid <> @CustID
 
-	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-	FROM CashAccumCredit WITH (NOLOCK)
-	WHERE recommend = @AgID AND CustID <> @CustID;
 
 	SELECT @Credit_Ag = ISNULL(credit, 0)
 	FROM dbo.custInfo WITH (NOLOCK)  
@@ -122,19 +121,19 @@ BEGIN
 
 	IF @AgID NOT IN (-3,-4)
 	BEGIN
-		IF @Credit_AllOtherMember + @CreditAmt + @AccumCredit_AllCashMember > @Credit_Ag
+		IF @Credit_AllOtherMember + @CreditAmt + @AccumCreditAllCashMember > @Credit_Ag
 		BEGIN
 			SELECT	@CreditProblem = 1,
 					@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit has exceeded the available given credit ({number}).'
 													ELSE [dbo].[f_Get_MsgNamebyMsgID](70030,@Language) 
 												END  
-												, '{number}', FORMAT(@Credit_Ag - @Credit_AllOtherMember - @AccumCredit_AllCashMember, '#,#0.####'))
+												, '{number}', FORMAT(@Credit_Ag - @Credit_AllOtherMember - @AccumCreditAllCashMember, '#,#0.####'))
 			RETURN 
 		END
 
 		DECLARE @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
   
-	      SELECT  @Agent_Credit_Bal	= @Credit_Ag - @Credit_AllOtherMember - @AccumCredit_AllCashMember;
+	      SELECT  @Agent_Credit_Bal	= @Credit_Ag - @Credit_AllOtherMember - @AccumCreditAllCashMember;
 	      SELECT  @Credit_Mem_Max		= CASE
 								WHEN @MaxCredit_Ag = 0 THEN @Agent_Credit_Bal
 								WHEN @MaxCredit_Ag > @Agent_Credit_Bal THEN @Agent_Credit_Bal  

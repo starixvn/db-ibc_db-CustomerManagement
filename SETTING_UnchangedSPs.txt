@@ -1,1 +1,1 @@
-NAP-Accounting\CreditTerm\dbo.Acc_CreditTermSelByGroupID.StoredProcedure.sql
+NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql

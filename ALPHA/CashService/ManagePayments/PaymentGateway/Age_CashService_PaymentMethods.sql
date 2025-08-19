@@ -32,25 +32,17 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	--Drop Down List Payment Methods : Get ALL Payment method
-	IF @TransactionType = 0
-	BEGIN
-		SELECT cpm.PaymentMethodID, cpm.MethodName
-		FROM CashPaymentMethod cpm WITH (NOLOCK)
-
-	END
-	ELSE
-	--Drop Down List Payment Methods : Get payment methods not yet assigned to the agent
 	BEGIN
 		SELECT DISTINCT
 		    pm.PaymentMethodID,
 		    pm.MethodName,
-		    ISNULL(api_config.PaymentMethodStatus , 0) AS PaymentMethodStatus
+		    ISNULL(api_config.PaymentMethodStatus , 0) AS PaymentMethodStatus,
+		    api_config.APIConfig
 		FROM CashPaymentMethod pm WITH (NOLOCK)
 		INNER JOIN CashPaymentProviderInfo cppi WITH (NOLOCK) ON pm.PaymentMethodID = cppi.PaymentMethodID
 		-- Use OUTER APPLY to fetch the API config per provider, method, transaction, and agent
 		OUTER APPLY (
-		    SELECT TOP 1 cppa.PaymentMethodStatus
+		    SELECT TOP 1 cppa.PaymentMethodStatus , cppa.APIConfig
 		    FROM CashPaymentProviderAPIConfig cppa WITH (NOLOCK)
 		    WHERE cppa.ProviderID = cppi.ProviderID
 			AND cppa.PaymentMethodID = cppi.PaymentMethodID
@@ -59,12 +51,12 @@ BEGIN
 		    ORDER BY cppa.PaymentMethodStatus
 		) AS api_config
 		WHERE 
-		    cppi.TransactionType = @TransactionType
+		    cppi.TransactionType = CASE WHEN @TransactionType =0 THEN cppi.TransactionType ELSE @TransactionType END
 		    AND cppi.ProviderID = @ProviderID
-		    AND (
-			  api_config.PaymentMethodStatus IS NULL -- No matching config found
-			  OR api_config.PaymentMethodStatus IN (3,4)  -- Matching config with status "Under Maintaince"
-		    )
+		   -- AND (
+			  --api_config.PaymentMethodStatus IS NULL -- No matching config found
+			  --OR api_config.PaymentMethodStatus IN (3,4)  -- Matching config with status "Under Maintaince"
+		   -- )
 	END
 
 	-- Get Channel

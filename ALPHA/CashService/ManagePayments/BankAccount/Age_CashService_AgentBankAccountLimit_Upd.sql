@@ -21,7 +21,7 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]   
-
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 	Param:
 
 	Update Daily Withdrawal Count
@@ -101,8 +101,8 @@ BEGIN
 	
 
 	--START LOG
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue VARCHAR(MAX), TrackingValue2 VARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX)
+	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX), Duration INT)
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX)
 	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 0
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
@@ -223,38 +223,26 @@ BEGIN
 		SET @ActionID = 300002
 
 		-- LOG NEW VALUES
-		SET @xml = (
-			SELECT	
-					@CustID								AS '@CustID',
-					CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-					@IP								AS '@IP',
-					CONVERT(DECIMAL(20,2), @MinPerDeposit)	AS '@MinPerDeposit',
-					CONVERT(DECIMAL(20,2), @MaxPerDeposit)	AS '@MaxPerDeposit',
-					CONVERT(DECIMAL(20,2), @MinPerWithdrawal) AS '@MinPerWithdrawal',
-					CONVERT(DECIMAL(20,2), @MaxPerWithdrawal) AS '@MaxPerWithdrawal'
-			FOR XML PATH('Age_CashService_AgentBankAccountLimit_Upd'), 
-			TYPE
-		);
-
-		SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
+		SELECT @TrackingValue = '<Age_CashService_AgentBankAccountLimit_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" MinPerDeposit="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), @MinPerDeposit))   
+							+'" MaxPerDeposit="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), @MaxPerDeposit))   
+							+'" MinPerWithdrawal="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), @MinPerWithdrawal))
+							+'" MaxPerWithdrawal="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), @MaxPerWithdrawal)) +'" />'
 
 
 		-- LOG OLD VALUES
-		SET @xml = (
-			SELECT	
-					@CustID								AS '@CustID',
-					CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-					@IP								AS '@IP',
-					CONVERT(DECIMAL(20,2), a.MinPerDeposit)	AS '@MinPerDeposit',
-					CONVERT(DECIMAL(20,2), a.MaxPerDeposit)	AS '@MaxPerDeposit',
-					CONVERT(DECIMAL(20,2), a.MinPerWithdrawal) AS '@MinPerWithdrawal',
-					CONVERT(DECIMAL(20,2), a.MaxPerWithdrawal) AS '@MaxPerWithdrawal'
-			FROM @Old_CashAgentLimit a
-			FOR XML PATH('Age_CashService_AgentBankAccountLimit_Upd'), 
-			TYPE
-		);
-
-		SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')		
+		SELECT @TrackingValue2 = '<Age_CashService_AgentBankAccountLimit_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" MinPerDeposit="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MinPerDeposit))   
+							+'" MaxPerDeposit="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MaxPerDeposit))   
+							+'" MinPerWithdrawal="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MinPerWithdrawal))
+							+'" MaxPerWithdrawal="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MaxPerWithdrawal)) +'" />'
+		FROM @Old_CashAgentLimit a		
 
 		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime

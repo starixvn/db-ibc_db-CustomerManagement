@@ -26,8 +26,8 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
-		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.AccountHolderName , BankAccountNumber,  PromptPayMobile [RedmineID: #231204]  
-
+		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.AccountHolderName , BankAccountNumber,  PromptPayMobile [RedmineID: #231204]   
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 	Param:
 		DECLARE @p1 INT , @p2 VARCHAR(1000)
 
@@ -146,26 +146,28 @@ BEGIN
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
+	DECLARE @BankCode VARCHAR (10)
+
+	SELECT @BankCode = cbl.BankCode
+	FROM CashBankList cbl WITH (NOLOCK)
+	WHERE cbl.BankID = @BankID
+
 	-- LOG NEW VALUES
-	SET @xml = (
-		SELECT	
-				@CustID								AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP								AS '@IP',
-				@BankID							AS '@BankID',
-				CONVERT(INT, @BankAccountStatus)	AS '@BankAccountStatus',
-				CONVERT(NVARCHAR(255), @AccountHolderName)	AS '@AccountHolderName',
-				@BankAccountNumber				AS '@BankAccountNumber',
-				CONVERT(NVARCHAR(255), @AccountNickname)	AS '@AccountNickname',
-				@TransTypeList					AS '@TransTypeList',
-				@DepositMatchingMode			AS '@DepositMatchingMode',
-				CONVERT(INT, @PromptPayEnabled)	AS '@PromptPayEnabled',
-				@PromptPayMobile				AS '@PromptPayMobile'
-		FOR XML PATH('Age_CashService_BankAccountAgent_Ins'), 
-		TYPE
-	);
+	SELECT @TrackingValueMask = '<Age_CashService_BankAccountAgent_Ins 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" BankID="' + CONVERT(VARCHAR(20), @BankID)
+							+'" BankCode="' + CONVERT(VARCHAR(20), @BankCode)
+							+'" BankAccountStatus="' + CONVERT(VARCHAR(10), @BankAccountStatus)   
+							+'" AccountHolderName="' + CONVERT(NVARCHAR(255), ISNULL(@AccountHolderName, ''))   
+							+'" BankAccountNumber="' + CONVERT(VARCHAR(100), ISNULL(@BankAccountNumber, ''))   
+							+'" AccountNickname="' + CONVERT(NVARCHAR(255), ISNULL(@AccountNickname, ''))   
+							+'" TransTypeList="' + CONVERT(VARCHAR(10), ISNULL(@TransTypeList, ''))
+							+'" DepositMatchingMode="' + CONVERT(VARCHAR(10), ISNULL(@DepositMatchingMode, 0))
+							+'" PromptPayEnabled="' + CONVERT(VARCHAR(20), @PromptPayEnabled)   
+							+'" PromptPayMobile="' + CONVERT(VARCHAR(50), ISNULL(@PromptPayMobile, '')) +'" />'
 	
-	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 	SELECT @TrackingValue = REPLACE(REPLACE(REPLACE(@TrackingValueMask, ISNULL(@AccountHolderName, ''), ''),ISNULL(@BankAccountNumber, ''),''),ISNULL(@PromptPayMobile, ''),'');
 
 	

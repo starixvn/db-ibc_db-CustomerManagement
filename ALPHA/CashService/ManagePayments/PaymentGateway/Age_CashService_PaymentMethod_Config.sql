@@ -21,20 +21,21 @@ AS
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
 		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474]
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]  
 	Param:
 		DECLARE @p1 INT
 		DECLARE @p2 NVARCHAR(1000)
 		EXEC Age_CashService_PaymentMethod_Config @ErrCode	     =@p1 OUTPUT
-								    , @ErrMsg	     =@p2 OUTPUT
-								    , @ProviderID	     =1
-								    , @TransactionType =1
-								    , @PaymentMethodID =1
-								    , @ValidationResult=1
-								    , @APIConfig	     ='{"APIMethodKey":"5bxr2v89pUyN9qjUAUT9YQ","MerchantID":"3q423423423","AppSecret":"dasdasdsad"}'
-								    , @CustID	     =249550999
-								    , @SubAccID	     =0
-								    , @IP		     ='10.0.0.112'
-								    , @Language	     ='E'
+									, @ErrMsg	     =@p2 OUTPUT
+									, @ProviderID	     =1
+									, @TransactionType =1
+									, @PaymentMethodID =1
+									, @ValidationResult=1
+									, @APIConfig	     ='{"APIMethodKey":"5bxr2v89pUyN9qjUAUT9YQ","MerchantID":"3q423423423","AppSecret":"dasdasdsad"}'
+									, @CustID	     =249550999
+									, @SubAccID	     =0
+									, @IP		     ='10.0.0.112'
+									, @Language	     ='E'
 		SELECT @p1 , @p2
 
 
@@ -103,29 +104,29 @@ BEGIN
 		RETURN;
 	END
 		
-	SELECT @CheckExists_ProviderAPIConfig = (SELECT PaymentMethodStatus FROM CashPaymentProviderAPIConfig WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID AND PaymentMethodID = @PaymentMethodID AND TransactionType = @TransactionType)
-	SELECT @CheckExists_AgentPaymentMethod = (SELECT TOP 1 1 FROM CashAgentPaymentMethod WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID AND PaymentMethodID = @PaymentMethodID  AND TransactionType = @TransactionType)
-
-	-- Data Exists , so return
-	IF @CheckExists_ProviderAPIConfig IN (1,2,4) AND @CheckExists_AgentPaymentMethod = 1
-	BEGIN
-		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 101;
-		RETURN
-	END
-
-	
+	-- Status API Payment Gateway return
 	SELECT @PaymentMethodStatus = CASE 
 							WHEN @ValidationResult = 0 THEN 2		-- API validate is 0 : Status Completed
 							ELSE 3						-- API validate is <> 0 : Status Fail
 						END
 
-	-- Existing record found with status 'Fail' — status has been updated.
-	IF @CheckExists_ProviderAPIConfig = 3 AND @CheckExists_AgentPaymentMethod = 1
+	SELECT @CheckExists_ProviderAPIConfig =  (SELECT Top 1 1 FROM CashPaymentProviderAPIConfig WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID AND PaymentMethodID = @PaymentMethodID AND TransactionType = @TransactionType)
+	SELECT @CheckExists_AgentPaymentMethod = (SELECT TOP 1 1 FROM CashAgentPaymentMethod WITH (NOLOCK) WHERE AgentID = @CustID AND ProviderID = @ProviderID AND PaymentMethodID = @PaymentMethodID  AND TransactionType = @TransactionType)
+
+	-- Data not Exists , so return
+	IF @CheckExists_ProviderAPIConfig IS NULL AND @CheckExists_AgentPaymentMethod IS NOT NULL
+	BEGIN
+		SELECT  @ErrMsg = N'Invalid parameters', @ErrCode = 101;
+		RETURN
+	END
+
+	-- Existing record status has been updated.
+	IF @CheckExists_ProviderAPIConfig IS NOT NULL AND @CheckExists_AgentPaymentMethod IS NOT NULL
 	BEGIN
 		-- Write log
 		INSERT INTO @old_RetryAPIConfig 
 		(
-			AgentID
+			  AgentID
 			, ProviderID
 			, MethodID
 			, TransactionType
@@ -144,12 +145,11 @@ BEGIN
 		AND ProviderID = @ProviderID 
 		AND PaymentMethodID = @PaymentMethodID 
 		AND TransactionType = @TransactionType
-		AND cppa.PaymentMethodStatus = @CheckExists_ProviderAPIConfig
 
 
 		--update values
 		UPDATE cppa
-			SET cppa.PaymentMethodStatus = @PaymentMethodStatus,
+			SET   cppa.PaymentMethodStatus = @PaymentMethodStatus,
 				cppa.APIConfig = @APIConfig,
 				RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CashPaymentProviderAPIConfig cppa WITH (NOLOCK)
@@ -157,17 +157,16 @@ BEGIN
 		AND ProviderID = @ProviderID 
 		AND PaymentMethodID = @PaymentMethodID 
 		AND TransactionType = @TransactionType
-		AND cppa.PaymentMethodStatus = @CheckExists_ProviderAPIConfig
 	END
 
 	-- No existing data found — proceeding to insert a new payment method
-	IF ISNULL(@CheckExists_ProviderAPIConfig, 0) = 0 AND ISNULL(@CheckExists_AgentPaymentMethod, 0) = 0
+	IF @CheckExists_ProviderAPIConfig IS NULL AND @CheckExists_AgentPaymentMethod IS NULL
 	BEGIN
 		BEGIN TRY
 			-- INIT FOR PAYMENT METHOD API CONFIG
 			INSERT INTO CashPaymentProviderAPIConfig 
 			(
-				AgentID
+				  AgentID
 				, ProviderID
 				, PaymentMethodID
 				, TransactionType
@@ -212,6 +211,7 @@ BEGIN
 		END CATCH
 	END
 
+	-- Insert Config Success
 	IF (@@error = 0)
 	BEGIN
 		IF @PaymentMethodStatus = 3
@@ -229,87 +229,110 @@ BEGIN
 	END
 
 	--START LOG 
-	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue VARCHAR(MAX), TrackingValue2 VARCHAR(MAX) , Duration INT )
-	DECLARE @TrackingValue VARCHAR(MAX), @TrackingValue2 VARCHAR(MAX)
+	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX), TrackingValueMask NVARCHAR(MAX), TrackingValueMask2 NVARCHAR(MAX), Duration INT)
+	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX), @TrackingValueMask NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
 	DECLARE @xml XML, @ActionID INT
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
+	DECLARE 
+		@APIConfigXML	VARCHAR(1000),
+		@APIConfigXML2	VARCHAR(1000),
+		@ProviderName	NVARCHAR(100);
+
+	SELECT @ProviderName = (SELECT ProviderName FROM CashPaymentProvider WITH (NOLOCK) WHERE ProviderID = @ProviderID)
 	
-	-- Existing record found with status 'Fail' — status has been updated.
-	IF @CheckExists_ProviderAPIConfig = 3 AND @CheckExists_AgentPaymentMethod = 1
+	-- Existing record And Retry or Changed API Connection.
+	IF @CheckExists_ProviderAPIConfig IS NOT NULL AND @CheckExists_AgentPaymentMethod IS NOT NULL
 	BEGIN
 		SET @ActionID = 305004
 
-		-- LOG NEW VALUES FOR PAYMENT METHOD API CONFIG 
-		SELECT @TrackingValue = '<Age_CashService_PaymentMethod_Config 
-		                    CustID="' + CONVERT(VARCHAR(20), @CustID) 
-		                    + '" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
-		                    + '" IP="' + CONVERT(VARCHAR(50), @IP)   
-		                    + '" AgentID="' + CONVERT(VARCHAR(20), (SELECT rt.AgentID FROM @old_RetryAPIConfig rt))
-		                    + '" ProviderID="' + CONVERT(VARCHAR(10), (SELECT rt.ProviderID FROM @old_RetryAPIConfig rt))   
-		                    + '" PaymentMethodID="' + CONVERT(VARCHAR(10), (SELECT rt.MethodID FROM @old_RetryAPIConfig rt))   
-		                    + '" TransactionType="' + CONVERT(VARCHAR(10), (SELECT rt.TransactionType FROM @old_RetryAPIConfig rt))
-		                    + '" APIConfig="' + CONVERT(VARCHAR(500), (SELECT rt.APIConfig FROM @old_RetryAPIConfig rt))   
-		                    + '" PaymentMethodStatus="' + CONVERT(VARCHAR(10), (SELECT rt.PaymentMethodStatus FROM @old_RetryAPIConfig rt)) + '" />';
+		-- LOG NEW VALUES FOR SETTING PAYMENT METHOD (XML style, always encode, handle empty APIConfig by REPLACE)
+		SET @APIConfigXML = REPLACE(REPLACE(ISNULL(@APIConfig, ''), '"', '&quot;'), '"', '&quot;');
+		SELECT @TrackingValueMask = '<Age_CashService_PaymentMethod_Config 
+									CustID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) + '" 
+									IP="' + CONVERT(VARCHAR(50), @IP) + '" 
+									AgentID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									ProviderID="' + CONVERT(VARCHAR(10), @ProviderID) + '" 
+									ProviderName="' + CONVERT(NVARCHAR(100), @ProviderName) + '" 
+									PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID) + '" 
+									TransactionType="' + CONVERT(VARCHAR(10), @TransactionType) + '" 
+									APIConfig="' + @APIConfigXML + '" 
+									PaymentMethodStatus="' + CONVERT(VARCHAR(10), @PaymentMethodStatus) + '" 
+								/>';
+		SET @TrackingValue = @TrackingValueMask;
+		SELECT @TrackingValue = REPLACE(@TrackingValue, ISNULL(@APIConfigXML, ''), '');
 
-		-- LOG NEW VALUES FOR SETTING PAYMENT METHOD
-		SELECT @TrackingValue2 = '<Age_CashService_PaymentMethod_Config 
-		                     CustID="' + CONVERT(VARCHAR(20), @CustID) 
-		                     + '" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
-		                     + '" IP="' + CONVERT(VARCHAR(50), @IP)   
-		                     + '" AgentID="' + CONVERT(VARCHAR(20), @CustID)
-		                     + '" ProviderID="' + CONVERT(VARCHAR(10), @ProviderID)   
-		                     + '" PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID)   
-		                     + '" TransactionType="' + CONVERT(VARCHAR(10), @TransactionType)
-		                     + '" APIConfig="' + CONVERT(VARCHAR(500), @APIConfig)   
-		                     + '" PaymentMethodStatus="' + CONVERT(VARCHAR(10), @PaymentMethodStatus) + '" />';
+		-- LOG NEW VALUES FOR PAYMENT METHOD API CONFIG (XML style, encode &quot;)
+		SELECT @APIConfigXML2 = REPLACE(REPLACE((SELECT rt.APIConfig FROM @old_RetryAPIConfig rt), '"', '&quot;'), '"', '&quot;');
+		SELECT @TrackingValueMask2 = '<Age_CashService_PaymentMethod_Config 
+									CustID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) + '" 
+									IP="' + CONVERT(VARCHAR(50), @IP) + '" 
+									AgentID="' + CONVERT(VARCHAR(20), (SELECT rt.AgentID FROM @old_RetryAPIConfig rt)) + '" 
+									ProviderID="' + CONVERT(VARCHAR(10), (SELECT rt.ProviderID FROM @old_RetryAPIConfig rt)) + '" 
+									ProviderName="' + CONVERT(NVARCHAR(100), @ProviderName) + '" 
+									PaymentMethodID="' + CONVERT(VARCHAR(10), (SELECT rt.MethodID FROM @old_RetryAPIConfig rt)) + '" 
+									TransactionType="' + CONVERT(VARCHAR(10), (SELECT rt.TransactionType FROM @old_RetryAPIConfig rt)) + '" 
+									APIConfig="' + @APIConfigXML2 + '" 
+									PaymentMethodStatus="' + CONVERT(VARCHAR(10), (SELECT rt.PaymentMethodStatus FROM @old_RetryAPIConfig rt)) + '" 
+								/>';
+		SET @TrackingValue2 = @TrackingValueMask2;
+		SELECT @TrackingValue2 = REPLACE(@TrackingValue2, ISNULL(@APIConfigXML2, ''), '');
 
-	
-		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
+		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValueMask, TrackingValueMask2, Duration)
+		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @TrackingValueMask , @TrackingValueMask2 , @DurationTime
 	END
 
-	IF ISNULL(@CheckExists_ProviderAPIConfig, 0) = 0  AND ISNULL(@CheckExists_AgentPaymentMethod, 0) = 0
+	-- New Connection API
+	IF @CheckExists_ProviderAPIConfig IS NULL AND @CheckExists_AgentPaymentMethod IS NULL
 	BEGIN
 		SET @ActionID = 305005
 
-		-- LOG NEW VALUES FOR PAYMENT METHOD API CONFIG 
-		SELECT @TrackingValue = '<Age_CashService_PaymentMethod_Config 
-		                    CustID="' + CONVERT(VARCHAR(20), @CustID) 
-		                    + '" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
-		                    + '" IP="' + CONVERT(VARCHAR(50), @IP)   
-		                    + '" AgentID="' + CONVERT(VARCHAR(20), @CustID)
-		                    + '" ProviderID="' + CONVERT(VARCHAR(10), @ProviderID)   
-		                    + '" PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID)   
-		                    + '" TransactionType="' + CONVERT(VARCHAR(10), @TransactionType)
-		                    + '" APIConfig="' + CONVERT(VARCHAR(500), @APIConfig)   
-		                    + '" PaymentMethodStatus="' + CONVERT(VARCHAR(10), @PaymentMethodStatus) + '" />';
+		-- Log new values for Payment Method API Config (XML style, encode &quot;)
+		SELECT @APIConfigXML = REPLACE(REPLACE(@APIConfig, '"', '&quot;'), '"', '&quot;');
+		SELECT @TrackingValueMask = '<Age_CashService_PaymentMethod_Config 
+									CustID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) + '" 
+									IP="' + CONVERT(VARCHAR(50), @IP) + '" 
+									AgentID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									ProviderID="' + CONVERT(VARCHAR(10), @ProviderID) + '" 
+									ProviderName="' + CONVERT(NVARCHAR(100), @ProviderName) + '" 
+									PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID) + '" 
+									TransactionType="' + CONVERT(VARCHAR(10), @TransactionType) + '" 
+									APIConfig="' + @APIConfigXML + '" 
+									PaymentMethodStatus="' + CONVERT(VARCHAR(10), @PaymentMethodStatus) + '" 
+								/>';
+
+		SET @TrackingValue = @TrackingValueMask;
+		SELECT @TrackingValue = REPLACE(@TrackingValue, ISNULL(@APIConfigXML, ''), '');
+
+		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValueMask, TrackingValueMask2, Duration)
+		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @TrackingValueMask , NULL , @DurationTime
+
+		-- Log new values for setting Payment Method (XML style)
+		SELECT @TrackingValueMask = '<Age_CashService_PaymentMethod_Config 
+									CustID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) + '" 
+									IP="' + CONVERT(VARCHAR(50), @IP) + '" 
+									AgentID="' + CONVERT(VARCHAR(20), @CustID) + '" 
+									ProviderID="' + CONVERT(VARCHAR(10), @ProviderID) + '" 
+									ProviderName="' + CONVERT(NVARCHAR(100), @ProviderName) + '" 
+									PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID) + '" 
+									TransactionType="' + CONVERT(VARCHAR(10), @TransactionType) + '" 
+									MinAmount="' + CONVERT(VARCHAR(20), @MinAmount) + '" 
+									MaxAmount="' + CONVERT(VARCHAR(20), @MaxAmount) + '" 
+									PaymentMethodEnable="' + CONVERT(VARCHAR(10), @PaymentMethodEnable) + '" 
+								/>';
 
 	
-		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
-	
-
-		-- LOG NEW VALUES FOR SETTING PAYMENT METHOD
-		SELECT @TrackingValue = '<Age_CashService_PaymentMethod_Config 
-		                    CustID="' + CONVERT(VARCHAR(20), @CustID) 
-		                    + '" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
-		                    + '" IP="' + CONVERT(VARCHAR(50), @IP)   
-		                    + '" AgentID="' + CONVERT(VARCHAR(20), @CustID)
-		                    + '" ProviderID="' + CONVERT(VARCHAR(10), @ProviderID)   
-		                    + '" PaymentMethodID="' + CONVERT(VARCHAR(10), @PaymentMethodID)   
-		                    + '" TransactionType="' + CONVERT(VARCHAR(10), @TransactionType)
-		                    + '" MinAmount="' + CONVERT(VARCHAR(20), @MinAmount)   
-		                    + '" MaxAmount="' + CONVERT(VARCHAR(20), @MaxAmount)
-		                    + '" PaymentMethodEnable="' + CONVERT(VARCHAR(10), @PaymentMethodEnable) + '" />';
-
-	
-		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValueMask, TrackingValueMask2, Duration)
+		SELECT @CustID ,  @CustID , @ActionID , @TrackingValueMask , NULL , @TrackingValueMask , NULL , @DurationTime
 	END
 	
 	-- Return Data Object
-	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2 , TrackingValue AS TrackingValueMask, TrackingValue2 AS  TrackingValueMask2 , Duration FROM @LogInfo_Tbl
+	SELECT UserID, CustID, ActionID, TrackingValue, TrackingValue2, TrackingValueMask, TrackingValueMask2 , Duration
+	FROM @LogInfo_Tbl
 	
 END

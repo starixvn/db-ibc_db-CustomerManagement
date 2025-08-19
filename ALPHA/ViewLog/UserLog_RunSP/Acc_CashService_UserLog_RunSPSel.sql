@@ -20,15 +20,15 @@ AS
 	  DB:           DBLOG-bodb_CustomerLog
 	  Revisions:
 		  - 20250728@Helios: Initial create for CashService log [redmine: 233474] 
-
+		  - 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266] 
 	  Example:
 		 EXEC Acc_CashService_UserLog_RunSPSel_UAT2 
-							 @CustId	  =16297291
+							 @CustId	  =249550999
 						     , @CustName	  ='AGENT03001'
-						     , @LoginUserId =14373905
+						     , @LoginUserId =249550999
 						     , @ActionTypeId=-1
-						     , @FromDate	  ='2025-08-01 00:00:00'
-						     , @ToDate	  ='2025-08-03 23:59:59'
+						     , @FromDate	  ='2025-08-12 00:00:00'
+						     , @ToDate	  ='2025-08-14 23:59:59'
 						     , @IsInternal  =0
 						     , @PageIndex	  =0
 						     , @PageSize	  =50
@@ -46,24 +46,11 @@ BEGIN
 		@ubound      INT,
 		@creatdate   DATETIME;
 
-	-- Get customer creation date to ensure proper date range
-	SELECT @creatdate = creatdate
-	FROM bodb02.dbo.Customer c WITH (NOLOCK)
-	WHERE custid = @CustId;
-
-	-- Adjust @FromDate if it is earlier than @creatdate (backward 30 seconds to ensure log coverage)
-	-- IF @FromDate < @creatdate
-	-- 	SELECT @FromDate = DATEADD(SECOND, -30, @creatdate); -- Backward 30s to get log [#97633]
-
 	-- Calculate lower and upper bounds for pagination
 	SET @lbound = @PageIndex * @PageSize;
 	SET @ubound = @lbound + @PageSize;
 	IF (@PageIndex > 0)
 		SET @lbound = @lbound + 1;
-
-	-- (Optional) Archive date logic, currently commented out
-	--DECLARE @__archiveDate DATETIME;
-	--SELECT @__archiveDate = DATEADD(DAY, 1, dbo.f_CustomerLog_GetArchiveDate());
 
 	-- Create temporary table to store filtered LogAction records
 	CREATE TABLE #tmp_LogAction
@@ -75,28 +62,6 @@ BEGIN
 		IsInternal      TINYINT
 	);
 
-	-- Populate #tmp_LogAction with relevant actions based on ActionTypeId
-	-- IF (@LowerActionId IS NOT NULL AND @UpperActionId IS NOT NULL)
-	-- BEGIN
-	-- 	-- If action range is specified, filter by ActionID range
-	-- 	INSERT INTO #tmp_LogAction
-	-- 	(
-	-- 		ActionID,
-	-- 		ActionTypeID,
-	-- 		SPName,
-	-- 		ActionNameEN,
-	-- 		IsInternal
-	-- 	)
-	-- 	SELECT
-	-- 		ActionID,
-	-- 		ActionTypeID,
-	-- 		SPName,
-	-- 		ActionNameEN,
-	-- 		IsInternal
-	-- 	FROM dbo.LogAction WITH (NOLOCK)
-	-- 	WHERE ActionID BETWEEN @LowerActionId AND @UpperActionId;
-	-- END
-	-- ELSE 
 	IF @ActionTypeId = -1
 	BEGIN
 		-- If ActionTypeId = -1, select all standard action types for CashService
@@ -115,7 +80,7 @@ BEGIN
 			ActionNameEN,
 			IsInternal
 		FROM dbo.LogAction WITH (NOLOCK)
-		WHERE ActionTypeID IN (100, 101, 102, 103, 104, 105);
+		WHERE ActionTypeID >= 100;
 	END
 	ELSE
 	BEGIN
@@ -142,7 +107,7 @@ BEGIN
 	SELECT
 		logid,
 		userid,
-		username,
+		Username,
 		TrackingValue,
 		TrackingValue2 AS TrackingValueOld,
 		logdate,
@@ -157,7 +122,7 @@ BEGIN
 			ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
 			logid,
 			userid,
-			i.username,
+			cs.username,
 			ISNULL(TrackingValueMask, c.TrackingValue) AS TrackingValue,
 			ISNULL(TrackingValueMask2, c.TrackingValue2) AS TrackingValue2,
 			logdate,
@@ -169,10 +134,9 @@ BEGIN
 			ISNULL(@CustName, '') AS CustName,
 			la.ActionNameEN
 		FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
+		LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
 		INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
-		LEFT JOIN bodb02.dbo.custInfo i WITH (NOLOCK) ON c.userid = i.custid 
-		WHERE c.userid = @LoginUserId
-		AND c.custid IN (@LoginUserId, @CustId)
+		WHERE c.custid = @CustId
 		AND logdate BETWEEN @FromDate AND @ToDate
 		AND la.IsInternal <= @IsInternal
 	) AS MyTable

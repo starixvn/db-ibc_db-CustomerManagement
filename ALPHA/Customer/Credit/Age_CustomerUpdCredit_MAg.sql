@@ -7,7 +7,8 @@ ALTER PROCEDURE [dbo].[Age_CustomerUpdCredit_MAg]
 	@IP				VARCHAR(15)		= '',
 	@Language		VARCHAR(2)		= 'E',
 	@CreditProblem	BIT				= 0 OUTPUT,
-	@ErrMsg			NVARCHAR(500)	= '' OUTPUT
+	@ErrMsg			NVARCHAR(500)	= '' OUTPUT,
+	@AccumCreditAllCashMember		MONEY	= 0
 AS
 
 /*
@@ -36,9 +37,11 @@ AS
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
+		- 20250729@Dave: Get data AccumCredit on SiteDB (is not select from the current DB (replicated)) [Redmine: #234627]
 	Param's Explanation:
 		• @custid: custid that need to be updated 
 		• @CreditAmt: new credit 
+		• @AccumCreditAllCashMember: total accumulated credit of all cash members under this agent (data from SiteDB)
 */
 
 BEGIN
@@ -48,8 +51,7 @@ BEGIN
 		@Credit_AllMember MONEY, 
 		@Credit_AllOtherAgent MONEY, 
 		@Credit_MAg MONEY,
-		@Credit_AllMasterDirectMember MONEY,
-		@AccumCredit_AllCashMember MONEY;
+		@Credit_AllMasterDirectMember MONEY;
 	
 	DECLARE @ErrCode INT = 0
 	
@@ -88,9 +90,6 @@ BEGIN
 	FROM dbo.custInfo WITH (NOLOCK)
 	WHERE recommend = @CustID AND roleid = 1
 
-	SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-	FROM CashAccumCredit WITH (NOLOCK)
-	WHERE recommend = @custID;
 
 	Select @Credit_MAg = ISNULL(credit, 0)
 	FROM dbo.custInfo WITH (NOLOCK)
@@ -106,13 +105,13 @@ BEGIN
 		RETURN
 	END
 	
-	IF @Credit_AllMember + @AccumCredit_AllCashMember > @CreditAmt
+	IF @Credit_AllMember + @AccumCreditAllCashMember > @CreditAmt
 	BEGIN
 		SELECT	@CreditProblem = 1,
 				@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
+											, '{number}', FORMAT(@Credit_AllMember + @AccumCreditAllCashMember, '#,#0.####'))
 		RETURN
 	END
 

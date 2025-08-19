@@ -23,7 +23,8 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]   
-		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.PromptPayMobile [RedmineID: #231204]
+		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentBankAccount.PromptPayMobile [RedmineID: #231204] 
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]    
 
 	Param:
 		DECLARE @p1 INT , @p2 VARCHAR(1000)
@@ -72,18 +73,19 @@ BEGIN
 
 	DECLARE @CheckExists_BankAccountNumber BIT = NULL
 
-	-- Create Table For WriteLog Old Data:
-	DECLARE @Old_CashAgentBankAccount TABLE (
-		    --AgentBankAccountID    INT,
-		    --BankID                INT,
-		    AgentID               INT,
-		    BankAccountStatus     BIT,
-		    AccountNickname       NVARCHAR(255),
-		    TransTypeList         VARCHAR(10),
-		    DepositMatching       SMALLINT,
-		    PromptPayEnabled      BIT,
-		    PromptPayMobile       VARCHAR(50)
-	)
+	-- Use temp table to store only necessary columns
+	CREATE TABLE #Old_AgentBankAccount (
+		BankAccountStatus     BIT,
+		BankAccountNumber     VARCHAR(100),
+		AccountHolderName     NVARCHAR(255),
+		AccountNickname       NVARCHAR(255),
+		PromptPayEnabled      BIT,
+		PromptPayMobile       VARCHAR(50),
+		BankCode              VARCHAR(10),
+		TransTypeList         VARCHAR(10),
+		DepositMatching_Agent SMALLINT,
+		DepositMatching_Bank  VARCHAR(60)
+	);
 
 	SELECT @CheckExists_BankAccountNumber = (SELECT TOP 1 1 
 								FROM CashAgentBankAccount WITH (NOLOCK) 
@@ -91,35 +93,42 @@ BEGIN
 
 	IF ISNULL(@CheckExists_BankAccountNumber , 0) = 0
 	BEGIN
-		SELECT  @ErrMsg = N'This bank account already exist, please enter a different bank account number.', @ErrCode = 102
+		SELECT  @ErrMsg = N'Bank account not found.', @ErrCode = 203
 		RETURN
 	END
 
 	IF @CheckExists_BankAccountNumber = 1
 	BEGIN
 		-- Stored for WriteLog
-		INSERT INTO @Old_CashAgentBankAccount 
+		INSERT INTO #Old_AgentBankAccount 
 		(
-			AgentID
-			, BankAccountStatus
-			, AccountNickname
-			, TransTypeList
-			, DepositMatching
-			, PromptPayEnabled
-			, PromptPayMobile
+			BankAccountStatus
+		    , BankAccountNumber
+		    , AccountHolderName
+		    , AccountNickname
+		    , PromptPayEnabled
+		    , PromptPayMobile
+		    , BankCode
+		    , TransTypeList
+		    , DepositMatching_Agent
+		    , DepositMatching_Bank
 		)
 		SELECT 
-			aba.AgentID, 
-			aba.BankAccountStatus, 
-			aba.AccountNickname, 
-			aba.TransTypeList, 
-			aba.DepositMatching, 
-			aba.PromptPayEnabled, 
-			aba.PromptPayMobile
-		FROM CashAgentBankAccount  aba WITH (NOLOCK)
+			aba.BankAccountStatus,
+			aba.BankAccountNumber,
+			aba.AccountHolderName,
+			aba.AccountNickname,
+			aba.PromptPayEnabled,
+			aba.PromptPayMobile,
+			cbl.BankCode,
+			aba.TransTypeList,
+			aba.DepositMatching,
+			cbl.DepositMode
+		FROM CashAgentBankAccount aba WITH (NOLOCK)
+		INNER JOIN CashBankList cbl WITH (NOLOCK) ON aba.BankID = cbl.BankID
 		WHERE aba.AgentID = @CustID
-		AND aba.AgentBankAccountID = @AgentBankAccountID
-		AND aba.IsActive = 1											-- Get Bank Account Is Active
+		  AND aba.AgentBankAccountID = @AgentBankAccountID
+		  AND aba.IsActive = 1;											-- Get Bank Account Is Active
 
 		-- Update Values
 		UPDATE aba
@@ -150,58 +159,77 @@ BEGIN
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
+	DECLARE
+		@BankAccountNumber	VARCHAR(255),
+		@AccountHolderName	NVARCHAR(255),
+		@BankCode			VARCHAR(255),
+		@DepositMatching_Bank	VARCHAR(255),
+		@DepositMatching_Agent	VARCHAR(255)
+
+	SELECT	
+		@BankAccountNumber	= oaba.BankAccountNumber,
+		@AccountHolderName	= oaba.AccountHolderName,
+		@BankCode			= oaba.BankCode,
+		@DepositMatching_Bank	= oaba.DepositMatching_Bank,
+		@DepositMatching_Agent	= oaba.DepositMatching_Agent
+	FROM #Old_AgentBankAccount oaba
+
 	-- LOG NEW VALUES
-	SET @xml = (
-		SELECT	
-				@CustID								AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP								AS '@IP',
-				CONVERT(INT, @BankAccountStatus)	AS '@BankAccountStatus',
-				CONVERT(NVARCHAR(255), @AccountNickname) AS '@AccountNickname',
-				@TransTypeList					AS '@TransTypeList',
-				@DepositMatchingMode			AS '@DepositMatching',
-				CONVERT(INT, @PromptPayEnabled)	AS '@PromptPayEnabled',
-				@PromptPayMobile				AS '@PromptPayMobile'
-		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
-		TYPE
-	);
-	SET @TrackingValueMask = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
-	SELECT @TrackingValue = REPLACE(@TrackingValueMask, ISNULL(@PromptPayMobile, ''), '');
+	SELECT @TrackingValueMask = '<Age_CashService_BankAccountAgent_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" BankAccountStatus="' + CONVERT(VARCHAR(10), @BankAccountStatus)   
+							+'" AccountNickname="' + CONVERT(NVARCHAR(255), ISNULL(@AccountNickname, ''))   
+							+'" TransTypeList="' + CONVERT(VARCHAR(10), ISNULL(@TransTypeList, ''))
+							+'" DepositMatching="' + CONVERT(VARCHAR(10), ISNULL(@DepositMatchingMode, 0))
+							+'" PromptPayEnabled="' + CONVERT(VARCHAR(20), @PromptPayEnabled)   
+							+'" PromptPayMobile="' + CONVERT(VARCHAR(50), ISNULL(@PromptPayMobile, ''))   
+							+'" BankAccountNumber="' + CONVERT(VARCHAR(100), ISNULL(@BankAccountNumber, ''))   
+							+'" AccountHolderName="' + CONVERT(NVARCHAR(255), ISNULL(@AccountHolderName, ''))   
+							+'" BankCode="' + CONVERT(VARCHAR(100), ISNULL(@BankCode, ''))   
+							+'" DepositMatching_Bank="' + CONVERT(VARCHAR(60), ISNULL(@DepositMatching_Bank, ''))
+							+'" DepositMatching_Agent="' + CONVERT(VARCHAR(10), ISNULL(@DepositMatching_Agent, 0)) +'" />'
+	SET @TrackingValue = REPLACE(REPLACE(REPLACE(@TrackingValueMask, 
+				ISNULL(@BankAccountNumber, ''), ''), 
+				ISNULL(@AccountHolderName, ''), ''), 
+				ISNULL(@PromptPayMobile, ''), '');
 
 	-- LOG OLD VALUES
-	SET @xml = (
-		SELECT	
-				@CustID								AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP								AS '@IP',
-				CONVERT(INT, a.BankAccountStatus)	AS '@BankAccountStatus',
-				CONVERT(NVARCHAR(255), a.AccountNickname) AS '@AccountNickname',
-				a.TransTypeList					AS '@TransTypeList',
-				a.DepositMatching				AS '@DepositMatching',
-				CONVERT(INT, a.PromptPayEnabled)	AS '@PromptPayEnabled',
-				a.PromptPayMobile				AS '@PromptPayMobile'
-		FROM @Old_CashAgentBankAccount a
-		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
-		TYPE
-	);
-	SET @TrackingValueMask2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValueMask2 = '<Age_CashService_BankAccountAgent_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" BankAccountStatus="' + CONVERT(VARCHAR(10), a.BankAccountStatus)   
+							+'" AccountNickname="' + CONVERT(NVARCHAR(255), ISNULL(a.AccountNickname, ''))   
+							+'" TransTypeList="' + CONVERT(VARCHAR(10), ISNULL(a.TransTypeList, ''))
+							+'" DepositMatching="' + CONVERT(VARCHAR(10), ISNULL(a.DepositMatching_Agent, 0))
+							+'" PromptPayEnabled="' + CONVERT(VARCHAR(20), a.PromptPayEnabled)   
+							+'" PromptPayMobile="' + CONVERT(VARCHAR(50), ISNULL(a.PromptPayMobile, ''))   
+							+'" BankAccountNumber="' + CONVERT(VARCHAR(100), ISNULL(a.BankAccountNumber, ''))   
+							+'" AccountHolderName="' + CONVERT(NVARCHAR(255), ISNULL(a.AccountHolderName, ''))   
+							+'" BankCode="' + CONVERT(VARCHAR(100), ISNULL(a.BankCode, ''))   
+							+'" DepositMatching_Bank="' + CONVERT(VARCHAR(60), ISNULL(a.DepositMatching_Bank, ''))
+							+'" DepositMatching_Agent="' + CONVERT(VARCHAR(10), ISNULL(a.DepositMatching_Agent, 0)) +'" />'
+	FROM #Old_AgentBankAccount a
 	
-	SET @xml = (
-		SELECT	
-				@CustID								AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP								AS '@IP',
-				CONVERT(INT, a.BankAccountStatus)	AS '@BankAccountStatus',
-				CONVERT(NVARCHAR(255), a.AccountNickname) AS '@AccountNickname',
-				a.TransTypeList					AS '@TransTypeList',
-				a.DepositMatching				AS '@DepositMatching',
-				CONVERT(INT, a.PromptPayEnabled)	AS '@PromptPayEnabled',
-				''								AS '@PromptPayMobile'
-		FROM @Old_CashAgentBankAccount a
-		FOR XML PATH('Age_CashService_BankAccountAgent_Upd'), 
-		TYPE
-	);
-	SELECT @TrackingValue2 = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	-- Masked version of OLD values for TrackingValue2 (sensitive data removed)
+	SELECT @TrackingValue2 = '<Age_CashService_BankAccountAgent_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" BankAccountStatus="' + CONVERT(VARCHAR(10), a.BankAccountStatus)   
+							+'" AccountNickname="' + CONVERT(NVARCHAR(255), ISNULL(a.AccountNickname, ''))   
+							+'" TransTypeList="' + CONVERT(VARCHAR(10), ISNULL(a.TransTypeList, ''))
+							+'" DepositMatching="' + CONVERT(VARCHAR(10), ISNULL(a.DepositMatching_Agent, 0))
+							+'" PromptPayEnabled="' + CONVERT(VARCHAR(20), a.PromptPayEnabled)   
+							+'" PromptPayMobile=""'   
+							+'" BankAccountNumber=""'   
+							+'" AccountHolderName=""'   
+							+'" BankCode="' + CONVERT(VARCHAR(100), ISNULL(a.BankCode, ''))   
+							+'" DepositMatching_Bank="' + CONVERT(VARCHAR(60), ISNULL(a.DepositMatching_Bank, ''))
+							+'" DepositMatching_Agent="' + CONVERT(VARCHAR(10), ISNULL(a.DepositMatching_Agent, 0)) +'" />'
+	FROM #Old_AgentBankAccount a
 
 	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
