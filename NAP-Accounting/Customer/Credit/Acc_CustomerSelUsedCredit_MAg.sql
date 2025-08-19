@@ -12,6 +12,7 @@ AS
 		- 20210505@Tina: Lock account & indirect close account [redmine: #148600]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474] 
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266] 
 */
 BEGIN
 	SET NOCOUNT ON
@@ -32,7 +33,7 @@ BEGIN
 		FROM CashAccumCredit WITH (NOLOCK)
 		WHERE mrecommend = @masterID 
 		GROUP BY recommend
-	) ac ON c.custid = uc.recommend
+	) ac ON c.custid = ac.recommend
 	WHERE c.mrecommend = @masterID AND c.roleid = 2
 	ORDER BY c.username
 END

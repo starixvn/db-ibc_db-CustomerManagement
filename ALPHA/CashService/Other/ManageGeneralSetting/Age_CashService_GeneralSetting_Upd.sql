@@ -20,7 +20,7 @@ AS
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
 		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentManagement.Contact , Mobile [RedmineID: #231204]   
-
+		 - 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 	Param:
 		DECLARE @p1 INT , @p2 NVARCHAR(1000)
 		exec Age_CashService_GeneralSetting_Upd	
@@ -49,10 +49,10 @@ BEGIN
 	SELECT @ErrCode = 0 , @ErrMsg = '' 
 
 	DECLARE @old_ManagedAgents TABLE (
-	    SettingInfo		TINYINT ,
-	    Mobile			VARCHAR(50),
-	    Contact			NVARCHAR(200),
-	    Announcement		NVARCHAR(500)
+		SettingInfo		TINYINT ,
+		Mobile			VARCHAR(50),
+		Contact			NVARCHAR(200),
+		Announcement		NVARCHAR(500)
 	)
 
 	IF @SettingInfo IS NULL OR @Mobile IS NULL OR @Mobile = '' OR @Contact IS NULL OR @Contact = ''
@@ -70,15 +70,15 @@ BEGIN
 	INSERT INTO @tmp_Contact 
 	(
 		ContactType
-	    , ContactValues
+		, ContactValues
 	)
 	SELECT 
-	    [type],
-	    [value]
+		[type],
+		[value]
 	FROM OPENJSON(@Contact)
 	WITH (
-	    [type] NVARCHAR(50) '$.type',
-	    [value] NVARCHAR(150) '$.value'
+		[type] NVARCHAR(50) '$.type',
+		[value] NVARCHAR(150) '$.value'
 	);
 
 	IF NOT EXISTS (SELECT TOP 1 1 FROM @tmp_Contact)
@@ -104,9 +104,9 @@ BEGIN
 		)
 		SELECT 
 			SettingInfo
-		    , Mobile
-		    , Contact
-		    , Announcement
+			, Mobile
+			, Contact
+			, Announcement
 		FROM CashAgentManagement cam WITH (NOLOCK)
 		WHERE cam.AgentId = @CustID
 
@@ -136,68 +136,81 @@ BEGIN
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
+	DECLARE
+		@ContactLineID	NVARCHAR(200),
+		@ContactTeteID	NVARCHAR(200)
+
+	SELECT @ContactLineID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'line')
+	SELECT @ContactTeteID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'tele')
+
+
+	--SET @Contact = REPLACE(REPLACE(@Contact, '"', '&quot;'), '"', '&quot;');
+
 	-- LOG NEW VALUES
-	SET @xml = (
-		SELECT	
-				@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP									AS '@IP',
-				@SettingInfo						AS '@SettingInfo',
-				@Mobile								AS '@Mobile',
-				CONVERT(NVARCHAR(500) , @Contact)	AS '@Contact',
-				CONVERT(NVARCHAR(500) , @Announcement) AS '@Announcement'
-		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
-		TYPE
-	);
-	SET @TrackingValueMask = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
-	SELECT @TrackingValue = REPLACE(REPLACE(@TrackingValueMask, ISNULL(@Mobile, ''), ''),ISNULL(@Contact, ''),'');
+	SELECT @TrackingValueMask = '<Age_CashService_GeneralSetting_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" SettingInfo="' + CONVERT(VARCHAR(10), @SettingInfo)   
+							+'" Mobile="' + CONVERT(VARCHAR(50), ISNULL(@Mobile, ''))   
+							+'" LineID="' + CONVERT(NVARCHAR(500), ISNULL(@ContactLineID, ''))
+							+'" Tele="' + CONVERT(NVARCHAR(500), ISNULL(@ContactTeteID, ''))
+							+'" Announcement="' + CONVERT(NVARCHAR(500), ISNULL(@Announcement, '')) +'" />'
+	
+	SELECT @TrackingValue = REPLACE(REPLACE(REPLACE(@TrackingValueMask, ISNULL(@Mobile, ''), ''), ISNULL(@ContactLineID, ''), ''), ISNULL(@ContactTeteID, ''), '');
 
 
 	-- LOG OLD VALUES
-	SET @xml = (
-		SELECT	
-				@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP									AS '@IP',
-				a.SettingInfo						AS '@SettingInfo',
-				a.Mobile							AS '@Mobile',
-				CONVERT(NVARCHAR(500) , a.Contact)	AS '@Contact',
-				CONVERT(NVARCHAR(500) , a.Announcement) AS '@Announcement'
-		FROM @old_ManagedAgents a
-		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
-		TYPE
-	);
-	SET @TrackingValueMask2 = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
+	DELETE FROM @tmp_Contact;
+	INSERT INTO @tmp_Contact (ContactType, ContactValues)
+	SELECT 
+		j.[type],
+		j.[value]
+	FROM @old_ManagedAgents a
+	CROSS APPLY OPENJSON(a.Contact)
+	WITH (
+		[type] NVARCHAR(50) '$.type',
+		[value] NVARCHAR(150) '$.value'
+	) j;
+
+	SELECT @ContactLineID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'line')
+	SELECT @ContactTeteID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'tele')
+
+	SELECT @TrackingValueMask2 = '<Age_CashService_GeneralSetting_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" SettingInfo="' + CONVERT(VARCHAR(10), a.SettingInfo)   
+							+'" Mobile="' + CONVERT(VARCHAR(50), ISNULL(a.Mobile, ''))   
+							+'" LineID="' + CONVERT(NVARCHAR(500), ISNULL(@ContactLineID, ''))
+							+'" Tele="' + CONVERT(NVARCHAR(500), ISNULL(@ContactTeteID, ''))
+							+'" Announcement="' + CONVERT(NVARCHAR(500), ISNULL(a.Announcement, '')) +'" />'
+	FROM @old_ManagedAgents a
 
 
-	SET @xml = (
-		SELECT	
-				@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP									AS '@IP',
-				a.SettingInfo						AS '@SettingInfo',
-				''									AS '@Mobile',
-				''									AS '@Contact',
-				CONVERT(NVARCHAR(500) , a.Announcement) AS '@Announcement'
-		FROM @old_ManagedAgents a
-		FOR XML PATH('Age_CashService_GeneralSetting_Upd'), 
-		TYPE
-	);
-	SELECT @TrackingValue2 =  REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+	SELECT @TrackingValue2 = '<Age_CashService_GeneralSetting_Upd 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" SettingInfo="' + CONVERT(VARCHAR(10), a.SettingInfo)   
+							+'" Mobile=""'   
+							+'" LineID=""'
+							+'" Tele=""'
+							+'" Announcement="' + CONVERT(NVARCHAR(500), ISNULL(a.Announcement, '')) +'" />'
+	FROM @old_ManagedAgents a
 
 	--INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 	--SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime
 
-
 	-- Return Data Object
 	SELECT
 		@custid		  AS UserID
-	    , @custid		  AS CustID
-	    , @ActionID		  AS ActionID
-	    , @TrackingValue	  AS TrackingValue
-	    , @TrackingValue2	  AS TrackingValue2
-	    , @TrackingValueMask  AS TrackingValueMask
-	    , @TrackingValueMask2 AS TrackingValueMask2
-	    , @DurationTime	  AS Duration
+		, @custid		  AS CustID
+		, @ActionID		  AS ActionID
+		, @TrackingValue	  AS TrackingValue
+		, @TrackingValue2	  AS TrackingValue2
+		, @TrackingValueMask  AS TrackingValueMask
+		, @TrackingValueMask2 AS TrackingValueMask2
+		, @DurationTime	  AS Duration
 
 END

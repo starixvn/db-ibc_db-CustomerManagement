@@ -34,6 +34,7 @@ Revisions:
     - 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 	- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 	- 20241107@Eden: Offer Direct Member for Super/Master [redmine: #211969]
+	- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 
 Param's Explanation:
 */
@@ -45,7 +46,7 @@ BEGIN
 	declare @duration int
 	set @startRun = getdate()
 
-	declare @custid int, @currency INT, @old_ugroup varchar(3), @srecommend int, @mrecommend int, @recommend int
+	declare @custid int, @currency INT, @old_ugroup varchar(3), @srecommend int, @mrecommend int, @recommend INT , @AccountType TINYINT
 	declare @IsMyanmarOdds BIT = 0 -- MyanmarOdds
 	Declare
 		@SuperDiscount decimal(9,8),
@@ -117,6 +118,8 @@ BEGIN
 		END	
 	END
 
+	-- Check Cust is Cash or Credit
+	SELECT @AccountType = (SELECT ISNULL(cps.ServiceType , 0) FROM CustProductStatus cps WITH (NOLOCK) WHERE cps.CustID = @CustID)
 
 	-- Collect Commission Upline
 	SELECT 
@@ -135,8 +138,12 @@ BEGIN
 	
 	-- Changed Commission of member Follow uGroup
 	UPDATE cdm
-	SET   @PlayerDiscount		= CASE WHEN cdm.PlayerDiscount > COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount)
-										THEN COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount) ELSE cdm.PlayerDiscount END
+	SET   @PlayerDiscount		= CASE 
+								WHEN @AccountType = 1 THEN 0						-- Cash Service member is a Player with 0 commission.
+								WHEN cdm.PlayerDiscount > COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount) 
+									THEN COALESCE(@AgentDiscount,@MasterDiscount,@SuperDiscount) 
+						            ELSE cdm.PlayerDiscount 
+						  END
 		, cdm.SuperDiscount		= @SuperDiscount
 		, cdm.MasterDiscount	= COALESCE(@MasterDiscount,cdm.PlayerDiscount)
 		, cdm.AgentDiscount		= COALESCE(@AgentDiscount,cdm.PlayerDiscount)

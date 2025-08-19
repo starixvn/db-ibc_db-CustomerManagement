@@ -17,7 +17,7 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
-
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 	Param:
 		DECLARE @p4 INT , @p5 NVARCHAR(1000)
 
@@ -115,7 +115,7 @@ BEGIN
 	BEGIN
 		--SELECT @ErrCode = 90017,
 		--	 @ErrMsg =  [dbo].[f_Get_MsgNamebyMsgID](90017,'E')
-		SELECT  @ErrMsg = N'Invalid values input.' , @ErrCode = 100;
+		SELECT  @ErrMsg = N'Invalid parameters.' , @ErrCode = 100;
 			RETURN
 	END
 
@@ -239,40 +239,72 @@ BEGIN
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
-
 	-- LOG NEW VALUES
 	SET @xml = (
-		SELECT	
-				@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP									AS '@IP',
-				a.MethodID							AS '@PaymentMethodID',
-				a.TransactionType					AS '@TransactionType',
-				CONVERT(DECIMAL(20,2), a.MinAmount)	AS '@MinAmount',
-				CONVERT(DECIMAL(20,2), a.MaxAmount)	AS '@MaxAmount',
-				a.PaymentMethodEnable				AS '@PaymentMethodEnable'
-		FROM @tmp_PaymentMethods a
-		FOR XML PATH('Age_CashService_PaymentMethod_Upd'), 
-		TYPE
+	SELECT	@CustID													AS '@CustID',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)								AS '@SubAccName',
+			@IP														AS '@IP',
+			@ProviderID													AS '@ProviderID',
+			(
+				SELECT	
+						a.MethodID										AS '@PaymentMethodID',
+						a.TransactionType									AS '@TransactionType',
+						CONVERT(DECIMAL(20,2), a.MinAmount)						AS '@MinAmount',
+						CONVERT(DECIMAL(20,2), a.MaxAmount)						AS '@MaxAmount',
+						a.PaymentMethodEnable								AS '@PaymentMethodEnable'
+				FROM @tmp_PaymentMethods a
+				FOR XML PATH('PaymentMethod'), 
+				TYPE
+			)
+	FOR XML PATH('ROOT'),TYPE
 	);
 	SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 	-- LOG OLD VALUES
 	SET @xml = (
-		SELECT	
-				@CustID									AS '@CustID',
-				CustDB.dbo.f_GetSubUsername(@SubAccID)	AS '@SubAccName',
-				@IP									AS '@IP',
-				a.MethodID							AS '@PaymentMethodID',
-				a.TransactionType					AS '@TransactionType',
-				CONVERT(DECIMAL(20,2), a.MinAmount)	AS '@MinAmount',
-				CONVERT(DECIMAL(20,2), a.MaxAmount)	AS '@MaxAmount',
-				a.PaymentMethodEnable				AS '@PaymentMethodEnable'
-		FROM @old_PaymentMethods a
-		FOR XML PATH('Age_CashService_PaymentMethod_Upd'), 
-		TYPE
+	SELECT	@CustID													AS '@CustID',
+			CustDB.dbo.f_GetSubUsername(@SubAccID)								AS '@SubAccName',
+			@IP														AS '@IP',
+			@ProviderID													AS '@ProviderID',
+			(
+				SELECT	
+						a.MethodID										AS '@PaymentMethodID',
+						a.TransactionType									AS '@TransactionType',
+						CONVERT(DECIMAL(20,2), a.MinAmount)						AS '@MinAmount',
+						CONVERT(DECIMAL(20,2), a.MaxAmount)						AS '@MaxAmount',
+						a.PaymentMethodEnable								AS '@PaymentMethodEnable'
+				FROM @old_PaymentMethods a
+				FOR XML PATH('PaymentMethod'), 
+				TYPE
+			)
+	FOR XML PATH('ROOT'),TYPE
 	);
+	
 	SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
+
+	-- -- LOG NEW VALUES
+	-- SELECT @TrackingValue = '<Age_CashService_PaymentMethod_Upd 
+	-- 						CustID="' + CONVERT(VARCHAR(20), @CustID) 
+	-- 						+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+	-- 						+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+	-- 						+'" PaymentMethodID="' + CONVERT(VARCHAR(20), a.MethodID)   
+	-- 						+'" TransactionType="' + CONVERT(VARCHAR(10), a.TransactionType)   
+	-- 						+'" MinAmount="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MinAmount))
+	-- 						+'" MaxAmount="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MaxAmount))
+	-- 						+'" PaymentMethodEnable="' + CONVERT(VARCHAR(10), a.PaymentMethodEnable) +'" />'
+	-- FROM @tmp_PaymentMethods a
+
+	-- -- LOG OLD VALUES
+	-- SELECT @TrackingValue2 = '<Age_CashService_PaymentMethod_Upd 
+	-- 						CustID="' + CONVERT(VARCHAR(20), @CustID) 
+	-- 						+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+	-- 						+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+	-- 						+'" PaymentMethodID="' + CONVERT(VARCHAR(20), a.MethodID)   
+	-- 						+'" TransactionType="' + CONVERT(VARCHAR(10), a.TransactionType)   
+	-- 						+'" MinAmount="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MinAmount))
+	-- 						+'" MaxAmount="' + CONVERT(VARCHAR(20), CONVERT(DECIMAL(20,2), a.MaxAmount))
+	-- 						+'" PaymentMethodEnable="' + CONVERT(VARCHAR(10), a.PaymentMethodEnable) +'" />'
+	-- FROM @old_PaymentMethods a
 
 	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime

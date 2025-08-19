@@ -17,7 +17,7 @@ AS
 	
 	Revisions:
 		- 20250321@Helios: Agency Cash Service - S4 - Rollback [Redmine: #228627]    
-
+		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
 	Param: 
 	@ServiceType : 0 - Disable  || 1 - Enable
 
@@ -123,21 +123,17 @@ BEGIN
 				SET @endRun = GETDATE ()
 				SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
-				SET @xml = (
-				SELECT	@CustID                         AS '@CustID',
-						@IP                             AS '@IP',
-						pc.AgentID						 AS '@AgentID',
-						pc.ProviderID					 AS '@ProviderID',
-						pc.ProviderStatus					 AS '@ProviderStatus',
-						CONVERT(NVARCHAR(500) , pc.ChannelContact) AS '@ChannelContact'
-				FROM #tmp_ProviderConfig pc
-				FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
-				TYPE
-				);
-				SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
-
-				INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-				SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+			SELECT @TrackingValue = '<Age_CashService_CustServiceTypeInitialize 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" AgentID="' + CONVERT(VARCHAR(20), pc.AgentID)   
+							+'" ProviderID="' + CONVERT(VARCHAR(20), pc.ProviderID)   
+							+'" ProviderStatus="' + CONVERT(VARCHAR(10), pc.ProviderStatus)
+							+'" ChannelContact="' + CONVERT(NVARCHAR(500), ISNULL(pc.ChannelContact, '')) +'" />'
+			FROM #tmp_ProviderConfig pc				
+			
+			INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+			SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
 		END TRY
 		BEGIN CATCH
 			SELECT @ErrMsg = N'Initialize failed.',
@@ -222,26 +218,25 @@ BEGIN
 			IF @@rowcount > 0
 				SET @endRun = GETDATE ()
 				SET @DurationTime = datediff (millisecond,@startRun,@endRun)
-				SET @xml = (
-				SELECT	@CustID                         AS '@CustID',
-						@IP                             AS '@IP',
-						@CustID					 AS '@AgentID',
-						cam.SettingInfo				 AS '@SettingInfo',
-						cam.Mobile					 AS '@Mobile',
-						CONVERT(NVARCHAR(500) , cam.Contact) AS '@Contact',
-						CONVERT(NVARCHAR(500) , cam.Announcement)				 AS '@Announcement',
-						cam.DailyWithdrawalCount						 AS '@DailyWithdrawalCount',
-						CONVERT(VARCHAR(200) ,  cam.StartTime , 120)			 AS '@StartTime',
-						CONVERT(VARCHAR(200) ,  cam.TrialEndTime , 120)			 AS '@TrialEndTime'
-				FROM CashAgentManagement cam WITH (NOLOCK)
-				WHERE cam.AgentId = @CustID
-				FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
-				TYPE
-				);
-				SET @TrackingValue = REPLACE(REPLACE(CONVERT(NVARCHAR(MAX), @xml), '&quot;', '"'), '" />', '"/"');
 			
-				INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
-				SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+			
+			SELECT @TrackingValue = '<Age_CashService_CustServiceTypeInitialize 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" AgentID="' + CONVERT(VARCHAR(20), @CustID)   
+							+'" SettingInfo="' + CONVERT(VARCHAR(20), cam.SettingInfo)   
+							+'" Mobile="' + CONVERT(NVARCHAR(50), ISNULL(cam.Mobile, ''))
+							+'" Contact="' + CONVERT(NVARCHAR(500), ISNULL(cam.Contact, ''))
+							+'" Announcement="' + CONVERT(NVARCHAR(500), ISNULL(cam.Announcement, ''))
+							+'" DailyWithdrawalCount="' + CONVERT(VARCHAR(20), cam.DailyWithdrawalCount)
+							+'" StartTime="' + CONVERT(VARCHAR(200), cam.StartTime, 120)
+							+'" TrialEndTime="' + CONVERT(VARCHAR(200), cam.TrialEndTime, 120) +'" />'
+			FROM CashAgentManagement cam WITH (NOLOCK)
+			WHERE cam.AgentId = @CustID				
+			
+			INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
+			SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
+
 		END TRY
 		BEGIN CATCH
 			-- Roll Back:
@@ -314,18 +309,14 @@ BEGIN
 					SET @endRun = GETDATE ()
 					SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
-					SET @xml = (
-					SELECT	@CustID                         AS '@CustID',
-							@IP                             AS '@IP',
-							cdm.AgentId						 AS '@AgentID',
-							cdm.DomainId					 AS '@DomainId',
-							cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+					SELECT @TrackingValue = '<Age_CashService_CustServiceTypeInitialize 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" AgentID="' + CONVERT(VARCHAR(20), cdm.AgentId)   
+							+'" DomainId="' + CONVERT(VARCHAR(20), cdm.DomainId)   
+							+'" SubDomainPrefix="' + CONVERT(NVARCHAR(100), ISNULL(cdm.SubDomainPrefix, '')) +'" />'
 					FROM CashDomainManagement cdm WITH (NOLOCK) 
 					WHERE cdm.AgentId = @CustID
-					FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
-					TYPE
-					);
-					SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 					
 				INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 				SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , NULL , @DurationTime
@@ -377,31 +368,23 @@ BEGIN
 						SET @endRun = GETDATE ()
 						SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
-						SET @xml = (
-						SELECT	@CustID                         AS '@CustID',
-								@IP                             AS '@IP',
-								cdm.AgentId						 AS '@AgentID',
-								cdm.DomainId					 AS '@DomainId',
-								cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+						SELECT @TrackingValue = '<Age_CashService_CustServiceTypeInitialize 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" AgentID="' + CONVERT(VARCHAR(20), cdm.AgentId)   
+							+'" DomainId="' + CONVERT(VARCHAR(20), cdm.DomainId)   
+							+'" SubDomainPrefix="' + CONVERT(NVARCHAR(100), ISNULL(cdm.SubDomainPrefix, '')) +'" />'
 						FROM CashDomainManagement cdm WITH (NOLOCK) 
 						WHERE cdm.AgentId = @CustID
-						FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
-						TYPE
-						);
-						SET @TrackingValue = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 
 						-- If there are old domains, log them as well
-						SET @xml = (
-						SELECT	@CustID                         AS '@CustID',
-								@IP                             AS '@IP',
-								cdm.AgentId						 AS '@AgentID',
-								cdm.DomainId					 AS '@DomainId',
-								cdm.SubDomainPrefix				 AS '@SubDomainPrefix'
+						SELECT @TrackingValue2 = '<Age_CashService_CustServiceTypeInitialize 
+							CustID="' + CONVERT(VARCHAR(20), @CustID) 
+							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
+							+'" AgentID="' + CONVERT(VARCHAR(20), cdm.AgentId)   
+							+'" DomainId="' + CONVERT(VARCHAR(20), cdm.DomainId)   
+							+'" SubDomainPrefix="' + CONVERT(NVARCHAR(100), ISNULL(cdm.SubDomainPrefix, '')) +'" />'
 						FROM @old_CashDomainManagement cdm
-						FOR XML PATH('Age_CashService_CustServiceTypeInitialize'), 
-						TYPE
-						);
-						SET @TrackingValue2 = REPLACE(CONVERT(VARCHAR(MAX), @xml), '" />', '"/"')
 				
 					INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, Duration)
 					SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @DurationTime

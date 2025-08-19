@@ -9,7 +9,8 @@ ALTER PROCEDURE [dbo].[Acc_CustomerUpdCredit]
 	@IP			VARCHAR(15)	= '',
 	@ErrCode	INT				= 0 OUTPUT,
 	@ErrMsg		NVARCHAR(500)	= '' OUTPUT,
-	@TotalAmt MONEY = NULL
+	@TotalAmt 	MONEY = NULL,
+	@AccumCreditAllCashMember	MONEY = 0
 AS
 
 /*
@@ -49,6 +50,11 @@ AS
 		- 20250220@July: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]    
 		- 20250626@Dave: Add AccumCredit of AllCashMember to AgentUsedCredit [Redmine: #231524]
+		- 20250729@Dave: Get data AccumCredit on SiteDB (is not select from the current DB (replicated)) [Redmine: #234627]
+
+	Parameter's Explanation:
+		- AccumCreditAllCashMember: total accumulated credit of all cash members under an agent (data from SiteDB)
+		
 		
 */
 BEGIN
@@ -65,8 +71,7 @@ SET NOCOUNT ON
 			@Credit_AllOtherMember MONEY,
 			@matchlimit SMALLMONEY,
 			@Credit_AllSuperDirectMember MONEY , 
-			@Credit_AllMasterDirectMember MONEY,
-			@AccumCredit_AllCashMember MONEY
+			@Credit_AllMasterDirectMember MONEY
 
 	SELECT	@username = username,
 			@roleid = roleid,
@@ -142,10 +147,6 @@ SET NOCOUNT ON
 			FROM dbo.custInfo WITH (NOLOCK) 
 			WHERE recommend = @recommend AND roleid = 1 AND CustID <> @CustID
 
-			SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-			FROM CashAccumCredit WITH (NOLOCK)
-			WHERE recommend = @recommend AND AccumCreditReturn > 0;
-
 			DECLARE @AgentMaxCredit MONEY, @Agent_Credit_Bal MONEY, @Credit_Mem_Max MONEY
 
 			SELECT	@AgentCredit = ISNULL(Credit, 0)
@@ -156,7 +157,7 @@ SET NOCOUNT ON
 			FROM dbo.CustAgent WITH (NOLOCK)
 			WHERE CustID = @recommend
 
-			SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember - ISNULL(@AccumCredit_AllCashMember, 0);
+			SELECT @Agent_Credit_Bal	= @AgentCredit - @Credit_AllOtherMember - ISNULL(@AccumCreditAllCashMember, 0);
 			SELECT @Credit_Mem_Max		= CASE
 											WHEN @AgentMaxCredit = 0 THEN @Agent_Credit_Bal
 											WHEN @AgentMaxCredit > @Agent_Credit_Bal THEN @Agent_Credit_Bal
@@ -303,17 +304,14 @@ SET NOCOUNT ON
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE recommend = @CustID AND roleid = 1
 
-		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-		FROM CashAccumCredit WITH (NOLOCK)
-    	WHERE recommend = @custID;
 		
-		IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit
+		IF @Credit_AllMember + @AccumCreditAllCashMember > @NewCredit
 		BEGIN
 			SELECT	@ErrCode = 202
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
 												ELSE [dbo].[f_Get_MsgNamebyMsgID](70033,@Language) 
 											END  
-											, '{number}', FORMAT((@Credit_AllMember + @AccumCredit_AllCashMember), '#,#0.####'))
+											, '{number}', FORMAT((@Credit_AllMember + @AccumCreditAllCashMember), '#,#0.####'))
 			RETURN
 		END
 	END
@@ -342,14 +340,10 @@ SET NOCOUNT ON
 		WHERE srecommend = @srecommend AND RoleID = 3 AND CustID <> @CustID
 	
 		-- Normal & direct Member 
-		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		/*SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
-		WHERE mrecommend = @CustID AND RoleID = 1
+		WHERE mrecommend = @CustID AND RoleID = 1*/
 
-		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-		FROM CashAccumCredit WITH (NOLOCK)
-		WHERE mrecommend = @CustID AND AccumCreditReturn > 0;
-	
 		SELECT @Credit_AllAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE mrecommend = @CustID AND RoleID = 2
@@ -371,7 +365,7 @@ SET NOCOUNT ON
 				RETURN
 			END
 
-			IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit
+			/*IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit
 			BEGIN
 				SELECT	@ErrCode = 302
 				SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
@@ -379,7 +373,7 @@ SET NOCOUNT ON
 											END  
 											, '{number}', FORMAT(@Credit_AllMember + @AccumCredit_AllCashMember, '#,#0.####'))
 				RETURN
-			END
+			END*/
 						
 			IF @Credit_AllAgent > @NewCredit
 			BEGIN
@@ -423,19 +417,16 @@ SET NOCOUNT ON
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 3
 	
-		SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
+		/*SELECT @Credit_AllMember = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
-		WHERE srecommend = @CustID AND RoleID = 1
+		WHERE srecommend = @CustID AND RoleID = 1*/
 
-		SELECT @AccumCredit_AllCashMember = ISNULL(SUM(AccumCreditReturn),0)
-		FROM CashAccumCredit WITH (NOLOCK)
-		WHERE srecommend = @CustID AND AccumCreditReturn > 0;
 
 		SELECT @Credit_AllAgent = ISNULL(SUM(ISNULL(credit, 0)), 0)
 		FROM dbo.custInfo WITH (NOLOCK)
 		WHERE srecommend = @CustID AND RoleID = 2
 
-		IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit 
+		/*IF @Credit_AllMember + @AccumCredit_AllCashMember > @NewCredit 
 		BEGIN
 			SELECT	@ErrCode = 403
 			SET		@ErrMsg = REPLACE(CASE @Language WHEN 'E' THEN 'The new credit is insufficient for all current Members ({number}).'
@@ -443,7 +434,7 @@ SET NOCOUNT ON
 											END  
 											, '{number}', FORMAT((@Credit_AllMember + @AccumCredit_AllCashMember), '#,#0.####'))
 			RETURN
-		END
+		END*/
 
 		IF @Credit_AllAgent > @NewCredit 
 		BEGIN
