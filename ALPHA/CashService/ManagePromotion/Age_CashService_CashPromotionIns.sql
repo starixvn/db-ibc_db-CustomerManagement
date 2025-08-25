@@ -56,8 +56,8 @@ AS
     @Log= '<ROOT CustID="1" SubAccName="" IP="1.1.1.1">
 	<Promotion Type="0" Enabled="0" FromDate="2025-07-08" ToDate="2025-07-10">
 		<Details>
-			<r ProductCategoryID="1" Product="1" Percentage="10.0000" MinTO="1000000.0000" MaxPayout="500000.0000" />
-			<r ProductCategoryID="2" Product="3,28,63" Percentage="15.0000" MinTO="2000000.0000" MaxPayout="1000000.0000"/>
+			<r ProductCategoryID="1" Product="1" Percentage="10.0000" MinTurnover="1000000.0000" MaxPayout="500000.0000" />
+			<r ProductCategoryID="2" Product="3,28,63" Percentage="15.0000" MinTurnover="2000000.0000" MaxPayout="1000000.0000"/>
 		</Details>
 		<Contents>
 			<r Title="Summer Promotion 2025" Language="en" Content="Welcome to the Summer Promotion 2025! Enjoy great offers when you join today."/>
@@ -106,7 +106,7 @@ BEGIN
         [ProductCategoryID] TINYINT '$.ProductCategoryID',
         [Product] VARCHAR(MAX) '$.Product',
         [Percentage] SMALLMONEY '$.Percentage',
-        [MinTO] MONEY '$.MinTO',
+        [MinTO] MONEY '$.MinTurnover',
         [MaxPayout] MONEY '$.MaxPayout'
     );
 
@@ -222,7 +222,7 @@ BEGIN
                                 SELECT pd.ProductCategoryID AS '@ProductCategoryID',
                                        pd.Product AS '@Product',
                                        pd.Percentage AS '@Percentage',
-                                       pd.MinTO AS '@MinTO',
+                                       pd.MinTO AS '@MinTurnover',
                                        pd.MaxPayout AS '@MaxPayout'
                                 FROM @tblPromotionDetails pd
                                 FOR XML PATH('r'), ROOT('Details')
