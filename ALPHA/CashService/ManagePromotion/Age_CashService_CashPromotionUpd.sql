@@ -17,7 +17,7 @@ AS
   
 	Revisions:
         - 20250707@Johnson: initial sp [redmine:#232347]
-
+        - 20250825@Johnson: enhance log [redmine:#236435]
     Parameter's Explanation:
     - @PromotionContents = 
     N'[{
@@ -66,10 +66,10 @@ BEGIN
 
     INSERT INTO @tblPromotionContents (Title, Banner, Language, Content)
     SELECT    
-        [title],
-        [banner],
+        ISNULL([title],''),
+        ISNULL([banner],''),
         [language],
-        [content]
+        ISNULL([content],'')
     FROM OPENJSON(@PromotionContents)
     WITH (        
         [title] NVARCHAR(200) '$.title',
@@ -139,6 +139,16 @@ BEGIN
 		SET @endRun = GETDATE ()
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
+    
+    INSERT INTO @tblPromotionContents_Old (Title, Banner, Language, Content)
+    SELECT    
+        '' [title],
+        '' [banner],
+        [language],
+        '' [content]
+    FROM @tblPromotionContents
+    WHERE Language NOT IN (SELECT language FROM @tblPromotionContents_Old);
+
     SELECT @TrackingValue = '<ROOT CustID="' + CONVERT(VARCHAR(20), @AgentID) 
                             + '" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
                             + '" IP="' + CONVERT(VARCHAR(50), @IP) + '">'
@@ -162,7 +172,7 @@ BEGIN
                                        pc.Language AS '@Language',
                                        pc.Content AS '@Content'
                                 FROM @tblPromotionContents_Old pc
-                                FOR XML PATH('r'), ROOT('Contents')
+                                FOR XML PATH('r'), TYPE
                             ) AS NVARCHAR(MAX))
                             + '</Promotion>' 
                             + '</ROOT>';
