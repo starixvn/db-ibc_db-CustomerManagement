@@ -21,6 +21,7 @@ AS
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]
 		- 20250623@Helios: Offer CashService - Enhance writelog with Masked: CashAgentManagement.Contact , Mobile [RedmineID: #231204]   
 		 - 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
+		 - 20250822@Helios: Agency Cash Service -Customer Setting Sprint 9 [redmine: #236430]
 	Param:
 		DECLARE @p1 INT , @p2 NVARCHAR(1000)
 		exec Age_CashService_GeneralSetting_Upd	
@@ -137,12 +138,18 @@ BEGIN
 		SET @DurationTime = datediff (millisecond,@startRun,@endRun)
 
 	DECLARE
-		@ContactLineID	NVARCHAR(200),
-		@ContactTeteID	NVARCHAR(200)
+		@ContactLineID		NVARCHAR(200),
+		@ContactTeteID		NVARCHAR(200),
+		@AllowRegistration	BIT,
+		@AllowDeposit		BIT
 
+	-- Get contact
 	SELECT @ContactLineID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'line')
 	SELECT @ContactTeteID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'tele')
 
+	-- Get General Setting
+	SELECT @AllowRegistration 	= CASE WHEN @SettingInfo IN (1,3) THEN 1 ELSE 0 END
+		 , @AllowDeposit 		= CASE WHEN @SettingInfo IN (2,3) THEN 1 ELSE 0 END
 
 	--SET @Contact = REPLACE(REPLACE(@Contact, '"', '&quot;'), '"', '&quot;');
 
@@ -151,7 +158,8 @@ BEGIN
 							CustID="' + CONVERT(VARCHAR(20), @CustID) 
 							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
 							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
-							+'" SettingInfo="' + CONVERT(VARCHAR(10), @SettingInfo)   
+							+'" AllowRegistration="' + CONVERT(VARCHAR(10), @AllowRegistration)   
+							+'" AllowDeposit="' + CONVERT(VARCHAR(10), @AllowDeposit)   
 							+'" Mobile="' + CONVERT(VARCHAR(50), ISNULL(@Mobile, ''))   
 							+'" LineID="' + CONVERT(NVARCHAR(500), ISNULL(@ContactLineID, ''))
 							+'" Tele="' + CONVERT(NVARCHAR(500), ISNULL(@ContactTeteID, ''))
@@ -172,7 +180,7 @@ BEGIN
 		[type] NVARCHAR(50) '$.type',
 		[value] NVARCHAR(150) '$.value'
 	) j;
-
+	
 	SELECT @ContactLineID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'line')
 	SELECT @ContactTeteID = (SELECT TOP 1 ContactValues FROM @tmp_Contact WHERE ContactType = 'tele')
 
@@ -180,7 +188,8 @@ BEGIN
 							CustID="' + CONVERT(VARCHAR(20), @CustID) 
 							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
 							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
-							+'" SettingInfo="' + CONVERT(VARCHAR(10), a.SettingInfo)   
+							+'" AllowRegistration="' + CONVERT(VARCHAR(10), CASE WHEN a.SettingInfo IN (1,3) THEN 1 ELSE 0 END)
+							+'" AllowDeposit="' + CONVERT(VARCHAR(10), CASE WHEN a.SettingInfo IN (2,3) THEN 1 ELSE 0 END)
 							+'" Mobile="' + CONVERT(VARCHAR(50), ISNULL(a.Mobile, ''))   
 							+'" LineID="' + CONVERT(NVARCHAR(500), ISNULL(@ContactLineID, ''))
 							+'" Tele="' + CONVERT(NVARCHAR(500), ISNULL(@ContactTeteID, ''))
@@ -192,7 +201,8 @@ BEGIN
 							CustID="' + CONVERT(VARCHAR(20), @CustID) 
 							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
 							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
-							+'" SettingInfo="' + CONVERT(VARCHAR(10), a.SettingInfo)   
+							+'" AllowRegistration="' + CONVERT(VARCHAR(10), CASE WHEN a.SettingInfo IN (1,3) THEN 1 ELSE 0 END)
+							+'" AllowDeposit="' + CONVERT(VARCHAR(10), CASE WHEN a.SettingInfo IN (2,3) THEN 1 ELSE 0 END)
 							+'" Mobile=""'   
 							+'" LineID=""'
 							+'" Tele=""'

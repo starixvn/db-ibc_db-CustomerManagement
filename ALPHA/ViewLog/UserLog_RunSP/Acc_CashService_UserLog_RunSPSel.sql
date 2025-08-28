@@ -20,7 +20,7 @@ AS
 	  DB:           DBLOG-bodb_CustomerLog
 	  Revisions:
 		  - 20250728@Helios: Initial create for CashService log [redmine: 233474] 
-		  - 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266] 
+		  - 20250724@Helios: Agency Cash Service - Customer Setting Sprint 8 [redmine: #235266] 
 	  Example:
 		 EXEC Acc_CashService_UserLog_RunSPSel_UAT2 
 							 @CustId	  =249550999
@@ -55,12 +55,15 @@ BEGIN
 	-- Create temporary table to store filtered LogAction records
 	CREATE TABLE #tmp_LogAction
 	(
-		ActionID        INT,
-		ActionTypeID    INT,
-		SPName          VARCHAR(50),
-		ActionNameEN    NVARCHAR(256),
-		IsInternal      TINYINT
+		ActionID			INT,
+		ActionTypeID		INT,
+		SPName			VARCHAR(50),
+		ActionNameEN		NVARCHAR(256),
+		IsInternal			TINYINT,
+		Indirectly_Upline		TINYINT DEFAULT 0
 	);
+
+	CREATE NONCLUSTERED INDEX IX_tmp_LogAction_ActionID ON #tmp_LogAction(ActionID);
 
 	IF @ActionTypeId = -1
 	BEGIN
@@ -71,15 +74,18 @@ BEGIN
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
+			IsInternal,
+			Indirectly_Upline
 		)
 		SELECT
-			ActionID,
+			la.ActionID,
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
-		FROM dbo.LogAction WITH (NOLOCK)
+			IsInternal,
+			CASE WHEN lad.Level IS NULL THEN 0 ELSE 1 END AS Indirectly_Upline
+		FROM dbo.LogAction la WITH (NOLOCK)
+		LEFT JOIN LogActionDetail lad WITH (NOLOCK) ON la.ActionID = lad.ActionID
 		WHERE ActionTypeID >= 100;
 	END
 	ELSE
@@ -91,19 +97,92 @@ BEGIN
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
+			IsInternal,
+			Indirectly_Upline
 		)
 		SELECT
-			ActionID,
+			la.ActionID,
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
-		FROM dbo.LogAction WITH (NOLOCK)
+			IsInternal,
+			CASE WHEN lad.Level IS NULL THEN 0 ELSE 1 END AS Indirectly_Upline
+		FROM dbo.LogAction la WITH (NOLOCK)
+		LEFT JOIN LogActionDetail lad WITH (NOLOCK) ON la.ActionID = lad.ActionID
 		WHERE ActionTypeID = @ActionTypeId;
 	END
 
-	-- Query all log data for ActionID list and join with user info
+	-- Create temp table to collect log result
+	CREATE TABLE #TmpResult
+	(
+		LogDate DATETIME,
+		logid INT,
+		userid INT,
+		username NVARCHAR(256),
+		TrackingValue NVARCHAR(MAX),
+		TrackingValue2 NVARCHAR(MAX),
+		logdate2 DATETIME,
+		ActionID INT,
+		ActionTypeID INT,
+		SPName VARCHAR(50),
+		IsInternal TINYINT,
+		custid INT,
+		CustName VARCHAR(50),
+		ActionNameEN NVARCHAR(256)
+	);
+
+	INSERT INTO #TmpResult
+	(
+		LogDate, logid, userid, username, TrackingValue, TrackingValue2, logdate2, ActionID, ActionTypeID, SPName, IsInternal, custid, CustName, ActionNameEN
+	)
+	SELECT
+		LogDate,
+		logid,
+		userid,
+		cs.username,
+		ISNULL(TrackingValueMask, c.TrackingValue) AS TrackingValue,
+		ISNULL(TrackingValueMask2, c.TrackingValue2) AS TrackingValue2,
+		logdate,
+		c.ActionID,
+		la.ActionTypeID,
+		la.SPName,
+		la.IsInternal,
+		c.custid,
+		ISNULL(@CustName, '') AS CustName,
+		la.ActionNameEN
+	FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
+	LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
+	INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
+	WHERE c.custid = @CustId
+	AND logdate BETWEEN @FromDate AND @ToDate
+	AND la.IsInternal <= @IsInternal
+	AND la.Indirectly_Upline = 0
+
+	UNION ALL
+
+	SELECT
+		LogDate,
+		logid,
+		userid,
+		cs.username,
+		ISNULL(TrackingValueMask, c.TrackingValue) AS TrackingValue,
+		ISNULL(TrackingValueMask2, c.TrackingValue2) AS TrackingValue2,
+		logdate,
+		c.ActionID,
+		la.ActionTypeID,
+		la.SPName,
+		la.IsInternal,
+		c.custid,
+		ISNULL(@CustName, '') AS CustName,
+		la.ActionNameEN
+	FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
+	LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
+	INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
+	WHERE c.custid = @LoginUserId
+	AND logdate BETWEEN @FromDate AND @ToDate
+	AND la.IsInternal <= @IsInternal
+	AND la.Indirectly_Upline = 1
+
 	SELECT
 		logid,
 		userid,
@@ -122,27 +201,22 @@ BEGIN
 			ROW_NUMBER() OVER ( ORDER BY LogDate DESC) AS RowNum,
 			logid,
 			userid,
-			cs.username,
-			ISNULL(TrackingValueMask, c.TrackingValue) AS TrackingValue,
-			ISNULL(TrackingValueMask2, c.TrackingValue2) AS TrackingValue2,
+			Username,
+			TrackingValue,
+			TrackingValue2,
 			logdate,
-			c.ActionID,
-			la.ActionTypeID,
-			la.SPName,
-			la.IsInternal,
-			c.custid,
-			ISNULL(@CustName, '') AS CustName,
-			la.ActionNameEN
-		FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
-		LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
-		INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
-		WHERE c.custid = @CustId
-		AND logdate BETWEEN @FromDate AND @ToDate
-		AND la.IsInternal <= @IsInternal
+			ActionID,
+			ActionTypeID,
+			SPName,
+			IsInternal,
+			Custid,	
+			ActionNameEN
+		FROM #TmpResult
 	) AS MyTable
 	WHERE RowNum BETWEEN @lbound AND @ubound;
 
 	-- Drop temporary table to release resources
 	DROP TABLE #tmp_LogAction;
+	DROP TABLE #TmpResult
 END
 

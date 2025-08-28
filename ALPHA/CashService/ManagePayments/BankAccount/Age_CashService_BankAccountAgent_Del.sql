@@ -18,6 +18,8 @@ AS
 	Revisions:
 		- 20250321@Helios: Agency Cash Service [Redmine: #223896]    
 		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 8 [redmine: #235266]
+		- 20250822@Helios: Agency Cash Service -Customer Setting Sprint 9 [redmine: #236430]
+
 	Param:
 		DECLARE @p1 INT , @p2 VARCHAR(1000)
 
@@ -46,7 +48,6 @@ BEGIN
 	
 	SET @startRun = GETDATE ()
 	SELECT @ErrCode = 0 , @ErrMsg = '' 
-
 
 	-- Use temp table to store only necessary columns
 	CREATE TABLE #Old_AgentBankAccount (
@@ -99,30 +100,52 @@ BEGIN
 	END
 
 	IF EXISTS (SELECT TOP 1 1 FROM #Old_AgentBankAccount oaba)
-	BEGIN
+	BEGIN TRY
 		-- UPDATE VALUES
 		UPDATE ca
 		SET 
 				ca.IsActive = 0,
 				ca.RepUpdateTime = dbo.f_GetDateTime2()
 		FROM CashAgentBankAccount ca WITH (ROWLOCK , UPDLOCK)
-		WHERE ca.AgentBankAccountID = @AgentBankAccountID		
-	END	
+		WHERE ca.AgentBankAccountID = @AgentBankAccountID
+	END	TRY
+	BEGIN CATCH
+		SELECT @ErrMsg = ERROR_MESSAGE(), @ErrCode = ERROR_NUMBER();
+		RETURN;
+	END CATCH
 
-	IF (@@error = 0)
-	BEGIN
-		SELECT  
-			@ErrMsg = N'Update Successful!',
-			@ErrCode = 0 ;
-	END
+	-- If IsCheck = 1, count check data from CashMemberBankAccount before update for WriteLog
+	DECLARE @Exist_MemberBankAccount_Affected INT = 0
+
+	-- Collect old data before update
+	SELECT @Exist_MemberBankAccount_Affected = (SELECT COUNT(1)
+								  FROM CashMemberBankAccount c WITH (NOLOCK)
+								  WHERE c.IsActive = 1 AND c.BankAccountAgentID = @AgentBankAccountID);
+
+	IF @Exist_MemberBankAccount_Affected > 0
+	BEGIN TRY
+		-- Update BankAccountAgentID to NULL : 
+		UPDATE CashMemberBankAccount WITH (ROWLOCK, UPDLOCK)
+			SET BankAccountAgentID = NULL,
+				RepUpdateTime = dbo.f_GetDateTime2()
+		WHERE IsActive = 1
+			AND BankAccountAgentID = @AgentBankAccountID;
+	END TRY
+	BEGIN CATCH
+		SELECT @ErrMsg = ERROR_MESSAGE(), @ErrCode = ERROR_NUMBER();
+		RETURN;
+	END CATCH
 
 	--START LOG
+	DECLARE @LogInfo_Tbl TABLE(UserID INT, CustID INT, ActionID INT, TrackingValue NVARCHAR(MAX), TrackingValue2 NVARCHAR(MAX), TrackingValueMask NVARCHAR(MAX), TrackingValueMask2 NVARCHAR(MAX) , Duration INT )
 	DECLARE @TrackingValue NVARCHAR(MAX), @TrackingValue2 NVARCHAR(MAX), @TrackingValueMask NVARCHAR(MAX), @TrackingValueMask2 NVARCHAR(MAX)
-	DECLARE @xml XML , @UserName NVARCHAR(50) , @ActionID INT = 300005
+	DECLARE @UserName NVARCHAR(50) , @ActionID INT = 300005
 	DECLARE @BankAccountNumber VARCHAR(100), @AccountHolderName NVARCHAR(255), @AccountNickname NVARCHAR(255), 
 			@PromptPayEnabled BIT, @PromptPayMobile VARCHAR(50), @BankCode VARCHAR(10), @TransTypeList VARCHAR(10),
 			@DepositMatching_Agent SMALLINT, @DepositMatching_Bank VARCHAR(60)
 	
+	SELECT @UserName = (SELECT TOP 1 UserName FROM CustDB.dbo.vw_CashService_Customer vc WITH (NOLOCK) WHERE CustID = @CustID)
+
 	-- Extract data from temp table for logging
 	SELECT  
 		@BankAccountNumber = BankAccountNumber,
@@ -140,7 +163,7 @@ BEGIN
 	SET @DurationTime = DATEDIFF(millisecond, @startRun, @endRun)
 
 	-- LOG NEW VALUES
-	SELECT @TrackingValueMask = '<Age_CashService_BankAccountAgent_Del 
+	SELECT @TrackingValueMask = '<Age_CashService_BankAccountAgent_Del
 							CustID="' + CONVERT(VARCHAR(20), @CustID) 
 							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
 							+'" IP="' + CONVERT(VARCHAR(50), @IP)   
@@ -161,7 +184,7 @@ BEGIN
 				ISNULL(@PromptPayMobile, ''), '');
 
 	-- LOG OLD VALUES
-	SELECT @TrackingValueMask2 = '<Age_CashService_BankAccountAgent_Del 
+	SELECT @TrackingValueMask2 = '<Age_CashService_BankAccountAgent_Del
 							CustID="' + CONVERT(VARCHAR(20), @CustID) 
 							+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
 							+'" IP="' + CONVERT(VARCHAR(50), @IP)    
@@ -181,13 +204,58 @@ BEGIN
 				ISNULL(@AccountHolderName, ''), ''), 
 				ISNULL(@PromptPayMobile, ''), '');
 	
-	SELECT 
-		@CustID AS UserID ,
-		@CustID AS CustID ,
-		@ActionID AS ActionID ,
-		@TrackingValue AS TrackingValue ,
-		@TrackingValue2 AS TrackingValue2 ,
-		@TrackingValueMask AS TrackingValueMask ,
-		@TrackingValueMask2 AS TrackingValueMask2  ,
-		@DurationTime AS Duration
+	INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, TrackingValueMask, TrackingValueMask2, Duration)
+	SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @TrackingValueMask , @TrackingValueMask2 , @DurationTime
+
+	IF @Exist_MemberBankAccount_Affected > 0
+	BEGIN
+
+		SET @ActionID = 300011
+		SET @TrackingValue = '' 
+		SET @TrackingValue2 = '' 
+		SET @TrackingValueMask = '' 
+		SET @TrackingValueMask2 = '' 
+
+		-- LOG NEW VALUES
+		SELECT @TrackingValueMask = '<Age_CashService_BankAccountAgent_Del
+									CustID="' + CONVERT(VARCHAR(20), @CustID) 
+									+'" SourceAccount="' + CONVERT(VARCHAR(50), @UserName)   
+									+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+									+'" IP="' + CONVERT(VARCHAR(50), @IP)    
+									+'" AgentBankAccountNumber="' + CONVERT(VARCHAR(100), N'NoMatchingBankAccount') + '" />'
+		SELECT @TrackingValue = @TrackingValueMask;
+
+		-- LOG OLD VALUES
+		SELECT @TrackingValueMask2 = '<Age_CashService_BankAccountAgent_Del
+									CustID="' + CONVERT(VARCHAR(20), @CustID) 
+									+'" SourceAccount="' + CONVERT(VARCHAR(50), @UserName)   
+									+'" SubAccName="' + CustDB.dbo.f_GetSubUsername(@SubAccID) 
+									+'" IP="' + CONVERT(VARCHAR(50), @IP)    
+									+'" AgentBankAccountNumber="' +  CONVERT(VARCHAR(100), ISNULL(@BankAccountNumber, ''))+ '" />'
+		SELECT @TrackingValue2 = @TrackingValueMask2;
+
+		IF @BankAccountNumber IS NOT NULL
+		BEGIN
+			SET @TrackingValue2 = REPLACE(
+				@TrackingValue2,
+				'AgentBankAccountNumber="' + CONVERT(VARCHAR(100), @BankAccountNumber) + '"',
+				'AgentBankAccountNumber=""'
+			);
+		END;
+
+		INSERT INTO @LogInfo_Tbl (UserID, CustID, ActionID, TrackingValue, TrackingValue2, TrackingValueMask, TrackingValueMask2, Duration)
+		SELECT @CustID ,  @CustID , @ActionID , @TrackingValue , @TrackingValue2 , @TrackingValueMask , @TrackingValueMask2 , @DurationTime
+	END
+
+	-- Return Data Object
+	SELECT
+		UserID,
+		CustID,
+		ActionID,
+		TrackingValue,
+		TrackingValue2,
+		TrackingValueMask,
+		TrackingValueMask2,
+		Duration
+	FROM @LogInfo_Tbl
 END
