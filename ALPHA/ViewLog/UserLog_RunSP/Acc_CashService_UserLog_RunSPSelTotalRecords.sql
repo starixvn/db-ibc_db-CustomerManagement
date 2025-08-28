@@ -22,17 +22,21 @@ AS
           EXEC dbo.Acc_CashService_UserLog_RunSPSelTotalRecords @CustId = 1, @LoginUserId = 2, @FromDate = '2025-07-01', @ToDate = '2025-07-28', @ActionTypeId = -1, @IsInternal = 0; 
 */
 BEGIN
-      SET NOCOUNT ON;
-    
-	-- Create temporary table to store filtered LogAction records 
+	SET NOCOUNT ON;
+
+
+	-- Create temporary table to store filtered LogAction records
 	CREATE TABLE #tmp_LogAction
 	(
-		ActionID        INT,
-		ActionTypeID    INT,
-		SPName          VARCHAR(50),
-		ActionNameEN    NVARCHAR(256),
-		IsInternal      TINYINT
+		ActionID			INT,
+		ActionTypeID		INT,
+		SPName			VARCHAR(50),
+		ActionNameEN		NVARCHAR(256),
+		IsInternal			TINYINT,
+		Indirectly_Upline		TINYINT DEFAULT 0
 	);
+
+	CREATE NONCLUSTERED INDEX IX_tmp_LogAction_ActionID ON #tmp_LogAction(ActionID);
 
 	IF @ActionTypeId = -1
 	BEGIN
@@ -43,15 +47,18 @@ BEGIN
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
+			IsInternal,
+			Indirectly_Upline
 		)
 		SELECT
-			ActionID,
+			la.ActionID,
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
-		FROM dbo.LogAction WITH (NOLOCK)
+			IsInternal,
+			CASE WHEN lad.Level IS NULL THEN 0 ELSE 1 END AS Indirectly_Upline
+		FROM dbo.LogAction la WITH (NOLOCK)
+		LEFT JOIN LogActionDetail lad WITH (NOLOCK) ON la.ActionID = lad.ActionID
 		WHERE ActionTypeID >= 100;
 	END
 	ELSE
@@ -63,27 +70,45 @@ BEGIN
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
+			IsInternal,
+			Indirectly_Upline
 		)
 		SELECT
-			ActionID,
+			la.ActionID,
 			ActionTypeID,
 			SPName,
 			ActionNameEN,
-			IsInternal
-		FROM dbo.LogAction WITH (NOLOCK)
+			IsInternal,
+			CASE WHEN lad.Level IS NULL THEN 0 ELSE 1 END AS Indirectly_Upline
+		FROM dbo.LogAction la WITH (NOLOCK)
+		LEFT JOIN LogActionDetail lad WITH (NOLOCK) ON la.ActionID = lad.ActionID
 		WHERE ActionTypeID = @ActionTypeId;
 	END
+
 	
-	-- Query all log data for ActionID list and join with user info
-	SELECT
-		COUNT(1) AS TotalRecords
+	DECLARE @Total INT = 0,
+			@Total_Indirect INT = 0;
+
+	SELECT @Total = COUNT(1)
 	FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
+	LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
 	INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
 	WHERE c.custid = @CustId
-	AND logdate BETWEEN @FromDate AND @ToDate
-	AND la.IsInternal <= @IsInternal
+		AND logdate BETWEEN @FromDate AND @ToDate
+		AND la.IsInternal <= @IsInternal
+		AND la.Indirectly_Upline = 0;
+
+	SELECT @Total_Indirect = COUNT(1)
+	FROM dbo.Cash_UserLog_RunSP c WITH (NOLOCK)
+	LEFT JOIN bodb02.dbo.CustInfo cs WITH (NOLOCK) ON c.userid = cs.custid
+	INNER JOIN #tmp_LogAction la ON c.ActionID = la.ActionID
+	WHERE c.custid = @LoginUserId
+		AND logdate BETWEEN @FromDate AND @ToDate
+		AND la.IsInternal <= @IsInternal
+		AND la.Indirectly_Upline = 1;
+
+	SELECT (@Total + @Total_Indirect) AS TotalRecords;
 
 	-- Drop temporary table to release resources
 	DROP TABLE #tmp_LogAction;
-END;
+END
