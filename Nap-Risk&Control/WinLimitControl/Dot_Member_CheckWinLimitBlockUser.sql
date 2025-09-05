@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender" viewers="vnteam" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCUST-CUSTDB" executers="Dot_intg,Dot_Member,API_Vender,oneseal_integration" viewers="vnteam" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[Dot_Member_CheckWinLimitBlockUser]  
 (  
 	 @custID  INT ,  
