@@ -1,24 +1,23 @@
-/*<info serverAlias="DBCUST-IPDB" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_lap" viewers="" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE Acc_GetIPInfo_Full
+/*<info serverAlias="DBCUST-IPDB" executers="wsv_nap,wsv_alp,wsv_xnap,wsv_lap,wsv_afinet" viewers="" isFunction="0" isNested="0"></info>*/
+ALTER PROCEDURE [dbo].[Acc_GetIPInfo_Full]
 	@IP VARCHAR(45)
 AS
 /*
 	Created by: Jamie
 	Date: 2010-04-01
-	Task: Get IP Info 
-	DB: DBCUST/IPDB 
+	Task: Get IP Info
+	DB: DBCUST/IPDB
 	Original: GetIPInfo_Full
-
 	Revisions:	
-		- 20180710@Razor: Grant permission for wsv_xnap
+		- 20180710@Razor: Grant permission for bodbExtAccNet
 		- 20211018@Elodie: Support IPv6 Phase 1 - Support for 3rd party product bet tickets  [Redmine:#90903]
-		- 20220420@Elodie:  Grant permission for wsv_lap  [Redmine:#168737]
+		- 20220420@Elodie:  Grant permission for bodbLicenseeNet  [Redmine:#168737]
+		- 20250909@Danny:  Grant permission for wsv_afinet  [Redmine:#234157]
 */
 BEGIN
 	SET NOCOUNT ON
 	DECLARE @IPFull VARCHAR(45), @IPvX TINYINT
 	DECLARE @v4IPKey TINYINT, @v4IPLong BIGINT, @v6KeyValue BINARY(2), @v6IPValue BINARY(16)
-
 	SELECT	@IPFull		= fip.FullForm,
 			@IPVx		= CASE WHEN LEFT(@IPFull,24) = '00000000000000000000FFFF' THEN 4 ELSE 6 END,
 			@v4IPKey    = CASE @IPvX WHEN 4 THEN CONVERT(TINYINT, CONVERT(BINARY(1), SUBSTRING(@IPFull,25,2), 2)) END,
@@ -26,14 +25,12 @@ BEGIN
 			@v6KeyValue = CASE @IPvX WHEN 6 THEN CONVERT(BINARY(2) , LEFT(@IPFull,4), 2) END,
 			@v6IPValue  = CASE @IPvX WHEN 6 THEN CONVERT(BINARY(16), @IPFull, 2) END
 	FROM dbo.f_IP_FullForm (@IP) fip
-
 	IF @IPVx = 4
 	BEGIN
 		SELECT countrySHORT, countryLONG, ipRegion, ipCity
 		FROM iptable WITH (NOLOCK)
 		WHERE ipKeyFrom = @v4IPKey
 			AND @v4IPLong BETWEEN ipFrom AND ipTo
-
 		IF @@ROWCOUNT = 0
 			SELECT ipKeyFrom, ipKeyTo, ipFrom, ipTo, countrySHORT, countryLONG, ipRegion, ipCity
 			FROM iptable WITH (NOLOCK)
