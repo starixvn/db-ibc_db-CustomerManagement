@@ -57,6 +57,8 @@ Revisions:
 	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
 	- 20241119@Elodie: Add $US for ACCPBTH - [Redmine: #213893]
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
+	- 20250908@Helios: Add currencies - by System ExtraPTRM - [Redmine: #238079]
+	
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
 */
@@ -204,6 +206,12 @@ BEGIN
 		SELECT 43 --THB,...
 		UNION ALL SELECT 35	--- 	$US
 	END
+	ELSE IF(@System IN ('ExtraPTRM'))
+	BEGIN
+		Insert Into @tbCurrency(exchangeID)
+		SELECT 2 --RM,...
+	END
+	
 	--Malaysia HL
 	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951','ACCTW1','ACCSB1',
 						'ACCDS17','ACCS359M','ACC801AH','ACCC1','ACCS222H','ACCD77M','ACCAHM','ACCWT','ACC222','ACCHPO','ACCKKM'

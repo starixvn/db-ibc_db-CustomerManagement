@@ -59,6 +59,7 @@ Revisions:
 	- 20240321@Johnson: Add ACCDS17,ACCS359M,ACC801AH,ACCC1,ACCS222H,ACCD77M,ACCAHM,ACCWT,ACC222,ACCHPO,ACCKKM [redmine: #202663]
 	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
+	- 20250908@Helios: Add site - by System ExtraPTRM - [Redmine: #238079]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -182,6 +183,11 @@ BEGIN
 	BEGIN
 		Insert Into @tbSite(siteid)
 		SELECT 1233 --7a5555,...
+	END
+	ELSE IF(@System IN ('ExtraPTRM'))
+	BEGIN
+		Insert Into @tbSite(siteid)
+		SELECT 1369 --Hedging,...
 	END
 	--Malaysia HL
 	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951','ACCTW1','ACCSB1',
