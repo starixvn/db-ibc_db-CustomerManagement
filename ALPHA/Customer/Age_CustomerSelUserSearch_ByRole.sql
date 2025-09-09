@@ -11,11 +11,11 @@ AS
 
 	Revisions:
 		- 20240802@Tacy: Create SP [Redmine: #204089]
-
+		- 20250903@Elodie: Enhance SP [Redmine: #237555]
 	Param's Explanation:
-		• @custid: User who are logging in.
-		• @username: part of username.
-		• @RoleId: roleId of @username 
+		ï¿½ @custid: User who are logging in.
+		ï¿½ @username: part of username.
+		ï¿½ @RoleId: roleId of @username 
 					0 ~ All
 					1 ~ Member
 					2 ~ Agent
@@ -53,53 +53,56 @@ BEGIN
 		IF @UserRoleId=4
 		BEGIN
 			INSERT INTO @tmpUsername (username, firstname, lastname, username2)
-			SELECT TOP 10 c.username, c.firstname, c.lastname, c.username2
+			SELECT TOP 10 c1.username, c1.firstname, c1.lastname, c1.username2
 			FROM customer c WITH (NOLOCK)
-				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2, roleid
 							FROM Customer t WITH (NOLOCK)
 							WHERE t.custid = c.custid 
-								AND roleid < @UserRoleId 
-								AND (@RoleId = 0 OR @RoleId = roleid)
-								AND (t.username LIKE @username  + '%' 
-									OR t.username2 LIKE @username  + '%' 
-									OR t.firstname LIKE @username  + '%' 
-									OR t.lastname LIKE @username  + '%')) c1
+								) c1
 			WHERE c.srecommend=@custid
-			ORDER BY username
+				AND c1.roleid < @UserRoleId 
+				AND (@RoleId = 0 OR @RoleId = c1.roleid)
+				AND (c1.username LIKE @username  + '%' 
+					OR c1.username2 LIKE @username  + '%' 
+					OR c1.firstname LIKE @username  + '%' 
+					OR c1.lastname LIKE @username  + '%')
+			ORDER BY c1.username
 		END
 		ELSE IF @UserRoleId=3
 		BEGIN
 			INSERT INTO @tmpUsername (username, firstname, lastname, username2)
-			SELECT TOP 10 c.username, c.firstname, c.lastname, c.username2
+			SELECT TOP 10 c1.username, c1.firstname, c1.lastname, c1.username2
 			FROM customer c WITH (NOLOCK)
-				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2, roleid
 							FROM Customer t WITH (NOLOCK)
 							WHERE t.custid = c.custid 
-								AND roleid < @UserRoleId 
-								AND (@RoleId = 0 OR @RoleId = roleid)
-								AND (t.username LIKE @username  + '%' 
-									OR t.username2 LIKE @username  + '%' 
-									OR t.firstname LIKE @username  + '%' 
-									OR t.lastname LIKE @username  + '%')) c1
+								) c1
 			WHERE c.mrecommend=@custid
-			ORDER BY username
+				AND c1.roleid < @UserRoleId 
+				AND (@RoleId = 0 OR @RoleId = c1.roleid)
+				AND (c1.username LIKE @username  + '%' 
+					OR c1.username2 LIKE @username  + '%' 
+					OR c1.firstname LIKE @username  + '%' 
+					OR c1.lastname LIKE @username  + '%')
+			ORDER BY c1.username
 		END
 		ELSE IF @UserRoleId=2
 		BEGIN
 			INSERT INTO @tmpUsername (username, firstname, lastname, username2)
 			SELECT TOP 10 c.username, c.firstname, c.lastname, c.username2
 			FROM customer c WITH (NOLOCK)
-				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2
+				CROSS APPLY (SELECT TOP 1 username, firstname, lastname, username2, roleid
 							FROM Customer t WITH (NOLOCK)
 							WHERE t.custid = c.custid 
-								AND roleid < @UserRoleId 
-								AND (@RoleId = 0 OR @RoleId = roleid)
-								AND (t.username LIKE @username  + '%' 
-									OR t.username2 LIKE @username  + '%' 
-									OR t.firstname LIKE @username  + '%' 
-									OR t.lastname LIKE @username  + '%')) c1
+								) c1
 			WHERE c.recommend=@custid
-			ORDER BY username
+				AND c1.roleid < @UserRoleId 
+				AND (@RoleId = 0 OR @RoleId = c1.roleid)
+				AND (c1.username LIKE @username  + '%' 
+					OR c1.username2 LIKE @username  + '%' 
+					OR c1.firstname LIKE @username  + '%' 
+					OR c1.lastname LIKE @username  + '%')
+			ORDER BY c1.username
 		END
 	END
 
