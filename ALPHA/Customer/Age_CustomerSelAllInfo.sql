@@ -66,6 +66,7 @@ AS
 		- 20230925@Tacy: remove get Closed Reason and Protection Mode info from DBACC [Redmine: #194274]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250623@Helios: Cash Service - Add an additional field ServiceType [redmine: #231204] 
+        - 20250915@Dave: Alpha_Add remark field when editing info of master/Agent/member [RedmineID: #238689]
 
 	Param's Explanation:
 		� @username: username of customer that need to be viewed.   
@@ -162,7 +163,11 @@ BEGIN
 			m.username AS masterName,
 			s.custid AS superID,
 			s.username AS superName,
-			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @Locked AS Locked , @isServiceType AS ServiceType
+			c.creatdate, lastlogged, iplogin AS lastloginip, pwdexpiry, @Locked AS Locked , @isServiceType AS ServiceType,
+			CASE WHEN @srecommend = @uplineid THEN ISNULL(cr.SuperRemark, '')
+				 WHEN @mrecommend = @uplineid THEN ISNULL(cr.MasterRemark, '')
+				 WHEN @recommend = @uplineid THEN ISNULL(cr.AgentRemark, '')
+			ELSE '' END AS Remark
     FROM custinfo ci WITH (NOLOCK)
 		INNER JOIN customer c WITH (NOLOCK) ON c.custid = ci.custid
 		CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -173,6 +178,7 @@ BEGIN
 	    LEFT JOIN custinfo a WITH (NOLOCK) ON c.recommend = a.custid
 	    LEFT JOIN custinfo m WITH (NOLOCK) ON c.mrecommend = m.custid
 	    LEFT JOIN custinfo s WITH (NOLOCK) ON c.srecommend = s.custid
+		LEFT JOIN CustomerRemark cr WITH (NOLOCK) ON cr.CustID = c.CustID
     WHERE c.custid = @custid
 
 END	
