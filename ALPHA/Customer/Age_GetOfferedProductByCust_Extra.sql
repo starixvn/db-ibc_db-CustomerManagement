@@ -1,6 +1,7 @@
 /*<info serverAlias="DBAGE-bodb02" executers="wsv_alp,wsv_alpv" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Age_GetOfferedProductByCust_Extra]
 	@custid INT
+	, @CashServiceSites VARCHAR(MAX)
 	, @SettingStatus TINYINT = 0
 AS
 /*
@@ -10,9 +11,11 @@ AS
 
 	Revisions:
 		- 20250527@Virgil: Agency Cash Service - Billing service and Report changes [Redmine: #227984]
+		- 20250718@Virgil: Cash Service Billing - Sprint 6 - Enhance code [RedmineId: #231700]
 
 	Param's Explanation:
 		- @SettingStatus: 0: Pro, 1: UAT
+		- @CashServiceSites: list Sites offer Cash Service
 
 	Example: EXEC Age_GetOfferedProductByCust_Extra @CustID = 1176086
 		
@@ -28,7 +31,11 @@ BEGIN
 	WHERE custid = @custid
 
 	SELECT t.ProductID,
-			CASE WHEN dbo.f_Age_OfferedProductBySite(@Site)=1 THEN 0 ELSE 1 END isHidden,
+			CASE
+				WHEN ',' + @CashServiceSites + ',' LIKE '%,' + @Site + ',%' THEN 0
+				WHEN @CashServiceSites = '*' THEN 0
+				ELSE 1 
+			END isHidden,
 			t.EndOfSupportDate
 	FROM dbo.Products t (NOLOCK)
 	WHERE ProductID IN (111)

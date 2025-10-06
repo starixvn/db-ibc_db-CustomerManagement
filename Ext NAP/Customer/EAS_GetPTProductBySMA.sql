@@ -2,6 +2,7 @@
 ALTER PROCEDURE [dbo].[EAS_GetPTProductBySMA] 
 	-- Add the parameters for the stored procedure here
 	@CustIds VARCHAR(MAX),
+	@CashServiceSites VARCHAR(MAX) = NULL,
 	@SettingStatus TINYINT = 0 
 AS
 /*
@@ -29,6 +30,8 @@ AS
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
 		- 20250415@Johnson: move sp to DBCUST [redmine: #224180]
+		- 20250707@Virgil: Cash Service - Billing service and Report changes [RedmineId: #232418]
+
 	Param's Explanation:
 	- @CustIds = '45823486,45823577,45823478,44614982,33546025'="45823478" roleid="3"/>
 						</ROOT>'
@@ -164,6 +167,10 @@ BEGIN
 	SELECT s.CustID, 0 AS SuperPT, 37 AS ProductID
 	FROM #SMATemp s
 	WHERE dbo.f_Age_OfferedProductBySite(s.Site)=1
+	UNION
+	SELECT s.CustID, 0 AS ValuePT, 111 AS ProductID
+	FROM #SMATemp s
+	WHERE ',' + @CashServiceSites + ',' LIKE '%,' + Site + ',%' OR @CashServiceSites = '*'
 	ORDER BY CustID, ProductID
 	
 	DROP TABLE #tblCustomer			
