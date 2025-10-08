@@ -1,10 +1,9 @@
 ﻿/*<info serverAlias="DBCUST-CustDB,DBONUSER-bodb02,DBEXT-bodb02,DBAGE-bodb02,DBACC-bodb02" selecters="wsv_nap,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
-
 ALTER FUNCTION [dbo].[f_SiteBySystem]
 (
-	@System varchar(50) = 'ACCOUNTING'
+	@System VARCHAR(50) = 'ACCOUNTING'
 )
-	RETURNS @tbSite table (siteid  int PRIMARY KEY)
+	RETURNS @tbSite TABLE (siteid  INT PRIMARY KEY)
 AS
 
 /*
@@ -60,6 +59,7 @@ Revisions:
 	- 20241119@Elodie: Add ACCPBTH - [Redmine: #213793]
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 	- 20250908@Helios: Add site - by System ExtraPTRM - [Redmine: #238079]
+	- 20251008@Dave: Add ACCGTHB - [Redmine: #241127]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -69,19 +69,19 @@ BEGIN
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid 
-		FROM [Site] WITH (NOLOCK)
+		FROM dbo.[Site] WITH (NOLOCK);
 	END
 	ELSE IF (@System = 'ACCTEST')
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid 
-		FROM [Site] WITH (NOLOCK)
-		WHERE isLicensee = 0 AND isActive = 1
+		FROM dbo.[Site] WITH (NOLOCK)
+		WHERE isLicensee = 0 AND isActive = 1;
 	END
-	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCPBTH','ACCTHAI9TA'))
+	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCPBTH','ACCTHAI9TA','ACCGTHB'))
 	BEGIN
-		Insert Into @tbSite(siteid)
-		SELECT 22 --755555,...
+		INSERT INTO @tbSite(siteid)
+		SELECT 22; --755555,...
 	END
 	--ELSE IF (@System IN ('ACCINDO','ACCIN') )
 	--BEGIN
@@ -91,14 +91,14 @@ BEGIN
 	ELSE IF (@System IN ('ACCINDO','ACCIN','INDO2','INDO56','INDO56B','ACCINDO2') )
 	BEGIN
 		INSERT INTO @tbSite(siteid)
-		SELECT 11 --INDO
+		SELECT 11; --INDO
 	END
 	ELSE IF (@System IN ('ACCYEN','ACCYEN789','ACCYEN889','ACCYEN668','ACCNTD','ACCIRR','ACCUSD','ACCUT','ACCYEN888','ACCUT2','ACCUSDOTH'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid
-		FROM Site s WITH (NOLOCK)
-		WHERE SiteLabel='789y' AND isActive=1
+		FROM dbo.Site s WITH (NOLOCK)
+		WHERE SiteLabel='789y' AND isActive=1;
 	END
 	ELSE IF (@System IN ('ACCUUS'))
 	BEGIN
@@ -111,83 +111,83 @@ BEGIN
 		UNION ALL 
 		SELECT 257 --Y987
 		UNION ALL 
-		SELECT 294 --EU88
+		SELECT 294; --EU88
 	END
 	ELSE IF (@System = 'ACCDDD')
 	BEGIN
 		INSERT INTO @tbSite(siteid)
-		SELECT 11 --INDO
+		SELECT 11; --INDO
 	END	
-	ELSE IF (@System in ( 'MKK99','ACCMKK'))
+	ELSE IF (@System IN ( 'MKK99','ACCMKK'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
-		SELECT 184 -- 766666
+		SELECT 184; -- 766666
 	END	
-	ELSE IF (@System in ( 'ACCMMK'))
+	ELSE IF (@System IN ( 'ACCMMK'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
-		SELECT 188 -- 7aa666
+		SELECT 188; -- 7aa666
 	END	
-	ELSE IF (@System in ( 'ACCYNG'))
+	ELSE IF (@System IN ( 'ACCYNG'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT 22 --755555
 		UNION ALL 
-		SELECT 11 --INDO	
+		SELECT 11; --INDO	
 	END		
 	ELSE IF (@System IN ('ACCTESTK68','TH999','TH001','TH002','TH003'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 257 --Y987
+		SELECT 257; --Y987
 	END
 	ELSE IF (@System IN ('SQ88','THEU','899EU','789EU','SQUS'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 294 --EU88
+		SELECT 294; --EU88
 	END
 	ELSE IF (@System IN ('IBCIndo'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 487 --IBCIndo
+		SELECT 487; --IBCIndo
 	END
 	ELSE IF (@System IN ('INDOWIN','INDOBS'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 487 --IBCIndo
 		UNION ALL 
-		SELECT 11 --INDO
+		SELECT 11; --INDO
 	END	
 	ELSE IF (@System IN ('IBCMMR', 'ACCUUSMyanmar'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 547 --76666B		
+		SELECT 547; --76666B		
 	END	
 	ELSE IF (@System IN ('IBCMMR', 'ACCUUSMyanmar'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 547 --76666B		
+		SELECT 547; --76666B		
 	END	
 	ELSE IF (@System IN ('ACCSABA789'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
-		SELECT 557 --Saba789		
+		SELECT 557; --Saba789		
 	END
 	ELSE IF (@System IN ('ACCAthena000'))
 	BEGIN
 		INSERT INTO @tbSite(siteid)		
 		SELECT 66 --Athena000
 		UNION ALL
-		SELECT 1 --BEST-ODDS		
+		SELECT 1; --BEST-ODDS		
 	END
 	ELSE IF(@System IN ('ACCTHaiSK','AccThaiSKUUS'))
 	BEGIN
-		Insert Into @tbSite(siteid)
-		SELECT 1233 --7a5555,...
+		INSERT INTO @tbSite(siteid)
+		SELECT 1233; --7a5555,...
 	END
 	ELSE IF(@System IN ('ExtraPTRM'))
 	BEGIN
-		Insert Into @tbSite(siteid)
-		SELECT 1369 --Hedging,...
+		INSERT INTO @tbSite(siteid)
+		SELECT 1369; --Hedging,...
 	END
 	--Malaysia HL
 	ELSE IF(@System IN ('ACCS56RM','ACCHHRM','ACCCH1','ACCMG7','ACCNV1','ACCA951','ACCTW1','ACCSB1',
@@ -197,12 +197,13 @@ BEGIN
 	BEGIN
 		INSERT INTO @tbSite(siteid)
 		SELECT siteid 
-		FROM [Site] WITH (NOLOCK)
+		FROM dbo.[Site] WITH (NOLOCK)
 		WHERE isLicensee = 0 
 			AND SiteLabel = 'MBC'
-			AND isActive=1
+			AND isActive=1;
 	END
-	RETURN
-END
+	RETURN;
+
+END;
 
 GO
