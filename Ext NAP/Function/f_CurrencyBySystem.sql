@@ -1,11 +1,9 @@
 ﻿/*<info serverAlias="DBCUST-CustDB,DBAGE-bodb02" selecters="wsv_nap,wsv_xnap" viewers="" isFunction="1" isNested="1"></info>*/
-
 ALTER FUNCTION [dbo].[f_CurrencyBySystem]
 (
-	@System varchar(50) = 'ACCOUNTING'
+	@System VARCHAR(50) = 'ACCOUNTING'
 )
-	
-	RETURNS @tbCurrency table (exchangeID  int PRIMARY KEY)
+	RETURNS @tbCurrency TABLE (exchangeID  INT PRIMARY KEY)
 AS
 
 /*
@@ -58,6 +56,7 @@ Revisions:
 	- 20241119@Elodie: Add $US for ACCPBTH - [Redmine: #213893]
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 	- 20250908@Helios: Add currencies - by System ExtraPTRM - [Redmine: #238079]
+	- 20251008@Dave: Add ACCGTHB [Redmine: #241127]
 	
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
@@ -68,46 +67,46 @@ BEGIN
 	BEGIN
 		INSERT INTO @tbCurrency(exchangeID)
 		SELECT ExchangeID 
-		FROM Exchange WITH (NOLOCK)
+		FROM dbo.Exchange WITH (NOLOCK);
 	END	
-	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCThaiSK','ACCTHAI9TA'))
+	ELSE IF(@System IN ('ACCTHAI', 'BC', 'ACCTHAI2', 'ACCTHAI56', 'ACCTHAI99','ACCTHAITT','ACCThaiSK','ACCTHAI9TA','ACCGTHB'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
-		SELECT 43 --THB,...
+		INSERT INTO @tbCurrency(exchangeID)
+		SELECT 43; --THB,...
 	END
 	ELSE IF (@System IN('ACCINDO', 'ACCIN','INDOBS','INDO2','ACCINDO2'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
+		INSERT INTO @tbCurrency(exchangeID)
 		SELECT 22 --IND
 		UNION SELECT 33 --IDD
 		UNION SELECT 34 --IDR
 		UNION SELECT 47 --DDD
-		UNION SELECT 15 --IN
+		UNION SELECT 15; --IN
 	END	
 	ELSE IF (@System IN ('ACCYEN','ACCYEN789','ACCYEN889','ACCYEN668','ACCYEN888'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
-		SELECT 16 --YEN					
+		INSERT INTO @tbCurrency(exchangeID)
+		SELECT 16; --YEN					
 	END	
 	ELSE IF (@System = 'ACCNTD')
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
-		SELECT 17 --NTD		
+		INSERT INTO @tbCurrency(exchangeID)
+		SELECT 17; --NTD		
 	END
 	ELSE IF (@system = 'ACCDDD')
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 47 --DDD
+		SELECT 47; --DDD
 	END
 	ELSE IF (@system = 'ACCIRR')
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 40 --IRR
+		SELECT 40; --IRR
 	END
 	ELSE IF (@system IN ('ACCUUS','ACCUUSMyanmar','AccThaiSKUUS'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 20 --UUS
+		SELECT 20; --UUS
 	END
 	ELSE IF (@system = 'ACCUSD')
 	BEGIN
@@ -116,100 +115,100 @@ BEGIN
 		UNION ALL SELECT 17	--- 	NTD
 		UNION ALL SELECT 35	--- 	$US
 		UNION ALL SELECT 40	--- 	IRR
-		UNION ALL SELECT 64 ---		UT
+		UNION ALL SELECT 64; ---		UT
 	END
 	ELSE IF (@system IN ('ACCUT','ACCUT2'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 64	--- 	UT	
 		UNION ALL 
-		SELECT 17	--- 	NTD			
+		SELECT 17;	--- 	NTD			
 	END
-	ELSE IF (@System in ( 'MKK99','ACCMKK'))
+	ELSE IF (@System IN ( 'MKK99','ACCMKK'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 70 --MKK
+		SELECT 70; --MKK
 	END
 	ELSE IF (@System IN('INDO56','INDO56B'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
+		INSERT INTO @tbCurrency(exchangeID)
 		SELECT 22 --IND
 		UNION SELECT 33 --IDD
 		UNION SELECT 34 --IDR
-		UNION SELECT 15 --IN
+		UNION SELECT 15; --IN
 	END	
 	ELSE IF (@System IN('IBCIndo','INDOWIN'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
+		INSERT INTO @tbCurrency(exchangeID)
 		SELECT 22 --IND
 		UNION SELECT 33 --IDD
 		UNION SELECT 34 --IDR
 		UNION SELECT 15 --IN
-		UNION SELECT 95 --USD
+		UNION SELECT 95; --USD
 	END	
 	ELSE IF (@system = 'ACCUSDOTH')
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 16	--- 	Yen
 		UNION ALL SELECT 17	--- 	NTD
-		UNION ALL SELECT 40	--- 	IRR
+		UNION ALL SELECT 40;	--- 	IRR
 	END
-	ELSE IF (@System in ( 'ACCMMK'))
+	ELSE IF (@System IN ( 'ACCMMK'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 69 --MMK
+		SELECT 69; --MMK
 	END
-	ELSE IF (@System in ( 'ACCYNG'))
+	ELSE IF (@System IN ( 'ACCYNG'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 72 --YNG
+		SELECT 72; --YNG
 	END
-	ELSE IF (@System in ( 'ACCTESTK68'))
-	BEGIN
-		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 74 --TH
-		UNION ALL SELECT 20	--UUS
-	END
-	ELSE IF (@System in ( 'TH999','TH001','TH002','TH003'))
+	ELSE IF (@System IN ( 'ACCTESTK68'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
 		SELECT 74 --TH
+		UNION ALL SELECT 20;	--UUS
 	END
-	ELSE IF (@System in ( 'SQ88','THEU','899EU','789EU'))
+	ELSE IF (@System IN ( 'TH999','TH001','TH002','TH003'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 78 --EUR
+		SELECT 74; --TH
 	END
-	ELSE IF (@System in ( 'SQUS'))
+	ELSE IF (@System IN ( 'SQ88','THEU','899EU','789EU'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 3 --US$
+		SELECT 78; --EUR
 	END
-	ELSE IF (@System in ( 'IBCMMR'))
+	ELSE IF (@System IN ( 'SQUS'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 69 --MMK
+		SELECT 3; --US$
 	END
-	ELSE IF (@System in ( 'ACCAthena000'))
+	ELSE IF (@System IN ( 'IBCMMR'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)
-		SELECT 20 --UUS
+		SELECT 69; --MMK
+	END
+	ELSE IF (@System IN ( 'ACCAthena000'))
+	BEGIN
+		INSERT INTO @tbCurrency(ExchangeID)
+		SELECT 20; --UUS
 	END
 	ELSE IF (@System IN ('ACCSABA789'))
 	BEGIN
 		INSERT INTO @tbCurrency(ExchangeID)		
-		SELECT 51 --INH		
+		SELECT 51; --INH		
 	END		
 	ELSE IF(@System IN ('ACCPBTH'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
+		INSERT INTO @tbCurrency(exchangeID)
 		SELECT 43 --THB,...
-		UNION ALL SELECT 35	--- 	$US
+		UNION ALL SELECT 35;	--- 	$US
 	END
 	ELSE IF(@System IN ('ExtraPTRM'))
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
-		SELECT 2 --RM,...
+		INSERT INTO @tbCurrency(exchangeID)
+		SELECT 2; --RM,...
 	END
 	
 	--Malaysia HL
@@ -218,10 +217,11 @@ BEGIN
 						)
 			)
 	BEGIN
-		Insert Into @tbCurrency(exchangeID)
+		INSERT INTO @tbCurrency(exchangeID)
 		SELECT ExchangeID 
-		FROM Exchange WITH (NOLOCK)
+		FROM dbo.Exchange WITH (NOLOCK);
 	END
-	RETURN
-END
+	RETURN;
+
+END;
 
