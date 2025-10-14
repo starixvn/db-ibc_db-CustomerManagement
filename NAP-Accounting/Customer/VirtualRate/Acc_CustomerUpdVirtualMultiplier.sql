@@ -57,6 +57,7 @@ AS
 		- 20240701@Winfred: Scale Out DBCUST - Apply In-house Replication for Virtual Rate Setting  [redmine: #207029]
 		- 20241101@Winfred: HF  - NAP- Cannot updating VR value for licensee super line with big downline member (over 500000 members downline)  [redmine: #213009]
 		- 20241101@Winfred: HF - NAP- Enhance Get all locked VR/enable VR+ status and VR value bitmap of downlines [redmine: #213009]
+		- 20251006@Dave: HF - NAP - Error when update Virtual Rate Lock Status [RedmineID: #240934]
 
 	Param's Explanation:  
 	- @virtualmultiplier = '<ROOT>
@@ -118,7 +119,7 @@ BEGIN
 	declare @roleid tinyint,  
 			@OldEnableVirtualrate BIT  
 	  
-	select @OldEnableVirtualrate = virtualmultiplier, @roleid = roleid from custinfo with (nolock) where custid = @custid  
+	select @OldEnableVirtualrate = virtualmultiplier, @roleid = roleid from dbo.custinfo with (nolock) where custid = @custid
 	  
 	--Check Allowed downlines during peak hour at weekend      
 	EXEC dbo.Acc_CustomerSelCheckAllowedDownlines    @custid=@custid,  
@@ -175,8 +176,8 @@ BEGIN
 			pvs.bettype,
 			pvs.islive,
 			dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) AS virtualMultiplier
-	FROM CustVirtualSetting cvs WITH(NOLOCK)
-		INNER JOIN ProfileVirtualSetting pvs WITH(NOLOCK) ON  cvs.seqNo = pvs.seqNo
+	FROM dbo.CustVirtualSetting cvs WITH(NOLOCK)
+		INNER JOIN dbo.ProfileVirtualSetting pvs WITH(NOLOCK) ON  cvs.seqNo = pvs.seqNo
 	WHERE cvs.custid = @CustID
 		AND pvs.isActive = 1
 		AND pvs.sporttype NOT IN (43)
@@ -185,57 +186,57 @@ BEGIN
 	--Get all locked VR/enable VR+ status and VR value bitmap of downlines
 	CREATE TABLE #tempCustID(custid INT, roleid TINYINT, type TINYINT PRIMARY KEY(custid, type))
 	CREATE TABLE #downlinesVRValue(custid INT, seqNo TINYINT, bitmapVirtual BINARY(64))
-	Declare @BatchStatus TINYINT = 3
-	Declare @BatchConfDownLine TINYINT = 3
+	Declare @BatchStatus TINYINT = 10
+	Declare @BatchConfDownLine TINYINT = 10
 
 	IF @roleid = 4
 	BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM dbo.VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.srecommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM dbo.CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
 		WHERE c.srecommend = @custid AND c.roleid IN (1,2,3)
 	END
 	ELSE IF @roleid = 3
 	BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM dbo.VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.mrecommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM dbo.CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs 
 		WHERE c.mrecommend = @custid AND c.roleid IN (1,2)
 	END
 	ELSE IF @roleid = 2
 	BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM dbo.VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.recommend = @custid 
 
 		INSERT INTO #downlinesVRValue(custid, seqNo, bitmapVirtual)
 		SELECT c.custid, seqNo, bitmapVirtual
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs  
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchConfDownLine) seqNo, bitmapVirtual FROM dbo.CustVirtualSetting WITH(NOLOCK) WHERE c.custID = CustID) cvs  
 		WHERE c.recommend = @custid AND c.roleid = 1
 	END
 	ELSE
 	BEGIN
 		INSERT INTO #tempCustID(custid, roleid, type)
 		SELECT c.custid, c.roleid, s.Type
-		FROM custinfo c WITH (NOLOCK)
-			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
+		FROM dbo.custinfo c WITH (NOLOCK)
+			CROSS APPLY (SELECT TOP (@BatchStatus) Type FROM dbo.VRCustLockStatus WITH(NOLOCK) WHERE c.custID = CustID) s 
 		WHERE c.custid = @custid 		
 	END
 
@@ -596,8 +597,8 @@ BEGIN
 	--Unlock selected account's VR/ Enable selected account's VR+ if any
 	DELETE c
 	OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
-	INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
-	FROM VRCustLockStatus c WITH (ROWLOCK)
+	INTO dbo.VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+	FROM dbo.VRCustLockStatus c WITH (ROWLOCK)
 	WHERE custid = @custid 
 		AND 1 = CASE WHEN (@IsUpdate_VRLockedStatus_Soccer = 1 AND @VRLockedStatus_Soccer = 0 AND Type = 1) 
 						OR (@IsUpdate_VRLockedStatus_OS = 1 AND @VRLockedStatus_OS = 0 AND Type = 2)
@@ -608,7 +609,7 @@ BEGIN
 	
 	IF @IsUpdate_VRAccumulate_Balance = 1 AND @VRAccumulate_Balance = 1 
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		INSERT INTO dbo.VRCustLockStatus(CustID, type, RepUpdateTime)
 		SELECT @custid, 4 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 
@@ -652,17 +653,17 @@ BEGIN
 	--Lock selected account's VR/ Disable selected account's VR+ if any 
 	IF @IsUpdate_VRLockedStatus_Soccer = 1 AND @VRLockedStatus_Soccer = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		INSERT INTO dbo.VRCustLockStatus(CustID, type, RepUpdateTime)
 		SELECT @custid, 1 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	IF @IsUpdate_VRLockedStatus_OS = 1 AND @VRLockedStatus_OS = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		INSERT INTO dbo.VRCustLockStatus(CustID, type, RepUpdateTime)
 		SELECT @custid, 2 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	IF @IsUpdate_VRLockedStatus_Basketball = 1 AND @VRLockedStatus_BasketBall = 1
 	BEGIN
-		INSERT INTO VRCustLockStatus(CustID, type, RepUpdateTime)
+		INSERT INTO dbo.VRCustLockStatus(CustID, type, RepUpdateTime)
 		SELECT @custid, 3 AS Type, [dbo].[f_GetDateTime2]() AS RepUpdateTime
 	END
 	
@@ -670,8 +671,8 @@ BEGIN
 	BEGIN
 		DELETE c
 		OUTPUT deleted.custid, deleted.Type, [dbo].[f_GetDateTime2]() 
-		INTO VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
-		FROM VRCustLockStatus c WITH (ROWLOCK)
+		INTO dbo.VRCustLockStatus_Del_Inhouse(custid,Type,RepUpdateTime)
+		FROM dbo.VRCustLockStatus c WITH (ROWLOCK)
 		WHERE custid = @custid AND Type = 4
 	END
 
@@ -710,7 +711,7 @@ BEGIN
 	IF EXISTS(
 			SELECT TOP 1 1
 			FROM #DownlinesVRValue t
-				CROSS APPLY (SELECT TOP 1 bitmapVirtual FROM CustVirtualSetting WITH (NOLOCK) WHERE t.custid = custid AND t.seqNo = seqNo)cvs
+				CROSS APPLY (SELECT TOP 1 bitmapVirtual FROM dbo.CustVirtualSetting WITH (NOLOCK) WHERE t.custid = custid AND t.seqNo = seqNo)cvs
 			WHERE  t.bitmapVirtual <> cvs.bitmapVirtual
 	)
 	SET @IsUpdateVRDownlines = 1
@@ -727,7 +728,7 @@ BEGIN
 				,IsLive
 				,VirtualMultiplier
 			FROM @tblVirtualrate
-			ORDER BY sporttype,isLive DESC,bettype
+			ORDER BY sporttype ASC,isLive DESC,bettype ASC
 			FOR XML  RAW('s')
 		)
 
@@ -753,7 +754,7 @@ BEGIN
 				,IsLive
 				,VirtualMultiplier
 			FROM @tblVirtualRate_old
-			ORDER BY sporttype,isLive DESC,bettype
+			ORDER BY sporttype ASC, isLive DESC,bettype ASC
 			FOR XML  RAW('s')
 		)
 
