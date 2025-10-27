@@ -15,6 +15,7 @@ AS
 		- 20220105@Eden: Enhance to write more logs for Virtual Rate jobs [Redmine:#166626]
 		- 20250121@Winfred: [NAP CM] Scale Out DBCUST - Apply Inhouse replication for Customer Class[Redmine: #214119]
 		- 20250725@Thomas.Nguyen: Adjust Log - only except Esports [RedmineID: #233535]
+		- 20251024@Winfred: change time get data for VR Job [RedmineID: #241078]
 
 	Param's Explanation:  
 	Examples:
@@ -48,7 +49,7 @@ BEGIN
 	WHERE c.roleid = 1
 		AND v.CustID IS NULL
 		AND c.creatdate > = p.ReleasedDate
-		AND c.creatdate BETWEEN DATEADD(hh,-25,GETDATE()) AND GETDATE()
+		AND c.creatdate BETWEEN DATEADD(hh,-30,GETDATE()) AND GETDATE()
 		AND pvs.isActive = 1
 		AND pvs.sporttype = 1 AND pvs.bettype = 1 AND pvs.islive = 1
 		--AND dbo.f_GetVirtualSetting(cvs.bitmapVirtual, pvs.profileID) < p.VRValue
