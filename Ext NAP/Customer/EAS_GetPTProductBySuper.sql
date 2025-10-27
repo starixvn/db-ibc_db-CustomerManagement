@@ -142,7 +142,7 @@ BEGIN
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
 	;WITH tmp AS(
 		SELECT  ProductID,SportType,BetType,RealProductID
-			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype)
+			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype ASC)
 		FROM #Tmp_ProductProfile 
 		WHERE ProductID IN (41,44)
 	)
@@ -206,7 +206,7 @@ BEGIN
 		CROSS APPLY (SELECT p.ProductID,p.ProductName 
 					 FROM f_CustSetting_Product (@SettingStatus) p WHERE p.ProductID=37) p
 	WHERE dbo.f_Age_OfferedProductBySite(s.Site)=1
-	ORDER BY CustID, ProductID
+	ORDER BY CustID ASC, ProductID ASC
 	
 	DROP TABLE #tblCustomer		
 	DROP TABLE #Supers

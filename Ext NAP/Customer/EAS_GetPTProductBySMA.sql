@@ -135,7 +135,7 @@ BEGIN
 	-- Only get representation bettype for each sport of RNG Lottery, Live Casino
 	;WITH tmp AS(
 		SELECT  ProductID,SportType,BetType,RealProductID
-			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype)
+			,RowNum = ROW_NUMBER() OVER ( PARTITION BY ProductID,Sporttype ORDER BY Bettype ASC)
 		FROM #Tmp_ProductProfile 
 		WHERE ProductID IN (41,44)
 	)
@@ -203,7 +203,7 @@ BEGIN
 	SELECT s.CustID, 0 AS ValuePT, 111 AS ProductID
 	FROM #SMATemp s
 	WHERE ',' + @CashServiceSites + ',' LIKE '%,' + Site + ',%' OR @CashServiceSites = '*'
-	ORDER BY CustID, ProductID
+	ORDER BY CustID ASC, ProductID ASC
 	
 	DROP TABLE #tblCustomer			
 	DROP TABLE #Tmp_ProductProfile
