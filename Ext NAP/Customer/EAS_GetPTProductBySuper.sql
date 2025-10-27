@@ -39,6 +39,7 @@ AS
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
+		- 20251027@Eden: Adjust Live Casino PT & Commission [Redmine: #242260]
 
 	Param's Explanation:
 	Example: EXEC EAS_GetPTProductBySuper @Supers = '45823486,45823577,45823478,44614982,33546025'
@@ -62,39 +63,8 @@ BEGIN
 
 	CREATE TABLE #Supers (CustID INT, Site VARCHAR(10)) 
 
-	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT)
-
-	--Live & RNG Casino
-	INSERT INTO #SportBettypeDummy (RealProductId, SportType, Bettype, ProductId)  
-	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID  
-	FROM f_CustSetting_Product (@SettingStatus) p   
-	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
-					, s.BetTypeRefPT AS BetType  
-					, s.ProductID AS DummyProductID  
-					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
-					WHERE s.ProductID IN (53,41)  
-						AND s.RealProductId=p.ProductID  
-						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'  
-						AND s.SportType <> 242 --IBCBet Live Casino  
-				) s 
-	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0  
-	AND Environment <= @SettingStatus  
-
-	UNION ALL
-
-	-- RNG Games
-	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID  
-	FROM f_CustSetting_Product (@SettingStatus) p   
-	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
-					, s.BetTypeRefPT AS BetType  
-					, s.ProductID AS DummyProductID  
-					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
-					WHERE s.ProductID = 44
-						AND s.RealProductId=p.ProductID  
-						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL'  
-				) s 
-	WHERE Enabled=1 AND GroupType=0  
-	AND Environment <= @SettingStatus  
+	CREATE TABLE #SportBettypeDummy(RealProductId TINYINT, SportType SMALLINT,Bettype SMALLINT, ProductId TINYINT, Site VARCHAR(10))
+	CREATE TABLE #Site (Site VARCHAR(10)) 
 
 	INSERT INTO #Supers(CustID)
 	SELECT DISTINCT value
@@ -107,6 +77,56 @@ BEGIN
 	SET s.Site=c.site
 	FROM #Supers s 
 	INNER JOIN Customer c WITH (NOLOCK) ON c.custid=s.CustID
+
+	INSERT INTO #Site(Site)	
+	SELECT DISTINCT Site
+	FROM #Supers
+
+	--Live Casino, split by Site
+	INSERT INTO #SportBettypeDummy (RealProductId, SportType, Bettype, ProductId,Site)
+	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID, s.Site
+	FROM f_CustSetting_Product (@SettingStatus) p   
+	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
+					, s.BetTypeRefPT AS BetType  
+					, s.ProductID AS DummyProductID 
+					, s.Site 
+					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
+					WHERE s.ProductID = 41 
+						AND s.RealProductId=p.ProductID  
+						AND s.isDeleted=0 AND s.isLicensee=0 
+						AND s.Site IN (SELECT Site FROM #Site)
+						AND s.SportType <> 242 --IBCBet Live Casino  
+				) s 
+	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0  
+	AND Environment <= @SettingStatus  
+	--RNG Casino
+	UNION ALL 
+	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID, NULL  
+	FROM f_CustSetting_Product (@SettingStatus) p   
+	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
+					, s.BetTypeRefPT AS BetType  
+					, s.ProductID AS DummyProductID  
+					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
+					WHERE s.ProductID = 53  
+						AND s.RealProductId=p.ProductID  
+						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL' 
+				) s 
+	WHERE CasinoType IN (1,2) AND Enabled=1 AND GroupType=0  
+	AND Environment <= @SettingStatus  
+	UNION ALL
+	--RNG Games
+	SELECT DISTINCT p.ProductID, s.SportType, s.BetType, s.DummyProductID, NULL  
+	FROM f_CustSetting_Product (@SettingStatus) p   
+	CROSS APPLY (	 SELECT s.RealProductId, s.SportTypeRefPT as SportType
+					, s.BetTypeRefPT AS BetType  
+					, s.ProductID AS DummyProductID  
+					FROM f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) s  
+					WHERE s.ProductID = 44
+						AND s.RealProductId=p.ProductID  
+						AND s.isDeleted=0 AND s.isLicensee=0 AND s.Site = 'ALL' 
+				) s 
+	WHERE Enabled=1 AND GroupType=0  
+	AND Environment <= @SettingStatus  
 
 	INSERT INTO #Tmp_ProductProfile( ProductID,SportType,BetType,RealProductID)
 	SELECT ProductID,SportType,BetType,RealProductID
@@ -153,7 +173,7 @@ BEGIN
 
 	DELETE FROM #tblCustomer WHERE IsHidden = 1
 
-	--Live & RNG Casino , RNG Games
+	--RNG Casino , RNG Games
 	INSERT #tblCustomer(CustID,SportType,BetType,ProductID,SuperPT)
 	SELECT ss.CustID, c.SportType, c.BetType, c.RealProductId, b.SuperPT
 	FROM #Supers ss 
@@ -162,7 +182,18 @@ BEGIN
 		ON  c.ProductId = b.ProductID 
 		AND c.SportType = b.SportType 
 		AND c.Bettype	= b.BetType 
-	WHERE b.ProductID IN (41,53,44)
+	WHERE b.ProductID IN (53,44)
+	--Live Casino, split by Site
+	UNION ALL
+	SELECT ss.CustID, c.SportType, c.BetType, c.RealProductId, b.SuperPT
+	FROM #Supers ss 
+	INNER JOIN #tblCustomer b ON  ss.CustID = b.CustID
+	INNER JOIN #SportBettypeDummy c WITH(NOLOCK)	
+		ON  c.ProductId = b.ProductID 
+		AND c.SportType = b.SportType 
+		AND c.Bettype	= b.BetType 
+		AND ss.Site = c.Site
+	WHERE b.ProductID IN (41)
 	
 	SELECT a.CustID,a.SuperPT,a.ProductID,p.ProductName
 	FROM #tblCustomer a 
