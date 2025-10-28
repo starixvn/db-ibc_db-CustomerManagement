@@ -25,6 +25,8 @@ AS
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969] 
 		- 20250512@Elodie: Enhance SP [RedmineID: #226968]
 		- 20251007@Dave: Performance - SQL issue [RedmineID: #240936]
+		- 20251028@Dave: NAP - Left panel : Cannot view downline licensees if they do not have data in CustLoginInfo [RedmineID: #242857]
+
 	Explanation: 
 		
 		@isDirectDownline : 
@@ -149,20 +151,20 @@ BEGIN
 	IF @roleid = 2
 		SELECT UserName,cl.ClosedReason
 		FROM #tmpList c
-			INNER JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
+			LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 	ELSE IF @roleid IN (0,3,4)
 	BEGIN
 		IF @isDirectDownline = 0
 		BEGIN
 			SELECT UserName,cl.ClosedReason
 			FROM #tmpList c
-			INNER JOIN dbo.CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
+			LEFT JOIN dbo.CustLoginInfo cl WITH(NOLOCK) ON c.custid=cl.CustID
 		END
 		IF @isDirectDownline = 1
 		BEGIN
 			SELECT UserName,clogin.ClosedReason
 			FROM #tmpList c
-			CROSS APPLY (
+			OUTER APPLY (
 				SELECT TOP 1 ClosedReason
 				FROM dbo.CustLoginInfo cl WITH (NOLOCK)
 				WHERE c.CustID = cl.CustID
