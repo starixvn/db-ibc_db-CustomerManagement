@@ -14,6 +14,7 @@ AS
 	
 	Revisions:
 		- 20250707@Elodie: Initial SP [Redmine: #232347] 
+		- 20251028@Elodie: Remove constraint name of primary key [Redmine: #232347] 
 
 	Param:
 		exec Task_CashService_BonusTransaction_Ins 			
@@ -76,7 +77,7 @@ BEGIN
 		ProductCategoryID TINYINT,
 		Turnover MONEY,
 		PromotionID INT,
-		CONSTRAINT PK_Turnover PRIMARY KEY (CustId, ProductCategoryID, PromotionID)
+		PRIMARY KEY (CustId, ProductCategoryID, PromotionID)
 	)
 
 	--Clean old data
