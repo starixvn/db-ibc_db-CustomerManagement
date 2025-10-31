@@ -69,8 +69,7 @@ BEGIN
 	INSERT INTO #Supers(CustID)
 	SELECT DISTINCT value
 	FROM STRING_SPLIT(@Supers, ',') AS ss
-	WHERE value <> ''
-	OPTION (maxrecursion 0)    
+	WHERE value <> ''   
 
 	--update super's site
 	UPDATE s

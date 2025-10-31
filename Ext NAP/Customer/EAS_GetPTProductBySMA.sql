@@ -64,7 +64,6 @@ BEGIN
 	SELECT DISTINCT value
 	FROM STRING_SPLIT(@CustIds, ',') AS ss
 	WHERE value <> ''
-	OPTION (maxrecursion 0)  
 	
 	UPDATE s
 	SET s.roleid = c.roleid, s.Site=c.site
