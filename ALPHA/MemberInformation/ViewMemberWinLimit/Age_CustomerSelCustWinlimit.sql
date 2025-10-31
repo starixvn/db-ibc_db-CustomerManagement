@@ -36,6 +36,8 @@ AS
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250724@Helios: Agency Cash Service -Customer Setting Sprint 7 [redmine: #233474]
+		- 20251031@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
+		
 	Param's Explanation:
 		- @CustID: SAgentID
 */
@@ -43,7 +45,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT
+	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT, @Site NVARCHAR(50);
 	SELECT @PageIndex = @PageIndex - 1
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
@@ -56,6 +58,10 @@ BEGIN
 		ServiceType TINYINT
 	)
 
+	SELECT @RoleId = RoleId, @srecommend = srecommend, @Site = site
+	FROM dbo.Customer c WITH(NOLOCK)
+	WHERE CustId = @CustId
+
 	--> Get Representative sporttype, bettype of this sport( use for settingtype 22 storeing way)
 	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
 			@BetType = ISNULL(BettypeRefWinlossLimit,@BetType)
@@ -63,14 +69,11 @@ BEGIN
 		INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) st
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype
-			AND st.isLicensee = 0 AND st.Site = 'ALL'
+			AND st.isLicensee = 0 AND st.Site IN (@Site, 'ALL')
 	WHERE st.SportType = @SportType
 		AND st.bettype = @BetType
 		AND st.isDeleted = 0
 
-	SELECT @RoleId = RoleId, @srecommend = srecommend
-	FROM dbo.CustInfo c WITH(NOLOCK)
-	WHERE CustId = @CustId
 
 	SELECT @VendorID = VendorID FROM DBACC.bodb02.dbo.Products WITH (NOLOCK) WHERE ProductID = @ProductID
 
@@ -239,7 +242,7 @@ BEGIN
 		,   tmp.ClosedReason
 		,	tmp.ServiceType
 	FROM	(
-		SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, mb.closed, ISNULL(mb.reject, 0), ci.username) AS RowNumber
+		SELECT	ROW_NUMBER() OVER (ORDER BY ci.Enabled DESC, mb.closed ASC, ISNULL(mb.reject, 0) ASC, ci.username ASC) AS RowNumber
 			,	ci.username
 			,	CAST(mb.closed AS BIT) closed
 			,	ci.enabled
@@ -269,7 +272,7 @@ BEGIN
 	) tmp
 		LEFT JOIN dbo.CustUserMapping3rd cm ON cm.Custid = tmp.CustId AND cm.VendorID = @VendorID
 	WHERE	tmp.RowNumber BETWEEN @RowStart AND @RowEnd
-	ORDER BY	RowNumber
+	ORDER BY	RowNumber ASC
 	OPTION (RECOMPILE)
 
 	DROP TABLE #MemberBalance
