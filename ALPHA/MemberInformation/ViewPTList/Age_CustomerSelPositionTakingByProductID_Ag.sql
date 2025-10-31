@@ -31,12 +31,13 @@ AS
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250701@Helios: Agency Cash Service - Sprint 6 [RedmineID: #231815]
+		- 20251031@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 	Param's Explanation:
 	- @Recommend: Agent ID
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE @SportType INT, @BetType INT, @IsDirectMember INT = 0
+	DECLARE @SportType INT, @BetType INT, @IsDirectMember INT = 0, @site NVARCHAR(50),@siteid SMALLINT=0, @currency SMALLINT=0
 	CREATE TABLE #SportBettype
 	(	SportType INT, 
 		BetType INT, 
@@ -44,16 +45,20 @@ BEGIN
 		RealProductID TINYINT
 	)		
 
+	SELECT @site = si.site, @siteid = si.siteid, @currency = cs.currency
+	FROM dbo.Customer AS cs WITH (NOLOCK)
+		INNER JOIN dbo.Site AS si WITH (NOLOCK) ON cs.site = si.site
+	WHERE cs.custid = @UplineID;
 
 	INSERT INTO #SportBettype (SportType, BetType, IsLive, RealProductID)
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(1,@SettingStatus,@siteid,@currency)
 	UNION ALL 
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(18,@SettingStatus,@siteid,@currency)
 	UNION ALL 
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,28,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(28,@SettingStatus,@siteid,@currency)
 
 
 	-- Chek Isdirect Member
@@ -67,7 +72,7 @@ BEGIN
 	FROM #SportBettype sb
 	INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) m 
 		ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID 
-		AND m.isLicensee = 0 AND m.Site = 'All'
+		AND m.isLicensee = 0 AND m.Site IN (@site,'All')
 	WHERE m.ProductID IS NOT NULL
 		AND m.isDeleted = 0
 
@@ -84,14 +89,15 @@ BEGIN
 		AND ci.srecommend = @UplineID
 		AND ci.recommend = -4
 
-		SELECT	*
+		SELECT	info4.RowNumber, info4.closed, info4.enabled, info4.suspended, info4.username, info4.firstname, info4.lastname, info4.custid, info4.ClosedReason, info4.Locked, info4.roleid,
+				pt4.SportType, pt4.BetType, pt4.Islive, pt4.positiontaking
 		FROM (
 			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
 												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
 												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
 																	     ELSE 0 
-												  END, 
-								 ci.username) AS RowNumber,
+												  END ASC, 
+								 ci.username ASC) AS RowNumber,
 				    ps.closed, 
 			    ci.enabled, 
 				    ISNULL(ps.reject,0) AS suspended,
@@ -115,7 +121,7 @@ BEGIN
 			AND ci.srecommend = @UplineID 
 			AND ci.recommend = -4
 			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
-		) info
+		) info4
 		CROSS APPLY (
 				SELECT	sbt.SportType
 					,	sbt.BetType
@@ -129,10 +135,10 @@ BEGIN
 				INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
 						ON 	csm3.CustID = cpts3.CustID
 						AND	csm3.IsGrouped = 0
-				WHERE	csm3.CustID = info.custid
-		) pt
+				WHERE	csm3.CustID = info4.custid
+		) pt4
 		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-		ORDER BY RowNumber, islive, SportType, BetType
+		ORDER BY RowNumber ASC, islive ASC, SportType ASC, BetType ASC
 	END
 	-- Master Direct Member
 	ELSE IF @IsDirectMember = -3
@@ -145,14 +151,15 @@ BEGIN
 		AND ci.mrecommend = @UplineID
 		AND ci.recommend = -3
 
-		SELECT	*
+		SELECT	info3.RowNumber, info3.closed, info3.enabled, info3.suspended, info3.username, info3.firstname, info3.lastname, info3.custid, info3.ClosedReason, info3.Locked, r.roleid,
+				pt3.SportType, pt3.BetType, pt3.Islive, pt3.positiontaking
 		FROM (
 			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
 												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
 												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
 																	     ELSE 0 
-												  END, 
-								 ci.username) AS RowNumber,
+												  END ASC, 
+								 ci.username ASC) AS RowNumber,
 				    ps.closed, 
 			    ci.enabled, 
 				    ISNULL(ps.reject,0) AS suspended,
@@ -175,7 +182,7 @@ BEGIN
 			AND ci.mrecommend = @UplineID 
 			AND ci.recommend = -3
 			GROUP BY    ci.enabled, ps.closed, ps.reject, ci.username, c.firstname, c.lastname, ci.custid,cl.ClosedReason,ps.Locked
-		) info
+		) info3
 		CROSS APPLY (
 			SELECT 3 AS roleid
 			UNION ALL 
@@ -198,10 +205,10 @@ BEGIN
 				INNER JOIN	CustSettingMode3rd csm3 WITH(NOLOCK)
 						ON 	csm3.CustID = cpts3.CustID
 						AND	csm3.IsGrouped = 0
-				WHERE	csm3.CustID = info.custid
-		) pt
+				WHERE	csm3.CustID = info3.custid
+		) pt3
 		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-		ORDER BY RowNumber, islive, SportType, BetType, roleid
+		ORDER BY RowNumber ASC, islive ASC, SportType ASC, BetType ASC, roleid ASC
 	END
 	-- Normal Member
 	ELSE
@@ -213,14 +220,15 @@ BEGIN
 		WHERE   ci.roleid = 1
 		AND ci.recommend = @UplineID
 
-		SELECT	*
+		SELECT	info.RowNumber, info.closed, info.enabled, info.suspended, info.username, info.firstname, info.lastname, info.custid, info.ClosedReason, info.Locked, info.ServiceType, r.roleid,
+				pt.SportType, pt.BetType, pt.Islive, pt.positiontaking
 		FROM (
 			SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
 												    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
 												    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
 																	     ELSE 0 
-												  END, 
-								 ci.username) AS RowNumber,
+												  END ASC, 
+								 ci.username ASC) AS RowNumber,
 				    ps.closed, 
 			    ci.enabled, 
 				    ISNULL(ps.reject,0) AS suspended,
@@ -292,7 +300,7 @@ BEGIN
 			WHERE	csm3.CustID = info.custid
 		) pt
 		WHERE	RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-		ORDER BY RowNumber, islive, SportType, BetType, roleid
+		ORDER BY RowNumber ASC, islive ASC, SportType ASC, BetType ASC, roleid ASC
 	END
 END	
 GO

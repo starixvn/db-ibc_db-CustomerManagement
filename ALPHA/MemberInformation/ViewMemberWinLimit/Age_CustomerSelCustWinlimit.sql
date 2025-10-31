@@ -45,7 +45,7 @@ BEGIN
 
 	SET NOCOUNT ON
 
-	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT, @Site NVARCHAR(50);
+	DECLARE @RoleId TINYINT, @RowCount INT, @RowStart INT, @RowEnd INT, @srecommend INT, @VendorID SMALLINT, @Site NVARCHAR(50),@siteid SMALLINT=0, @currency smallint;
 	SELECT @PageIndex = @PageIndex - 1
 		, @RowStart = @PageSize * @PageIndex + 1
 		, @RowEnd = @RowStart + @PageSize - 1
@@ -58,14 +58,15 @@ BEGIN
 		ServiceType TINYINT
 	)
 
-	SELECT @RoleId = RoleId, @srecommend = srecommend, @Site = site
+	SELECT @RoleId = RoleId, @srecommend = srecommend, @Site = s.site, @siteid = s.siteid
 	FROM dbo.Customer c WITH(NOLOCK)
-	WHERE CustId = @CustId
+		INNER JOIN dbo.Site s WITH (NOLOCK) ON c.site = s.site
+	WHERE c.CustId = @CustId
 
 	--> Get Representative sporttype, bettype of this sport( use for settingtype 22 storeing way)
 	SELECT @SportType = ISNULL(SporttypeRefWinlossLimit,@SportType), 
 			@BetType = ISNULL(BettypeRefWinlossLimit,@BetType)
-	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
+	FROM	dbo.f_CustSetting_ProductProfileSel(22, @SettingStatus,@siteid,@currency) AS s
 		INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) st
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype

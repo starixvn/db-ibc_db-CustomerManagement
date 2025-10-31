@@ -28,6 +28,7 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20231019@Helios: Customer Setting - Migrate Sportsbook to DCS [RedmineID: #193083] 
 		- 20240316@Eden: Unify Live RNG Casino [Redmine: #198960]
+		- 20251103@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 
 	Param's Explanation:
 	- @MRecommend: Master Agent ID
@@ -35,7 +36,7 @@ AS
 BEGIN
 
 	SET NOCOUNT ON
-	DECLARE @SportType INT, @BetType INT
+	DECLARE @SportType INT, @BetType INT, @site NVARCHAR(50), @siteid SMALLINT = 0, @currency SMALLINT = 0;
 	CREATE TABLE #SportBettype
 	(	SportType INT, 
 		BetType INT, 
@@ -43,15 +44,20 @@ BEGIN
 		RealProductID TINYINT
 	)		
 
+	SELECT @site = si.site, @siteid = si.siteid, @currency = cs.currency
+	FROM dbo.Customer AS cs WITH (NOLOCK)
+		INNER JOIN dbo.Site AS si WITH (NOLOCK) ON cs.site = si.site
+	WHERE cs.custid = @MRecommend;
+
 	INSERT INTO #SportBettype (SportType, BetType, IsLive, RealProductID)
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,1,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(1,@SettingStatus,@siteid,@currency)
 	UNION ALL 
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,18,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(18,@SettingStatus,@siteid,@currency)
 	UNION ALL 
 	SELECT SportType, BetType, IsLive , RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,28,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(28,@SettingStatus,@siteid,@currency)
 
 	SELECT  @TotalPages = COUNT(ci.custid),
             @TotalPages = @TotalPages / @PageSize 
@@ -65,20 +71,21 @@ BEGIN
 	FROM #SportBettype sb
 	INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) m 
 		ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID 
-		AND m.isLicensee = 0 AND m.Site = 'All'
+		AND m.isLicensee = 0 AND m.Site IN (@site, 'All')
 	WHERE m.ProductID IS NOT NULL
 		AND m.isDeleted = 0
 
 	DELETE FROM #SportBettype WHERE ISNULL(RealProductID , 0) <> @ProductID 
 
-	SELECT	*
+	SELECT	info.RowNumber, info.closed, info.enabled, info.suspended, info.username, info.firstname, info.lastname, info.custid, info.ClosedReason, info.Locked
+			, r.roleid, pt.SportType, pt.BetType, pt.isLive, pt.positiontaking
 	FROM (
 		SELECT	ROW_NUMBER() OVER(ORDER BY CASE WHEN ISNULL(ci.enabled, 0) = 0 THEN 3 
 											    WHEN ISNULL(ps.closed,  0) = 1 THEN 2 
 											    WHEN ISNULL(ps.reject,  0) = 1 THEN 1 
 											                                   ELSE 0 
-										        END, 
-                                           ci.username) AS RowNumber,
+										        END ASC, 
+                                           ci.username ASC) AS RowNumber,
 			    ps.closed, 
                 ci.enabled, 
 			    ISNULL(ps.reject,0) AS suspended,
@@ -123,6 +130,6 @@ BEGIN
 		WHERE	cpts3.CustID = info.custid
 	) pt
 	WHERE RowNumber >= (@PageIndex - 1) * @PageSize + 1 AND RowNumber <= @PageIndex * @PageSize
-	ORDER BY RowNumber, isLive, SportType, BetType, roleid
+	ORDER BY RowNumber ASC, isLive ASC, SportType ASC, BetType ASC, roleid ASC
 END
 GO

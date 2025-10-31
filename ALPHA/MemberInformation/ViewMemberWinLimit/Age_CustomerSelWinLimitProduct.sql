@@ -28,17 +28,19 @@ AS
 		- 20231213@Tacy: Live Casino - Hide un-launched product from Member Win Loss Limit page [Redmine: #198317]
 		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
+		- 202511031@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT
 */  
 BEGIN
 	DECLARE @Products TABLE(BetType SMALLINT, SportType SMALLINT, ProductName VARCHAR(50), ProductID TINYINT)
-	DECLARE @Currency INT, @SiteID INT
+	DECLARE @Currency INT, @SiteID INT, @site NVARCHAR(50);
 
 	--Product Status
 	SELECT	@SiteID = s.siteid,
-			@Currency = c.currency
+			@Currency = c.currency,
+			@site = s.site
 	FROM customer c WITH (NOLOCK)
 	    INNER JOIN Site s WITH (NOLOCK) ON c.site = s.site	
     WHERE c.custid = @custid
@@ -48,7 +50,7 @@ BEGIN
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
-	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 6,@SettingStatus) AS sbss
+	INNER JOIN	dbo.f_CustSetting_ProductProfileSel(6,@SettingStatus,@siteid,@currency) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
@@ -66,7 +68,7 @@ BEGIN
 	SELECT DISTINCT sbss.BetType, sbss.SportType, p.ProductName, p.ProductID
 	FROM		dbo.CustProductStatus		AS cps	WITH (NOLOCK)
 	CROSS JOIN	dbo.ProductStatusProfile	AS psp	WITH (NOLOCK)
-	INNER JOIN	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 12,@SettingStatus) AS sbss
+	INNER JOIN	dbo.f_CustSetting_ProductProfileSel(12,@SettingStatus,@siteid,@currency) AS sbss
 			ON	sbss.SportType = psp.Sporttype
 			AND	sbss.BetType = psp.Bettype
 	INNER JOIN	dbo.f_CustSetting_Product 	(@SettingStatus) AS p
@@ -92,11 +94,11 @@ BEGIN
 		,st.BetType
 		,st.RealProductId
 		,s.productID
-	FROM	dbo.f_CustSetting_SportBetTypeSettingSelect(NULL, 22, @SettingStatus) AS s
+	FROM	dbo.f_CustSetting_ProductProfileSel(22, @SettingStatus,@siteid,@currency) AS s
 		INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) AS st
 			ON st.SporttypeRefWinlossLimit = s.SportType 
 			AND st.BettypeRefWinlossLimit = s.Bettype
-			AND st.isLicensee = 0 AND st.Site = 'ALL'
+			AND st.isLicensee = 0 AND st.Site IN( @site, 'ALL')
 			AND st.isDeleted = 0
 
 	INSERT INTO	@Products (BetType, SportType, ProductName, ProductID)
@@ -137,7 +139,7 @@ BEGIN
 		AND d.Enabled = 1
 		AND d.Environment<=@SettingStatus
 
-	ORDER BY d.OrderNo
+	ORDER BY d.OrderNo ASC
 
 	DROP TABLE #SportBetype
 END

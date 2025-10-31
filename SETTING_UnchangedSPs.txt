@@ -1,1 +1,2 @@
 NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\Customer\CopySuperSetting\Acc_CustomerCheckSuperList.sql

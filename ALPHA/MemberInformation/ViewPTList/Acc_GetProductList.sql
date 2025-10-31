@@ -14,6 +14,7 @@ AS
 		- 20230731@Eden: Simplify Live Casino Customer Setting - [Redmine: #189389]
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20240314@Helios: Unify Live RNG Casino [Redmine: #198960]
+		- 20251031@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 	Examples:
 		EXEC [Acc_GetProductList] @Type = 1, @CustID = 28529050 , @SettingStatus = 3
 		EXEC [Acc_GetProductList] @Type = 2, @CustID = 28529050 , @SettingStatus = 3
@@ -25,7 +26,7 @@ BEGIN
 	CREATE TABLE #Product_NonOffer (ProductID tinyint)
 	CREATE TABLE #SportOfferStatus (sporttype smallint, bettype smallint, IsHidden BIT)
 	CREATE NONCLUSTERED INDEX IX_NonOfferSport ON #SportOfferStatus(sporttype,bettype)
-	DECLARE @SiteID INT , @Currency INT
+	DECLARE @SiteID INT , @Currency INT, @site NVARCHAR(50)
 
 	IF @Type = 1
 	BEGIN
@@ -42,7 +43,7 @@ BEGIN
 		WHERE SettingName = 'Commission'
 	END
 
-	SELECT @Currency = ci.currency, @SiteID = s.siteid
+	SELECT @Currency = ci.currency, @SiteID = s.siteid, @site = s.site
 	FROM customer ci WITH(NOLOCK) 
 		INNER JOIN Site s WITH(NOLOCK) ON ci.site = s.site
 	WHERE ci.custid = @CustID
@@ -68,12 +69,12 @@ BEGIN
 
 	;WITH Tmp AS(
 		SELECT ISNULL(st.RealProductId, d.RealProductId) AS RealProductId,d.GroupID,
-			RN = ROW_NUMBER() OVER ( PARTITION BY ISNULL(st.RealProductId, d.RealProductId) ORDER by d.SportType,d.BetType)
+			RN = ROW_NUMBER() OVER ( PARTITION BY ISNULL(st.RealProductId, d.RealProductId) ORDER by d.SportType ASC, d.BetType ASC)
 		FROM dbo.f_CustSetting_ProductProfileSel (NULL,@SettingStatus,@SiteID,@Currency) d 
 			INNER JOIN #ProductsettingType t ON d.SettingType = t.SettingType
 			LEFT JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) AS st 
 				ON st.SportType = d.SportType AND st.BetType = d.BetType
-				AND st.isLicensee = 0 AND st.Site = 'ALL' AND st.isDeleted = 0
+				AND st.isLicensee = 0 AND st.Site IN (@site, 'ALL') AND st.isDeleted = 0
 			LEFT JOIN #SportOfferStatus non ON d.SportType = non.sporttype AND d.BetType = non.bettype AND non.IsHidden = 1
 		WHERE non.sporttype IS NULL 
 		)
@@ -97,7 +98,7 @@ BEGIN
 		INNER JOIN f_CustSetting_Product (@SettingStatus) AS p  ON t.ProductID = p.ProductID 
 	WHERE p.Enabled = 1
 	AND p.Environment<=@SettingStatus
-	ORDER BY OrderNo
+	ORDER BY OrderNo ASC
 				
 	DROP TABLE #ProductsettingType
 	DROP TABLE #Product_NonOffer

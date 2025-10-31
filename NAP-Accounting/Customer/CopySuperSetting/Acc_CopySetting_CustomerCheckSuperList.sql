@@ -23,6 +23,7 @@ AS
 		- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 		- 20240316@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960]
 		- 20241010@Tacy: NAP - Manage super settings [redmine: #206291]
+		- 20251104@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 
 	Parameter's Explanation:
 		@custid: output source custid
@@ -32,7 +33,7 @@ AS
 BEGIN
 	SET NOCOUNT ON
 	
-	DECLARE @CustID INT
+	DECLARE @CustID INT, @site NVARCHAR(50),@siteid SMALLINT=0, @currency SMALLINT=0
 
 	CREATE TABLE #tblCust(custid INT, username VARCHAR(50),bitmapIsHidden BINARY(32) )
 	CREATE NONCLUSTERED INDEX IX_tblCust_custid ON #tblCust(custid ASC)
@@ -47,9 +48,11 @@ BEGIN
 	FROM #tblCust t
 		INNER JOIN customer c WITH(NOLOCK) ON t.username = c.username
 
-	SELECT @custid = custid
+	SELECT @custid = custid, @site = site, @currency =  currency
 	FROM customer WITH(NOLOCK) 
 	WHERE username = @username
+
+	SELECT @siteid = siteid FROM dbo.Site WITH (NOLOCK) WHERE site = @site;
 
 	DECLARE @tblProduct TABLE (productID TINYINT, SportType SMALLINT, GroupID tinyint)
 	DECLARE @tblProduct_hidden TABLE (productID TINYINT, SportType SMALLINT)	
@@ -66,7 +69,7 @@ BEGIN
 
 	INSERT INTO #ProductSettingDetail(SettingType,SportType,BetType,ProductID,GroupID)
 	SELECT d.SettingType,d.SportType,d.BetType,d.ProductID, d.GroupID
-	FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,NULL,NULL) d
+	FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,@siteid,@currency) d
 		INNER JOIN ProductSettingType t WITH(NOLOCK) ON d.SettingType = t.SettingType
 	WHERE t.SettingName = 'Win Loss Limit'
 
@@ -79,7 +82,7 @@ BEGIN
 	WHERE mt.SporttypeRefWinlossLimit  IS NOT NULL
 		AND mt.BettypeRefWinlossLimit  IS NOT NULL
 		AND mt.isLicensee = 0
-		AND mt.site = 'ALL'
+		AND mt.site IN ( @site, 'ALL')
 		AND mt.isDeleted = 0
 	
 	INSERT INTO #SportBettypeFilter(ProductID, SportType, Bettype, BitmapOrder,GroupID)

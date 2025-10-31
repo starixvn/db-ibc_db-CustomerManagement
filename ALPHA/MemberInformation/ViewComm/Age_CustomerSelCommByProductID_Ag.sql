@@ -26,6 +26,7 @@ AS
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 		- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 		- 20250701@Helios: Agency Cash Service - Sprint 6 [RedmineID: #231815]
+		- 20251031@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 	Param's Explanation: 
 		- @SettingStatus: 0: Pro, 1: UAT 
 		- @isDirectDownline:
@@ -35,30 +36,35 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON
-	DECLARE  @SportType INT
+	DECLARE  @SportType INT, @site NVARCHAR(50), @siteid SMALLINT = 0, @currency SMALLINT = 0;
 	CREATE TABLE #SportBettypeFilter ( ProductID TINYINT, SportType SMALLINT, Bettype SMALLINT, IsLive BIT, SettingType SMALLINT, RealProductID TINYINT)
 	CREATE TABLE #CustTemp(custID INT PRIMARY KEY, username VARCHAR(50), ugroup VARCHAR(10), firstname NVARCHAR(254), lastname NVARCHAR(254), enabled BIT, credit MONEY, DoubleCommLosing BIT)
 
+	SELECT @site = si.site, @siteid = si.siteid, @currency = cs.currency
+	FROM dbo.Customer AS cs WITH (NOLOCK)
+		INNER JOIN dbo.Site AS si WITH (NOLOCK) ON cs.site = si.site
+	WHERE cs.custid = @Recommend;
+
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType, RealProductID)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType, RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,3,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(3,@SettingStatus,@siteid,@currency)
 	--WHERE RealProductId = @ProductID
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType, RealProductID)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType, RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,19,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(19,@SettingStatus,@siteid,@currency)
 	--WHERE RealProductId = @ProductID
 
 	INSERT INTO #SportBettypeFilter  (ProductID, SportType, Bettype, IsLive, SettingType, RealProductID)
 	SELECT ProductID, SportType, Bettype, IsLive, SettingType, RealProductID
-	FROM dbo.f_CustSetting_SportBetTypeSettingSelect(NULL,25,@SettingStatus)
+	FROM dbo.f_CustSetting_ProductProfileSel(25,@SettingStatus,@siteid,@currency)
 
 	UPDATE sb	
 	SET sb.RealProductID = m.RealProductId
 	FROM #SportBettypeFilter sb
 	INNER JOIN f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) m
 		ON sb.SportType = m.SportType AND sb.BetType = m.BetType AND sb.RealProductID = m.ProductID 
-		AND m.isLicensee = 0 AND m.Site = 'All'
+		AND m.isLicensee = 0 AND m.Site IN (@site, 'All')
 	WHERE m.ProductID IS NOT NULL
 		AND m.isDeleted = 0
 
@@ -166,8 +172,8 @@ BEGIN
 				WHEN ISNULL ( cps.reject , 0 ) = 1
 					THEN 1
 				ELSE 0
-			END
-		    , ci.username
+			END ASC
+		    , ci.username ASC
 	END
 	
 	ELSE
@@ -212,9 +218,9 @@ BEGIN
 				when isnull(cps.closed, 0) = 1 then 2 
 				when isnull(cps.reject, 0) = 1 then 1 
 				else 0 
-			end, 
-			m.username,
-			cs.SportType
+			end ASC, 
+			m.username ASC,
+			cs.SportType ASC
 	END
 END
 GO
