@@ -19,6 +19,7 @@ AS
 		- 20230731@Eden: Simplify Live Casino Customer Setting - move from bodb02 to custdb [Redmine: #189389]
 		- 20240215@Eden: Unify Live Casino & RNG slot/RNG Casino [Redmine: #198960] 
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]
+		- 20251027@Eden: Adjust Live Casino PT & Commission [Redmine: #242260]
 */
 BEGIN
 	SET NOCOUNT ON
@@ -68,13 +69,13 @@ BEGIN
 	FROM #ProductSettingDetail d WITH(NOLOCK)
 		INNER JOIN CustDB.dbo.f_CustSetting_SportBetTypeSettingMatrix (@SettingStatus) mt
 			ON mt.ProductID = d.ProductID 
-			AND mt.isLicensee = 0 AND mt.Site = 'ALL'
+			AND mt.isLicensee = 0 --AND mt.Site = 'ALL'
 		INNER JOIN @products p  ON p.ProductId = mt.RealProductId
 	WHERE d.GroupID IN (2,3)
 
 	SELECT ProductId,Product_Type
 	FROM #tmpProducts_Show 
-	ORDER BY ProductId
+	ORDER BY ProductId ASC
 	
 	DROP TABLE #tmpProducts
 	DROP TABLE #ProductSettingDetail
