@@ -1,6 +1,1 @@
 NAP-Accounting\Customer\CopySuperSetting\Acc_CustomerCheckSuperList.sql
-ALPHA\CashService\ManagePromotion\Age_CashService_PromotionProductList.sql
-ALPHA\Customer\Age_GetOfferedProductByCust.sql
-ALPHA\Customer\Acc_CustSetting_CheckMacauEnable.sql
-ALPHA\Customer\Acc_GetSportOfferStatusBySiteCurrency.sql
-NAP-Accounting\Customer\Status\Acc_CustomerSelStatus.sql
