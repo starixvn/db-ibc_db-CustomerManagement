@@ -61,7 +61,7 @@ BEGIN
 
 	INSERT INTO #Product_NonOffer(ProductID)
 	SELECT t.RealProductId
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) t
+	FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,@SiteID,@Currency) t
 		LEFT JOIN #SportOfferStatus offer ON t.SportType = offer.sporttype AND t.BetType = offer.bettype AND offer.IsHidden = 0
 	WHERE t.SettingType IN(4,11,13,21)
 		AND t.IsHidden = 1

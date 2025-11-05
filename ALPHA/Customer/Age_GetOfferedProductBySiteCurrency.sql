@@ -17,6 +17,7 @@ AS
 		- 20240701@Tacy: Grant permission on Ext NAP acc [Redmine: #206055] 
 		- 20240521@Helios: Unify RNG Games [Redmine: #204358]  
 		- 20241115@Johnson: hardcode to show product list non-offer(bitcoin) on report 
+		- 20251110@Dave: Live Casino - Adjust-pt-comm-for-live-casino [RedmineID: #242260]
 	Examples:
 	
 */
@@ -73,7 +74,7 @@ BEGIN
 
 	INSERT INTO #SportBettypeFilter (ProductID,SportType,Bettype)
 	SELECT p.RealProductId,p.SportType,p.Bettype
-	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus) p
+	FROM dbo.f_CustSetting_ProductProfileSel(NULL,@SettingStatus,@siteid,@currency) p
 		INNER JOIN #ProductSettingType t ON p.SettingType = t.SettingType
 	UNION
 	SELECT 69,175,7901 --bitcoin
@@ -136,7 +137,7 @@ BEGIN
 			p.EndOfSupportDate, p.OrderNo, p.[Type]
 	FROM #Products p
 	WHERE ProductID = 37
-	ORDER BY [Type], OrderNo
+	ORDER BY [Type] ASC, OrderNo ASC
 
 	DROP TABLE #OfferProduct
 	DROP TABLE #ProductSettingType

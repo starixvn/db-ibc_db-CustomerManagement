@@ -13,6 +13,7 @@ Revisions:
 					 Clone from NAP_WinLimit_Notification_MemSel
 	- 20230928@Luke: Modify SPs to adapt in-house replication setup [Redmine: #194414]
 	- 20250122@Tacy: Offer direct member for super/master [Redmine: #215809]
+	- 20251105@Dave: Adjust Live Casino PT & Commission [Redmine: #242260]
 
 Param's Explanation:
 	� @ErrCode:
@@ -24,6 +25,8 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON
 	DECLARE @FromDate DATETIME = DATEADD(DAY, DATEDIFF(DAY, 1, GETDATE()),0) 
+	DECLARE @isTest BIT = 0
+	SELECT  @isTest = dbo.f_CheckSPVersion(@@PROCID)
 	SELECT t.ProductID
 		, wl.CustID
 		, c.username
@@ -46,9 +49,9 @@ BEGIN
 		INNER JOIN Site AS s WITH (NOLOCK) ON s.site = c.site
 		INNER JOIN exchange AS e WITH (NOLOCK) ON c.currency = e.exchangeid
 		CROSS APPLY(SELECT TOP 1 RealProductID as ProductID
-					FROM SportBettypeSettingMatrix s WITH (NOLOCK)
+					FROM dbo.f_CustSetting_SportBetTypeSettingMatrix(@isTest) s 
 					WHERE s.SportType = wl.ProductID 
-						AND s.isDeleted = 0) t
+						AND s.isDeleted = 0 AND s.Site IN ('All', c.site)) t
 	WHERE CASE
 			WHEN @ProductId = 0
 			THEN wl.IsNotified
