@@ -1,1 +1,1 @@
-NAP-Accounting\Customer\Acc_CustomerUserGroupWrapper_Upd.sql
+NAP-Accounting\Customer\Acc_CustomerSelAllInfo.sql
