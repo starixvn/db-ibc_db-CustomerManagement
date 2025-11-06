@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20240215@Winfred: [NAP CM] Customer Class - SP Integrate Spread setting [RedmineID: #200996] 
 		- 20240612@Winfred: [NAP CM] Customer Class - Add Peak Hour Spread on rule setting [Redmine: #186118]
+		- 20251106@Winfred: [NAP CM] - Spread Management - Enhance Dot_Member_CustomerClassSpreadSel SP [Redmine: #243250]
 
 	Param's Explanation:
 	Example: Dot_Member_CustomerClassSpreadSel @SiteID = 25, @Currency = 1, @CustomerClass =13 , @Platform =3 , @IsTest=0, @IsLicensee = 0
@@ -24,7 +25,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	DECLARE @ModeTest BIT, @NewSiteID INT
+	DECLARE @ModeTest BIT, @NewSiteID INT, @n INT = 2000000
 		
 	IF 	@IsLicensee = 0
 	BEGIN
@@ -54,15 +55,15 @@ BEGIN
 		FROM (
 			SELECT
 				cp.SportType,
-				MAX(cc.Spread) AS SumSpread
+				MAX(cs.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail_UAT cp WITH(NOLOCK)
-				CROSS APPLY (SELECT TOP 1 
-								cs.Spread
-							 FROM CustomerClassSpreadClass_UAT cm WITH(NOLOCK)
-								INNER JOIN CustomerClassSpread_UAT cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND Type = 1
-							) cc
-			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
+				INNER JOIN CustomerClassSpreadClass_UAT cm WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID
+				INNER JOIN CustomerClassSpread_UAT cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
+			WHERE cm.CustomerClass = @CustomerClass 
+				AND cs.IsTest = @IsTest 
+				AND cs.Enable = 1 
+				AND cs.Type = 1
+				AND	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
 				AND cp.Platform IN (0, @Platform)
 			GROUP BY cp.SportType) KQ
@@ -79,15 +80,15 @@ BEGIN
 		FROM (
 			SELECT
 				cp.SportType,
-				MAX(cc.Spread) AS SumSpread
+				MAX(cs.Spread) AS SumSpread
 			FROM CustomerClassSpreadDetail cp WITH(NOLOCK)
-				CROSS APPLY (SELECT TOP 1 
-								cs.Spread
-							 FROM CustomerClassSpreadClass cm WITH(NOLOCK)
-								INNER JOIN CustomerClassSpread cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
-							 WHERE cm.PolicyID = cp.PolicyID AND IsTest = @IsTest AND Enable = 1 AND CustomerClass = @CustomerClass AND Type = 1
-							) cc
-			WHERE	cp.SiteID IN (0, @NewSiteID, @SiteID)
+				INNER JOIN CustomerClassSpreadClass cm WITH(NOLOCK) ON cm.PolicyID = cp.PolicyID
+				INNER JOIN CustomerClassSpread cs WITH(NOLOCK) ON cm.PolicyID = cs.PolicyID 
+			WHERE cm.CustomerClass = @CustomerClass 
+				AND cs.IsTest = @IsTest 
+				AND cs.Enable = 1 
+				AND cs.Type = 1
+				AND	cp.SiteID IN (0, @NewSiteID, @SiteID)
 				AND cp.Currency IN (0, @Currency)
 				AND cp.Platform IN (0, @Platform)
 			GROUP BY cp.SportType) KQ
