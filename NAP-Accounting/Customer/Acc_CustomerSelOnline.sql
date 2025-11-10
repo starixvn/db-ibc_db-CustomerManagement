@@ -1,8 +1,8 @@
-﻿/*<info serverAlias="DBONUSER-on_user" executers="bodbAdminNet,wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
+﻿/*<info serverAlias="DBONUSER-on_user" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Acc_CustomerSelOnline]
 	@custid INT,
-	@availableTime INT = 70
+	@availableTime INT = 300
 AS
 /*
 Created: 20090122@nqminh
@@ -16,6 +16,7 @@ Revisions:
 	- 20121001@Jamie: Do not get DomainID field 
 	- 20180504@Louis: Update Online List [RedmineID: #94480]
 	- 20190425@Johnson: add headline for cn88 [Redmine: #105338]
+	- 20251108@Elodie: Increase @availableTime from 70 to 300 seconds
 Param's Explanation:
 • @userid: customer id
 • @availableTime: time-diff between reload time and current time by seconds
@@ -40,5 +41,5 @@ ELSE
 	SELECT on_sessionid, custid, ServerID, on_userid, IP, iskickedout, subaccid, NetSessionID, Country, MachineIP, LoginTime as reload_time
 	FROM on_user_agent WITH (nolock)
 	WHERE custid = @custid AND reload_time >= DATEADD(SECOND, -@availableTime, @currentTime) AND iskickedout = 0 AND ServerID <> 0
-	ORDER BY on_userid
+	ORDER BY on_userid ASC
 GO	
