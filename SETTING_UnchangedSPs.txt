@@ -1,1 +1,2 @@
 NAP-Accounting\Customer\CopySuperSetting\Acc_CustomerCheckSuperList.sql
+Nap-Risk&Control\WinLimitControl\BlockMember\Task_Winlimit_BlockedUser.sql
