@@ -15,6 +15,7 @@ AS
 
 	Revisions:		
 		- 20241010@Helen: move site for CREDIT - [Redmine:#212007]
+		- 20251010@Helios: Upgrade ExchangeID DataType [Redmine:#242140] 
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -70,7 +71,7 @@ BEGIN
 	END
 	
 	DECLARE @OldSite varchar(50), @OldSiteLabel varchar(50), @LogSPData varchar(8000)
-	DECLARE @userName VARCHAR(50),@currency TINYINT
+	DECLARE @userName VARCHAR(50),@currency SMALLINT
 
 	SELECT @OldSite =  c.site, @OldSiteLabel = s.SiteLabel
 	from customer c with(nolock) 
