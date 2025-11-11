@@ -37,6 +37,7 @@ AS
 		- 20241010@Helen: Temporarily RETURN SP - [Redmine:#212007]
 		- 20241010@Helen: move site for CREDIT - [Redmine:#212007]
 		- 20241101@Winfred: HF  - NAP- Cannot updating VR value for licensee super line with big downline member (over 500000 members downline)  [redmine: #213009]
+		- 20251010@Helios: Upgrade ExchangeID DataType - [Redmine:#242140] 
 
 	Param's Explanation:
 		@CustID: Custid of customer want to move site. We allow to move all customers
@@ -53,7 +54,7 @@ BEGIN
 	DECLARE @RoleId int	
 
 	DECLARE @OldSite varchar(50), @OldSiteLabel varchar(50), @LogSPData varchar(8000)
-	DECLARE @userName VARCHAR(50),@currency TINYINT
+	DECLARE @userName VARCHAR(50)
 
 	SELECT @OldSite =  c.site, @OldSiteLabel = s.SiteLabel
 	from customer c with(nolock) 
