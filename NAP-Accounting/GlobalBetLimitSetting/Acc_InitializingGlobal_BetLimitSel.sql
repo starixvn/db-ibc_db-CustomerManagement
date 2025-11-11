@@ -1,5 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
-
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitSel] 
 	-- Add the parameters for the stored procedure here
 	 @ProductID				TINYINT
@@ -24,6 +23,7 @@ AS
 			- 22021227@Tacy: apply settingtype [Redmine: #174509] 
 			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 			- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
+			- 20251111@Dave: Live Casino - Adjust-pt-comm-for-live-casino [RedmineID: #242260]
 		
 		Param's Explanation:
 			@ProductID				0 : All, <> 0 : ProductID
@@ -100,8 +100,12 @@ BEGIN
 	)
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	SELECT DISTINCT SportType,BetType,SettingType,IsLive,ProductID
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	WHERE (SettingType IN (2,7,8,9,16,17)) 
+			AND (@ProductID = 0 OR ProductID = @ProductID) 
+			AND (@pMutilSportType = '0' OR SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
+			AND ProductID NOT IN  (1,3,8)
 
 	INSERT INTO #ProductProfile (SportType, SportName, BetType, typenamee, SettingType, IsCredit)				
 	SELECT SportType, SportName, BetType, typenamee, SettingType, IsCredit
@@ -117,11 +121,7 @@ BEGIN
 		FROM #ProductSettingDetail psd WITH(NOLOCK)
 			INNER JOIN #Sports s WITH(NOLOCK) ON psd.SportType = s.SportType
 			INNER JOIN #Bettype b WITH(NOLOCK) ON psd.BetType = b.typeid
-		WHERE (psd.SettingType IN (2,7,8,9,16,17)) 
-			AND (@ProductID = 0 OR psd.ProductID = @ProductID) 
-			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
-			AND psd.ProductID NOT IN  (1,3,8)
-			AND @pMutilCurrencyCredit<>''
+		WHERE @pMutilCurrencyCredit<>''
 		UNION ALL
 		SELECT DISTINCT
 			  psd.BetType
@@ -139,7 +139,7 @@ BEGIN
 			AND (@pMutilSportType = '0' OR psd.SportType IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilSportType, ',')))
 			AND @pMutilCurrencyDeposit<>'' AND psd.SettingStatus<>2
 	) KQ
-	ORDER BY SportType,BetType
+	ORDER BY SportType ASC,BetType ASC
 
 	--SettingType IN (7,8,17)
 	IF EXISTS (SELECT 1 FROM #ProductProfile WHERE SettingType IN (7,8,17))
@@ -240,7 +240,7 @@ BEGIN
 		 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId
 		 LEFT JOIN Exchange eD WITH(NOLOCK)  ON t.ExchangeIdDeposit = eD.ExchangeId
 		 LEFT JOIN Site s WITH(NOLOCK)  ON t.SiteID = s.siteid
-		ORDER by SportType desc, BetType,ExchangeIdCredit DESC,ExchangeIdDeposit,GameGroupID	
+		ORDER by SportType desc, BetType ASC,ExchangeIdCredit DESC,ExchangeIdDeposit ASC,GameGroupID ASC	
 	END
 	ELSE
 	BEGIN
@@ -252,7 +252,10 @@ BEGIN
 			, NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake
 			, GameGroupID, ec.currency AS CurrencyCredit, eD.currency AS CurrencyDeposit, t.SiteID, s.site
 		FROM (
-			SELECT ROW_NUMBER() OVER(ORDER by SportType desc, BetType,ExchangeIdCredit DESC,ExchangeIdDeposit,GameGroupID) rn, *
+			SELECT ROW_NUMBER() OVER(ORDER by SportType desc, BetType ASC,ExchangeIdCredit DESC,ExchangeIdDeposit ASC,GameGroupID ASC) rn,
+				SportType, SportName, BetType, typenamee, ExchangeIdCredit, ExchangeIdDeposit,
+				NewMinBet, NewMaxBet, NewMaxPerMatch, NewMaxPerBall, NewMaxGameStake,
+				CurMinBet, CurMaxBet, CurMaxPerMatch, CurMaxPerBall, CurMaxGameStake, GameGroupID, SiteID
 			FROM #BetLimit
 		   )t
 		 LEFT JOIN Exchange eC WITH(NOLOCK)  ON t.ExchangeIdCredit = eC.ExchangeId

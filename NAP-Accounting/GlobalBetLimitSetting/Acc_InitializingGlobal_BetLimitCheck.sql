@@ -1,4 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_BetLimitCheck] 
 	-- Add the parameters for the stored procedure here
 	 @InputData		VARCHAR(MAX)=''
@@ -24,11 +24,12 @@ AS
 		- 20230308@Tacy: NAP - Enhance function - Support dummy sport [RedmineID: #183826]
 		- 20230323@Tacy: NAP - Enhance to import global betlimit for products having single stake level betlimit [RedmineID: #185705]
 		- 20230810@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
+		- 20251111@Dave: Live Casino - Adjust-pt-comm-for-live-casino [RedmineID: #242260]
 
 	Param's Explanation:
-		• @IsCheck : 0 ~ not allow insert deposit's single stakelevel with SiteID=NULL
+		ï¿½ @IsCheck : 0 ~ not allow insert deposit's single stakelevel with SiteID=NULL
 					 1 ~ allow insert deposit's single stakelevel with SiteID=NULL
-		• @pInputData : 
+		ï¿½ @pInputData : 
 		<ROOT>
 			<BetLimit 
 					SportType="1" 
@@ -173,8 +174,9 @@ BEGIN
 	)
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID,RealProductID)
-	SELECT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
+	SELECT DISTINCT SportType,BetType,SettingType,IsLive,ProductID,RealProductID
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	WHERE SettingType IN (2, 7, 8, 9, 16, 17) AND ProductID NOT IN (1,3,8)
 
 	SELECT TOP (1)
 			@ErrCode=CASE WHEN ISNULL(SportType, '')=''			THEN 131
@@ -238,7 +240,7 @@ BEGIN
 	FROM #NewInputDateTbl a
 		INNER JOIN #ProductSettingDetail psd WITH(NOLOCK) ON a.SportType=psd.SportType
 														AND (psd.SettingType=8 OR (psd.SettingType IN (2, 8, 9, 16, 7, 17) AND a.BetType=psd.BetType))
-	WHERE a.IsCredit=1 AND psd.SettingType IN (2, 7, 8, 9, 16, 17) AND psd.ProductID NOT IN (1,3,8)
+	WHERE a.IsCredit=1 /*AND psd.SettingType IN (2, 7, 8, 9, 16, 17) AND psd.ProductID NOT IN (1,3,8)*/
 
 	UPDATE a	--DEPOSIT
 	SET a.SettingType= ps.SettingType, a.OrgBetType=psd.BetType, a.ProductID =ps.ProductID
@@ -401,13 +403,13 @@ BEGIN
 		RETURN
 	END
 
-	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID
+	SELECT TOP (1) @ProductID=ProductID, @SportType=SportType, @BetType=OrgBetType FROM #NewInputDateTbl tmp ORDER BY RowID ASC
 	IF EXISTS (SELECT TOP 1 1 FROM #NewInputDateTbl WHERE ProductID<>@ProductID)	
 	BEGIN
 		SELECT @ErrCode=121	
 		SELECT TOP(1) @ErrMsg='Row ' + CAST(RowID AS VARCHAR(10)) + ' : You can only upload setting for one product at a time.' 
 		FROM #NewInputDateTbl WHERE ProductID<>@ProductID
-		ORDER BY RowID 
+		ORDER BY RowID ASC
 		RETURN
 	END	
 
@@ -757,7 +759,7 @@ BEGIN
 		SET @ErrCode=125
 		SELECT @ErrMsg=STUFF((SELECT ', row ' + CAST(RowIDF AS NVARCHAR(50)) + ' - row ' + CAST(RowIDT AS NVARCHAR(50)) 
 								FROM #RowDuplicate tmp
-								ORDER BY RowIDF
+								ORDER BY RowIDF ASC
 								FOR XML PATH('')), 1, 1, '') + ' : These rows have duplicate data' 
 		RETURN
 	END	

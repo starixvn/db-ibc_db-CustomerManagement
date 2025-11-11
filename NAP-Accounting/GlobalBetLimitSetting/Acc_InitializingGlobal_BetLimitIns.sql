@@ -26,9 +26,10 @@ AS
 		- 20240711@Johnson: Apply In-house Replication for Customer Setting [redmine:#207025]
 		- 20250108@Virgil: Apply In-house replication for profile setting tables [RedmineID: #214117]
 		- 20250120@Tacy: Move to GlobCustDB [RedmineID: #216870]
+		- 20251111@Dave: Live Casino - Adjust-pt-comm-for-live-casino [RedmineID: #242260]
 
 	Param's Explanation:
-		• @pInputData : 
+		ï¿½ @pInputData : 
 		<ROOT>
 			<BetLimit 
 					SportType="1" 
@@ -133,8 +134,9 @@ BEGIN
 	)
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	SELECT DISTINCT SportType,BetType,SettingType,IsLive,ProductID
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	WHERE SettingType IN (2,7,8,9,16,17) AND ProductID NOT IN (1,3,8)
 
 	--Parse XML data
 	DECLARE @iDoc INT
@@ -212,7 +214,7 @@ BEGIN
 		FROM  #NewInputDateTbl a
 			INNER JOIN #ProductSettingDetail psd WITH(NOLOCK) ON a.SportType = psd.SportType 
 															AND ( psd.SettingType IN (2,8,9,16) OR (psd.SettingType IN (7, 17) AND a.BetType = psd.BetType))
-		WHERE a.IsCredit = 1 AND psd.SettingType IN (2,7,8,9,16,17) AND ProductID NOT IN (1,3,8)
+		WHERE a.IsCredit = 1 /*AND psd.SettingType IN (2,7,8,9,16,17) AND ProductID NOT IN (1,3,8)*/
 			
 		UPDATE a	--DEPOSIT 
 		SET a.SettingType =  ps.SettingType	, a.OrgBetType = psd.BetType
@@ -281,7 +283,7 @@ BEGIN
 			AND NOT EXISTS( SELECT TOP 1 1 FROM StakeLevel tmp WITH(NOLOCK) 
 							WHERE tmp.GameTypeID = a.BetType AND a.ExchangeId = tmp.ExchangeId 
 								  AND (a.CurMinBet = MinStake AND a.CurMaxBet = MaxStake))
-			ORDER BY a.BetType
+			ORDER BY a.BetType ASC
 		
 			UPDATE dst	
 			SET dst.MinLabel = a.MinLabel, dst.MaxLabel = a.MaxLabel , dst.MinStake = a.NewMinBet,dst.MaxStake = a.NewMaxBet, dst.RepUpdateTime = SYSDATETIME()
@@ -333,7 +335,7 @@ BEGIN
 			SELECT @Dep_MaxSLID = MAX(StakeLevelID) FROM DEP_StakeLevel WITH(NOLOCK)
 		
 			INSERT INTO Dep_StakeLevel(GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID,SiteID,StakeLevelID,RepUpdateTime)
-			SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID,exchangeid), SYSDATETIME() 
+			SELECT GameTypeID,MinLabel,MaxLabel,MinStake,MaxStake,ExchangeId,GameGroupID ,SiteID, StakeLevelID = @Dep_MaxSLID + ROW_NUMBER() OVER(ORDER BY GameTypeID ASC,exchangeid ASC), SYSDATETIME() 
 			FROM (
 				SELECT DISTINCT a.OrgBetType AS GameTypeID,a.ExchangeId,0 AS GameGroupID, a.MinLabel, a.MaxLabel, a.NewMinBet AS MinStake, a.NewMaxBet AS MaxStake,SiteID
 				FROM #NewInputDateTbl a

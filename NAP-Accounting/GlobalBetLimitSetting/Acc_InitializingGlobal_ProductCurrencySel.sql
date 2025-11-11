@@ -1,5 +1,4 @@
-/*<info serverAlias="DBACC-bodb02" executers="bodbAdminNet,wsv_nap" viewers="" isFunction="0"></info>*/
-
+/*<info serverAlias="DBACC-bodb02" executers="wsv_nap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_InitializingGlobal_ProductCurrencySel] 
 	-- Add the parameters for the stored procedure here
 	 @pMutilProductID	VARCHAR(MAX) = ''
@@ -14,6 +13,7 @@ AS
 			- 20220708@Tacy: Create SP [Redmine: #174509]
 			- 20221121@Eden: Unify RNG Lottery Customer Settings [RedmineID: #180640]
 			- 20230918@Tacy: NAP - Global betlimit - Support to initial setting on UAT [Redmine: #192557]
+			- 20251111@Dave: Live Casino - Adjust-pt-comm-for-live-casino [RedmineID: #242260]
 		
 		Param's Explanation:
 			@pMutilProductID 0 : All, <> 0 : ProductID
@@ -67,8 +67,10 @@ BEGIN
 	)
 
 	INSERT INTO #ProductSettingDetail(SportType,BetType,SettingType,IsLive,ProductID)
-	SELECT SportType,BetType,SettingType,IsLive,ProductID
+	SELECT DISTINCT SportType,BetType,SettingType,IsLive,ProductID
 	FROM dbo.f_CustSetting_ProductSettingDetailSel(@SettingStatus)
+	WHERE SettingType IN (2,9,16,20,7,8,17)
+		AND (@pMutilProductID='0' OR ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 
 	--CREDIT
 	INSERT INTO #Credit_ProductCurrency (ProductID, ProductName, SportType, SportName, CurrencyCredit)
@@ -80,7 +82,6 @@ BEGIN
 		INNER JOIN ProductBetSetting pbs WITH(NOLOCK) ON pbs.Sporttype=psd.SportType AND pbs.Bettype=psd.BetType
 		INNER JOIN Exchange eC WITH(NOLOCK) ON eC.ExchangeId=pbs.Currency
 	WHERE psd.SettingType IN (2,9,16,20) AND p.ProductID NOT IN (1,3,8)
-		AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 		AND (@pMutilCurrency='0' OR pbs.Currency IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
 	UNION
 	SELECT DISTINCT
@@ -91,7 +92,6 @@ BEGIN
 		INNER JOIN StakeLevel sl WITH(NOLOCK) ON sl.GameTypeID=psd.BetType
 		INNER JOIN Exchange eC WITH(NOLOCK) ON eC.ExchangeId=sl.ExchangeId
 	WHERE psd.SettingType IN (7,8,17)
-		AND (@pMutilProductID='0' OR p.ProductID IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilProductID, ',')))
 		AND (@pMutilCurrency='0' OR sl.ExchangeId IN (SELECT RTRIM(LTRIM(value)) val FROM STRING_SPLIT(@pMutilCurrency, ',')))
 
 	--DEPOSIT
@@ -155,7 +155,7 @@ BEGIN
 	--ExportData
 	SELECT ProductName, SportType, SportName, CurrencyCredit, CurrencyDeposit
 	FROM #ProductCurrency t
-	ORDER BY ProductName, SportType, CurrencyCredit, CurrencyDeposit
+	ORDER BY ProductName ASC, SportType ASC, CurrencyCredit ASC, CurrencyDeposit ASC
 	
 	DROP TABLE #Sports
 	DROP TABLE #Products

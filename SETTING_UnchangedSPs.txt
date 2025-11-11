@@ -1,2 +1,8 @@
 NAP-Accounting\Customer\CopySuperSetting\Acc_CustomerCheckSuperList.sql
 Nap-Risk&Control\WinLimitControl\BlockMember\Task_Winlimit_BlockedUser.sql
+NAP-Accounting\Customer\Status\Acc_CustomerSelStatus.sql
+ALPHA\Customer\Acc_CustSetting_CheckMacauEnable.sql
+ALPHA\Customer\Acc_GetSportOfferStatusBySiteCurrency.sql
+ALPHA\CashService\ManagePromotion\Age_CashService_PromotionProductList.sql
+ALPHA\Customer\Age_CustomerSelUserInfo.sql
+ALPHA\Customer\Age_GetOfferedProductByCust.sql
