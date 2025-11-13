@@ -71,6 +71,7 @@ Revisions:
 	- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 	- 20241107@Helios: Offer Direct Member for Super/Master [redmine: #211969]
 	- 20250717@Dave: Agency Cash Service - Customer Setting - Sprint 6 - Add filter for Member Type (@ServiceType) [Redmine: #232372]
+	- 20251113@Dave: EXT - Allow Headline to hide IP info of their downlines [Redmine: #243331]
 	Explanation's Param:
 	@Status = 
 		0: All
@@ -111,7 +112,7 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 		SELECT ci.custID, ci.username,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed asc, ISNULL(cps.reject,0) asc, c.username asc) as RowNumber
 		FROM #CollectDownline ci
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -148,7 +149,7 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpMemberList(CustID, username, RowNumber)
 		SELECT ci.custID, ci.username,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed asc, ISNULL(cps.reject,0) asc, c.username asc) as RowNumber
 		FROM #CollectDownline ci
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -235,7 +236,8 @@ BEGIN
 			MAX(CASE WHEN cdm.SportType = 1 AND cdm.BetType = 5 THEN cdm.PlayerDiscount	ELSE 0 END)	   AS playerdiscount1x2,
 
 			ISNULL(cps.Locked,0) AS Locked,
-			ISNULL(v_csm.ServiceType, 0) AS ServiceType
+			ISNULL(v_csm.ServiceType, 0) AS ServiceType,
+			ISNULL(su.isHideIP, 0) AS isHideIP
 	FROM @tmpMemberList ml
 		INNER JOIN dbo.customer c WITH(NOLOCK) on ml.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
@@ -248,13 +250,14 @@ BEGIN
 		LEFT JOIN CustDiscount3rd_Member cdm WITH (NOLOCK) ON c.custid = cdm.CustID AND cdm.SportType IN (1,2)
 		LEFT JOIN dbo.CustLoginInfo_Member cl WITH(NOLOCK) ON c.custid=cl.CustID
 		CROSS APPLY (SELECT TOP 1 ServiceType FROM dbo.vw_CustInfoExtra WITH(NOLOCK) WHERE CustID = ci.custid) AS v_csm
+		LEFT JOIN dbo.CustSuper su WITH(NOLOCK) ON su.CustID = c.srecommend 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd	
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, c.ugroup, c.username2,
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason,
 			cl.SecurityCode, ml.RowNumber  ,cps.Locked,c.recommend,
-			ISNULL(v_csm.ServiceType, 0)
-	ORDER BY RowNumber
+			ISNULL(v_csm.ServiceType, 0), ISNULL(su.isHideIP, 0)
+	ORDER BY RowNumber ASC
 
 END
 GO

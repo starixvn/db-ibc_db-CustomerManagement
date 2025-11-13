@@ -19,6 +19,7 @@ AS
 		- 20241206@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
 		- 20250425@Dave: Login Process Amenment - Solution 3- Phrase 2 - Update old userpwd on CustLoginInfo_Member [Redmine: #225351]
+		- 20251113@Dave: EXT - Allow Headline to hide IP info of their downlines - change conditon break LOOP WHILE [Redmine: #243331]
 
 	Param's Explanation:
 		• @ErrMsg: Error description.
@@ -56,7 +57,7 @@ BEGIN
 			,@OldPwd	VARCHAR(40)
 			,@roleid	TINYINT
 
-    WHILE EXISTS (SELECT TOP 1 1 FROM @tblCust WHERE IsFinished=0)
+    WHILE (1 = 1)
 	BEGIN
 		GetCustId:
 			UPDATE TOP (1) T
@@ -65,6 +66,8 @@ BEGIN
 			FROM @tblCust t
 			WHERE IsFinished=0
 		
+		IF @@ROWCOUNT = 0 BREAK;
+
 		SELECT @TempErrCode = NULL, @TempErrMsg = NULL
 
 		--Check disable user

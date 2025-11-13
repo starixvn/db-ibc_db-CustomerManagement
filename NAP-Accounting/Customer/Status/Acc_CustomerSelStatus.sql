@@ -1,8 +1,6 @@
 /*<info serverAlias="DBCUST-CustDB,DBACC-bodb02" executers="wsv_nap,wsv_alp,wsv_alpv,wsv_xnap" viewers="" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Acc_CustomerSelStatus]
 	@CustID		INT,
-	@AdminID		INT			= 0,
-	@system		VARCHAR(30)		='NAP',
 	@username		VARCHAR(50)		= '',
 	@SettingStatus	TINYINT		= 0
 AS 
@@ -109,6 +107,7 @@ AS
 		- 20240515@Helios: Unify RNG Games - Rollback Code RNG Casino And Enhance [Redmine: #204358] 
 		- 20240725@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241022@Johnson: remove bitcoin/MyanmarOdds [redmine: #201396]
+		- 20251128@Dave: EXT - Allow Headline to hide IP info of their downlines - drop params @system, @AdminID [Redmine: #243331]
 	Param's Explanation:
 		- @system: = NAP : internal login from NAP
 					NAPEXT:internal login from NAP EXT

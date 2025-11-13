@@ -19,8 +19,9 @@ AS
 	Revisions: 
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
 		- 20241209@Johnson: Apply In-house replication for Credit Setting [RedmineID: #212684]
+		- 20251113@Dave: EXT - Allow Headline to hide IP info of their downlines - change conditon break LOOP WHILE [Redmine: #243331]
 	Parameter's Explanation:
-	• @ErrMsg: Error description.
+	ï¿½ @ErrMsg: Error description.
 		@ErrMsg = <Root>
 						<Error CustID="20650722" ErrCode="101" ErrMsg="Error! Error when updating Message Customer Read Status."/>
 					</Root>
@@ -60,14 +61,17 @@ BEGIN
 	WHERE value <> ''
 
 	--Update info
-	WHILE EXISTS (SELECT TOP 1 1 FROM @tblCust WHERE IsFinished=0)
+	WHILE (1 = 1)
 	BEGIN
-		GetCustId:
-			UPDATE TOP (1) T
-			SET	t.IsFinished=1
-				,@CustID = CustID
-			FROM @tblCust t
-			WHERE IsFinished=0
+	
+		UPDATE TOP (1) T
+		SET	t.IsFinished=1
+			,@CustID = CustID
+		FROM @tblCust t
+		WHERE IsFinished=0
+
+		IF @@ROWCOUNT = 0
+			BREAK;
 
 		SELECT @TempErrCode = NULL, @TempErrMsg = NULL
 
@@ -81,7 +85,7 @@ BEGIN
 						+ '" ErrCode="' + CAST(ISNULL(@TempErrCode,'0') AS VARCHAR(5))
 						+ '" ErrMsg="' + ISNULL(@TempErrMsg,'') + '" />'
 							
-			GOTO GetCustId
+			CONTINUE;
 		END
 
 		SELECT @oldFirstName	= FirstName

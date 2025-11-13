@@ -72,6 +72,7 @@ AS
 		- 20240702@Tacy: EXT NAP - Not check Permission on Site/Currency [Redmine: #206918] 
 		- 20241022@Johnson: remove MyanmarOdds [redmine: #201396]
 		- 20250717@Dave: Agency Cash Service - Customer Setting - Sprint 6 - output ServiceType [Redmine: #232372]
+		- 20251113@Dave: EXT - Allow Headline to hide IP info of their downlines [Redmine: #243331]
 
 	Explanation's Param:
 		@Status = 
@@ -100,7 +101,7 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpAgentList(CustID, Downlines, username, RowNumber)
 		SELECT ci.custID, d.Downlines, ci.username,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed asc, ISNULL(cps.reject,0) asc, c.username asc) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -139,7 +140,7 @@ BEGIN
 	BEGIN
 		INSERT INTO @tmpAgentList(CustID, Downlines, username, RowNumber)
 		SELECT ci.custID, d.Downlines, ci.username,
-			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed, ISNULL(cps.reject,0), c.username) as RowNumber
+			ROW_NUMBER() OVER(ORDER BY ci.enabled desc, cps.closed asc, ISNULL(cps.reject,0) asc, c.username asc) as RowNumber
 		FROM dbo.custinfo ci WITH(NOLOCK)
 			INNER JOIN Customer c WITH(NOLOCK) ON c.custid = ci.custid
 			CROSS APPLY  (SELECT CASE WHEN CloseInfo > 0 THEN 1 ELSE 0 END AS closed
@@ -213,6 +214,7 @@ BEGIN
 			MAX(CASE WHEN cda.SportType = 1 and cda.BetType = 4 THEN cda.Discount ELSE 0 END) AS discountcs,
 			ISNULL(cps.Locked,0) AS Locked
            	,ISNULL(v_csm.ServiceType, 0) AS ServiceType
+			,ISNULL(su.isHideIP,0) AS isHideIP
 	FROM @tmpAgentList al
 		INNER JOIN dbo.customer c WITH(NOLOCK) on al.custid = c.custid
 		INNER JOIN dbo.custinfo ci WITH(NOLOCK) on ci.custid = c.custid
@@ -228,12 +230,13 @@ BEGIN
 						FROM dbo.vw_CustInfoExtra WITH(NOLOCK)
 						WHERE CustID = ci.custid
 					) AS v_csm
+		LEFT JOIN dbo.CustSuper su WITH(NOLOCK) ON su.CustID = c.srecommend 
 	WHERE RowNumber BETWEEN @RowStart AND @RowEnd
 	GROUP BY c.custid, c.username, ci.enabled, cps.closed, cps.reject, c.roleid, c.currency, 
 			c.firstname, c.lastname, c.creatdate, c.iplogin,		 
 			ci.DoubleCommLosing, cl.ClosedReason, al.Downlines,
 			cl.SecurityCode, al.RowNumber ,cps.Locked
-			,ISNULL(v_csm.ServiceType, 0)
-	ORDER BY RowNumber
+			,ISNULL(v_csm.ServiceType, 0), ISNULL(su.isHideIP,0)
+	ORDER BY RowNumber ASC
 END
 GO

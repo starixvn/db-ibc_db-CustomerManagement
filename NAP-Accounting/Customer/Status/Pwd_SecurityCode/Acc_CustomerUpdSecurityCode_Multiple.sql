@@ -17,6 +17,7 @@
 		- 20240308@Tacy: Create SP [Redmine: #201432] 
 		- 20240805@Tacy: Remove linked-server/cross-db on NAP_UserControl [redmineID: #208402]
 		- 20241230@Aries: Scale Out DBCUST - Apply Inhouse replication for the remaning tables [Redmine: #215627]
+		- 20251113@Dave: EXT - Allow Headline to hide IP info of their downlines - change conditon break LOOP WHILE [Redmine: #243331]
 
 	Parameter's Explanation:
 		@CustIDList = <Root>
@@ -25,7 +26,7 @@
 							<SecurityCode CustID="17241027" Code="cf4c8b6b4003410143c18f7ee09229139ad62e59"/>
 						</Root>
 
-	• @ErrMsg: Error description.
+	ï¿½ @ErrMsg: Error description.
 		@ErrMsg = <Root>
 						<Error CustID="20650722" ErrCode="101" ErrMsg="Reset security code unsuccesful. Please try again."/>
 					</Root>
@@ -70,7 +71,7 @@ BEGIN
 
 	EXEC sp_xml_removedocument @iDoc
 
-	WHILE EXISTS (SELECT TOP 1 1 FROM @tblCust WHERE IsFinished=0)
+	WHILE (1 = 1)
 	BEGIN
 		GetCustId:
 			UPDATE TOP (1) T
@@ -80,6 +81,7 @@ BEGIN
 			FROM @tblCust t
 			WHERE IsFinished=0
 
+		IF @@ROWCOUNT = 0 BREAK;
 		SELECT @TempErrCode = NULL, @TempErrMsg = NULL
 
 		--Check disable user
