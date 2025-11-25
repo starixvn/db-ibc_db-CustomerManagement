@@ -12,6 +12,7 @@ AS
 	- 20220228@Eden: All sites - Integrate new Customer Class for PA Probation [Redmine:#170666]
 	- 20240319@Luke: [NAP CM] VR Engine - Add in new criteria: Apply follow the VR accumulated balance, Currency [Redmine: #201333]
 	- 20240422@Winfred: [NAP CM] VR Engine - Allow to add CC by Sport, and re-arrange league group on dropdownlist [Redmine: #195539]
+    - 20251124@Dave: Pioneers - Apply Inhouse for 'RefResource' table - Check isdeleted [Redmine: #245025]
 
 	Parameter explanation:
 
@@ -56,19 +57,19 @@ BEGIN
 	SELECT SiteID,Site, CASE WHEN isLicensee = 1 THEN 2 ELSE 1 END SiteType
 	FROM dbo.[Site] WITH(NOLOCK)
 	WHERE isActive = 1
-	ORDER BY Site
+	ORDER BY Site ASC
 
 	--SELECT CustomerClass,Name FROM dbo.f_NAP_VREngine_GetCustomerClass() ORDER BY 1
-	SELECT BetFrom,Name FROM dbo.f_NAP_VREngine_GetBetFrom() ORDER BY 2
+	SELECT BetFrom,Name FROM dbo.f_NAP_VREngine_GetBetFrom() ORDER BY Name ASC
 
-	SELECT * FROM #SportVR
+	SELECT sporttype FROM #SportVR
 	SELECT DISTINCT bettype FROM #SportBettypeVR
-	SELECT * FROM #LeagueGroup
+	SELECT LeagueGroupID, GroupName FROM #LeagueGroup
 
 	SELECT ExchangeId AS CurrencyID, currency AS CurrencyName
 	FROM Exchange WITH (NOLOCK)
 	WHERE IsActive = 1
-	ORDER BY ExchangeId
+	ORDER BY ExchangeId ASC
 
 	-- CC by Sport
 	SELECT CAST(SportType AS SMALLINT) AS SportType, SportName
@@ -77,7 +78,7 @@ BEGIN
 	UNION
 	SELECT CAST(ResourceId AS SMALLINT) AS SportType, Resource_en AS SportName
 	FROM RefResource WITH (NOLOCK)
-	WHERE RefId='DummySport' AND ResourceId IN (9901, 9902)
+	WHERE RefId='DummySport' AND ResourceId IN (9901, 9902) AND IsDeleted = 0
 	UNION
 	SELECT -2 AS SportType, 'Non-Sports' AS SportName 
 

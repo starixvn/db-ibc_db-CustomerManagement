@@ -15,6 +15,7 @@ AS
 	Revisions:
 		- 20250707@Elodie: Initial SP [Redmine: #232347] 
 		- 20251028@Elodie: Remove constraint name of primary key [Redmine: #232347] 
+        - 20251124@Dave: Pioneers - Apply Inhouse for 'RefResource' table - Check isdeleted [Redmine: #245025]
 
 	Param:
 		exec Task_CashService_BonusTransaction_Ins 			
@@ -233,7 +234,8 @@ BEGIN
 				AND EXISTS (SELECT 1 FROM dbo.RefResource rf WITH (NOLOCK) -- count Slots game only
 					WHERE rf.RefId='RNG_BT_Group'
 						AND CAST(rf.ResourceId AS SMALLINT) = f.BetType
-						AND CAST(rf.Resource_en AS TINYINT) = 1) --GameGroupID:  1 Slot Games | 2 Others
+						AND CAST(rf.Resource_en AS TINYINT) = 1
+						AND IsDeleted = 0) --GameGroupID:  1 Slot Games | 2 Others
 				-- Exclude Progressive Games Contribution Bettype
 				AND NOT EXISTS (SELECT 1 FROM dbo.f_ProgressiveGamesContribution_Bettype_Sel(@RNGCasinoProductIds) WHERE ProductId = f.ProductID AND ContributionBettype = f.BetType )
 		
