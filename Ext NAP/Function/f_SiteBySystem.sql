@@ -60,6 +60,7 @@ Revisions:
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 	- 20250908@Helios: Add site - by System ExtraPTRM - [Redmine: #238079]
 	- 20251008@Dave: Add ACCGTHB - [Redmine: #241127]
+	- 20251127@Dave: Add ACCIW33 - [Redmine: #245427]
 	Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING'
 */
@@ -201,6 +202,11 @@ BEGIN
 		WHERE isLicensee = 0 
 			AND SiteLabel = 'MBC'
 			AND isActive=1;
+	END
+	ELSE IF(@System IN ('ACCIW33'))
+	BEGIN
+		INSERT INTO @tbSite(siteid)
+		SELECT 21; --733333
 	END
 	RETURN;
 
