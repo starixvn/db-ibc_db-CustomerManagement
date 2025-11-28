@@ -57,6 +57,7 @@ Revisions:
 	- 20250122@Elodie: Add ACCTHAI9TA - [Redmine: #217269]
 	- 20250908@Helios: Add currencies - by System ExtraPTRM - [Redmine: #238079]
 	- 20251008@Dave: Add ACCGTHB [Redmine: #241127]
+	- 20251127@Dave: Add ACCIW33 - [Redmine: #245427]
 	
 Param's Explanation:
 	- @System: input system name 'ACCTHAI', 'ACCOUNTING', 'ACCINDO'
@@ -205,7 +206,7 @@ BEGIN
 		SELECT 43 --THB,...
 		UNION ALL SELECT 35;	--- 	$US
 	END
-	ELSE IF(@System IN ('ExtraPTRM'))
+	ELSE IF(@System IN ('ExtraPTRM','ACCIW33'))
 	BEGIN
 		INSERT INTO @tbCurrency(exchangeID)
 		SELECT 2; --RM,...
